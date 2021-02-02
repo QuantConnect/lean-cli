@@ -1,0 +1,6 @@
+# This file contains development dependencies
+# Production dependencies are stored in setup.py
+
+-e .
+
+pytest==6.2.2
