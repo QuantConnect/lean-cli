@@ -48,7 +48,7 @@ jobs:
         # run: sed -i 's/__version__ = "dev"/__version__ = "'"${GITHUB_REF##*/}"'"/g' lean/__init__.py
 
       - name: Build package
-        run: python setup.py build
+        run: python setup.py sdist bdist_wheel
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@master
