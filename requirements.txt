@@ -3,4 +3,5 @@
 
 -e .
 
+wheel
 pytest==6.2.2

@@ -42,6 +42,9 @@ jobs:
         with:
           python-version: 3.6
 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       # TODO: Replace the current run line with the commented run line when deploying on tag builds
       - name: Update version
         run: sed -i 's/__version__ = "dev"/__version__ = "0.0.'"$GITHUB_RUN_NUMBER"'"/g' lean/__init__.py
