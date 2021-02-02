@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # TODO: Change to `github.event_name == "push" && startsWith(github.ref, "refs/tags")` to deploy on tag builds
-    # Releases are done on master builds for now to make sure everything works correctly
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Releases are done on main builds for now to make sure everything works correctly
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: test
 
     steps:

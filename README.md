@@ -19,4 +19,4 @@ If you need to add dependencies, first update `setup.py` (if it is a production 
 
 The unit tests can be ran by running `pytest`.
 
-<!-- Not yet enabled: Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `master` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v". -->
+<!-- Not yet enabled: Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v". -->
