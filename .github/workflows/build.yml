@@ -30,7 +30,7 @@ jobs:
 
     # TODO: Change to `github.event_name == "push" && startsWith(github.ref, "refs/tags")` to deploy on tag builds
     # Releases are done on master builds for now to make sure everything works correctly
-    if: github.event_name == "push" && github.ref == "refs/heads/master"
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: test
 
     steps:
@@ -42,9 +42,10 @@ jobs:
         with:
           python-version: 3.6
 
-      # TODO: Replace $GITHUB_RUN_NUMBER with ${GITHUB_REF##*/} when deploying on tag builds
+      # TODO: Replace the current run line with the commented run line when deploying on tag builds
       - name: Update version
-        run: sed -i 's/__version__ = "dev"/__version__ = "'"$GITHUB_RUN_NUMBER"'"/g' lean/__init__.py
+        run: sed -i 's/__version__ = "dev"/__version__ = "0.0.'"$GITHUB_RUN_NUMBER"'"/g' lean/__init__.py
+        # run: sed -i 's/__version__ = "dev"/__version__ = "'"${GITHUB_REF##*/}"'"/g' lean/__init__.py
 
       - name: Build package
         run: python setup.py build
