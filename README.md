@@ -3,6 +3,8 @@
 [![Build Status](https://github.com/QuantConnect/lean-cli/workflows/Build/badge.svg)](https://github.com/QuantConnect/lean-cli/actions?query=workflow%3ABuild)
 [![PyPI Version](https://img.shields.io/pypi/v/lean)](https://pypi.org/project/lean/)
 
+**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the 1.0.0 release. Use with caution.**
+
 The Lean CLI is a CLI aimed at making it easier to run the LEAN engine locally and in the cloud.
 
 ## Installation
@@ -19,4 +21,4 @@ If you need to add dependencies, first update `setup.py` (if it is a production 
 
 The unit tests can be ran by running `pytest`.
 
-<!-- Not yet enabled: Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v". -->
+Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".
