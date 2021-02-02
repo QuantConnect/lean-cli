@@ -19,7 +19,7 @@ def get_version():
 
 # Production dependencies
 install_requires = [
-    "click~=7.1"
+    "click~=7.1.0"
 ]
 
 setup(
