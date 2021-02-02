@@ -25,7 +25,7 @@ install_requires = [
 setup(
     name="lean",
     version=get_version(),
-    description="Lean CLI aimed at making it easier to run the LEAN engine locally and in the cloud",
+    description="A CLI aimed at making it easier to run QuantConnect's LEAN engine locally and in the cloud",
     author="QuantConnect",
     author_email="support@quantconnect.com",
     url="https://github.com/QuantConnect/lean-cli",
