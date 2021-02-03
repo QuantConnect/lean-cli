@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Dict
 
 from lean.config.global_config import GlobalConfig
+from lean.constants import GLOBAL_CONFIG_DIR
 
 CONFIG_FILE_NAME = "credentials"
 
 
 def get_config_path() -> Path:
-    return Path.home() / ".lean" / CONFIG_FILE_NAME
+    return Path.home() / GLOBAL_CONFIG_DIR / CONFIG_FILE_NAME
 
 
 def create_config(user_id: str, api_token: str) -> None:

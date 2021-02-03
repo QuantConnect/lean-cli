@@ -3,6 +3,7 @@ from time import time
 from typing import Dict, Any
 
 import requests
+
 from lean.api.errors import FailedRequestException, AuthenticationException
 
 BASE_URL = "https://www.quantconnect.com/api/v2"
@@ -56,7 +57,7 @@ class APIClient:
 
         url = BASE_URL + endpoint
 
-        # Create the hash token which is used to authenticate the current user to the API
+        # Create the hash which is used to authenticate the user to the API
         timestamp = str(int(time()))
         hash = sha256(f"{self.__api_token}:{timestamp}".encode("utf-8")).hexdigest()
 

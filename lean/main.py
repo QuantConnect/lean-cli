@@ -4,6 +4,8 @@ import click
 
 from lean import __version__
 from lean.commands import auth
+from lean.commands import init
+from lean.commands import create_project
 
 
 @click.group()
@@ -14,9 +16,11 @@ def lean() -> None:
     pass
 
 
-# Authentication commands
+# Add all commands to the root command group
 lean.add_command(auth.login)
 lean.add_command(auth.logout)
+lean.add_command(init.init)
+lean.add_command(create_project.create_project)
 
 
 def main() -> None:

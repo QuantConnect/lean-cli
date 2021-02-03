@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
-from typing import Dict
-from unittest.mock import patch
+from unittest import mock
 
 from click.testing import CliRunner
+
 from lean.main import lean
 
 
@@ -11,7 +11,7 @@ def get_credentials_path() -> Path:
     return Path.home() / ".lean" / "credentials"
 
 
-def assert_credentials(user_id: str, api_token: str) -> Dict[str, str]:
+def assert_credentials(user_id: str, api_token: str) -> None:
     credentials_path = get_credentials_path()
 
     assert credentials_path.exists()
@@ -26,7 +26,7 @@ def assert_credentials(user_id: str, api_token: str) -> Dict[str, str]:
         assert data["api_token"] == api_token
 
 
-@patch("lean.api.api_client.APIClient.is_authenticated")
+@mock.patch("lean.api.api_client.APIClient.is_authenticated")
 def test_login_logs_in_with_options_if_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
@@ -37,7 +37,7 @@ def test_login_logs_in_with_options_if_given(is_authenticated) -> None:
     assert_credentials("123", "456")
 
 
-@patch("lean.api.api_client.APIClient.is_authenticated")
+@mock.patch("lean.api.api_client.APIClient.is_authenticated")
 def test_login_prompts_if_user_id_not_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
@@ -49,7 +49,7 @@ def test_login_prompts_if_user_id_not_given(is_authenticated) -> None:
     assert_credentials("123", "456")
 
 
-@patch("lean.api.api_client.APIClient.is_authenticated")
+@mock.patch("lean.api.api_client.APIClient.is_authenticated")
 def test_login_prompts_if_api_token_not_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
@@ -61,7 +61,7 @@ def test_login_prompts_if_api_token_not_given(is_authenticated) -> None:
     assert_credentials("123", "456")
 
 
-@patch("lean.api.api_client.APIClient.is_authenticated")
+@mock.patch("lean.api.api_client.APIClient.is_authenticated")
 def test_login_aborts_if_credentials_are_invalid(is_authenticated) -> None:
     is_authenticated.return_value = False
 
