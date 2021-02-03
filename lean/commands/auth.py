@@ -3,6 +3,10 @@
 from typing import Optional
 
 import click
+from lean.api.api_client import APIClient
+from lean.config.global_config import GlobalConfig
+
+CREDENTIALS_FILE_NAME = "credentials"
 
 
 @click.command()
@@ -15,10 +19,34 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
 
     Credentials are stored in ~/.lean/credentials and are removed upon running `lean logout`.
     """
-    pass
+    config = GlobalConfig(CREDENTIALS_FILE_NAME)
+
+    if user_id is None or api_token is None:
+        click.echo("Your user ID and API token are needed to make authenticated requests to the QuantConnect API")
+        click.echo("You can request these credentials on https://www.quantconnect.com/account")
+        click.echo(f"Both will be saved in {config.path}")
+
+    if user_id is None:
+        user_id = click.prompt("User ID")
+
+    if api_token is None:
+        api_token = click.prompt("API token")
+
+    api_client = APIClient(user_id, api_token)
+
+    if not api_client.is_authenticated():
+        raise click.ClickException("Credentials are invalid")
+
+    config["user_id"] = user_id
+    config["api_token"] = api_token
+
+    config.save()
+
+    click.echo("Successfully logged in")
 
 
 @click.command()
-def logout() -> None:
+@click.option("--arg", type=str)
+def logout(arg: Optional[str]) -> None:
     """Log out and remove stored credentials."""
-    pass
+    GlobalConfig(CREDENTIALS_FILE_NAME).clear()

@@ -19,7 +19,8 @@ def get_version():
 
 # Production dependencies
 install_requires = [
-    "click~=7.1.0"
+    "click~=7.1.0",
+    "requests~=2.25.0"
 ]
 
 setup(
