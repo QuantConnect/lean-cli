@@ -3,9 +3,10 @@
 import click
 
 from lean import __version__
-from lean.commands import auth
-from lean.commands import init
-from lean.commands import create_project
+from lean.commands.create_project import create_project
+from lean.commands.init import init
+from lean.commands.login import login
+from lean.commands.logout import logout
 
 
 @click.group()
@@ -17,10 +18,10 @@ def lean() -> None:
 
 
 # Add all commands to the root command group
-lean.add_command(auth.login)
-lean.add_command(auth.logout)
-lean.add_command(init.init)
-lean.add_command(create_project.create_project)
+lean.add_command(login)
+lean.add_command(logout)
+lean.add_command(init)
+lean.add_command(create_project)
 
 
 def main() -> None:

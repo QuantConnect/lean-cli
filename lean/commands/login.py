@@ -1,12 +1,10 @@
-"""This module contains commands used to authenticate with the QuantConnect.com API."""
-
 from typing import Optional
 
 import click
+
 from lean.api.api_client import APIClient
 from lean.config.global_config import GlobalConfig
-
-CREDENTIALS_FILE_NAME = "credentials"
+from lean.constants import CREDENTIALS_FILE_NAME
 
 
 @click.command()
@@ -43,9 +41,3 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     config.save()
 
     click.echo("Successfully logged in")
-
-
-@click.command()
-def logout() -> None:
-    """Log out and remove stored credentials."""
-    GlobalConfig(CREDENTIALS_FILE_NAME).clear()
