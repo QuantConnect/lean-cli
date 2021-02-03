@@ -46,7 +46,6 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
 
 
 @click.command()
-@click.option("--arg", type=str)
-def logout(arg: Optional[str]) -> None:
+def logout() -> None:
     """Log out and remove stored credentials."""
     GlobalConfig(CREDENTIALS_FILE_NAME).clear()
