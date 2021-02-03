@@ -9,7 +9,7 @@ The Lean CLI is a CLI aimed at making it easier to run the LEAN engine locally a
 
 ## Installation
 
-In the future: `pip install -U lean`.
+The CLI can be installed and updated by running `pip install -U lean`.
 
 Usage instructions will be added when there is something usable in this repository.
 
