@@ -1,5 +1,6 @@
 import itertools
 import os
+from typing import Tuple
 
 import click
 import docker
@@ -48,7 +49,7 @@ def pull_image(image: str, tag: str) -> None:
     os.system(f"docker image pull {image}:{tag}")
 
 
-def run_image(image: str, tag: str, command: str, **kwargs) -> bool:
+def run_image(image: str, tag: str, command: str, quiet: bool, **kwargs) -> Tuple[bool, str]:
     """
     Run a Docker image. If the image is not available yet it will be pulled first.
 
@@ -57,16 +58,22 @@ def run_image(image: str, tag: str, command: str, **kwargs) -> bool:
     :param image: the name of the image to run
     :param tag: the image's tag to run
     :param command: the command to run
+    :param quiet: whether the logs of the image should be printed to stdout
     :param kwargs: the kwargs to forward to docker.containers.run
-    :return: True if the command in the container exited successfully, False if not
+    :return: a tuple containing whether the command in the container exited successfully and the output of the command
     """
     if not is_image_available(image, tag):
         pull_image(image, tag)
 
     docker_client = get_docker_client()
 
+    kwargs["detach"] = True
     container = docker_client.containers.run(f"{image}:{tag}", command, **kwargs)
-    for line in container.logs(stream=True, follow=True):
-        click.echo(line, nl=False)
 
-    return container.wait()["StatusCode"] == 0
+    output = ""
+    for chunk in container.logs(stream=True, follow=True):
+        output += chunk.decode("utf-8")
+        if not quiet:
+            click.echo(chunk, nl=False)
+
+    return container.wait()["StatusCode"] == 0, output

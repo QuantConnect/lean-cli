@@ -1,6 +1,7 @@
 import json
 import platform
 import re
+import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -67,6 +68,70 @@ def get_complete_lean_config(algorithm_file: Path) -> Dict[str, Any]:
     return lean_config
 
 
+def compile_csharp_project(project_dir: Path) -> Path:
+    """Compile the C# project in the given directory and return the path where the binaries are stored.
+
+    :param project_dir: the path to the directory containing C# files that needs to be compiled
+    :return: the path to the directory containing the QuantConnect.Algorithm.CSharp.{dll,pdb} files
+    """
+    click.echo(f"Compiling the C# files in '{project_dir}'")
+
+    # Create a temporary directory used for compiling the C# project
+    compile_dir = Path(tempfile.mkdtemp())
+
+    # Copy all project files to the temporary directory
+    # shutil.copytree only works if the target directory doesn't exist yet, so we remove it before running copytree
+    compile_dir.rmdir()
+    shutil.copytree(project_dir, compile_dir)
+
+    # Get a list of all dll's in the docker image
+    _, output = run_image(DOCKER_IMAGE, DOCKER_TAG, "-c ls", True, entrypoint="bash")
+    dlls = [line for line in output.split("\n") if line.endswith(".dll")]
+
+    # Create a csproj file which will be used to compile the project
+    with open(compile_dir / "Project.csproj", "w+") as file:
+        references = [f"""
+        <Reference Include="{dll.split('.dll')[0]}">
+            <HintPath>/Lean/Launcher/bin/Debug/{dll}</HintPath>
+        </Reference>
+        """.strip() for dll in dlls]
+        references = "\n".join(references)
+
+        file.write(f"""
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <RootNamespace>QuantConnect.Algorithm.CSharp</RootNamespace>
+        <AssemblyName>QuantConnect.Algorithm.CSharp</AssemblyName>
+        <TargetFramework>net462</TargetFramework>
+        <LangVersion>6</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <OutputPath>bin/$(Configuration)/</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        {references}
+    </ItemGroup>
+</Project>
+        """.strip())
+
+    # Compile the project in a Docker container
+    volumes = {
+        str(compile_dir): {
+            "bind": "/Project",
+            "mode": "rw"
+        }
+    }
+
+    run_image(DOCKER_IMAGE, DOCKER_TAG, "restore /Project/Project.csproj", False, entrypoint="nuget", volumes=volumes)
+    run_image(DOCKER_IMAGE, DOCKER_TAG, "/Project/Project.csproj", False, entrypoint="msbuild", volumes=volumes)
+
+    return compile_dir / "bin" / "Debug"
+
+
 @local_command
 @click.argument("project", type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True))
 @click.option("--output", "-o",
@@ -99,7 +164,6 @@ def backtest(project: str, output: str) -> None:
     # The dict containing all options passed to `docker run`
     # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
     run_options: Dict[str, Any] = {
-        "detach": True,
         "mounts": [Mount(target="/Lean/Launcher/config.json", source=config_path, type="bind", read_only=True)],
         "volumes": {},
         "ports": {
@@ -130,16 +194,24 @@ def backtest(project: str, output: str) -> None:
         }
 
     # Mount the project which needs to be backtested
-    run_options["volumes"][str(project_dir)] = {
-        "bind": "/Project",
-        "mode": "rw"
-    }
+    if algorithm_file.name.endswith(".py"):
+        run_options["volumes"][str(project_dir)] = {
+            "bind": "/Project",
+            "mode": "rw"
+        }
+    else:
+        # C# projects need to be compiled before the backtest can run
+        csharp_binaries_dir = compile_csharp_project(project_dir)
 
-    # TODO: Compile C# projects before running them
+        for extension in ["dll", "pdb"]:
+            run_options["mounts"].append(
+                Mount(target=f"/Lean/Launcher/bin/Debug/QuantConnect.Algorithm.CSharp.{extension}",
+                      source=str(csharp_binaries_dir / f"QuantConnect.Algorithm.CSharp.{extension}"),
+                      type="bind"))
 
     # Run the backtest and log the result
     command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
-    success = run_image(DOCKER_IMAGE, DOCKER_TAG, command, **run_options)
+    success, _ = run_image(DOCKER_IMAGE, DOCKER_TAG, command, False, **run_options)
 
     relative_project_dir = project_dir.relative_to(lean_project_root)
     relative_output_dir = output_dir.relative_to(lean_project_root)

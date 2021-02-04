@@ -2,6 +2,7 @@
 
 [![Build Status](https://github.com/QuantConnect/lean-cli/workflows/Build/badge.svg)](https://github.com/QuantConnect/lean-cli/actions?query=workflow%3ABuild)
 [![PyPI Version](https://img.shields.io/pypi/v/lean)](https://pypi.org/project/lean/)
+[![Project Status](https://img.shields.io/pypi/status/lean)](https://pypi.org/project/lean/)
 
 **This CLI is still in development. Bugs may still occur and breaking changes may still happen before the 1.0.0 release. Use with caution.**
 
