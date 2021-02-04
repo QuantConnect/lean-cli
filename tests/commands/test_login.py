@@ -20,11 +20,11 @@ def assert_credentials(user_id: str, api_token: str) -> None:
     with open(credentials_path) as file:
         data = json.load(file)
 
-        assert "user_id" in data
-        assert "api_token" in data
+        assert "user-id" in data
+        assert "api-token" in data
 
-        assert data["user_id"] == user_id
-        assert data["api_token"] == api_token
+        assert data["user-id"] == user_id
+        assert data["api-token"] == api_token
 
 
 @mock.patch("lean.api.api_client.APIClient.is_authenticated")
@@ -46,7 +46,7 @@ def test_login_prompts_if_user_id_not_given(is_authenticated) -> None:
     result = runner.invoke(lean, ["login", "--api-token", "456"], input="123\n")
 
     assert result.exit_code == 0
-    assert "User ID:" in result.output
+    assert "User id:" in result.output
     assert_credentials("123", "456")
 
 

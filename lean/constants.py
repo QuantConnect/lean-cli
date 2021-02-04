@@ -9,3 +9,9 @@ DEFAULT_CONFIG_FILE = "lean.json"
 
 # The default name of the data directory in a Lean CLI project
 DEFAULT_DATA_DIR = "data"
+
+# The Docker image which is used when running the LEAN engine locally
+DOCKER_IMAGE = "quantconnect/lean"
+
+# The tag of the Docker image which is used when running the LEAN engine locally
+DOCKER_TAG = "latest"

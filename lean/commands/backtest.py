@@ -1,64 +1,49 @@
-import itertools
 import json
-import os
 import platform
 import re
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import click
 from docker.types import Mount
 
 from lean.config.global_config import GlobalConfig
 from lean.config.local_config import get_lean_config, get_lean_config_path
-from lean.constants import CREDENTIALS_FILE_NAME
+from lean.constants import CREDENTIALS_FILE_NAME, DOCKER_IMAGE, DOCKER_TAG
 from lean.decorators import local_command
-from lean.docker import get_docker_client
+from lean.docker import run_image
 
 
 # This command is based on the following files:
 # https://github.com/QuantConnect/Lean/blob/254d0896f10b0fa3f50d178283bf94e34cb0b474/run_docker.sh
 # https://github.com/QuantConnect/Lean/blob/254d0896f10b0fa3f50d178283bf94e34cb0b474/run_docker.bat
 
-@local_command
-@click.argument("project", type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True))
-@click.option("--output", "-o",
-              type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
-              help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP")
-def backtest(project: str, output: str) -> None:
-    """Backtest a project locally using Docker.
+def parse_project_paths(project: str) -> Tuple[Path, Path]:
+    """Determine the path to the project containing the algorithm and the path to the algorithm itself.
 
-    If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be used.
+    :param project: the project given by the user
+    :return: a tuple containing the path to the project directory and the path to the algorithm file
+    """
+    project_path = Path(project)
 
-    If PROJECT is a file, the algorithm in the specified file will be used."""
-    # Parse which directory contains the source files and which source file contains the algorithm
-    project_arg = Path(project)
-    algorithm_file = None
-
-    if project_arg.is_file():
-        project_dir = project_arg.parent
-        algorithm_file = project_arg
+    if project_path.is_file():
+        return project_path.parent, project_path
     else:
-        project_dir = project_arg
-
-        for candidate_algorithm_file in [project_dir / "main.py", project_dir / "Main.cs"]:
+        for candidate_algorithm_file in [project_path / "main.py", project_path / "Main.cs"]:
             if candidate_algorithm_file.exists():
-                algorithm_file = candidate_algorithm_file
-                break
+                return project_path, candidate_algorithm_file
 
-        if algorithm_file is None:
-            raise click.ClickException("The specified project does not contain a main.py or Main.cs file")
+    raise click.ClickException("The specified project does not contain a main.py or Main.cs file")
 
-    # Set up the output directory to store the results in
-    if output is not None:
-        output_dir = Path(output)
-    else:
-        output_dir = project_dir / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        output_dir.mkdir(parents=True)
 
-    # Retrieve the Lean config and add the properties which are removed in `lean init`
+def get_complete_lean_config(algorithm_file: Path) -> Dict[str, Any]:
+    """Retrieve the Lean config stored in the Lean CLI project and fill it with the items removed in `lean init`.
+
+    :param algorithm_file: the path to the file containing the algorithm to backtest
+    :return: a full Lean config object containing all properties needed for Lean to run
+    """
     lean_config = get_lean_config()
     lean_config["environment"] = "backtesting"
     lean_config["composer-dll-directory"] = "."
@@ -78,6 +63,33 @@ def backtest(project: str, output: str) -> None:
             lean_config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", file.read())[0]
         lean_config["algorithm-language"] = "CSharp"
         lean_config["algorithm-location"] = "QuantConnect.Algorithm.CSharp.dll"
+
+    return lean_config
+
+
+@local_command
+@click.argument("project", type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True))
+@click.option("--output", "-o",
+              type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
+              help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP")
+def backtest(project: str, output: str) -> None:
+    """Backtest a project locally using Docker.
+
+    If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be used.
+
+    If PROJECT is a file, the algorithm in the specified file will be used."""
+    # Parse which directory contains the source files and which source file contains the algorithm
+    project_dir, algorithm_file = parse_project_paths(project)
+
+    # Set up the output directory to store the results in
+    if output is not None:
+        output_dir = Path(output)
+    else:
+        output_dir = project_dir / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output_dir.mkdir(parents=True)
+
+    # Retrieve the Lean config and add the properties which are removed in `lean init`
+    lean_config = get_complete_lean_config(algorithm_file)
 
     # Write the complete Lean config to a temporary file because we only need it for this single backtest
     with tempfile.NamedTemporaryFile(mode="w+", delete=False) as config_file:
@@ -125,33 +137,14 @@ def backtest(project: str, output: str) -> None:
 
     # TODO: Compile C# projects before running them
 
-    # Configure the image and command to run
-    docker_image = "quantconnect/lean"
-    docker_tag = "latest"
+    # Run the backtest and log the result
     command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
+    success = run_image(DOCKER_IMAGE, DOCKER_TAG, command, **run_options)
 
-    docker_client = get_docker_client()
-
-    # Pull the image if it hasn't been downloaded yet
-    installed_tags = list(itertools.chain(*[x.tags for x in docker_client.images.list()]))
-    if f"{docker_image}:{docker_tag}" not in installed_tags:
-        click.echo(f"Pulling {docker_image}:{docker_tag} from Docker Hub, this may take a while...")
-
-        # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
-        # Downloading 5+ GB without showing the progress does not provide a good developer experience
-        # Since the pull command is the same on Windows, Linux and macOS we can safely use a system call
-        os.system(f"docker image pull {docker_image}:{docker_tag}")
-
-    # Run the backtest
-    container = docker_client.containers.run(f"{docker_image}:{docker_tag}", command, **run_options)
-    for line in container.logs(stream=True, follow=True):
-        click.echo(line, nl=False)
-
-    exit_code = container.wait()["StatusCode"]
     relative_project_dir = project_dir.relative_to(lean_project_root)
     relative_output_dir = output_dir.relative_to(lean_project_root)
 
-    if exit_code == 0:
+    if success:
         click.echo(f"Successfully backtested '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
     else:
         raise click.ClickException(
