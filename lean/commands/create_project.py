@@ -3,26 +3,28 @@ from pathlib import Path
 
 import click
 
-# The default templates have been copied from the "Create New Algorithm" feature in the Algorithm Lab
+# The default templates are coming from the "Create New Algorithm" feature in the Algorithm Lab
 
-DEFAULT_PYTHON_MAIN = """
+DEFAULT_PYTHON_MAIN = '''
+from QuantConnect import Resolution
+from QuantConnect.Algorithm import QCAlgorithm
+
+
 class $NAME$(QCAlgorithm):
-
     def Initialize(self):
         self.SetStartDate(2020, 8, 2)  # Set Start Date
         self.SetCash(100000)  # Set Strategy Cash
         # self.AddEquity("SPY", Resolution.Minute)
 
-
     def OnData(self, data):
-        '''OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
+        """OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
             Arguments:
                 data: Slice object keyed by symbol containing the stock data
-        '''
-
+        """
         # if not self.Portfolio.Invested:
-        #    self.SetHoldings("SPY", 1)
-""".strip() + "\n"
+        #     self.SetHoldings("SPY", 1)
+        #     self.Debug("Purchased Stock")
+'''.strip() + "\n"
 
 DEFAULT_PYTHON_NOTEBOOK = """
 {
@@ -108,19 +110,18 @@ DEFAULT_PYTHON_NOTEBOOK = """
 """.strip() + "\n"
 
 DEFAULT_CSHARP_MAIN = """
+using QuantConnect.Data;
+
 namespace QuantConnect.Algorithm.CSharp
 {
     public class $NAME$ : QCAlgorithm
     {
-
         public override void Initialize()
         {
-            SetStartDate(2020, 8, 2);  //Set Start Date
-            SetCash(100000);             //Set Strategy Cash
-            
+            SetStartDate(2020, 8, 2); // Set Start Date
+            SetCash(100000); // Set Strategy Cash
+
             // AddEquity("SPY", Resolution.Minute);
-
-
         }
 
         /// OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
@@ -129,11 +130,10 @@ namespace QuantConnect.Algorithm.CSharp
         {
             // if (!Portfolio.Invested)
             // {
-            //    SetHoldings("SPY", 1);
-            //    Debug("Purchased Stock");
-            //}
+            //     SetHoldings("SPY", 1);
+            //     Debug("Purchased Stock");
+            // }
         }
-
     }
 }
 """.strip() + "\n"
@@ -169,7 +169,7 @@ DEFAULT_CSHARP_NOTEBOOK = """
    "metadata": {},
    "outputs": [],
    "source": [
-    "foreach(var slice in history.Take(5)) {\n",
+    "foreach (var slice in history.Take(5)) {\n",
     "    Console.WriteLine(slice.Bars[spy.Symbol].ToString());\n",
     "}"
    ]

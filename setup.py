@@ -21,7 +21,9 @@ def get_version():
 install_requires = [
     "click~=7.1.0",
     "requests~=2.25.0",
-    "tqdm~=4.56.0"
+    "tqdm~=4.56.0",
+    "jsoncomment~=0.4.0",
+    "docker~=4.4.0"
 ]
 
 setup(

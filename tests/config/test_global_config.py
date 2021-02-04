@@ -18,7 +18,6 @@ def create_config(user_id: str, api_token: str) -> None:
 
 
 def get_config() -> Dict[str, str]:
-    """Returns the parsed contents of the config file."""
     with open(get_config_path()) as file:
         return json.load(file)
 

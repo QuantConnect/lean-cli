@@ -69,4 +69,4 @@ def test_login_aborts_if_credentials_are_invalid(is_authenticated) -> None:
     runner = CliRunner()
     result = runner.invoke(lean, ["login", "--user-id", "123", "--api-token", "456"])
 
-    assert result.exit_code == 1
+    assert result.exit_code != 0

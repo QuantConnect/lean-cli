@@ -3,6 +3,7 @@
 import click
 
 from lean import __version__
+from lean.commands.backtest import backtest
 from lean.commands.create_project import create_project
 from lean.commands.init import init
 from lean.commands.login import login
@@ -22,6 +23,7 @@ lean.add_command(login)
 lean.add_command(logout)
 lean.add_command(init)
 lean.add_command(create_project)
+lean.add_command(backtest)
 
 
 def main() -> None:

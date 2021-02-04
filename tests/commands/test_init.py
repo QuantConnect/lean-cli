@@ -10,7 +10,7 @@ from lean.main import lean
 
 
 def create_fake_archive() -> None:
-    """Creates a fake archive and mocks the request to the url which contains the Lean repository."""
+    """Create a fake archive and mock the request to the url which contains the Lean repository."""
     with zipfile.ZipFile("/tmp/archive.zip", "w") as archive:
         archive.writestr("Lean-master/Data/equity/readme.md", "# This is just a test")
         archive.writestr("Lean-master/Launcher/config.json", """

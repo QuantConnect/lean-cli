@@ -1,4 +1,4 @@
-"""This module contains functions to manage the global configuration files in ~/.lean."""
+"""This module contains utilities to manage the global configuration files in ~/.lean."""
 
 import json
 from pathlib import Path
@@ -7,10 +7,10 @@ from lean.constants import GLOBAL_CONFIG_DIR
 
 
 class GlobalConfig(dict):
-    """A GlobalConfig instance manages the data in a single file in the global config directory."""
+    """A GlobalConfig instance manages the data in a single file in ~/.lean."""
 
     def __init__(self, file_name: str) -> None:
-        """Create a GlobalConfig instance for the file named <file_name> in the global config directory.
+        """Create a GlobalConfig instance for the ~/.lean/<file_name>.
 
         If the file exists already, its data is loaded into the instance.
         """

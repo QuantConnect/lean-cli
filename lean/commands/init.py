@@ -112,8 +112,8 @@ def init() -> None:
             config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIR}"')
 
             # Save the modified config
-            with open(lean_config_path, "w+") as file:
-                file.write(config)
+            with open(lean_config_path, "w+") as config_file:
+                config_file.write(config)
 
     click.echo("Successfully bootstrapped your Lean CLI project!")
     click.echo()

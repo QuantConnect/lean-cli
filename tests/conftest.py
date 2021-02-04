@@ -24,9 +24,7 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
 
     # Set the current working directory to an empty directory
     test_dir = Path.home() / "testing"
-    if not test_dir.exists():
-        test_dir.mkdir(parents=True)
-
+    test_dir.mkdir()
     os.chdir(test_dir)
 
     return fs
