@@ -20,12 +20,12 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     config = GlobalConfig(CREDENTIALS_FILE_NAME)
 
     if user_id is None or api_token is None:
-        click.echo("Your user ID and API token are needed to make authenticated requests to the QuantConnect API")
+        click.echo("Your user id and API token are needed to make authenticated requests to the QuantConnect API")
         click.echo("You can request these credentials on https://www.quantconnect.com/account")
         click.echo(f"Both will be saved in {config.path}")
 
     if user_id is None:
-        user_id = click.prompt("User ID")
+        user_id = click.prompt("User id")
 
     if api_token is None:
         api_token = click.prompt("API token")
@@ -35,8 +35,8 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     if not api_client.is_authenticated():
         raise click.ClickException("Credentials are invalid")
 
-    config["user_id"] = user_id
-    config["api_token"] = api_token
+    config["user-id"] = user_id
+    config["api-token"] = api_token
 
     config.save()
 

@@ -66,8 +66,8 @@ def backtest(project: str, output: str) -> None:
     lean_config["debugging-method"] = "LocalCmdline"
 
     credentials_config = GlobalConfig(CREDENTIALS_FILE_NAME)
-    lean_config["job-user-id"] = credentials_config["user_id"] if "user_id" in credentials_config else "0"
-    lean_config["api-access-token"] = credentials_config["api_token"] if "api_token" in credentials_config else ""
+    lean_config["job-user-id"] = credentials_config["user-id"] if "user-id" in credentials_config else "0"
+    lean_config["api-access-token"] = credentials_config["api-token"] if "api-token" in credentials_config else ""
 
     if algorithm_file.name.endswith(".py"):
         lean_config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
