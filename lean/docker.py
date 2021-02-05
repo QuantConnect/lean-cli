@@ -1,5 +1,6 @@
 import itertools
 import os
+import sys
 from typing import Tuple
 
 import click
@@ -8,17 +9,18 @@ import docker
 
 def get_docker_client() -> docker.DockerClient:
     """Create a DockerClient instance, abort execution if Docker is not available."""
-    docker_client = docker.from_env()
-    docker_available = True
+    error_message = "Please make sure Docker is installed and running"
+
+    try:
+        docker_client = docker.from_env()
+    except:
+        raise click.ClickException(error_message)
 
     try:
         if not docker_client.ping():
-            docker_available = False
+            raise click.ClickException(error_message)
     except:
-        docker_available = False
-
-    if not docker_available:
-        raise click.ClickException("Please make sure Docker is installed and running")
+        raise click.ClickException(error_message)
 
     return docker_client
 
@@ -75,5 +77,9 @@ def run_image(image: str, tag: str, command: str, quiet: bool, **kwargs) -> Tupl
         output += chunk.decode("utf-8")
         if not quiet:
             click.echo(chunk, nl=False)
+    
+    # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
+    if not quiet:
+        sys.stdout.flush()
 
     return container.wait()["StatusCode"] == 0, output
