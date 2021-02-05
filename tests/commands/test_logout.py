@@ -2,7 +2,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from lean.constants import GLOBAL_CONFIG_DIR, CREDENTIALS_FILE_NAME
+from lean.constants import CREDENTIALS_FILE_NAME, GLOBAL_CONFIG_DIR
 from lean.main import lean
 
 

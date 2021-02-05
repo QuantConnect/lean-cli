@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import click
 from jsoncomment import JsonComment

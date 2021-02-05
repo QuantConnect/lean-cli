@@ -2,8 +2,9 @@ import json
 
 import pytest
 import responses
+
 from lean.api.api_client import APIClient, BASE_URL
-from lean.api.errors import FailedRequestException, AuthenticationException
+from lean.api.errors import AuthenticationException, FailedRequestException
 
 
 @responses.activate

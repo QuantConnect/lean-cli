@@ -5,7 +5,7 @@ import responses
 from click.testing import CliRunner
 
 from lean.commands.init import remove_section_from_config
-from lean.constants import DEFAULT_DATA_DIR, DEFAULT_CONFIG_FILE
+from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
 from lean.main import lean
 
 

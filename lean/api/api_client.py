@@ -1,10 +1,10 @@
 from hashlib import sha256
 from time import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 import requests
 
-from lean.api.errors import FailedRequestException, AuthenticationException
+from lean.api.errors import AuthenticationException, FailedRequestException
 
 BASE_URL = "https://www.quantconnect.com/api/v2"
 

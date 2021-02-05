@@ -120,7 +120,6 @@ namespace QuantConnect.Algorithm.CSharp
         {
             SetStartDate(2020, 8, 2); // Set Start Date
             SetCash(100000); // Set Strategy Cash
-
             // AddEquity("SPY", Resolution.Minute);
         }
 

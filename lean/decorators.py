@@ -1,4 +1,4 @@
-from typing import Callable, Any, Optional
+from typing import Any, Callable, Optional
 
 import click
 

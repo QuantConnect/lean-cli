@@ -7,7 +7,7 @@ import click
 import requests
 from tqdm import tqdm
 
-from lean.constants import DEFAULT_DATA_DIR, DEFAULT_CONFIG_FILE
+from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
 
 
 def remove_section_from_config(config: str, json_key: str) -> str:

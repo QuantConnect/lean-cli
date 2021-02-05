@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
+                                          DEFAULT_PYTHON_NOTEBOOK)
 from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
 
 
@@ -14,6 +16,14 @@ def create_fake_lean_cli_project() -> None:
 }}
         """)
 
-    for file in [Path.cwd() / "Python Project" / "main.py", Path.cwd() / "CSharp Project" / "Main.cs"]:
-        file.parent.mkdir(parents=True)
-        file.touch()
+    files = {
+        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN,
+        (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
+        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN,
+        (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
+    }
+
+    for path, content in files.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w+") as file:
+            file.write(content)

@@ -4,7 +4,7 @@ from unittest import mock
 
 import click
 
-from lean.config.local_config import get_lean_config_path, get_lean_config
+from lean.config.local_config import get_lean_config, get_lean_config_path
 from lean.constants import DEFAULT_CONFIG_FILE
 
 
