@@ -28,7 +28,7 @@ def assert_credentials(user_id: str, api_token: str) -> None:
 
 
 @mock.patch("lean.api.api_client.APIClient.is_authenticated")
-def test_login_logs_in_with_options_if_given(is_authenticated) -> None:
+def test_login_should_log_in_with_options_when_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
     runner = CliRunner()
@@ -39,7 +39,7 @@ def test_login_logs_in_with_options_if_given(is_authenticated) -> None:
 
 
 @mock.patch("lean.api.api_client.APIClient.is_authenticated")
-def test_login_prompts_if_user_id_not_given(is_authenticated) -> None:
+def test_login_should_prompt_when_user_id_not_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
     runner = CliRunner()
@@ -51,7 +51,7 @@ def test_login_prompts_if_user_id_not_given(is_authenticated) -> None:
 
 
 @mock.patch("lean.api.api_client.APIClient.is_authenticated")
-def test_login_prompts_if_api_token_not_given(is_authenticated) -> None:
+def test_login_should_prompt_when_api_token_not_given(is_authenticated) -> None:
     is_authenticated.return_value = True
 
     runner = CliRunner()
@@ -63,7 +63,7 @@ def test_login_prompts_if_api_token_not_given(is_authenticated) -> None:
 
 
 @mock.patch("lean.api.api_client.APIClient.is_authenticated")
-def test_login_aborts_if_credentials_are_invalid(is_authenticated) -> None:
+def test_login_should_abort_when_credentials_are_invalid(is_authenticated) -> None:
     is_authenticated.return_value = False
 
     runner = CliRunner()

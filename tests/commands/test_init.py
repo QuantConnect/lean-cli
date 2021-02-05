@@ -63,7 +63,7 @@ def create_fake_archive() -> None:
         responses.add(responses.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
 
 
-def test_remove_section_from_config_removes_section_containing_given_key_from_given_json() -> None:
+def test_remove_section_from_config_should_remove_section_containing_given_key_from_given_json() -> None:
     config = """
 {
     // Doc 1
@@ -90,7 +90,7 @@ def test_remove_section_from_config_removes_section_containing_given_key_from_gi
     assert remove_section_from_config(config, "key2") == expected_output
 
 
-def test_init_aborts_if_config_file_already_exists() -> None:
+def test_init_should_abort_when_config_file_already_exists() -> None:
     (Path.cwd() / DEFAULT_LEAN_CONFIG_FILE).touch()
 
     runner = CliRunner()
@@ -99,7 +99,7 @@ def test_init_aborts_if_config_file_already_exists() -> None:
     assert result.exit_code != 0
 
 
-def test_init_aborts_if_data_directory_already_exists() -> None:
+def test_init_should_abort_when_data_directory_already_exists() -> None:
     (Path.cwd() / DEFAULT_LEAN_DATA_DIR).mkdir()
 
     runner = CliRunner()
@@ -108,7 +108,7 @@ def test_init_aborts_if_data_directory_already_exists() -> None:
     assert result.exit_code != 0
 
 
-def test_init_prompts_for_confirmation_if_directory_not_empty() -> None:
+def test_init_should_prompt_for_confirmation_when_directory_not_empty() -> None:
     (Path.cwd() / "my-custom-file.txt").touch()
 
     runner = CliRunner()
@@ -135,7 +135,7 @@ def test_init_should_create_data_directory_from_repo() -> None:
 
 
 @responses.activate
-def test_init_should_create_config_file_from_repo_and_should_remove_unnecessary_keys() -> None:
+def test_init_should_create_config_file_from_repo_without_unnecessary_keys() -> None:
     create_fake_archive()
 
     runner = CliRunner()

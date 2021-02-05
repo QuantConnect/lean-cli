@@ -43,7 +43,7 @@ def test_create_project_should_create_csharp_project() -> None:
         assert '"language": "csharp"' in file.read()
 
 
-def test_create_project_should_abort_if_project_already_exists() -> None:
+def test_create_project_should_abort_when_project_already_exists() -> None:
     (Path.cwd() / "My First Project").mkdir()
 
     runner = CliRunner()

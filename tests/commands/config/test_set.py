@@ -14,7 +14,7 @@ def test_config_get_should_update_the_value_of_the_option_with_the_given_key_wit
     assert user_id_option.get_value() == "54321"
 
 
-def test_config_set_should_fail_if_no_option_with_given_key_exists() -> None:
+def test_config_set_should_fail_when_no_option_with_given_key_exists() -> None:
     runner = CliRunner()
     result = runner.invoke(lean, ["config", "set", "this-option-does-not-exist", "value"])
 

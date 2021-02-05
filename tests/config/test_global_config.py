@@ -25,7 +25,7 @@ def get_config() -> Dict[str, str]:
         return json.load(file)
 
 
-def test_global_config_constructor_loads_existing_data() -> None:
+def test_global_config_constructor_should_load_existing_data() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
@@ -37,7 +37,7 @@ def test_global_config_constructor_loads_existing_data() -> None:
     assert config["key2"] == "456"
 
 
-def test_global_config_save_saves_modifications_to_existing_file() -> None:
+def test_global_config_save_should_save_modifications_to_existing_file() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
@@ -53,7 +53,7 @@ def test_global_config_save_saves_modifications_to_existing_file() -> None:
     assert new_config["key2"] == "456"
 
 
-def test_global_config_save_creates_file_if_it_does_not_exist_yet() -> None:
+def test_global_config_save_should_create_file_when_it_does_not_exist_yet() -> None:
     config = GlobalConfig(CONFIG_FILE_NAME)
     config["key1"] = "123"
     config["key2"] = "456"
@@ -68,7 +68,7 @@ def test_global_config_save_creates_file_if_it_does_not_exist_yet() -> None:
     assert new_config["key2"] == "456"
 
 
-def test_global_config_clear_empties_the_dict() -> None:
+def test_global_config_clear_should_empty_dict() -> None:
     config = GlobalConfig(CONFIG_FILE_NAME)
     config["key1"] = "123"
     config["key2"] = "456"
@@ -78,7 +78,7 @@ def test_global_config_clear_empties_the_dict() -> None:
     assert len(config.keys()) == 0
 
 
-def test_global_config_clear_deletes_the_underlying_file() -> None:
+def test_global_config_clear_should_delete_underlying_file() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
@@ -87,7 +87,7 @@ def test_global_config_clear_deletes_the_underlying_file() -> None:
     assert not get_config_path().exists()
 
 
-def test_string_option_get_value_retrieves_value_from_global_config() -> None:
+def test_string_option_get_value_should_retrieve_value_from_global_config() -> None:
     create_config("123", "456")
 
     option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
@@ -95,13 +95,13 @@ def test_string_option_get_value_retrieves_value_from_global_config() -> None:
     assert option.get_value() == "123"
 
 
-def test_string_option_get_value_returns_default_if_key_not_set_in_global_config() -> None:
+def test_string_option_get_value_should_return_default_if_key_not_set_in_global_config() -> None:
     option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
 
     assert option.get_value(default="123") == "123"
 
 
-def test_string_option_set_value_updates_global_file() -> None:
+def test_string_option_set_value_should_update_global_file() -> None:
     option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
     option.set_value("789")
 
@@ -111,21 +111,21 @@ def test_string_option_set_value_updates_global_file() -> None:
     assert config["key1"] == "789"
 
 
-def test_string_option_set_value_fails_if_value_blank() -> None:
+def test_string_option_set_value_should_fail_when_value_blank() -> None:
     option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
 
     with pytest.raises(click.ClickException):
         option.set_value("")
 
 
-def test_choice_option_constructor_adds_allowed_values_to_description() -> None:
+def test_choice_option_constructor_should_add_allowed_values_to_description() -> None:
     option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
 
     assert "value 1" in option.description
     assert "value 2" in option.description
 
 
-def test_choice_option_set_value_updates_global_file_case_insensitively() -> None:
+def test_choice_option_set_value_should_update_global_file_case_insensitively() -> None:
     option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
     option.set_value("VALUE 1")
 
@@ -135,7 +135,7 @@ def test_choice_option_set_value_updates_global_file_case_insensitively() -> Non
     assert config["key1"] == "value 1"
 
 
-def test_choice_option_set_value_fails_if_value_not_in_allowed_values() -> None:
+def test_choice_option_set_value_should_fail_when_value_not_in_allowed_values() -> None:
     option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
 
     with pytest.raises(click.ClickException):

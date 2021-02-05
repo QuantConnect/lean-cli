@@ -29,7 +29,7 @@ def setup_mocks(from_env, system, status_code: int) -> Tuple[mock.Mock, mock.Moc
 
 @mock.patch("os.system")
 @mock.patch("docker.from_env")
-def test_backtest_aborts_if_lean_config_not_available(from_env, system) -> None:
+def test_backtest_should_abort_when_lean_config_not_available(from_env, system) -> None:
     create_fake_lean_cli_project()
     (Path.cwd() / DEFAULT_LEAN_CONFIG_FILE).unlink()
 
@@ -43,7 +43,7 @@ def test_backtest_aborts_if_lean_config_not_available(from_env, system) -> None:
 
 @mock.patch("os.system")
 @mock.patch("docker.from_env")
-def test_backtest_aborts_if_project_does_not_exist(from_env, system) -> None:
+def test_backtest_should_abort_when_project_does_not_exist(from_env, system) -> None:
     create_fake_lean_cli_project()
 
     docker_client, container = setup_mocks(from_env, system, 0)
@@ -56,7 +56,7 @@ def test_backtest_aborts_if_project_does_not_exist(from_env, system) -> None:
 
 @mock.patch("os.system")
 @mock.patch("docker.from_env")
-def test_backtest_aborts_if_project_does_not_contain_algorithm_file(from_env, system) -> None:
+def test_backtest_should_abort_when_project_does_not_contain_algorithm_file(from_env, system) -> None:
     create_fake_lean_cli_project()
     (Path.cwd() / "Empty Project").mkdir()
 
@@ -87,7 +87,7 @@ def test_backtest_should_create_directory_for_output(from_env, system) -> None:
 
 @mock.patch("os.system")
 @mock.patch("docker.from_env")
-def test_backtest_should_fail_if_running_docker_image_fails(from_env, system) -> None:
+def test_backtest_should_fail_when_running_docker_image_fails(from_env, system) -> None:
     create_fake_lean_cli_project()
 
     docker_client, container = setup_mocks(from_env, system, 1)

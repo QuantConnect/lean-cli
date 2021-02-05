@@ -10,7 +10,7 @@ def get_credentials_path() -> Path:
     return Path.home() / GLOBAL_CONFIG_DIR / CREDENTIALS_FILE
 
 
-def test_logout_deletes_credentials() -> None:
+def test_logout_should_delete_credentials_file() -> None:
     with open(get_credentials_path(), "w+") as file:
         file.write("{}")
 

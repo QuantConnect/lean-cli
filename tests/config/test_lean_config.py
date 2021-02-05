@@ -15,7 +15,7 @@ def set_config_option(get_current_context, config_option: Optional[str]) -> None
 
 
 @mock.patch("click.get_current_context")
-def test_get_lean_config_path_should_return_file_from_context_if_set(get_current_context) -> None:
+def test_get_lean_config_path_should_return_file_from_context_when_set(get_current_context) -> None:
     set_config_option(get_current_context, str(Path.cwd() / "custom-config.json"))
 
     result = get_lean_config_path()
@@ -34,7 +34,7 @@ def test_get_lean_config_path_should_look_into_parent_directories_for_config_fil
 
 
 @mock.patch("click.get_current_context")
-def test_get_lean_config_path_should_return_none_if_no_config_file_available(get_current_context) -> None:
+def test_get_lean_config_path_should_return_none_when_no_config_file_available(get_current_context) -> None:
     set_config_option(get_current_context, None)
 
     result = get_lean_config_path()
@@ -74,7 +74,7 @@ def test_get_lean_config_should_read_and_parse_config_file_containing_comments(g
 
 
 @mock.patch("lean.config.lean_config.get_lean_config_path")
-def test_get_lean_config_should_return_none_if_no_config_file_available(get_lean_config_path) -> None:
+def test_get_lean_config_should_return_none_when_no_config_file_available(get_lean_config_path) -> None:
     get_lean_config_path.return_value = None
 
     result = get_lean_config()
