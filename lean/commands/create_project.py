@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 
 # The default templates are coming from the "Create New Algorithm" feature in the Algorithm Lab
+from lean.config.global_config import default_language_option
 
 DEFAULT_PYTHON_MAIN = '''
 from QuantConnect import Resolution
@@ -213,13 +214,20 @@ DEFAULT_CSHARP_NOTEBOOK = """
 @click.command()
 @click.argument("name", type=str)
 @click.option("--language", "-l",
-              type=click.Choice(["python", "csharp"], case_sensitive=False),
+              type=click.Choice(default_language_option.allowed_values, case_sensitive=False),
               help="The language of the project to create")
 def create_project(name: str, language: str) -> None:
     """Create a new project containing starter code.
 
     If NAME is a path containing subdirectories those will be created automatically.
+
+    The default language can be set using `lean config set default-language python/csharp`.
     """
+    language = language if language is not None else default_language_option.get_value()
+    if language is None:
+        raise click.ClickException(
+            "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`")
+
     full_path = Path.cwd() / name
 
     if full_path.exists():

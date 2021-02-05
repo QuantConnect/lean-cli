@@ -17,9 +17,9 @@ def create_fake_lean_cli_project() -> None:
         """)
 
     files = {
-        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN,
+        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
-        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN,
+        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$NAME", "CSharpProject"),
         (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
     }
 
