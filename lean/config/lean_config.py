@@ -1,5 +1,3 @@
-"""This module contains utilities to manage the local configuration in lean.json."""
-
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -7,12 +5,11 @@ from typing import Any, Dict, Optional
 import click
 from jsoncomment import JsonComment
 
-from lean.constants import DEFAULT_CONFIG_FILE
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE
 
 
 def get_lean_config_path() -> Optional[Path]:
     """Find the nearest lean.json by recursively going upwards in the directory tree."""
-
     # --config overrides the default search for lean.json
     ctx = click.get_current_context()
     if ctx.config_option is not None:
@@ -21,7 +18,7 @@ def get_lean_config_path() -> Optional[Path]:
     # Recurse upwards in the directory tree until we find a lean.json file
     current_dir = Path.cwd()
     while True:
-        target_file = current_dir / DEFAULT_CONFIG_FILE
+        target_file = current_dir / DEFAULT_LEAN_CONFIG_FILE
         if target_file.exists():
             return target_file
 

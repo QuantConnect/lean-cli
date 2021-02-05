@@ -77,7 +77,7 @@ def run_image(image: str, tag: str, command: str, quiet: bool, **kwargs) -> Tupl
         output += chunk.decode("utf-8")
         if not quiet:
             click.echo(chunk, nl=False)
-    
+
     # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
     if not quiet:
         sys.stdout.flush()

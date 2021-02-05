@@ -4,8 +4,8 @@ from unittest import mock
 
 import click
 
-from lean.config.local_config import get_lean_config, get_lean_config_path
-from lean.constants import DEFAULT_CONFIG_FILE
+from lean.config.lean_config import get_lean_config, get_lean_config_path
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE
 
 
 def set_config_option(get_current_context, config_option: Optional[str]) -> None:
@@ -26,11 +26,11 @@ def test_get_lean_config_path_should_return_file_from_context_if_set(get_current
 @mock.patch("click.get_current_context")
 def test_get_lean_config_path_should_look_into_parent_directories_for_config_file(get_current_context) -> None:
     set_config_option(get_current_context, None)
-    (Path.home() / DEFAULT_CONFIG_FILE).touch()
+    (Path.home() / DEFAULT_LEAN_CONFIG_FILE).touch()
 
     result = get_lean_config_path()
 
-    assert result == Path.home() / DEFAULT_CONFIG_FILE
+    assert result == Path.home() / DEFAULT_LEAN_CONFIG_FILE
 
 
 @mock.patch("click.get_current_context")
@@ -42,9 +42,9 @@ def test_get_lean_config_path_should_return_none_if_no_config_file_available(get
     assert result is None
 
 
-@mock.patch("lean.config.local_config.get_lean_config_path")
+@mock.patch("lean.config.lean_config.get_lean_config_path")
 def test_get_lean_config_should_read_and_parse_config_file_containing_comments(get_lean_config_path) -> None:
-    config_path = Path.cwd() / DEFAULT_CONFIG_FILE
+    config_path = Path.cwd() / DEFAULT_LEAN_CONFIG_FILE
 
     with open(config_path, "w+") as file:
         file.write("""
@@ -73,7 +73,7 @@ def test_get_lean_config_should_read_and_parse_config_file_containing_comments(g
     assert result["key3"] == "value3"
 
 
-@mock.patch("lean.config.local_config.get_lean_config_path")
+@mock.patch("lean.config.lean_config.get_lean_config_path")
 def test_get_lean_config_should_return_none_if_no_config_file_available(get_lean_config_path) -> None:
     get_lean_config_path.return_value = None
 

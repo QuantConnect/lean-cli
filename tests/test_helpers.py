@@ -2,17 +2,17 @@ from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK)
-from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 
 def create_fake_lean_cli_project() -> None:
     """Create a directory structure similar to the one created by `lean init` with a Python and C# project."""
-    (Path.cwd() / DEFAULT_DATA_DIR).mkdir()
+    (Path.cwd() / DEFAULT_LEAN_DATA_DIR).mkdir()
 
-    with open(Path.cwd() / DEFAULT_CONFIG_FILE, "w+") as config_file:
+    with open(Path.cwd() / DEFAULT_LEAN_CONFIG_FILE, "w+") as config_file:
         config_file.write(f"""
 {{
-    "data-folder": "{DEFAULT_DATA_DIR}"
+    "data-folder": "{DEFAULT_LEAN_DATA_DIR}"
 }}
         """)
 

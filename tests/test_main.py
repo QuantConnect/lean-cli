@@ -1,6 +1,6 @@
 from click.testing import CliRunner
 
-from lean.main import lean
+from lean.commands import lean
 
 
 def test_lean_shows_help_when_called_without_arguments() -> None:

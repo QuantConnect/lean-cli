@@ -1,17 +1,20 @@
-# Global configuration should be stored in ~/GLOBAL_CONFIG_DIR
+# The directory in the user's home directory used to store global configuration
 GLOBAL_CONFIG_DIR = ".lean"
 
-# The file in the global config directory used to store the QuantConnect user id and API token
-CREDENTIALS_FILE_NAME = "credentials"
+# The file in the global config directory used to store credentials
+CREDENTIALS_FILE = "credentials"
+
+# The file in the global config directory used to store general CLI configuration
+CLI_CONFIG_FILE = "config"
 
 # The default name of the configuration file in a Lean CLI project
-DEFAULT_CONFIG_FILE = "lean.json"
+DEFAULT_LEAN_CONFIG_FILE = "lean.json"
 
 # The default name of the data directory in a Lean CLI project
-DEFAULT_DATA_DIR = "data"
+DEFAULT_LEAN_DATA_DIR = "data"
 
-# The Docker image which is used when running the LEAN engine locally
-DOCKER_IMAGE = "quantconnect/lean"
+# The Docker image used when running the LEAN engine locally
+LEAN_ENGINE_DOCKER_IMAGE = "quantconnect/lean"
 
-# The tag of the Docker image which is used when running the LEAN engine locally
-DOCKER_TAG = "latest"
+# The tag of the Docker image used when running the LEAN engine locally
+LEAN_ENGINE_DOCKER_TAG = "latest"

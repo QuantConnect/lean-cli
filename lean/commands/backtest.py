@@ -10,9 +10,9 @@ from typing import Any, Dict, Tuple
 import click
 from docker.types import Mount
 
-from lean.config.global_config import GlobalConfig
-from lean.config.local_config import get_lean_config, get_lean_config_path
-from lean.constants import CREDENTIALS_FILE_NAME, DOCKER_IMAGE, DOCKER_TAG
+from lean.config.global_config import api_token_option, GlobalConfig, user_id_option
+from lean.config.lean_config import get_lean_config, get_lean_config_path
+from lean.constants import CREDENTIALS_FILE, LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG
 from lean.decorators import local_command
 from lean.docker import run_image
 
@@ -51,9 +51,9 @@ def get_complete_lean_config(algorithm_file: Path) -> Dict[str, Any]:
     lean_config["debugging"] = False
     lean_config["debugging-method"] = "LocalCmdline"
 
-    credentials_config = GlobalConfig(CREDENTIALS_FILE_NAME)
-    lean_config["job-user-id"] = credentials_config["user-id"] if "user-id" in credentials_config else "0"
-    lean_config["api-access-token"] = credentials_config["api-token"] if "api-token" in credentials_config else ""
+    credentials_config = GlobalConfig(CREDENTIALS_FILE)
+    lean_config["job-user-id"] = user_id_option.get_value(default="0")
+    lean_config["api-access-token"] = api_token_option.get_value(default="")
 
     if algorithm_file.name.endswith(".py"):
         lean_config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
@@ -85,7 +85,7 @@ def compile_csharp_project(project_dir: Path) -> Path:
     shutil.copytree(project_dir, compile_dir)
 
     # Get a list of all dll's in the docker image
-    _, output = run_image(DOCKER_IMAGE, DOCKER_TAG, "-c ls", True, entrypoint="bash")
+    _, output = run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, "-c ls", True, entrypoint="bash")
     dlls = [line for line in output.split("\n") if line.endswith(".dll")]
 
     # Create a csproj file which will be used to compile the project
@@ -126,8 +126,10 @@ def compile_csharp_project(project_dir: Path) -> Path:
         }
     }
 
-    run_image(DOCKER_IMAGE, DOCKER_TAG, "restore /Project/Project.csproj", False, entrypoint="nuget", volumes=volumes)
-    run_image(DOCKER_IMAGE, DOCKER_TAG, "/Project/Project.csproj", False, entrypoint="msbuild", volumes=volumes)
+    run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, "restore /Project/Project.csproj", False,
+              entrypoint="nuget", volumes=volumes)
+    run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, "/Project/Project.csproj", False, entrypoint="msbuild",
+              volumes=volumes)
 
     return compile_dir / "bin" / "Debug"
 
@@ -211,7 +213,7 @@ def backtest(project: str, output: str) -> None:
 
     # Run the backtest and log the result
     command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
-    success, _ = run_image(DOCKER_IMAGE, DOCKER_TAG, command, False, **run_options)
+    success, _ = run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, command, False, **run_options)
 
     relative_project_dir = project_dir.relative_to(lean_project_root)
     relative_output_dir = output_dir.relative_to(lean_project_root)

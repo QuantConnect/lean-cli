@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 
 import click
 
-from lean.config.local_config import get_lean_config_path
+from lean.config.lean_config import get_lean_config_path
 
 
 class LocalCommand(click.Command):

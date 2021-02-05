@@ -1,7 +1,7 @@
 import os
 import re
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -23,7 +23,8 @@ install_requires = [
     "requests~=2.25.0",
     "tqdm~=4.56.0",
     "jsoncomment~=0.4.0",
-    "docker~=4.4.0"
+    "docker~=4.4.0",
+    "rich~=9.10.0"
 ]
 
 setup(

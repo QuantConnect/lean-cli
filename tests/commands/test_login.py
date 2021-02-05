@@ -4,12 +4,12 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from lean.constants import CREDENTIALS_FILE_NAME, GLOBAL_CONFIG_DIR
-from lean.main import lean
+from lean.commands import lean
+from lean.constants import CREDENTIALS_FILE, GLOBAL_CONFIG_DIR
 
 
 def get_credentials_path() -> Path:
-    return Path.home() / GLOBAL_CONFIG_DIR / CREDENTIALS_FILE_NAME
+    return Path.home() / GLOBAL_CONFIG_DIR / CREDENTIALS_FILE
 
 
 def assert_credentials(user_id: str, api_token: str) -> None:

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from lean.main import lean
+from lean.commands import lean
 
 
 def test_create_project_should_create_python_project() -> None:

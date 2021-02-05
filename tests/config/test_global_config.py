@@ -2,7 +2,10 @@ import json
 from pathlib import Path
 from typing import Dict
 
-from lean.config.global_config import GlobalConfig
+import click
+import pytest
+
+from lean.config.global_config import ChoiceOption, GlobalConfig, StringOption
 from lean.constants import GLOBAL_CONFIG_DIR
 
 CONFIG_FILE_NAME = "credentials"
@@ -12,9 +15,9 @@ def get_config_path() -> Path:
     return Path.home() / GLOBAL_CONFIG_DIR / CONFIG_FILE_NAME
 
 
-def create_config(user_id: str, api_token: str) -> None:
+def create_config(key1: str, key2: str) -> None:
     with open(get_config_path(), "w+") as file:
-        json.dump({"user_id": user_id, "api_token": api_token}, file)
+        json.dump({"key1": key1, "key2": key2}, file)
 
 
 def get_config() -> Dict[str, str]:
@@ -22,63 +25,118 @@ def get_config() -> Dict[str, str]:
         return json.load(file)
 
 
-def test_constructor_loads_existing_data() -> None:
+def test_global_config_constructor_loads_existing_data() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
 
-    assert "user_id" in config
-    assert "api_token" in config
+    assert "key1" in config
+    assert "key2" in config
 
-    assert config["user_id"] == "123"
-    assert config["api_token"] == "456"
+    assert config["key1"] == "123"
+    assert config["key2"] == "456"
 
 
-def test_save_saves_modifications_to_existing_file() -> None:
+def test_global_config_save_saves_modifications_to_existing_file() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
-    config["user_id"] = "789"
+    config["key1"] = "789"
     config.save()
 
     new_config = get_config()
 
-    assert "user_id" in new_config
-    assert "api_token" in new_config
+    assert "key1" in new_config
+    assert "key2" in new_config
 
-    assert new_config["user_id"] == "789"
-    assert new_config["api_token"] == "456"
+    assert new_config["key1"] == "789"
+    assert new_config["key2"] == "456"
 
 
-def test_save_creates_file_if_it_does_not_exist_yet() -> None:
+def test_global_config_save_creates_file_if_it_does_not_exist_yet() -> None:
     config = GlobalConfig(CONFIG_FILE_NAME)
-    config["user_id"] = "123"
-    config["api_token"] = "456"
+    config["key1"] = "123"
+    config["key2"] = "456"
     config.save()
 
     new_config = get_config()
 
-    assert "user_id" in new_config
-    assert "api_token" in new_config
+    assert "key1" in new_config
+    assert "key2" in new_config
 
-    assert new_config["user_id"] == "123"
-    assert new_config["api_token"] == "456"
+    assert new_config["key1"] == "123"
+    assert new_config["key2"] == "456"
 
 
-def test_clear_empties_the_dict() -> None:
+def test_global_config_clear_empties_the_dict() -> None:
     config = GlobalConfig(CONFIG_FILE_NAME)
-    config["user_id"] = "123"
-    config["api_token"] = "456"
+    config["key1"] = "123"
+    config["key2"] = "456"
 
     config.clear()
 
     assert len(config.keys()) == 0
 
 
-def test_clear_deletes_the_underlying_file() -> None:
+def test_global_config_clear_deletes_the_underlying_file() -> None:
     create_config("123", "456")
 
     config = GlobalConfig(CONFIG_FILE_NAME)
     config.clear()
 
     assert not get_config_path().exists()
+
+
+def test_string_option_get_value_retrieves_value_from_global_config() -> None:
+    create_config("123", "456")
+
+    option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
+
+    assert option.get_value() == "123"
+
+
+def test_string_option_get_value_returns_default_if_key_not_set_in_global_config() -> None:
+    option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
+
+    assert option.get_value(default="123") == "123"
+
+
+def test_string_option_set_value_updates_global_file() -> None:
+    option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
+    option.set_value("789")
+
+    config = get_config()
+
+    assert "key1" in config
+    assert config["key1"] == "789"
+
+
+def test_string_option_set_value_fails_if_value_blank() -> None:
+    option = StringOption("key1", "Description 1", CONFIG_FILE_NAME)
+
+    with pytest.raises(click.ClickException):
+        option.set_value("")
+
+
+def test_choice_option_constructor_adds_allowed_values_to_description() -> None:
+    option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
+
+    assert "value 1" in option.description
+    assert "value 2" in option.description
+
+
+def test_choice_option_set_value_updates_global_file_case_insensitively() -> None:
+    option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
+    option.set_value("VALUE 1")
+
+    config = get_config()
+
+    assert "key1" in config
+    assert config["key1"] == "value 1"
+
+
+def test_choice_option_set_value_fails_if_value_not_in_allowed_values() -> None:
+    option = ChoiceOption("key1", "Description 1", CONFIG_FILE_NAME, ["value 1", "value 2"])
+
+    with pytest.raises(click.ClickException):
+        option.set_value("value 3")

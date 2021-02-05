@@ -7,7 +7,7 @@ import click
 import requests
 from tqdm import tqdm
 
-from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 
 def remove_section_from_config(config: str, json_key: str) -> str:
@@ -48,8 +48,8 @@ def remove_section_from_config(config: str, json_key: str) -> str:
 def init() -> None:
     """Bootstrap a Lean CLI project."""
     current_dir = Path.cwd()
-    data_dir = current_dir / DEFAULT_DATA_DIR
-    lean_config_path = current_dir / DEFAULT_CONFIG_FILE
+    data_dir = current_dir / DEFAULT_LEAN_DATA_DIR
+    lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE
 
     # Abort if one of the files we are going to create already exists to prevent us from overriding existing files
     for path in [data_dir, lean_config_path]:
@@ -109,7 +109,7 @@ def init() -> None:
                 config = remove_section_from_config(config, key)
 
             # Update the data-folder configuration
-            config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIR}"')
+            config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_LEAN_DATA_DIR}"')
 
             # Save the modified config
             with open(lean_config_path, "w+") as config_file:
@@ -118,9 +118,10 @@ def init() -> None:
     click.echo("Successfully bootstrapped your Lean CLI project!")
     click.echo()
     click.echo("The following structure has been created:")
-    click.echo(f"- {DEFAULT_CONFIG_FILE} contains the configuration used when running the LEAN engine locally")
-    click.echo(f"- {DEFAULT_DATA_DIR}/ contains the data that is used when running the LEAN engine locally")
+    click.echo(f"- {DEFAULT_LEAN_CONFIG_FILE} contains the configuration used when running the LEAN engine locally")
+    click.echo(f"- {DEFAULT_LEAN_DATA_DIR}/ contains the data that is used when running the LEAN engine locally")
     click.echo()
     click.echo("Here are some commands to get you going:")
-    click.echo('- Run `lean create-project --language python "My Project"` to create a new project with starter code')
-    click.echo(f'- Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_DATA_DIR}/')
+    click.echo('- Run `lean create-project "My Project"` to create a new project with starter code')
+    click.echo(
+        f'- Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_LEAN_DATA_DIR}/')

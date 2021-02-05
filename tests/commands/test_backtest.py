@@ -1,31 +1,52 @@
 from pathlib import Path
+from typing import Tuple
 from unittest import mock
 
 from click.testing import CliRunner
 
-from lean.constants import DEFAULT_CONFIG_FILE
-from lean.main import lean
+from lean.commands import lean
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-@mock.patch("lean.commands.backtest.run_image")
-def test_backtest_aborts_if_lean_config_not_available(run_image) -> None:
-    create_fake_lean_cli_project()
-    (Path.cwd() / DEFAULT_CONFIG_FILE).unlink()
+def setup_mocks(from_env, system, status_code: int) -> Tuple[mock.Mock, mock.Mock]:
+    """Mock docker.from_env() and os.system()."""
+    docker_client = mock.Mock()
+    container = mock.Mock()
 
-    run_image.return_value = True, ""
+    docker_client.ping.return_value = True
+    docker_client.images.list.return_value = []
+    docker_client.containers.run.return_value = container
+
+    container.logs.return_value = iter(())
+    container.wait.return_value = {"StatusCode": status_code}
+
+    from_env.return_value = docker_client
+    system.return_value = status_code
+
+    return docker_client, container
+
+
+@mock.patch("os.system")
+@mock.patch("docker.from_env")
+def test_backtest_aborts_if_lean_config_not_available(from_env, system) -> None:
+    create_fake_lean_cli_project()
+    (Path.cwd() / DEFAULT_LEAN_CONFIG_FILE).unlink()
+
+    docker_client, container = setup_mocks(from_env, system, 0)
 
     runner = CliRunner()
-    result = runner.invoke(lean, ["backtest", "Python Algorithm"])
+    result = runner.invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code != 0
 
 
-@mock.patch("lean.commands.backtest.run_image")
-def test_backtest_aborts_if_project_does_not_exist(run_image) -> None:
+@mock.patch("os.system")
+@mock.patch("docker.from_env")
+def test_backtest_aborts_if_project_does_not_exist(from_env, system) -> None:
     create_fake_lean_cli_project()
 
-    run_image.return_value = True, ""
+    docker_client, container = setup_mocks(from_env, system, 0)
 
     runner = CliRunner()
     result = runner.invoke(lean, ["backtest", "This Project Does Not Exist"])
@@ -33,12 +54,13 @@ def test_backtest_aborts_if_project_does_not_exist(run_image) -> None:
     assert result.exit_code != 0
 
 
-@mock.patch("lean.commands.backtest.run_image")
-def test_backtest_aborts_if_project_does_not_contain_algorithm_file(run_image) -> None:
+@mock.patch("os.system")
+@mock.patch("docker.from_env")
+def test_backtest_aborts_if_project_does_not_contain_algorithm_file(from_env, system) -> None:
     create_fake_lean_cli_project()
     (Path.cwd() / "Empty Project").mkdir()
 
-    run_image.return_value = True, ""
+    docker_client, container = setup_mocks(from_env, system, 0)
 
     runner = CliRunner()
     result = runner.invoke(lean, ["backtest", "Empty Project"])
@@ -46,11 +68,12 @@ def test_backtest_aborts_if_project_does_not_contain_algorithm_file(run_image) -
     assert result.exit_code != 0
 
 
-@mock.patch("lean.commands.backtest.run_image")
-def test_backtest_should_create_directory_for_output(run_image) -> None:
+@mock.patch("os.system")
+@mock.patch("docker.from_env")
+def test_backtest_should_create_directory_for_output(from_env, system) -> None:
     create_fake_lean_cli_project()
 
-    run_image.return_value = True, ""
+    docker_client, container = setup_mocks(from_env, system, 0)
 
     runner = CliRunner()
     result = runner.invoke(lean, ["backtest", "Python Project"])
@@ -62,11 +85,12 @@ def test_backtest_should_create_directory_for_output(run_image) -> None:
     assert next(backtests_dir.iterdir(), None) is not None
 
 
-@mock.patch("lean.commands.backtest.run_image")
-def test_backtest_should_fail_if_running_docker_image_fails(run_image) -> None:
+@mock.patch("os.system")
+@mock.patch("docker.from_env")
+def test_backtest_should_fail_if_running_docker_image_fails(from_env, system) -> None:
     create_fake_lean_cli_project()
 
-    run_image.return_value = False, ""
+    docker_client, container = setup_mocks(from_env, system, 1)
 
     runner = CliRunner()
     result = runner.invoke(lean, ["backtest", "Python Project"])

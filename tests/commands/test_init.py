@@ -4,9 +4,9 @@ from pathlib import Path
 import responses
 from click.testing import CliRunner
 
+from lean.commands import lean
 from lean.commands.init import remove_section_from_config
-from lean.constants import DEFAULT_CONFIG_FILE, DEFAULT_DATA_DIR
-from lean.main import lean
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 
 def create_fake_archive() -> None:
@@ -91,7 +91,7 @@ def test_remove_section_from_config_removes_section_containing_given_key_from_gi
 
 
 def test_init_aborts_if_config_file_already_exists() -> None:
-    (Path.cwd() / DEFAULT_CONFIG_FILE).touch()
+    (Path.cwd() / DEFAULT_LEAN_CONFIG_FILE).touch()
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -100,7 +100,7 @@ def test_init_aborts_if_config_file_already_exists() -> None:
 
 
 def test_init_aborts_if_data_directory_already_exists() -> None:
-    (Path.cwd() / DEFAULT_DATA_DIR).mkdir()
+    (Path.cwd() / DEFAULT_LEAN_DATA_DIR).mkdir()
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -127,7 +127,7 @@ def test_init_should_create_data_directory_from_repo() -> None:
 
     assert result.exit_code == 0
 
-    readme_path = Path.cwd() / DEFAULT_DATA_DIR / "equity" / "readme.md"
+    readme_path = Path.cwd() / DEFAULT_LEAN_DATA_DIR / "equity" / "readme.md"
     assert readme_path.exists()
 
     with open(readme_path) as readme_file:
@@ -143,7 +143,7 @@ def test_init_should_create_config_file_from_repo_and_should_remove_unnecessary_
 
     assert result.exit_code == 0
 
-    config_path = Path.cwd() / DEFAULT_CONFIG_FILE
+    config_path = Path.cwd() / DEFAULT_LEAN_CONFIG_FILE
     assert config_path.exists()
 
     with open(config_path) as config_file:
@@ -157,7 +157,7 @@ def test_init_should_create_config_file_from_repo_and_should_remove_unnecessary_
   // to add more!
 
   // engine
-  "data-folder": "{DEFAULT_DATA_DIR}",
+  "data-folder": "{DEFAULT_LEAN_DATA_DIR}",
 
   // handlers
   "log-handler": "QuantConnect.Logging.CompositeLogHandler",
