@@ -10,7 +10,7 @@ def get(key: str) -> None:
     """Get the current value of a configurable option.
 
     Credentials cannot be retrieved this way for security reasons.
-    Please open ~/.lean/credentials if you want to see the full values of your currently stored credentials.
+    Please open ~/.lean/credentials if you want to see your currently stored credentials.
 
     Run `lean config list` to show all available options.
     """
