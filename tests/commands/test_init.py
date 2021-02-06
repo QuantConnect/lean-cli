@@ -1,3 +1,4 @@
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -12,7 +13,9 @@ from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 def create_fake_archive() -> None:
     """Create a fake archive and mock the request to the url which contains the Lean repository."""
-    with zipfile.ZipFile("/tmp/archive.zip", "w") as archive:
+    archive_path = Path(tempfile.gettempdir()) / "archive.zip"
+
+    with zipfile.ZipFile(archive_path, "w") as archive:
         archive.writestr("Lean-master/Data/equity/readme.md", "# This is just a test")
         archive.writestr("Lean-master/Launcher/config.json", """
 {
@@ -60,7 +63,7 @@ def create_fake_archive() -> None:
 }
         """.strip())
 
-    with open("/tmp/archive.zip", "rb") as archive:
+    with open(archive_path, "rb") as archive:
         responses.add(responses.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
 
 
