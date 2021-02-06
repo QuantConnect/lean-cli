@@ -123,7 +123,7 @@ api_token_option = StringOption("api-token",
                                 CREDENTIALS_FILE)
 
 default_language_option = ChoiceOption("default-language",
-                                       "The default language used in commands like `lean create-project`.",
+                                       "The default language used when creating new projects.",
                                        CLI_CONFIG_FILE,
                                        ["python", "csharp"])
 

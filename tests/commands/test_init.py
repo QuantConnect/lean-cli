@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.commands.init import remove_section_from_config
+from lean.config.global_config import default_language_option
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 
@@ -119,8 +120,20 @@ def test_init_should_prompt_for_confirmation_when_directory_not_empty() -> None:
 
 
 @responses.activate
+def test_init_should_prompt_for_default_language_when_not_set_yet() -> None:
+    create_fake_archive()
+
+    runner = CliRunner()
+    result = runner.invoke(lean, ["init"], input="csharp\n")
+
+    assert result.exit_code == 0
+    assert default_language_option.get_value() == "csharp"
+
+
+@responses.activate
 def test_init_should_create_data_directory_from_repo() -> None:
     create_fake_archive()
+    default_language_option.set_value("python")
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -137,9 +150,10 @@ def test_init_should_create_data_directory_from_repo() -> None:
 @responses.activate
 def test_init_should_create_config_file_from_repo_without_unnecessary_keys() -> None:
     create_fake_archive()
+    default_language_option.set_value("python")
 
     runner = CliRunner()
-    result = runner.invoke(lean, ["init"])
+    result = runner.invoke(lean, ["init"], input="python\n")
 
     assert result.exit_code == 0
 

@@ -7,6 +7,7 @@ import click
 import requests
 from tqdm import tqdm
 
+from lean.config.global_config import default_language_option
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
 
 
@@ -114,6 +115,11 @@ def init() -> None:
             # Save the modified config
             with open(lean_config_path, "w+") as config_file:
                 config_file.write(config)
+
+    if default_language_option.get_value() is None:
+        default_language = click.prompt("What should the default language for new projects be?",
+                                        type=click.Choice(default_language_option.allowed_values))
+        default_language_option.set_value(default_language)
 
     click.echo("Successfully bootstrapped your Lean CLI project!")
     click.echo()
