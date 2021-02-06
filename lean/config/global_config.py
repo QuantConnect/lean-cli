@@ -27,6 +27,9 @@ class GlobalConfig(dict):
 
     def save(self) -> None:
         """Save the modified data to the underlying file."""
+        if not self.path.parent.exists():
+            self.path.parent.mkdir(parents=True)
+
         with open(self.path, "w+") as file:
             json.dump(self, file, indent=4)
 

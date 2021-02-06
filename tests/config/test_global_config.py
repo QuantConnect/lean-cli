@@ -68,6 +68,17 @@ def test_global_config_save_should_create_file_when_it_does_not_exist_yet() -> N
     assert new_config["key2"] == "456"
 
 
+def test_global_config_save_should_create_global_config_directory_when_it_does_not_exist_yet() -> None:
+    (Path.home() / GLOBAL_CONFIG_DIR).rmdir()
+
+    config = GlobalConfig(CONFIG_FILE_NAME)
+    config["key1"] = "123"
+    config["key2"] = "456"
+    config.save()
+
+    assert get_config_path().exists()
+
+
 def test_global_config_clear_should_empty_dict() -> None:
     config = GlobalConfig(CONFIG_FILE_NAME)
     config["key1"] = "123"
