@@ -1,4 +1,5 @@
 import click
+from pathlib import Path
 from rich import box
 from rich.console import Console
 from rich.table import Table
@@ -21,7 +22,7 @@ def list() -> None:
     for option in all_options:
         table.add_row(option.key,
                       option.get_value(default="<not set>"),
-                      f"~/{GLOBAL_CONFIG_DIR}/{option.file_name}",
+                      str(Path.home() / GLOBAL_CONFIG_DIR / option.file_name),
                       option.description)
 
     console.print(table)
