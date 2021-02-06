@@ -81,8 +81,8 @@ def run_image(image: str, tag: str, command: str, quiet: bool, **kwargs) -> Tupl
         except:
             # container.kill() throws if the container has already stopped running
             pass
-
-        sys.exit(1)
+        finally:
+            sys.exit(1)
 
     signal.signal(signal.SIGINT, signal_handler)
 
