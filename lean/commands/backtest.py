@@ -126,10 +126,24 @@ def compile_csharp_project(project_dir: Path) -> Path:
         }
     }
 
-    run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, "restore /Project/Project.csproj", False,
-              entrypoint="nuget", volumes=volumes)
-    run_image(LEAN_ENGINE_DOCKER_IMAGE, LEAN_ENGINE_DOCKER_TAG, "/Project/Project.csproj", False, entrypoint="msbuild",
-              volumes=volumes)
+    success, _ = run_image(LEAN_ENGINE_DOCKER_IMAGE,
+                           LEAN_ENGINE_DOCKER_TAG,
+                           "restore /Project/Project.csproj",
+                           False,
+                           entrypoint="nuget", volumes=volumes)
+
+    if not success:
+        raise click.ClickException("Something went wrong while compiling your project")
+
+    success, _ = run_image(LEAN_ENGINE_DOCKER_IMAGE,
+                           LEAN_ENGINE_DOCKER_TAG,
+                           "/Project/Project.csproj",
+                           False,
+                           entrypoint="msbuild",
+                           volumes=volumes)
+
+    if not success:
+        raise click.ClickException("Something went wrong while compiling your project")
 
     return compile_dir / "bin" / "Debug"
 

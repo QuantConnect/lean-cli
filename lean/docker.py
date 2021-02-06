@@ -1,6 +1,8 @@
 import itertools
 import os
+import signal
 import sys
+import types
 from typing import Tuple
 
 import click
@@ -72,6 +74,19 @@ def run_image(image: str, tag: str, command: str, quiet: bool, **kwargs) -> Tupl
     kwargs["detach"] = True
     container = docker_client.containers.run(f"{image}:{tag}", command, **kwargs)
 
+    # Kill the container on Ctrl+C
+    def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
+        try:
+            container.kill()
+        except:
+            # container.kill() throws if the container has already stopped running
+            pass
+
+        sys.exit(1)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Capture all logs and print it to stdout if not running in quiet mode
     output = ""
     for chunk in container.logs(stream=True, follow=True):
         output += chunk.decode("utf-8")
