@@ -35,7 +35,7 @@ def test_config_get_should_fail_when_option_has_no_value(mock_container: MockCon
     mock_container.cli_config_manager_mock.get_option_by_key.side_effect = lambda k: option if k == "my-key" else None
 
     runner = CliRunner()
-    result = runner.invoke(lean, ["config", "get", "my-value"])
+    result = runner.invoke(lean, ["config", "get", "my-key"])
 
     assert result.exit_code != 0
 

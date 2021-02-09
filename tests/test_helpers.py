@@ -16,7 +16,6 @@ from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
 from lean.components.storage import Storage
-from lean.container import container
 from lean.models.options import Option
 
 
@@ -107,12 +106,13 @@ class MockedContainer(containers.DeclarativeContainer):
 
 def create_fake_lean_cli_project() -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and C# project."""
-    (Path.cwd() / container.config()["default_data_directory_name"]).mkdir()
+    (Path.cwd() / "data").mkdir()
 
-    with open(Path.cwd() / container.config()["default_lean_config_file_name"], "w+") as config_file:
+    with open(Path.cwd() / "lean.json", "w+") as config_file:
         config_file.write(f"""
 {{
-    "data-folder": "{container.config()["default_data_directory_name"]}"
+    // data-folder documentation
+    "data-folder": "data"
 }}
         """)
 

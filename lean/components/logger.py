@@ -1,7 +1,5 @@
 import sys
 
-import click
-
 
 class Logger:
     """A Logger logs messages."""
@@ -16,7 +14,7 @@ class Logger:
         :param message: the message to log
         :param newline: whether a newline character should be appended to the message
         """
-        click.echo(message, nl=newline)
+        print(message, end="\n" if newline else "")
 
     def debug(self, message: str, newline: bool = True) -> None:
         """Logs a debug message to stdout if debug logging is enabled.
@@ -33,7 +31,7 @@ class Logger:
         :param message: the message to log
         :param newline: whether a newline character should be appended to the message
         """
-        click.echo(message, nl=newline, err=True)
+        print(message, end="\n" if newline else "", file=sys.stderr)
 
     def flush(self) -> None:
         """Flushes stdout and stderr."""
