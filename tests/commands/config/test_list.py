@@ -4,11 +4,16 @@ from click.testing import CliRunner
 from rich.console import ConsoleDimensions
 
 from lean.commands import lean
-from lean.config.global_config import all_options, api_token_option, user_id_option
+from tests.test_helpers import create_option, MockContainer
 
 
 @mock.patch("rich.console.Console.size", new_callable=mock.PropertyMock)
-def test_config_list_should_list_all_options(size) -> None:
+def test_config_list_should_list_all_options(size, mock_container: MockContainer) -> None:
+    short_option = create_option("short", "123", False)
+    long_option = create_option("long", "abcdefghijklmnopqrstuvwxyz", False)
+
+    mock_container.cli_config_manager_mock.all_options = [short_option, long_option]
+
     size.return_value = ConsoleDimensions(1000, 1000)
 
     runner = CliRunner()
@@ -16,15 +21,17 @@ def test_config_list_should_list_all_options(size) -> None:
 
     assert result.exit_code == 0
 
-    for option in all_options:
+    for option in [short_option, long_option]:
         assert option.key in result.output
         assert option.description in result.output
 
 
 @mock.patch("rich.console.Console.size", new_callable=mock.PropertyMock)
-def test_config_list_should_not_show_complete_value_of_credentials(size) -> None:
-    user_id_option.set_value("12345")
-    api_token_option.set_value("abcdefghijklmnopqrstuvwxyz")
+def test_config_list_should_not_show_complete_value_of_credentials(size, mock_container: MockContainer) -> None:
+    short_option = create_option("short", "123", True)
+    long_option = create_option("long", "abcdefghijklmnopqrstuvwxyz", True)
+
+    mock_container.cli_config_manager_mock.all_options = [short_option, long_option]
 
     size.return_value = ConsoleDimensions(1000, 1000)
 
@@ -33,5 +40,5 @@ def test_config_list_should_not_show_complete_value_of_credentials(size) -> None
 
     assert result.exit_code == 0
 
-    assert "12345" not in result.output
+    assert "123" not in result.output
     assert "abcdefghijklmnopqrstuvwxyz" not in result.output

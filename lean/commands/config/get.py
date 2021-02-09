@@ -1,28 +1,28 @@
 import click
 
-from lean.config.global_config import all_options
-from lean.constants import CREDENTIALS_FILE
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 @click.argument("key")
 def get(key: str) -> None:
     """Get the current value of a configurable option.
 
-    Credentials cannot be retrieved this way for security reasons.
+    Sensitive options like credentials cannot be retrieved this way for security reasons.
     Please open ~/.lean/credentials if you want to see your currently stored credentials.
 
     Run `lean config list` to show all available options.
     """
-    option = next((x for x in all_options if x.key == key), None)
-    if option is None:
-        raise click.ClickException(f"There doesn't exist an option with key '{key}'")
+    cli_config_manager = container.cli_config_manager()
 
-    if option.file_name == CREDENTIALS_FILE:
-        raise click.ClickException("Credentials cannot be retrieved using `lean config get` for security reasons")
+    option = cli_config_manager.get_option_by_key(key)
+    if option.is_sensitive:
+        raise RuntimeError(
+            "Sensitive options like credentials cannot be retrieved using `lean config get` for security reasons")
 
     value = option.get_value()
     if value is None:
-        raise click.ClickException(f"The option with key '{key}' doesn't have a value set")
+        raise RuntimeError(f"The option with key '{key}' doesn't have a value set")
 
     click.echo(value)

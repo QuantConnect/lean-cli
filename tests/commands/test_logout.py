@@ -1,21 +1,12 @@
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from lean.commands import lean
-from lean.constants import CREDENTIALS_FILE, GLOBAL_CONFIG_DIR
+from tests.test_helpers import MockContainer
 
 
-def get_credentials_path() -> Path:
-    return Path.home() / GLOBAL_CONFIG_DIR / CREDENTIALS_FILE
-
-
-def test_logout_should_delete_credentials_file() -> None:
-    with open(get_credentials_path(), "w+") as file:
-        file.write("{}")
-
-    runner = CliRunner()
-    result = runner.invoke(lean, ["logout"])
+def test_logout_should_clear_credentials_storage(mock_container: MockContainer) -> None:
+    result = CliRunner().invoke(lean, ["logout"])
 
     assert result.exit_code == 0
-    assert not get_credentials_path().exists()
+
+    mock_container.credentials_storage_mock.clear.assert_called()

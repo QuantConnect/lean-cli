@@ -1,21 +1,19 @@
-import tempfile
 import zipfile
 from pathlib import Path
 
-import responses
 from click.testing import CliRunner
 
 from lean.commands import lean
-from lean.commands.init import remove_section_from_config
-from lean.config.global_config import default_language_option
-from lean.constants import DEFAULT_LEAN_CONFIG_FILE, DEFAULT_LEAN_DATA_DIR
+from tests.test_helpers import MockContainer
 
 
-def create_fake_archive() -> None:
-    """Create a fake archive and mock the request to the url which contains the Lean repository."""
-    archive_path = Path(tempfile.gettempdir()) / "archive.zip"
+def download_file(url: str, destination: Path) -> None:
+    if url != "https://github.com/QuantConnect/Lean/archive/master.zip":
+        return
 
-    with zipfile.ZipFile(archive_path, "w") as archive:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(destination, "w") as archive:
         archive.writestr("Lean-master/Data/equity/readme.md", "# This is just a test")
         archive.writestr("Lean-master/Launcher/config.json", """
 {
@@ -27,75 +25,20 @@ def create_fake_archive() -> None:
   // to add more!
 
   "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
-
-  // algorithm class selector
-  "algorithm-type-name": "BasicTemplateFrameworkAlgorithm",
-
-  // Algorithm language selector - options CSharp, Python
-  "algorithm-language": "CSharp",
-
-  //Physical DLL location
-  "algorithm-location": "QuantConnect.Algorithm.CSharp.dll",
-  //"algorithm-location": "../../../Algorithm.Python/BasicTemplateFrameworkAlgorithm.py",
-
-  //Research notebook
-  //"composer-dll-directory": ".",
-
-  // engine
-  "data-folder": "../../../Data/",
-
-  // debugging configuration - options for debugging-method LocalCmdLine, VisualStudio, PTVSD, PyCharm
-  "debugging": false,
-  "debugging-method": "LocalCmdline",
-
-  // handlers
-  "log-handler": "QuantConnect.Logging.CompositeLogHandler",
-  "messaging-handler": "QuantConnect.Messaging.Messaging",
-  "job-queue-handler": "QuantConnect.Queues.JobQueue",
-  "api-handler": "QuantConnect.Api.Api",
-  "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-  "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-  "alpha-handler": "QuantConnect.Lean.Engine.Alphas.DefaultAlphaHandler",
-  "data-channel-provider": "DataChannelProvider",
-  "object-store": "QuantConnect.Lean.Engine.Storage.LocalObjectStore",
-  "data-aggregator": "QuantConnect.Lean.Engine.DataFeeds.AggregationManager"
 }
         """.strip())
 
-    with open(archive_path, "rb") as archive:
-        responses.add(responses.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
+
+def test_init_should_abort_when_config_file_already_exists(mock_container: MockContainer) -> None:
+    (Path.cwd() / mock_container.config["default_lean_config_file_name"]).touch()
+
+    result = CliRunner().invoke(lean, ["init"])
+
+    assert result.exit_code != 0
 
 
-def test_remove_section_from_config_should_remove_section_containing_given_key_from_given_json() -> None:
-    config = """
-{
-    // Doc 1
-    "key1": "value1",
-    
-    // Doc 2
-    "key2": "value2",
-    
-    // Doc 3
-    "key3": "value3"
-}
-    """.strip()
-
-    expected_output = """
-{
-    // Doc 1
-    "key1": "value1",
-
-    // Doc 3
-    "key3": "value3"
-}
-    """.strip()
-
-    assert remove_section_from_config(config, "key2") == expected_output
-
-
-def test_init_should_abort_when_config_file_already_exists() -> None:
-    (Path.cwd() / DEFAULT_LEAN_CONFIG_FILE).touch()
+def test_init_should_abort_when_data_directory_already_exists(mock_container: MockContainer) -> None:
+    (Path.cwd() / mock_container.config["default_data_directory_name"]).mkdir()
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -103,69 +46,61 @@ def test_init_should_abort_when_config_file_already_exists() -> None:
     assert result.exit_code != 0
 
 
-def test_init_should_abort_when_data_directory_already_exists() -> None:
-    (Path.cwd() / DEFAULT_LEAN_DATA_DIR).mkdir()
-
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"])
-
-    assert result.exit_code != 0
-
-
-def test_init_should_prompt_for_confirmation_when_directory_not_empty() -> None:
+def test_init_should_prompt_for_confirmation_when_directory_not_empty(mock_container: MockContainer) -> None:
     (Path.cwd() / "my-custom-file.txt").touch()
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"], input="n\n")
+    result = CliRunner().invoke(lean, ["init"], input="n\n")
 
     assert result.exit_code != 0
     assert "continue?" in result.output
 
 
-@responses.activate
-def test_init_should_prompt_for_default_language_when_not_set_yet() -> None:
-    create_fake_archive()
+def test_init_should_prompt_for_default_language_when_not_set_yet(mock_container: MockContainer) -> None:
+    mock_container.http_client_mock.download_file.side_effect = download_file
+
+    mock_container.cli_config_manager_mock.default_language.get_value.return_value = None
+    mock_container.cli_config_manager_mock.default_language.allowed_values = ["python", "csharp"]
+    mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"], input="csharp\n")
 
     assert result.exit_code == 0
-    assert default_language_option.get_value() == "csharp"
+
+    mock_container.cli_config_manager_mock.default_language.set_value.assert_called_once_with("csharp")
 
 
-@responses.activate
-def test_init_should_create_data_directory_from_repo() -> None:
-    create_fake_archive()
-    default_language_option.set_value("python")
+def test_init_should_create_data_directory_from_repo(mock_container: MockContainer) -> None:
+    mock_container.http_client_mock.download_file.side_effect = download_file
+
+    mock_container.cli_config_manager_mock.default_language.get_value.return_value = "python"
+    mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
 
     assert result.exit_code == 0
 
-    readme_path = Path.cwd() / DEFAULT_LEAN_DATA_DIR / "equity" / "readme.md"
+    readme_path = Path.cwd() / mock_container.config["default_data_directory_name"] / "equity" / "readme.md"
     assert readme_path.exists()
 
     with open(readme_path) as readme_file:
         assert readme_file.read() == "# This is just a test"
 
 
-@responses.activate
-def test_init_should_create_config_file_from_repo_without_unnecessary_keys() -> None:
-    create_fake_archive()
-    default_language_option.set_value("python")
+def test_init_should_create_clean_config_file_from_repo(mock_container: MockContainer) -> None:
+    mock_container.http_client_mock.download_file.side_effect = download_file
+
+    mock_container.cli_config_manager_mock.default_language.get_value.return_value = "python"
+    mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
 
     runner = CliRunner()
-    result = runner.invoke(lean, ["init"], input="python\n")
+    result = runner.invoke(lean, ["init"])
 
     assert result.exit_code == 0
 
-    config_path = Path.cwd() / DEFAULT_LEAN_CONFIG_FILE
-    assert config_path.exists()
-
-    with open(config_path) as config_file:
-        assert config_file.read().strip() == f"""
-{{
+    mock_container.lean_config_manager_mock.clean_lean_config.assert_called_once_with("""
+{
   // this configuration file works by first loading all top-level
   // configuration items and then will load the specified environment
   // on top, this provides a layering affect. environment names can be
@@ -173,20 +108,10 @@ def test_init_should_create_config_file_from_repo_without_unnecessary_keys() -> 
   // two predefined environments, 'backtesting' and 'live', feel free
   // to add more!
 
-  // engine
-  "data-folder": "{DEFAULT_LEAN_DATA_DIR}",
+  "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+}
+        """.strip())
 
-  // handlers
-  "log-handler": "QuantConnect.Logging.CompositeLogHandler",
-  "messaging-handler": "QuantConnect.Messaging.Messaging",
-  "job-queue-handler": "QuantConnect.Queues.JobQueue",
-  "api-handler": "QuantConnect.Api.Api",
-  "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-  "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-  "alpha-handler": "QuantConnect.Lean.Engine.Alphas.DefaultAlphaHandler",
-  "data-channel-provider": "DataChannelProvider",
-  "object-store": "QuantConnect.Lean.Engine.Storage.LocalObjectStore",
-  "data-aggregator": "QuantConnect.Lean.Engine.DataFeeds.AggregationManager"
-}}
-        """.strip()
+    config_path = Path.cwd() / mock_container.config["default_lean_config_file_name"]
+    assert config_path.exists()
+    assert config_path.read_text() == '{ "key": "value" }'

@@ -2,12 +2,11 @@ from typing import Optional
 
 import click
 
-from lean.api.api_client import APIClient
-from lean.config.global_config import api_token_option, user_id_option
-from lean.constants import GLOBAL_CONFIG_DIR
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 @click.option("--user-id", "-u", type=str, help="QuantConnect.com user id")
 @click.option("--api-token", "-t", type=str, help="QuantConnect.com API token")
 def login(user_id: Optional[str], api_token: Optional[str]) -> None:
@@ -17,10 +16,13 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
 
     Credentials are stored in ~/.lean/credentials and are removed upon running `lean logout`.
     """
+    logger = container.logger()
+    credentials_storage = container.credentials_storage()
+
     if user_id is None or api_token is None:
-        click.echo("Your user id and API token are needed to make authenticated requests to the QuantConnect API")
-        click.echo("You can request these credentials on https://www.quantconnect.com/account")
-        click.echo(f"Both will be saved in ~/{GLOBAL_CONFIG_DIR}/{user_id_option.file_name}")
+        logger.info("Your user id and API token are needed to make authenticated requests to the QuantConnect API")
+        logger.info("You can request these credentials on https://www.quantconnect.com/account")
+        logger.info(f"Both will be saved in {credentials_storage.file}")
 
     if user_id is None:
         user_id = click.prompt("User id")
@@ -28,12 +30,12 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     if api_token is None:
         api_token = click.prompt("API token")
 
-    api_client = APIClient(user_id, api_token)
-
+    api_client = container.api_client(user_id=user_id, api_token=api_token)
     if not api_client.is_authenticated():
-        raise click.ClickException("Credentials are invalid")
+        raise RuntimeError("Credentials are invalid")
 
-    user_id_option.set_value(user_id)
-    api_token_option.set_value(api_token)
+    cli_config_manager = container.cli_config_manager()
+    cli_config_manager.user_id.set_value(user_id)
+    cli_config_manager.api_token.set_value(api_token)
 
-    click.echo("Successfully logged in")
+    logger.info("Successfully logged in")

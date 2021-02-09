@@ -1,15 +1,13 @@
-from pathlib import Path
-
 import click
 from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from lean.config.global_config import all_options
-from lean.constants import CREDENTIALS_FILE, GLOBAL_CONFIG_DIR
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 def list() -> None:
     """List the configurable options and their current values."""
     console = Console()
@@ -20,16 +18,16 @@ def list() -> None:
     table.add_column("Location")
     table.add_column("Description")
 
-    for option in all_options:
+    for option in container.cli_config_manager().all_options:
         value = option.get_value(default="<not set>")
 
-        # Don't print complete credentials
-        if value != "<not set>" and option.file_name == CREDENTIALS_FILE:
+        # Mask values of sensitive options
+        if value != "<not set>" and option.is_sensitive:
             value = "*" * 12 + value[-3:] if len(value) >= 5 else "*" * 15
 
         table.add_row(option.key,
                       value,
-                      str(Path.home() / GLOBAL_CONFIG_DIR / option.file_name),
+                      str(option.location),
                       option.description)
 
     console.print(table)

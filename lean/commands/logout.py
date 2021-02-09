@@ -1,10 +1,10 @@
 import click
 
-from lean.config.global_config import GlobalConfig
-from lean.constants import CREDENTIALS_FILE
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 def logout() -> None:
     """Log out and remove stored credentials."""
-    GlobalConfig(CREDENTIALS_FILE).clear()
+    container.credentials_storage().clear()

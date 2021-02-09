@@ -4,7 +4,8 @@ from pathlib import Path
 import click
 
 # The default templates are coming from the "Create New Algorithm" feature in the Algorithm Lab
-from lean.config.global_config import default_language_option
+from lean.click import LeanCommand
+from lean.container import container
 
 DEFAULT_PYTHON_MAIN = '''
 from QuantConnect import Resolution
@@ -211,10 +212,10 @@ DEFAULT_CSHARP_NOTEBOOK = """
 """.strip() + "\n"
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 @click.argument("name", type=str)
 @click.option("--language", "-l",
-              type=click.Choice(default_language_option.allowed_values, case_sensitive=False),
+              type=click.Choice(container.cli_config_manager().default_language.allowed_values, case_sensitive=False),
               help="The language of the project to create")
 def create_project(name: str, language: str) -> None:
     """Create a new project containing starter code.
@@ -223,30 +224,31 @@ def create_project(name: str, language: str) -> None:
 
     The default language can be set using `lean config set default-language python/csharp`.
     """
-    language = language if language is not None else default_language_option.get_value()
+    cli_config_manager = container.cli_config_manager()
+
+    language = language if language is not None else cli_config_manager.default_language.get_value()
     if language is None:
-        raise click.ClickException(
+        raise RuntimeError(
             "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`")
 
     full_path = Path.cwd() / name
-
     if full_path.exists():
-        raise click.ClickException(f"A project named '{name}' already exists")
-
-    if not full_path.exists():
+        raise RuntimeError(f"A project named '{name}' already exists")
+    else:
         full_path.mkdir(parents=True)
 
     # Convert the project name into a valid class name by removing all non-alphanumeric characters
     class_name = re.sub(f"[^a-zA-Z0-9]", "", full_path.name)
 
     if language == "python":
-        with open(full_path / "main.py", "w+") as file:
+        with (full_path / "main.py").open("w+") as file:
             file.write(DEFAULT_PYTHON_MAIN.replace("$NAME$", class_name))
     else:
-        with open(full_path / "Main.cs", "w+") as file:
+        with (full_path / "Main.cs").open("w+") as file:
             file.write(DEFAULT_CSHARP_MAIN.replace("$NAME$", class_name))
 
-    with open(full_path / "research.ipynb", "w+") as file:
+    with (full_path / "research.ipynb").open("w+") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
-    click.echo(f"Successfully created project '{name}'")
+    logger = container.logger()
+    logger.info(f"Successfully created project '{name}'")

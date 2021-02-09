@@ -1,9 +1,10 @@
 import click
 
-from lean.config.global_config import all_options
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command()
+@click.command(cls=LeanCommand)
 @click.argument("key")
 @click.argument("value")
 def set(key: str, value: str) -> None:
@@ -11,11 +12,9 @@ def set(key: str, value: str) -> None:
 
     Run `lean config list` to show all available options.
     """
-    option = next((x for x in all_options if x.key == key), None)
+    cli_config_manager = container.cli_config_manager()
 
-    if option is None:
-        raise click.ClickException(f"There doesn't exist an option with key '{key}'")
-
+    option = cli_config_manager.get_option_by_key(key)
     option.set_value(value)
 
     click.echo(f"Successfully updated the value of '{key}' to '{option.get_value()}'")

@@ -6,12 +6,12 @@ from setuptools import find_packages, setup
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
 
-def read(relative_path):
+def read(relative_path: str) -> str:
     with open(os.path.join(current_dir, relative_path)) as file:
         return file.read()
 
 
-def get_version():
+def get_version() -> str:
     version_file = read("lean/__init__.py")
     version_match = re.search(r"^__version__ = \"([^\"]+)\"", version_file, re.M)
     return version_match.group(1)
@@ -19,12 +19,12 @@ def get_version():
 
 # Production dependencies
 install_requires = [
-    "click~=7.1.0",
-    "requests~=2.25.0",
-    "tqdm~=4.56.0",
-    "jsoncomment~=0.4.0",
-    "docker~=4.4.0",
-    "rich~=9.10.0"
+    "click~=7.1.2",
+    "requests~=2.25.1",
+    "jsoncomment~=0.4.2",
+    "docker~=4.4.1",
+    "rich~=9.10.0",
+    "dependency-injector~=4.20.1"
 ]
 
 setup(
