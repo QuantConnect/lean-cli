@@ -24,19 +24,13 @@ A workflow with the CLI may look like this:
 
 ## Debugging backtests
 
-To debug backtests some additional setup is needed depending on the language and editor you use.
-
-### PyCharm + Python
-TBD
+To debug backtests some additional setup is needed depending on the editor and language you use.
 
 ### VS Code + Python
 1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
 2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
 ```json5
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -60,6 +54,32 @@ TBD
 3. Run the `lean backtest` command with the `--debug vscode` option.
 4. Wait until the CLI tells you to attach to the debugger.
 5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
+
+### VS Code + C#
+1. Install version 15.8 of the [Mono Debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension. You can do this by first installing the latest version and then clicking on the arrow button next to the Uninstall button, which will open a context menu containing the "Install Another Version" option.
+2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
+```json5
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to Mono",
+            "request": "attach",
+            "type": "mono",
+            "address": "localhost", 
+            "port": 55555
+        }
+    ]
+}
+```
+3. Run the `lean backtest` command with the `--debug vscode` option.
+4. Wait until the CLI tells you to attach to the debugger.
+5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
+
+### PyCharm + Python
+*Note: Remote debugging requires PyCharm Professional.*
+
+TBD
 
 ### Visual Studio + C#
 TBD

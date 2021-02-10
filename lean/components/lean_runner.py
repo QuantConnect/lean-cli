@@ -67,10 +67,7 @@ class LeanRunner:
                 Mount(target="/Lean/Launcher/config.json", source=str(config_path), type="bind", read_only=True)
             ],
             "volumes": {},
-            "ports": {
-                "5678": "5678",
-                "6000": "6000"
-            }
+            "ports": {}
         }
 
         # Mount the data directory
@@ -109,8 +106,27 @@ class LeanRunner:
                           source=str(csharp_binaries_dir / f"QuantConnect.Algorithm.CSharp.{extension}"),
                           type="bind"))
 
-        # Run the engine and log the result
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
+
+        # Set up PTVSD debugging
+        if debugging_method == "PTVSD":
+            run_options["ports"]["5678"] = "5678"
+
+        # Set up Mono debugging
+        if debugging_method == "VisualStudio":
+            run_options["ports"]["55555"] = "55555"
+            run_options["entrypoint"] = "mono"
+
+            command = " ".join([
+                "--debug",
+                "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
+                "QuantConnect.Lean.Launcher.exe",
+                command
+            ])
+
+            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
+
+        # Run the engine and log the result
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
                                                     command,

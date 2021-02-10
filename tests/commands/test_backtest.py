@@ -122,24 +122,26 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
                                                  None)
 
 
-@pytest.mark.parametrize("editor,debug_method", [("pycharm", "PyCharm"),
-                                                 ("PyCharm", "PyCharm"),
-                                                 ("vs", "VisualStudio"),
-                                                 ("VS", "VisualStudio"),
-                                                 ("vscode", "PTVSD"),
-                                                 ("VSCode", "PTVSD")])
-def test_backtest_passes_correct_debug_method_to_lean_runner(editor: str, debug_method: str) -> None:
+@pytest.mark.parametrize("project,editor,debug_method", [("Python Project/main.py", "pycharm", "PyCharm"),
+                                                         ("Python Project/main.py", "PyCharm", "PyCharm"),
+                                                         ("CSharp Project/Main.cs", "vs", "VisualStudio"),
+                                                         ("CSharp Project/Main.cs", "VS", "VisualStudio"),
+                                                         ("Python Project/main.py", "vscode", "PTVSD"),
+                                                         ("Python Project/main.py", "VSCode", "PTVSD"),
+                                                         ("CSharp Project/Main.cs", "vscode", "VisualStudio"),
+                                                         ("CSharp Project/Main.cs", "VSCode", "VisualStudio")])
+def test_backtest_passes_correct_debug_method_to_lean_runner(project: str, editor: str, debug_method: str) -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", editor])
+    result = CliRunner().invoke(lean, ["backtest", project, "--debug", editor])
 
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with("backtesting",
-                                                 Path("Python Project/main.py").resolve(),
+                                                 Path(project).resolve(),
                                                  mock.ANY,
                                                  "latest",
                                                  debug_method)

@@ -20,7 +20,7 @@ from lean.container import container
               help="The LEAN engine version to run (defaults to the latest installed version)")
 @click.option("--debug",
               type=click.Choice(["pycharm", "vs", "vscode"], case_sensitive=False),
-              help="Enable debugging for a certain editor")
+              help="Enable debugging for a certain editor (see --help for more information)")
 def backtest(project: Path, output: Optional[Path], update: bool, version: Optional[int], debug: Optional[str]) -> None:
     """Backtest a project locally using Docker.
 
@@ -31,23 +31,6 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     \b
     Go to the following url to learn how to debug backtests using the Lean CLI:
     https://github.com/QuantConnect/lean-cli#debugging-backtests
-
-    \b
-    To debug Python algorithms with PyCharm:
-    1. Start the debugging server in PyCharm using the drop down configuration “Debug in Container”.
-    2. Run this command with the `--debug pycharm` option.
-
-    \b
-    To debug C# algorithms with Visual Studio:
-    1. Install the "VSMonoDebugger" extension.
-    2. Go to "Extensions > Mono > Settings" and fill in the following:
-        Remote Host IP: 127.0.0.1
-        Remote Host Port: 55555
-        Mono Debug Port: 55555
-    3. Click Save and close the extension settings.
-    4. Run this command with the `--debug vs` option.
-    5. Wait until the Lean CLI tells you to attach to the debugger.
-    6. Click "Extensions > Mono > Attach to mono debugger" in Visual Studio.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -60,12 +43,14 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     if update:
         lean_runner.force_update()
 
-    # Convert editor to debugging method
+    # Detect the debugging method to use based on the editor and project language
     if debug == "pycharm":
         debug = "PyCharm"
+
     if debug == "vs":
         debug = "VisualStudio"
+
     if debug == "vscode":
-        debug = "PTVSD"
+        debug = "PTVSD" if algorithm_file.name.endswith(".py") else "VisualStudio"
 
     lean_runner.run_lean("backtesting", algorithm_file, output, version, debug)
