@@ -23,6 +23,9 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
 
+    # Reset singletons so that fresh Path instances get created
+    container.reset_singletons()
+
     return fs
 
 

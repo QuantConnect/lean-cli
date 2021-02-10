@@ -28,6 +28,6 @@ To work on the Lean CLI, clone the repository, enter an environment containing P
 
 If you need to add dependencies, first update `setup.py` (if it is a production dependency) or `requirements.txt` (if it is a development dependency) and then re-run `pip install -r requirements.txt`.
 
-The unit tests can be ran by running `pytest`. Because a lot of methods interact with the filesystem, the filesystem is mocked before running each test to ensure your local files won't be modified.
+The tests can be ran by running `pytest`. Because a lot of methods interact with the filesystem, the filesystem is mocked before running each test to ensure your local files won't be modified.
 
 Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".

@@ -17,7 +17,8 @@ def test_backtest_should_call_lean_runner_to_backtest_given_algorithm_file(mock_
 
     mock_container.lean_runner_mock.run_lean.assert_called_once_with("backtesting",
                                                                      Path("Python Project/main.py").resolve(),
-                                                                     mock.ANY)
+                                                                     mock.ANY,
+                                                                     version=None)
 
 
 def test_backtest_should_run_backtest_with_default_output_directory(mock_container: MockContainer) -> None:
@@ -76,3 +77,33 @@ def test_backtest_should_abort_when_project_does_not_contain_algorithm_file(mock
     assert result.exit_code != 0
 
     mock_container.lean_runner_mock.run_lean.assert_not_called()
+
+
+def test_backtest_should_force_update_when_update_option_given(mock_container: MockContainer) -> None:
+    create_fake_lean_cli_project()
+    mock_container.project_manager_mock.find_algorithm_file.side_effect = lambda p: p
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--update"])
+
+    assert result.exit_code == 0
+
+    mock_container.lean_runner_mock.force_update.assert_called_once()
+
+    mock_container.lean_runner_mock.run_lean.assert_called_once_with("backtesting",
+                                                                     Path("Python Project/main.py").resolve(),
+                                                                     mock.ANY,
+                                                                     version=None)
+
+
+def test_backtest_should_pass_version_on_to_lean_runner(mock_container: MockContainer) -> None:
+    create_fake_lean_cli_project()
+    mock_container.project_manager_mock.find_algorithm_file.side_effect = lambda p: p
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--version", "3"])
+
+    assert result.exit_code == 0
+
+    mock_container.lean_runner_mock.run_lean.assert_called_once_with("backtesting",
+                                                                     Path("Python Project/main.py").resolve(),
+                                                                     mock.ANY,
+                                                                     version=3)

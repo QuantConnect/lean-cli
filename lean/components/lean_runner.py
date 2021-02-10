@@ -3,7 +3,7 @@ import platform
 import tempfile
 from distutils import dir_util
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from docker.types import Mount
 
@@ -35,12 +35,13 @@ class LeanRunner:
         self._docker_image = docker_image
         self._docker_tag = docker_tag
 
-    def run_lean(self, environment: str, algorithm_file: Path, output_dir: Path) -> None:
+    def run_lean(self, environment: str, algorithm_file: Path, output_dir: Path, version: Optional[int] = None) -> None:
         """Runs the LEAN engine locally in Docker.
 
-        :param environment: the environment to run
+        :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
+        :param version: The LEAN version to run
         """
         project_dir = algorithm_file.parent
 
@@ -106,7 +107,7 @@ class LeanRunner:
         # Run the engine and log the result
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
         success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    self._docker_tag,
+                                                    version or self._docker_tag,
                                                     command,
                                                     quiet=False,
                                                     **run_options)
@@ -121,6 +122,10 @@ class LeanRunner:
         else:
             raise RuntimeError(
                 f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
+
+    def force_update(self) -> None:
+        """Pulls the latest version of the Docker image containing the LEAN engine."""
+        self._docker_manager.pull_image(self._docker_image, self._docker_tag)
 
     def _compile_csharp_project(self, project_dir: Path) -> Path:
         """Compiles the C# project in the given directory and returns the path where the binaries are stored.

@@ -13,7 +13,9 @@ from lean.container import container
 @click.option("--output", "-o",
               type=PathParameter(exists=False),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP")
-def backtest(project: Path, output: Optional[Path]) -> None:
+@click.option("--update", is_flag=True, help="Update the LEAN engine to the latest version before running the backtest")
+@click.option("--version", type=int, help="The LEAN version to run (defaults to the latest version)")
+def backtest(project: Path, output: Optional[Path], update: bool, version: Optional[int]) -> None:
     """Backtest a project locally using Docker.
 
     If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
@@ -27,4 +29,8 @@ def backtest(project: Path, output: Optional[Path]) -> None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean("backtesting", algorithm_file, output)
+
+    if update:
+        lean_runner.force_update()
+
+    lean_runner.run_lean("backtesting", algorithm_file, output, version=version)
