@@ -1,5 +1,4 @@
 import os
-import site
 from pathlib import Path
 
 import pytest
@@ -20,17 +19,9 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     # The "fs" argument triggers pyfakefs' own pytest fixture to register
     # After pyfakefs has started all filesystem actions will happen on a fake in-memory filesystem
 
-    # Simulate a fake home directory and set the cwd to an empty directory
+    # Create a fake home directory and set the cwd to an empty directory
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
-
-    # Proxy access to site-packages to the real filesystem
-    for path in site.getsitepackages():
-        if Path(path).exists():
-            fs.add_real_directory(path)
-
-    # Make sure the container uses fresh singletons so Path instances are recreated
-    container.reset_singletons()
 
     return fs
 
