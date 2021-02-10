@@ -3,6 +3,7 @@ from typing import Optional
 
 import click
 
+from lean.config import Config
 from lean.container import container
 
 
@@ -17,7 +18,7 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
     """Parses the --verbose option."""
     if value:
         logger = container.logger()
-        logger.enable_debug_logging()
+        logger.debug_logging_enabled = True
 
 
 class LeanCommand(click.Command):
@@ -41,7 +42,7 @@ class LeanCommand(click.Command):
         if self._requires_project:
             params += [click.Option(["--config", "-c"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                                    help=f"The configuration file that should be used (defaults to the nearest {container.config()['default_lean_config_file_name']})",
+                                    help=f"The configuration file that should be used (defaults to the nearest {Config.default_lean_config_file_name})",
                                     expose_value=False,
                                     is_eager=True,
                                     callback=parse_config_option)]

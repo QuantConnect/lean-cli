@@ -41,7 +41,7 @@ def test_logger_error_should_not_add_newline_when_newline_is_false(capsys: Captu
 
 def test_logger_debug_should_log_message_to_stdout(capsys: CaptureFixture) -> None:
     logger = Logger()
-    logger.enable_debug_logging()
+    logger.debug_logging_enabled = True
     logger.debug("Message")
 
     assert_stdout_stderr(capsys, "Message\n", "")
@@ -49,17 +49,19 @@ def test_logger_debug_should_log_message_to_stdout(capsys: CaptureFixture) -> No
 
 def test_logger_debug_should_not_add_newline_when_newline_is_false(capsys: CaptureFixture) -> None:
     logger = Logger()
-    logger.enable_debug_logging()
+    logger.debug_logging_enabled = True
     logger.debug("Message", newline=False)
 
     assert_stdout_stderr(capsys, "Message", "")
 
 
-def test_logger_debug_should_not_log_until_enable_debug_logging_is_called(capsys: CaptureFixture) -> None:
+def test_logger_debug_should_not_log_until_debug_logging_is_enabled(capsys: CaptureFixture) -> None:
     logger = Logger()
-    logger.debug("Message")
+    logger.debug("Message 1")
+    logger.debug_logging_enabled = True
+    logger.debug("Message 2")
 
-    assert_stdout_stderr(capsys, "", "")
+    assert_stdout_stderr(capsys, "Message 2\n", "")
 
 
 @mock.patch("sys.stdout.flush")

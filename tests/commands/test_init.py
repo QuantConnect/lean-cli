@@ -1,19 +1,23 @@
+import tempfile
 import zipfile
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
+from responses import RequestsMock
 
 from lean.commands import lean
+from lean.config import Config
 from tests.test_helpers import MockContainer
 
 
-def download_file(url: str, destination: Path) -> None:
-    if url != "https://github.com/QuantConnect/Lean/archive/master.zip":
-        return
+@pytest.fixture(autouse=True)
+def create_fake_archive(requests_mock: RequestsMock) -> None:
+    requests_mock.assert_all_requests_are_fired = False
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
+    archive_path = Path(tempfile.mkdtemp()) / "archive.zip"
 
-    with zipfile.ZipFile(destination, "w") as archive:
+    with zipfile.ZipFile(archive_path, "w") as archive:
         archive.writestr("Lean-master/Data/equity/readme.md", "# This is just a test")
         archive.writestr("Lean-master/Launcher/config.json", """
 {
@@ -24,13 +28,16 @@ def download_file(url: str, destination: Path) -> None:
   // two predefined environments, 'backtesting' and 'live', feel free
   // to add more!
 
-  "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+  "environment": "backtesting" // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 }
         """.strip())
 
+    with open(archive_path, "rb") as archive:
+        requests_mock.add(requests_mock.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
+
 
 def test_init_should_abort_when_config_file_already_exists(mock_container: MockContainer) -> None:
-    (Path.cwd() / mock_container.config["default_lean_config_file_name"]).touch()
+    (Path.cwd() / Config.default_lean_config_file_name).touch()
 
     result = CliRunner().invoke(lean, ["init"])
 
@@ -38,7 +45,7 @@ def test_init_should_abort_when_config_file_already_exists(mock_container: MockC
 
 
 def test_init_should_abort_when_data_directory_already_exists(mock_container: MockContainer) -> None:
-    (Path.cwd() / mock_container.config["default_data_directory_name"]).mkdir()
+    (Path.cwd() / Config.default_data_directory_name).mkdir()
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -56,8 +63,6 @@ def test_init_should_prompt_for_confirmation_when_directory_not_empty(mock_conta
 
 
 def test_init_should_prompt_for_default_language_when_not_set_yet(mock_container: MockContainer) -> None:
-    mock_container.http_client_mock.download_file.side_effect = download_file
-
     mock_container.cli_config_manager_mock.default_language.get_value.return_value = None
     mock_container.cli_config_manager_mock.default_language.allowed_values = ["python", "csharp"]
     mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
@@ -71,8 +76,6 @@ def test_init_should_prompt_for_default_language_when_not_set_yet(mock_container
 
 
 def test_init_should_create_data_directory_from_repo(mock_container: MockContainer) -> None:
-    mock_container.http_client_mock.download_file.side_effect = download_file
-
     mock_container.cli_config_manager_mock.default_language.get_value.return_value = "python"
     mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
 
@@ -81,7 +84,7 @@ def test_init_should_create_data_directory_from_repo(mock_container: MockContain
 
     assert result.exit_code == 0
 
-    readme_path = Path.cwd() / mock_container.config["default_data_directory_name"] / "equity" / "readme.md"
+    readme_path = Path.cwd() / Config.default_data_directory_name / "equity" / "readme.md"
     assert readme_path.exists()
 
     with open(readme_path) as readme_file:
@@ -89,8 +92,6 @@ def test_init_should_create_data_directory_from_repo(mock_container: MockContain
 
 
 def test_init_should_create_clean_config_file_from_repo(mock_container: MockContainer) -> None:
-    mock_container.http_client_mock.download_file.side_effect = download_file
-
     mock_container.cli_config_manager_mock.default_language.get_value.return_value = "python"
     mock_container.lean_config_manager_mock.clean_lean_config.return_value = '{ "key": "value" }'
 
@@ -108,10 +109,10 @@ def test_init_should_create_clean_config_file_from_repo(mock_container: MockCont
   // two predefined environments, 'backtesting' and 'live', feel free
   // to add more!
 
-  "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+  "environment": "backtesting" // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 }
         """.strip())
 
-    config_path = Path.cwd() / mock_container.config["default_lean_config_file_name"]
+    config_path = Path.cwd() / Config.default_lean_config_file_name
     assert config_path.exists()
     assert config_path.read_text() == '{ "key": "value" }'

@@ -1,52 +1,40 @@
-import json
-from base64 import b64encode
 from hashlib import sha256
 from time import time
 from typing import Any, Dict
+from urllib.parse import urljoin
 
-from lean.components.http_client import HTTPClient
+import requests
+
+from lean.components.logger import Logger
 from lean.models.errors import AuthenticationError, RequestFailedError
-from lean.models.response import Response
 
 
 class APIClient:
     """The APIClient class manages communication with the QuantConnect API."""
 
-    def __init__(self, http_client: HTTPClient, base_url: str, user_id: str, api_token: str) -> None:
+    def __init__(self, logger: Logger, base_url: str, user_id: str, api_token: str) -> None:
         """Creates a new APIClient instance.
 
-        :param http_client: the HTTPClient instance to make HTTP requests with
+        :param logger: the logger to use to print debug messages to
         :param base_url: the base url of the QuantConnect API
-        :param user_id: the QuantConnect user id to use for authentication
-        :param api_token: the QuantConnect API token to use for authentication
+        :param user_id: the QuantConnect user id to use when sending authenticated requests
+        :param api_token: the QuantConnect API token to use when sending authenticated requests
         """
-        self._http_client = http_client
+        self._logger = logger
         self._base_url = base_url
         self._user_id = user_id
         self._api_token = api_token
 
-    def get(self, endpoint: str, params: Dict[str, Any] = {}) -> Any:
+    def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.
 
         Raises an error if the request fails or if the current credentials are invalid.
 
         :param endpoint: the API endpoint to send the request to
-        :param params: the parameters to send
+        :param parameters: the parameters to attach to the url
         :return: the parsed response of the request
         """
-        url = self._endpoint_to_url(endpoint)
-        headers = self._create_headers()
-
-        try:
-            response = self._http_client.get(url, params=params, headers=headers)
-        except RequestFailedError as error:
-            # An HTTP 500 response may also indicate that the user is not logged in
-            if error.response.status_code == 500:
-                raise AuthenticationError()
-            else:
-                raise error
-
-        return self._parse_response(response)
+        return self._request("get", endpoint, {"params": parameters})
 
     def post(self, endpoint: str, data: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated POST request to the given endpoint with the given data.
@@ -57,19 +45,7 @@ class APIClient:
         :param data: the data to send in the body of the request
         :return: the parsed response of the request
         """
-        url = self._endpoint_to_url(endpoint)
-        headers = self._create_headers()
-
-        try:
-            response = self._http_client.post(url, data=data, headers=headers)
-        except RequestFailedError as error:
-            # An HTTP 500 response may also indicate that the user is not logged in
-            if error.response.status_code == 500:
-                raise AuthenticationError()
-            else:
-                raise error
-
-        return self._parse_response(response)
+        return self._request("post", endpoint, {"json": data})
 
     def is_authenticated(self) -> bool:
         """Checks whether the current credentials are valid.
@@ -77,51 +53,52 @@ class APIClient:
         :return: True if the current credentials are valid, False if not
         """
         try:
+            requests.get("https://github.com/QuantConnect/Lean/archive/master.zip")
             self.get("projects/read")
             return True
         except:
             return False
 
-    def _endpoint_to_url(self, endpoint: str) -> str:
-        """Converts an endpoint into a full url.
+    def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}) -> Any:
+        """Makes an authenticated request to the given endpoint.
 
-        :param endpoint: the endpoint to create the full url for
-        :return: the full url combining the base url of the API with the requested endpoint
+        :param method: the HTTP method to use for the request
+        :param endpoint: the API endpoint to send the request to
+        :param options: additional options to pass on to requests.request()
+        :return: the parsed response of the request
         """
-        url = self._base_url
-        if not url.endswith("/"):
-            url += "/"
+        base_url = self._base_url if self._base_url.endswith("/") else self._base_url + "/"
+        full_url = urljoin(base_url, endpoint)
 
-        if endpoint.startswith("/"):
-            url += endpoint[1:]
-        else:
-            url += endpoint
-
-        return url
-
-    def _create_headers(self) -> Dict[str, str]:
-        """Returns the headers needed to authenticate requests.
-
-        :return: a dict containing all headers which need to be set on a request to authenticate the user
-        """
+        # Create the hash which is used to authenticate the user to the API
         timestamp = str(int(time()))
         password = sha256(f"{self._api_token}:{timestamp}".encode("utf-8")).hexdigest()
-        authorization = b64encode(bytes(f"{self._user_id}:{password}", "utf-8")).decode("ascii")
 
-        return {
-            "Timestamp": timestamp,
-            "Authorization": f"Basic {authorization}"
-        }
+        self._logger.debug(f"{method.upper()} {full_url} with data {list(options.values())[0]}")
 
-    def _parse_response(self, response: Response) -> Any:
+        response = requests.request(method,
+                                    full_url,
+                                    headers={"Timestamp": timestamp},
+                                    auth=(self._user_id, password),
+                                    **options)
+
+        if response.status_code == 500:
+            raise AuthenticationError()
+
+        if not response.ok or response.status_code < 200 or response.status_code >= 300:
+            raise RequestFailedError(response)
+
+        return self._parse_response(response)
+
+    def _parse_response(self, response: requests.Response) -> Any:
         """Parses the data in a response.
 
-        Raises an error if the response indicates something went wrong.
+        Raises an error if the data in the response indicates something went wrong.
 
-        :param response: the response to parse
-        :return: the parsed content of the response
+        :param response: the response of the request
+        :return: the data in the response
         """
-        data = json.loads(response.text)
+        data = response.json()
 
         if data["success"]:
             return data
@@ -130,9 +107,9 @@ class APIClient:
             if data["errors"][0].startswith("Hash doesn't match."):
                 raise AuthenticationError()
 
-            raise RequestFailedError("\n".join(data["errors"]), response)
+            raise RequestFailedError(response, "\n".join(data["errors"]))
 
         if "messages" in data and len(data["messages"]) > 0:
-            raise RequestFailedError("\n".join(data["messages"]), response)
+            raise RequestFailedError(response, "\n".join(data["messages"]))
 
-        raise RequestFailedError("Request failed", response)
+        raise RequestFailedError(response)

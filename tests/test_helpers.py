@@ -1,4 +1,3 @@
-import tempfile
 from pathlib import Path
 from typing import Optional
 from unittest import mock
@@ -11,7 +10,6 @@ from lean.components.api_client import APIClient
 from lean.components.backtest_runner import BacktestRunner
 from lean.components.cli_config_manager import CLIConfigManager
 from lean.components.docker_manager import DockerManager
-from lean.components.http_client import HTTPClient
 from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
@@ -25,29 +23,6 @@ class MockContainer:
     *_mock_class represents the class itself.
     *_mock represents the instance(s) of the class.
     """
-    config = {
-        # The file in which general CLI configuration is stored
-        "general_config_file": str(Path(tempfile.gettempdir()) / "config"),
-
-        # The file in which credentials are stored
-        "credentials_config_file": str(Path(tempfile.gettempdir()) / "credentials"),
-
-        # The default name of the configuration file in a Lean CLI project
-        "default_lean_config_file_name": "lean.json",
-
-        # The default name of the data directory in a Lean CLI project
-        "default_data_directory_name": "data",
-
-        # The Docker image used when running the LEAN engine locally
-        "lean_engine_docker_image": "quantconnect/lean",
-
-        # The tag of the Docker image used when running the LEAN engine locally
-        "lean_engine_docker_tag": "latest",
-
-        # The base url of the QuantConnect API
-        "api_base_url": "https://www.quantconnect.com/api/v2"
-    }
-
     logger_mock_class = mock.Mock(spec=Logger)
     logger_mock: mock.NonCallableMock = logger_mock_class.return_value
 
@@ -62,9 +37,6 @@ class MockContainer:
 
     lean_config_manager_mock_class = mock.Mock(spec=LeanConfigManager)
     lean_config_manager_mock: mock.NonCallableMock = lean_config_manager_mock_class.return_value
-
-    http_client_mock_class = mock.Mock(spec=HTTPClient)
-    http_client_mock: mock.NonCallableMock = http_client_mock_class.return_value
 
     api_client_mock_class = mock.Mock(spec=APIClient)
     api_client_mock: mock.NonCallableMock = api_client_mock_class.return_value
@@ -84,8 +56,6 @@ class MockedContainer(containers.DeclarativeContainer):
 
     Dependency Injector removes all non-provider members from the class, so the mocks are stored in MockContainer.
     """
-    config = providers.Configuration(default=MockContainer.config)
-
     logger = providers.Singleton(MockContainer.logger_mock_class)
 
     general_storage = providers.Singleton(MockContainer.general_storage_mock_class)
@@ -94,7 +64,6 @@ class MockedContainer(containers.DeclarativeContainer):
     cli_config_manager = providers.Singleton(MockContainer.cli_config_manager_mock_class)
     lean_config_manager = providers.Singleton(MockContainer.lean_config_manager_mock_class)
 
-    http_client = providers.Singleton(MockContainer.http_client_mock_class)
     api_client = providers.Singleton(MockContainer.api_client_mock_class)
 
     project_manager = providers.Singleton(MockContainer.project_manager_mock_class)
@@ -130,7 +99,7 @@ def create_fake_lean_cli_project() -> None:
 
 
 def create_option(key: str, value: Optional[str], sensitive: bool) -> mock.Mock:
-    """Creates a fake option."""
+    """Creates a fake Option instance."""
     option = mock.Mock(spec=Option)
     option.key = key
     option.description = f"{key} documentation"

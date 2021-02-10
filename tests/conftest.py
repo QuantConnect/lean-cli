@@ -1,8 +1,10 @@
 import os
+import site
 from pathlib import Path
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
+from responses import RequestsMock
 
 from lean.container import container
 from tests.test_helpers import MockContainer, MockedContainer
@@ -22,10 +24,23 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
 
-    # Make sure the container uses fresh singletons, so Path instances are recreated
+    # Proxy access to site-packages to the real filesystem
+    fs.add_real_paths(site.getsitepackages())
+
+    # Make sure the container uses fresh singletons so Path instances are recreated
     container.reset_singletons()
 
     return fs
+
+
+@pytest.fixture(autouse=True)
+def requests_mock() -> RequestsMock:
+    """A pytest fixture which mocks the requests library before each test.
+
+    If a test makes an HTTP request which hasn't been mocked, the request will fail.
+    """
+    with RequestsMock() as mock:
+        yield mock
 
 
 @pytest.fixture()

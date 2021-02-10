@@ -12,7 +12,9 @@ def main() -> None:
     except Exception as exception:
         logger = container.logger()
 
-        logger.debug(traceback.print_exc())
-        logger.error(f"Error: {exception}")
+        if logger.debug_logging_enabled:
+            logger.debug(traceback.format_exc().strip())
+        else:
+            logger.error(f"Error: {exception}")
 
         sys.exit(1)
