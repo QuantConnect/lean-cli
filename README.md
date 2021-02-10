@@ -22,6 +22,48 @@ A workflow with the CLI may look like this:
 3. Work on your strategy in `./RSI Strategy`.
 4. Run a backtest with `lean backtest "RSI Strategy"`. This runs your backtest in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
+## Debugging backtests
+
+To debug backtests some additional setup is needed depending on the language and editor you use.
+
+### PyCharm + Python
+TBD
+
+### VS Code + Python
+1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
+2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Remote Attach",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${fileDirname}",
+                    "remoteRoot": "/Project"
+                }
+            ]
+        }
+    ]
+}
+```
+3. Run the `lean backtest` command with the `--debug vscode` option.
+4. Wait until the CLI tells you to attach to the debugger.
+5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
+
+### Visual Studio + C#
+TBD
+
 ## Development
 
 To work on the Lean CLI, clone the repository, enter an environment containing Python 3.6+ and run `pip install -r requirements.txt`. This command will install the required dependencies and installs the CLI in editable mode. This means you'll be able to edit the code and immediately see the results the next time you run `lean`.
