@@ -6,7 +6,7 @@ from lean.components.project_manager import ProjectManager
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-def test_project_manager_find_algorithm_file_should_return_input_when_input_is_file() -> None:
+def test_find_algorithm_file_should_return_input_when_input_is_file() -> None:
     create_fake_lean_cli_project()
 
     manager = ProjectManager()
@@ -15,7 +15,7 @@ def test_project_manager_find_algorithm_file_should_return_input_when_input_is_f
     assert result == Path.cwd() / "Python Project" / "main.py"
 
 
-def test_project_manager_find_algorithm_file_should_return_main_py_when_input_directory_contains_it() -> None:
+def test_find_algorithm_file_should_return_main_py_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_project()
 
     manager = ProjectManager()
@@ -24,7 +24,7 @@ def test_project_manager_find_algorithm_file_should_return_main_py_when_input_di
     assert result == Path.cwd() / "Python Project" / "main.py"
 
 
-def test_project_manager_find_algorithm_file_should_return_main_cs_when_input_directory_contains_it() -> None:
+def test_find_algorithm_file_should_return_main_cs_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_project()
 
     manager = ProjectManager()
@@ -33,7 +33,7 @@ def test_project_manager_find_algorithm_file_should_return_main_cs_when_input_di
     assert result == Path.cwd() / "CSharp Project" / "Main.cs"
 
 
-def test_project_manager_find_algorithm_file_should_raise_error_if_no_algorithm_file_exists() -> None:
+def test_find_algorithm_file_should_raise_error_if_no_algorithm_file_exists() -> None:
     create_fake_lean_cli_project()
 
     (Path.cwd() / "Empty Project").mkdir()
