@@ -32,7 +32,7 @@ TBD
 ### VS Code + Python
 1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
 2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
-```json
+```json5
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
