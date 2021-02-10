@@ -6,12 +6,12 @@ from typing import Any
 class Storage:
     """A Storage instance manages the data in a single file."""
 
-    def __init__(self, file: str) -> None:
+    def __init__(self, file: Path) -> None:
         """Creates a new Storage instance.
 
         :param file: the path to the file this Storage instance should manage
         """
-        self.file = Path(file)
+        self.file = file
 
         if self.file.exists():
             self._data = json.loads(self.file.read_text())

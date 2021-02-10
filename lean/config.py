@@ -5,10 +5,10 @@ class Config:
     """The Config class contains configuration which is used to configure classes in the container."""
 
     # The file in which general CLI configuration is stored
-    general_config_file = str(Path("~/.lean/config").expanduser())
+    general_config_file = Path("~/.lean/credentials").expanduser()
 
     # The file in which credentials are stored
-    credentials_config_file = str(Path("~/.lean/credentials").expanduser())
+    credentials_config_file = Path("~/.lean/credentials").expanduser()
 
     # The default name of the configuration file in a Lean CLI project
     default_lean_config_file_name = "lean.json"
