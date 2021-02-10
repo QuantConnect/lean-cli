@@ -7,10 +7,10 @@ from dependency_injector import containers, providers
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK)
 from lean.components.api_client import APIClient
-from lean.components.backtest_runner import BacktestRunner
 from lean.components.cli_config_manager import CLIConfigManager
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
+from lean.components.lean_runner import LeanRunner
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
 from lean.components.storage import Storage
@@ -47,8 +47,8 @@ class MockContainer:
     docker_manager_mock_class = mock.Mock(spec=DockerManager)
     docker_manager_mock: mock.NonCallableMock = docker_manager_mock_class.return_value
 
-    backtest_runner_mock_class = mock.Mock(spec=BacktestRunner)
-    backtest_runner_mock: mock.NonCallableMock = backtest_runner_mock_class.return_value
+    lean_runner_mock_class = mock.Mock(spec=LeanRunner)
+    lean_runner_mock: mock.NonCallableMock = lean_runner_mock_class.return_value
 
 
 class MockedContainer(containers.DeclarativeContainer):
@@ -70,7 +70,7 @@ class MockedContainer(containers.DeclarativeContainer):
 
     docker_manager = providers.Singleton(MockContainer.docker_manager_mock_class)
 
-    backtest_runner = providers.Singleton(MockContainer.backtest_runner_mock_class)
+    lean_runner = providers.Singleton(MockContainer.lean_runner_mock_class)
 
 
 def create_fake_lean_cli_project() -> None:

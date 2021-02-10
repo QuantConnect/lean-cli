@@ -12,8 +12,8 @@ from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
 
 
-class BacktestRunner:
-    """The BacktestRunner contains the code that runs backtests locally."""
+class LeanRunner:
+    """The LeanRunner class contains the code that runs the LEAN engine locally."""
 
     def __init__(self,
                  logger: Logger,
@@ -21,13 +21,13 @@ class BacktestRunner:
                  docker_manager: DockerManager,
                  docker_image: str,
                  docker_tag: str) -> None:
-        """Creates a new BacktestRunner instance.
+        """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param docker_image: the Docker image containing the LEAN engine
-        :param docker_tag: the tag of the image to run
+        :param docker_tag: the default tag of the image to run
         """
         self._logger = logger
         self._lean_config_manager = lean_config_manager
@@ -35,9 +35,10 @@ class BacktestRunner:
         self._docker_image = docker_image
         self._docker_tag = docker_tag
 
-    def run_backtest(self, algorithm_file: Path, output_dir: Path) -> None:
-        """Runs a backtest in Docker.
+    def run_lean(self, environment: str, algorithm_file: Path, output_dir: Path) -> None:
+        """Runs the LEAN engine locally in Docker.
 
+        :param environment: the environment to run
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
         """
@@ -48,7 +49,7 @@ class BacktestRunner:
             output_dir.mkdir(parents=True)
 
         # Create a file containing the complete Lean configuration
-        config = self._lean_config_manager.get_complete_lean_config("backtesting", algorithm_file)
+        config = self._lean_config_manager.get_complete_lean_config(environment, algorithm_file)
         config_path = Path(tempfile.mkdtemp()) / "config.json"
         with config_path.open("w+") as file:
             file.write(json.dumps(config, indent=4))
@@ -86,14 +87,14 @@ class BacktestRunner:
                 "host.docker.internal": "172.17.0.1"
             }
 
-        # Mount the project which needs to be backtested
+        # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
             run_options["volumes"][str(project_dir)] = {
                 "bind": "/Project",
                 "mode": "rw"
             }
         else:
-            # C# projects need to be compiled before the backtest can run
+            # C# projects need to be compiled before they can be mounted
             csharp_binaries_dir = self._compile_csharp_project(project_dir)
 
             for extension in ["dll", "pdb"]:
@@ -102,7 +103,7 @@ class BacktestRunner:
                           source=str(csharp_binaries_dir / f"QuantConnect.Algorithm.CSharp.{extension}"),
                           type="bind"))
 
-        # Run the backtest and log the result
+        # Run the engine and log the result
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     self._docker_tag,
@@ -116,10 +117,10 @@ class BacktestRunner:
 
         if success:
             self._logger.info(
-                f"Successfully backtested '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
+                f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
         else:
             raise RuntimeError(
-                f"Something went wrong while backtesting '{relative_project_dir}', the output is stored in '{relative_output_dir}'")
+                f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
 
     def _compile_csharp_project(self, project_dir: Path) -> Path:
         """Compiles the C# project in the given directory and returns the path where the binaries are stored.

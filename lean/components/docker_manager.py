@@ -81,7 +81,7 @@ class DockerManager:
         for chunk in container.logs(stream=True, follow=True):
             output += chunk.decode("utf-8")
             if not quiet:
-                self._logger.info(chunk, newline=False)
+                self._logger.info(chunk.decode("utf-8"), newline=False)
 
         # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
         if not quiet:

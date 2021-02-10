@@ -26,5 +26,5 @@ def backtest(project: Path, output: Optional[Path]) -> None:
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    backtest_runner = container.backtest_runner()
-    backtest_runner.run_backtest(algorithm_file, output)
+    lean_runner = container.lean_runner()
+    lean_runner.run_lean("backtesting", algorithm_file, output)

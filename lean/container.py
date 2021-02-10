@@ -1,10 +1,10 @@
 from dependency_injector import containers, providers
 
 from lean.components.api_client import APIClient
-from lean.components.backtest_runner import BacktestRunner
 from lean.components.cli_config_manager import CLIConfigManager
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
+from lean.components.lean_runner import LeanRunner
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
 from lean.components.storage import Storage
@@ -35,12 +35,12 @@ class Container(containers.DeclarativeContainer):
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 
-    backtest_runner = providers.Singleton(BacktestRunner,
-                                          logger=logger,
-                                          lean_config_manager=lean_config_manager,
-                                          docker_manager=docker_manager,
-                                          docker_image=Config.lean_engine_docker_image,
-                                          docker_tag=Config.lean_engine_docker_tag)
+    lean_runner = providers.Singleton(LeanRunner,
+                                      logger=logger,
+                                      lean_config_manager=lean_config_manager,
+                                      docker_manager=docker_manager,
+                                      docker_image=Config.lean_engine_docker_image,
+                                      docker_tag=Config.lean_engine_docker_tag)
 
 
 container = Container()
