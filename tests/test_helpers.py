@@ -5,7 +5,7 @@ from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NO
 
 
 def create_fake_lean_cli_project() -> None:
-    """Creates a directory structure similar to the one created by `lean init` with a Python and C# project."""
+    """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project."""
     (Path.cwd() / "data").mkdir()
 
     with open(Path.cwd() / "lean.json", "w+") as config_file:

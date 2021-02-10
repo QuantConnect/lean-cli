@@ -8,7 +8,7 @@ from lean.components.lean_config_manager import LeanConfigManager
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-def test_get_lean_config_path_should_return_closest_config_file() -> None:
+def test_get_lean_config_path_returns_closest_config_file() -> None:
     lean_config_path = Path.cwd() / "lean.json"
     cwd_path = Path.cwd() / "sub1" / "sub2" / "sub3"
 
@@ -21,21 +21,21 @@ def test_get_lean_config_path_should_return_closest_config_file() -> None:
     assert manager.get_lean_config_path() == lean_config_path
 
 
-def test_get_lean_config_path_should_raise_error_when_no_config_file_exists() -> None:
+def test_get_lean_config_path_raises_error_when_no_config_file_exists() -> None:
     manager = LeanConfigManager(mock.Mock(), "lean.json")
 
     with pytest.raises(Exception):
         manager.get_lean_config_path()
 
 
-def test_get_lean_config_path_should_return_default_path_if_set() -> None:
+def test_get_lean_config_path_returns_default_path_when_set() -> None:
     manager = LeanConfigManager(mock.Mock(), "lean.json")
     manager.set_default_lean_config_path(Path.cwd() / "custom-lean.json")
 
     assert manager.get_lean_config_path() == Path.cwd() / "custom-lean.json"
 
 
-def test_get_data_directory_should_return_path_to_data_directory_as_configured_in_config() -> None:
+def test_get_data_directory_returns_path_to_data_directory_as_configured_in_config() -> None:
     with (Path.cwd() / "lean.json").open("w+") as file:
         file.write('{ "data-folder": "sub1/sub2/sub3/data" }')
 
@@ -44,7 +44,7 @@ def test_get_data_directory_should_return_path_to_data_directory_as_configured_i
     assert manager.get_data_directory() == Path.cwd() / "sub1" / "sub2" / "sub3" / "data"
 
 
-def test_get_data_directory_should_return_path_to_data_directory_when_config_contains_comments() -> None:
+def test_get_data_directory_returns_path_to_data_directory_when_config_contains_comments() -> None:
     with (Path.cwd() / "lean.json").open("w+") as file:
         file.write("""
 {
@@ -162,7 +162,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     assert "// handlers" in clean_config
 
 
-def test_get_complete_lean_config_should_return_dict_with_all_keys_removed_in_clean_lean_config() -> None:
+def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_lean_config() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
@@ -175,7 +175,7 @@ def test_get_complete_lean_config_should_return_dict_with_all_keys_removed_in_cl
         assert key in config
 
 
-def test_get_complete_lean_config_should_set_environment() -> None:
+def test_get_complete_lean_config_sets_environment() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
@@ -184,7 +184,7 @@ def test_get_complete_lean_config_should_set_environment() -> None:
     assert config["environment"] == "my-environment"
 
 
-def test_get_complete_lean_config_should_disable_debugging_when_no_method_given() -> None:
+def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
@@ -193,7 +193,7 @@ def test_get_complete_lean_config_should_disable_debugging_when_no_method_given(
     assert not config["debugging"]
 
 
-def test_get_complete_lean_config_should_enable_debugging_when_method_given() -> None:
+def test_get_complete_lean_config_enables_debugging_when_method_given() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
@@ -205,7 +205,7 @@ def test_get_complete_lean_config_should_enable_debugging_when_method_given() ->
     assert config["debugging-method"] == "my-debug-method"
 
 
-def test_get_complete_lean_config_should_set_credentials_from_cli_config_manager() -> None:
+def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> None:
     create_fake_lean_cli_project()
 
     cli_config_manager = mock.Mock()
@@ -221,7 +221,7 @@ def test_get_complete_lean_config_should_set_credentials_from_cli_config_manager
     assert config["api-access-token"] == "456"
 
 
-def test_get_complete_lean_config_should_set_python_algorithm_details() -> None:
+def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
@@ -232,7 +232,7 @@ def test_get_complete_lean_config_should_set_python_algorithm_details() -> None:
     assert config["algorithm-location"] == "../../../../Project/main.py"
 
 
-def test_get_complete_lean_config_should_set_csharp_algorithm_details() -> None:
+def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")

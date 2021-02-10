@@ -6,7 +6,6 @@ class Config:
 
     Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
     """
-
     # The file in which general CLI configuration is stored
     general_config_file = str(Path("~/.lean/credentials").expanduser())
 

@@ -7,7 +7,7 @@ from lean.commands import lean
 from lean.container import container
 
 
-def test_login_should_log_in_with_options_when_given() -> None:
+def test_login_logs_in_with_options_when_given() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
     container.api_client.override(providers.Object(api_client))
@@ -20,7 +20,7 @@ def test_login_should_log_in_with_options_when_given() -> None:
     assert container.cli_config_manager().api_token.get_value() == "456"
 
 
-def test_login_should_prompt_when_user_id_not_given() -> None:
+def test_login_prompts_when_user_id_not_given() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
     container.api_client.override(providers.Object(api_client))
@@ -34,7 +34,7 @@ def test_login_should_prompt_when_user_id_not_given() -> None:
     assert container.cli_config_manager().api_token.get_value() == "456"
 
 
-def test_login_should_prompt_when_api_token_not_given() -> None:
+def test_login_prompts_when_api_token_not_given() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
     container.api_client.override(providers.Object(api_client))
@@ -48,7 +48,7 @@ def test_login_should_prompt_when_api_token_not_given() -> None:
     assert container.cli_config_manager().api_token.get_value() == "456"
 
 
-def test_login_should_abort_when_credentials_are_invalid() -> None:
+def test_login_aborts_when_credentials_are_invalid() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = False
     container.api_client.override(providers.Object(api_client))

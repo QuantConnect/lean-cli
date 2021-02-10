@@ -28,8 +28,6 @@ To work on the Lean CLI, clone the repository, enter an environment containing P
 
 If you need to add dependencies, first update `setup.py` (if it is a production dependency) or `requirements.txt` (if it is a development dependency) and then re-run `pip install -r requirements.txt`.
 
-The automated tests can be ran by running `pytest`. Commands are tested with integration tests (because the most important thing a command does is combining different components into a usable unit), where-as individual components like the logger are tested with unit tests.
-
-To ensure tests run quickly and to make them easier to write the filesystem and http requests are mocked before each test.
+The automated tests can be ran by running `pytest`. Commands are tested with integration tests because their main job is to combine different components into a usable unit, where-as individual components are tested with unit tests.
 
 Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".

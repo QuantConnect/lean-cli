@@ -9,13 +9,13 @@ from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-def test_backtest_should_call_lean_runner_to_backtest_given_algorithm_file() -> None:
+def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
@@ -25,13 +25,13 @@ def test_backtest_should_call_lean_runner_to_backtest_given_algorithm_file() -> 
                                                  version=None)
 
 
-def test_backtest_should_run_backtest_with_default_output_directory() -> None:
+def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
@@ -42,25 +42,24 @@ def test_backtest_should_run_backtest_with_default_output_directory() -> None:
     args[2].relative_to(Path("Python Project/backtests").resolve())
 
 
-def test_backtest_should_run_backtest_with_custom_output_directory() -> None:
+def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean,
-                                ["backtest", "Python Project/main.py", "--output", "Python Project/custom-backtests"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom-backtests"])
 
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once()
     args, _ = lean_runner.run_lean.call_args
 
-    # This will raise an error if the output directory is not relative to Python Project/backtests
+    # This will raise an error if the output directory is not relative to Python Project/custom-backtests
     args[2].relative_to(Path("Python Project/custom-backtests").resolve())
 
 
-def test_backtest_should_abort_when_project_does_not_exist() -> None:
+def test_backtest_aborts_when_project_does_not_exist() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
@@ -73,7 +72,7 @@ def test_backtest_should_abort_when_project_does_not_exist() -> None:
     lean_runner.run_lean.assert_not_called()
 
 
-def test_backtest_should_abort_when_project_does_not_contain_algorithm_file() -> None:
+def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
@@ -86,13 +85,13 @@ def test_backtest_should_abort_when_project_does_not_contain_algorithm_file() ->
     lean_runner.run_lean.assert_not_called()
 
 
-def test_backtest_should_force_update_when_update_option_given() -> None:
+def test_backtest_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--update"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--update"])
 
     assert result.exit_code == 0
 
@@ -103,13 +102,13 @@ def test_backtest_should_force_update_when_update_option_given() -> None:
                                                  version=None)
 
 
-def test_backtest_should_pass_version_on_to_lean_runner() -> None:
+def test_backtest_passes_version_to_lean_runner() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--version", "3"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--version", "3"])
 
     assert result.exit_code == 0
 

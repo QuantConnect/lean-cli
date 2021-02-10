@@ -38,7 +38,7 @@ def create_fake_archive(requests_mock: RequestsMock) -> None:
         requests_mock.add(requests_mock.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
 
 
-def test_init_should_abort_when_config_file_already_exists() -> None:
+def test_init_aborts_when_config_file_already_exists() -> None:
     (Path.cwd() / Config.default_lean_config_file_name).touch()
 
     result = CliRunner().invoke(lean, ["init"])
@@ -46,7 +46,7 @@ def test_init_should_abort_when_config_file_already_exists() -> None:
     assert result.exit_code != 0
 
 
-def test_init_should_abort_when_data_directory_already_exists() -> None:
+def test_init_aborts_when_data_directory_already_exists() -> None:
     (Path.cwd() / Config.default_data_directory_name).mkdir()
 
     runner = CliRunner()
@@ -55,7 +55,7 @@ def test_init_should_abort_when_data_directory_already_exists() -> None:
     assert result.exit_code != 0
 
 
-def test_init_should_prompt_for_confirmation_when_directory_not_empty() -> None:
+def test_init_prompts_for_confirmation_when_directory_not_empty() -> None:
     (Path.cwd() / "my-custom-file.txt").touch()
 
     result = CliRunner().invoke(lean, ["init"], input="n\n")
@@ -64,7 +64,7 @@ def test_init_should_prompt_for_confirmation_when_directory_not_empty() -> None:
     assert "continue?" in result.output
 
 
-def test_init_should_prompt_for_default_language_when_not_set_yet() -> None:
+def test_init_prompts_for_default_language_when_not_set_yet() -> None:
     runner = CliRunner()
     result = runner.invoke(lean, ["init"], input="csharp\n")
 
@@ -73,7 +73,7 @@ def test_init_should_prompt_for_default_language_when_not_set_yet() -> None:
     assert container.cli_config_manager().default_language.get_value() == "csharp"
 
 
-def test_init_should_create_data_directory_from_repo() -> None:
+def test_init_creates_data_directory_from_repo() -> None:
     runner = CliRunner()
     result = runner.invoke(lean, ["init"], input="csharp\n")
 
@@ -86,7 +86,7 @@ def test_init_should_create_data_directory_from_repo() -> None:
         assert readme_file.read() == "# This is just a test"
 
 
-def test_init_should_create_clean_config_file_from_repo() -> None:
+def test_init_creates_clean_config_file_from_repo() -> None:
     runner = CliRunner()
     result = runner.invoke(lean, ["init"], input="csharp\n")
 
