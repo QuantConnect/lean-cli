@@ -132,9 +132,11 @@ class LeanConfigManager:
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
 
         if algorithm_file.name.endswith(".py"):
+            lean_cli_project_root = self.get_lean_config_path().parent
+
             config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
             config["algorithm-language"] = "Python"
-            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.relative_to(self.get_lean_config_path().parent)}"
+            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.relative_to(lean_cli_project_root).as_posix()}"
         else:
             algorithm_text = algorithm_file.read_text()
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
