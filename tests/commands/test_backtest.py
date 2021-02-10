@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
@@ -22,7 +23,8 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 version=None)
+                                                 "latest",
+                                                 None)
 
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
@@ -99,10 +101,11 @@ def test_backtest_forces_update_when_update_option_given() -> None:
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 version=None)
+                                                 "latest",
+                                                 None)
 
 
-def test_backtest_passes_version_to_lean_runner() -> None:
+def test_backtest_passes_custom_version_to_lean_runner() -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
@@ -115,4 +118,28 @@ def test_backtest_passes_version_to_lean_runner() -> None:
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 version=3)
+                                                 "3",
+                                                 None)
+
+
+@pytest.mark.parametrize("editor,debug_method", [("pycharm", "PyCharm"),
+                                                 ("PyCharm", "PyCharm"),
+                                                 ("vs", "VisualStudio"),
+                                                 ("VS", "VisualStudio"),
+                                                 ("vscode", "PTVSD"),
+                                                 ("VSCode", "PTVSD")])
+def test_backtest_passes_correct_debug_method_to_lean_runner(editor: str, debug_method: str) -> None:
+    create_fake_lean_cli_project()
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", editor])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 "latest",
+                                                 debug_method)

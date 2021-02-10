@@ -166,7 +166,7 @@ def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_le
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py")
+    config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py", None)
 
     for key in ["environment",
                 "algorithm-type-name", "algorithm-language", "algorithm-location",
@@ -179,16 +179,25 @@ def test_get_complete_lean_config_sets_environment() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["environment"] == "my-environment"
+
+
+def test_get_complete_lean_config_sets_close_automatically() -> None:
+    create_fake_lean_cli_project()
+
+    manager = LeanConfigManager(mock.Mock(), "lean.json")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+
+    assert config["close-automatically"]
 
 
 def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert not config["debugging"]
 
@@ -199,7 +208,7 @@ def test_get_complete_lean_config_enables_debugging_when_method_given() -> None:
     manager = LeanConfigManager(mock.Mock(), "lean.json")
     config = manager.get_complete_lean_config("my-environment",
                                               Path.cwd() / "Python Project" / "main.py",
-                                              debugging_method="my-debug-method")
+                                              "my-debug-method")
 
     assert config["debugging"]
     assert config["debugging-method"] == "my-debug-method"
@@ -225,7 +234,7 @@ def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["algorithm-type-name"] == "main"
     assert config["algorithm-language"] == "Python"
@@ -236,7 +245,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "CSharp Project" / "Main.cs")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "CSharp Project" / "Main.cs", None)
 
     assert config["algorithm-type-name"] == "CSharpProject"
     assert config["algorithm-language"] == "CSharp"

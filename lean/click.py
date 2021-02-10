@@ -35,6 +35,10 @@ class LeanCommand(click.Command):
 
         super().__init__(*args, **kwargs)
 
+        # By default the width of help messages is min(terminal_width, max_terminal_width)
+        # max_terminal_width defaults to 80, which we increase to 120 to improve readability on wide terminals
+        self.context_settings["max_content_width"] = 120
+
     def get_params(self, ctx):
         params = super().get_params(ctx)
 

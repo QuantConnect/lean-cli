@@ -93,6 +93,17 @@ def test_api_client_raises_authentication_error_on_http_500(method: str, request
 
 
 @pytest.mark.parametrize("method", [("get"), ("post")])
+def test_api_client_raises_request_failed_error_on_failing_response_non_http_500(method: str,
+                                                                                 requests_mock: RequestsMock) -> None:
+    requests_mock.add(method.upper(), BASE_URL + "/endpoint", status=404)
+
+    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+
+    with pytest.raises(RequestFailedError):
+        getattr(api, method)("endpoint")
+
+
+@pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_raises_authentication_error_on_error_complaining_about_hash(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), BASE_URL + "/endpoint",

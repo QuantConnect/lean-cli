@@ -21,8 +21,5 @@ class Config:
     # The Docker image used when running the LEAN engine locally
     lean_engine_docker_image = "quantconnect/lean"
 
-    # The tag of the Docker image used when running the LEAN engine locally
-    lean_engine_docker_tag = "latest"
-
     # The base url of the QuantConnect API
     api_base_url = "https://www.quantconnect.com/api/v2"

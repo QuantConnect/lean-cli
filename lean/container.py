@@ -39,8 +39,7 @@ class Container(containers.DeclarativeContainer):
                                       logger=logger,
                                       lean_config_manager=lean_config_manager,
                                       docker_manager=docker_manager,
-                                      docker_image=Config.lean_engine_docker_image,
-                                      docker_tag=Config.lean_engine_docker_tag)
+                                      docker_image=Config.lean_engine_docker_image)
 
 
 container = Container()

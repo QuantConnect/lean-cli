@@ -106,7 +106,7 @@ class LeanConfigManager:
     def get_complete_lean_config(self,
                                  environment: str,
                                  algorithm_file: Path,
-                                 debugging_method: Optional[str] = None) -> Dict[str, Any]:
+                                 debugging_method: Optional[str]) -> Dict[str, Any]:
         """Returns a complete Lean config object containing all properties needed for the engine to run.
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
@@ -121,6 +121,7 @@ class LeanConfigManager:
         config = self._read_lean_config()
 
         config["environment"] = environment
+        config["close-automatically"] = True
 
         config["composer-dll-directory"] = "."
 

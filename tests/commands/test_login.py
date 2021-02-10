@@ -56,3 +56,6 @@ def test_login_aborts_when_credentials_are_invalid() -> None:
     result = CliRunner().invoke(lean, ["login", "--user-id", "123", "--api-token", "456"])
 
     assert result.exit_code != 0
+
+    assert container.cli_config_manager().user_id.get_value() is None
+    assert container.cli_config_manager().api_token.get_value() is None

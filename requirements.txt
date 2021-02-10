@@ -5,6 +5,5 @@
 
 wheel
 pytest==6.2.2
-pytest-cov==2.11.1
 pyfakefs==4.3.3
 responses==0.12.1

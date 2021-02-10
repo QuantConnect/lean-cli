@@ -9,11 +9,11 @@ def create_fake_lean_cli_project() -> None:
     (Path.cwd() / "data").mkdir()
 
     with open(Path.cwd() / "lean.json", "w+") as config_file:
-        config_file.write(f"""
-{{
+        config_file.write("""
+{
     // data-folder documentation
     "data-folder": "data"
-}}
+}
         """)
 
     files = {

@@ -19,29 +19,32 @@ class LeanRunner:
                  logger: Logger,
                  lean_config_manager: LeanConfigManager,
                  docker_manager: DockerManager,
-                 docker_image: str,
-                 docker_tag: str) -> None:
+                 docker_image: str) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param docker_image: the Docker image containing the LEAN engine
-        :param docker_tag: the default tag of the image to run
         """
         self._logger = logger
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
         self._docker_image = docker_image
-        self._docker_tag = docker_tag
 
-    def run_lean(self, environment: str, algorithm_file: Path, output_dir: Path, version: Optional[int] = None) -> None:
+    def run_lean(self,
+                 environment: str,
+                 algorithm_file: Path,
+                 output_dir: Path,
+                 version: str,
+                 debugging_method: Optional[str]) -> None:
         """Runs the LEAN engine locally in Docker.
 
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
-        :param version: The LEAN version to run
+        :param version: the LEAN engine version to run
+        :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         """
         project_dir = algorithm_file.parent
 
@@ -50,7 +53,9 @@ class LeanRunner:
             output_dir.mkdir(parents=True)
 
         # Create a file containing the complete Lean configuration
-        config = self._lean_config_manager.get_complete_lean_config(environment, algorithm_file)
+        config = self._lean_config_manager.get_complete_lean_config(environment,
+                                                                    algorithm_file,
+                                                                    debugging_method)
         config_path = Path(tempfile.mkdtemp()) / "config.json"
         with config_path.open("w+") as file:
             file.write(json.dumps(config, indent=4))
@@ -96,7 +101,7 @@ class LeanRunner:
             }
         else:
             # C# projects need to be compiled before they can be mounted
-            csharp_binaries_dir = self._compile_csharp_project(project_dir)
+            csharp_binaries_dir = self._compile_csharp_project(project_dir, version)
 
             for extension in ["dll", "pdb"]:
                 run_options["mounts"].append(
@@ -107,7 +112,7 @@ class LeanRunner:
         # Run the engine and log the result
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
         success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version or self._docker_tag,
+                                                    version,
                                                     command,
                                                     quiet=False,
                                                     **run_options)
@@ -125,12 +130,13 @@ class LeanRunner:
 
     def force_update(self) -> None:
         """Pulls the latest version of the Docker image containing the LEAN engine."""
-        self._docker_manager.pull_image(self._docker_image, self._docker_tag)
+        self._docker_manager.pull_image(self._docker_image, "latest")
 
-    def _compile_csharp_project(self, project_dir: Path) -> Path:
+    def _compile_csharp_project(self, project_dir: Path, version: str) -> Path:
         """Compiles the C# project in the given directory and returns the path where the binaries are stored.
 
         :param project_dir: the path to the directory containing C# files that need to be compiled
+        :param version: the LEAN version to compile against
         :return: the path to the directory containing the QuantConnect.Algorithm.CSharp.{dll,pdb} files
         """
         self._logger.info(f"Compiling the C# files in '{project_dir}'")
@@ -143,7 +149,7 @@ class LeanRunner:
 
         # Get a list of all dll's in the docker image
         _, output = self._docker_manager.run_image(self._docker_image,
-                                                   self._docker_tag,
+                                                   version,
                                                    "-c ls",
                                                    quiet=True,
                                                    entrypoint="bash")
@@ -189,7 +195,7 @@ class LeanRunner:
         }
 
         success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    self._docker_tag,
+                                                    version,
                                                     "restore /Project/Project.csproj",
                                                     quiet=False,
                                                     entrypoint="nuget",
@@ -199,7 +205,7 @@ class LeanRunner:
             raise RuntimeError("Something went wrong while compiling your project")
 
         success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    self._docker_tag,
+                                                    version,
                                                     "/Project/Project.csproj",
                                                     quiet=False,
                                                     entrypoint="msbuild",

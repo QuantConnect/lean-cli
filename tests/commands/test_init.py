@@ -7,7 +7,6 @@ from click.testing import CliRunner
 from responses import RequestsMock
 
 from lean.commands import lean
-from lean.config import Config
 from lean.container import container
 
 
@@ -39,7 +38,7 @@ def create_fake_archive(requests_mock: RequestsMock) -> None:
 
 
 def test_init_aborts_when_config_file_already_exists() -> None:
-    (Path.cwd() / Config.default_lean_config_file_name).touch()
+    (Path.cwd() / "lean.json").touch()
 
     result = CliRunner().invoke(lean, ["init"])
 
@@ -47,7 +46,7 @@ def test_init_aborts_when_config_file_already_exists() -> None:
 
 
 def test_init_aborts_when_data_directory_already_exists() -> None:
-    (Path.cwd() / Config.default_data_directory_name).mkdir()
+    (Path.cwd() / "data").mkdir()
 
     runner = CliRunner()
     result = runner.invoke(lean, ["init"])
@@ -79,7 +78,7 @@ def test_init_creates_data_directory_from_repo() -> None:
 
     assert result.exit_code == 0
 
-    readme_path = Path.cwd() / Config.default_data_directory_name / "equity" / "readme.md"
+    readme_path = Path.cwd() / "data" / "equity" / "readme.md"
     assert readme_path.exists()
 
     with open(readme_path) as readme_file:
@@ -92,7 +91,7 @@ def test_init_creates_clean_config_file_from_repo() -> None:
 
     assert result.exit_code == 0
 
-    config_path = Path.cwd() / Config.default_lean_config_file_name
+    config_path = Path.cwd() / "lean.json"
     assert config_path.exists()
     assert config_path.read_text() == """
 {
