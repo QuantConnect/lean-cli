@@ -92,9 +92,10 @@ class LeanRunner:
 
         # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
-            run_options["volumes"][str(project_dir)] = {
-                "bind": "/Project",
-                "mode": "rw"
+            # To get Python debugging to work correctly we need to mount all Lean CLI projects
+            run_options["volumes"][str(self._lean_config_manager.get_lean_config_path().parent)] = {
+                "bind": "/LeanCLI",
+                "mode": "ro"
             }
         else:
             # C# projects need to be compiled before they can be mounted
@@ -180,7 +181,7 @@ class LeanRunner:
         """.strip() for dll in dlls]
         references = "\n".join(references)
 
-        with (compile_dir / "Project.csproj").open("w+") as file:
+        with (compile_dir / "LeanCLI.csproj").open("w+") as file:
             file.write(f"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
@@ -205,14 +206,14 @@ class LeanRunner:
         # Compile the project in a Docker container
         volumes = {
             str(compile_dir): {
-                "bind": "/Project",
+                "bind": "/LeanCLI",
                 "mode": "rw"
             }
         }
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "restore /Project/Project.csproj",
+                                                    "restore /LeanCLI/LeanCLI.csproj",
                                                     quiet=False,
                                                     entrypoint="nuget",
                                                     volumes=volumes)
@@ -222,7 +223,7 @@ class LeanRunner:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "/Project/Project.csproj",
+                                                    "/LeanCLI/LeanCLI.csproj",
                                                     quiet=False,
                                                     entrypoint="msbuild",
                                                     volumes=volumes)

@@ -56,6 +56,8 @@ To debug backtests some additional setup is needed depending on the editor and l
 5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
 
 ### VS Code + C#
+TBD: Not working yet
+
 1. Install version 15.8 of the [Mono Debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension. You can do this by first installing the latest version and then clicking on the arrow button next to the Uninstall button, which will open a context menu containing the "Install Another Version" option.
 2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
 ```json5
@@ -77,11 +79,16 @@ To debug backtests some additional setup is needed depending on the editor and l
 5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
 
 ### PyCharm + Python
-*Note: Remote debugging requires PyCharm Professional.*
+*Note: This combination requires PyCharm Professional.*
 
-TBD
+1. Create a new run configuration of type "Python Debug Server" with "IDE host name" set to "localhost", "Port" set to "6000" and add a path mapping where "Local path" is set to the absolute path to the directory containing your lean.json file and "Remote path" is set to "/LeanCLI".
+2. Start the debugger in PyCharm using the run configuration from step 1.
+3. Run the `lean backtest` command with the `--debug pycharm` option.
 
 ### Visual Studio + C#
+TBD
+
+### Rider + C#
 TBD
 
 ## Development

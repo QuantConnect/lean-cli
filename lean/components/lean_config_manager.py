@@ -134,7 +134,7 @@ class LeanConfigManager:
         if algorithm_file.name.endswith(".py"):
             config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
             config["algorithm-language"] = "Python"
-            config["algorithm-location"] = f"../../../../Project/{algorithm_file.name}"
+            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.relative_to(self.get_lean_config_path().parent)}"
         else:
             algorithm_text = algorithm_file.read_text()
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
