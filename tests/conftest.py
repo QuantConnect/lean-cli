@@ -6,12 +6,10 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
 
 from lean.container import container
-from tests.test_helpers import MockContainer, MockedContainer
 
 
 # conftest.py is ran by pytest before loading each testing module
 # Fixtures defined in here are therefore available in all testing modules
-
 
 @pytest.fixture(autouse=True)
 def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
@@ -39,17 +37,10 @@ def requests_mock() -> RequestsMock:
         yield mock
 
 
-@pytest.fixture()
-def mock_container() -> MockContainer:
-    """A pytest fixture which overrides the container with a MockContainer instance."""
-    mocked_container = MockedContainer()
-    container.override(mocked_container)
-
-    yield MockContainer
+@pytest.fixture(autouse=True)
+def reset_container_overrides() -> None:
+    """A pytest fixture which makes sure all container and provider overrides are reset before each test."""
+    for provider in container.traverse():
+        provider.reset_override()
 
     container.reset_override()
-
-    # Reset all mocks
-    for name, value in vars(MockContainer).items():
-        if "_mock" in name:
-            value.reset_mock()

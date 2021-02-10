@@ -3,7 +3,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from lean.commands import lean
-from tests.test_helpers import MockContainer
+from lean.container import container
 
 
 def assert_python_project_exists() -> None:
@@ -34,7 +34,7 @@ def assert_csharp_project_exists() -> None:
         assert '"language": "csharp"' in file.read()
 
 
-def test_create_project_should_create_python_project_when_language_python(mock_container: MockContainer) -> None:
+def test_create_project_should_create_python_project_when_language_python() -> None:
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
 
     assert result.exit_code == 0
@@ -42,7 +42,7 @@ def test_create_project_should_create_python_project_when_language_python(mock_c
     assert_python_project_exists()
 
 
-def test_create_project_should_create_csharp_project_when_language_csharp(mock_container: MockContainer) -> None:
+def test_create_project_should_create_csharp_project_when_language_csharp() -> None:
     result = CliRunner().invoke(lean, ["create-project", "--language", "csharp", "My First Project"])
 
     assert result.exit_code == 0
@@ -50,9 +50,8 @@ def test_create_project_should_create_csharp_project_when_language_csharp(mock_c
     assert_csharp_project_exists()
 
 
-def test_create_project_should_create_python_project_when_default_language_set_to_python(
-        mock_container: MockContainer) -> None:
-    mock_container.cli_config_manager_mock.default_language.get_value.return_value = "python"
+def test_create_project_should_create_python_project_when_default_language_set_to_python() -> None:
+    container.cli_config_manager().default_language.set_value("python")
 
     result = CliRunner().invoke(lean, ["create-project", "My First Project"])
 
@@ -61,16 +60,13 @@ def test_create_project_should_create_python_project_when_default_language_set_t
     assert_python_project_exists()
 
 
-def test_create_project_should_fail_when_default_language_not_set_and_language_not_given(
-        mock_container: MockContainer) -> None:
-    mock_container.cli_config_manager_mock.default_language.get_value.return_value = None
-
+def test_create_project_should_fail_when_default_language_not_set_and_language_not_given() -> None:
     result = CliRunner().invoke(lean, ["create-project", "My First Project"])
 
     assert result.exit_code != 0
 
 
-def test_create_project_should_abort_when_project_already_exists(mock_container: MockContainer) -> None:
+def test_create_project_should_abort_when_project_already_exists() -> None:
     (Path.cwd() / "My First Project").mkdir()
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
@@ -78,8 +74,9 @@ def test_create_project_should_abort_when_project_already_exists(mock_container:
     assert result.exit_code != 0
 
 
-def test_create_project_should_create_subdirectories(mock_container: MockContainer) -> None:
+def test_create_project_should_create_subdirectories() -> None:
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Category/My First Project"])
 
     assert result.exit_code == 0
+
     assert (Path.cwd() / "My First Category" / "My First Project").exists()
