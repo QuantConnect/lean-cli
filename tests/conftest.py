@@ -25,7 +25,9 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     os.chdir(Path.home() / "testing")
 
     # Proxy access to site-packages to the real filesystem
-    fs.add_real_paths(site.getsitepackages())
+    for path in site.getsitepackages():
+        if Path(path).exists():
+            fs.add_real_directory(path)
 
     # Make sure the container uses fresh singletons so Path instances are recreated
     container.reset_singletons()
