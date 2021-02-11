@@ -125,6 +125,9 @@ def init() -> None:
     config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text()
     config = lean_config_manager.clean_lean_config(config)
 
+    # Update the data-folder configuration
+    config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{Config.default_data_directory_name}"')
+
     with lean_config_path.open("w+") as file:
         file.write(config)
 
