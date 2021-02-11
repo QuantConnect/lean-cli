@@ -141,7 +141,7 @@ class LeanConfigManager:
             algorithm_text = algorithm_file.read_text()
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
-            config["algorithm-location"] = "QuantConnect.Algorithm.CSharp.dll"
+            config["algorithm-location"] = "LeanCLI.dll"
 
         return config
 

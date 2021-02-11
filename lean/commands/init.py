@@ -28,8 +28,6 @@ on the page above, you can add a PackageReference for it.
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <RootNamespace>QuantConnect.Algorithm.CSharp</RootNamespace>
-        <AssemblyName>QuantConnect.Algorithm.CSharp</AssemblyName>
         <TargetFramework>net462</TargetFramework>
         <LangVersion>6</LangVersion>
         <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -199,9 +197,9 @@ def init() -> None:
 
     # Create files which make debugging and autocompletion possible
     extra_files = {
-        "QuantConnect.Algorithm.CSharp.csproj": CSPROJ,
+        "LeanCLI.csproj": CSPROJ,
         ".idea/workspace.xml": PYCHARM_WORKSPACE_XML,
-        ".idea/.idea.QuantConnect.Algorithm.CSharp.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
+        ".idea/.idea.LeanCLI.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
         ".vscode/launch.json": VSCODE_LAUNCH_JSON
     }
 

@@ -104,8 +104,8 @@ class LeanRunner:
 
             for extension in ["dll", "pdb"]:
                 run_options["mounts"].append(
-                    Mount(target=f"/Lean/Launcher/bin/Debug/QuantConnect.Algorithm.CSharp.{extension}",
-                          source=str(csharp_binaries_dir / f"QuantConnect.Algorithm.CSharp.{extension}"),
+                    Mount(target=f"/Lean/Launcher/bin/Debug/LeanCLI.{extension}",
+                          source=str(csharp_binaries_dir / f"LeanCLI.{extension}"),
                           type="bind"))
 
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
@@ -154,7 +154,7 @@ class LeanRunner:
         """Compiles the C# code in the Lean CLI project and returns the path where the binaries are stored.
 
         :param version: the LEAN version to compile against
-        :return: the path to the directory containing the QuantConnect.Algorithm.CSharp.{dll,pdb} files
+        :return: the path to the directory containing the LeanCLI.{dll,pdb} files
         """
         cli_root_dir = self._lean_config_manager.get_lean_config_path().parent
         self._logger.info(f"Compiling all C# files in '{cli_root_dir}'")
@@ -189,14 +189,12 @@ class LeanRunner:
         """.strip() for dll in dlls]
         references = "\n".join(references)
 
-        with (compile_dir / "QuantConnect.Algorithm.CSharp.csproj").open("w+") as file:
+        with (compile_dir / "LeanCLI.csproj").open("w+") as file:
             file.write(f"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <RootNamespace>QuantConnect.Algorithm.CSharp</RootNamespace>
-        <AssemblyName>QuantConnect.Algorithm.CSharp</AssemblyName>
         <TargetFramework>net462</TargetFramework>
         <LangVersion>6</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -222,7 +220,7 @@ class LeanRunner:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "restore /LeanCLI/QuantConnect.Algorithm.CSharp.csproj",
+                                                    "restore /LeanCLI/LeanCLI.csproj",
                                                     quiet=False,
                                                     entrypoint="nuget",
                                                     volumes=volumes)
@@ -232,7 +230,7 @@ class LeanRunner:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "/LeanCLI/QuantConnect.Algorithm.CSharp.csproj",
+                                                    "/LeanCLI/LeanCLI.csproj",
                                                     quiet=False,
                                                     entrypoint="msbuild",
                                                     volumes=volumes)
@@ -240,10 +238,10 @@ class LeanRunner:
         if not success:
             raise RuntimeError("Something went wrong while compiling your project")
 
-        # Copy the generated QuantConnect.Algorithm.CSharp.dll file to the user's CLI project
-        # This is required for debugging to work with Visual Studio
-        compiled_dll = compile_dir / "bin" / "Debug" / "QuantConnect.Algorithm.CSharp.dll"
-        local_path = cli_root_dir / "bin" / "Debug" / "QuantConnect.Algorithm.CSharp.dll"
+        # Copy the generated LeanCLI.dll file to the user's CLI project
+        # This is required for C# debugging to work with Visual Studio and Visual Studio Code
+        compiled_dll = compile_dir / "bin" / "Debug" / "LeanCLI.dll"
+        local_path = cli_root_dir / "bin" / "Debug" / "LeanCLI.dll"
         local_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(compiled_dll, local_path)
 

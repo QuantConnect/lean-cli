@@ -249,4 +249,4 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
 
     assert config["algorithm-type-name"] == "CSharpProject"
     assert config["algorithm-language"] == "CSharp"
-    assert config["algorithm-location"] == "QuantConnect.Algorithm.CSharp.dll"
+    assert config["algorithm-location"] == "LeanCLI.dll"
