@@ -28,17 +28,9 @@ To debug backtests some additional setup is needed depending on the editor and l
 
 ### VS Code + Python
 1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
-2. Run the `lean backtest` command with the `--debug mono` option.
-3. Wait until the CLI tells you to attach to the debugger.
-4. In VS Code, open the Run tab and run the configuration called "Debug Python with Lean CLI" (this configuration is created when you run `lean init`).
-
-### VS Code + C#
-TBD: Not working yet
-
-1. Install version 15.8 of the [Mono Debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension. You can do this by first installing the latest version and then clicking on the arrow button next to the Uninstall button, which will open a context menu containing the "Install Another Version" option.
 2. Run the `lean backtest` command with the `--debug ptvsd` option.
 3. Wait until the CLI tells you to attach to the debugger.
-4. In VS Code, open the Run tab and run the configuration called "Debug C# with Lean CLI" (this configuration is created when you run `lean init`).
+4. In VS Code, open the Run tab and run the configuration called "Debug Python with Lean CLI" (this configuration is created when you run `lean init`).
 
 ### PyCharm + Python
 *Note: This combination requires PyCharm Professional.*
@@ -48,6 +40,11 @@ TBD: Not working yet
 
 ### Visual Studio + C#
 TBD
+
+### Rider + C#
+1. Run the `lean backtest` command with the `--debug mono` option.
+2. Wait until the CLI tells you to attach to the debugger.
+3. In Rider, start debugging using the "Debug with Lean CLI" run configuration (this configuration is created when you run `lean init`).
 
 ## Development
 

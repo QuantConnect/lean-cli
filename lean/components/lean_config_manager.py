@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from jsoncomment import JsonComment
 
 from lean.components.cli_config_manager import CLIConfigManager
+from lean.models.config import DebuggingMethod
 
 
 class LeanConfigManager:
@@ -106,7 +107,7 @@ class LeanConfigManager:
     def get_complete_lean_config(self,
                                  environment: str,
                                  algorithm_file: Path,
-                                 debugging_method: Optional[str]) -> Dict[str, Any]:
+                                 debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
         """Returns a complete Lean config object containing all properties needed for the engine to run.
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
@@ -125,7 +126,7 @@ class LeanConfigManager:
         config["composer-dll-directory"] = "."
 
         config["debugging"] = debugging_method is not None
-        config["debugging-method"] = debugging_method or "LocalCmdline"
+        config["debugging-method"] = debugging_method.value if debugging_method is not None else "LocalCmdline"
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")

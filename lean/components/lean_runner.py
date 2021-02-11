@@ -10,6 +10,7 @@ from docker.types import Mount
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
+from lean.models.config import DebuggingMethod
 
 
 class LeanRunner:
@@ -37,7 +38,7 @@ class LeanRunner:
                  algorithm_file: Path,
                  output_dir: Path,
                  version: str,
-                 debugging_method: Optional[str]) -> None:
+                 debugging_method: Optional[DebuggingMethod]) -> None:
         """Runs the LEAN engine locally in Docker.
 
         :param environment: the environment to run the algorithm in
@@ -110,11 +111,11 @@ class LeanRunner:
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
 
         # Set up PTVSD debugging
-        if debugging_method == "PTVSD":
+        if debugging_method == DebuggingMethod.PTVSD:
             run_options["ports"]["5678"] = "5678"
 
         # Set up Mono debugging
-        if debugging_method == "VisualStudio":
+        if debugging_method == DebuggingMethod.Mono:
             run_options["ports"]["55555"] = "55555"
             run_options["entrypoint"] = "mono"
 
@@ -161,8 +162,10 @@ class LeanRunner:
         # Create a temporary directory used for compiling the C# project
         compile_dir = Path(tempfile.mkdtemp())
 
+        cli_project_dir = self._lean_config_manager.get_lean_config_path().parent
+
         # Copy all project files to the temporary directory
-        dir_util.copy_tree(str(project_dir), str(compile_dir))
+        dir_util.copy_tree(str(cli_project_dir), str(compile_dir))
 
         # Get a list of all dll's in the docker image
         _, output = self._docker_manager.run_image(self._docker_image,
@@ -196,6 +199,7 @@ class LeanRunner:
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+        <PathMap>/LeanCLI={str(cli_project_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>
         {references}

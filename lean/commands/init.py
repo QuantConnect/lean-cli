@@ -11,16 +11,29 @@ from lean.config import Config
 from lean.container import container
 
 CSPROJ = """
+<!--
+This file exists to make C# autocompletion work.
+
+Custom libraries added in this file won't be used when compiling your code.
+When using the Lean CLI to run algorithms, this csproj file is overwritten
+to make your code compile against all the DLLs in the QuantConnect/Lean
+Docker container. This container contains the following libraries besides
+the System.* and QuantConnect.* libraries:
+https://www.quantconnect.com/docs/key-concepts/supported-libraries
+
+If you want to get autocompletion to work for any of the C# libraries listed
+on the page above, you can add a PackageReference for it.
+-->
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net462</TargetFramework>
+        <LangVersion>6</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-      <PackageReference Include="QuantConnect.Lean" Version="2.4.10544" />
+        <PackageReference Include="QuantConnect.Lean" Version="*"/>
     </ItemGroup>
 </Project>
-"""
+""".strip() + "\n"
 
 IDEA_WORKSPACE_XML = """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -46,7 +59,7 @@ IDEA_WORKSPACE_XML = """
     </list>
   </component>
 </project>
-"""
+""".strip() + "\n"
 
 VSCODE_LAUNCH_JSON = """
 {
@@ -76,7 +89,7 @@ VSCODE_LAUNCH_JSON = """
         }
     ]
 }
-"""
+""".strip() + "\n"
 
 
 @click.command(cls=LeanCommand)

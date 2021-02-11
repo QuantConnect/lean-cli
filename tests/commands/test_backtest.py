@@ -7,6 +7,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
+from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_project
 
 
@@ -122,26 +123,24 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
                                                  None)
 
 
-@pytest.mark.parametrize("project,editor,debug_method", [("Python Project/main.py", "pycharm", "PyCharm"),
-                                                         ("Python Project/main.py", "PyCharm", "PyCharm"),
-                                                         ("CSharp Project/Main.cs", "vs", "VisualStudio"),
-                                                         ("CSharp Project/Main.cs", "VS", "VisualStudio"),
-                                                         ("Python Project/main.py", "vscode", "PTVSD"),
-                                                         ("Python Project/main.py", "VSCode", "PTVSD"),
-                                                         ("CSharp Project/Main.cs", "vscode", "VisualStudio"),
-                                                         ("CSharp Project/Main.cs", "VSCode", "VisualStudio")])
-def test_backtest_passes_correct_debug_method_to_lean_runner(project: str, editor: str, debug_method: str) -> None:
+@pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
+                                                    ("PyCharm", DebuggingMethod.PyCharm),
+                                                    ("ptvsd", DebuggingMethod.PTVSD),
+                                                    ("PTVSD", DebuggingMethod.PTVSD),
+                                                    ("mono", DebuggingMethod.Mono),
+                                                    ("Mono", DebuggingMethod.Mono)])
+def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
     create_fake_lean_cli_project()
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", project, "--debug", editor])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--debug", value])
 
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with("backtesting",
-                                                 Path(project).resolve(),
+                                                 Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  "latest",
-                                                 debug_method)
+                                                 debugging_method)

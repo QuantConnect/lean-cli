@@ -6,6 +6,7 @@ import click
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
+from lean.models.config import DebuggingMethod
 
 
 @click.command(cls=LeanCommand, requires_project=True)
@@ -19,8 +20,8 @@ from lean.container import container
               default="latest",
               help="The LEAN engine version to run (defaults to the latest installed version)")
 @click.option("--debug",
-              type=click.Choice(["pycharm", "vs", "vscode"], case_sensitive=False),
-              help="Enable debugging for a certain editor (see --help for more information)")
+              type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),
+              help="Enable a certain debugging method (see --help for more information)")
 def backtest(project: Path, output: Optional[Path], update: bool, version: Optional[int], debug: Optional[str]) -> None:
     """Backtest a project locally using Docker.
 
@@ -43,16 +44,13 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     if update:
         lean_runner.force_update()
 
-    # Detect the debugging method to use based on the editor and project language
+    # Convert the given --debug value to the debugging method to use
     debugging_method = None
-
     if debug == "pycharm":
-        debugging_method = "PyCharm"
-
-    if debug == "vs":
-        debugging_method = "VisualStudio"
-
-    if debug == "vscode":
-        debugging_method = "PTVSD" if algorithm_file.name.endswith(".py") else "VisualStudio"
+        debugging_method = DebuggingMethod.PyCharm
+    if debug == "ptvsd":
+        debugging_method = DebuggingMethod.PTVSD
+    if debug == "mono":
+        debugging_method = DebuggingMethod.Mono
 
     lean_runner.run_lean("backtesting", algorithm_file, output, version, debugging_method)

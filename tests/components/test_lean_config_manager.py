@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from lean.components.lean_config_manager import LeanConfigManager
+from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_project
 
 
@@ -202,16 +203,17 @@ def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> N
     assert not config["debugging"]
 
 
-def test_get_complete_lean_config_enables_debugging_when_method_given() -> None:
+@pytest.mark.parametrize("method,value", [(DebuggingMethod.PyCharm, "PyCharm"),
+                                          (DebuggingMethod.PTVSD, "PTVSD"),
+                                          (DebuggingMethod.Mono, "LocalCmdline")])
+def test_get_complete_lean_config_enables_debugging_when_method_given(method: DebuggingMethod, value: str) -> None:
     create_fake_lean_cli_project()
 
     manager = LeanConfigManager(mock.Mock(), "lean.json")
-    config = manager.get_complete_lean_config("my-environment",
-                                              Path.cwd() / "Python Project" / "main.py",
-                                              "my-debug-method")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method)
 
     assert config["debugging"]
-    assert config["debugging-method"] == "my-debug-method"
+    assert config["debugging-method"] == value
 
 
 def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> None:
@@ -222,9 +224,7 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
     cli_config_manager.api_token.get_value.return_value = "456"
 
     manager = LeanConfigManager(cli_config_manager, "lean.json")
-    config = manager.get_complete_lean_config("my-environment",
-                                              Path.cwd() / "Python Project" / "main.py",
-                                              debugging_method="my-debug-method")
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["job-user-id"] == "123"
     assert config["api-access-token"] == "456"
