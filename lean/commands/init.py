@@ -48,7 +48,7 @@ IDEA_WORKSPACE_XML = """
 </project>
 """
 
-VSCODE_LAUNCH_CONFIG = """
+VSCODE_LAUNCH_JSON = """
 {
     "version": "0.2.0",
     "configurations": [
@@ -132,7 +132,7 @@ def init() -> None:
     extra_files = {
         "LeanCLI.csproj": CSPROJ,
         ".idea/workspace.xml": IDEA_WORKSPACE_XML,
-        ".vscode/launch.json": VSCODE_LAUNCH_CONFIG
+        ".vscode/launch.json": VSCODE_LAUNCH_JSON
     }
 
     for location, content in extra_files.items():
