@@ -47,21 +47,21 @@ on the page above, you can add a PackageReference for it.
         <When Condition="$(IsWindows)">
             <ItemGroup>
                 <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\win\Python.Runtime.dll</HintPath>
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/win/Python.Runtime.dll</HintPath>
                 </Reference>
             </ItemGroup>
         </When>
         <When Condition="$(IsLinux)">
             <ItemGroup>
                 <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\linux\Python.Runtime.dll</HintPath>
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/linux/Python.Runtime.dll</HintPath>
                 </Reference>
             </ItemGroup>
         </When>
         <When Condition="$(IsOSX)">
             <ItemGroup>
                 <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\osx\Python.Runtime.dll</HintPath>
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/osx/Python.Runtime.dll</HintPath>
                 </Reference>
             </ItemGroup>
         </When>
