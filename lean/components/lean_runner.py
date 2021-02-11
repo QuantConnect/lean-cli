@@ -1,7 +1,7 @@
 import json
 import platform
+import shutil
 import tempfile
-from distutils import dir_util
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -100,7 +100,7 @@ class LeanRunner:
             }
         else:
             # C# projects need to be compiled before they can be mounted
-            csharp_binaries_dir = self._compile_csharp_project(project_dir, version)
+            csharp_binaries_dir = self._compile_csharp_project(version)
 
             for extension in ["dll", "pdb"]:
                 run_options["mounts"].append(
@@ -150,29 +150,34 @@ class LeanRunner:
         """Pulls the latest version of the Docker image containing the LEAN engine."""
         self._docker_manager.pull_image(self._docker_image, "latest")
 
-    def _compile_csharp_project(self, project_dir: Path, version: str) -> Path:
-        """Compiles the C# project in the given directory and returns the path where the binaries are stored.
+    def _compile_csharp_project(self, version: str) -> Path:
+        """Compiles the C# code in the Lean CLI project and returns the path where the binaries are stored.
 
-        :param project_dir: the path to the directory containing C# files that need to be compiled
         :param version: the LEAN version to compile against
         :return: the path to the directory containing the QuantConnect.Algorithm.CSharp.{dll,pdb} files
         """
-        self._logger.info(f"Compiling the C# files in '{project_dir}'")
+        cli_root_dir = self._lean_config_manager.get_lean_config_path().parent
+        self._logger.info(f"Compiling all C# files in '{cli_root_dir}'")
 
-        # Create a temporary directory used for compiling the C# project
+        # Create a temporary directory used for compiling the C# files
         compile_dir = Path(tempfile.mkdtemp())
 
-        cli_project_dir = self._lean_config_manager.get_lean_config_path().parent
-
-        # Copy all project files to the temporary directory
-        dir_util.copy_tree(str(cli_project_dir), str(compile_dir))
+        # Copy all C# files to the temporary directory
+        # shutil.copytree() requires the destination not to exist yet, so we delete it for now
+        compile_dir.rmdir()
+        shutil.copytree(str(cli_root_dir),
+                        str(compile_dir),
+                        ignore=lambda d, files: [f for f in files if (Path(d) / f).is_file() and not f.endswith(".cs")])
 
         # Get a list of all dll's in the docker image
-        _, output = self._docker_manager.run_image(self._docker_image,
+        success, output = self._docker_manager.run_image(self._docker_image,
                                                    version,
                                                    "-c ls",
                                                    quiet=True,
                                                    entrypoint="bash")
+
+        if not success:
+            raise RuntimeError("Something went wrong while compiling your project")
 
         dlls = [line for line in output.split("\n") if line.endswith(".dll")]
 
@@ -184,7 +189,7 @@ class LeanRunner:
         """.strip() for dll in dlls]
         references = "\n".join(references)
 
-        with (compile_dir / "LeanCLI.csproj").open("w+") as file:
+        with (compile_dir / "QuantConnect.Algorithm.CSharp.csproj").open("w+") as file:
             file.write(f"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
@@ -199,7 +204,7 @@ class LeanRunner:
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <PathMap>/LeanCLI={str(cli_project_dir)}</PathMap>
+        <PathMap>/LeanCLI={str(cli_root_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>
         {references}
@@ -217,7 +222,7 @@ class LeanRunner:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "restore /LeanCLI/LeanCLI.csproj",
+                                                    "restore /LeanCLI/QuantConnect.Algorithm.CSharp.csproj",
                                                     quiet=False,
                                                     entrypoint="nuget",
                                                     volumes=volumes)
@@ -227,12 +232,19 @@ class LeanRunner:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "/LeanCLI/LeanCLI.csproj",
+                                                    "/LeanCLI/QuantConnect.Algorithm.CSharp.csproj",
                                                     quiet=False,
                                                     entrypoint="msbuild",
                                                     volumes=volumes)
 
         if not success:
             raise RuntimeError("Something went wrong while compiling your project")
+
+        # Copy the generated QuantConnect.Algorithm.CSharp.dll file to the user's CLI project
+        # This is required for debugging to work with Visual Studio
+        compiled_dll = compile_dir / "bin" / "Debug" / "QuantConnect.Algorithm.CSharp.dll"
+        local_path = cli_root_dir / "bin" / "Debug" / "QuantConnect.Algorithm.CSharp.dll"
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(compiled_dll, local_path)
 
         return compile_dir / "bin" / "Debug"

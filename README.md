@@ -39,7 +39,14 @@ To debug backtests some additional setup is needed depending on the editor and l
 2. Run the `lean backtest` command with the `--debug pycharm` option.
 
 ### Visual Studio + C#
-TBD
+1. Install the [VSMonoDebugger](https://marketplace.visualstudio.com/items?itemName=GordianDotNet.VSMonoDebugger0d62) extension.
+2. In Visual Studio, go to "Extensions > Mono > Settings" and enter the following settings:
+    * Remote Host IP: 127.0.0.1
+    * Remote Host Port: 55555
+    * Mono Debug Port: 55555
+3. Run the `lean backtest` command with the `--debug mono` option.
+4. Wait until the CLI tells you to attach to the debugger.
+5. In Visual Studio, attach to the debugger using "Extensions > Mono > Attach to mono debugger".
 
 ### Rider + C#
 1. Run the `lean backtest` command with the `--debug mono` option.

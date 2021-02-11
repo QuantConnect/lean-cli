@@ -12,7 +12,7 @@ from lean.container import container
 
 CSPROJ = """
 <!--
-This file exists to make C# autocompletion work.
+This file exists to make C# autocompletion and debugging work.
 
 Custom libraries added in this file won't be used when compiling your code.
 When using the Lean CLI to run algorithms, this csproj file is overwritten
@@ -26,9 +26,46 @@ on the page above, you can add a PackageReference for it.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <RootNamespace>QuantConnect.Algorithm.CSharp</RootNamespace>
+        <AssemblyName>QuantConnect.Algorithm.CSharp</AssemblyName>
         <TargetFramework>net462</TargetFramework>
         <LangVersion>6</LangVersion>
+        <OutputPath>bin\$(Configuration)\</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
+     <PropertyGroup>
+        <IsWindows>false</IsWindows>
+        <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+        <IsOSX>false</IsOSX>
+        <IsOSX Condition="'$(IsWindows)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+        <IsLinux>false</IsLinux>
+        <IsLinux Condition="'$(IsWindows)' != 'true' AND '$(IsOSX)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+    </PropertyGroup>
+    <Choose>
+        <When Condition="$(IsWindows)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\win\Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+        <When Condition="$(IsLinux)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\linux\Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+        <When Condition="$(IsOSX)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)\quantconnect.pythonnet\1.0.5.30\lib\osx\Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+    </Choose>
     <ItemGroup>
         <PackageReference Include="QuantConnect.Lean" Version="*"/>
     </ItemGroup>
@@ -146,7 +183,7 @@ def init() -> None:
 
     # Create files which make debugging and autocompletion possible
     extra_files = {
-        "LeanCLI.csproj": CSPROJ,
+        "QuantConnect.Algorithm.CSharp.csproj": CSPROJ,
         ".idea/workspace.xml": IDEA_WORKSPACE_XML,
         ".vscode/launch.json": VSCODE_LAUNCH_JSON
     }
