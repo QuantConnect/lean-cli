@@ -112,8 +112,8 @@ VSCODE_LAUNCH_JSON = """
             },
             "pathMappings": [
                 {
-                    "localRoot": "${fileDirname}",
-                    "remoteRoot": "/Project"
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/LeanCLI"
                 }
             ]
         },
