@@ -72,7 +72,7 @@ on the page above, you can add a PackageReference for it.
 </Project>
 """.strip() + "\n"
 
-IDEA_WORKSPACE_XML = """
+PYCHARM_WORKSPACE_XML = """
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RunManager" selected="Python Debug Server.Debug with Lean CLI">
@@ -94,6 +94,22 @@ IDEA_WORKSPACE_XML = """
     <list>
       <item itemvalue="Python Debug Server.Debug with Lean CLI" />
     </list>
+  </component>
+</project>
+""".strip() + "\n"
+
+RIDER_WORKSPACE_XML = """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55555" address="localhost">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
   </component>
 </project>
 """.strip() + "\n"
@@ -184,7 +200,8 @@ def init() -> None:
     # Create files which make debugging and autocompletion possible
     extra_files = {
         "QuantConnect.Algorithm.CSharp.csproj": CSPROJ,
-        ".idea/workspace.xml": IDEA_WORKSPACE_XML,
+        ".idea/workspace.xml": PYCHARM_WORKSPACE_XML,
+        ".idea/.idea.QuantConnect.Algorithm.CSharp.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
         ".vscode/launch.json": VSCODE_LAUNCH_JSON
     }
 
