@@ -28,67 +28,25 @@ To debug backtests some additional setup is needed depending on the editor and l
 
 ### VS Code + Python
 1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
-2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
-```json5
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python: Remote Attach",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${fileDirname}",
-                    "remoteRoot": "/Project"
-                }
-            ]
-        }
-    ]
-}
-```
-3. Run the `lean backtest` command with the `--debug vscode` option.
-4. Wait until the CLI tells you to attach to the debugger.
-5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
+2. Run the `lean backtest` command with the `--debug mono` option.
+3. Wait until the CLI tells you to attach to the debugger.
+4. In VS Code, open the Run tab and run the configuration called "Debug Python with Lean CLI" (this configuration is created when you run `lean init`).
 
 ### VS Code + C#
 TBD: Not working yet
 
 1. Install version 15.8 of the [Mono Debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension. You can do this by first installing the latest version and then clicking on the arrow button next to the Uninstall button, which will open a context menu containing the "Install Another Version" option.
-2. In your Lean CLI project, create the `.vscode/launch.json` file and add the following content:
-```json5
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Attach to Mono",
-            "request": "attach",
-            "type": "mono",
-            "address": "localhost", 
-            "port": 55555
-        }
-    ]
-}
-```
-3. Run the `lean backtest` command with the `--debug vscode` option.
-4. Wait until the CLI tells you to attach to the debugger.
-5. In VS Code, open the Run tab and click on the green Run button in the top-left corner to attach to the debugger.
+2. Run the `lean backtest` command with the `--debug ptvsd` option.
+3. Wait until the CLI tells you to attach to the debugger.
+4. In VS Code, open the Run tab and run the configuration called "Debug C# with Lean CLI" (this configuration is created when you run `lean init`).
 
 ### PyCharm + Python
 *Note: This combination requires PyCharm Professional.*
 
-1. Create a new run configuration of type "Python Debug Server" with "IDE host name" set to "localhost", "Port" set to "6000" and add a path mapping where "Local path" is set to the absolute path to the directory containing your lean.json file and "Remote path" is set to "/LeanCLI".
-2. Start the debugger in PyCharm using the run configuration from step 1.
-3. Run the `lean backtest` command with the `--debug pycharm` option.
+1. In PyCharm, start debugging using the "Debug with Lean CLI" run configuration (this configuration is created when you run `lean init`).
+2. Run the `lean backtest` command with the `--debug pycharm` option.
 
 ### Visual Studio + C#
-TBD
-
-### Rider + C#
 TBD
 
 ## Development

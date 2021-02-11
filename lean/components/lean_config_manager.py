@@ -111,8 +111,7 @@ class LeanConfigManager:
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
 
-        It is assumed that the default LEAN Docker image is used and that the project containing the algorithm_file
-        will be mounted in /Project.
+        It is assumed that the default LEAN Docker image is used and that the Lean CLI project is mounted at /LeanCLI.
 
         :param environment: the environment to set
         :param algorithm_file: the path to the algorithm that will be ran

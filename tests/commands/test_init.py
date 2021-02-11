@@ -48,8 +48,7 @@ def test_init_aborts_when_config_file_already_exists() -> None:
 def test_init_aborts_when_data_directory_already_exists() -> None:
     (Path.cwd() / "data").mkdir()
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"])
+    result = CliRunner().invoke(lean, ["init"])
 
     assert result.exit_code != 0
 
@@ -64,8 +63,7 @@ def test_init_prompts_for_confirmation_when_directory_not_empty() -> None:
 
 
 def test_init_prompts_for_default_language_when_not_set_yet() -> None:
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"], input="csharp\n")
+    result = CliRunner().invoke(lean, ["init"], input="csharp\n")
 
     assert result.exit_code == 0
 
@@ -73,8 +71,7 @@ def test_init_prompts_for_default_language_when_not_set_yet() -> None:
 
 
 def test_init_creates_data_directory_from_repo() -> None:
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"], input="csharp\n")
+    result = CliRunner().invoke(lean, ["init"], input="csharp\n")
 
     assert result.exit_code == 0
 
@@ -86,8 +83,7 @@ def test_init_creates_data_directory_from_repo() -> None:
 
 
 def test_init_creates_clean_config_file_from_repo() -> None:
-    runner = CliRunner()
-    result = runner.invoke(lean, ["init"], input="csharp\n")
+    result = CliRunner().invoke(lean, ["init"], input="csharp\n")
 
     assert result.exit_code == 0
 
@@ -106,3 +102,12 @@ def test_init_creates_clean_config_file_from_repo() -> None:
   "data-folder": "data"
 }
     """.strip()
+
+
+@pytest.mark.parametrize("file", ["LeanCLI.csproj", ".idea/workspace.xml", ".vscode/launch.json"])
+def test_init_creates_extra_files_supporting_autocompletion_and_debugging(file: str) -> None:
+    result = CliRunner().invoke(lean, ["init"], input="csharp\n")
+
+    assert result.exit_code == 0
+
+    assert (Path.cwd() / file).exists()

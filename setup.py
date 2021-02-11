@@ -24,7 +24,8 @@ install_requires = [
     "jsoncomment~=0.4.2",
     "docker~=4.4.1",
     "rich~=9.10.0",
-    "dependency-injector~=4.20.1"
+    "dependency-injector~=4.20.1",
+    "quantconnect-stubs"
 ]
 
 setup(

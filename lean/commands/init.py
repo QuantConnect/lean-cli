@@ -10,6 +10,74 @@ from lean.click import LeanCommand
 from lean.config import Config
 from lean.container import container
 
+CSPROJ = """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="QuantConnect.Lean" Version="2.4.10544" />
+    </ItemGroup>
+</Project>
+"""
+
+IDEA_WORKSPACE_XML = """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager" selected="Python Debug Server.Debug with Lean CLI">
+    <configuration name="Debug with Lean CLI" type="PyRemoteDebugConfigurationType" factoryName="Python Remote Debug">
+      <module name="LEAN" />
+      <option name="PORT" value="6000" />
+      <option name="HOST" value="localhost" />
+      <PathMappingSettings>
+        <option name="pathMappings">
+          <list>
+            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+          </list>
+        </option>
+      </PathMappingSettings>
+      <option name="REDIRECT_OUTPUT" value="true" />
+      <option name="SUSPEND_AFTER_CONNECT" value="true" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python Debug Server.Debug with Lean CLI" />
+    </list>
+  </component>
+</project>
+"""
+
+VSCODE_LAUNCH_CONFIG = """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Python with Lean CLI",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${fileDirname}",
+                    "remoteRoot": "/Project"
+                }
+            ]
+        },
+        {
+            "name": "Debug C# with Lean CLI",
+            "request": "attach",
+            "type": "mono",
+            "address": "localhost",
+            "port": 55555
+        }
+    ]
+}
+"""
+
 
 @click.command(cls=LeanCommand)
 def init() -> None:
@@ -59,6 +127,19 @@ def init() -> None:
 
     with lean_config_path.open("w+") as file:
         file.write(config)
+
+    # Create files which make debugging and autocompletion possible
+    extra_files = {
+        "LeanCLI.csproj": CSPROJ,
+        ".idea/workspace.xml": IDEA_WORKSPACE_XML,
+        ".vscode/launch.json": VSCODE_LAUNCH_CONFIG
+    }
+
+    for location, content in extra_files.items():
+        path = Path(Path.cwd() / location)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w+") as file:
+            file.write(content)
 
     # Prompt for some general configuration if not set yet
     cli_config_manager = container.cli_config_manager()

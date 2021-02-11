@@ -44,13 +44,15 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
         lean_runner.force_update()
 
     # Detect the debugging method to use based on the editor and project language
+    debugging_method = None
+
     if debug == "pycharm":
-        debug = "PyCharm"
+        debugging_method = "PyCharm"
 
     if debug == "vs":
-        debug = "VisualStudio"
+        debugging_method = "VisualStudio"
 
     if debug == "vscode":
-        debug = "PTVSD" if algorithm_file.name.endswith(".py") else "VisualStudio"
+        debugging_method = "PTVSD" if algorithm_file.name.endswith(".py") else "VisualStudio"
 
-    lean_runner.run_lean("backtesting", algorithm_file, output, version, debug)
+    lean_runner.run_lean("backtesting", algorithm_file, output, version, debugging_method)
