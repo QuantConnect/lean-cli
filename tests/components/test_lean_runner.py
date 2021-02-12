@@ -333,7 +333,7 @@ def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
     assert kwargs["entrypoint"] == "mono"
 
 
-def test_run_lean_raises_if_running_image_fails() -> None:
+def test_run_lean_raises_when_run_image_fails() -> None:
     create_fake_lean_cli_project()
 
     docker_manager = mock.Mock()
