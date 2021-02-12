@@ -68,14 +68,20 @@ class LeanConfigManager:
         """
         self._default_path = path
 
+    def get_cli_root_directory(self) -> Path:
+        """Returns the path to the root of the current Lean CLI project.
+
+        :return: the path to the directory containing the Lean config file
+        """
+        return self.get_lean_config_path().parent
+
     def get_data_directory(self) -> Path:
         """Returns the path to the data directory.
 
         :return: the path to the data directory as it is configured in the Lean config
         """
         config = self._read_lean_config()
-        config_path = self.get_lean_config_path()
-        return config_path.parent / config["data-folder"]
+        return self.get_cli_root_directory() / config["data-folder"]
 
     def clean_lean_config(self, config: str) -> str:
         """Removes the properties from a Lean config file which can be set in get_complete_lean_config().
@@ -145,11 +151,11 @@ class LeanConfigManager:
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
 
         if algorithm_file.name.endswith(".py"):
-            lean_cli_project_root = self.get_lean_config_path().parent
+            cli_root_dir = self.get_cli_root_directory()
 
             config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
             config["algorithm-language"] = "Python"
-            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.relative_to(lean_cli_project_root).as_posix()}"
+            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.relative_to(cli_root_dir).as_posix()}"
         else:
             algorithm_text = algorithm_file.read_text()
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]

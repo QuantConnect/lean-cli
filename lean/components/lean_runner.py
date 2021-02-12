@@ -13,13 +13,13 @@
 
 import json
 import platform
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from docker.types import Mount
 
+from lean.components.csharp_compiler import CSharpCompiler
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
@@ -31,17 +31,20 @@ class LeanRunner:
 
     def __init__(self,
                  logger: Logger,
+                 csharp_compiler: CSharpCompiler,
                  lean_config_manager: LeanConfigManager,
                  docker_manager: DockerManager,
                  docker_image: str) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
+        :param csharp_compiler: the CSharpCompiler instance used to compile C# projects before running them
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param docker_image: the Docker image containing the LEAN engine
         """
         self._logger = logger
+        self._csharp_compiler = csharp_compiler
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
         self._docker_image = docker_image
@@ -54,6 +57,8 @@ class LeanRunner:
                  debugging_method: Optional[DebuggingMethod]) -> None:
         """Runs the LEAN engine locally in Docker.
 
+        Raises an error if something goes wrong.
+
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
@@ -61,6 +66,12 @@ class LeanRunner:
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         """
         project_dir = algorithm_file.parent
+
+        # Compile the project first if it is a C# project
+        # If compilation fails, there is no need to do anything else
+        csharp_dll_dir = None
+        if algorithm_file.name.endswith(".cs"):
+            csharp_dll_dir = self._csharp_compiler.compile_csharp_project(project_dir, version)
 
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():
@@ -107,18 +118,16 @@ class LeanRunner:
         # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
             # To get Python debugging to work correctly we need to mount all Lean CLI projects
-            run_options["volumes"][str(self._lean_config_manager.get_lean_config_path().parent)] = {
+            # Without this editors won't be able to distinguish between main.py in project A and main.py in project B
+            run_options["volumes"][str(self._lean_config_manager.get_cli_root_directory())] = {
                 "bind": "/LeanCLI",
                 "mode": "ro"
             }
         else:
-            # C# projects need to be compiled before they can be mounted
-            csharp_binaries_dir = self._compile_csharp_project(version)
-
             for extension in ["dll", "pdb"]:
                 run_options["mounts"].append(
                     Mount(target=f"/Lean/Launcher/bin/Debug/LeanCLI.{extension}",
-                          source=str(csharp_binaries_dir / f"LeanCLI.{extension}"),
+                          source=str(csharp_dll_dir / f"LeanCLI.{extension}"),
                           type="bind"))
 
         command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
@@ -148,9 +157,9 @@ class LeanRunner:
                                                     quiet=False,
                                                     **run_options)
 
-        lean_project_root = self._lean_config_manager.get_lean_config_path().parent
-        relative_project_dir = project_dir.relative_to(lean_project_root)
-        relative_output_dir = output_dir.relative_to(lean_project_root)
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        relative_project_dir = project_dir.relative_to(cli_root_dir)
+        relative_output_dir = output_dir.relative_to(cli_root_dir)
 
         if success:
             self._logger.info(
@@ -158,104 +167,3 @@ class LeanRunner:
         else:
             raise RuntimeError(
                 f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
-
-    def force_update(self) -> None:
-        """Pulls the latest version of the Docker image containing the LEAN engine."""
-        self._docker_manager.pull_image(self._docker_image, "latest")
-
-    def _compile_csharp_project(self, version: str) -> Path:
-        """Compiles the C# code in the Lean CLI project and returns the path where the binaries are stored.
-
-        :param version: the LEAN version to compile against
-        :return: the path to the directory containing the LeanCLI.{dll,pdb} files
-        """
-        cli_root_dir = self._lean_config_manager.get_lean_config_path().parent
-        self._logger.info(f"Compiling all C# files in '{cli_root_dir}'")
-
-        # Create a temporary directory used for compiling the C# files
-        compile_dir = Path(tempfile.mkdtemp())
-
-        # Copy all C# files to the temporary directory
-        # shutil.copytree() requires the destination not to exist yet, so we delete it for now
-        compile_dir.rmdir()
-        shutil.copytree(str(cli_root_dir),
-                        str(compile_dir),
-                        ignore=lambda d, files: [f for f in files if (Path(d) / f).is_file() and not f.endswith(".cs")])
-
-        # Get a list of all dll's in the docker image
-        success, output = self._docker_manager.run_image(self._docker_image,
-                                                         version,
-                                                         "-c ls",
-                                                         quiet=True,
-                                                         entrypoint="bash")
-
-        if not success:
-            raise RuntimeError("Something went wrong while compiling your project")
-
-        dlls = [line for line in output.split("\n") if line.endswith(".dll")]
-
-        # Create a csproj file which will be used to compile the project
-        references = [f"""
-        <Reference Include="{dll.split('.dll')[0]}">
-            <HintPath>/Lean/Launcher/bin/Debug/{dll}</HintPath>
-        </Reference>
-        """.strip() for dll in dlls]
-        references = "\n".join(references)
-
-        with (compile_dir / "LeanCLI.csproj").open("w+") as file:
-            file.write(f"""
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net462</TargetFramework>
-        <LangVersion>6</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <OutputPath>bin/$(Configuration)/</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <PathMap>/LeanCLI={str(cli_root_dir)}</PathMap>
-    </PropertyGroup>
-    <ItemGroup>
-        {references}
-    </ItemGroup>
-</Project>
-            """.strip())
-
-        # Compile the project in a Docker container
-        volumes = {
-            str(compile_dir): {
-                "bind": "/LeanCLI",
-                "mode": "rw"
-            }
-        }
-
-        success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version,
-                                                    "restore /LeanCLI/LeanCLI.csproj",
-                                                    quiet=False,
-                                                    entrypoint="nuget",
-                                                    volumes=volumes)
-
-        if not success:
-            raise RuntimeError("Something went wrong while compiling your project")
-
-        success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version,
-                                                    "/LeanCLI/LeanCLI.csproj",
-                                                    quiet=False,
-                                                    entrypoint="msbuild",
-                                                    volumes=volumes)
-
-        if not success:
-            raise RuntimeError("Something went wrong while compiling your project")
-
-        # Copy the generated LeanCLI.dll file to the user's CLI project
-        # This is required for C# debugging to work with Visual Studio and Visual Studio Code
-        compiled_dll = compile_dir / "bin" / "Debug" / "LeanCLI.dll"
-        local_path = cli_root_dir / "bin" / "Debug" / "LeanCLI.dll"
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(compiled_dll, local_path)
-
-        return compile_dir / "bin" / "Debug"

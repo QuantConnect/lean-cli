@@ -49,6 +49,14 @@ def test_get_lean_config_path_returns_default_path_when_set() -> None:
     assert manager.get_lean_config_path() == Path.cwd() / "custom-lean.json"
 
 
+def test_get_cli_root_directory_returns_path_to_directory_containing_config_file() -> None:
+    create_fake_lean_cli_project()
+
+    manager = LeanConfigManager(mock.Mock(), "lean.json")
+
+    assert manager.get_cli_root_directory() == Path.cwd()
+
+
 def test_get_data_directory_returns_path_to_data_directory_as_configured_in_config() -> None:
     with (Path.cwd() / "lean.json").open("w+") as file:
         file.write('{ "data-folder": "sub1/sub2/sub3/data" }')

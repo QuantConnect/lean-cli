@@ -15,6 +15,7 @@ from dependency_injector import containers, providers
 
 from lean.components.api_client import APIClient
 from lean.components.cli_config_manager import CLIConfigManager
+from lean.components.csharp_compiler import CSharpCompiler
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.lean_runner import LeanRunner
@@ -34,6 +35,7 @@ class Container(containers.DeclarativeContainer):
     cli_config_manager = providers.Singleton(CLIConfigManager,
                                              general_storage=general_storage,
                                              credentials_storage=credentials_storage)
+
     lean_config_manager = providers.Singleton(LeanConfigManager,
                                               cli_config_manager=cli_config_manager,
                                               default_file_name=Config.default_lean_config_file_name)
@@ -48,8 +50,15 @@ class Container(containers.DeclarativeContainer):
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 
+    csharp_compiler = providers.Singleton(CSharpCompiler,
+                                          logger=logger,
+                                          lean_config_manager=lean_config_manager,
+                                          docker_manager=docker_manager,
+                                          docker_image=Config.lean_engine_docker_image)
+
     lean_runner = providers.Singleton(LeanRunner,
                                       logger=logger,
+                                      csharp_compiler=csharp_compiler,
                                       lean_config_manager=lean_config_manager,
                                       docker_manager=docker_manager,
                                       docker_image=Config.lean_engine_docker_image)

@@ -18,6 +18,7 @@ from typing import Optional
 import click
 
 from lean.click import LeanCommand, PathParameter
+from lean.config import Config
 from lean.container import container
 from lean.models.config import DebuggingMethod
 
@@ -55,7 +56,7 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     lean_runner = container.lean_runner()
 
     if update:
-        lean_runner.force_update()
+        container.docker_manager().pull_image(Config.lean_engine_docker_image, "latest")
 
     # Convert the given --debug value to the debugging method to use
     debugging_method = None

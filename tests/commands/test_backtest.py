@@ -27,6 +27,9 @@ from tests.test_helpers import create_fake_lean_cli_project
 def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     create_fake_lean_cli_project()
 
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
@@ -43,6 +46,9 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
     create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
@@ -61,6 +67,9 @@ def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
 def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     create_fake_lean_cli_project()
 
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
@@ -78,6 +87,9 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
 def test_backtest_aborts_when_project_does_not_exist() -> None:
     create_fake_lean_cli_project()
 
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
@@ -90,6 +102,9 @@ def test_backtest_aborts_when_project_does_not_exist() -> None:
 
 def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
     create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
@@ -104,6 +119,9 @@ def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
 def test_backtest_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_project()
 
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
@@ -111,7 +129,7 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    lean_runner.force_update.assert_called_once()
+    docker_manager.pull_image.assert_called_once_with("quantconnect/lean", "latest")
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -121,6 +139,9 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
 def test_backtest_passes_custom_version_to_lean_runner() -> None:
     create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
@@ -144,6 +165,9 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
                                                     ("Mono", DebuggingMethod.Mono)])
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
     create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
