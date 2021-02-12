@@ -14,6 +14,8 @@ The CLI can be installed and updated by running `pip install -U lean`.
 
 After installing the CLI, simply `cd` into an empty directory and run `lean init` to set up a Lean CLI project.
 
+Note that many commands in the CLI require Docker to run. See [Get Docker](https://docs.docker.com/get-docker/) for instructions on how to install Docker for your operating system.
+
 ## Usage
 
 A workflow with the CLI may look like this:
