@@ -347,3 +347,5 @@ def test_run_lean_raises_when_run_image_fails() -> None:
                              Path.cwd() / "output",
                              "latest",
                              DebuggingMethod.Mono)
+
+    docker_manager.run_image.assert_called_once()
