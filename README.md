@@ -4,17 +4,36 @@
 [![PyPI Version](https://img.shields.io/pypi/v/lean)](https://pypi.org/project/lean/)
 [![Project Status](https://img.shields.io/pypi/status/lean)](https://pypi.org/project/lean/)
 
-**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the 1.0.0 release. Use with caution.**
+**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the first beta release. Use with caution.**
 
-The Lean CLI is a CLI aimed at making it easier to run the LEAN engine locally and in the cloud.
+The Lean CLI is a cross-platform CLI aimed at making it easier to run the LEAN engine locally and in the cloud.
+
+## Roadmap
+
+The following features are currently planned to be implemented (in order of priority):
+- [x] Project scaffolding
+- [x] Local autocompletion
+- [x] CLI configuration
+- [x] Local backtesting
+- [x] Local debugging
+- [ ] Local research environment
+- [ ] Cloud synchronization
+- [ ] Cloud backtesting
+- **First beta release**
+- [ ] Local data downloading
+- [ ] Local optimization
+- [ ] Local backtest visualization
+- [ ] Local live trading
+- [ ] Cloud optimization
+- [ ] Cloud live trading
 
 ## Installation
 
 The CLI can be installed and updated by running `pip install -U lean`.
 
-After installing the CLI, simply `cd` into an empty directory and run `lean init` to set up a Lean CLI project.
-
 Note that many commands in the CLI require Docker to run. See [Get Docker](https://docs.docker.com/get-docker/) for instructions on how to install Docker for your operating system.
+
+After installing the CLI, simply `cd` into an empty directory and run `lean init` to set up a Lean CLI project. This will scaffold a standard directory structure for you to hit the ground running.
 
 ## Usage
 

@@ -69,22 +69,39 @@ class CSharpCompiler:
         shutil.copytree(str(cli_root_dir), str(compile_dir), ignore=get_objects_to_ignore)
 
         with (compile_dir / "LeanCLI.csproj").open("w+") as file:
-            file.write(self._get_csproj(version))
+            file.write(f"""
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net462</TargetFramework>
+        <LangVersion>6</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <OutputPath>bin/$(Configuration)/</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+        <PathMap>/LeanCLI={str(cli_root_dir)}</PathMap>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="/Lean/Launcher/bin/Debug/*.dll">
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+</Project>
+            """.strip())
 
-        # Compile the project in a Docker container
-        volumes = {
-            str(compile_dir): {
-                "bind": "/LeanCLI",
-                "mode": "rw"
-            }
-        }
-
-        success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version,
-                                                    "-restore /LeanCLI/LeanCLI.csproj",
-                                                    quiet=False,
-                                                    entrypoint="msbuild",
-                                                    volumes=volumes)
+        success = self._docker_manager.run_image(self._docker_image,
+                                                 version,
+                                                 "-restore /LeanCLI/LeanCLI.csproj",
+                                                 quiet=False,
+                                                 entrypoint="msbuild",
+                                                 volumes={
+                                                     str(compile_dir): {
+                                                         "bind": "/LeanCLI",
+                                                         "mode": "rw"
+                                                     }
+                                                 })
 
         if not success:
             raise RuntimeError("Something went wrong while running msbuild")
@@ -97,49 +114,3 @@ class CSharpCompiler:
         shutil.copy2(compiled_dll, local_path)
 
         return compile_dir / "bin" / "Debug"
-
-    def _get_csproj(self, version: str) -> str:
-        """Returns the content the csproj file should contain when compiling a project.
-
-        :param version: the LEAN version the project is compiled against
-        :return: the content the csproj file should have when compiling a C# project
-        """
-        success, output = self._docker_manager.run_image(self._docker_image,
-                                                         version,
-                                                         "-c ls",
-                                                         quiet=True,
-                                                         entrypoint="bash")
-
-        if not success:
-            raise RuntimeError("Could not retrieve DLLs in Docker image")
-
-        dlls = [line for line in output.split("\n") if line.endswith(".dll")]
-
-        # Create Reference items for all DLLs in the Docker image
-        references = [f"""
-        <Reference Include="{dll.split('.dll')[0]}">
-            <HintPath>/Lean/Launcher/bin/Debug/{dll}</HintPath>
-            <Private>False</Private>
-        </Reference>
-        """.strip() for dll in dlls]
-        references = "\n".join(references)
-
-        return f"""
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net462</TargetFramework>
-        <LangVersion>6</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <OutputPath>bin/$(Configuration)/</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <PathMap>/LeanCLI={str(self._lean_config_manager.get_cli_root_directory())}</PathMap>
-    </PropertyGroup>
-    <ItemGroup>
-        {references}
-    </ItemGroup>
-</Project>
-            """.strip()

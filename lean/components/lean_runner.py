@@ -151,11 +151,7 @@ class LeanRunner:
             self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
 
         # Run the engine and log the result
-        success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version,
-                                                    command,
-                                                    quiet=False,
-                                                    **run_options)
+        success = self._docker_manager.run_image(self._docker_image, version, command, quiet=False, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)

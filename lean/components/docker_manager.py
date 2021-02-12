@@ -16,7 +16,6 @@ import os
 import signal
 import sys
 import types
-from typing import Tuple
 
 import docker
 import requests
@@ -58,7 +57,7 @@ class DockerManager:
         # Since the pull command is the same on Windows, Linux and macOS we can safely use a system call
         os.system(f"docker image pull {image}:{tag}")
 
-    def run_image(self, image: str, tag: str, command: str, quiet: bool = False, **kwargs) -> Tuple[bool, str]:
+    def run_image(self, image: str, tag: str, command: str, quiet: bool = False, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available yet it will be pulled first.
 
         See https://docker-py.readthedocs.io/en/stable/containers.html for all the supported kwargs.
@@ -68,7 +67,7 @@ class DockerManager:
         :param command: the command to run
         :param quiet: whether the logs of the image should be printed to stdout
         :param kwargs: the kwargs to forward to docker.containers.run
-        :return: whether the command in the container exited successfully and the output of the command
+        :return: True if the command in the container exited successfully, False if not
         """
         if not self.is_image_installed(image, tag):
             self.pull_image(image, tag)
@@ -101,7 +100,7 @@ class DockerManager:
         if not quiet:
             self._logger.flush()
 
-        return container.wait()["StatusCode"] == 0, output
+        return container.wait()["StatusCode"] == 0
 
     def tag_exists(self, image: str, tag: str) -> bool:
         """Returns whether a certain tag exists for a certain image in the Docker registry.
@@ -110,10 +109,7 @@ class DockerManager:
         :param tag: the tag to check the existence of
         :return: True if the tag exists for the given image on the Docker Registry, False if not
         """
-        response = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags")
-        response.raise_for_status()
-
-        tags_list = response.json()
+        tags_list = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags").json()
         return any([x["name"] == tag for x in tags_list])
 
     def _get_docker_client(self) -> docker.DockerClient:

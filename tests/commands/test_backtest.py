@@ -157,6 +157,24 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
                                                  None)
 
 
+def test_backtest_aborts_when_version_invalid() -> None:
+    create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    docker_manager.tag_exists.return_value = False
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--version", "3"])
+
+    assert result.exit_code != 0
+
+    lean_runner.run_lean.assert_not_called()
+
+
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
                                                     ("PyCharm", DebuggingMethod.PyCharm),
                                                     ("ptvsd", DebuggingMethod.PTVSD),
