@@ -14,6 +14,7 @@
 import shutil
 import tempfile
 from pathlib import Path
+from typing import List
 
 from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
@@ -51,17 +52,21 @@ class CSharpCompiler:
         """
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
 
-        self._logger.info(f"Compiling all C# files in '{cli_root_dir}'")
+        self._logger.info(f"Compiling all C# files in '{project_dir}'")
 
         # Create a temporary directory used for compiling the C# files
         compile_dir = Path(tempfile.mkdtemp())
 
-        # Copy all C# files to the temporary directory
+        # Copy all C# files in the project directory to the temporary directory
+        # To make debugging work properly we need to preserve the directory structure of the Lean CLI project
+        def get_objects_to_ignore(directory: str, objects: List[str]) -> List[str]:
+            paths = [(Path(directory) / x) for x in objects]
+            files = [p for p in paths if p.is_file()]
+            return [f.name for f in files] if str(project_dir) + "/" not in directory + "/" else []
+
         # shutil.copytree() requires the destination not to exist yet, so we delete it first
         compile_dir.rmdir()
-        shutil.copytree(str(cli_root_dir),
-                        str(compile_dir),
-                        ignore=lambda d, files: [f for f in files if (Path(d) / f).is_file() and not f.endswith(".cs")])
+        shutil.copytree(str(cli_root_dir), str(compile_dir), ignore=get_objects_to_ignore)
 
         with (compile_dir / "LeanCLI.csproj").open("w+") as file:
             file.write(self._get_csproj(version))
@@ -124,6 +129,7 @@ class CSharpCompiler:
         references = [f"""
         <Reference Include="{dll.split('.dll')[0]}">
             <HintPath>/Lean/Launcher/bin/Debug/{dll}</HintPath>
+            <Private>False</Private>
         </Reference>
         """.strip() for dll in dlls]
         references = "\n".join(references)

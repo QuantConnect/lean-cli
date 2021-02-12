@@ -19,6 +19,7 @@ import types
 from typing import Tuple
 
 import docker
+import requests
 
 from lean.components.logger import Logger
 
@@ -101,6 +102,19 @@ class DockerManager:
             self._logger.flush()
 
         return container.wait()["StatusCode"] == 0, output
+
+    def tag_exists(self, image: str, tag: str) -> bool:
+        """Returns whether a certain tag exists for a certain image in the Docker registry.
+
+        :param image: the image to check the tag of
+        :param tag: the tag to check the existence of
+        :return: True if the tag exists for the given image on the Docker Registry, False if not
+        """
+        response = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags")
+        response.raise_for_status()
+
+        tags_list = response.json()
+        return any([x["name"] == tag for x in tags_list])
 
     def _get_docker_client(self) -> docker.DockerClient:
         """Creates a DockerClient instance.

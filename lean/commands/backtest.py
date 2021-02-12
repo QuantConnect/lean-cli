@@ -28,7 +28,7 @@ from lean.models.config import DebuggingMethod
 @click.option("--output", "-o",
               type=PathParameter(exists=False),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
-@click.option("--update", is_flag=True, help="Pull the latest LEAN engine version before running the backtest")
+@click.option("--update", is_flag=True, help="Pull the selected LEAN engine version before running the backtest")
 @click.option("--version",
               type=str,
               default="latest",
@@ -53,10 +53,14 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    lean_runner = container.lean_runner()
+    docker_manager = container.docker_manager()
+
+    if version != "latest":
+        if not docker_manager.tag_exists(Config.lean_engine_docker_image, version):
+            raise RuntimeError("The specified version does not exist")
 
     if update:
-        container.docker_manager().pull_image(Config.lean_engine_docker_image, "latest")
+        docker_manager.pull_image(Config.lean_engine_docker_image, version)
 
     # Convert the given --debug value to the debugging method to use
     debugging_method = None
@@ -67,4 +71,5 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: Optio
     if debug == "mono":
         debugging_method = DebuggingMethod.Mono
 
+    lean_runner = container.lean_runner()
     lean_runner.run_lean("backtesting", algorithm_file, output, version, debugging_method)
