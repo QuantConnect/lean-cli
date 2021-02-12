@@ -171,10 +171,10 @@ class LeanRunner:
 
         # Get a list of all dll's in the docker image
         success, output = self._docker_manager.run_image(self._docker_image,
-                                                   version,
-                                                   "-c ls",
-                                                   quiet=True,
-                                                   entrypoint="bash")
+                                                         version,
+                                                         "-c ls",
+                                                         quiet=True,
+                                                         entrypoint="bash")
 
         if not success:
             raise RuntimeError("Something went wrong while compiling your project")
