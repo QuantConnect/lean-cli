@@ -81,17 +81,7 @@ class CSharpCompiler:
 
         success, _ = self._docker_manager.run_image(self._docker_image,
                                                     version,
-                                                    "restore /LeanCLI/LeanCLI.csproj",
-                                                    quiet=False,
-                                                    entrypoint="nuget",
-                                                    volumes=volumes)
-
-        if not success:
-            raise RuntimeError("Something went wrong while running nuget")
-
-        success, _ = self._docker_manager.run_image(self._docker_image,
-                                                    version,
-                                                    "/LeanCLI/LeanCLI.csproj",
+                                                    "-restore /LeanCLI/LeanCLI.csproj",
                                                     quiet=False,
                                                     entrypoint="msbuild",
                                                     volumes=volumes)
