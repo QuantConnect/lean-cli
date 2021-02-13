@@ -90,9 +90,7 @@ class DockerManager:
         signal.signal(signal.SIGINT, signal_handler)
 
         # Capture all logs and print it to stdout if not running in quiet mode
-        output = ""
         for chunk in container.logs(stream=True, follow=True):
-            output += chunk.decode("utf-8")
             if not quiet:
                 self._logger.info(chunk.decode("utf-8"), newline=False)
 
