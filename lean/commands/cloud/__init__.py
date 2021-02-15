@@ -13,31 +13,17 @@
 
 import click
 
-from lean import __version__
-from lean.commands.backtest import backtest
-from lean.commands.config import config
-from lean.commands.cloud import cloud
-from lean.commands.create_project import create_project
-from lean.commands.init import init
-from lean.commands.login import login
-from lean.commands.logout import logout
-from lean.commands.research import research
+from lean.commands.cloud.pull import pull
+from lean.commands.cloud.push import push
 
 
 @click.group()
-@click.version_option(__version__)
-def lean() -> None:
-    """The Lean CLI by QuantConnect."""
+def cloud() -> None:
+    """Interact with the QuantConnect cloud."""
     # This method is intentionally empty
-    # It is used as the command group for all `lean <command>` commands
+    # It is used as the command group for all `lean cloud <command>` commands
     pass
 
 
-lean.add_command(login)
-lean.add_command(logout)
-lean.add_command(config)
-lean.add_command(init)
-lean.add_command(create_project)
-lean.add_command(backtest)
-lean.add_command(research)
-lean.add_command(cloud)
+cloud.add_command(pull)
+cloud.add_command(push)

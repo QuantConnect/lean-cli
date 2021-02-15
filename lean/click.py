@@ -37,14 +37,14 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_lean_config: bool = False, *args, **kwargs):
+    def __init__(self, requires_cli_project: bool = False, *args, **kwargs):
         """Creates a new LeanCommand instance.
 
-        :param requires_lean_config: True if this command needs to be ran in a Lean CLI project, False if not
+        :param requires_cli_project: True if this command needs to be ran in a Lean CLI project, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
-        self._requires_lean_config = requires_lean_config
+        self._requires_cli_project = requires_cli_project
 
         super().__init__(*args, **kwargs)
 
@@ -52,11 +52,19 @@ class LeanCommand(click.Command):
         # max_terminal_width defaults to 80, which we increase to 120 to improve readability on wide terminals
         self.context_settings["max_content_width"] = 120
 
+    def invoke(self, ctx):
+        # Abort if the command needs to be ran inside a Lean CLI project
+        if self._requires_cli_project:
+            # This method will throw if the directory cannot be found
+            container.lean_config_manager().get_cli_root_directory()
+
+        return super().invoke(ctx)
+
     def get_params(self, ctx):
         params = super().get_params(ctx)
 
         # Add --config option if the commands needs to be ran inside a Lean CLI project
-        if self._requires_lean_config:
+        if self._requires_cli_project:
             params += [click.Option(["--config", "-c"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                                     help=f"The configuration file that should be used (defaults to the nearest {Config.default_lean_config_file_name})",

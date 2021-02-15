@@ -21,7 +21,7 @@ from lean.config import Config
 from lean.container import container
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True)
+@click.command(cls=LeanCommand, requires_cli_project=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.option("--port", type=int, default=8888, show_default=True, help="The port to run Jupyter Lab on")
 @click.option("--update", is_flag=True, help="Pull the selected research environment version before starting it")
