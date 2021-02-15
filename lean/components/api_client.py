@@ -66,10 +66,9 @@ class APIClient:
         :return: True if the current credentials are valid, False if not
         """
         try:
-            requests.get("https://github.com/QuantConnect/Lean/archive/master.zip")
             self.get("projects/read")
             return True
-        except:
+        except (RequestFailedError, AuthenticationError):
             return False
 
     def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}) -> Any:

@@ -16,7 +16,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] CLI configuration
 - [x] Local backtesting
 - [x] Local debugging
-- [ ] Local research environment
+- [x] Local research environment
 - [ ] Cloud synchronization
 - [ ] Cloud backtesting
 - **First beta release**

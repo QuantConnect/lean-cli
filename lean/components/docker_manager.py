@@ -16,6 +16,7 @@ import os
 import signal
 import sys
 import types
+from typing import Optional
 
 import docker
 import requests
@@ -33,17 +34,6 @@ class DockerManager:
         """
         self._logger = logger
 
-    def is_image_installed(self, image: str, tag: str) -> bool:
-        """Checks whether a certain image's tag is already installed.
-
-        :param image: the name of the image to check availability for
-        :param tag: the image's tag to check availability for
-        :return: True if the image has been pulled before, False if not
-        """
-        docker_client = self._get_docker_client()
-        installed_tags = list(itertools.chain(*[x.tags for x in docker_client.images.list()]))
-        return f"{image}:{tag}" in installed_tags
-
     def pull_image(self, image: str, tag: str) -> None:
         """Pulls a Docker image.
 
@@ -57,10 +47,13 @@ class DockerManager:
         # Since the pull command is the same on Windows, Linux and macOS we can safely use a system call
         os.system(f"docker image pull {image}:{tag}")
 
-    def run_image(self, image: str, tag: str, command: str, quiet: bool = False, **kwargs) -> bool:
+    def run_image(self, image: str, tag: str, command: Optional[str], quiet: bool = False, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available yet it will be pulled first.
 
         See https://docker-py.readthedocs.io/en/stable/containers.html for all the supported kwargs.
+
+        If kwargs contains an "on_run" property, it is removed before passing it on to docker.containers.run
+        and the given lambda is ran when the Docker container has started.
 
         :param image: the name of the image to run
         :param tag: the image's tag to run
@@ -69,8 +62,11 @@ class DockerManager:
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
-        if not self.is_image_installed(image, tag):
+        if not self.tag_installed(image, tag):
             self.pull_image(image, tag)
+
+        on_run = kwargs.pop("on_run", lambda: None)
+        on_run_called = False
 
         docker_client = self._get_docker_client()
 
@@ -91,6 +87,10 @@ class DockerManager:
 
         # Capture all logs and print it to stdout if not running in quiet mode
         for chunk in container.logs(stream=True, follow=True):
+            if not on_run_called:
+                on_run()
+                on_run_called = True
+
             if not quiet:
                 self._logger.info(chunk.decode("utf-8"), newline=False)
 
@@ -99,6 +99,17 @@ class DockerManager:
             self._logger.flush()
 
         return container.wait()["StatusCode"] == 0
+
+    def tag_installed(self, image: str, tag: str) -> bool:
+        """Returns whether a certain image's tag is installed.
+
+        :param image: the name of the image to check availability for
+        :param tag: the image's tag to check availability for
+        :return: True if the image's tag has been pulled before, False if not
+        """
+        docker_client = self._get_docker_client()
+        installed_tags = list(itertools.chain(*[x.tags for x in docker_client.images.list()]))
+        return f"{image}:{tag}" in installed_tags
 
     def tag_exists(self, image: str, tag: str) -> bool:
         """Returns whether a certain tag exists for a certain image in the Docker registry.

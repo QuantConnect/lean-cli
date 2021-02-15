@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -30,7 +31,10 @@ def assert_python_project_exists() -> None:
         assert "class MyFirstProject(QCAlgorithm)" in file.read()
 
     with open(project_dir / "research.ipynb") as file:
-        assert '"language": "python"' in file.read()
+        assert json.load(file)["metadata"]["kernelspec"]["language"] == "python"
+
+    with open(project_dir / "config.json") as file:
+        assert json.load(file)["algorithm-language"] == "Python"
 
 
 def assert_csharp_project_exists() -> None:
@@ -39,12 +43,16 @@ def assert_csharp_project_exists() -> None:
     assert project_dir.exists()
     assert (project_dir / "Main.cs").exists()
     assert (project_dir / "research.ipynb").exists()
+    assert (project_dir / "config.json").exists()
 
     with open(project_dir / "Main.cs") as file:
         assert "class MyFirstProject : QCAlgorithm" in file.read()
 
     with open(project_dir / "research.ipynb") as file:
-        assert '"language": "csharp"' in file.read()
+        assert json.load(file)["metadata"]["kernelspec"]["language"] == "csharp"
+
+    with open(project_dir / "config.json") as file:
+        assert json.load(file)["algorithm-language"] == "CSharp"
 
 
 def test_create_project_creates_python_project_when_language_python() -> None:

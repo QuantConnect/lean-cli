@@ -37,14 +37,14 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_project: bool = False, *args, **kwargs):
+    def __init__(self, requires_lean_config: bool = False, *args, **kwargs):
         """Creates a new LeanCommand instance.
 
-        :param requires_project: True if this command needs to be ran in a Lean CLI project, False if not
+        :param requires_lean_config: True if this command needs to be ran in a Lean CLI project, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
-        self._requires_project = requires_project
+        self._requires_lean_config = requires_lean_config
 
         super().__init__(*args, **kwargs)
 
@@ -56,7 +56,7 @@ class LeanCommand(click.Command):
         params = super().get_params(ctx)
 
         # Add --config option if the commands needs to be ran inside a Lean CLI project
-        if self._requires_project:
+        if self._requires_lean_config:
             params += [click.Option(["--config", "-c"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                                     help=f"The configuration file that should be used (defaults to the nearest {Config.default_lean_config_file_name})",

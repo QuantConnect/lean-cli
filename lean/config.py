@@ -25,14 +25,21 @@ class Config:
     # The file in which credentials are stored
     credentials_config_file = str(Path("~/.lean/credentials").expanduser())
 
-    # The default name of the configuration file in a Lean CLI project
+    # The default name of the configuration file in a Lean CLI directory
     default_lean_config_file_name = "lean.json"
 
-    # The default name of the data directory in a Lean CLI project
+    # The default name of the data directory in a Lean CLI directory
     default_data_directory_name = "data"
+
+    # The name of the configuration file in a project in a Lean CLI directory
+    # This should match the file name expected by https://github.com/QuantConnect/Lean/blob/master/DockerfileJupyter
+    project_config_file_name = "config.json"
 
     # The Docker image used when running the LEAN engine locally
     lean_engine_docker_image = "quantconnect/lean"
+
+    # The Docker image used when running a Jupyter Lab environment locally
+    research_docker_image = "quantconnect/research"
 
     # The base url of the QuantConnect API
     api_base_url = "https://www.quantconnect.com/api/v2"

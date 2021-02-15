@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.config import DebuggingMethod
 
 
-@click.command(cls=LeanCommand, requires_project=True)
+@click.command(cls=LeanCommand, requires_lean_config=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output", "-o",
               type=PathParameter(exists=False),
@@ -36,7 +36,7 @@ from lean.models.config import DebuggingMethod
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
-def backtest(project: Path, output: Optional[Path], update: bool, version: Optional[int], debug: Optional[str]) -> None:
+def backtest(project: Path, output: Optional[Path], update: bool, version: str, debug: Optional[str]) -> None:
     """Backtest a project locally using Docker.
 
     \b

@@ -20,6 +20,7 @@ from lean.components.docker_manager import DockerManager
 from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.lean_runner import LeanRunner
 from lean.components.logger import Logger
+from lean.components.project_config_manager import ProjectConfigManager
 from lean.components.project_manager import ProjectManager
 from lean.components.storage import Storage
 from lean.config import Config
@@ -47,6 +48,8 @@ class Container(containers.DeclarativeContainer):
                                    api_token=cli_config_manager.provided.api_token.get_value())
 
     project_manager = providers.Singleton(ProjectManager)
+
+    project_config_manager = providers.Singleton(ProjectConfigManager, file_name=Config.project_config_file_name)
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 

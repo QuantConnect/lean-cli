@@ -17,7 +17,7 @@ from typing import Any
 
 
 class Storage:
-    """A Storage instance manages the data in a single file."""
+    """A Storage instance manages the data in a single JSON file."""
 
     def __init__(self, file: str) -> None:
         """Creates a new Storage instance.
