@@ -39,9 +39,10 @@ After installing the CLI, simply `cd` into an empty directory and run `lean init
 
 A workflow with the CLI may look like this:
 1. `cd` into the Lean CLI project.
-2. Run `lean create-project -l python "RSI Strategy"` to create a new project with some basic code to get you started.
+2. Run `lean create-project "RSI Strategy"` to create a new project with some basic code to get you started.
 3. Work on your strategy in `./RSI Strategy`.
-4. Run a backtest with `lean backtest "RSI Strategy"`. This runs your backtest in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
+4. Run `lean research "RSI Strategy"` to launch a Jupyter Lab session to work on research notebooks. 
+5. Run a backtest with `lean backtest "RSI Strategy"`. This runs your backtest in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
 ## Debugging backtests
 

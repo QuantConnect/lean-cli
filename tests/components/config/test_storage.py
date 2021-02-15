@@ -14,7 +14,7 @@
 import json
 from pathlib import Path
 
-from lean.components.storage import Storage
+from lean.components.config.storage import Storage
 
 
 def test_get_reads_key_from_file() -> None:

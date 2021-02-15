@@ -11,16 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
+from unittest import mock
 
-from lean.components.project_config_manager import ProjectConfigManager
-from tests.test_helpers import create_fake_lean_cli_project
+import pytest
+
+from lean.components.config.cli_config_manager import CLIConfigManager
 
 
-def test_get_project_config_returns_storage_instance_of_correct_file() -> None:
-    create_fake_lean_cli_project()
+def test_get_option_by_key_returns_option_with_matching_key() -> None:
+    manager = CLIConfigManager(mock.Mock(), mock.Mock())
 
-    project_config_manager = ProjectConfigManager("config.json")
-    project_config = project_config_manager.get_project_config(Path.cwd() / "Python Project")
+    for key in ["user-id", "api-token", "default-language"]:
+        assert manager.get_option_by_key(key).key == key
 
-    assert project_config.file == Path.cwd() / "Python Project" / "config.json"
+
+def test_get_option_by_key_raises_error_when_no_option_with_matching_key_exists() -> None:
+    manager = CLIConfigManager(mock.Mock(), mock.Mock())
+
+    with pytest.raises(Exception):
+        manager.get_option_by_key("this-option-does-not-exist")

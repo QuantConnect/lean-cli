@@ -17,8 +17,8 @@ from unittest import mock
 
 import pytest
 
-from lean.components.lean_config_manager import LeanConfigManager
-from lean.components.lean_runner import LeanRunner
+from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.engine.lean_runner import LeanRunner
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_project
 

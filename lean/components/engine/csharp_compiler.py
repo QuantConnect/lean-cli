@@ -16,8 +16,8 @@ import tempfile
 from pathlib import Path
 from typing import List
 
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker_manager import DockerManager
-from lean.components.lean_config_manager import LeanConfigManager
 from lean.components.logger import Logger
 
 

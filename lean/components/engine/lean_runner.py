@@ -19,9 +19,9 @@ from typing import Any, Dict, Optional
 
 from docker.types import Mount
 
-from lean.components.csharp_compiler import CSharpCompiler
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker_manager import DockerManager
-from lean.components.lean_config_manager import LeanConfigManager
+from lean.components.engine.csharp_compiler import CSharpCompiler
 from lean.components.logger import Logger
 from lean.models.config import DebuggingMethod
 

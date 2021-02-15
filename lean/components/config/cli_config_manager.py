@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.components.storage import Storage
+from lean.components.config.storage import Storage
 from lean.models.options import ChoiceOption, Option
 
 

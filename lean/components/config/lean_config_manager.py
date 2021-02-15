@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 
 from jsoncomment import JsonComment
 
-from lean.components.cli_config_manager import CLIConfigManager
+from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.models.config import DebuggingMethod
 
 

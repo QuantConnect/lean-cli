@@ -13,7 +13,7 @@
 
 from pathlib import Path
 
-from lean.components.storage import Storage
+from lean.components.config.storage import Storage
 
 
 class ProjectConfigManager:

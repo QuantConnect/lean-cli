@@ -18,7 +18,7 @@ from unittest import mock
 import pytest
 from responses import RequestsMock
 
-from lean.components.api_client import APIClient
+from lean.components.api.api_client import APIClient
 from lean.models.errors import AuthenticationError, RequestFailedError
 
 BASE_URL = "https://www.quantconnect.com/api"

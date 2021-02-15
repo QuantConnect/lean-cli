@@ -13,7 +13,7 @@
 
 from typing import List, Optional
 
-from lean.components.storage import Storage
+from lean.components.config.storage import Storage
 
 
 class Option:

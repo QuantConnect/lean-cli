@@ -13,16 +13,16 @@
 
 from dependency_injector import containers, providers
 
-from lean.components.api_client import APIClient
-from lean.components.cli_config_manager import CLIConfigManager
-from lean.components.csharp_compiler import CSharpCompiler
+from lean.components.api.api_client import APIClient
+from lean.components.config.cli_config_manager import CLIConfigManager
+from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.config.storage import Storage
 from lean.components.docker_manager import DockerManager
-from lean.components.lean_config_manager import LeanConfigManager
-from lean.components.lean_runner import LeanRunner
+from lean.components.engine.csharp_compiler import CSharpCompiler
+from lean.components.engine.lean_runner import LeanRunner
 from lean.components.logger import Logger
-from lean.components.project_config_manager import ProjectConfigManager
 from lean.components.project_manager import ProjectManager
-from lean.components.storage import Storage
 from lean.config import Config
 
 
