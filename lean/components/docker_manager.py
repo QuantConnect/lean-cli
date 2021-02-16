@@ -88,7 +88,7 @@ class DockerManager:
 
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows for some reason
-        def print_logs(container: Container, on_run: Callable[[], None], quiet: bool, logger: Logger) -> None:
+        def print_logs() -> None:
             on_run_called = False
 
             # Capture all logs and print it to stdout if not running in quiet mode
@@ -98,13 +98,13 @@ class DockerManager:
                     on_run_called = True
 
                 if not quiet:
-                    logger.info(chunk.decode("utf-8"), newline=False)
+                    self._logger.info(chunk.decode("utf-8"), newline=False)
 
             # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
             if not quiet:
-                logger.flush()
+                self._logger.flush()
 
-        thread = threading.Thread(target=print_logs, args=(container, on_run, quiet, self._logger))
+        thread = threading.Thread(target=print_logs)
         thread.daemon = True
         thread.start()
 
