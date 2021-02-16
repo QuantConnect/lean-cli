@@ -63,15 +63,22 @@ class Container(containers.DeclarativeContainer):
     node_client = providers.Singleton(NodeClient, api_client=api_client)
     live_client = providers.Singleton(LiveClient, api_client=api_client)
 
-    project_manager = providers.Singleton(ProjectManager)
     project_config_manager = providers.Singleton(ProjectConfigManager, file_name=Config.project_config_file_name)
+    project_manager = providers.Singleton(ProjectManager,
+                                          project_config_manager=project_config_manager,
+                                          project_config_file_name=Config.project_config_file_name)
 
     pull_manager = providers.Singleton(PullManager,
                                        logger=logger,
                                        project_client=project_client,
                                        file_client=file_client,
                                        project_config_manager=project_config_manager)
-    push_manager = providers.Singleton(PushManager)
+    push_manager = providers.Singleton(PushManager,
+                                       logger=logger,
+                                       project_client=project_client,
+                                       file_client=file_client,
+                                       project_manager=project_manager,
+                                       project_config_manager=project_config_manager)
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 

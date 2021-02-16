@@ -11,19 +11,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from typing import Optional
 
 import click
 
-from lean.click import LeanCommand
+from lean.click import LeanCommand, PathParameter
+from lean.config import Config
+from lean.container import container
 
 
 @click.command(cls=LeanCommand)
-@click.option("--project", type=str, help="Name or id of the project to push (all local projects if not specified)")
-def push(project: Optional[str]) -> None:
+@click.option("--project",
+              type=PathParameter(exists=True, file_okay=False, dir_okay=True),
+              help="Path to the local project to push (all local projects if not specified)")
+def push(project: Optional[Path]) -> None:
     """Push local projects to QuantConnect.
 
     This command overrides the content of cloud files with the content of their respective local counterparts.
     """
-    # TODO: Implement
-    print(project)
+    # Parse which projects need to be pushed
+    if project is not None:
+        project_config_manager = container.project_config_manager()
+        if not project_config_manager.get_project_config(project).file.exists():
+            raise RuntimeError("Given directory is not a Lean project")
+
+        projects_to_push = [project]
+    else:
+        projects_to_push = [p.parent for p in Path.cwd().rglob(Config.project_config_file_name)]
+
+    push_manager = container.push_manager()
+    push_manager.push_projects(projects_to_push)

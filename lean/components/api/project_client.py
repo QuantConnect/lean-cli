@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 from lean.components.api.api_client import APIClient
 from lean.models.api import QCCreatedProject, QCLanguage, QCProject
@@ -61,6 +61,25 @@ class ProjectClient:
 
         return self._process_project(QCCreatedProject(**data["projects"][0]))
 
+    def update(self, project_id: int, name: Optional[str] = None, parameters: Optional[Dict[str, str]] = None) -> None:
+        """Updates an existing project.
+
+        :param project_id: the id of the project to update
+        :param name: the new name to assign to the project, or None if the name shouldn't be changed
+        :param parameters: the new parameters of the project, or None if the parameters shouldn't be changed
+        """
+        request_parameters = {
+            "projectId": project_id
+        }
+
+        if name is not None:
+            request_parameters["name"] = name
+
+        if parameters is not None:
+            request_parameters["parameters"] = parameters
+
+        self._api.post("projects/update", request_parameters)
+
     def delete(self, project_id: int) -> None:
         """Deletes an existing project.
 
@@ -68,6 +87,28 @@ class ProjectClient:
         """
         self._api.post("projects/delete", {
             "projectId": project_id
+        })
+
+    def add_library(self, project_id: int, library_project_id: int) -> None:
+        """Links a library to a project.
+
+        :param project_id: the id of the project to add the library to
+        :param library_project_id: the id of the library project to add as library
+        """
+        self._api.post("projects/library/create", {
+            "projectId": project_id,
+            "libraryId": library_project_id
+        })
+
+    def delete_library(self, project_id: int, library_project_id: int) -> None:
+        """Removes a library from a project.
+
+        :param project_id: the id of the project the library is added to
+        :param library_project_id: the id of the library project to remove
+        """
+        self._api.post("projects/library/delete", {
+            "projectId": project_id,
+            "libraryId": library_project_id
         })
 
     def _process_project(self, project: Any) -> Any:

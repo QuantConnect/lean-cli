@@ -12,10 +12,22 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Dict, List
+
+from lean.components.config.project_config_manager import ProjectConfigManager
 
 
 class ProjectManager:
     """The ProjectManager class provides utilities for finding specific files in projects."""
+
+    def __init__(self, project_config_manager: ProjectConfigManager, project_config_file_name: str) -> None:
+        """Creates a new ProjectManager instance.
+
+        :param project_config_manager: the ProjectConfigManager instance to use when retrieving project configuration
+        :param project_config_file_name: the name of the project config file
+        """
+        self._project_config_manager = project_config_manager
+        self._project_config_file_name = project_config_file_name
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -34,3 +46,64 @@ class ProjectManager:
                 return target_file
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
+
+    def resolve_project_dependencies(self, project: Path) -> List[Path]:
+        """Resolves the library dependencies for a given project.
+
+        :param project: the project to resolve dependencies for
+        :return: a list containing the project and all of its recursive dependencies
+        """
+        # The library index is only created when it is needed
+        library_index = None
+
+        # The list of projects which will be returned
+        resolved_projects = []
+
+        # The list of projects of which the dependencies need to be processed
+        projects_to_process = [project]
+
+        # The list of project ids of which the dependencies have been processed
+        processed_project_ids = []
+
+        while len(projects_to_process) > 0:
+            current_project = projects_to_process.pop(0)
+            current_config = self._project_config_manager.get_project_config(current_project)
+
+            # Don't process a project twice
+            current_project_id = current_config.get("project-id")
+            if current_project_id in processed_project_ids:
+                continue
+
+            # Find the ids of not-yet-processed libraries of the current project
+            required_library_ids = current_config.get("libraries", [])
+            missing_library_ids = [library_id for library_id in required_library_ids if
+                                   library_id not in processed_project_ids]
+
+            # For each missing library id, add the library project to the list of projects that need to be processed
+            for library_id in missing_library_ids:
+                if library_index is None:
+                    library_index = self._get_library_index()
+
+                if library_id in library_index:
+                    projects_to_process.append(library_index[library_id])
+
+            resolved_projects.append(current_project)
+            processed_project_ids.append(current_project_id)
+
+        return resolved_projects
+
+    def _get_library_index(self) -> Dict[str, Path]:
+        """Returns a dictionary containing all library projects.
+
+        :return: a dictionary where the keys are project ids and the values are paths to library project directories
+        """
+        library_index = {}
+
+        for p in Path.cwd().rglob(f"Library/**/{self._project_config_file_name}"):
+            config = self._project_config_manager.get_project_config(p.parent)
+            project_id = config.get("project-id")
+
+            if project_id is not None:
+                library_index[project_id] = p.parent
+
+        return library_index

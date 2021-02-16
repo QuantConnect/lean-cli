@@ -49,15 +49,7 @@ class PullManager:
 
         :param projects_to_pull: the cloud projects that need to be pulled
         """
-        # Resolve library dependencies and add them to the list of projects to be pulled
-        library_ids = set(itertools.chain(*[p.libraries for p in projects_to_pull]))
-        all_projects = self._project_client.get_all()
-
-        for library_id in library_ids:
-            if any([p.projectId == library_id for p in projects_to_pull]):
-                continue
-
-            projects_to_pull.append([p for p in all_projects if p.projectId == library_id][0])
+        projects_to_pull = self._resolve_projects_to_pull(projects_to_pull, self._project_client.get_all())
 
         for index, project in enumerate(projects_to_pull, start=1):
             try:
@@ -65,6 +57,30 @@ class PullManager:
                 self._pull_project(project)
             except Exception as ex:
                 self._logger.warn(f"Cannot pull '{project.name}' ({project.projectId}): {ex}")
+
+    def _resolve_projects_to_pull(self,
+                                  projects_to_pull: List[QCProject],
+                                  all_projects: List[QCProject]) -> List[QCProject]:
+        """Resolves all library dependencies in projects_to_pull.
+
+         :param projects_to_pull: the projects that need to be pulled
+         :param all_projects: all projects accessible by the user
+         :return: a list containing all projects in projects_to_pull where no project has a dependency on a project not in the list
+         """
+        required_library_ids = set(itertools.chain(*[p.libraries for p in projects_to_pull]))
+        missing_library_ids = [library_id for library_id in required_library_ids if
+                               not any([p.projectId == library_id for p in projects_to_pull])]
+
+        # If all required libraries are already in projects_to_pull we're done
+        if len(missing_library_ids) == 0:
+            return projects_to_pull
+
+        # Add all not-yet-added libraries which are depended upon by projects in projects_to_pull
+        for library_id in missing_library_ids:
+            projects_to_pull.append([p for p in all_projects if p.projectId == library_id][0])
+
+        # Resolve the dependencies of dependencies recursively
+        return self._resolve_projects_to_pull(projects_to_pull, all_projects)
 
     def _pull_project(self, project: QCProject) -> None:
         """Pulls a single project from the cloud to the local drive.
@@ -102,6 +118,7 @@ class PullManager:
         project_config.set("project-id", project.projectId)
         project_config.set("algorithm-language", "Python" if project.language == QCLanguage.Python else "CSharp")
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
+        project_config.set("libraries", project.libraries)
 
     def _pull_files(self, project: QCProject) -> None:
         """Pull the files of a single project.
