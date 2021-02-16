@@ -25,6 +25,7 @@ from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.project_client import ProjectClient
+from lean.models.api import QCCompileState, QCLanguage
 
 # These tests require a QuantConnect user id and API token
 USER_ID = ""
@@ -54,7 +55,7 @@ def test_projects_crud() -> None:
 
     # Test a project can be created
     name = f"Test Project {datetime.now()}"
-    created_project = project_client.create(name, "Py")
+    created_project = project_client.create(name, QCLanguage.Python)
 
     assert created_project.name == name
     assert created_project.projectId > 0
@@ -79,7 +80,7 @@ def test_files_crud() -> None:
 
     # Create a project to play with
     name = f"Test Project {datetime.now()}"
-    project = project_client.create(name, "Py")
+    project = project_client.create(name, QCLanguage.Python)
 
     # Test a file can be created
     created_file = file_client.create(project.projectId, "file.py", "# This is a comment")
@@ -119,7 +120,7 @@ def test_compiling() -> None:
 
     # Create a project to play with
     name = f"Test Project {datetime.now()}"
-    project = project_client.create(name, "Py")
+    project = project_client.create(name, QCLanguage.Python)
 
     # Test a compilation can be started
     created_compile = compile_client.create(project.projectId)
@@ -141,14 +142,15 @@ def test_backtest_crud() -> None:
 
     # Create a project to play with
     project_name = f"Test Project {datetime.now()}"
-    project = project_client.create(project_name, "Py")
+    project = project_client.create(project_name, QCLanguage.Python)
 
     # Compile the project
     created_compile = compile_client.create(project.projectId)
 
     # Wait for the compile to be completed
     while True:
-        if compile_client.get(project.projectId, created_compile.compileId).state in ["BuildSuccess", "BuildError"]:
+        if compile_client.get(project.projectId, created_compile.compileId).state in [QCCompileState.BuildSuccess,
+                                                                                      QCCompileState.BuildError]:
             break
         sleep(1)
 

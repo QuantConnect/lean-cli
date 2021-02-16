@@ -12,10 +12,10 @@
 # limitations under the License.
 
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
-from typing_extensions import Literal
 
 
 # The models in this module are all parts of responses from the QuantConnect API
@@ -55,7 +55,12 @@ class QCLiveResults(BaseModel):
     sErrorMessage: Optional[str] = None
 
 
-QCLanguage = Literal["C#", "F#", "VB", "Ja", "Py"]
+class QCLanguage(str, Enum):
+    CSharp = "C#"
+    FSharp = "F#"
+    VisualBasic = "VB"
+    Java = "Ja"
+    Python = "Py"
 
 
 class QCProject(BaseModel):
@@ -104,7 +109,10 @@ class QCCompileParameterContainer(BaseModel):
     parameters: List[QCCompileParameter]
 
 
-QCCompileState = Literal["InQueue", "BuildSuccess", "BuildError"]
+class QCCompileState(str, Enum):
+    InQueue = "InQueue"
+    BuildSuccess = "BuildSuccess"
+    BuildError = "BuildError"
 
 
 class QCCompileWithLogs(BaseModel):
@@ -167,18 +175,19 @@ class QCNodeList(BaseModel):
     live: List[QCNode]
 
 
-QCLiveAlgorithmStatus = Literal["DeployError",
-                                "InQueue",
-                                "Running",
-                                "Stopped",
-                                "Liquidated",
-                                "Deleted",
-                                "Completed",
-                                "RuntimeError",
-                                "Invalid",
-                                "LoggingIn",
-                                "Initializing",
-                                "History"]
+class QCLiveAlgorithmStatus(str, Enum):
+    DeployError = "DeployError"
+    InQueue = "InQueue"
+    Running = "Running"
+    Stopped = "Stopped"
+    Liquidated = "Liquidated"
+    Deleted = "Deleted"
+    Completed = "Completed"
+    RuntimeError = "RuntimeError"
+    Invalid = "Invalid"
+    LoggingIn = "LoggingIn"
+    Initializing = "Initializing"
+    History = "History"
 
 
 class QCLiveAlgorithm(BaseModel):

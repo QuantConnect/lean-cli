@@ -56,7 +56,7 @@ class ProjectClient:
         """
         data = self._api.post("projects/create", {
             "name": name,
-            "language": language
+            "language": language.value
         })
 
         return self._process_project(QCCreatedProject(**data["projects"][0]))
