@@ -20,9 +20,8 @@ import types
 from typing import Callable, Optional
 
 import docker
-from docker.models.containers import Container
 import requests
-from requests.exceptions import ReadTimeout
+from docker.models.containers import Container
 
 from lean.components.logger import Logger
 
@@ -69,7 +68,6 @@ class DockerManager:
             self.pull_image(image, tag)
 
         on_run = kwargs.pop("on_run", lambda: None)
-        on_run_called = False
 
         docker_client = self._get_docker_client()
 
@@ -92,7 +90,7 @@ class DockerManager:
         # If we run this code on the current thread, SIGINT won't be triggered on Windows for some reason
         def print_logs(container: Container, on_run: Callable[[], None], quiet: bool, logger: Logger) -> None:
             on_run_called = False
-            
+
             # Capture all logs and print it to stdout if not running in quiet mode
             for chunk in container.logs(stream=True, follow=True):
                 if not on_run_called:
@@ -105,11 +103,11 @@ class DockerManager:
             # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
             if not quiet:
                 logger.flush()
-        
+
         thread = threading.Thread(target=print_logs, args=(container, on_run, quiet, self._logger))
         thread.daemon = True
         thread.start()
-        
+
         while thread.is_alive():
             thread.join(0.1)
 

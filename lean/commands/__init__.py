@@ -15,8 +15,8 @@ import click
 
 from lean import __version__
 from lean.commands.backtest import backtest
-from lean.commands.config import config
 from lean.commands.cloud import cloud
+from lean.commands.config import config
 from lean.commands.create_project import create_project
 from lean.commands.init import init
 from lean.commands.login import login

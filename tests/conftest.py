@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import os
-import site
 from pathlib import Path
 
 import certifi
@@ -21,6 +20,7 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
 
 from lean.container import container
+
 
 # conftest.py is ran by pytest before loading each testing module
 # Fixtures defined in here are therefore available in all testing modules
