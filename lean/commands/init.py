@@ -43,7 +43,7 @@ on the page above, you can add a PackageReference for it.
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <TargetFramework>net462</TargetFramework>
         <LangVersion>6</LangVersion>
-        <OutputPath>bin\$(Configuration)\</OutputPath>
+        <OutputPath>bin\\$(Configuration)\\</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
      <PropertyGroup>
