@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 from responses import RequestsMock
 
+from lean.components.api.account_client import AccountClient
 from lean.components.api.api_client import APIClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -204,10 +205,11 @@ def test_live_client_get_all_parses_response() -> None:
 
 def test_node_client_get_all_parses_response() -> None:
     api_client = create_api_client()
+    account_client = AccountClient(api_client)
     node_client = NodeClient(api_client)
 
-    # Retrieve the user's account details
-    organization = api_client.get_organization()
+    # Retrieve the organization details
+    organization = account_client.get_organization()
 
     # Test nodes can be retrieved
     # All we can do here is make sure NodeClient can parse the response
@@ -215,11 +217,12 @@ def test_node_client_get_all_parses_response() -> None:
     node_client.get_all(organization.organizationId)
 
 
-def test_api_client_get_organization() -> None:
+def test_account_client_get_organization() -> None:
     api_client = create_api_client()
+    account_client = AccountClient(api_client)
 
     # Test get_organization() returns the same value when retrieving default organization with and without parameter
-    default_organization = api_client.get_organization()
-    specific_organization = api_client.get_organization(default_organization.organizationId)
+    default_organization = account_client.get_organization()
+    specific_organization = account_client.get_organization(default_organization.organizationId)
 
     assert default_organization == specific_organization

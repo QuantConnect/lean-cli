@@ -13,13 +13,12 @@
 
 from hashlib import sha256
 from time import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib.parse import urljoin
 
 import requests
 
 from lean.components.logger import Logger
-from lean.models.api import QCOrganization
 from lean.models.errors import AuthenticationError, RequestFailedError
 
 
@@ -71,20 +70,6 @@ class APIClient:
             return True
         except (RequestFailedError, AuthenticationError):
             return False
-
-    def get_organization(self, organization_id: Optional[str] = None) -> QCOrganization:
-        """Returns the details of an organization.
-
-        :param organization_id: the id of the organization or None to select the default organization
-        :return: the details of the organization
-        """
-        parameters = {}
-
-        if organization_id is not None:
-            parameters["organizationId"] = organization_id
-
-        data = self.post("account/read", parameters)
-        return QCOrganization(**data)
 
     def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated request to the given endpoint.

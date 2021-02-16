@@ -13,6 +13,7 @@
 
 from dependency_injector import containers, providers
 
+from lean.components.api.account_client import AccountClient
 from lean.components.api.api_client import APIClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -52,6 +53,7 @@ class Container(containers.DeclarativeContainer):
                                    base_url=Config.api_base_url,
                                    user_id=cli_config_manager.provided.user_id.get_value()(),
                                    api_token=cli_config_manager.provided.api_token.get_value()())
+    account_client = providers.Singleton(AccountClient, api_client=api_client)
     file_client = providers.Singleton(FileClient, api_client=api_client)
     project_client = providers.Singleton(ProjectClient, api_client=api_client)
     compile_client = providers.Singleton(CompileClient, api_client=api_client)
