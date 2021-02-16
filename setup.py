@@ -25,6 +25,8 @@ install_requires = [
     "docker~=4.4.1",
     "rich~=9.10.0",
     "dependency-injector~=4.20.1",
+    "pydantic~=1.7.3",
+    "typing-extensions~=3.7.4.3",
     "quantconnect-stubs"
 ]
 

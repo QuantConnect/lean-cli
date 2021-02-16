@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import site
 from pathlib import Path
 
 import pytest
@@ -20,15 +21,20 @@ from responses import RequestsMock
 
 from lean.container import container
 
-
 # conftest.py is ran by pytest before loading each testing module
 # Fixtures defined in here are therefore available in all testing modules
+
+site_packages_paths = [path for path in site.getsitepackages() if Path(path).exists()]
+
 
 @pytest.fixture(autouse=True)
 def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     """A pytest fixture which mocks the filesystem before each test."""
     # The "fs" argument triggers pyfakefs' own pytest fixture to register
     # After pyfakefs has started all filesystem actions will happen on a fake in-memory filesystem
+
+    # Proxy access to site-packages to the real filesystem
+    fs.add_real_paths(site_packages_paths)
 
     # Create a fake home directory and set the cwd to an empty directory
     fs.create_dir(Path.home() / "testing")
