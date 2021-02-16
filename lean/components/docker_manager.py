@@ -91,17 +91,13 @@ class DockerManager:
             on_run_called = False
 
             # Capture all logs and print it to stdout if not running in quiet mode
-            for chunk in container.logs(stream=True, follow=True):
+            for line in container.logs(stream=True, follow=True):
                 if not on_run_called:
                     on_run()
                     on_run_called = True
 
                 if not quiet:
-                    self._logger.info(chunk.decode("utf-8"), newline=False)
-
-            # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
-            if not quiet:
-                self._logger.flush()
+                    self._logger.info(line.decode("utf-8").strip())
 
         thread = threading.Thread(target=print_logs)
         thread.daemon = True

@@ -243,6 +243,7 @@ def create_project(name: str, language: str) -> None:
     project_config_manager = container.project_config_manager()
     project_config = project_config_manager.get_project_config(full_path)
     project_config.set("algorithm-language", "Python" if language == "python" else "CSharp")
+    project_config.set("parameters", {})
 
     logger = container.logger()
     logger.info(f"Successfully created project '{name}'")

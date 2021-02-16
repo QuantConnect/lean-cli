@@ -18,7 +18,7 @@ import click
 from lean.click import LeanCommand
 
 
-@click.command(cls=LeanCommand, requires_cli_project=True)
+@click.command(cls=LeanCommand)
 @click.option("--project", type=str, help="Name or id of the project to push (all local projects if not specified)")
 def push(project: Optional[str]) -> None:
     """Push local projects to QuantConnect.

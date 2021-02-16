@@ -11,21 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import traceback
-
-from lean.commands import lean
-from lean.container import container
-
-
-def main() -> None:
-    """This function is the entrypoint when running a Lean command in a terminal."""
-    try:
-        lean.main()
-    except Exception as exception:
-        logger = container.logger()
-
-        logger.debug(traceback.format_exc().strip())
-        logger.error(f"Error: {exception}")
-
-        sys.exit(1)
+class PushManager:
+    """The PushManager class is responsible for synchronizing local projects to the cloud."""
+    # TODO: Implement
+    pass

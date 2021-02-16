@@ -30,6 +30,8 @@ from lean.components.engine.csharp_compiler import CSharpCompiler
 from lean.components.engine.lean_runner import LeanRunner
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
+from lean.components.sync.pull_manager import PullManager
+from lean.components.sync.push_manager import PushManager
 from lean.config import Config
 
 
@@ -63,6 +65,13 @@ class Container(containers.DeclarativeContainer):
 
     project_manager = providers.Singleton(ProjectManager)
     project_config_manager = providers.Singleton(ProjectConfigManager, file_name=Config.project_config_file_name)
+
+    pull_manager = providers.Singleton(PullManager,
+                                       logger=logger,
+                                       project_client=project_client,
+                                       file_client=file_client,
+                                       project_config_manager=project_config_manager)
+    push_manager = providers.Singleton(PushManager)
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 

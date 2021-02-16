@@ -16,14 +16,32 @@ from typing import Optional
 import click
 
 from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.command(cls=LeanCommand, requires_cli_project=True)
+@click.command(cls=LeanCommand)
 @click.option("--project", type=str, help="Name or id of the project to pull (all cloud projects if not specified)")
-def pull(project: Optional[str]) -> None:
+@click.option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
+def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     """Pull projects from QuantConnect to the local drive.
 
     This command overrides the content of local files with the content of their respective counterparts in the cloud.
     """
-    # TODO: Implement
-    print(project)
+    project_client = container.project_client()
+    all_projects = project_client.get_all()
+
+    # Parse which projects need to be pulled
+    if project is not None:
+        for p in all_projects:
+            if str(p.projectId) == project or p.name == project:
+                projects_to_pull = [p]
+                break
+        else:
+            raise RuntimeError("No project with the given name or id exists in the cloud")
+    else:
+        projects_to_pull = all_projects
+        if not pull_bootcamp:
+            projects_to_pull = [p for p in projects_to_pull if not p.name.startswith("Boot Camp/")]
+
+    pull_manager = container.pull_manager()
+    pull_manager.pull_projects(projects_to_pull)

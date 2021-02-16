@@ -31,7 +31,7 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
     """Parses the --verbose option."""
     if value:
         logger = container.logger()
-        logger.debug_logging_enabled = True
+        logger.enable_debug_logging()
 
 
 class LeanCommand(click.Command):
