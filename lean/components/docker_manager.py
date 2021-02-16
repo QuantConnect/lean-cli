@@ -17,11 +17,10 @@ import signal
 import sys
 import threading
 import types
-from typing import Callable, Optional
+from typing import Optional
 
 import docker
 import requests
-from docker.models.containers import Container
 
 from lean.components.logger import Logger
 
