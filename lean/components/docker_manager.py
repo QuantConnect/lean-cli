@@ -15,11 +15,14 @@ import itertools
 import os
 import signal
 import sys
+import threading
 import types
-from typing import Optional
+from typing import Callable, Optional
 
 import docker
+from docker.models.containers import Container
 import requests
+from requests.exceptions import ReadTimeout
 
 from lean.components.logger import Logger
 
@@ -85,18 +88,30 @@ class DockerManager:
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        # Capture all logs and print it to stdout if not running in quiet mode
-        for chunk in container.logs(stream=True, follow=True):
-            if not on_run_called:
-                on_run()
-                on_run_called = True
+        # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
+        # If we run this code on the current thread, SIGINT won't be triggered on Windows for some reason
+        def print_logs(container: Container, on_run: Callable[[], None], quiet: bool, logger: Logger) -> None:
+            on_run_called = False
+            
+            # Capture all logs and print it to stdout if not running in quiet mode
+            for chunk in container.logs(stream=True, follow=True):
+                if not on_run_called:
+                    on_run()
+                    on_run_called = True
 
+                if not quiet:
+                    logger.info(chunk.decode("utf-8"), newline=False)
+
+            # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
             if not quiet:
-                self._logger.info(chunk.decode("utf-8"), newline=False)
-
-        # Flush stdout to make sure messages printed after run_image() appear after the Docker logs
-        if not quiet:
-            self._logger.flush()
+                logger.flush()
+        
+        thread = threading.Thread(target=print_logs, args=(container, on_run, quiet, self._logger))
+        thread.daemon = True
+        thread.start()
+        
+        while thread.is_alive():
+            thread.join(0.1)
 
         return container.wait()["StatusCode"] == 0
 
@@ -132,13 +147,13 @@ class DockerManager:
 
         try:
             docker_client = docker.from_env()
-        except:
+        except Exception:
             raise RuntimeError(error_message)
 
         try:
             if not docker_client.ping():
                 raise RuntimeError(error_message)
-        except:
+        except Exception:
             raise RuntimeError(error_message)
 
         return docker_client
