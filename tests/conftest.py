@@ -15,6 +15,7 @@ import os
 import site
 from pathlib import Path
 
+import certifi
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
@@ -24,8 +25,6 @@ from lean.container import container
 # conftest.py is ran by pytest before loading each testing module
 # Fixtures defined in here are therefore available in all testing modules
 
-site_packages_paths = [path for path in site.getsitepackages() if Path(path).exists()]
-
 
 @pytest.fixture(autouse=True)
 def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
@@ -33,8 +32,8 @@ def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     # The "fs" argument triggers pyfakefs' own pytest fixture to register
     # After pyfakefs has started all filesystem actions will happen on a fake in-memory filesystem
 
-    # Proxy access to site-packages to the real filesystem
-    fs.add_real_paths(site_packages_paths)
+    # Proxy access to certifi's certificate authority bundle to the real filesystem
+    fs.add_real_file(certifi.where())
 
     # Create a fake home directory and set the cwd to an empty directory
     fs.create_dir(Path.home() / "testing")
