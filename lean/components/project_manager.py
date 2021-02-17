@@ -47,11 +47,11 @@ class ProjectManager:
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
 
-    def resolve_project_dependencies(self, project: Path) -> List[Path]:
+    def resolve_project_libraries(self, project: Path) -> List[Path]:
         """Resolves the library dependencies for a given project.
 
         :param project: the project to resolve dependencies for
-        :return: a list containing the project and all of its recursive dependencies
+        :return: a list containing the project and all of its recursive library dependencies
         """
         # The library index is only created when it is needed
         library_index = None

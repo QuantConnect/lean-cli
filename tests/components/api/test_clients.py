@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 from datetime import datetime
 from time import sleep
+from typing import ContextManager
 from unittest import mock
 
 import pytest
@@ -26,7 +28,7 @@ from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.project_client import ProjectClient
-from lean.models.api import QCCompileState, QCLanguage
+from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
 
 # These tests require a QuantConnect user id and API token
 USER_ID = ""
@@ -44,6 +46,23 @@ def create_api_client() -> APIClient:
         pytest.skip("API credentials not specified")
 
     return APIClient(mock.Mock(), "https://www.quantconnect.com/api/v2", USER_ID, API_TOKEN)
+
+
+@contextlib.contextmanager
+def create_project(api_client: APIClient, name_prefix: str) -> ContextManager[QCProject]:
+    project_client = ProjectClient(api_client)
+
+    # Create the project
+    created_project = project_client.create(f"{name_prefix} {datetime.now()}", QCLanguage.Python)
+
+    # Retrieve full project details
+    project = project_client.get(created_project.projectId)
+
+    # Do something with the project
+    yield project
+
+    # Delete the project
+    project_client.delete(project.projectId)
 
 
 def test_api_credentials_valid() -> None:
@@ -66,6 +85,35 @@ def test_projects_crud() -> None:
 
     assert retrieved_project.projectId == created_project.projectId
 
+    # Test the project's name can be updated
+    project_client.update(created_project.projectId, name="New Name")
+    retrieved_project = project_client.get(created_project.projectId)
+
+    assert retrieved_project.name == "New Name"
+
+    # Test the project's parameters can be updated
+    project_client.update(created_project.projectId, parameters={"key1": "value1", "key2": "value2", "key3": "value3"})
+    retrieved_project = project_client.get(created_project.projectId)
+
+    assert retrieved_project.parameters == [
+        QCParameter(key="key1", value="value1"),
+        QCParameter(key="key2", value="value2"),
+        QCParameter(key="key3", value="value3")
+    ]
+
+    # Test libraries can be added
+    with create_project(api_client, "Library/Test Project") as library_project:
+        project_client.add_library(created_project.projectId, library_project.projectId)
+        retrieved_project = project_client.get(created_project.projectId)
+
+        assert retrieved_project.libraries == [library_project.projectId]
+
+        # Test libraries can be deleted
+        project_client.delete_library(created_project.projectId, library_project.projectId)
+        retrieved_project = project_client.get(created_project.projectId)
+
+        assert retrieved_project.libraries == []
+
     # Test the project can be deleted
     project_client.delete(created_project.projectId)
 
@@ -76,121 +124,100 @@ def test_projects_crud() -> None:
 
 def test_files_crud() -> None:
     api_client = create_api_client()
-    project_client = ProjectClient(api_client)
     file_client = FileClient(api_client)
 
-    # Create a project to play with
-    name = f"Test Project {datetime.now()}"
-    project = project_client.create(name, QCLanguage.Python)
+    with create_project(api_client, "Test Project") as project:
+        # Test a file can be created
+        created_file = file_client.create(project.projectId, "file.py", "# This is a comment")
 
-    # Test a file can be created
-    created_file = file_client.create(project.projectId, "file.py", "# This is a comment")
+        assert created_file.name == "file.py"
+        assert created_file.content == "# This is a comment"
 
-    assert created_file.name == "file.py"
-    assert created_file.content == "# This is a comment"
+        # Test the file can be retrieved
+        retrieved_file = file_client.get(project.projectId, "file.py")
 
-    # Test the file can be retrieved
-    retrieved_file = file_client.get(project.projectId, "file.py")
+        assert retrieved_file.name == "file.py"
+        assert retrieved_file.content == "# This is a comment"
 
-    assert retrieved_file.name == "file.py"
-    assert retrieved_file.content == "# This is a comment"
+        # Test the file can be updated
+        file_client.update(project.projectId, "file.py", "# This is a new comment")
+        retrieved_file = file_client.get(project.projectId, "file.py")
 
-    # Test the file can be updated
-    file_client.update(project.projectId, "file.py", "# This is a new comment")
-    retrieved_file = file_client.get(project.projectId, "file.py")
+        assert retrieved_file.name == "file.py"
+        assert retrieved_file.content == "# This is a new comment"
 
-    assert retrieved_file.name == "file.py"
-    assert retrieved_file.content == "# This is a new comment"
+        # Test the file can be deleted
+        file_client.delete(project.projectId, "file.py")
 
-    # Test the file can be deleted
-    file_client.delete(project.projectId, "file.py")
+        # Test the file is really deleted
+        files = file_client.get_all(project.projectId)
 
-    # Test the file is really deleted
-    files = file_client.get_all(project.projectId)
-
-    assert not any([file.name == "file.py" for file in files])
-
-    # Delete the project that was used to test FileClient
-    project_client.delete(project.projectId)
+        assert not any([file.name == "file.py" for file in files])
 
 
 def test_compiling() -> None:
     api_client = create_api_client()
-    project_client = ProjectClient(api_client)
     compile_client = CompileClient(api_client)
 
-    # Create a project to play with
-    name = f"Test Project {datetime.now()}"
-    project = project_client.create(name, QCLanguage.Python)
+    with create_project(api_client, "Test Project") as project:
+        # Test a compilation can be started
+        created_compile = compile_client.create(project.projectId)
 
-    # Test a compilation can be started
-    created_compile = compile_client.create(project.projectId)
+        # Test compilation can be retrieved
+        retrieved_compile = compile_client.get(project.projectId, created_compile.compileId)
 
-    # Test compilation can be retrieved
-    retrieved_compile = compile_client.get(project.projectId, created_compile.compileId)
-
-    assert retrieved_compile.compileId == created_compile.compileId
-
-    # Delete the project that was used to test CompileClient
-    project_client.delete(project.projectId)
+        assert retrieved_compile.compileId == created_compile.compileId
 
 
 def test_backtest_crud() -> None:
     api_client = create_api_client()
-    project_client = ProjectClient(api_client)
     compile_client = CompileClient(api_client)
     backtest_client = BacktestClient(api_client)
 
-    # Create a project to play with
-    project_name = f"Test Project {datetime.now()}"
-    project = project_client.create(project_name, QCLanguage.Python)
+    with create_project(api_client, "Test Project") as project:
+        # Compile the project
+        created_compile = compile_client.create(project.projectId)
 
-    # Compile the project
-    created_compile = compile_client.create(project.projectId)
+        # Wait for the compile to be completed
+        while True:
+            if compile_client.get(project.projectId, created_compile.compileId).state in [QCCompileState.BuildSuccess,
+                                                                                          QCCompileState.BuildError]:
+                break
+            sleep(1)
 
-    # Wait for the compile to be completed
-    while True:
-        if compile_client.get(project.projectId, created_compile.compileId).state in [QCCompileState.BuildSuccess,
-                                                                                      QCCompileState.BuildError]:
-            break
-        sleep(1)
+        # Test a backtest can be started
+        backtest_name = f"Test Backtest {datetime.now()}"
+        created_backtest = backtest_client.create(project.projectId, created_compile.compileId, backtest_name)
 
-    # Test a backtest can be started
-    backtest_name = f"Test Backtest {datetime.now()}"
-    created_backtest = backtest_client.create(project.projectId, created_compile.compileId, backtest_name)
+        assert created_backtest.name == backtest_name
 
-    assert created_backtest.name == backtest_name
+        # Wait for the backtest to be completed
+        while True:
+            if backtest_client.get(project.projectId, created_backtest.backtestId).completed:
+                break
+            sleep(1)
 
-    # Wait for the backtest to be completed
-    while True:
-        if backtest_client.get(project.projectId, created_backtest.backtestId).completed:
-            break
-        sleep(1)
+        # Test the backtest can be retrieved
+        retrieved_backtest = backtest_client.get(project.projectId, created_backtest.backtestId)
 
-    # Test the backtest can be retrieved
-    retrieved_backtest = backtest_client.get(project.projectId, created_backtest.backtestId)
+        assert retrieved_backtest.backtestId == created_backtest.backtestId
+        assert retrieved_backtest.name == backtest_name
 
-    assert retrieved_backtest.backtestId == created_backtest.backtestId
-    assert retrieved_backtest.name == backtest_name
+        # Test the backtest can be updated
+        backtest_client.update(project.projectId, created_backtest.backtestId, backtest_name + "2", "This is a note")
+        retrieved_backtest = backtest_client.get(project.projectId, created_backtest.backtestId)
 
-    # Test the backtest can be updated
-    backtest_client.update(project.projectId, created_backtest.backtestId, backtest_name + "2", "This is a note")
-    retrieved_backtest = backtest_client.get(project.projectId, created_backtest.backtestId)
+        assert retrieved_backtest.backtestId == created_backtest.backtestId
+        assert retrieved_backtest.name == backtest_name + "2"
+        assert retrieved_backtest.note == "This is a note"
 
-    assert retrieved_backtest.backtestId == created_backtest.backtestId
-    assert retrieved_backtest.name == backtest_name + "2"
-    assert retrieved_backtest.note == "This is a note"
+        # Test the backtest can be deleted
+        backtest_client.delete(project.projectId, created_backtest.backtestId)
 
-    # Test the backtest can be deleted
-    backtest_client.delete(project.projectId, created_backtest.backtestId)
+        # Test the backtest is really deleted
+        backtests = backtest_client.get_all(project.projectId)
 
-    # Test the backtest is really deleted
-    backtests = backtest_client.get_all(project.projectId)
-
-    assert not any([backtest.backtestId == created_backtest.backtestId for backtest in backtests])
-
-    # Delete the project that was used to test BacktestClient
-    project_client.delete(project.projectId)
+        assert not any([backtest.backtestId == created_backtest.backtestId for backtest in backtests])
 
 
 def test_live_client_get_all_parses_response() -> None:

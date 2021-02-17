@@ -10,22 +10,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from click.testing import CliRunner
-
-from lean.commands import lean
-from lean.container import container
-
-
-def test_config_set_updates_the_value_of_the_option() -> None:
-    result = CliRunner().invoke(lean, ["config", "set", "user-id", "12345"])
-
-    assert result.exit_code == 0
-
-    assert container.cli_config_manager().user_id.get_value() == "12345"
-
-
-def test_config_set_aborts_when_no_option_with_given_key_exists() -> None:
-    result = CliRunner().invoke(lean, ["config", "set", "this-option-does-not-exist", "value"])
-
-    assert result.exit_code != 0

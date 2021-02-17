@@ -65,7 +65,7 @@ class PullManager:
         """Resolves all library dependencies in projects_to_pull.
 
          :param projects_to_pull: the projects that need to be pulled
-         :param all_projects: all projects accessible by the user
+         :param all_projects: all cloud projects accessible by the user
          :return: a list containing all projects in projects_to_pull where no project has a dependency on a project not in the list
          """
         required_library_ids = set(itertools.chain(*[p.libraries for p in projects_to_pull]))

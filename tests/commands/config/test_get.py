@@ -20,23 +20,20 @@ from lean.container import container
 def test_config_get_prints_the_value_of_the_option_with_the_given_key() -> None:
     container.cli_config_manager().default_language.set_value("python")
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "get", "default-language"])
+    result = CliRunner().invoke(lean, ["config", "get", "default-language"])
 
     assert result.exit_code == 0
     assert result.output == "python\n"
 
 
 def test_config_get_aborts_when_no_option_with_given_key_exists() -> None:
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "get", "this-option-does-not-exist"])
+    result = CliRunner().invoke(lean, ["config", "get", "this-option-does-not-exist"])
 
     assert result.exit_code != 0
 
 
 def test_config_get_aborts_when_option_has_no_value() -> None:
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "get", "default-language"])
+    result = CliRunner().invoke(lean, ["config", "get", "default-language"])
 
     assert result.exit_code != 0
 
@@ -44,8 +41,7 @@ def test_config_get_aborts_when_option_has_no_value() -> None:
 def test_config_get_aborts_when_option_is_sensitive() -> None:
     container.cli_config_manager().user_id.set_value("123")
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "get", "user-id"])
+    result = CliRunner().invoke(lean, ["config", "get", "user-id"])
 
     assert result.exit_code != 0
     assert "123" not in result.output

@@ -53,8 +53,8 @@ class PushManager:
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         """
-        # Resolve the dependencies of all projects which need to be pushed
-        projects_to_push = [self._project_manager.resolve_project_dependencies(p) for p in projects_to_push]
+        # Resolve the library dependencies of all projects which need to be pushed
+        projects_to_push = [self._project_manager.resolve_project_libraries(p) for p in projects_to_push]
         projects_to_push = set(itertools.chain(*projects_to_push))
         projects_to_push = sorted(list(projects_to_push))
 

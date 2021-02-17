@@ -24,8 +24,7 @@ from lean.container import container
 def test_config_list_lists_all_options(size) -> None:
     size.return_value = ConsoleDimensions(1000, 1000)
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "list"])
+    result = CliRunner().invoke(lean, ["config", "list"])
 
     assert result.exit_code == 0
 
@@ -41,8 +40,7 @@ def test_config_list_does_not_show_complete_values_of_sensitive_options(size) ->
 
     size.return_value = ConsoleDimensions(1000, 1000)
 
-    runner = CliRunner()
-    result = runner.invoke(lean, ["config", "list"])
+    result = CliRunner().invoke(lean, ["config", "list"])
 
     assert result.exit_code == 0
 
