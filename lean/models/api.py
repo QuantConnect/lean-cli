@@ -34,6 +34,10 @@ class QCCollaborator(BaseModel):
 class QCParameter(BaseModel):
     key: str
     value: str
+    min: Optional[float]
+    max: Optional[float]
+    step: Optional[float]
+    type: Optional[str]
 
 
 class QCLiveResults(BaseModel):

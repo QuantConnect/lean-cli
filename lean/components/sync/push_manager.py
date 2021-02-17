@@ -106,6 +106,7 @@ class PushManager:
 
         # Finalize pushing by updating locally modified metadata
         self._push_parameters(project, cloud_project)
+        self._push_libraries(project, cloud_project)
 
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
         """Push the files of a local project to the cloud.
@@ -138,6 +139,25 @@ class PushManager:
         local_parameters = self._project_config_manager.get_project_config(project).get("parameters", {})
         cloud_parameters = {parameter.key: parameter.value for parameter in cloud_project.parameters}
 
-        if local_parameters != cloud_parameters:
+        if local_parameters != cloud_parameters and local_parameters != {}:
             self._project_client.update(cloud_project.projectId, parameters=local_parameters)
             self._logger.info(f"Successfully updated cloud parameters for '{cloud_project.name}'")
+
+    def _push_libraries(self, project: Path, cloud_project: QCProject) -> None:
+        """Push linked libraries to the cloud. Does nothing if the cloud is already up-to-date.
+
+        :param project: the local project to push the linked libraries of
+        :param cloud_project: the cloud project to push the linked libraries to
+        """
+        local_libraries = self._project_config_manager.get_project_config(project).get("libraries", [])
+        cloud_libraries = cloud_project.libraries
+
+        for library in cloud_libraries:
+            if library not in local_libraries:
+                self._project_client.delete_library(cloud_project.projectId, library)
+                self._logger.info(f"Successfully pushed removal of library {library} to '{cloud_project.name}'")
+
+        for library in local_libraries:
+            if library not in cloud_libraries:
+                self._project_client.add_library(cloud_project.projectId, library)
+                self._logger.info(f"Successfully pushed addition of library {library} to '{cloud_project.name}'")
