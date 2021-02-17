@@ -18,7 +18,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] Local backtesting
 - [x] Local debugging
 - [x] Local research environment
-- [ ] Cloud synchronization
+- [x] Cloud synchronization
 - [ ] Cloud backtesting
 - **First beta release**
 - [ ] Local data downloading
@@ -27,6 +27,7 @@ The following features are currently planned to be implemented (in order of prio
 - [ ] Local live trading
 - [ ] Cloud optimization
 - [ ] Cloud live trading
+- [ ] Local library support
 
 ## Installation
 
