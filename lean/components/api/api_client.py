@@ -49,16 +49,18 @@ class APIClient:
         """
         return self._request("get", endpoint, {"params": parameters})
 
-    def post(self, endpoint: str, data: Dict[str, Any] = {}) -> Any:
+    def post(self, endpoint: str, data: Dict[str, Any] = {}, data_as_json: bool = True) -> Any:
         """Makes an authenticated POST request to the given endpoint with the given data.
 
         Raises an error if the request fails or if the current credentials are invalid.
 
         :param endpoint: the API endpoint to send the request to
         :param data: the data to send in the body of the request
+        :param data_as_json: True if data needs to be sent as JSON, False if data needs to be sent as form data
         :return: the parsed response of the request
         """
-        return self._request("post", endpoint, {"json": data})
+        options = {"json": data} if data_as_json else {"data": data}
+        return self._request("post", endpoint, options)
 
     def is_authenticated(self) -> bool:
         """Checks whether the current credentials are valid.

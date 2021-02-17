@@ -20,6 +20,7 @@ from lean.components.api.project_client import ProjectClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
+from lean.models.api import QCLanguage, QCProject
 
 
 class PushManager:
@@ -55,6 +56,88 @@ class PushManager:
         # Resolve the dependencies of all projects which need to be pushed
         projects_to_push = [self._project_manager.resolve_project_dependencies(p) for p in projects_to_push]
         projects_to_push = set(itertools.chain(*projects_to_push))
+        projects_to_push = sorted(list(projects_to_push))
 
-        for p in projects_to_push:
-            self._logger.info(str(p))
+        cloud_projects = self._project_client.get_all()
+
+        for index, project in enumerate(projects_to_push, start=1):
+            relative_path = project.relative_to(Path.cwd())
+            try:
+                self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
+                self._push_project(project, cloud_projects)
+            except Exception as ex:
+                self._logger.warn(f"Could not push '{relative_path}': {ex}")
+
+    def _push_project(self, project: Path, cloud_projects: List[QCProject]) -> None:
+        """Pushes a single local project to the cloud.
+
+        Raises an error with a descriptive message if the project cannot be pushed.
+
+        :param project: the local project to push
+        :param cloud_projects: a list containing all of the user's cloud projects
+        """
+        project_name = project.relative_to(Path.cwd()).as_posix()
+
+        project_config = self._project_config_manager.get_project_config(project)
+        project_id = project_config.get("project-id")
+
+        cloud_project_by_id = next(iter([p for p in cloud_projects if p.projectId == project_id]), None)
+        cloud_project_by_name = next(iter([p for p in cloud_projects if p.name == project_name]), None)
+
+        # Find the cloud project to push the files to
+        if cloud_project_by_id is not None:
+            # Project has id which matches cloud project, update cloud project
+            cloud_project = cloud_project_by_id
+        elif cloud_project_by_name is None:
+            # Project has invalid id or no id at all and no cloud project has same name, create cloud project
+            new_project = self._project_client.create(project_name,
+                                                      QCLanguage[project_config.get("algorithm-language")])
+            self._logger.info(f"Successfully created cloud project '{project_name}'")
+
+            project_config.set("project-id", new_project.projectId)
+
+            # We need to retrieve the created project again to get all project details
+            cloud_project = self._project_client.get(new_project.projectId)
+        else:
+            raise RuntimeError("There already exists a project with the same name in the cloud")
+
+        # Push local files to cloud
+        self._push_files(project, cloud_project)
+
+        # Finalize pushing by updating locally modified metadata
+        self._push_parameters(project, cloud_project)
+
+    def _push_files(self, project: Path, cloud_project: QCProject) -> None:
+        """Push the files of a local project to the cloud.
+
+        :param project: the local project to push the files of
+        :param cloud_project: the cloud project to push the files to
+        """
+        local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
+        cloud_files = self._file_client.get_all(cloud_project.projectId)
+
+        for local_file in local_files:
+            file_name = local_file.relative_to(project).as_posix()
+            file_content = local_file.read_text()
+
+            cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
+
+            if cloud_file is None:
+                self._file_client.create(cloud_project.projectId, file_name, file_content)
+                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
+            elif cloud_file.content.strip() != file_content.strip():
+                self._file_client.update(cloud_project.projectId, file_name, file_content)
+                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
+
+    def _push_parameters(self, project: Path, cloud_project: QCProject) -> None:
+        """Push local parameters to the cloud. Does nothing if the cloud is already up-to-date.
+
+        :param project: the local project to push the parameters of
+        :param cloud_project: the cloud project to push the parameters to
+        """
+        local_parameters = self._project_config_manager.get_project_config(project).get("parameters", {})
+        cloud_parameters = {parameter.key: parameter.value for parameter in cloud_project.parameters}
+
+        if local_parameters != cloud_parameters:
+            self._project_client.update(cloud_project.projectId, parameters=local_parameters)
+            self._logger.info(f"Successfully updated cloud parameters for '{cloud_project.name}'")

@@ -69,6 +69,18 @@ def test_post_sets_body_of_request_as_json(requests_mock: RequestsMock) -> None:
     assert body["key2"] == "value2"
 
 
+def test_post_sets_body_of_request_as_form_data(requests_mock: RequestsMock) -> None:
+    requests_mock.add(requests_mock.POST, BASE_URL + "/endpoint", '{ "success": true }')
+
+    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api.post("endpoint", {"key1": "value1", "key2": "value2"}, data_as_json=False)
+
+    assert len(requests_mock.calls) == 1
+    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint"
+
+    assert requests_mock.calls[0].request.body == "key1=value1&key2=value2"
+
+
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_makes_authenticated_requests(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), BASE_URL + "/endpoint", '{ "success": true }')

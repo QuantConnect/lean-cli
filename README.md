@@ -7,7 +7,7 @@
 
 **This CLI is still in development. Bugs may still occur and breaking changes may still happen before the first beta release. Use with caution.**
 
-The Lean CLI is a cross-platform CLI aimed at making it easier to run the LEAN engine locally and in the cloud.
+The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
 ## Roadmap
 

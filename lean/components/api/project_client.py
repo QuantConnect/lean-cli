@@ -76,9 +76,13 @@ class ProjectClient:
             request_parameters["name"] = name
 
         if parameters is not None:
-            request_parameters["parameters"] = parameters
+            index = 0
+            for key, value in parameters.items():
+                request_parameters[f"parameters[{index}][key]"] = key
+                request_parameters[f"parameters[{index}][value]"] = value
+                index += 1
 
-        self._api.post("projects/update", request_parameters)
+        self._api.post("projects/update", request_parameters, data_as_json=False)
 
     def delete(self, project_id: int) -> None:
         """Deletes an existing project.

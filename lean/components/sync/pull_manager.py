@@ -50,6 +50,7 @@ class PullManager:
         :param projects_to_pull: the cloud projects that need to be pulled
         """
         projects_to_pull = self._resolve_projects_to_pull(projects_to_pull, self._project_client.get_all())
+        projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
 
         for index, project in enumerate(projects_to_pull, start=1):
             try:
