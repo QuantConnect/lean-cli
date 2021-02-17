@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.engine.csharp_compiler import CSharpCompiler
 from tests.test_helpers import create_fake_lean_cli_project
 
@@ -35,7 +36,10 @@ def run_image(image: str, tag: str, command: str, quiet: bool = False, **kwargs)
 
 
 def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
-    return CSharpCompiler(mock.Mock(), LeanConfigManager(mock.Mock(), "lean.json"), docker_manager, "quantconnect/lean")
+    return CSharpCompiler(mock.Mock(),
+                          LeanConfigManager(mock.Mock(), ProjectConfigManager("config.json"), "lean.json"),
+                          docker_manager,
+                          "quantconnect/lean")
 
 
 def test_compile_csharp_project_runs_msbuild_in_docker() -> None:

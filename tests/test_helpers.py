@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
@@ -32,10 +33,18 @@ def create_fake_lean_cli_project() -> None:
     files = {
         (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
-        (Path.cwd() / "Python Project" / "config.json"): '{ "algorithm-language": "Python" }',
+        (Path.cwd() / "Python Project" / "config.json"): json.dumps({
+            "algorithm-language": "Python",
+            "parameters": {},
+            "libraries": []
+        }),
         (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$NAME", "CSharpProject"),
         (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
-        (Path.cwd() / "CSharp Project" / "config.json"): '{ "algorithm-language": "CSharp" }'
+        (Path.cwd() / "CSharp Project" / "config.json"): json.dumps({
+            "algorithm-language": "CSharp",
+            "parameters": {},
+            "libraries": []
+        })
     }
 
     for path, content in files.items():

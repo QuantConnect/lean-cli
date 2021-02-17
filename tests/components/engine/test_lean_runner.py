@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.engine.lean_runner import LeanRunner
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_project
@@ -41,7 +42,7 @@ def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = c
 
     return LeanRunner(mock.Mock(),
                       csharp_compiler,
-                      LeanConfigManager(cli_config_manager, "lean.json"),
+                      LeanConfigManager(cli_config_manager, ProjectConfigManager("config.json"), "lean.json"),
                       docker_manager,
                       "quantconnect/lean")
 

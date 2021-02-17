@@ -46,10 +46,6 @@ class Container(containers.DeclarativeContainer):
                                              general_storage=general_storage,
                                              credentials_storage=credentials_storage)
 
-    lean_config_manager = providers.Singleton(LeanConfigManager,
-                                              cli_config_manager=cli_config_manager,
-                                              default_file_name=Config.default_lean_config_file_name)
-
     api_client = providers.Factory(APIClient,
                                    logger=logger,
                                    base_url=Config.api_base_url,
@@ -79,6 +75,11 @@ class Container(containers.DeclarativeContainer):
                                        file_client=file_client,
                                        project_manager=project_manager,
                                        project_config_manager=project_config_manager)
+
+    lean_config_manager = providers.Singleton(LeanConfigManager,
+                                              cli_config_manager=cli_config_manager,
+                                              project_config_manager=project_config_manager,
+                                              default_file_name=Config.default_lean_config_file_name)
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 

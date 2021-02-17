@@ -18,19 +18,25 @@ from typing import Any, Dict, Optional
 from jsoncomment import JsonComment
 
 from lean.components.config.cli_config_manager import CLIConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.models.config import DebuggingMethod
 
 
 class LeanConfigManager:
     """The LeanConfigManager class contains utilities to work with files containing LEAN engine configuration."""
 
-    def __init__(self, cli_config_manager: CLIConfigManager, default_file_name: str) -> None:
+    def __init__(self,
+                 cli_config_manager: CLIConfigManager,
+                 project_config_manager: ProjectConfigManager,
+                 default_file_name: str) -> None:
         """Creates a new LeanConfigManager instance.
 
         :param cli_config_manager: the CLIConfigManager instance to use when retrieving credentials
+        :param project_config_manager: the ProjectConfigManager instance to use when retrieving project parameters
         :param default_file_name: the default name of the file containing the Lean config
         """
         self._cli_config_manager = cli_config_manager
+        self._project_config_manager = project_config_manager
         self._default_file_name = default_file_name
         self._default_path = None
 
@@ -113,7 +119,8 @@ class LeanConfigManager:
                           "composer-dll-directory",
                           "debugging", "debugging-method",
                           "job-user-id", "api-access-token",
-                          "algorithm-type-name", "algorithm-language", "algorithm-location"]
+                          "algorithm-type-name", "algorithm-language", "algorithm-location",
+                          "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow"]
 
         # This function is implemented by doing string manipulation because the config contains comments
         # If we were to parse it as JSON, we would have to remove the comments which we don't want to do
@@ -161,6 +168,9 @@ class LeanConfigManager:
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
             config["algorithm-location"] = "LeanCLI.dll"
+
+        project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
+        config["parameters"] = project_config.get("parameters", {})
 
         return config
 
