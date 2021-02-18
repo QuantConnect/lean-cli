@@ -23,8 +23,6 @@ from lean.container import container
 @click.command(cls=LeanCommand)
 def list() -> None:
     """List the configurable options and their current values."""
-    console = Console()
-
     table = Table(box=box.SQUARE)
     table.add_column("Key")
     table.add_column("Value")
@@ -43,4 +41,5 @@ def list() -> None:
                       str(option.location),
                       option.description)
 
+    console = Console()
     console.print(table)

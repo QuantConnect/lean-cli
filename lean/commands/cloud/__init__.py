@@ -13,6 +13,7 @@
 
 import click
 
+from lean.commands.cloud.backtest import backtest
 from lean.commands.cloud.pull import pull
 from lean.commands.cloud.push import push
 
@@ -27,3 +28,4 @@ def cloud() -> None:
 
 cloud.add_command(pull)
 cloud.add_command(push)
+cloud.add_command(backtest)

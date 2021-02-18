@@ -32,6 +32,7 @@ from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
 from lean.components.sync.pull_manager import PullManager
 from lean.components.sync.push_manager import PushManager
+from lean.components.task_manager import TaskManager
 from lean.config import Config
 
 
@@ -94,6 +95,8 @@ class Container(containers.DeclarativeContainer):
                                       lean_config_manager=lean_config_manager,
                                       docker_manager=docker_manager,
                                       docker_image=Config.lean_engine_docker_image)
+
+    task_manager = providers.Singleton(TaskManager)
 
 
 container = Container()

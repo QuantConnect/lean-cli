@@ -13,7 +13,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -144,8 +144,30 @@ class QCBacktest(BaseModel):
     error: Optional[str] = None
     stacktrace: Optional[str] = None
     runtimeStatistics: Optional[Dict[str, str]]
-    statistics: Optional[Dict[str, str]]
+    statistics: Optional[Union[Dict[str, str], List[Any]]]
     totalPerformance: Optional[Any]
+
+    def is_complete(self) -> bool:
+        """Returns whether the backtest has completed in the cloud.
+
+        :return: True if the backtest is complete, False if not
+        """
+        if self.error is not None:
+            return True
+
+        if not self.completed:
+            return False
+
+        has_runtime_statistics = self.runtimeStatistics is not None
+        has_statistics = self.statistics is not None and not isinstance(self.statistics, list)
+        return has_runtime_statistics and has_statistics
+
+    def get_url(self) -> str:
+        """Returns the url of the backtests results page in the cloud.
+
+        :return: a url which when visited opens an Algorithm Lab tab containing the backtest's results
+        """
+        return f"https://www.quantconnect.com/terminal/#open/{self.projectId}/{self.backtestId}"
 
 
 class QCBacktestReport(BaseModel):
