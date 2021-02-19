@@ -19,7 +19,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] Local debugging
 - [x] Local research environment
 - [x] Cloud synchronization
-- [ ] Cloud backtesting
+- [x] Cloud backtesting
 - **First beta release**
 - [ ] Local data downloading
 - [ ] Local optimization
