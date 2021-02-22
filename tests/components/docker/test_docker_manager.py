@@ -15,7 +15,7 @@ from unittest import mock
 
 from responses import RequestsMock
 
-from lean.components.docker_manager import DockerManager
+from lean.components.docker.docker_manager import DockerManager
 
 
 def test_tag_exists_returns_true_when_tag_exists_in_registry(requests_mock: RequestsMock) -> None:

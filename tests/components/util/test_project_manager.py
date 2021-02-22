@@ -18,7 +18,7 @@ from typing import List
 import pytest
 
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.components.project_manager import ProjectManager
+from lean.components.util.project_manager import ProjectManager
 from tests.test_helpers import create_fake_lean_cli_project
 
 

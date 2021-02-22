@@ -22,9 +22,8 @@ from rich.console import Console
 from rich.table import Table
 
 from lean.click import LeanCommand
-from lean.components.api.api_client import APIClient
 from lean.container import container
-from lean.models.api import QCBacktest, QCCompileState, QCCompileWithLogs, QCProject
+from lean.models.api import QCBacktest
 
 # Name generation logic is based on
 # https://github.com/QuantConnect/Lean/blob/5034c28c2efb4691a148b2c4a59f1c7ceb5f3b7e/VisualStudioPlugin/BacktestNameProvider.cs
@@ -48,71 +47,6 @@ ANIMALS = ["Horse", "Zebra", "Whale", "Tapir", "Barracuda", "Cow", "Cat", "Wolf"
            "Jaguar", "Dog", "Armadillo", "Gorilla", "Alpaca", "Kangaroo", "Dragonfly", "Salamander", "Owl", "Bat",
            "Sheep", "Frog", "Chimpanzee", "Bull", "Scorpion", "Lemur", "Camel", "Leopard", "Fish", "Donkey", "Manatee",
            "Shark", "Bear", "kitten", "Fly", "Ant", "Sardine"]
-
-
-def _compile_project(api_client: APIClient, project: QCProject) -> QCCompileWithLogs:
-    """Compiles a project in the cloud.
-
-    :param api_client: the APIClient instance to use when communicating with the QuantConnect API
-    :param project: the project to compile
-    :return: a QCCompileWithLogs instance containing the details of the finished compile
-    """
-    logger = container.logger()
-    logger.info(f"Started compiling project '{project.name}'")
-
-    created_compile = api_client.compiles.create(project.projectId)
-
-    # Log the parameters reported in the compile
-    parameters = []
-    parameter_count = 0
-
-    for parameter_container in created_compile.parameters:
-        for parameter in parameter_container.parameters:
-            parameters.append(f"- {parameter_container.file}:{parameter.line} :: {parameter.type}")
-            parameter_count += int(parameter.type.split(" ")[0])
-
-    if parameter_count > 0:
-        logger.info(f"Detected parameters ({parameter_count}):")
-        for parameter in parameters:
-            logger.info(parameter)
-    else:
-        logger.info("Detected parameters: none")
-
-    finished_compile = container.task_manager().poll(
-        make_request=lambda: api_client.compiles.get(project.projectId, created_compile.compileId),
-        is_done=lambda data: data.state in [QCCompileState.BuildSuccess, QCCompileState.BuildError]
-    )
-
-    if finished_compile.state == QCCompileState.BuildError:
-        logger.error("\n".join(finished_compile.logs))
-        raise RuntimeError(f"Something went wrong while compiling project '{project.name}'")
-
-    logger.info("\n".join(finished_compile.logs))
-    logger.info(f"Successfully compiled project '{project.name}'")
-
-    return finished_compile
-
-
-def _run_backtest(api_client: APIClient, project: QCProject, compile_id: str, name: str) -> QCBacktest:
-    """Runs a backtest in the cloud.
-
-    :param api_client: the APIClient instance to use when communicating with the QuantConnect API
-    :param project: the project to backtest
-    :param compile_id: an id of a compile of the given project
-    :param name: the name of the backtest to run
-    :return: the completed backtest
-    """
-    created_backtest = api_client.backtests.create(project.projectId, compile_id, name)
-
-    logger = container.logger()
-    logger.info(f"Started backtest named '{name}' for project '{project.name}'")
-    logger.info(f"Backtest url: {created_backtest.get_url()}")
-
-    return container.task_manager().poll(
-        make_request=lambda: api_client.backtests.get(project.projectId, created_backtest.backtestId),
-        is_done=lambda data: data.is_complete(),
-        get_progress=lambda data: data.progress
-    )
 
 
 def _log_backtest_stats(backtest: QCBacktest) -> None:
@@ -201,8 +135,8 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     if name is None:
         name = f"{choice(VERBS)} {choice(COLORS)} {choice(ANIMALS)}"
 
-    finished_compile = _compile_project(api_client, cloud_project)
-    finished_backtest = _run_backtest(api_client, cloud_project, finished_compile.compileId, name)
+    cloud_runner = container.cloud_runner()
+    finished_backtest = cloud_runner.run_backtest(cloud_project, name)
 
     _log_backtest_stats(finished_backtest)
 

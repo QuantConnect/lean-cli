@@ -18,7 +18,7 @@ import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.components.engine.csharp_compiler import CSharpCompiler
+from lean.components.docker.csharp_compiler import CSharpCompiler
 from tests.test_helpers import create_fake_lean_cli_project
 
 

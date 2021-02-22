@@ -25,7 +25,7 @@ from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.project_client import ProjectClient
-from lean.components.logger import Logger
+from lean.components.util.logger import Logger
 from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
 

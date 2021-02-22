@@ -22,7 +22,7 @@ from typing import Optional
 import docker
 import requests
 
-from lean.components.logger import Logger
+from lean.components.util.logger import Logger
 
 
 class DockerManager:

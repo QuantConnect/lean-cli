@@ -17,8 +17,8 @@ from pathlib import Path
 from typing import List
 
 from lean.components.config.lean_config_manager import LeanConfigManager
-from lean.components.docker_manager import DockerManager
-from lean.components.logger import Logger
+from lean.components.docker.docker_manager import DockerManager
+from lean.components.util.logger import Logger
 from lean.constants import ENGINE_IMAGE
 
 

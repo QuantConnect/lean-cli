@@ -20,9 +20,9 @@ from typing import Any, Dict, Optional
 from docker.types import Mount
 
 from lean.components.config.lean_config_manager import LeanConfigManager
-from lean.components.docker_manager import DockerManager
-from lean.components.engine.csharp_compiler import CSharpCompiler
-from lean.components.logger import Logger
+from lean.components.docker.docker_manager import DockerManager
+from lean.components.docker.csharp_compiler import CSharpCompiler
+from lean.components.util.logger import Logger
 from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 

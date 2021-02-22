@@ -17,7 +17,7 @@ from typing import List
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.components.logger import Logger
+from lean.components.util.logger import Logger
 from lean.models.api import QCLanguage, QCProject
 
 

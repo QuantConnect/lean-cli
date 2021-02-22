@@ -13,7 +13,7 @@
 
 from _pytest.capture import CaptureFixture
 
-from lean.components.logger import Logger
+from lean.components.util.logger import Logger
 
 
 def assert_stdout_stderr(capsys: CaptureFixture, stdout: str, stderr: str) -> None:
