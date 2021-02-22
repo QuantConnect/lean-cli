@@ -50,9 +50,9 @@ def test_cloud_pull_pulls_all_non_bootcamp_projects_when_no_options_given() -> N
                       create_project(4, "Boot Camp/Project 4"),
                       create_project(5, "Boot Camp/Project 5")]
 
-    project_client = mock.Mock()
-    project_client.get_all.return_value = cloud_projects
-    container.project_client.override(providers.Object(project_client))
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))
@@ -73,9 +73,9 @@ def test_cloud_pull_pulls_all_projects_when_pull_bootcamp_option_given() -> None
                       create_project(4, "Boot Camp/Project 4"),
                       create_project(5, "Boot Camp/Project 5")]
 
-    project_client = mock.Mock()
-    project_client.get_all.return_value = cloud_projects
-    container.project_client.override(providers.Object(project_client))
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))
@@ -96,9 +96,9 @@ def test_cloud_pull_pulls_project_by_id() -> None:
                       create_project(4, "Boot Camp/Project 4"),
                       create_project(5, "Boot Camp/Project 5")]
 
-    project_client = mock.Mock()
-    project_client.get_all.return_value = cloud_projects
-    container.project_client.override(providers.Object(project_client))
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))
@@ -119,9 +119,9 @@ def test_cloud_pull_pulls_project_by_name() -> None:
                       create_project(4, "Boot Camp/Project 4"),
                       create_project(5, "Boot Camp/Project 5")]
 
-    project_client = mock.Mock()
-    project_client.get_all.return_value = cloud_projects
-    container.project_client.override(providers.Object(project_client))
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))
@@ -142,9 +142,9 @@ def test_cloud_pull_aborts_when_project_input_matches_no_cloud_projects() -> Non
                       create_project(4, "Boot Camp/Project 4"),
                       create_project(5, "Boot Camp/Project 5")]
 
-    project_client = mock.Mock()
-    project_client.get_all.return_value = cloud_projects
-    container.project_client.override(providers.Object(project_client))
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))

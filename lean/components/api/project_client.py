@@ -11,16 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from lean.components.api.api_client import APIClient
+from lean.components.api.api_client import *
 from lean.models.api import QCCreatedProject, QCLanguage, QCProject
 
 
 class ProjectClient:
     """The ProjectClient class contains methods to interact with projects/* API endpoints."""
 
-    def __init__(self, api_client: APIClient) -> None:
+    def __init__(self, api_client: 'APIClient') -> None:
         """Creates a new ProjectClient instance.
 
         :param api_client: the APIClient instance to use when making requests

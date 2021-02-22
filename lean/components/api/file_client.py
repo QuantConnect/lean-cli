@@ -13,14 +13,14 @@
 
 from typing import List
 
-from lean.components.api.api_client import APIClient
+from lean.components.api.api_client import *
 from lean.models.api import QCFullFile, QCMinimalFile
 
 
 class FileClient:
     """The FileClient class contains methods to interact with files/* API endpoints."""
 
-    def __init__(self, api_client: APIClient) -> None:
+    def __init__(self, api_client: 'APIClient') -> None:
         """Creates a new FileClient instance.
 
         :param api_client: the APIClient instance to use when making requests

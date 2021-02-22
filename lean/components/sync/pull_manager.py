@@ -15,8 +15,7 @@ import itertools
 from pathlib import Path
 from typing import List
 
-from lean.components.api.file_client import FileClient
-from lean.components.api.project_client import ProjectClient
+from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.logger import Logger
 from lean.models.api import QCLanguage, QCProject
@@ -25,21 +24,15 @@ from lean.models.api import QCLanguage, QCProject
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
 
-    def __init__(self,
-                 logger: Logger,
-                 project_client: ProjectClient,
-                 file_client: FileClient,
-                 project_config_manager: ProjectConfigManager) -> None:
+    def __init__(self, logger: Logger, api_client: APIClient, project_config_manager: ProjectConfigManager) -> None:
         """Creates a new PullManager instance.
 
         :param logger: the logger to use when printing messages
-        :param project_client: the ProjectClient to use when needing project information from the cloud
-        :param file_client: the FileClient to use when interacting with the cloud
+        :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_config_manager: the ProjectConfigManager instance to use
         """
         self._logger = logger
-        self._project_client = project_client
-        self._file_client = file_client
+        self._api_client = api_client
         self._project_config_manager = project_config_manager
 
     def pull_projects(self, projects_to_pull: List[QCProject]) -> None:
@@ -49,7 +42,7 @@ class PullManager:
 
         :param projects_to_pull: the cloud projects that need to be pulled
         """
-        projects_to_pull = self._resolve_projects_to_pull(projects_to_pull, self._project_client.get_all())
+        projects_to_pull = self._resolve_projects_to_pull(projects_to_pull, self._api_client.projects.get_all())
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
 
         for index, project in enumerate(projects_to_pull, start=1):
@@ -126,7 +119,7 @@ class PullManager:
 
         :param project: the cloud project of which the files need to be pulled
         """
-        for cloud_file in self._file_client.get_all(project.projectId):
+        for cloud_file in self._api_client.files.get_all(project.projectId):
             if cloud_file.isLibrary:
                 continue
 

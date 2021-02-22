@@ -31,8 +31,8 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
 
     If you pull a specific project, all the libraries linked to that project are pulled as well (recursively).
     """
-    project_client = container.project_client()
-    all_projects = project_client.get_all()
+    api_client = container.api_client()
+    all_projects = api_client.projects.get_all()
 
     # Parse which projects need to be pulled
     if project is not None:

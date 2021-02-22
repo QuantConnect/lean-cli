@@ -13,16 +13,16 @@
 
 from datetime import datetime
 from math import floor
-from typing import Any, List, Optional
+from typing import List, Optional
 
-from lean.components.api.api_client import APIClient
+from lean.components.api.api_client import *
 from lean.models.api import QCLiveAlgorithm, QCLiveAlgorithmStatus
 
 
 class LiveClient:
     """The LiveClient class contains methods to interact with live/* API endpoints."""
 
-    def __init__(self, api_client: APIClient) -> None:
+    def __init__(self, api_client: 'APIClient') -> None:
         """Creates a new LiveClient instance.
 
         :param api_client: the APIClient instance to use when making requests

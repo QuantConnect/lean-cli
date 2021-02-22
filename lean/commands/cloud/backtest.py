@@ -22,6 +22,7 @@ from rich.console import Console
 from rich.table import Table
 
 from lean.click import LeanCommand
+from lean.components.api.api_client import APIClient
 from lean.container import container
 from lean.models.api import QCBacktest, QCCompileState, QCCompileWithLogs, QCProject
 
@@ -49,17 +50,17 @@ ANIMALS = ["Horse", "Zebra", "Whale", "Tapir", "Barracuda", "Cow", "Cat", "Wolf"
            "Shark", "Bear", "kitten", "Fly", "Ant", "Sardine"]
 
 
-def _compile_project(project: QCProject) -> QCCompileWithLogs:
+def _compile_project(api_client: APIClient, project: QCProject) -> QCCompileWithLogs:
     """Compiles a project in the cloud.
 
+    :param api_client: the APIClient instance to use when communicating with the QuantConnect API
     :param project: the project to compile
     :return: a QCCompileWithLogs instance containing the details of the finished compile
     """
     logger = container.logger()
     logger.info(f"Started compiling project '{project.name}'")
 
-    compile_client = container.compile_client()
-    created_compile = compile_client.create(project.projectId)
+    created_compile = api_client.compiles.create(project.projectId)
 
     # Log the parameters reported in the compile
     parameters = []
@@ -78,7 +79,7 @@ def _compile_project(project: QCProject) -> QCCompileWithLogs:
         logger.info("Detected parameters: none")
 
     finished_compile = container.task_manager().poll(
-        make_request=lambda: compile_client.get(project.projectId, created_compile.compileId),
+        make_request=lambda: api_client.compiles.get(project.projectId, created_compile.compileId),
         is_done=lambda data: data.state in [QCCompileState.BuildSuccess, QCCompileState.BuildError]
     )
 
@@ -92,23 +93,23 @@ def _compile_project(project: QCProject) -> QCCompileWithLogs:
     return finished_compile
 
 
-def _run_backtest(project: QCProject, compile_id: str, name: str) -> QCBacktest:
+def _run_backtest(api_client: APIClient, project: QCProject, compile_id: str, name: str) -> QCBacktest:
     """Runs a backtest in the cloud.
 
+    :param api_client: the APIClient instance to use when communicating with the QuantConnect API
     :param project: the project to backtest
     :param compile_id: an id of a compile of the given project
     :param name: the name of the backtest to run
     :return: the completed backtest
     """
-    backtest_client = container.backtest_client()
-    created_backtest = backtest_client.create(project.projectId, compile_id, name)
+    created_backtest = api_client.backtests.create(project.projectId, compile_id, name)
 
     logger = container.logger()
     logger.info(f"Started backtest named '{name}' for project '{project.name}'")
     logger.info(f"Backtest url: {created_backtest.get_url()}")
 
     return container.task_manager().poll(
-        make_request=lambda: backtest_client.get(project.projectId, created_backtest.backtestId),
+        make_request=lambda: api_client.backtests.get(project.projectId, created_backtest.backtestId),
         is_done=lambda data: data.is_complete(),
         get_progress=lambda data: data.progress
     )
@@ -179,8 +180,8 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     """
     logger = container.logger()
 
-    project_client = container.project_client()
-    all_projects = project_client.get_all()
+    api_client = container.api_client()
+    all_projects = api_client.projects.get_all()
 
     for p in all_projects:
         if str(p.projectId) == project or p.name == project:
@@ -200,8 +201,8 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     if name is None:
         name = f"{choice(VERBS)} {choice(COLORS)} {choice(ANIMALS)}"
 
-    finished_compile = _compile_project(cloud_project)
-    finished_backtest = _run_backtest(cloud_project, finished_compile.compileId, name)
+    finished_compile = _compile_project(api_client, cloud_project)
+    finished_backtest = _run_backtest(api_client, cloud_project, finished_compile.compileId, name)
 
     _log_backtest_stats(finished_backtest)
 

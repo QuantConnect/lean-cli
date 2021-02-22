@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.components.api.api_client import APIClient
+from lean.components.api.api_client import *
 from lean.models.api import QCCompileWithLogs, QCCompileWithParameters
 
 
 class CompileClient:
     """The CompileClient class contains methods to interact with compile/* API endpoints."""
 
-    def __init__(self, api_client: APIClient) -> None:
+    def __init__(self, api_client: 'APIClient') -> None:
         """Creates a new CompileClient instance.
 
         :param api_client: the APIClient instance to use when making requests

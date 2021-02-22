@@ -13,14 +13,7 @@
 
 from dependency_injector import containers, providers
 
-from lean.components.api.account_client import AccountClient
 from lean.components.api.api_client import APIClient
-from lean.components.api.backtest_client import BacktestClient
-from lean.components.api.compile_client import CompileClient
-from lean.components.api.file_client import FileClient
-from lean.components.api.live_client import LiveClient
-from lean.components.api.node_client import NodeClient
-from lean.components.api.project_client import ProjectClient
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -43,43 +36,32 @@ class Container(containers.DeclarativeContainer):
     general_storage = providers.Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = providers.Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
 
+    project_config_manager = providers.Singleton(ProjectConfigManager)
     cli_config_manager = providers.Singleton(CLIConfigManager,
                                              general_storage=general_storage,
                                              credentials_storage=credentials_storage)
+    lean_config_manager = providers.Singleton(LeanConfigManager,
+                                              cli_config_manager=cli_config_manager,
+                                              project_config_manager=project_config_manager)
+
+    project_manager = providers.Singleton(ProjectManager, project_config_manager=project_config_manager)
 
     api_client = providers.Factory(APIClient,
                                    logger=logger,
                                    user_id=cli_config_manager.provided.user_id.get_value()(),
                                    api_token=cli_config_manager.provided.api_token.get_value()())
-    account_client = providers.Singleton(AccountClient, api_client=api_client)
-    file_client = providers.Singleton(FileClient, api_client=api_client)
-    project_client = providers.Singleton(ProjectClient, api_client=api_client)
-    compile_client = providers.Singleton(CompileClient, api_client=api_client)
-    backtest_client = providers.Singleton(BacktestClient, api_client=api_client)
-    node_client = providers.Singleton(NodeClient, api_client=api_client)
-    live_client = providers.Singleton(LiveClient, api_client=api_client)
-
-    project_config_manager = providers.Singleton(ProjectConfigManager)
-    project_manager = providers.Singleton(ProjectManager, project_config_manager=project_config_manager)
 
     pull_manager = providers.Singleton(PullManager,
                                        logger=logger,
-                                       project_client=project_client,
-                                       file_client=file_client,
+                                       api_client=api_client,
                                        project_config_manager=project_config_manager)
     push_manager = providers.Singleton(PushManager,
                                        logger=logger,
-                                       project_client=project_client,
-                                       file_client=file_client,
+                                       api_client=api_client,
                                        project_manager=project_manager,
                                        project_config_manager=project_config_manager)
 
-    lean_config_manager = providers.Singleton(LeanConfigManager,
-                                              cli_config_manager=cli_config_manager,
-                                              project_config_manager=project_config_manager)
-
     docker_manager = providers.Singleton(DockerManager, logger=logger)
-
     csharp_compiler = providers.Singleton(CSharpCompiler,
                                           logger=logger,
                                           lean_config_manager=lean_config_manager,

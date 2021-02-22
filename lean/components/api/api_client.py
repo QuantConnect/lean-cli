@@ -18,6 +18,13 @@ from urllib.parse import urljoin
 
 import requests
 
+from lean.components.api.account_client import AccountClient
+from lean.components.api.backtest_client import BacktestClient
+from lean.components.api.compile_client import CompileClient
+from lean.components.api.file_client import FileClient
+from lean.components.api.live_client import LiveClient
+from lean.components.api.node_client import NodeClient
+from lean.components.api.project_client import ProjectClient
 from lean.components.logger import Logger
 from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
@@ -36,6 +43,15 @@ class APIClient:
         self._logger = logger
         self._user_id = user_id
         self._api_token = api_token
+
+        # Create the clients containing the methods to send requests to the various API endpoints
+        self.accounts = AccountClient(self)
+        self.backtests = BacktestClient(self)
+        self.compiles = CompileClient(self)
+        self.files = FileClient(self)
+        self.live = LiveClient(self)
+        self.nodes = NodeClient(self)
+        self.projects = ProjectClient(self)
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.

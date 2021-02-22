@@ -15,8 +15,7 @@ import itertools
 from pathlib import Path
 from typing import List
 
-from lean.components.api.file_client import FileClient
-from lean.components.api.project_client import ProjectClient
+from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.logger import Logger
 from lean.components.project_manager import ProjectManager
@@ -28,21 +27,18 @@ class PushManager:
 
     def __init__(self,
                  logger: Logger,
-                 project_client: ProjectClient,
-                 file_client: FileClient,
+                 api_client: APIClient,
                  project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager) -> None:
         """Creates a new PushManager instance.
 
         :param logger: the logger to use when printing messages
-        :param project_client: the ProjectClient to use interacting with the cloud
-        :param file_client: the FileClient to use when interacting with the cloud
+        :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_manager: the ProjectManager to use when looking for certain projects
         :param project_config_manager: the ProjectConfigManager instance to use
         """
         self._logger = logger
-        self._project_client = project_client
-        self._file_client = file_client
+        self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
 
@@ -58,7 +54,7 @@ class PushManager:
         projects_to_push = set(itertools.chain(*projects_to_push))
         projects_to_push = sorted(list(projects_to_push))
 
-        cloud_projects = self._project_client.get_all()
+        cloud_projects = self._api_client.projects.get_all()
 
         for index, project in enumerate(projects_to_push, start=1):
             relative_path = project.relative_to(Path.cwd())
@@ -90,14 +86,14 @@ class PushManager:
             cloud_project = cloud_project_by_id
         elif cloud_project_by_name is None:
             # Project has invalid id or no id at all and no cloud project has same name, create cloud project
-            new_project = self._project_client.create(project_name,
-                                                      QCLanguage[project_config.get("algorithm-language")])
+            new_project = self._api_client.projects.create(project_name,
+                                                           QCLanguage[project_config.get("algorithm-language")])
             self._logger.info(f"Successfully created cloud project '{project_name}'")
 
             project_config.set("project-id", new_project.projectId)
 
             # We need to retrieve the created project again to get all project details
-            cloud_project = self._project_client.get(new_project.projectId)
+            cloud_project = self._api_client.projects.get(new_project.projectId)
         else:
             raise RuntimeError("There already exists a project with the same name in the cloud")
 
@@ -115,7 +111,7 @@ class PushManager:
         :param cloud_project: the cloud project to push the files to
         """
         local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
-        cloud_files = self._file_client.get_all(cloud_project.projectId)
+        cloud_files = self._api_client.files.get_all(cloud_project.projectId)
 
         for local_file in local_files:
             file_name = local_file.relative_to(project).as_posix()
@@ -124,10 +120,10 @@ class PushManager:
             cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
 
             if cloud_file is None:
-                self._file_client.create(cloud_project.projectId, file_name, file_content)
+                self._api_client.files.create(cloud_project.projectId, file_name, file_content)
                 self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
             elif cloud_file.content.strip() != file_content.strip():
-                self._file_client.update(cloud_project.projectId, file_name, file_content)
+                self._api_client.files.update(cloud_project.projectId, file_name, file_content)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
 
     def _push_parameters(self, project: Path, cloud_project: QCProject) -> None:
@@ -140,7 +136,7 @@ class PushManager:
         cloud_parameters = {parameter.key: parameter.value for parameter in cloud_project.parameters}
 
         if local_parameters != cloud_parameters and local_parameters != {}:
-            self._project_client.update(cloud_project.projectId, parameters=local_parameters)
+            self._api_client.projects.update(cloud_project.projectId, parameters=local_parameters)
             self._logger.info(f"Successfully updated cloud parameters for '{cloud_project.name}'")
 
     def _push_libraries(self, project: Path, cloud_project: QCProject) -> None:
@@ -154,10 +150,10 @@ class PushManager:
 
         for library in cloud_libraries:
             if library not in local_libraries:
-                self._project_client.delete_library(cloud_project.projectId, library)
+                self._api_client.projects.delete_library(cloud_project.projectId, library)
                 self._logger.info(f"Successfully pushed removal of library {library} to '{cloud_project.name}'")
 
         for library in local_libraries:
             if library not in cloud_libraries:
-                self._project_client.add_library(cloud_project.projectId, library)
+                self._api_client.projects.add_library(cloud_project.projectId, library)
                 self._logger.info(f"Successfully pushed addition of library {library} to '{cloud_project.name}'")
