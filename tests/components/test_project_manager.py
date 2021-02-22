@@ -36,7 +36,7 @@ def create_library_project(name: str, project_id: int, libraries: List[int]) -> 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
     create_fake_lean_cli_project()
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     result = manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -45,7 +45,7 @@ def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
 def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_project()
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     result = manager.find_algorithm_file(Path.cwd() / "Python Project")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -54,7 +54,7 @@ def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() 
 def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_project()
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     result = manager.find_algorithm_file(Path.cwd() / "CSharp Project")
 
     assert result == Path.cwd() / "CSharp Project" / "Main.cs"
@@ -65,7 +65,7 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
 
     (Path.cwd() / "Empty Project").mkdir()
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
 
     with pytest.raises(Exception):
         manager.find_algorithm_file(Path.cwd() / "Empty Project")
@@ -78,7 +78,7 @@ def test_resolve_project_libraries_returns_paths_of_all_linked_libraries_recursi
     create_library_project("Library 2", 2, [3])
     create_library_project("Library 3", 3, [])
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Library" / "Library 1")
 
     assert set(dependencies) == {Path.cwd() / "Library" / "Library 1",
@@ -93,7 +93,7 @@ def test_resolve_project_libraries_returns_paths_of_all_linked_libraries_when_cy
     create_library_project("Library 2", 2, [3])
     create_library_project("Library 3", 3, [2])
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Library" / "Library 1")
 
     assert set(dependencies) == {Path.cwd() / "Library" / "Library 1",
@@ -104,7 +104,7 @@ def test_resolve_project_libraries_returns_paths_of_all_linked_libraries_when_cy
 def test_resolve_project_libraries_returns_single_path_when_project_has_no_libraries() -> None:
     create_fake_lean_cli_project()
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Python Project")
 
     assert set(dependencies) == {Path.cwd() / "Python Project"}
@@ -116,7 +116,7 @@ def test_resolve_project_libraries_returns_single_path_when_libraries_dont_exist
     create_library_project("Library 1", 1, [3])
     create_library_project("Library 2", 2, [])
 
-    manager = ProjectManager(ProjectConfigManager("config.json"), "config.json")
+    manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Library" / "Library 1")
 
     assert set(dependencies) == {Path.cwd() / "Library" / "Library 1"}

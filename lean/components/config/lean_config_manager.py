@@ -19,25 +19,21 @@ from jsoncomment import JsonComment
 
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.models.config import DebuggingMethod
 
 
 class LeanConfigManager:
     """The LeanConfigManager class contains utilities to work with files containing LEAN engine configuration."""
 
-    def __init__(self,
-                 cli_config_manager: CLIConfigManager,
-                 project_config_manager: ProjectConfigManager,
-                 default_file_name: str) -> None:
+    def __init__(self, cli_config_manager: CLIConfigManager, project_config_manager: ProjectConfigManager) -> None:
         """Creates a new LeanConfigManager instance.
 
         :param cli_config_manager: the CLIConfigManager instance to use when retrieving credentials
         :param project_config_manager: the ProjectConfigManager instance to use when retrieving project parameters
-        :param default_file_name: the default name of the file containing the Lean config
         """
         self._cli_config_manager = cli_config_manager
         self._project_config_manager = project_config_manager
-        self._default_file_name = default_file_name
         self._default_path = None
 
     def get_lean_config_path(self) -> Path:
@@ -56,7 +52,7 @@ class LeanConfigManager:
         # Recurse upwards in the directory tree until we find a Lean config file
         current_dir = Path.cwd()
         while True:
-            target_file = current_dir / self._default_file_name
+            target_file = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
             if target_file.exists():
                 return target_file
 

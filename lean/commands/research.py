@@ -17,7 +17,7 @@ from pathlib import Path
 import click
 
 from lean.click import LeanCommand, PathParameter
-from lean.config import Config
+from lean.constants import RESEARCH_IMAGE
 from lean.container import container
 
 
@@ -65,10 +65,10 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
     docker_manager = container.docker_manager()
 
     if version != "latest":
-        if not docker_manager.tag_exists(Config.research_docker_image, version):
+        if not docker_manager.tag_exists(RESEARCH_IMAGE, version):
             raise RuntimeError("The specified version does not exist")
 
     if update:
-        docker_manager.pull_image(Config.research_docker_image, version)
+        docker_manager.pull_image(RESEARCH_IMAGE, version)
 
-    docker_manager.run_image(Config.research_docker_image, version, None, False, **run_options)
+    docker_manager.run_image(RESEARCH_IMAGE, version, None, False, **run_options)

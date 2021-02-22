@@ -19,49 +19,48 @@ import pytest
 from responses import RequestsMock
 
 from lean.components.api.api_client import APIClient
+from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
-
-BASE_URL = "https://www.quantconnect.com/api"
 
 
 def test_get_makes_get_request_to_given_endpoint(requests_mock: RequestsMock) -> None:
-    requests_mock.add(requests_mock.GET, BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(requests_mock.GET, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     api.get("endpoint")
 
     assert len(requests_mock.calls) == 1
-    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint"
+    assert requests_mock.calls[0].request.url == API_BASE_URL + "endpoint"
 
 
 def test_get_attaches_parameters_to_url(requests_mock: RequestsMock) -> None:
-    requests_mock.add(requests_mock.GET, BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(requests_mock.GET, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     api.get("endpoint", {"key1": "value1", "key2": "value2"})
 
     assert len(requests_mock.calls) == 1
-    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint?key1=value1&key2=value2"
+    assert requests_mock.calls[0].request.url == API_BASE_URL + "endpoint?key1=value1&key2=value2"
 
 
 def test_post_makes_post_request_to_given_endpoint(requests_mock: RequestsMock) -> None:
-    requests_mock.add(requests_mock.POST, BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     api.post("endpoint")
 
     assert len(requests_mock.calls) == 1
-    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint"
+    assert requests_mock.calls[0].request.url == API_BASE_URL + "endpoint"
 
 
 def test_post_sets_body_of_request_as_json(requests_mock: RequestsMock) -> None:
-    requests_mock.add(requests_mock.POST, BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     api.post("endpoint", {"key1": "value1", "key2": "value2"})
 
     assert len(requests_mock.calls) == 1
-    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint"
+    assert requests_mock.calls[0].request.url == API_BASE_URL + "endpoint"
 
     body = json.loads(requests_mock.calls[0].request.body)
 
@@ -70,22 +69,22 @@ def test_post_sets_body_of_request_as_json(requests_mock: RequestsMock) -> None:
 
 
 def test_post_sets_body_of_request_as_form_data(requests_mock: RequestsMock) -> None:
-    requests_mock.add(requests_mock.POST, BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     api.post("endpoint", {"key1": "value1", "key2": "value2"}, data_as_json=False)
 
     assert len(requests_mock.calls) == 1
-    assert requests_mock.calls[0].request.url == BASE_URL + "/endpoint"
+    assert requests_mock.calls[0].request.url == API_BASE_URL + "endpoint"
 
     assert requests_mock.calls[0].request.body == "key1=value1&key2=value2"
 
 
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_makes_authenticated_requests(method: str, requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     getattr(api, method)("endpoint")
 
     assert len(requests_mock.calls) == 1
@@ -98,9 +97,9 @@ def test_api_client_makes_authenticated_requests(method: str, requests_mock: Req
 
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_returns_data_when_success_is_true(method: str, requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint", '{ "success": true }')
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
     response = getattr(api, method)("endpoint")
 
     assert "success" in response
@@ -109,9 +108,9 @@ def test_api_client_returns_data_when_success_is_true(method: str, requests_mock
 
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_raises_authentication_error_on_http_500(method: str, requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint", status=500)
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=500)
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     with pytest.raises(AuthenticationError):
         getattr(api, method)("endpoint")
@@ -120,9 +119,9 @@ def test_api_client_raises_authentication_error_on_http_500(method: str, request
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_raises_request_failed_error_on_failing_response_non_http_500(method: str,
                                                                                  requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint", status=404)
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=404)
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     with pytest.raises(RequestFailedError):
         getattr(api, method)("endpoint")
@@ -131,10 +130,10 @@ def test_api_client_raises_request_failed_error_on_failing_response_non_http_500
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_raises_authentication_error_on_error_complaining_about_hash(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint",
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
                       '{ "success": false, "errors": ["Hash doesn\'t match."] }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     with pytest.raises(AuthenticationError):
         getattr(api, method)("endpoint")
@@ -143,9 +142,10 @@ def test_api_client_raises_authentication_error_on_error_complaining_about_hash(
 @pytest.mark.parametrize("method", [("get"), ("post")])
 def test_api_client_raises_request_failed_error_when_response_contains_errors(method: str,
                                                                               requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), BASE_URL + "/endpoint", '{ "success": false, "errors": ["Error 1", "Error 2"] }')
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
+                      '{ "success": false, "errors": ["Error 1", "Error 2"] }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     with pytest.raises(RequestFailedError) as error:
         getattr(api, method)("endpoint")
@@ -157,10 +157,10 @@ def test_api_client_raises_request_failed_error_when_response_contains_errors(me
 def test_api_client_raises_request_failed_error_when_response_contains_messages(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(),
-                      BASE_URL + "/endpoint",
+                      API_BASE_URL + "endpoint",
                       '{ "success": false, "messages": ["Message 1", "Message 2"] }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     with pytest.raises(RequestFailedError) as error:
         getattr(api, method)("endpoint")
@@ -173,7 +173,7 @@ def test_is_authenticated_returns_true_when_authenticated_request_succeeds(reque
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": true }')
     requests_mock.add(requests_mock.POST, re.compile(".*"), body='{ "success": true }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     assert api.is_authenticated()
 
@@ -183,6 +183,6 @@ def test_is_authenticated_returns_false_when_authenticated_request_fails(request
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": false }')
     requests_mock.add(requests_mock.POST, re.compile(".*"), body='{ "success": false }')
 
-    api = APIClient(mock.Mock(), BASE_URL, "123", "456")
+    api = APIClient(mock.Mock(), "123", "456")
 
     assert not api.is_authenticated()

@@ -18,7 +18,7 @@ from typing import Optional
 import click
 
 from lean.click import LeanCommand, PathParameter
-from lean.config import Config
+from lean.constants import ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
 
@@ -56,11 +56,11 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: str, 
     docker_manager = container.docker_manager()
 
     if version != "latest":
-        if not docker_manager.tag_exists(Config.lean_engine_docker_image, version):
+        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
             raise RuntimeError("The specified version does not exist")
 
     if update:
-        docker_manager.pull_image(Config.lean_engine_docker_image, version)
+        docker_manager.pull_image(ENGINE_IMAGE, version)
 
     # Convert the given --debug value to the debugging method to use
     debugging_method = None

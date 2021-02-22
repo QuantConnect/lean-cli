@@ -20,7 +20,7 @@ import click
 import requests
 
 from lean.click import LeanCommand
-from lean.config import Config
+from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 
 CSPROJ = """
@@ -160,8 +160,8 @@ VSCODE_LAUNCH_JSON = """
 def init() -> None:
     """Bootstrap a Lean CLI project."""
     current_dir = Path.cwd()
-    data_dir = current_dir / Config.default_data_directory_name
-    lean_config_path = current_dir / Config.default_lean_config_file_name
+    data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
+    lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
 
     # Abort if one of the files we are going to create already exists to prevent us from overriding existing files
     for path in [data_dir, lean_config_path]:
@@ -203,7 +203,7 @@ def init() -> None:
     config = lean_config_manager.clean_lean_config(config)
 
     # Update the data-folder configuration
-    config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{Config.default_data_directory_name}"')
+    config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
 
     with lean_config_path.open("w+") as file:
         file.write(config)
@@ -233,10 +233,10 @@ def init() -> None:
 Successfully bootstrapped your Lean CLI project!
 
 The following structure has been created:
-- {Config.default_lean_config_file_name} contains the configuration used when running the LEAN engine locally
-- {Config.default_data_directory_name}/ contains the data that is used when running the LEAN engine locally
+- {DEFAULT_LEAN_CONFIG_FILE_NAME} contains the configuration used when running the LEAN engine locally
+- {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
 
 Here are some commands to get you going:
 - Run `lean create-project "My Project"` to create a new project with starter code
-- Run `lean backtest "My Project"` to backtest a project locally with the data in {Config.default_data_directory_name}/
+- Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_DATA_DIRECTORY_NAME}/
 """.strip())

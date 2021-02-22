@@ -15,19 +15,18 @@ from pathlib import Path
 from typing import Dict, List
 
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 
 
 class ProjectManager:
     """The ProjectManager class provides utilities for finding specific files in projects."""
 
-    def __init__(self, project_config_manager: ProjectConfigManager, project_config_file_name: str) -> None:
+    def __init__(self, project_config_manager: ProjectConfigManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param project_config_manager: the ProjectConfigManager instance to use when retrieving project configuration
-        :param project_config_file_name: the name of the project config file
         """
         self._project_config_manager = project_config_manager
-        self._project_config_file_name = project_config_file_name
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -99,7 +98,7 @@ class ProjectManager:
         """
         library_index = {}
 
-        for p in Path.cwd().rglob(f"Library/**/{self._project_config_file_name}"):
+        for p in Path.cwd().rglob(f"Library/**/{PROJECT_CONFIG_FILE_NAME}"):
             config = self._project_config_manager.get_project_config(p.parent)
             project_id = config.get("project-id")
 

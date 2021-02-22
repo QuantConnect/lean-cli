@@ -17,7 +17,7 @@ from typing import Optional
 import click
 
 from lean.click import LeanCommand, PathParameter
-from lean.config import Config
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 
 
@@ -42,7 +42,7 @@ def push(project: Optional[Path]) -> None:
 
         projects_to_push = [project]
     else:
-        projects_to_push = [p.parent for p in Path.cwd().rglob(Config.project_config_file_name)]
+        projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
 
     push_manager = container.push_manager()
     push_manager.push_projects(projects_to_push)

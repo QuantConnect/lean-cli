@@ -36,10 +36,7 @@ def run_image(image: str, tag: str, command: str, quiet: bool = False, **kwargs)
 
 
 def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
-    return CSharpCompiler(mock.Mock(),
-                          LeanConfigManager(mock.Mock(), ProjectConfigManager("config.json"), "lean.json"),
-                          docker_manager,
-                          "quantconnect/lean")
+    return CSharpCompiler(mock.Mock(), LeanConfigManager(mock.Mock(), ProjectConfigManager()), docker_manager)
 
 
 def test_compile_csharp_project_runs_msbuild_in_docker() -> None:

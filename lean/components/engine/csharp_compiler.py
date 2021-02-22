@@ -19,27 +19,22 @@ from typing import List
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker_manager import DockerManager
 from lean.components.logger import Logger
+from lean.constants import ENGINE_IMAGE
 
 
 class CSharpCompiler:
     """The CSharpCompiler class is responsible for compiling C# projects."""
 
-    def __init__(self,
-                 logger: Logger,
-                 lean_config_manager: LeanConfigManager,
-                 docker_manager: DockerManager,
-                 docker_image: str) -> None:
+    def __init__(self, logger: Logger, lean_config_manager: LeanConfigManager, docker_manager: DockerManager) -> None:
         """Creates a new CSharpCompiler instance.
 
         :param logger: the logger that is used to print messages
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
-        :param docker_image: the Docker image containing the LEAN engine
         """
         self._logger = logger
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
-        self._docker_image = docker_image
 
     def compile_csharp_project(self, project_dir: Path, version: str) -> Path:
         """Compiles a C# project and returns the directory containing the generated DLLs.
@@ -91,7 +86,7 @@ class CSharpCompiler:
 </Project>
             """.strip())
 
-        success = self._docker_manager.run_image(self._docker_image,
+        success = self._docker_manager.run_image(ENGINE_IMAGE,
                                                  version,
                                                  "-restore /LeanCLI/LeanCLI.csproj",
                                                  quiet=False,

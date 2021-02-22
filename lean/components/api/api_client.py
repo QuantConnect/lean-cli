@@ -19,22 +19,21 @@ from urllib.parse import urljoin
 import requests
 
 from lean.components.logger import Logger
+from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
 
 
 class APIClient:
     """The APIClient class manages communication with the QuantConnect API."""
 
-    def __init__(self, logger: Logger, base_url: str, user_id: str, api_token: str) -> None:
+    def __init__(self, logger: Logger, user_id: str, api_token: str) -> None:
         """Creates a new APIClient instance.
 
         :param logger: the logger to use to print debug messages to
-        :param base_url: the base url of the QuantConnect API
         :param user_id: the QuantConnect user id to use when sending authenticated requests
         :param api_token: the QuantConnect API token to use when sending authenticated requests
         """
         self._logger = logger
-        self._base_url = base_url
         self._user_id = user_id
         self._api_token = api_token
 
@@ -81,8 +80,7 @@ class APIClient:
         :param options: additional options to pass on to requests.request()
         :return: the parsed response of the request
         """
-        base_url = self._base_url if self._base_url.endswith("/") else self._base_url + "/"
-        full_url = urljoin(base_url, endpoint)
+        full_url = urljoin(API_BASE_URL, endpoint)
 
         # Create the hash which is used to authenticate the user to the API
         timestamp = str(int(time()))

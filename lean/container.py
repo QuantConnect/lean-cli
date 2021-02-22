@@ -33,15 +33,15 @@ from lean.components.project_manager import ProjectManager
 from lean.components.sync.pull_manager import PullManager
 from lean.components.sync.push_manager import PushManager
 from lean.components.task_manager import TaskManager
-from lean.config import Config
+from lean.constants import CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
 
 class Container(containers.DeclarativeContainer):
     """The Container class contains providers for all reusable components used by the CLI."""
     logger = providers.Singleton(Logger)
 
-    general_storage = providers.Singleton(Storage, file=Config.general_config_file)
-    credentials_storage = providers.Singleton(Storage, file=Config.credentials_config_file)
+    general_storage = providers.Singleton(Storage, file=GENERAL_CONFIG_PATH)
+    credentials_storage = providers.Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
 
     cli_config_manager = providers.Singleton(CLIConfigManager,
                                              general_storage=general_storage,
@@ -49,7 +49,6 @@ class Container(containers.DeclarativeContainer):
 
     api_client = providers.Factory(APIClient,
                                    logger=logger,
-                                   base_url=Config.api_base_url,
                                    user_id=cli_config_manager.provided.user_id.get_value()(),
                                    api_token=cli_config_manager.provided.api_token.get_value()())
     account_client = providers.Singleton(AccountClient, api_client=api_client)
@@ -60,10 +59,8 @@ class Container(containers.DeclarativeContainer):
     node_client = providers.Singleton(NodeClient, api_client=api_client)
     live_client = providers.Singleton(LiveClient, api_client=api_client)
 
-    project_config_manager = providers.Singleton(ProjectConfigManager, file_name=Config.project_config_file_name)
-    project_manager = providers.Singleton(ProjectManager,
-                                          project_config_manager=project_config_manager,
-                                          project_config_file_name=Config.project_config_file_name)
+    project_config_manager = providers.Singleton(ProjectConfigManager)
+    project_manager = providers.Singleton(ProjectManager, project_config_manager=project_config_manager)
 
     pull_manager = providers.Singleton(PullManager,
                                        logger=logger,
@@ -79,22 +76,19 @@ class Container(containers.DeclarativeContainer):
 
     lean_config_manager = providers.Singleton(LeanConfigManager,
                                               cli_config_manager=cli_config_manager,
-                                              project_config_manager=project_config_manager,
-                                              default_file_name=Config.default_lean_config_file_name)
+                                              project_config_manager=project_config_manager)
 
     docker_manager = providers.Singleton(DockerManager, logger=logger)
 
     csharp_compiler = providers.Singleton(CSharpCompiler,
                                           logger=logger,
                                           lean_config_manager=lean_config_manager,
-                                          docker_manager=docker_manager,
-                                          docker_image=Config.lean_engine_docker_image)
+                                          docker_manager=docker_manager)
     lean_runner = providers.Singleton(LeanRunner,
                                       logger=logger,
                                       csharp_compiler=csharp_compiler,
                                       lean_config_manager=lean_config_manager,
-                                      docker_manager=docker_manager,
-                                      docker_image=Config.lean_engine_docker_image)
+                                      docker_manager=docker_manager)
 
     task_manager = providers.Singleton(TaskManager)
 

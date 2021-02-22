@@ -14,17 +14,11 @@
 from pathlib import Path
 
 from lean.components.config.storage import Storage
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 
 
 class ProjectConfigManager:
     """The ProjectConfigManager class manages the configuration of a single project."""
-
-    def __init__(self, file_name: str) -> None:
-        """Creates a new ProjectConfigManager instance.
-
-        :param file_name: the name of the file containing the project's configuration
-        """
-        self._file_name = file_name
 
     def get_project_config(self, project_directory: Path) -> Storage:
         """Returns a Storage instance to get/set the configuration for a project.
@@ -32,4 +26,4 @@ class ProjectConfigManager:
         :param project_directory: the path to the project to retrieve the configuration of
         :return: the Storage instance containing the project-specific configuration of the given project
         """
-        return Storage(str(project_directory / self._file_name))
+        return Storage(str(project_directory / PROJECT_CONFIG_FILE_NAME))

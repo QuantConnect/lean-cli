@@ -16,7 +16,7 @@ from typing import Optional
 
 import click
 
-from lean.config import Config
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 
 
@@ -67,7 +67,7 @@ class LeanCommand(click.Command):
         if self._requires_cli_project:
             params += [click.Option(["--config", "-c"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                                    help=f"The configuration file that should be used (defaults to the nearest {Config.default_lean_config_file_name})",
+                                    help=f"The configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
                                     expose_value=False,
                                     is_eager=True,
                                     callback=parse_config_option)]
@@ -87,8 +87,6 @@ class LeanCommand(click.Command):
 
 class PathParameter(click.ParamType):
     """A limited version of click.Path which uses pathlib.Path."""
-
-    name = "path"
 
     def __init__(self, exists: bool = False, file_okay: bool = True, dir_okay: bool = True):
         """Creates a new Path instance.

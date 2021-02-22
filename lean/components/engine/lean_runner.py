@@ -23,6 +23,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker_manager import DockerManager
 from lean.components.engine.csharp_compiler import CSharpCompiler
 from lean.components.logger import Logger
+from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 
 
@@ -33,21 +34,18 @@ class LeanRunner:
                  logger: Logger,
                  csharp_compiler: CSharpCompiler,
                  lean_config_manager: LeanConfigManager,
-                 docker_manager: DockerManager,
-                 docker_image: str) -> None:
+                 docker_manager: DockerManager) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
         :param csharp_compiler: the CSharpCompiler instance used to compile C# projects before running them
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
-        :param docker_image: the Docker image containing the LEAN engine
         """
         self._logger = logger
         self._csharp_compiler = csharp_compiler
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
-        self._docker_image = docker_image
 
     def run_lean(self,
                  environment: str,
@@ -151,7 +149,7 @@ class LeanRunner:
             self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
 
         # Run the engine and log the result
-        success = self._docker_manager.run_image(self._docker_image, version, command, quiet=False, **run_options)
+        success = self._docker_manager.run_image(ENGINE_IMAGE, version, command, quiet=False, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)

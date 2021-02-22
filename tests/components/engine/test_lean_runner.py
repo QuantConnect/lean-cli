@@ -42,9 +42,8 @@ def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = c
 
     return LeanRunner(mock.Mock(),
                       csharp_compiler,
-                      LeanConfigManager(cli_config_manager, ProjectConfigManager("config.json"), "lean.json"),
-                      docker_manager,
-                      "quantconnect/lean")
+                      LeanConfigManager(cli_config_manager, ProjectConfigManager()),
+                      docker_manager)
 
 
 def test_run_lean_compiles_csharp_project() -> None:
