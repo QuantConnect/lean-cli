@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dependency_injector import containers, providers
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.providers import Factory, Singleton
 
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.cloud_runner import CloudRunner
@@ -30,52 +31,52 @@ from lean.components.util.task_manager import TaskManager
 from lean.constants import CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
 
-class Container(containers.DeclarativeContainer):
+class Container(DeclarativeContainer):
     """The Container class contains providers for all reusable components used by the CLI."""
-    logger = providers.Singleton(Logger)
+    logger = Singleton(Logger)
 
-    task_manager = providers.Singleton(TaskManager)
+    task_manager = Singleton(TaskManager)
 
-    general_storage = providers.Singleton(Storage, file=GENERAL_CONFIG_PATH)
-    credentials_storage = providers.Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
+    general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
+    credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
 
-    project_config_manager = providers.Singleton(ProjectConfigManager)
-    cli_config_manager = providers.Singleton(CLIConfigManager,
-                                             general_storage=general_storage,
-                                             credentials_storage=credentials_storage)
-    lean_config_manager = providers.Singleton(LeanConfigManager,
-                                              cli_config_manager=cli_config_manager,
-                                              project_config_manager=project_config_manager)
+    project_config_manager = Singleton(ProjectConfigManager)
+    cli_config_manager = Singleton(CLIConfigManager,
+                                   general_storage=general_storage,
+                                   credentials_storage=credentials_storage)
+    lean_config_manager = Singleton(LeanConfigManager,
+                                    cli_config_manager=cli_config_manager,
+                                    project_config_manager=project_config_manager)
 
-    project_manager = providers.Singleton(ProjectManager, project_config_manager=project_config_manager)
+    project_manager = Singleton(ProjectManager, project_config_manager=project_config_manager)
 
-    api_client = providers.Factory(APIClient,
-                                   logger=logger,
-                                   user_id=cli_config_manager.provided.user_id.get_value()(),
-                                   api_token=cli_config_manager.provided.api_token.get_value()())
+    api_client = Factory(APIClient,
+                         logger=logger,
+                         user_id=cli_config_manager.provided.user_id.get_value()(),
+                         api_token=cli_config_manager.provided.api_token.get_value()())
 
-    cloud_runner = providers.Singleton(CloudRunner, logger=logger, api_client=api_client, task_manager=task_manager)
-    pull_manager = providers.Singleton(PullManager,
-                                       logger=logger,
-                                       api_client=api_client,
-                                       project_config_manager=project_config_manager)
-    push_manager = providers.Singleton(PushManager,
-                                       logger=logger,
-                                       api_client=api_client,
-                                       project_manager=project_manager,
-                                       project_config_manager=project_config_manager)
+    cloud_runner = Singleton(CloudRunner, logger=logger, api_client=api_client, task_manager=task_manager)
+    pull_manager = Singleton(PullManager,
+                             logger=logger,
+                             api_client=api_client,
+                             project_config_manager=project_config_manager)
+    push_manager = Singleton(PushManager,
+                             logger=logger,
+                             api_client=api_client,
+                             project_manager=project_manager,
+                             project_config_manager=project_config_manager)
 
-    docker_manager = providers.Singleton(DockerManager, logger=logger)
+    docker_manager = Singleton(DockerManager, logger=logger)
 
-    csharp_compiler = providers.Singleton(CSharpCompiler,
-                                          logger=logger,
-                                          lean_config_manager=lean_config_manager,
-                                          docker_manager=docker_manager)
-    lean_runner = providers.Singleton(LeanRunner,
-                                      logger=logger,
-                                      csharp_compiler=csharp_compiler,
-                                      lean_config_manager=lean_config_manager,
-                                      docker_manager=docker_manager)
+    csharp_compiler = Singleton(CSharpCompiler,
+                                logger=logger,
+                                lean_config_manager=lean_config_manager,
+                                docker_manager=docker_manager)
+    lean_runner = Singleton(LeanRunner,
+                            logger=logger,
+                            csharp_compiler=csharp_compiler,
+                            lean_config_manager=lean_config_manager,
+                            docker_manager=docker_manager)
 
 
 container = Container()
