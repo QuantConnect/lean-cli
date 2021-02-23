@@ -30,7 +30,7 @@ from lean.container import container
               default="latest",
               help="The version of the research environment version to run (defaults to the latest installed version)")
 def research(project: Path, port: int, update: bool, version: str) -> None:
-    """Run a local Jupyter Lab environment for a project in Docker."""
+    """Run a Jupyter Lab environment locally using Docker."""
     cli_config_manager = container.cli_config_manager()
 
     project_config_manager = container.project_config_manager()
