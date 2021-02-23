@@ -83,7 +83,7 @@ def main() -> None:
 
         section_parts = [header, help_str, help_output, command_source]
 
-        table_of_contents.append(f"* [`{c.name}`](#{get_header_id(c.name)})")
+        table_of_contents.append(f"- [`{c.name}`](#{get_header_id(c.name)})")
         command_sections.append("\n\n".join(section_parts))
 
     full_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)

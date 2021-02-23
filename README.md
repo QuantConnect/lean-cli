@@ -68,18 +68,18 @@ A cloud-focused workflow (local development, cloud execution) with the CLI may l
 ## Commands
 
 <!-- commands start -->
-* [`lean backtest`](#lean-backtest)
-* [`lean cloud backtest`](#lean-cloud-backtest)
-* [`lean cloud pull`](#lean-cloud-pull)
-* [`lean cloud push`](#lean-cloud-push)
-* [`lean config get`](#lean-config-get)
-* [`lean config list`](#lean-config-list)
-* [`lean config set`](#lean-config-set)
-* [`lean create-project`](#lean-create-project)
-* [`lean init`](#lean-init)
-* [`lean login`](#lean-login)
-* [`lean logout`](#lean-logout)
-* [`lean research`](#lean-research)
+- [`lean backtest`](#lean-backtest)
+- [`lean cloud backtest`](#lean-cloud-backtest)
+- [`lean cloud pull`](#lean-cloud-pull)
+- [`lean cloud push`](#lean-cloud-push)
+- [`lean config get`](#lean-config-get)
+- [`lean config list`](#lean-config-list)
+- [`lean config set`](#lean-config-set)
+- [`lean create-project`](#lean-create-project)
+- [`lean init`](#lean-init)
+- [`lean login`](#lean-login)
+- [`lean logout`](#lean-logout)
+- [`lean research`](#lean-research)
 
 ### `lean backtest`
 
