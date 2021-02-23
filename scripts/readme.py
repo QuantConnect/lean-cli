@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This module automatically updates the commands reference part of the readme.
-# It should be ran using `python scripts/readme.py` from the root of the project.
+# This program automatically updates the commands reference part of the readme
+# It should be ran using `python scripts/readme.py` from the root of the project
 
 import re
 from pathlib import Path
@@ -75,7 +75,7 @@ def main() -> None:
         header = f"### `{c.name}`"
         help_str = c.command.get_short_help_str(limit=120)
 
-        help_output = CliRunner().invoke(c.command, ["--help"]).output.strip()
+        help_output = CliRunner().invoke(c.command, ["--help"], prog_name=c.name, terminal_width=120).output.strip()
         help_output = f"```\n{help_output}\n```"
 
         command_source = f"lean/commands/{c.name.replace('lean ', '').replace(' ', '/').replace('-', '_')}.py"

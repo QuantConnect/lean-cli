@@ -49,6 +49,8 @@ After installing the CLI, simply `cd` into an empty directory and run `lean init
 
 ## Usage
 
+The Lean CLI supports multiple workflows. The examples below serve as a starting point, you're free to mix local and cloud features in any way you'd like.
+
 A locally-focused workflow (local development, local execution) with the CLI may look like this:
 1. `cd` into the Lean CLI project.
 2. Run `lean create-project "RSI Strategy"` to create a new project with some basic code to get you started.
@@ -59,8 +61,9 @@ A locally-focused workflow (local development, local execution) with the CLI may
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
 1. `cd` into the Lean CLI project.
 2. Run `lean cloud pull` to pull remotely changed files.
-3. Start programming and run backtests with `lean cloud backtest <PROJECT> --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
-4. When you're done for the moment, run `lean cloud push` to push all remotely changed files to the cloud.
+3. Start programming and run backtests with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
+4. Whenever you need to create a new project, run `lean create-project "Project Name"` and `lean cloud push --project "Project Name"` to create a new project containing some basic code and to push it to the cloud.
+5. When you're done for the moment, run `lean cloud push` to push all locally changed files to the cloud.
 
 ## Commands
 
@@ -83,7 +86,7 @@ A cloud-focused workflow (local development, cloud execution) with the CLI may l
 Backtest a project locally using Docker.
 
 ```
-Usage: backtest [OPTIONS] PROJECT
+Usage: lean backtest [OPTIONS] PROJECT
 
   Backtest a project locally using Docker.
 
@@ -94,22 +97,12 @@ Usage: backtest [OPTIONS] PROJECT
   https://github.com/QuantConnect/lean-cli#local-debugging
 
 Options:
-  -o, --output PATH             Directory to store results in (defaults to
-                                PROJECT/backtests/TIMESTAMP)
-
-  --update                      Pull the selected LEAN engine version before
-                                running the backtest
-
-  --version TEXT                The LEAN engine version to run (defaults to the
-                                latest installed version)
-
-  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help
-                                for more information)
-
+  --output PATH                 Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --update                      Pull the selected LEAN engine version before running the backtest
+  --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
+  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --help                        Show this message and exit.
-  -c, --config FILE             The Lean configuration file that should be used
-                                (defaults to the nearest lean.json)
-
+  -c, --config FILE             The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                     Enable debug logging
 ```
 
@@ -120,24 +113,19 @@ _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
 Run a backtest in the cloud.
 
 ```
-Usage: backtest [OPTIONS] PROJECT
+Usage: lean cloud backtest [OPTIONS] PROJECT
 
   Run a backtest in the cloud.
 
   PROJECT should be the name or id of a cloud project.
 
-  If the project that has to be backtested has been pulled to the local drive
-  with `lean cloud pull` it is possible to use the --push option to push local
-  modifications to the cloud before running the backtest.
+  If the project that has to be backtested has been pulled to the local drive with `lean cloud pull` it is possible to
+  use the --push option to push local modifications to the cloud before running the backtest.
 
 Options:
-  --name TEXT  The name of the backtest (a random one is generated if not
-               specified)
-
+  --name TEXT  The name of the backtest (a random one is generated if not specified)
   --push       Push local modifications to the cloud before running the backtest
-  --open       Automatically open the browser with the results when the backtest
-               is finished
-
+  --open       Automatically open the browser with the results when the backtest is finished
   --help       Show this message and exit.
   --verbose    Enable debug logging
 ```
@@ -149,23 +137,18 @@ _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
 Pull projects from QuantConnect to the local drive.
 
 ```
-Usage: pull [OPTIONS]
+Usage: lean cloud pull [OPTIONS]
 
   Pull projects from QuantConnect to the local drive.
 
-  This command overrides the content of local files with the content of their
-  respective counterparts in the cloud.
+  This command overrides the content of local files with the content of their respective counterparts in the cloud.
 
-  This command will not delete local files for which there is no counterpart
-  in the cloud.
+  This command will not delete local files for which there is no counterpart in the cloud.
 
-  If you pull a specific project, all the libraries linked to that project are
-  pulled as well (recursively).
+  If you pull a specific project, all the libraries linked to that project are pulled as well (recursively).
 
 Options:
-  --project TEXT   Name or id of the project to pull (all cloud projects if not
-                   specified)
-
+  --project TEXT   Name or id of the project to pull (all cloud projects if not specified)
   --pull-bootcamp  Pull Boot Camp projects (disabled by default)
   --help           Show this message and exit.
   --verbose        Enable debug logging
@@ -178,23 +161,18 @@ _See code: [lean/commands/cloud/pull.py](lean/commands/cloud/pull.py)_
 Push local projects to QuantConnect.
 
 ```
-Usage: push [OPTIONS]
+Usage: lean cloud push [OPTIONS]
 
   Push local projects to QuantConnect.
 
-  This command overrides the content of cloud files with the content of their
-  respective local counterparts.
+  This command overrides the content of cloud files with the content of their respective local counterparts.
 
-  This command will not delete cloud files which don't have a local
-  counterpart.
+  This command will not delete cloud files which don't have a local counterpart.
 
-  If you push a specific project, all the libraries linked to that project are
-  pushed as well (recursively).
+  If you push a specific project, all the libraries linked to that project are pushed as well (recursively).
 
 Options:
-  --project DIRECTORY  Path to the local project to push (all local projects if
-                       not specified)
-
+  --project DIRECTORY  Path to the local project to push (all local projects if not specified)
   --help               Show this message and exit.
   --verbose            Enable debug logging
 ```
@@ -206,13 +184,12 @@ _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
 Get the current value of a configurable option.
 
 ```
-Usage: get [OPTIONS] KEY
+Usage: lean config get [OPTIONS] KEY
 
   Get the current value of a configurable option.
 
-  Sensitive options like credentials cannot be retrieved this way for security
-  reasons. Please open ~/.lean/credentials if you want to see your currently
-  stored credentials.
+  Sensitive options like credentials cannot be retrieved this way for security reasons. Please open
+  ~/.lean/credentials if you want to see your currently stored credentials.
 
   Run `lean config list` to show all available options.
 
@@ -228,7 +205,7 @@ _See code: [lean/commands/config/get.py](lean/commands/config/get.py)_
 List the configurable options and their current values.
 
 ```
-Usage: list [OPTIONS]
+Usage: lean config list [OPTIONS]
 
   List the configurable options and their current values.
 
@@ -244,7 +221,7 @@ _See code: [lean/commands/config/list.py](lean/commands/config/list.py)_
 Set a configurable option.
 
 ```
-Usage: set [OPTIONS] KEY VALUE
+Usage: lean config set [OPTIONS] KEY VALUE
 
   Set a configurable option.
 
@@ -262,15 +239,13 @@ _See code: [lean/commands/config/set.py](lean/commands/config/set.py)_
 Create a new project containing starter code.
 
 ```
-Usage: create-project [OPTIONS] NAME
+Usage: lean create-project [OPTIONS] NAME
 
   Create a new project containing starter code.
 
-  If NAME is a path containing subdirectories those will be created
-  automatically.
+  If NAME is a path containing subdirectories those will be created automatically.
 
-  The default language can be set using `lean config set default-language
-  python/csharp`.
+  The default language can be set using `lean config set default-language python/csharp`.
 
 Options:
   -l, --language [python|csharp]  The language of the project to create
@@ -285,7 +260,7 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 Bootstrap a Lean CLI project.
 
 ```
-Usage: init [OPTIONS]
+Usage: lean init [OPTIONS]
 
   Bootstrap a Lean CLI project.
 
@@ -301,14 +276,13 @@ _See code: [lean/commands/init.py](lean/commands/init.py)_
 Log in with a QuantConnect account.
 
 ```
-Usage: login [OPTIONS]
+Usage: lean login [OPTIONS]
 
   Log in with a QuantConnect account.
 
   If user id or API token is not provided an interactive prompt will show.
 
-  Credentials are stored in ~/.lean/credentials and are removed upon running
-  `lean logout`.
+  Credentials are stored in ~/.lean/credentials and are removed upon running `lean logout`.
 
 Options:
   -u, --user-id TEXT    QuantConnect.com user id
@@ -324,7 +298,7 @@ _See code: [lean/commands/login.py](lean/commands/login.py)_
 Log out and remove stored credentials.
 
 ```
-Usage: logout [OPTIONS]
+Usage: lean logout [OPTIONS]
 
   Log out and remove stored credentials.
 
@@ -340,22 +314,16 @@ _See code: [lean/commands/logout.py](lean/commands/logout.py)_
 Run a Jupyter Lab environment locally using Docker.
 
 ```
-Usage: research [OPTIONS] PROJECT
+Usage: lean research [OPTIONS] PROJECT
 
   Run a Jupyter Lab environment locally using Docker.
 
 Options:
   --port INTEGER     The port to run Jupyter Lab on  [default: 8888]
-  --update           Pull the selected research environment version before
-                     starting it
-
-  --version TEXT     The version of the research environment version to run
-                     (defaults to the latest installed version)
-
+  --update           Pull the selected research environment version before starting it
+  --version TEXT     The version of the research environment version to run (defaults to the latest installed version)
   --help             Show this message and exit.
-  -c, --config FILE  The Lean configuration file that should be used (defaults
-                     to the nearest lean.json)
-
+  -c, --config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose          Enable debug logging
 ```
 

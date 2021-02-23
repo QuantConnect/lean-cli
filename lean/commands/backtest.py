@@ -25,7 +25,7 @@ from lean.models.config import DebuggingMethod
 
 @click.command(cls=LeanCommand, requires_cli_project=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--output", "-o",
+@click.option("--output",
               type=PathParameter(exists=False),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
 @click.option("--update", is_flag=True, help="Pull the selected LEAN engine version before running the backtest")
