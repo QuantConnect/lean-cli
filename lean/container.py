@@ -35,7 +35,7 @@ class Container(DeclarativeContainer):
     """The Container class contains providers for all reusable components used by the CLI."""
     logger = Singleton(Logger)
 
-    task_manager = Singleton(TaskManager)
+    task_manager = Singleton(TaskManager, logger=logger)
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)

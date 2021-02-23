@@ -11,15 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+from typing import Any, Union
+
+from rich.console import Console, RenderableType
+from tqdm import tqdm
 
 
 class Logger:
-    """A Logger logs messages."""
+    """The Logger class handles all output printing."""
 
     def __init__(self) -> None:
         """Creates a new Logger instance."""
         self._debug_logging_enabled = False
+
+        self._stdout_console = Console(stderr=False)
+        self._stderr_console = Console(stderr=True)
 
     def enable_debug_logging(self) -> None:
         """Enables debug messages to be printed."""
@@ -31,25 +37,37 @@ class Logger:
         :param message: the message to log
         """
         if self._debug_logging_enabled:
-            print(message)
+            self._stdout_console.print(message)
 
-    def info(self, message: str) -> None:
+    def info(self, message: Union[str, RenderableType], enable_markup: bool = False) -> None:
         """Logs a message to stdout.
 
         :param message: the message to log
+        :param enable_markup: True if rich's markup should be enabled, False if not
         """
-        print(message)
+        if enable_markup:
+            self._stdout_console.print(message)
+        else:
+            print(message)
 
     def warn(self, message: str) -> None:
         """Logs a warning message to stderr.
 
         :param message: the message to log
         """
-        print(message, file=sys.stderr)
+        self._stderr_console.print(f"[orange1]{message}[/orange1]")
 
     def error(self, message: str) -> None:
         """Logs a message to stderr.
 
         :param message: the message to log
         """
-        print(message, file=sys.stderr)
+        self._stderr_console.print(f"[red]{message}[/red]")
+
+    def progress(self, total: Any) -> tqdm:
+        """Creates a progress bar.
+
+        :param total: the progress bar's end amount
+        :return: a tqdm instance containing the progress bar that is being displayed
+        """
+        return tqdm(total=total, ncols=50, bar_format="[{bar}] {percentage:1.0f}%", ascii=" =")

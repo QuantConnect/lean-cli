@@ -12,10 +12,12 @@
 # limitations under the License.
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK)
+from lean.models.api import QCLanguage, QCLiveResults, QCProject
 
 
 def create_fake_lean_cli_project() -> None:
@@ -51,3 +53,22 @@ def create_fake_lean_cli_project() -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w+") as file:
             file.write(content)
+
+
+def create_api_project(id: int, name: str) -> QCProject:
+    """Creates a fake API project response."""
+    return QCProject(
+        projectId=id,
+        organizationId="123",
+        name=name,
+        description="Description",
+        modified=datetime.now(),
+        created=datetime.now(),
+        language=QCLanguage.Python,
+        collaborators=[],
+        leanVersionId=10500,
+        leanPinnedToMaster=True,
+        parameters=[],
+        liveResults=QCLiveResults(eStatus="Unknown"),
+        libraries=[]
+    )

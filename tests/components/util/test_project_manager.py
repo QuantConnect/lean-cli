@@ -107,7 +107,7 @@ def test_resolve_project_libraries_returns_single_path_when_project_has_no_libra
     manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Python Project")
 
-    assert set(dependencies) == {Path.cwd() / "Python Project"}
+    assert dependencies == [Path.cwd() / "Python Project"]
 
 
 def test_resolve_project_libraries_returns_single_path_when_libraries_dont_exist_locally() -> None:
@@ -119,4 +119,15 @@ def test_resolve_project_libraries_returns_single_path_when_libraries_dont_exist
     manager = ProjectManager(ProjectConfigManager())
     dependencies = manager.resolve_project_libraries(Path.cwd() / "Library" / "Library 1")
 
-    assert set(dependencies) == {Path.cwd() / "Library" / "Library 1"}
+    assert dependencies == [Path.cwd() / "Library" / "Library 1"]
+
+
+def test_resolve_project_libraries_does_not_return_two_of_the_same_when_self_dependency_exists() -> None:
+    create_fake_lean_cli_project()
+
+    create_library_project("Library 1", 1, [1])
+
+    manager = ProjectManager(ProjectConfigManager())
+    dependencies = manager.resolve_project_libraries(Path.cwd() / "Library" / "Library 1")
+
+    assert dependencies == [Path.cwd() / "Library" / "Library 1"]

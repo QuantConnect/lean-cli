@@ -38,4 +38,5 @@ def get(key: str) -> None:
     if value is None:
         raise RuntimeError(f"The option with key '{key}' doesn't have a value set")
 
-    click.echo(value)
+    logger = container.logger()
+    logger.info(value)

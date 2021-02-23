@@ -53,10 +53,14 @@ class LeanCommand(click.Command):
         self.context_settings["max_content_width"] = 120
 
     def invoke(self, ctx):
-        # Abort if the command needs to be ran inside a Lean CLI project
         if self._requires_cli_project:
-            # This method will throw if the directory cannot be found
-            container.lean_config_manager().get_cli_root_directory()
+            try:
+                # This method will throw if the directory cannot be found
+                container.lean_config_manager().get_cli_root_directory()
+            except Exception:
+                # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI project
+                raise RuntimeError(
+                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the configuration file to use with --config")
 
         return super().invoke(ctx)
 

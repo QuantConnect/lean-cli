@@ -27,19 +27,22 @@ from lean.container import container
 
 
 @pytest.fixture(autouse=True)
-def mock_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
+def fake_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     """A pytest fixture which mocks the filesystem before each test."""
     # The "fs" argument triggers pyfakefs' own pytest fixture to register
     # After pyfakefs has started all filesystem actions will happen on a fake in-memory filesystem
 
     # Proxy access to certifi's certificate authority bundle to the real filesystem
+    # This is required to be able to send HTTP requests using requests
     fs.add_real_file(certifi.where())
 
     # Create a fake home directory and set the cwd to an empty directory
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
 
-    # Reset singletons so that fresh Path instances get created
+    # Reset all singletons so Path instances get recreated
+    # Path instances are bound to the filesystem that was active at the time of their creation
+    # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
     container.reset_singletons()
 
     return fs

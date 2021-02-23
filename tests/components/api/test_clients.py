@@ -28,6 +28,7 @@ from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.project_client import ProjectClient
+from lean.constants import API_BASE_URL
 from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
 
 # These tests require a QuantConnect user id and API token
@@ -38,14 +39,14 @@ API_TOKEN = ""
 @pytest.fixture(autouse=True)
 def allow_http_requests(requests_mock: RequestsMock) -> None:
     """A pytest fixture which allows HTTP requests to the API to pass through the requests mock."""
-    requests_mock.add_passthru("https://www.quantconnect.com/api/v2")
+    requests_mock.add_passthru(API_BASE_URL)
 
 
 def create_api_client() -> APIClient:
     if USER_ID == "" or API_TOKEN == "":
         pytest.skip("API credentials not specified")
 
-    return APIClient(mock.Mock(), "https://www.quantconnect.com/api/v2", USER_ID, API_TOKEN)
+    return APIClient(mock.Mock(), USER_ID, API_TOKEN)
 
 
 @contextlib.contextmanager

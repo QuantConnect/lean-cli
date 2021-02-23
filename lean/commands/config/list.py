@@ -13,7 +13,6 @@
 
 import click
 from rich import box
-from rich.console import Console
 from rich.table import Table
 
 from lean.click import LeanCommand
@@ -41,5 +40,5 @@ def list() -> None:
                       str(option.location),
                       option.description)
 
-    console = Console()
-    console.print(table)
+    logger = container.logger()
+    logger.info(table, enable_markup=True)

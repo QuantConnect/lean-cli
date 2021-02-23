@@ -1,8 +1,9 @@
-from time import sleep
+import time
 from typing import Callable, List, Optional, TypeVar
 
 from pydantic import BaseModel
-from tqdm import tqdm
+
+from lean.components.util.logger import Logger
 
 T = TypeVar("T")
 
@@ -17,6 +18,13 @@ class Interval(BaseModel):
 
 class TaskManager:
     """The TaskManager contains utilities to handle long-running tasks."""
+
+    def __init__(self, logger: Logger) -> None:
+        """Creates a new TaskManager instance.
+
+        :param logger: the logger to use when a progress bars should be shown
+        """
+        self._logger = logger
 
     def poll(self,
              make_request: Callable[[], T],
@@ -55,7 +63,7 @@ class TaskManager:
 
         progress_bar = None
         if get_progress is not None:
-            progress_bar = tqdm(total=1.0, ncols=50, bar_format="{l_bar}{bar}|")
+            progress_bar = self._logger.progress(total=1.0)
 
         while True:
             try:
@@ -73,7 +81,7 @@ class TaskManager:
                     progress_bar.close()
                 return data
 
-            sleep(intervals[current_interval_index].interval_seconds)
+            time.sleep(intervals[current_interval_index].interval_seconds)
 
             poll_counter += 1
             if poll_counter == intervals[current_interval_index].interval_uses:

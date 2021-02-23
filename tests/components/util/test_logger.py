@@ -46,6 +46,13 @@ def test_info_logs_message_to_stdout(capsys: CaptureFixture) -> None:
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
+def test_info_removes_markup_when_markup_enabled(capsys: CaptureFixture) -> None:
+    logger = Logger()
+    logger.info("[red]Message[/red]", enable_markup=True)
+
+    assert_stdout_stderr(capsys, "Message\n", "")
+
+
 def test_warn_logs_message_to_stderr(capsys: CaptureFixture) -> None:
     logger = Logger()
     logger.warn("Message")
@@ -58,3 +65,11 @@ def test_error_logs_message_to_stderr(capsys: CaptureFixture) -> None:
     logger.error("Message")
 
     assert_stdout_stderr(capsys, "", "Message\n")
+
+
+def test_progress_creates_empty_progress_bar_with_given_total(capsys: CaptureFixture) -> None:
+    logger = Logger()
+    progress = logger.progress(100)
+
+    assert progress.n == 0
+    assert progress.total == 100

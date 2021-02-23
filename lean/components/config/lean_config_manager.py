@@ -58,8 +58,7 @@ class LeanConfigManager:
 
             # If the parent directory is the same as the current directory we can't go up any more
             if current_dir.parent == current_dir:
-                raise RuntimeError(
-                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the configuration file to use with --config")
+                raise RuntimeError(f"'{DEFAULT_LEAN_CONFIG_FILE_NAME}' not found")
 
             current_dir = current_dir.parent
 
