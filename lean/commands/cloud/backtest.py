@@ -18,7 +18,6 @@ from typing import Optional
 
 import click
 from rich import box
-from rich.console import Console
 from rich.table import Table
 
 from lean.click import LeanCommand
@@ -88,8 +87,8 @@ def _log_backtest_stats(backtest: QCBacktest) -> None:
         end = (i + 1) * 4
         table.add_row(*stats[start:end], end_section=end_of_first_section == end)
 
-    console = Console()
-    console.print(table)
+    logger = container.logger()
+    logger.info(table, enable_markup=True)
 
 
 @click.command(cls=LeanCommand)
