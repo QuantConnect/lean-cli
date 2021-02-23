@@ -120,7 +120,8 @@ def test_init_creates_clean_config_file_from_repo() -> None:
 @pytest.mark.parametrize("file", ["LeanCLI.csproj",
                                   ".idea/workspace.xml",
                                   ".idea/.idea.LeanCLI.dir/.idea/workspace.xml",
-                                  ".vscode/launch.json"])
+                                  ".vscode/launch.json",
+                                  ".vscode/settings.json"])
 def test_init_creates_extra_files_supporting_autocompletion_and_debugging(file: str) -> None:
     result = CliRunner().invoke(lean, ["init"], input="csharp\n")
 

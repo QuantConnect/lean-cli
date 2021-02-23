@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import shutil
+import sys
 import tempfile
 import zipfile
 from pathlib import Path
@@ -155,6 +156,12 @@ VSCODE_LAUNCH_JSON = """
 }
 """.strip() + "\n"
 
+VSCODE_SETTINGS_JSON = """
+{
+    "python.pythonPath": "$PYTHON$"
+}
+""".strip() + "\n"
+
 
 @click.command(cls=LeanCommand)
 def init() -> None:
@@ -213,7 +220,8 @@ def init() -> None:
         "LeanCLI.csproj": CSPROJ,
         ".idea/workspace.xml": PYCHARM_WORKSPACE_XML,
         ".idea/.idea.LeanCLI.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
-        ".vscode/launch.json": VSCODE_LAUNCH_JSON
+        ".vscode/launch.json": VSCODE_LAUNCH_JSON,
+        ".vscode/settings.json": VSCODE_SETTINGS_JSON.replace("$PYTHON$", sys.executable)
     }
 
     for location, content in extra_files.items():
