@@ -44,8 +44,8 @@ def backtest(project: Path, output: Optional[Path], update: bool, version: str, 
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
     \b
-    Go to the following url to learn how to debug backtests using the Lean CLI:
-    https://github.com/QuantConnect/lean-cli#debugging-backtests
+    Go to the following url to learn how to debug backtests locally using the Lean CLI:
+    https://github.com/QuantConnect/lean-cli#local-debugging
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))

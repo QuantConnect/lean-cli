@@ -71,7 +71,7 @@ class LeanCommand(click.Command):
         if self._requires_cli_project:
             params += [click.Option(["--config", "-c"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                                    help=f"The configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
+                                    help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
                                     expose_value=False,
                                     is_eager=True,
                                     callback=parse_config_option)]
