@@ -61,7 +61,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
 1. `cd` into the Lean CLI project.
 2. Run `lean cloud pull` to pull remotely changed files.
-3. Start programming and run backtests with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
+3. Start programming locally and run backtests in the cloud with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
 4. Whenever you need to create a new project, run `lean create-project "Project Name"` and `lean cloud push --project "Project Name"` to create a new project containing some basic code and to push it to the cloud.
 5. When you're done for the moment, run `lean cloud push` to push all locally changed files to the cloud.
 
