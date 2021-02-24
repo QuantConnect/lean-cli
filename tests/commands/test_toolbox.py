@@ -126,8 +126,6 @@ def test_toolbox_mounts_directory_as_volume_when_directory_option_given(option) 
 
     assert option in kwargs["entrypoint"]
     assert str(path) in kwargs["volumes"]
-
-    option_dir = kwargs["entrypoint"][kwargs["entrypoint"].index(option) + 1]
     assert kwargs["volumes"][str(path)]["bind"].endswith(option.lstrip("--"))
 
 
