@@ -128,7 +128,7 @@ def test_toolbox_mounts_directory_as_volume_when_directory_option_given(option) 
     assert str(path) in kwargs["volumes"]
 
     option_dir = kwargs["entrypoint"][kwargs["entrypoint"].index(option) + 1]
-    assert kwargs["volumes"][str(path)]["bind"] == str((Path("/Lean/Launcher/bin/Debug") / Path(option_dir)).resolve())
+    assert kwargs["volumes"][str(path)]["bind"].endswith(option.lstrip("--"))
 
 
 @pytest.mark.parametrize("option", ["--source-dir", "--source-meta-dir"])
