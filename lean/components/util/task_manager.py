@@ -74,25 +74,27 @@ class TaskManager:
         poll_counter = 0
         current_interval_index = 0
 
-        progress_bar = None
+        progress = None
+        progress_task = None
         if get_progress is not None:
-            progress_bar = self._logger.progress(total=1.0)
+            progress = self._logger.progress()
+            progress_task = progress.add_task("")
 
         try:
             while True:
                 try:
                     data = make_request()
                 except Exception as ex:
-                    if progress_bar is not None:
-                        progress_bar.close()
+                    if progress is not None:
+                        progress.stop()
                     raise ex
 
                 if get_progress is not None:
-                    progress_bar.update(get_progress(data) - progress_bar.n)
+                    progress.update(progress_task, completed=get_progress(data) * 100)
 
                 if is_done(data):
-                    if progress_bar is not None:
-                        progress_bar.close()
+                    if progress is not None:
+                        progress.stop()
                     return data
 
                 time.sleep(intervals[current_interval_index].interval_seconds)
@@ -102,6 +104,6 @@ class TaskManager:
                     current_interval_index += 1
                     poll_counter = 0
         except KeyboardInterrupt as e:
-            if progress_bar is not None:
-                progress_bar.close()
+            if progress is not None:
+                progress.stop()
             raise e

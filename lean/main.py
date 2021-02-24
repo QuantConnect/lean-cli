@@ -26,5 +26,4 @@ def main() -> None:
         logger = container.logger()
         logger.debug(traceback.format_exc().strip())
         logger.error(f"Error: {exception}")
-
         sys.exit(1)

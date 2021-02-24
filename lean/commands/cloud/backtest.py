@@ -19,6 +19,7 @@ from typing import Optional
 import click
 from rich import box
 from rich.table import Table
+from rich.text import Text
 
 from lean.click import LeanCommand
 from lean.container import container
@@ -59,9 +60,9 @@ def _log_backtest_stats(backtest: QCBacktest) -> None:
         stats.append(key)
 
         if "-" in value:
-            stats.append(f"[red]{value}[/red]")
+            stats.append(Text.from_markup(f"[red]{value}[/red]"))
         elif any(char.isdigit() and int(char) > 0 for char in value):
-            stats.append(f"[green]{value}[/green]")
+            stats.append(Text.from_markup(f"[green]{value}[/green]"))
         else:
             stats.append(value)
 
@@ -88,7 +89,7 @@ def _log_backtest_stats(backtest: QCBacktest) -> None:
         table.add_row(*stats[start:end], end_section=end_of_first_section == end)
 
     logger = container.logger()
-    logger.info(table, enable_markup=True)
+    logger.info(table)
 
 
 @click.command(cls=LeanCommand)

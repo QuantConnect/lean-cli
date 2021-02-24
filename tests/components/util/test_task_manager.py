@@ -72,20 +72,20 @@ def test_poll_repeatedly_updates_progress_bar_when_get_progress_defined(sleep) -
         return float(value) / 5.0
 
     logger = mock.Mock()
-    progress_bar = mock.Mock()
-    progress_bar.n = 0.0
-    logger.progress.return_value = progress_bar
+    progress = mock.Mock()
+    progress.add_task.return_value = 1
+    logger.progress.return_value = progress
 
     task_manager = TaskManager(logger)
     task_manager.poll(make_request, is_done, get_progress=get_progress)
 
-    assert progress_bar.update.mock_calls == [mock.call(0.2),
-                                              mock.call(0.4),
-                                              mock.call(0.6),
-                                              mock.call(0.8),
-                                              mock.call(1.0)]
+    assert progress.update.mock_calls == [mock.call(1, completed=20.0),
+                                          mock.call(1, completed=40.0),
+                                          mock.call(1, completed=60.0),
+                                          mock.call(1, completed=80.0),
+                                          mock.call(1, completed=100.0)]
 
-    progress_bar.close.assert_called_once()
+    progress.stop.assert_called_once()
 
 
 @mock.patch("time.sleep")
@@ -108,9 +108,9 @@ def test_poll_raises_when_make_request_raises(sleep) -> None:
         return float(value) / 5.0
 
     logger = mock.Mock()
-    progress_bar = mock.Mock()
-    progress_bar.n = 0.0
-    logger.progress.return_value = progress_bar
+    progress = mock.Mock()
+    progress.add_task.return_value = 1
+    logger.progress.return_value = progress
 
     task_manager = TaskManager(logger)
 
@@ -118,7 +118,7 @@ def test_poll_raises_when_make_request_raises(sleep) -> None:
         task_manager.poll(make_request, is_done, get_progress=get_progress)
 
     assert str(err.value) == "3"
-    progress_bar.close.assert_called_once()
+    progress.stop.assert_called_once()
 
 
 @mock.patch("time.sleep")
@@ -141,13 +141,13 @@ def test_poll_closes_progress_bar_when_keyboard_interrupt_fired(sleep) -> None:
         return float(value) / 5.0
 
     logger = mock.Mock()
-    progress_bar = mock.Mock()
-    progress_bar.n = 0.0
-    logger.progress.return_value = progress_bar
+    progress = mock.Mock()
+    progress.add_task.return_value = 1
+    logger.progress.return_value = progress
 
     task_manager = TaskManager(logger)
 
     with pytest.raises(KeyboardInterrupt):
         task_manager.poll(make_request, is_done, get_progress=get_progress)
 
-    progress_bar.close.assert_called_once()
+    progress.stop.assert_called_once()

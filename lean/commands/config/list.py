@@ -41,4 +41,4 @@ def list() -> None:
                       option.description)
 
     logger = container.logger()
-    logger.info(table, enable_markup=True)
+    logger.info(table)

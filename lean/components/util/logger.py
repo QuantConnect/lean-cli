@@ -11,10 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Union
-
 from rich.console import Console, RenderableType
-from tqdm import tqdm
+from rich.progress import BarColumn, Progress, TextColumn
 
 
 class Logger:
@@ -22,52 +20,47 @@ class Logger:
 
     def __init__(self) -> None:
         """Creates a new Logger instance."""
+        self._console = Console(markup=False, highlight=False, emoji=False)
         self._debug_logging_enabled = False
-
-        self._stdout_console = Console(stderr=False)
-        self._stderr_console = Console(stderr=True)
 
     def enable_debug_logging(self) -> None:
         """Enables debug messages to be printed."""
         self._debug_logging_enabled = True
 
     def debug(self, message: str) -> None:
-        """Logs a debug message to stdout if debug logging is enabled.
+        """Logs a debug message if debug logging is enabled.
 
         :param message: the message to log
         """
         if self._debug_logging_enabled:
-            self._stdout_console.print(message)
+            self._console.print(f"[grey50]{message}[/grey50]", markup=True)
 
-    def info(self, message: Union[str, RenderableType], enable_markup: bool = False) -> None:
-        """Logs a message to stdout.
+    def info(self, message: RenderableType) -> None:
+        """Logs an info message.
 
         :param message: the message to log
-        :param enable_markup: True if rich's markup should be enabled, False if not
         """
-        if enable_markup:
-            self._stdout_console.print(message)
-        else:
-            print(message)
+        self._console.print(message)
 
     def warn(self, message: str) -> None:
-        """Logs a warning message to stderr.
+        """Logs a warning message.
 
         :param message: the message to log
         """
-        self._stderr_console.print(f"[orange1]{message}[/orange1]")
+        self._console.print(f"[yellow]{message}[/yellow]", markup=True)
 
-    def error(self, message: str) -> None:
-        """Logs a message to stderr.
+    def error(self, message: RenderableType) -> None:
+        """Logs an error message.
 
         :param message: the message to log
         """
-        self._stderr_console.print(f"[red]{message}[/red]")
+        self._console.print(f"[red]{message}[/red]", markup=True)
 
-    def progress(self, total: Any) -> tqdm:
-        """Creates a progress bar.
+    def progress(self) -> Progress:
+        """Creates a Progress instance.
 
-        :param total: the progress bar's end amount
-        :return: a tqdm instance containing the progress bar that is being displayed
+        :return: a Progress instance which can be used to display progress bars
         """
-        return tqdm(total=total, ncols=50, bar_format="[{bar}] {percentage:1.0f}%", ascii=" =")
+        progress = Progress(TextColumn(""), BarColumn(), TextColumn("{task.percentage:0.0f}%"), console=self._console)
+        progress.start()
+        return progress

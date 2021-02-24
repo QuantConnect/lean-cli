@@ -31,7 +31,7 @@ def test_debug_does_not_log_until_debug_logging_is_enabled(capsys: CaptureFixtur
     assert_stdout_stderr(capsys, "Message 2\n", "")
 
 
-def test_debug_logs_message_to_stdout(capsys: CaptureFixture) -> None:
+def test_debug_logs_message(capsys: CaptureFixture) -> None:
     logger = Logger()
     logger.enable_debug_logging()
     logger.debug("Message")
@@ -39,37 +39,32 @@ def test_debug_logs_message_to_stdout(capsys: CaptureFixture) -> None:
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_info_logs_message_to_stdout(capsys: CaptureFixture) -> None:
+def test_info_logs_message(capsys: CaptureFixture) -> None:
     logger = Logger()
     logger.info("Message")
 
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_info_removes_markup_when_markup_enabled(capsys: CaptureFixture) -> None:
+def test_warn_logs_message(capsys: CaptureFixture) -> None:
     logger = Logger()
-    logger.info("[red]Message[/red]", enable_markup=True)
+    logger.warn("Message")
 
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_warn_logs_message_to_stderr(capsys: CaptureFixture) -> None:
-    logger = Logger()
-    logger.warn("Message")
-
-    assert_stdout_stderr(capsys, "", "Message\n")
-
-
-def test_error_logs_message_to_stderr(capsys: CaptureFixture) -> None:
+def test_error_logs_message(capsys: CaptureFixture) -> None:
     logger = Logger()
     logger.error("Message")
 
-    assert_stdout_stderr(capsys, "", "Message\n")
+    assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_progress_creates_empty_progress_bar_with_given_total(capsys: CaptureFixture) -> None:
+def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> None:
     logger = Logger()
-    progress = logger.progress(100)
+    progress = logger.progress()
 
-    assert progress.n == 0
-    assert progress.total == 100
+    result = progress._started
+
+    progress.stop()
+    assert result
