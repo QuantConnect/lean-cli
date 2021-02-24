@@ -17,7 +17,6 @@ import signal
 import sys
 import threading
 import types
-from typing import Optional
 
 import docker
 import requests
@@ -48,7 +47,7 @@ class DockerManager:
         # Since the pull command is the same on Windows, Linux and macOS we can safely use a system call
         os.system(f"docker image pull {image}:{tag}")
 
-    def run_image(self, image: str, tag: str, command: Optional[str], quiet: bool = False, **kwargs) -> bool:
+    def run_image(self, image: str, tag: str, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available yet it will be pulled first.
 
         See https://docker-py.readthedocs.io/en/stable/containers.html for all the supported kwargs.
@@ -58,8 +57,6 @@ class DockerManager:
 
         :param image: the name of the image to run
         :param tag: the image's tag to run
-        :param command: the command to run
-        :param quiet: whether the logs of the image should be printed to stdout
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
@@ -71,7 +68,7 @@ class DockerManager:
         docker_client = self._get_docker_client()
 
         kwargs["detach"] = True
-        container = docker_client.containers.run(f"{image}:{tag}", command, **kwargs)
+        container = docker_client.containers.run(f"{image}:{tag}", None, **kwargs)
 
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
@@ -96,8 +93,7 @@ class DockerManager:
                     on_run()
                     on_run_called = True
 
-                if not quiet:
-                    self._logger.info(line.decode("utf-8").strip())
+                self._logger.info(line.decode("utf-8").strip())
 
         thread = threading.Thread(target=print_logs)
         thread.daemon = True

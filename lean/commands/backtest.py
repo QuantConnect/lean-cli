@@ -28,15 +28,18 @@ from lean.models.config import DebuggingMethod
 @click.option("--output",
               type=PathParameter(exists=False),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
-@click.option("--update", is_flag=True, help="Pull the selected LEAN engine version before running the backtest")
+@click.option("--debug",
+              type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),
+              help="Enable a certain debugging method (see --help for more information)")
+@click.option("--update",
+              is_flag=True,
+              default=False,
+              help="Pull the selected LEAN engine version before running the backtest")
 @click.option("--version",
               type=str,
               default="latest",
               help="The LEAN engine version to run (defaults to the latest installed version)")
-@click.option("--debug",
-              type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),
-              help="Enable a certain debugging method (see --help for more information)")
-def backtest(project: Path, output: Optional[Path], update: bool, version: str, debug: Optional[str]) -> None:
+def backtest(project: Path, output: Optional[Path], debug: Optional[str], update: bool, version: str) -> None:
     """Backtest a project locally using Docker.
 
     \b

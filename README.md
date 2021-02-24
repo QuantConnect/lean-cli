@@ -31,7 +31,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] Cloud synchronization
 - [x] Cloud backtesting
 - [ ] **First beta release**
-- [ ] Local data downloading
+- [x] Local data downloading
 - [ ] Local optimization
 - [ ] Local backtest visualization
 - [ ] Local live trading
@@ -53,10 +53,11 @@ The Lean CLI supports multiple workflows. The examples below serve as a starting
 
 A locally-focused workflow (local development, local execution) with the CLI may look like this:
 1. `cd` into the Lean CLI project.
-2. Run `lean create-project "RSI Strategy"` to create a new project with some basic code to get you started.
-3. Work on your strategy in `./RSI Strategy`.
-4. Run `lean research "RSI Strategy"` to launch a Jupyter Lab session to work on research notebooks. 
-5. Run a backtest with `lean backtest "RSI Strategy"`. This runs your backtest in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
+2. Download some data with the [`lean toolbox`](#lean-toolbox) command.
+3. Run `lean create-project "RSI Strategy"` to create a new project with some basic code to get you started.
+4. Work on your strategy in `./RSI Strategy`.
+5. Run `lean research "RSI Strategy"` to launch a Jupyter Lab session to work on research notebooks. 
+6. Run a backtest with `lean backtest "RSI Strategy"`. This runs your backtest in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own local data.
 
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
 1. `cd` into the Lean CLI project.
@@ -80,6 +81,7 @@ A cloud-focused workflow (local development, cloud execution) with the CLI may l
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean research`](#lean-research)
+- [`lean toolbox`](#lean-toolbox)
 
 ### `lean backtest`
 
@@ -98,9 +100,9 @@ Usage: lean backtest [OPTIONS] PROJECT
 
 Options:
   --output PATH                 Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --update                      Pull the selected LEAN engine version before running the backtest
   --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
-  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --help                        Show this message and exit.
   -c, --config FILE             The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                     Enable debug logging
@@ -319,7 +321,7 @@ Usage: lean research [OPTIONS] PROJECT
   Run a Jupyter Lab environment locally using Docker.
 
 Options:
-  --port INTEGER     The port to run Jupyter Lab on  [default: 8888]
+  --port INTEGER     The port to run Jupyter Lab on (defaults to 8888)
   --update           Pull the selected research environment version before starting it
   --version TEXT     The version of the research environment version to run (defaults to the latest installed version)
   --help             Show this message and exit.
@@ -328,6 +330,36 @@ Options:
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
+
+### `lean toolbox`
+
+Download, convert or generate data using one of the tools in Lean's ToolBox using Docker.
+
+```
+Usage: lean toolbox [OPTIONS]
+
+  Download, convert or generate data using one of the tools in Lean's ToolBox using Docker.
+
+  All options are passed to the toolbox.
+  Go to the following url to see the available apps and their supported options:
+  https://github.com/QuantConnect/Lean/blob/master/ToolBox/README.md
+
+  If a --source-dir or --source-meta-dir option is given, its value will be mounted as a volume in the Docker container.
+  The --destination-dir option should be omitted, it'll automatically be set by the CLI.
+
+  Example usage:
+  $ lean toolbox --app=YahooDownloader --tickers=SPY,AAPL --resolution=Daily --from-date=19980102-00:00:00 --to-date=20210107-00:00:00
+
+Options:
+  --toolbox-help     Pass the --help flag to the ToolBox
+  --update           Pull the selected LEAN engine version before running the ToolBox
+  --version TEXT     The LEAN engine version to run the ToolBox in (defaults to the latest installed version)
+  --help             Show this message and exit.
+  -c, --config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose          Enable debug logging
+```
+
+_See code: [lean/commands/toolbox.py](lean/commands/toolbox.py)_
 <!-- commands end -->
 
 ## Local debugging

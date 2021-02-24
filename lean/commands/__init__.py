@@ -22,6 +22,7 @@ from lean.commands.init import init
 from lean.commands.login import login
 from lean.commands.logout import logout
 from lean.commands.research import research
+from lean.commands.toolbox import toolbox
 
 
 @click.group()
@@ -33,11 +34,13 @@ def lean() -> None:
     pass
 
 
+lean.add_command(config)
+lean.add_command(cloud)
+
 lean.add_command(login)
 lean.add_command(logout)
-lean.add_command(config)
 lean.add_command(init)
 lean.add_command(create_project)
 lean.add_command(backtest)
 lean.add_command(research)
-lean.add_command(cloud)
+lean.add_command(toolbox)

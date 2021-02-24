@@ -81,7 +81,7 @@ class LeanConfigManager:
 
         :return: the path to the data directory as it is configured in the Lean config
         """
-        config = self._read_lean_config()
+        config = self.get_lean_config()
         return self.get_cli_root_directory() / config["data-folder"]
 
     def clean_lean_config(self, config: str) -> str:
@@ -139,7 +139,7 @@ class LeanConfigManager:
         :param algorithm_file: the path to the algorithm that will be ran
         :param debugging_method: the debugging method to use, or None to disable debugging
         """
-        config = self._read_lean_config()
+        config = self.get_lean_config()
 
         config["environment"] = environment
         config["close-automatically"] = True
@@ -169,7 +169,7 @@ class LeanConfigManager:
 
         return config
 
-    def _read_lean_config(self) -> Dict[str, Any]:
+    def get_lean_config(self) -> Dict[str, Any]:
         """Reads the Lean config into a dict.
 
         :return: a dict containing the contents of the Lean config file

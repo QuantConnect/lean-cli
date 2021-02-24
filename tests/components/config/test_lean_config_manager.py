@@ -316,3 +316,12 @@ def test_get_complete_lean_config_sets_parameters() -> None:
         "key2": "value2",
         "key3": "value3"
     }
+
+
+def test_get_lean_config_returns_contents_of_lean_config_file_as_dict() -> None:
+    create_fake_lean_cli_project()
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
+    config = manager.get_lean_config()
+
+    assert config == {"data-folder": "data"}

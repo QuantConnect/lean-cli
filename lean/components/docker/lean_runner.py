@@ -20,8 +20,8 @@ from typing import Any, Dict, Optional
 from docker.types import Mount
 
 from lean.components.config.lean_config_manager import LeanConfigManager
-from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.csharp_compiler import CSharpCompiler
+from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
@@ -128,7 +128,10 @@ class LeanRunner:
                           source=str(csharp_dll_dir / f"LeanCLI.{extension}"),
                           type="bind"))
 
-        command = "--data-folder /Data --results-destination-folder /Results --config /Lean/Launcher/config.json"
+        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe",
+                                     "--data-folder", "/Data",
+                                     "--results-destination-folder", "/Results",
+                                     "--config", "/Lean/Launcher/config.json"]
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -137,19 +140,16 @@ class LeanRunner:
         # Set up Mono debugging
         if debugging_method == DebuggingMethod.Mono:
             run_options["ports"]["55555"] = "55555"
-            run_options["entrypoint"] = "mono"
-
-            command = " ".join([
-                "--debug",
-                "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
-                "QuantConnect.Lean.Launcher.exe",
-                command
-            ])
+            run_options["entrypoint"] = ["mono",
+                                         "--debug",
+                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
+                                         "QuantConnect.Lean.Launcher.exe",
+                                         *run_options["entrypoint"][2:]]
 
             self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
 
         # Run the engine and log the result
-        success = self._docker_manager.run_image(ENGINE_IMAGE, version, command, quiet=False, **run_options)
+        success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
