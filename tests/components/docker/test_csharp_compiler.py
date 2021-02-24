@@ -22,7 +22,7 @@ from lean.components.docker.csharp_compiler import CSharpCompiler
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-def run_image(image: str, tag: str, command: str, quiet: bool = False, **kwargs) -> bool:
+def run_image(image: str, tag: str, **kwargs) -> bool:
     volumes = kwargs.get("volumes")
 
     assert len(volumes) == 1
@@ -54,7 +54,7 @@ def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
 
     assert args[0] == "quantconnect/lean"
     assert args[1] == "latest"
-    assert kwargs["entrypoint"] == "msbuild"
+    assert kwargs["entrypoint"][0] == "msbuild"
 
 
 def test_compile_csharp_project_raises_when_msbuild_fails() -> None:

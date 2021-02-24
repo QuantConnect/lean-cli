@@ -88,9 +88,7 @@ class CSharpCompiler:
 
         success = self._docker_manager.run_image(ENGINE_IMAGE,
                                                  version,
-                                                 "-restore /LeanCLI/LeanCLI.csproj",
-                                                 quiet=False,
-                                                 entrypoint="msbuild",
+                                                 entrypoint=["msbuild", "-restore", "/LeanCLI/LeanCLI.csproj"],
                                                  volumes={
                                                      str(compile_dir): {
                                                          "bind": "/LeanCLI",
