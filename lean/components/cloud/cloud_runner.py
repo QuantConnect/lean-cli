@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import click
+
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.components.util.task_manager import TaskManager
@@ -20,16 +22,16 @@ from lean.models.api import QCBacktest, QCCompileState, QCCompileWithLogs, QCPro
 class CloudRunner:
     """The CloudRunner is responsible for running projects in the cloud."""
 
-    def __init__(self, logger: Logger, api_client: APIClient, task_runner: TaskManager):
+    def __init__(self, logger: Logger, api_client: APIClient, task_manager: TaskManager):
         """Creates a new CloudBacktestRunner instance.
 
         :param logger: the logger to use to log messages with
         :param api_client: the APIClient instance to use when communicating with the QuantConnect API
-        :param task_runner: the TaskManager to run long-running tasks with
+        :param task_manager: the TaskManager to run long-running tasks with
         """
         self._logger = logger
         self._api_client = api_client
-        self._task_runner = task_runner
+        self._task_manager = task_manager
 
     def run_backtest(self, project: QCProject, name: str) -> QCBacktest:
         finished_compile = self._compile_project(project)
@@ -38,11 +40,17 @@ class CloudRunner:
         self._logger.info(f"Started backtest named '{name}' for project '{project.name}'")
         self._logger.info(f"Backtest url: {created_backtest.get_url()}")
 
-        return self._task_runner.poll(
-            make_request=lambda: self._api_client.backtests.get(project.projectId, created_backtest.backtestId),
-            is_done=lambda data: data.is_complete(),
-            get_progress=lambda data: data.progress
-        )
+        try:
+            return self._task_manager.poll(
+                make_request=lambda: self._api_client.backtests.get(project.projectId, created_backtest.backtestId),
+                is_done=lambda data: data.is_complete(),
+                get_progress=lambda data: data.progress
+            )
+        except KeyboardInterrupt as e:
+            if click.confirm("Do you want to cancel and delete the running backtest?", True):
+                self._api_client.backtests.delete(project.projectId, created_backtest.backtestId)
+                self._logger.info(f"Successfully cancelled and deleted backtest '{name}'")
+            raise e
 
     def _compile_project(self, project: QCProject) -> QCCompileWithLogs:
         """Compiles a project in the cloud.
@@ -70,7 +78,7 @@ class CloudRunner:
         else:
             self._logger.info("Detected parameters: none")
 
-        finished_compile = self._task_runner.poll(
+        finished_compile = self._task_manager.poll(
             make_request=lambda: self._api_client.compiles.get(project.projectId, created_compile.compileId),
             is_done=lambda data: data.state in [QCCompileState.BuildSuccess, QCCompileState.BuildError]
         )

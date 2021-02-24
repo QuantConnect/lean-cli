@@ -48,8 +48,8 @@ class LeanCommand(click.Command):
 
         super().__init__(*args, **kwargs)
 
-        # By default the width of help messages is min(terminal_width, max_terminal_width)
-        # max_terminal_width defaults to 80, which we increase to 120 to improve readability on wide terminals
+        # By default the width of help messages is min(terminal_width, max_content_width)
+        # max_content_width defaults to 80, which we increase to 120 to improve readability on wide terminals
         self.context_settings["max_content_width"] = 120
 
     def invoke(self, ctx):
@@ -60,7 +60,7 @@ class LeanCommand(click.Command):
             except Exception:
                 # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI project
                 raise RuntimeError(
-                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the configuration file to use with --config")
+                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --config")
 
         return super().invoke(ctx)
 
@@ -93,7 +93,7 @@ class PathParameter(click.ParamType):
     """A limited version of click.Path which uses pathlib.Path."""
 
     def __init__(self, exists: bool = False, file_okay: bool = True, dir_okay: bool = True):
-        """Creates a new Path instance.
+        """Creates a new PathParameter instance.
 
         :param exists: True if the path needs to point to an existing object, False if not
         :param file_okay: True if the path may point to a file, False if not
@@ -114,7 +114,7 @@ class PathParameter(click.ParamType):
             self._path_type = "Path"
 
     def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> Path:
-        path = Path(value).resolve()
+        path = Path(value).expanduser().resolve()
 
         if self._exists and not path.exists():
             self.fail(f"{self._path_type} '{value}' does not exist.", param, ctx)

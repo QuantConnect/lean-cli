@@ -119,3 +119,35 @@ def test_poll_raises_when_make_request_raises(sleep) -> None:
 
     assert str(err.value) == "3"
     progress_bar.close.assert_called_once()
+
+
+@mock.patch("time.sleep")
+def test_poll_closes_progress_bar_when_keyboard_interrupt_fired(sleep) -> None:
+    index = 0
+
+    def make_request() -> int:
+        nonlocal index
+        index += 1
+
+        if index == 3:
+            raise KeyboardInterrupt()
+
+        return index
+
+    def is_done(value: int) -> bool:
+        return value == 5
+
+    def get_progress(value: int) -> float:
+        return float(value) / 5.0
+
+    logger = mock.Mock()
+    progress_bar = mock.Mock()
+    progress_bar.n = 0.0
+    logger.progress.return_value = progress_bar
+
+    task_manager = TaskManager(logger)
+
+    with pytest.raises(KeyboardInterrupt):
+        task_manager.poll(make_request, is_done, get_progress=get_progress)
+
+    progress_bar.close.assert_called_once()
