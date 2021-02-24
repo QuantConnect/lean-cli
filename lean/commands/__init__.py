@@ -33,11 +33,12 @@ def lean() -> None:
     pass
 
 
+lean.add_command(config)
+lean.add_command(cloud)
+
 lean.add_command(login)
 lean.add_command(logout)
-lean.add_command(config)
 lean.add_command(init)
 lean.add_command(create_project)
 lean.add_command(backtest)
 lean.add_command(research)
-lean.add_command(cloud)

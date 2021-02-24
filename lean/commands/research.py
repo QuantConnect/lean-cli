@@ -23,7 +23,7 @@ from lean.container import container
 
 @click.command(cls=LeanCommand, requires_cli_project=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.option("--port", type=int, default=8888, show_default=True, help="The port to run Jupyter Lab on")
+@click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
 @click.option("--update", is_flag=True, help="Pull the selected research environment version before starting it")
 @click.option("--version",
               type=str,
@@ -71,4 +71,4 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
     if update:
         docker_manager.pull_image(RESEARCH_IMAGE, version)
 
-    docker_manager.run_image(RESEARCH_IMAGE, version, None, False, **run_options)
+    docker_manager.run_image(RESEARCH_IMAGE, version, **run_options)

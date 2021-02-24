@@ -161,7 +161,7 @@ def test_research_opens_browser_when_container_started(open) -> None:
     open.assert_called_once_with("http://localhost:8888/")
 
 
-def test_backtest_forces_update_when_update_option_given() -> None:
+def test_research_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_project()
 
     docker_manager = mock.Mock()

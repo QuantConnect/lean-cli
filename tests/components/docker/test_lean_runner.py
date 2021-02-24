@@ -329,8 +329,8 @@ def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[2].startswith("--debug")
-    assert kwargs["entrypoint"] == "mono"
+    assert kwargs["entrypoint"][0] == "mono"
+    assert "--debug" in kwargs["entrypoint"]
 
 
 def test_run_lean_raises_when_run_image_fails() -> None:

@@ -98,9 +98,9 @@ Usage: lean backtest [OPTIONS] PROJECT
 
 Options:
   --output PATH                 Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --update                      Pull the selected LEAN engine version before running the backtest
   --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
-  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --help                        Show this message and exit.
   -c, --config FILE             The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                     Enable debug logging
@@ -319,7 +319,7 @@ Usage: lean research [OPTIONS] PROJECT
   Run a Jupyter Lab environment locally using Docker.
 
 Options:
-  --port INTEGER     The port to run Jupyter Lab on  [default: 8888]
+  --port INTEGER     The port to run Jupyter Lab on (defaults to 8888)
   --update           Pull the selected research environment version before starting it
   --version TEXT     The version of the research environment version to run (defaults to the latest installed version)
   --help             Show this message and exit.
