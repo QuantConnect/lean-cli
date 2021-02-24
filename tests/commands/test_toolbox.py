@@ -125,6 +125,7 @@ def test_toolbox_mounts_directory_as_volume_when_directory_option_given(option) 
     args, kwargs = docker_manager.run_image.call_args
 
     assert option in kwargs["entrypoint"]
+
     assert str(path) in kwargs["volumes"]
     assert kwargs["volumes"][str(path)]["bind"].endswith(option.lstrip("--"))
 
