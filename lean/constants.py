@@ -21,6 +21,8 @@ GENERAL_CONFIG_PATH = str(Path("~/.lean/config").expanduser())
 # The file in which credentials are stored
 CREDENTIALS_CONFIG_PATH = str(Path("~/.lean/credentials").expanduser())
 
+CACHE_PATH = str(Path("~/.lean/cache").expanduser())
+
 # The default name of the configuration file in a Lean CLI directory containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
 
@@ -40,3 +42,9 @@ RESEARCH_IMAGE = "quantconnect/research"
 # The base url of the QuantConnect API
 # This url should end with a forward slash
 API_BASE_URL = "https://www.quantconnect.com/api/v2/"
+
+# The interval in hours at which the CLI checks for updates to itself
+UPDATE_CHECK_INTERVAL_CLI = 24
+
+# The interval in hours at which the CLI checks for updates to Docker images that are being ran
+UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14

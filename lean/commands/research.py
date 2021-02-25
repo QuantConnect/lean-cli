@@ -24,7 +24,10 @@ from lean.container import container
 @click.command(cls=LeanCommand, requires_cli_project=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
-@click.option("--update", is_flag=True, help="Pull the selected research environment version before starting it")
+@click.option("--update",
+              is_flag=True,
+              default=False,
+              help="Pull the selected research environment version before starting it")
 @click.option("--version",
               type=str,
               default="latest",
@@ -70,5 +73,9 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
 
     if update:
         docker_manager.pull_image(RESEARCH_IMAGE, version)
+
+    if version == "latest" and not update:
+        update_manager = container.update_manager()
+        update_manager.warn_if_docker_image_outdated(RESEARCH_IMAGE)
 
     docker_manager.run_image(RESEARCH_IMAGE, version, **run_options)

@@ -13,14 +13,24 @@
 
 import json
 from pathlib import Path
+from typing import Optional
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_project
+
+
+@pytest.fixture(autouse=True)
+def update_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the update manager before every test."""
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+    return update_manager
 
 
 def test_research_runs_research_container() -> None:
@@ -221,3 +231,34 @@ def test_research_aborts_when_run_image_fails() -> None:
     assert result.exit_code != 0
 
     docker_manager.run_image.assert_called_once()
+
+
+@pytest.mark.parametrize("version_option,update_flag,update_check_expected", [(None, True, False),
+                                                                              (None, False, True),
+                                                                              ("3", True, False),
+                                                                              ("3", False, False),
+                                                                              ("latest", True, False),
+                                                                              ("latest", False, True)])
+def test_research_checks_for_updates(update_manager_mock: mock.Mock,
+                                     version_option: Optional[str],
+                                     update_flag: bool,
+                                     update_check_expected: bool) -> None:
+    create_fake_lean_cli_project()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    options = []
+    if version_option is not None:
+        options.extend(["--version", version_option])
+    if update_flag:
+        options.extend(["--update"])
+
+    result = CliRunner().invoke(lean, ["research", "Python Project", *options])
+
+    assert result.exit_code == 0
+
+    if update_check_expected:
+        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with("quantconnect/research")
+    else:
+        update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

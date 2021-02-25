@@ -56,15 +56,6 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    docker_manager = container.docker_manager()
-
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError("The specified version does not exist")
-
-    if update:
-        docker_manager.pull_image(ENGINE_IMAGE, version)
-
     # Convert the given --debug value to the debugging method to use
     debugging_method = None
     if debug == "pycharm":
@@ -74,5 +65,18 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     if debug == "mono":
         debugging_method = DebuggingMethod.Mono
 
+    docker_manager = container.docker_manager()
+
+    if version != "latest":
+        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
+            raise RuntimeError("The specified version does not exist")
+
+    if update:
+        docker_manager.pull_image(ENGINE_IMAGE, version)
+
     lean_runner = container.lean_runner()
     lean_runner.run_lean("backtesting", algorithm_file, output, version, debugging_method)
+
+    if version == "latest" and not update:
+        update_manager = container.update_manager()
+        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)

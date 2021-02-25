@@ -62,7 +62,12 @@ class LeanCommand(click.Command):
                 raise RuntimeError(
                     "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --config")
 
-        return super().invoke(ctx)
+        result = super().invoke(ctx)
+
+        update_manager = container.update_manager()
+        update_manager.warn_if_cli_outdated()
+
+        return result
 
     def get_params(self, ctx):
         params = super().get_params(ctx)

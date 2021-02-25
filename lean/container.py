@@ -28,7 +28,8 @@ from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
-from lean.constants import CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
+from lean.components.util.update_manager import UpdateManager
+from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
 
 class Container(DeclarativeContainer):
@@ -39,6 +40,7 @@ class Container(DeclarativeContainer):
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
+    cache_storage = Singleton(Storage, file=CACHE_PATH)
 
     project_config_manager = Singleton(ProjectConfigManager)
     cli_config_manager = Singleton(CLIConfigManager,
@@ -77,6 +79,8 @@ class Container(DeclarativeContainer):
                             csharp_compiler=csharp_compiler,
                             lean_config_manager=lean_config_manager,
                             docker_manager=docker_manager)
+
+    update_manager = Singleton(UpdateManager, logger=logger, cache_storage=cache_storage, docker_manager=docker_manager)
 
 
 container = Container()

@@ -125,6 +125,16 @@ class DockerManager:
         tags_list = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags").json()
         return any([x["name"] == tag for x in tags_list])
 
+    def get_tag_digest(self, image: str, tag: str) -> str:
+        """Returns the digest of a locally installed image's tag.
+
+        :param image: the image to get the digest of a tag of
+        :param tag: the image's tag to get the digest of
+        :return: the local digest of the image's tag
+        """
+        image = self._get_docker_client().images.get(f"{image}:{tag}")
+        return image.attrs["RepoDigests"][0].split("@")[1]
+
     def _get_docker_client(self) -> docker.DockerClient:
         """Creates a DockerClient instance.
 

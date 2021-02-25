@@ -68,6 +68,36 @@ def test_lean_command_fails_when_not_executed_in_cli_project() -> None:
     assert result.exit_code != 0
 
 
+def test_lean_command_checks_for_cli_updates() -> None:
+    @click.command(cls=LeanCommand)
+    def command() -> None:
+        pass
+
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+
+    result = CliRunner().invoke(command)
+
+    assert result.exit_code == 0
+
+    update_manager.warn_if_cli_outdated.assert_called_once()
+
+
+def test_lean_command_does_not_check_for_cli_updates_when_command_raises() -> None:
+    @click.command(cls=LeanCommand)
+    def command() -> None:
+        raise RuntimeError("Oops")
+
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+
+    result = CliRunner().invoke(command)
+
+    assert result.exit_code != 0
+
+    update_manager.warn_if_cli_outdated.assert_not_called()
+
+
 def test_path_parameter_fails_when_input_not_existent_and_exists_required() -> None:
     @click.command(cls=LeanCommand)
     @click.argument("arg", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
