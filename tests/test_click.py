@@ -38,7 +38,7 @@ def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> Non
     logger.enable_debug_logging.assert_called_once()
 
 
-def test_lean_command_sets_default_lean_config_path_when_config_option_given() -> None:
+def test_lean_command_sets_default_lean_config_path_when_lean_config_option_given() -> None:
     @click.command(cls=LeanCommand, requires_cli_project=True)
     def command() -> None:
         pass
@@ -49,7 +49,7 @@ def test_lean_command_sets_default_lean_config_path_when_config_option_given() -
     with (Path.cwd() / "custom-config.json").open("w+") as file:
         file.write("{}")
 
-    result = CliRunner().invoke(command, ["--config", "custom-config.json"])
+    result = CliRunner().invoke(command, ["--lean-config", "custom-config.json"])
 
     assert result.exit_code == 0
 

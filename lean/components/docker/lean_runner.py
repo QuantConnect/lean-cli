@@ -65,6 +65,63 @@ class LeanRunner:
         """
         project_dir = algorithm_file.parent
 
+        # The dict containing all options passed to `docker run`
+        # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
+        run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, version, debugging_method)
+
+        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe",
+                                     "--data-folder", "/Data",
+                                     "--results-destination-folder", "/Results",
+                                     "--config", "/Lean/Launcher/config.json"]
+
+        # Set up PTVSD debugging
+        if debugging_method == DebuggingMethod.PTVSD:
+            run_options["ports"]["5678"] = "5678"
+
+        # Set up Mono debugging
+        if debugging_method == DebuggingMethod.Mono:
+            run_options["ports"]["55555"] = "55555"
+            run_options["entrypoint"] = ["mono",
+                                         "--debug",
+                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
+                                         "QuantConnect.Lean.Launcher.exe",
+                                         *run_options["entrypoint"][2:]]
+
+            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
+
+        # Run the engine and log the result
+        success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
+
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        relative_project_dir = project_dir.relative_to(cli_root_dir)
+        relative_output_dir = output_dir.relative_to(cli_root_dir)
+
+        if success:
+            self._logger.info(
+                f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
+        else:
+            raise RuntimeError(
+                f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
+
+    def get_basic_docker_config(self,
+                                environment: str,
+                                algorithm_file: Path,
+                                output_dir: Path,
+                                version: str,
+                                debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
+        """Creates a basic Docker config to run the engine with.
+
+        This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
+
+        :param environment: the environment to run the algorithm in
+        :param algorithm_file: the path to the file containing the algorithm
+        :param output_dir: the directory to save output data to
+        :param version: the LEAN engine version to run
+        :param debugging_method: the debugging method if debugging needs to be enabled, None if not
+        :return: the Docker configuration containing basic configuration to run Lean
+        """
+        project_dir = algorithm_file.parent
+
         # Compile the project first if it is a C# project
         # If compilation fails, there is no need to do anything else
         csharp_dll_dir = None
@@ -128,36 +185,4 @@ class LeanRunner:
                           source=str(csharp_dll_dir / f"LeanCLI.{extension}"),
                           type="bind"))
 
-        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe",
-                                     "--data-folder", "/Data",
-                                     "--results-destination-folder", "/Results",
-                                     "--config", "/Lean/Launcher/config.json"]
-
-        # Set up PTVSD debugging
-        if debugging_method == DebuggingMethod.PTVSD:
-            run_options["ports"]["5678"] = "5678"
-
-        # Set up Mono debugging
-        if debugging_method == DebuggingMethod.Mono:
-            run_options["ports"]["55555"] = "55555"
-            run_options["entrypoint"] = ["mono",
-                                         "--debug",
-                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
-                                         "QuantConnect.Lean.Launcher.exe",
-                                         *run_options["entrypoint"][2:]]
-
-            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
-
-        # Run the engine and log the result
-        success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
-
-        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        relative_project_dir = project_dir.relative_to(cli_root_dir)
-        relative_output_dir = output_dir.relative_to(cli_root_dir)
-
-        if success:
-            self._logger.info(
-                f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
-        else:
-            raise RuntimeError(
-                f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
+        return run_options

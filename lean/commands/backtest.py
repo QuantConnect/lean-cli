@@ -26,7 +26,7 @@ from lean.models.config import DebuggingMethod
 @click.command(cls=LeanCommand, requires_cli_project=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
-              type=PathParameter(exists=False),
+              type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),

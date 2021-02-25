@@ -60,7 +60,7 @@ class LeanCommand(click.Command):
             except Exception:
                 # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI project
                 raise RuntimeError(
-                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --config")
+                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --lean-config")
 
         result = super().invoke(ctx)
 
@@ -74,7 +74,7 @@ class LeanCommand(click.Command):
 
         # Add --config option if the commands needs to be ran inside a Lean CLI project
         if self._requires_cli_project:
-            params += [click.Option(["--config", "-c"],
+            params += [click.Option(["--lean-config"],
                                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                                     help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
                                     expose_value=False,

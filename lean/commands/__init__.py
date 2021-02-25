@@ -21,6 +21,7 @@ from lean.commands.create_project import create_project
 from lean.commands.init import init
 from lean.commands.login import login
 from lean.commands.logout import logout
+from lean.commands.optimize import optimize
 from lean.commands.research import research
 
 
@@ -41,4 +42,6 @@ lean.add_command(logout)
 lean.add_command(init)
 lean.add_command(create_project)
 lean.add_command(backtest)
+# TODO: Uncomment this when the optimize command is ready for deployment (pending Lean changes)
+# lean.add_command(optimize)
 lean.add_command(research)

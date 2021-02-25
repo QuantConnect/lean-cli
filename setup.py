@@ -24,6 +24,7 @@ install_requires = [
     "jsoncomment~=0.4.2",
     "docker~=4.4.1",
     "rich~=9.10.0",
+    "questionary~=1.9.0",
     "dependency-injector~=4.20.1",
     "pydantic~=1.7.3",
     "quantconnect-stubs"

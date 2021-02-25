@@ -97,12 +97,12 @@ Usage: lean backtest [OPTIONS] PROJECT
   https://github.com/QuantConnect/lean-cli#local-debugging
 
 Options:
-  --output PATH                 Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --output DIRECTORY            Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
   --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --update                      Pull the selected LEAN engine version before running the backtest
   --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
   --help                        Show this message and exit.
-  -c, --config FILE             The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --lean-config FILE            The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                     Enable debug logging
 ```
 
@@ -319,12 +319,12 @@ Usage: lean research [OPTIONS] PROJECT
   Run a Jupyter Lab environment locally using Docker.
 
 Options:
-  --port INTEGER     The port to run Jupyter Lab on (defaults to 8888)
-  --update           Pull the selected research environment version before starting it
-  --version TEXT     The version of the research environment version to run (defaults to the latest installed version)
-  --help             Show this message and exit.
-  -c, --config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose          Enable debug logging
+  --port INTEGER      The port to run Jupyter Lab on (defaults to 8888)
+  --update            Pull the selected research environment version before starting it
+  --version TEXT      The version of the research environment version to run (defaults to the latest installed version)
+  --help              Show this message and exit.
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
