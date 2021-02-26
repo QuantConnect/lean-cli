@@ -63,8 +63,8 @@ class OptimizationConfigurer:
         target = self._choose_target("Select an optimization target")
         direction = self._choose_from_list("Select whether you want to minimize or maximize the target",
                                            [
-                                               Option(id=OptimizationExtremum.Minimum, label="Minimum"),
-                                               Option(id=OptimizationExtremum.Maximum, label="Maximum")
+                                               Option(id=OptimizationExtremum.Minimum, label="Minimize"),
+                                               Option(id=OptimizationExtremum.Maximum, label="Maximize")
                                            ])
 
         return OptimizationTarget(target=target, extremum=direction)

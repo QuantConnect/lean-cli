@@ -125,7 +125,7 @@ def test_run_lean_mounts_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any([mount["Target"] == "/Lean/Launcher/config.json" for mount in kwargs["mounts"]])
+    assert any([mount["Target"] == "/Lean/Launcher/bin/Debug/config.json" for mount in kwargs["mounts"]])
 
 
 def test_run_lean_mounts_data_directory() -> None:
@@ -145,7 +145,7 @@ def test_run_lean_mounts_data_directory() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any([volume["bind"] == "/Data" for volume in kwargs["volumes"].values()])
+    assert any([volume["bind"] == "/Lean/Data" for volume in kwargs["volumes"].values()])
 
 
 def test_run_lean_mounts_output_directory() -> None:

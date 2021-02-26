@@ -10,7 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import json
+import re
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +20,7 @@ from typing import Optional
 
 import click
 from docker.types import Mount
+from jsoncomment import JsonComment
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
@@ -77,8 +80,6 @@ def optimize(project: Path,
         optimization_constraints = optimization_configurer.configure_constraints()
 
         config = {
-            "optimizer-close-automatically": True,
-            "results-destination-folder": "/Results",
             "optimization-strategy": optimization_strategy,
             "optimization-strategy-settings": {
                 "$type": "QuantConnect.Optimizer.Strategies.StepBaseOptimizationStrategySettings, QuantConnect.Optimizer",
@@ -91,10 +92,23 @@ def optimize(project: Path,
             "parameters": [parameter.dict() for parameter in optimization_parameters],
             "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
         }
+    else:
+        config_text = optimizer_config.read_text()
 
-        optimizer_config = Path(tempfile.mkdtemp()) / "config.json"
-        with optimizer_config.open("w+") as file:
-            file.write(json.dumps(config, indent=4))
+        # JsonComment can parse JSON with non-inline comments, so we remove the inline ones first
+        config_without_inline_comments = re.sub(r",\s*//.*", ",", config_text, flags=re.MULTILINE)
+        config = JsonComment().loads(config_without_inline_comments)
+
+        # Remove keys which are configured in the Lean config
+        for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
+            config.pop(key, None)
+
+    config["optimizer-close-automatically"] = True
+    config["results-destination-folder"] = "/Results"
+
+    config_path = Path(tempfile.mkdtemp()) / "config.json"
+    with config_path.open("w+") as file:
+        file.write(json.dumps(config, indent=4))
 
     lean_runner = container.lean_runner()
     run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, version, None)
@@ -103,7 +117,7 @@ def optimize(project: Path,
     run_options["entrypoint"] = ["mono", "QuantConnect.Optimizer.Launcher.exe"]
     run_options["mounts"].append(
         Mount(target="/Lean/Optimizer.Launcher/bin/Debug/config.json",
-              source=str(optimizer_config),
+              source=str(config_path),
               type="bind",
               read_only=True)
     )
