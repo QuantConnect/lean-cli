@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Callable
+from xml.etree import ElementTree
 
 import pytest
 from click.testing import CliRunner
@@ -117,14 +120,34 @@ def test_init_creates_clean_config_file_from_repo() -> None:
     """.strip()
 
 
-@pytest.mark.parametrize("file", ["LeanCLI.csproj",
-                                  ".idea/workspace.xml",
-                                  ".idea/.idea.LeanCLI.dir/.idea/workspace.xml",
-                                  ".vscode/launch.json",
-                                  ".vscode/settings.json"])
-def test_init_creates_extra_files_supporting_autocompletion_and_debugging(file: str) -> None:
+def validate_json(text: str) -> bool:
+    try:
+        json.loads(text)
+        return True
+    except ValueError:
+        return False
+
+
+def validate_xml(text: str) -> bool:
+    try:
+        ElementTree.fromstring(text)
+        return True
+    except ElementTree.ParseError:
+        return False
+
+
+@pytest.mark.parametrize("file,validator", [("LeanCLI.csproj", validate_xml),
+                                            (".idea/workspace.xml", validate_xml),
+                                            (".idea/.idea.LeanCLI.dir/.idea/workspace.xml", validate_xml),
+                                            (".vscode/launch.json", validate_json),
+                                            (".vscode/settings.json", validate_json)])
+def test_init_creates_valid_files_supporting_autocompletion_and_debugging(file: str,
+                                                                          validator: Callable[[str], bool]) -> None:
     result = CliRunner().invoke(lean, ["init"], input="csharp\n")
 
     assert result.exit_code == 0
 
     assert (Path.cwd() / file).exists()
+
+    with open(file) as f:
+        assert validator(f.read())
