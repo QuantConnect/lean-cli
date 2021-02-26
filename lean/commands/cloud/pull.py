@@ -28,8 +28,6 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     This command overrides the content of local files with the content of their respective counterparts in the cloud.
 
     This command will not delete local files for which there is no counterpart in the cloud.
-
-    If you pull a specific project, all the libraries linked to that project are pulled as well (recursively).
     """
     api_client = container.api_client()
     all_projects = api_client.projects.get_all()

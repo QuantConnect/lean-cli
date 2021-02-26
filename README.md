@@ -145,8 +145,6 @@ Usage: lean cloud pull [OPTIONS]
 
   This command will not delete local files for which there is no counterpart in the cloud.
 
-  If you pull a specific project, all the libraries linked to that project are pulled as well (recursively).
-
 Options:
   --project TEXT   Name or id of the project to pull (all cloud projects if not specified)
   --pull-bootcamp  Pull Boot Camp projects (disabled by default)
@@ -168,8 +166,6 @@ Usage: lean cloud push [OPTIONS]
   This command overrides the content of cloud files with the content of their respective local counterparts.
 
   This command will not delete cloud files which don't have a local counterpart.
-
-  If you push a specific project, all the libraries linked to that project are pushed as well (recursively).
 
 Options:
   --project DIRECTORY  Path to the local project to push (all local projects if not specified)

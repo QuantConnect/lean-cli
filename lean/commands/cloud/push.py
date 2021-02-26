@@ -31,8 +31,6 @@ def push(project: Optional[Path]) -> None:
     This command overrides the content of cloud files with the content of their respective local counterparts.
 
     This command will not delete cloud files which don't have a local counterpart.
-
-    If you push a specific project, all the libraries linked to that project are pushed as well (recursively).
     """
     # Parse which projects need to be pushed
     if project is not None:
