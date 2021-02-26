@@ -28,13 +28,6 @@ from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum,
 from tests.test_helpers import create_fake_lean_cli_project
 
 
-# TODO: Remove this when the optimize command is ready for deployment (pending Lean changes)
-@pytest.fixture(autouse=True)
-def skip_tests() -> None:
-    """A pytest fixture which skips all tests in the module."""
-    pytest.skip("The `lean optimize` command is not available yet")
-
-
 @pytest.fixture(autouse=True)
 def update_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the update manager before every test."""

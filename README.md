@@ -79,6 +79,7 @@ A cloud-focused workflow (local development, cloud execution) with the CLI may l
 - [`lean init`](#lean-init)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
+- [`lean optimize`](#lean-optimize)
 - [`lean research`](#lean-research)
 
 ### `lean backtest`
@@ -304,6 +305,36 @@ Options:
 ```
 
 _See code: [lean/commands/logout.py](lean/commands/logout.py)_
+
+### `lean optimize`
+
+Optimize a project's parameters locally using Docker.
+
+```
+Usage: lean optimize [OPTIONS] PROJECT
+
+  Optimize a project's parameters locally using Docker.
+
+  If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
+  If PROJECT is a file, the algorithm in the specified file will be executed.
+
+  The --optimizer-config option can be used to specify the configuration to run the optimizer with.
+  When using the option it should point to a file like this (the algorithm-* properties should be omitted):
+  https://github.com/QuantConnect/Lean/blob/master/Optimizer.Launcher/config.json
+
+  When --optimizer-config is not set, an interactive prompt will be shown to configure the optimizer.
+
+Options:
+  --output DIRECTORY       Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
+  --optimizer-config FILE  The optimizer configuration file that should be used
+  --update                 Pull the selected LEAN engine version before running the optimizer
+  --version TEXT           The LEAN engine version to run (defaults to the latest installed version)
+  --help                   Show this message and exit.
+  --lean-config FILE       The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                Enable debug logging
+```
+
+_See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 
 ### `lean research`
 
