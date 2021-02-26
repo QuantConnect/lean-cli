@@ -158,7 +158,7 @@ class LeanRunner:
         data_dir = self._lean_config_manager.get_data_directory()
         run_options["volumes"][str(data_dir)] = {
             "bind": "/Lean/Data",
-            "mode": "ro"
+            "mode": "rw"
         }
 
         # Mount the output directory
