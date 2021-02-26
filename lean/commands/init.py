@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import shutil
 import sys
 import tempfile
@@ -156,12 +157,6 @@ VSCODE_LAUNCH_JSON = """
 }
 """.strip() + "\n"
 
-VSCODE_SETTINGS_JSON = """
-{
-    "python.pythonPath": "$PYTHON$"
-}
-""".strip() + "\n"
-
 
 @click.command(cls=LeanCommand)
 def init() -> None:
@@ -221,7 +216,7 @@ def init() -> None:
         ".idea/workspace.xml": PYCHARM_WORKSPACE_XML,
         ".idea/.idea.LeanCLI.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
         ".vscode/launch.json": VSCODE_LAUNCH_JSON,
-        ".vscode/settings.json": VSCODE_SETTINGS_JSON.replace("$PYTHON$", sys.executable)
+        ".vscode/settings.json": json.dumps({"python.pythonPath": sys.executable}, indent=4) + "\n"
     }
 
     for location, content in extra_files.items():
