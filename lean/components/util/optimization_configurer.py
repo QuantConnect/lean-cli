@@ -19,8 +19,7 @@ from pydantic.main import BaseModel
 from lean.components.util.logger import Logger
 from lean.models.api import QCParameter
 from lean.models.optimizer import (OptimizationConstraint, OptimizationConstraintOperator, OptimizationExtremum,
-                                   OptimizationParameter,
-                                   OptimizationTarget)
+                                   OptimizationParameter, OptimizationTarget)
 
 
 class Option(BaseModel):
