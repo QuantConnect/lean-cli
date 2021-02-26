@@ -94,7 +94,9 @@ class OptimizationConfigurer:
 
         :return: the chosen optimization constraints
         """
-        self._logger.info("Optimization constraints can be used to filter out backtests from the results")
+        self._logger.info("Constraints can be used to filter out backtests from the results")
+        self._logger.info("When a backtest doesn't comply with the constraints it is dropped from the results")
+        self._logger.info("For example, this makes it possible to filter out all backtests with high drawdown")
 
         results: List[OptimizationConstraint] = []
 
@@ -103,7 +105,7 @@ class OptimizationConfigurer:
             results_str = results_str or "None"
             self._logger.info(f"Current constraints: {results_str}")
 
-            if not click.confirm("Do you want to add a constraint?"):
+            if not click.confirm("Do you want to add a constraint?", default=False):
                 return results
 
             target = self._choose_target("Select a constraint target")
