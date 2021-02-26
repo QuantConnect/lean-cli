@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 from typing import Any, List
 
 import click
@@ -38,6 +39,14 @@ class OptimizationConfigurer:
         """
         self._logger = logger
 
+        # The targets that are available in the cloud
+        self._available_targets = [
+            ("TotalPerformance.PortfolioStatistics.SharpeRatio", "Sharpe Ratio"),
+            ("TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn", "Compounding Annual Return"),
+            ("TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio", "Probabilistic Sharpe Ratio"),
+            ("TotalPerformance.PortfolioStatistics.Drawdown", "Drawdown")
+        ]
+
     def configure_strategy(self, cloud: bool) -> str:
         """Asks the user for the optimization strategy to use.
 
@@ -50,7 +59,8 @@ class OptimizationConfigurer:
 
         if not cloud:
             options.append(
-                Option(id="QuantConnect.Optimizer.Strategies.EulerSearchOptimizationStrategy", label="Euler Search"))
+                Option(id="QuantConnect.Optimizer.Strategies.EulerSearchOptimizationStrategy", label="Euler Search")
+            )
 
         return self._choose_from_list("Select the optimization strategy to use", options)
 
@@ -59,14 +69,13 @@ class OptimizationConfigurer:
 
         :return: the chosen optimization target
         """
-        target = self._choose_target("Select an optimization target")
-        direction = self._choose_from_list("Select whether you want to minimize or maximize the target",
-                                           [
-                                               Option(id=OptimizationExtremum.Minimum, label="Minimize"),
-                                               Option(id=OptimizationExtremum.Maximum, label="Maximize")
-                                           ])
+        # Create a list of options containing a "<target> (min)" and "<target> (max)" option for every target
+        options = list(itertools.product(self._available_targets,
+                                         [OptimizationExtremum.Minimum, OptimizationExtremum.Maximum]))
+        options = [Option(id=OptimizationTarget(target=option[0][0], extremum=option[1]),
+                          label=f"{option[0][1]} ({option[1]})") for option in options]
 
-        return OptimizationTarget(target=target, extremum=direction)
+        return self._choose_from_list("Select an optimization target", options)
 
     def configure_parameters(self, project_parameters: List[QCParameter]) -> List[OptimizationParameter]:
         """Asks the user which parameters need to be optimized and with what constraints.
@@ -95,7 +104,7 @@ class OptimizationConfigurer:
         """
         self._logger.info("Constraints can be used to filter out backtests from the results")
         self._logger.info("When a backtest doesn't comply with the constraints it is dropped from the results")
-        self._logger.info("For example, this makes it possible to filter out all backtests with high drawdown")
+        self._logger.info("Example constraint: Drawdown < 0.25 (Drawdown less than 25%)")
 
         results: List[OptimizationConstraint] = []
 
@@ -107,7 +116,9 @@ class OptimizationConfigurer:
             if not click.confirm("Do you want to add a constraint?", default=False):
                 return results
 
-            target = self._choose_target("Select a constraint target")
+            target_options = [Option(id=target[0], label=target[1]) for target in self._available_targets]
+            target = self._choose_from_list("Select a constraint target", target_options)
+
             operator = self._choose_from_list("Select a constraint operator (<value> will be asked after this)", [
                 Option(id=OptimizationConstraintOperator.Less, label="Less than <value>"),
                 Option(id=OptimizationConstraintOperator.LessOrEqual, label="Less than or equal to <value>"),
@@ -116,26 +127,10 @@ class OptimizationConfigurer:
                 Option(id=OptimizationConstraintOperator.Equals, label="Equals <value>"),
                 Option(id=OptimizationConstraintOperator.NotEquals, label="Not equal to <value>")
             ])
+
             value = click.prompt("Set the <value> for the selected operator", type=click.FLOAT)
 
             results.append(OptimizationConstraint(**{"target": target, "operator": operator, "target-value": value}))
-
-    def _choose_target(self, text: str) -> str:
-        """Asks the user for a target (the path to a property in a backtest's output).
-
-        :param text: the text to display before prompting
-        :return: the chosen target
-        """
-        return self._choose_from_list(text, [
-            Option(id="TotalPerformance.PortfolioStatistics.SharpeRatio",
-                   label="Sharpe Ratio"),
-            Option(id="TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn",
-                   label="Compounding Annual Return"),
-            Option(id="TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio",
-                   label="Probabilistic Sharpe Ratio"),
-            Option(id="TotalPerformance.PortfolioStatistics.Drawdown",
-                   label="Drawdown")
-        ])
 
     def _choose_from_list(self, text: str, options: List[Option]) -> Any:
         """Asks the user to select an option from a list of possible options.
