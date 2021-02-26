@@ -92,11 +92,11 @@ class PullManager:
                     # There is a local project which is linked to this cloud project
                     self._pull_files(project)
                 else:
-                    # There is a local project but the project config's project id doesn't match this project's id
+                    # There is a local project but the project config's cloud id doesn't match this cloud project's id
                     raise RuntimeError(
-                        f"The local directory matching the project's name is configured to synchronize with cloud project {project_config.get('project-id')}")
+                        f"The local directory matching the project's name is configured to synchronize with cloud project {project_config.get('cloud-id')}")
             elif project_config.file.exists():
-                # There is a local project but the project config does not contain a project id
+                # There is a local project but the project config does not contain a cloud id
                 raise RuntimeError(
                     f"The local directory matching the project's name already contains a Lean project which is not linked to a cloud project")
             else:
