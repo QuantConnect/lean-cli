@@ -111,7 +111,7 @@ def optimize(project: Path,
     config_path = output / "config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w+") as file:
-        file.write(json.dumps(config, indent=4))
+        file.write(json.dumps(config, indent=4) + "\n")
 
     lean_runner = container.lean_runner()
     run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, version, None)

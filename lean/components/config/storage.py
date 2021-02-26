@@ -75,7 +75,7 @@ class Storage:
             self.file.parent.mkdir(parents=True, exist_ok=True)
 
             with self.file.open("w+") as file:
-                file.write(json.dumps(self._data, indent=4))
+                file.write(json.dumps(self._data, indent=4) + "\n")
         else:
             if self.file.exists():
                 self.file.unlink()
