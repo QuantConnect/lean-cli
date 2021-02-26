@@ -37,15 +37,13 @@ def create_fake_lean_cli_project() -> None:
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
         (Path.cwd() / "Python Project" / "config.json"): json.dumps({
             "algorithm-language": "Python",
-            "parameters": {},
-            "libraries": []
+            "parameters": {}
         }),
         (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$NAME", "CSharpProject"),
         (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
         (Path.cwd() / "CSharp Project" / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
-            "parameters": {},
-            "libraries": []
+            "parameters": {}
         })
     }
 

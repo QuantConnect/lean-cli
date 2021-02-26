@@ -87,8 +87,8 @@ class PullManager:
         if local_path.exists():
             project_config = self._project_config_manager.get_project_config(local_path)
 
-            if project_config.has("project-id"):
-                if project_config.get("project-id") == project.projectId:
+            if project_config.has("cloud-id"):
+                if project_config.get("cloud-id") == project.projectId:
                     # There is a local project which is linked to this cloud project
                     self._pull_files(project)
                 else:
@@ -109,10 +109,9 @@ class PullManager:
 
         # Finalize pulling by updating the project config with the latest details
         project_config = self._project_config_manager.get_project_config(local_path)
-        project_config.set("project-id", project.projectId)
+        project_config.set("cloud-id", project.projectId)
         project_config.set("algorithm-language", "Python" if project.language == QCLanguage.Python else "CSharp")
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
-        project_config.set("libraries", project.libraries)
 
     def _pull_files(self, project: QCProject) -> None:
         """Pull the files of a single project.

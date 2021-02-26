@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
 from pathlib import Path
 from typing import List
 
@@ -50,9 +49,7 @@ class PushManager:
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         """
         # Resolve the library dependencies of all projects which need to be pushed
-        projects_to_push = [self._project_manager.resolve_project_libraries(p) for p in projects_to_push]
-        projects_to_push = set(itertools.chain(*projects_to_push))
-        projects_to_push = sorted(list(projects_to_push))
+        projects_to_push = sorted(projects_to_push)
 
         cloud_projects = self._api_client.projects.get_all()
 
@@ -75,7 +72,7 @@ class PushManager:
         project_name = project.relative_to(Path.cwd()).as_posix()
 
         project_config = self._project_config_manager.get_project_config(project)
-        project_id = project_config.get("project-id")
+        project_id = project_config.get("cloud-id")
 
         cloud_project_by_id = next(iter([p for p in cloud_projects if p.projectId == project_id]), None)
         cloud_project_by_name = next(iter([p for p in cloud_projects if p.name == project_name]), None)
@@ -90,7 +87,7 @@ class PushManager:
                                                            QCLanguage[project_config.get("algorithm-language")])
             self._logger.info(f"Successfully created cloud project '{project_name}'")
 
-            project_config.set("project-id", new_project.projectId)
+            project_config.set("cloud-id", new_project.projectId)
 
             # We need to retrieve the created project again to get all project details
             cloud_project = self._api_client.projects.get(new_project.projectId)
@@ -102,7 +99,6 @@ class PushManager:
 
         # Finalize pushing by updating locally modified metadata
         self._push_parameters(project, cloud_project)
-        self._push_libraries(project, cloud_project)
 
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
         """Push the files of a local project to the cloud.
@@ -138,22 +134,3 @@ class PushManager:
         if local_parameters != cloud_parameters and local_parameters != {}:
             self._api_client.projects.update(cloud_project.projectId, parameters=local_parameters)
             self._logger.info(f"Successfully updated cloud parameters for '{cloud_project.name}'")
-
-    def _push_libraries(self, project: Path, cloud_project: QCProject) -> None:
-        """Push linked libraries to the cloud. Does nothing if the cloud is already up-to-date.
-
-        :param project: the local project to push the linked libraries of
-        :param cloud_project: the cloud project to push the linked libraries to
-        """
-        local_libraries = self._project_config_manager.get_project_config(project).get("libraries", [])
-        cloud_libraries = cloud_project.libraries
-
-        for library in cloud_libraries:
-            if library not in local_libraries:
-                self._api_client.projects.delete_library(cloud_project.projectId, library)
-                self._logger.info(f"Successfully pushed removal of library {library} to '{cloud_project.name}'")
-
-        for library in local_libraries:
-            if library not in cloud_libraries:
-                self._api_client.projects.add_library(cloud_project.projectId, library)
-                self._logger.info(f"Successfully pushed addition of library {library} to '{cloud_project.name}'")
