@@ -78,6 +78,7 @@ def optimize(project: Path,
 
         config = {
             "optimizer-close-automatically": True,
+            "results-destination-folder": "/Results",
             "optimization-strategy": optimization_strategy,
             "optimization-strategy-settings": {
                 "$type": "QuantConnect.Optimizer.Strategies.StepBaseOptimizationStrategySettings, QuantConnect.Optimizer",
@@ -101,7 +102,11 @@ def optimize(project: Path,
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["entrypoint"] = ["mono", "QuantConnect.Optimizer.Launcher.exe"]
     run_options["mounts"].append(
-        Mount(target="/Lean/Optimizer.Launcher/config.json", source=str(optimizer_config), type="bind", read_only=True))
+        Mount(target="/Lean/Optimizer.Launcher/bin/Debug/config.json",
+              source=str(optimizer_config),
+              type="bind",
+              read_only=True)
+    )
 
     docker_manager = container.docker_manager()
 

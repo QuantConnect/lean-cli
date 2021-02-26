@@ -69,10 +69,7 @@ class LeanRunner:
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, version, debugging_method)
 
-        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe",
-                                     "--data-folder", "/Data",
-                                     "--results-destination-folder", "/Results",
-                                     "--config", "/Lean/Launcher/config.json"]
+        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe"]
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -136,6 +133,10 @@ class LeanRunner:
         config = self._lean_config_manager.get_complete_lean_config(environment,
                                                                     algorithm_file,
                                                                     debugging_method)
+
+        config["data-folder"] = "/Lean/Data"
+        config["results-destination-folder"] = "/Results"
+
         config_path = Path(tempfile.mkdtemp()) / "config.json"
         with config_path.open("w+") as file:
             file.write(json.dumps(config, indent=4))
@@ -144,7 +145,10 @@ class LeanRunner:
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options: Dict[str, Any] = {
             "mounts": [
-                Mount(target="/Lean/Launcher/config.json", source=str(config_path), type="bind", read_only=True)
+                Mount(target="/Lean/Launcher/bin/Debug/config.json",
+                      source=str(config_path),
+                      type="bind",
+                      read_only=True)
             ],
             "volumes": {},
             "ports": {}
@@ -153,7 +157,7 @@ class LeanRunner:
         # Mount the data directory
         data_dir = self._lean_config_manager.get_data_directory()
         run_options["volumes"][str(data_dir)] = {
-            "bind": "/Data",
+            "bind": "/Lean/Data",
             "mode": "ro"
         }
 

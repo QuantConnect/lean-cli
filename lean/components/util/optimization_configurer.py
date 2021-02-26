@@ -14,7 +14,6 @@
 from typing import Any, List
 
 import click
-import questionary
 from pydantic.main import BaseModel
 
 from lean.components.util.logger import Logger
@@ -111,14 +110,14 @@ class OptimizationConfigurer:
             operator = self._choose_from_list("Select a constraint operator (<value> will be asked after this)", [
                 Option(id=OptimizationConstraintOperator.Less, label="Less than <value>"),
                 Option(id=OptimizationConstraintOperator.LessOrEqual, label="Less than or equal to <value>"),
-                Option(id=OptimizationConstraintOperator.Greater, label="Greater than or equal to <value>"),
+                Option(id=OptimizationConstraintOperator.Greater, label="Greater than <value>"),
                 Option(id=OptimizationConstraintOperator.GreaterOrEqual, label="Greater than or equal to <value>"),
                 Option(id=OptimizationConstraintOperator.Equals, label="Equals <value>"),
                 Option(id=OptimizationConstraintOperator.NotEquals, label="Not equal to <value>")
             ])
             value = click.prompt("Set the <value> for the selected operator", type=click.FLOAT)
 
-            results.append(OptimizationConstraint(target=target, operator=operator, target_value=value))
+            results.append(OptimizationConstraint(**{"target": target, "operator": operator, "target-value": value}))
 
     def _choose_target(self, text: str) -> str:
         """Asks the user for a target (the path to a property in a backtest's output).
@@ -149,5 +148,10 @@ class OptimizationConfigurer:
         if len(options) == 1:
             return options[0]
 
-        choices = [questionary.Choice(title=option.label, value=option.id) for option in options]
-        return questionary.select(text, choices).ask()
+        self._logger.info(f"{text}:")
+
+        for i, option in enumerate(options):
+            self._logger.info(f"{i + 1}) {option.label}")
+
+        number = click.prompt("Enter a number", type=click.IntRange(min=1, max=len(options)))
+        return options[number - 1].id
