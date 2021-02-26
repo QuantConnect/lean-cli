@@ -134,7 +134,7 @@ def optimize(project: Path,
     if update:
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
-    success = docker_manager.run_image("lean", "local", **run_options)
+    success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
     if not success:
         raise RuntimeError("Something went wrong while running the optimization")
 
