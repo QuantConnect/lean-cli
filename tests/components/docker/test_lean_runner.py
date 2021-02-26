@@ -147,6 +147,9 @@ def test_run_lean_mounts_data_directory() -> None:
 
     assert any([volume["bind"] == "/Lean/Data" for volume in kwargs["volumes"].values()])
 
+    key = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Lean/Data")
+    assert key == str(Path.cwd() / "data")
+
 
 def test_run_lean_mounts_output_directory() -> None:
     create_fake_lean_cli_project()
@@ -167,6 +170,9 @@ def test_run_lean_mounts_output_directory() -> None:
 
     assert any([volume["bind"] == "/Results" for volume in kwargs["volumes"].values()])
 
+    key = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Results")
+    assert key == str(Path.cwd() / "output")
+
 
 def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
     create_fake_lean_cli_project()
@@ -182,7 +188,7 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
                          "latest",
                          None)
 
-    assert (Path.cwd() / "output").exists()
+    assert (Path.cwd() / "output").is_dir()
 
 
 def test_run_lean_mounts_entire_cli_root_when_running_python_algorithm() -> None:

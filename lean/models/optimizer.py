@@ -28,7 +28,7 @@ class OptimizationConstraintOperator(str, Enum):
     Greater = "greater"
     GreaterOrEqual = "greaterOrEqual"
     Equals = "equals"
-    NotEquals = "notEquals"
+    NotEquals = "notEqual"
 
 
 class OptimizationTarget(BaseModel):
@@ -39,7 +39,7 @@ class OptimizationTarget(BaseModel):
 class OptimizationConstraint(BaseModel):
     target: str
     operator: OptimizationConstraintOperator
-    target_value: str = Field(alias="target-value")
+    target_value: float = Field(alias="target-value")
 
     def __str__(self) -> str:
         operator = {

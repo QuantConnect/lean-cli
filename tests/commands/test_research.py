@@ -216,23 +216,6 @@ def test_research_aborts_when_version_invalid() -> None:
     docker_manager.run_lean.assert_not_called()
 
 
-def test_research_aborts_when_run_image_fails() -> None:
-    create_fake_lean_cli_project()
-
-    def run_image(*args, **kwargs) -> None:
-        raise RuntimeError("Oops")
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    result = CliRunner().invoke(lean, ["research", "Python Project"])
-
-    assert result.exit_code != 0
-
-    docker_manager.run_image.assert_called_once()
-
-
 @pytest.mark.parametrize("version_option,update_flag,update_check_expected", [(None, True, False),
                                                                               (None, False, True),
                                                                               ("3", True, False),

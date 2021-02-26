@@ -13,7 +13,6 @@
 
 import json
 import re
-import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -73,11 +72,14 @@ def optimize(project: Path,
         project_config = project_config_manager.get_project_config(algorithm_file.parent)
         project_parameters = [QCParameter(key=k, value=v) for k, v in project_config.get("parameters", {}).items()]
 
-        optimization_configurer = container.optimization_configurer()
-        optimization_strategy = optimization_configurer.configure_strategy(cloud=False)
-        optimization_target = optimization_configurer.configure_target()
-        optimization_parameters = optimization_configurer.configure_parameters(project_parameters)
-        optimization_constraints = optimization_configurer.configure_constraints()
+        if len(project_parameters) == 0:
+            raise RuntimeError("The given project has no parameters to optimize")
+
+        optimizer_config_manager = container.optimizer_config_manager()
+        optimization_strategy = optimizer_config_manager.configure_strategy(cloud=False)
+        optimization_target = optimizer_config_manager.configure_target()
+        optimization_parameters = optimizer_config_manager.configure_parameters(project_parameters)
+        optimization_constraints = optimizer_config_manager.configure_constraints()
 
         config = {
             "optimization-strategy": optimization_strategy,
@@ -106,7 +108,8 @@ def optimize(project: Path,
     config["optimizer-close-automatically"] = True
     config["results-destination-folder"] = "/Results"
 
-    config_path = Path(tempfile.mkdtemp()) / "config.json"
+    config_path = output / "config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w+") as file:
         file.write(json.dumps(config, indent=4))
 
@@ -131,8 +134,6 @@ def optimize(project: Path,
     if update:
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
-    # TODO: Replace statements when optimizer in Lean is dockerized
-    # success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
     success = docker_manager.run_image("lean", "local", **run_options)
     if not success:
         raise RuntimeError("Something went wrong while running the optimization")

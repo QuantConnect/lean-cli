@@ -26,7 +26,7 @@ from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
-from lean.components.util.optimization_configurer import OptimizationConfigurer
+from lean.components.config.optimizer_config_manager import OptimizerConfigManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.update_manager import UpdateManager
@@ -83,7 +83,7 @@ class Container(DeclarativeContainer):
 
     update_manager = Singleton(UpdateManager, logger=logger, cache_storage=cache_storage, docker_manager=docker_manager)
 
-    optimization_configurer = Singleton(OptimizationConfigurer, logger=logger)
+    optimizer_config_manager = Singleton(OptimizerConfigManager, logger=logger)
 
 
 container = Container()

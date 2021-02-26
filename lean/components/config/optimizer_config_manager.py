@@ -29,7 +29,7 @@ class Option(BaseModel):
     label: str
 
 
-class OptimizationConfigurer:
+class OptimizerConfigManager:
     """The OptimizationConfigurer contains methods to interactively configure parts of the optimizer."""
 
     def __init__(self, logger: Logger) -> None:
@@ -124,7 +124,7 @@ class OptimizationConfigurer:
                 Option(id=OptimizationConstraintOperator.LessOrEqual, label="Less than or equal to <value>"),
                 Option(id=OptimizationConstraintOperator.Greater, label="Greater than <value>"),
                 Option(id=OptimizationConstraintOperator.GreaterOrEqual, label="Greater than or equal to <value>"),
-                Option(id=OptimizationConstraintOperator.Equals, label="Equals <value>"),
+                Option(id=OptimizationConstraintOperator.Equals, label="Equal to <value>"),
                 Option(id=OptimizationConstraintOperator.NotEquals, label="Not equal to <value>")
             ])
 
