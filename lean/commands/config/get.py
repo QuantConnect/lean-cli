@@ -18,7 +18,7 @@ from lean.container import container
 
 
 @click.command(cls=LeanCommand)
-@click.argument("key")
+@click.argument("key", type=str)
 def get(key: str) -> None:
     """Get the current value of a configurable option.
 

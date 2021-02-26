@@ -10,11 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import tempfile
 import webbrowser
 from pathlib import Path
 
 import click
+from docker.types import Mount
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import RESEARCH_IMAGE
@@ -38,6 +39,11 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
 
     project_config_manager = container.project_config_manager()
     project_config = project_config_manager.get_project_config(project)
+
+    # Copy the config to a temporary config file before we add some research-specific configuration to it
+    config_path = Path(tempfile.mkdtemp()) / "config.json"
+    project_config.file = config_path
+
     project_config.set("composer-dll-directory", "/Lean/Launcher/bin/Debug")
     project_config.set("messaging-handler", "QuantConnect.Messaging.Messaging")
     project_config.set("job-queue-handler", "QuantConnect.Queues.JobQueue")
@@ -49,10 +55,16 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
     data_dir = lean_config_manager.get_data_directory()
 
     run_options = {
+        "mounts": [
+            Mount(target="/Lean/Launcher/bin/Debug/Notebooks/config.json",
+                  source=str(config_path),
+                  type="bind",
+                  read_only=True)
+        ],
         "volumes": {
             str(data_dir): {
                 "bind": "/Lean/Launcher/Data",
-                "mode": "ro"
+                "mode": "rw"
             },
             str(project): {
                 "bind": "/Lean/Launcher/bin/Debug/Notebooks",

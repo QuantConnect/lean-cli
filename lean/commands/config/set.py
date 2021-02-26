@@ -18,8 +18,8 @@ from lean.container import container
 
 
 @click.command(cls=LeanCommand)
-@click.argument("key")
-@click.argument("value")
+@click.argument("key", type=str)
+@click.argument("value", type=str)
 def set(key: str, value: str) -> None:
     """Set a configurable option.
 
