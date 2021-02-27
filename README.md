@@ -32,7 +32,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] Cloud backtesting
 - [ ] **First beta release**
 - [ ] Local data downloading
-- [ ] Local optimization
+- [x] Local optimization
 - [ ] Local backtest visualization
 - [ ] Local live trading
 - [ ] Cloud optimization
