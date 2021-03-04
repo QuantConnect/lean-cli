@@ -30,7 +30,6 @@ DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
 DEFAULT_DATA_DIRECTORY_NAME = "data"
 
 # The name of the configuration file in a project in a Lean CLI directory
-# This should match the file name expected by https://github.com/QuantConnect/Lean/blob/master/DockerfileJupyter
 PROJECT_CONFIG_FILE_NAME = "config.json"
 
 # The Docker image used when running the LEAN engine locally

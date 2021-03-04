@@ -13,18 +13,9 @@
 
 from pathlib import Path
 
-from lean.components.config.project_config_manager import ProjectConfigManager
-
 
 class ProjectManager:
     """The ProjectManager class provides utilities for finding specific files in projects."""
-
-    def __init__(self, project_config_manager: ProjectConfigManager) -> None:
-        """Creates a new ProjectManager instance.
-
-        :param project_config_manager: the ProjectConfigManager instance to use when retrieving project configuration
-        """
-        self._project_config_manager = project_config_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.

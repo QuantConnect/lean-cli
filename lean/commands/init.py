@@ -216,7 +216,10 @@ def init() -> None:
         ".idea/workspace.xml": PYCHARM_WORKSPACE_XML,
         ".idea/.idea.LeanCLI.dir/.idea/workspace.xml": RIDER_WORKSPACE_XML,
         ".vscode/launch.json": VSCODE_LAUNCH_JSON,
-        ".vscode/settings.json": json.dumps({"python.pythonPath": sys.executable}, indent=4) + "\n"
+        ".vscode/settings.json": json.dumps({
+            "python.pythonPath": sys.executable,
+            "python.languageServer": "Pylance"
+        }, indent=4) + "\n"
     }
 
     for location, content in extra_files.items():

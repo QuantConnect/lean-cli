@@ -51,7 +51,7 @@ class Container(DeclarativeContainer):
                                     cli_config_manager=cli_config_manager,
                                     project_config_manager=project_config_manager)
 
-    project_manager = Singleton(ProjectManager, project_config_manager=project_config_manager)
+    project_manager = Singleton(ProjectManager)
 
     api_client = Factory(APIClient,
                          logger=logger,
