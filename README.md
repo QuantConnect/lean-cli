@@ -6,18 +6,11 @@
 [![PyPI Version](https://img.shields.io/pypi/v/lean)](https://pypi.org/project/lean/)
 [![Project Status](https://img.shields.io/pypi/status/lean)](https://pypi.org/project/lean/)
 
-**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the first beta release. Use with caution.**
+**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the first beta release on March 8th. Use with caution.**
 
 The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
-## Table of Contents
-
-- [Roadmap](#roadmap)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Commands](#commands)
-- [Local debugging](#local-debugging)
-- [Development](#development)
+Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
 
 ## Roadmap
 
@@ -67,6 +60,8 @@ A locally-focused workflow (local development, local execution) with the CLI may
 
 ## Commands
 
+*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for more comprehensive documentation.*
+
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
 - [`lean cloud backtest`](#lean-cloud-backtest)
@@ -95,7 +90,7 @@ Usage: lean backtest [OPTIONS] PROJECT
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
   Go to the following url to learn how to debug backtests locally using the Lean CLI:
-  https://github.com/QuantConnect/lean-cli#local-debugging
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#03-Debugging-local-backtestshtml
 
 Options:
   --output DIRECTORY            Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
@@ -356,45 +351,6 @@ Options:
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
 <!-- commands end -->
-
-## Local debugging
-
-To debug backtests locally some additional setup is needed depending on the editor and language you use.
-
-*Note: When debugging C#, after you attach to the debugger, a breakpoint will be hit for which your editor will tell you it has no code for. This is expected behavior, simply continue from that breakpoint and your algorithm will start running.*
-
-### VS Code + Python
-1. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension.
-2. Run the `lean backtest` command with the `--debug ptvsd` option.
-3. Wait until the CLI tells you to attach to the debugger.
-4. In VS Code, open the Run tab and run the configuration called "Debug Python with Lean CLI" (this configuration is created when you run `lean init`).
-
-### VS Code + C#
-1. Install version 15.8 of the [Mono Debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension. You can do this by first installing the latest version and then clicking on the arrow button next to the Uninstall button, which will open a context menu containing the "Install Another Version" option.
-2. Run the `lean backtest` command with the `--debug mono` option.
-3. Wait until the CLI tells you to attach to the debugger.
-4. In VS Code, open the Run tab and run the configuration called "Debug C# with Lean CLI" (this configuration is created when you run `lean init`).
-
-### PyCharm + Python
-*Note: This combination requires PyCharm Professional.*
-
-1. In PyCharm, start debugging using the "Debug with Lean CLI" run configuration (this configuration is created when you run `lean init`).
-2. Run the `lean backtest` command with the `--debug pycharm` option.
-
-### Visual Studio + C#
-1. Install the [VSMonoDebugger](https://marketplace.visualstudio.com/items?itemName=GordianDotNet.VSMonoDebugger0d62) extension.
-2. In Visual Studio, go to "Extensions > Mono > Settings" and enter the following settings:
-    * Remote Host IP: 127.0.0.1
-    * Remote Host Port: 55555
-    * Mono Debug Port: 55555
-3. Run the `lean backtest` command with the `--debug mono` option.
-4. Wait until the CLI tells you to attach to the debugger.
-5. In Visual Studio, attach to the debugger using "Extensions > Mono > Attach to mono debugger".
-
-### Rider + C#
-1. Run the `lean backtest` command with the `--debug mono` option.
-2. Wait until the CLI tells you to attach to the debugger.
-3. In Rider, start debugging using the "Debug with Lean CLI" run configuration (this configuration is created when you run `lean init`).
 
 ## Development
 
