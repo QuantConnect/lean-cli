@@ -102,7 +102,7 @@ def _log_backtest_stats(backtest: QCBacktest) -> None:
 @click.option("--open", "open_browser",
               is_flag=True,
               default=False,
-              help="Automatically open the browser with the results when the backtest is finished")
+              help="Automatically open the results in the browser when the backtest is finished")
 def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) -> None:
     """Run a backtest in the cloud.
 

@@ -126,7 +126,7 @@ Usage: lean cloud backtest [OPTIONS] PROJECT
 Options:
   --name TEXT  The name of the backtest (a random one is generated if not specified)
   --push       Push local modifications to the cloud before running the backtest
-  --open       Automatically open the browser with the results when the backtest is finished
+  --open       Automatically open the results in the browser when the backtest is finished
   --verbose    Enable debug logging
   --help       Show this message and exit.
 ```
@@ -282,8 +282,8 @@ Usage: lean login [OPTIONS]
   Credentials are stored in ~/.lean/credentials and are removed upon running `lean logout`.
 
 Options:
-  -u, --user-id TEXT    QuantConnect.com user id
-  -t, --api-token TEXT  QuantConnect.com API token
+  -u, --user-id TEXT    QuantConnect user id
+  -t, --api-token TEXT  QuantConnect API token
   --verbose             Enable debug logging
   --help                Show this message and exit.
 ```
