@@ -53,7 +53,7 @@ class CSharpCompiler:
         compile_dir = Path(tempfile.mkdtemp())
 
         # Copy all C# files in the project directory to the temporary directory
-        # To make debugging work properly we need to preserve the directory structure of the Lean CLI project
+        # To make debugging work we need to preserve the directory structure of the projects in the Lean CLI directory
         def get_objects_to_ignore(directory: str, objects: List[str]) -> List[str]:
             paths = [(Path(directory) / x) for x in objects]
             files = [p for p in paths if p.is_file()]
@@ -99,7 +99,7 @@ class CSharpCompiler:
         if not success:
             raise RuntimeError("Something went wrong while running msbuild")
 
-        # Copy the generated LeanCLI.dll file to the user's CLI project
+        # Copy the generated LeanCLI.dll file to the user's CLI directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code
         compiled_dll = compile_dir / "bin" / "Debug" / "LeanCLI.dll"
         local_path = cli_root_dir / "bin" / "Debug" / "LeanCLI.dll"

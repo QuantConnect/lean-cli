@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.config import DebuggingMethod
 
 
-@click.command(cls=LeanCommand, requires_cli_project=True)
+@click.command(cls=LeanCommand, requires_cli_directory=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),

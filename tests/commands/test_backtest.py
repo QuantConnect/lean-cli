@@ -22,7 +22,7 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.container import container
 from lean.models.config import DebuggingMethod
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +34,7 @@ def update_manager_mock() -> mock.Mock:
 
 
 def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -54,7 +54,7 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
 
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -74,7 +74,7 @@ def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
 
 
 def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -94,7 +94,7 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -110,7 +110,7 @@ def test_backtest_aborts_when_project_does_not_exist() -> None:
 
 
 def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -126,7 +126,7 @@ def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
 
 
 def test_backtest_forces_update_when_update_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -147,7 +147,7 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
 
 def test_backtest_passes_custom_version_to_lean_runner() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -167,7 +167,7 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
 
 
 def test_backtest_aborts_when_version_invalid() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -191,7 +191,7 @@ def test_backtest_aborts_when_version_invalid() -> None:
                                                     ("mono", DebuggingMethod.Mono),
                                                     ("Mono", DebuggingMethod.Mono)])
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -220,7 +220,7 @@ def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
                                      version_option: Optional[str],
                                      update_flag: bool,
                                      update_check_expected: bool) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

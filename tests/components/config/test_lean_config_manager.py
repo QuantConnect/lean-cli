@@ -21,7 +21,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.models.config import DebuggingMethod
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_get_lean_config_path_returns_closest_config_file() -> None:
@@ -52,7 +52,7 @@ def test_get_lean_config_path_returns_default_path_when_set() -> None:
 
 
 def test_get_cli_root_directory_returns_path_to_directory_containing_config_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
 
@@ -210,7 +210,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
 
 
 def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_lean_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py", None)
@@ -224,7 +224,7 @@ def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_le
 
 
 def test_get_complete_lean_config_sets_environment() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
@@ -233,7 +233,7 @@ def test_get_complete_lean_config_sets_environment() -> None:
 
 
 def test_get_complete_lean_config_sets_close_automatically() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
@@ -242,7 +242,7 @@ def test_get_complete_lean_config_sets_close_automatically() -> None:
 
 
 def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
@@ -254,7 +254,7 @@ def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> N
                                           (DebuggingMethod.PTVSD, "PTVSD"),
                                           (DebuggingMethod.Mono, "LocalCmdline")])
 def test_get_complete_lean_config_enables_debugging_when_method_given(method: DebuggingMethod, value: str) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method)
@@ -264,7 +264,7 @@ def test_get_complete_lean_config_enables_debugging_when_method_given(method: De
 
 
 def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cli_config_manager = mock.Mock()
     cli_config_manager.user_id.get_value.return_value = "123"
@@ -278,7 +278,7 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
 
 
 def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
@@ -289,7 +289,7 @@ def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
 
 
 def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "CSharp Project" / "Main.cs", None)
@@ -300,7 +300,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
 
 
 def test_get_complete_lean_config_sets_parameters() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {
         "key1": "value1",

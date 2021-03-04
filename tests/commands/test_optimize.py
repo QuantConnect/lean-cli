@@ -25,7 +25,7 @@ from lean.components.config.storage import Storage
 from lean.container import container
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +60,7 @@ def optimizer_config_manager_mock() -> mock.Mock:
 
 
 def test_optimize_runs_lean_container() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -79,7 +79,7 @@ def test_optimize_runs_lean_container() -> None:
 
 
 def test_optimize_runs_optimizer() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -99,7 +99,7 @@ def test_optimize_runs_optimizer() -> None:
 
 
 def test_optimize_mounts_optimizer_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -117,7 +117,7 @@ def test_optimize_mounts_optimizer_config() -> None:
 
 
 def test_optimize_mounts_lean_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -135,7 +135,7 @@ def test_optimize_mounts_lean_config() -> None:
 
 
 def test_optimize_mounts_data_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -156,7 +156,7 @@ def test_optimize_mounts_data_directory() -> None:
 
 
 def test_optimize_mounts_output_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -177,7 +177,7 @@ def test_optimize_mounts_output_directory() -> None:
 
 
 def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -192,7 +192,7 @@ def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
 
 
 def test_optimize_creates_correct_config_from_optimizer_config_manager_output() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -236,7 +236,7 @@ def test_optimize_creates_correct_config_from_optimizer_config_manager_output() 
 
 
 def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -342,7 +342,7 @@ def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
 
 
 def test_optimize_writes_config_to_output_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -383,7 +383,7 @@ def test_optimize_writes_config_to_output_directory() -> None:
 
 
 def test_optimize_aborts_when_project_has_no_parameters() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -398,7 +398,7 @@ def test_optimize_aborts_when_project_has_no_parameters() -> None:
 
 
 def test_optimize_forces_update_when_update_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -414,7 +414,7 @@ def test_optimize_forces_update_when_update_option_given() -> None:
 
 
 def test_optimize_runs_custom_version() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -433,7 +433,7 @@ def test_optimize_runs_custom_version() -> None:
 
 
 def test_optimize_aborts_when_version_invalid() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.tag_exists.return_value = False
@@ -449,7 +449,7 @@ def test_optimize_aborts_when_version_invalid() -> None:
 
 
 def test_optimize_aborts_when_run_image_fails() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
@@ -474,7 +474,7 @@ def test_optimize_checks_for_updates(update_manager_mock: mock.Mock,
                                      version_option: Optional[str],
                                      update_flag: bool,
                                      update_check_expected: bool) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

@@ -70,7 +70,7 @@ class LeanConfigManager:
         self._default_path = path
 
     def get_cli_root_directory(self) -> Path:
-        """Returns the path to the root of the current Lean CLI project.
+        """Returns the path to the root of the current Lean CLI directory.
 
         :return: the path to the directory containing the Lean config file
         """
@@ -133,7 +133,7 @@ class LeanConfigManager:
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
 
-        It is assumed that the default LEAN Docker image is used and that the Lean CLI project is mounted at /LeanCLI.
+        It is assumed that the default LEAN Docker image is used and that the Lean CLI directory is mounted at /LeanCLI.
 
         :param environment: the environment to set
         :param algorithm_file: the path to the algorithm that will be ran

@@ -37,14 +37,14 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_cli_project: bool = False, *args, **kwargs):
+    def __init__(self, requires_cli_directory: bool = False, *args, **kwargs):
         """Creates a new LeanCommand instance.
 
-        :param requires_cli_project: True if this command needs to be ran in a Lean CLI project, False if not
+        :param requires_cli_directory: True if this command needs to be ran in a Lean CLI directory, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
-        self._requires_cli_project = requires_cli_project
+        self._requires_cli_directory = requires_cli_directory
 
         super().__init__(*args, **kwargs)
 
@@ -53,14 +53,14 @@ class LeanCommand(click.Command):
         self.context_settings["max_content_width"] = 120
 
     def invoke(self, ctx):
-        if self._requires_cli_project:
+        if self._requires_cli_directory:
             try:
                 # This method will throw if the directory cannot be found
                 container.lean_config_manager().get_cli_root_directory()
             except Exception:
-                # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI project
+                # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI directory
                 raise RuntimeError(
-                    "This command should be executed in a Lean CLI project, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --lean-config")
+                    "This command should be executed in a Lean CLI directory, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --lean-config")
 
         result = super().invoke(ctx)
 
@@ -72,24 +72,24 @@ class LeanCommand(click.Command):
     def get_params(self, ctx):
         params = super().get_params(ctx)
 
-        # Add --config option if the commands needs to be ran inside a Lean CLI project
-        if self._requires_cli_project:
-            params += [click.Option(["--lean-config"],
-                                    type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                                    help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
-                                    expose_value=False,
-                                    is_eager=True,
-                                    callback=parse_config_option)]
+        # Add --config option if the commands needs to be ran inside a Lean CLI directory
+        if self._requires_cli_directory:
+            params.insert(len(params) - 1, click.Option(["--lean-config"],
+                                                        type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+                                                        help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
+                                                        expose_value=False,
+                                                        is_eager=True,
+                                                        callback=parse_config_option))
 
         # Add --verbose option
-        params += [click.Option(["--verbose"],
-                                type=bool,
-                                help="Enable debug logging",
-                                is_flag=True,
-                                default=False,
-                                expose_value=False,
-                                is_eager=True,
-                                callback=parse_verbose_option)]
+        params.insert(len(params) - 1, click.Option(["--verbose"],
+                                                    type=bool,
+                                                    help="Enable debug logging",
+                                                    is_flag=True,
+                                                    default=False,
+                                                    expose_value=False,
+                                                    is_eager=True,
+                                                    callback=parse_verbose_option))
 
         return params
 

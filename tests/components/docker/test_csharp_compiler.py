@@ -19,7 +19,7 @@ import pytest
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.csharp_compiler import CSharpCompiler
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def run_image(image: str, tag: str, **kwargs) -> bool:
@@ -40,7 +40,7 @@ def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
 
 
 def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
@@ -58,7 +58,7 @@ def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
 
 
 def test_compile_csharp_project_raises_when_msbuild_fails() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
@@ -72,7 +72,7 @@ def test_compile_csharp_project_raises_when_msbuild_fails() -> None:
 
 
 def test_compile_csharp_project_only_mounts_files_from_given_project() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
@@ -93,7 +93,7 @@ def test_compile_csharp_project_only_mounts_files_from_given_project() -> None:
 
 
 def test_compile_csharp_project_copies_generated_dll_to_cli_bin() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image

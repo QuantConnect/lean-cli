@@ -21,7 +21,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.models.config import DebuggingMethod
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def create_csharp_compiler() -> mock.Mock:
@@ -47,7 +47,7 @@ def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = c
 
 
 def test_run_lean_compiles_csharp_project() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     csharp_compiler = create_csharp_compiler()
 
@@ -66,7 +66,7 @@ def test_run_lean_compiles_csharp_project() -> None:
 
 
 def test_run_lean_fails_when_csharp_compilation_fails() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     def compile_csharp_project(*args) -> None:
         raise RuntimeError("Oops")
@@ -88,7 +88,7 @@ def test_run_lean_fails_when_csharp_compilation_fails() -> None:
 
 
 def test_run_lean_runs_lean_container() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -109,7 +109,7 @@ def test_run_lean_runs_lean_container() -> None:
 
 
 def test_run_lean_mounts_config_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -129,7 +129,7 @@ def test_run_lean_mounts_config_file() -> None:
 
 
 def test_run_lean_mounts_data_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -152,7 +152,7 @@ def test_run_lean_mounts_data_directory() -> None:
 
 
 def test_run_lean_mounts_output_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -175,7 +175,7 @@ def test_run_lean_mounts_output_directory() -> None:
 
 
 def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -192,7 +192,7 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
 
 
 def test_run_lean_mounts_entire_cli_root_when_running_python_algorithm() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -212,7 +212,7 @@ def test_run_lean_mounts_entire_cli_root_when_running_python_algorithm() -> None
 
 
 def test_run_lean_mounts_dlls_when_running_csharp_algorithm() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -234,7 +234,7 @@ def test_run_lean_mounts_dlls_when_running_csharp_algorithm() -> None:
 
 @mock.patch("platform.system")
 def test_run_lean_adds_internal_host_when_running_linux(system) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -257,7 +257,7 @@ def test_run_lean_adds_internal_host_when_running_linux(system) -> None:
 
 @mock.patch("platform.system")
 def test_run_lean_does_not_add_internal_host_when_not_running_linux(system) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -279,7 +279,7 @@ def test_run_lean_does_not_add_internal_host_when_not_running_linux(system) -> N
 
 
 def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -299,7 +299,7 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
 
 
 def test_run_lean_exposes_55555_when_debugging_with_mono() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -319,7 +319,7 @@ def test_run_lean_exposes_55555_when_debugging_with_mono() -> None:
 
 
 def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
@@ -340,7 +340,7 @@ def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
 
 
 def test_run_lean_raises_when_run_image_fails() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False

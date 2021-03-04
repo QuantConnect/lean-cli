@@ -176,7 +176,7 @@ class LeanRunner:
 
         # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
-            # To get Python debugging to work correctly we need to mount all Lean CLI projects
+            # To get Python debugging to work correctly we need to mount all projects
             # Without this editors won't be able to distinguish between main.py in project A and main.py in project B
             run_options["volumes"][str(self._lean_config_manager.get_cli_root_directory())] = {
                 "bind": "/LeanCLI",

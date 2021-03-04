@@ -19,11 +19,11 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
     container.push_manager.override(providers.Object(push_manager))
@@ -39,7 +39,7 @@ def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
 
 
 def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
     container.push_manager.override(providers.Object(push_manager))
@@ -52,7 +52,7 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
     container.push_manager.override(providers.Object(push_manager))
@@ -67,7 +67,7 @@ def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
 
 
 def test_cloud_push_aborts_when_given_directory_does_not_exist() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
     container.push_manager.override(providers.Object(push_manager))

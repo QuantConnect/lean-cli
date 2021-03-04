@@ -160,7 +160,7 @@ VSCODE_LAUNCH_JSON = """
 
 @click.command(cls=LeanCommand)
 def init() -> None:
-    """Bootstrap a Lean CLI project."""
+    """Bootstrap a Lean CLI directory."""
     current_dir = Path.cwd()
     data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
     lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
@@ -175,7 +175,7 @@ def init() -> None:
 
     # Warn the user if the current directory is not empty
     if next(current_dir.iterdir(), None) is not None:
-        logger.info("This command will bootstrap a Lean CLI project in the current directory")
+        logger.info("This command will bootstrap a Lean CLI directory in the current directory")
         click.confirm("The current directory is not empty, continue?", default=False, abort=True)
 
     # Download the Lean repository
@@ -236,13 +236,19 @@ def init() -> None:
         cli_config_manager.default_language.set_value(default_language)
 
     logger.info(f"""
-Successfully bootstrapped your Lean CLI project!
+Successfully bootstrapped your Lean CLI directory!
 
 The following structure has been created:
 - {DEFAULT_LEAN_CONFIG_FILE_NAME} contains the configuration used when running the LEAN engine locally
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
+- The .idea and .vscode directories and the LeanCLI.csproj file contain data to make setting up local autocompletion and debugging easier
+
+The following documentation pages may be useful:
+- Setting up local autocompletion: https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocompletion
+- Synchronizing projects with the cloud: https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization
 
 Here are some commands to get you going:
 - Run `lean create-project "My Project"` to create a new project with starter code
+- Run `lean cloud pull` to download all your QuantConnect projects to your local drive
 - Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_DATA_DIRECTORY_NAME}/
 """.strip())

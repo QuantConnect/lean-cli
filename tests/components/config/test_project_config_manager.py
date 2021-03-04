@@ -14,11 +14,11 @@
 from pathlib import Path
 
 from lean.components.config.project_config_manager import ProjectConfigManager
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_get_project_config_returns_storage_instance_of_correct_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project_config_manager = ProjectConfigManager()
     project_config = project_config_manager.get_project_config(Path.cwd() / "Python Project")

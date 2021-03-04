@@ -18,11 +18,11 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
-from tests.test_helpers import create_api_project, create_fake_lean_cli_project
+from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 
 
 def test_cloud_pull_pulls_all_non_bootcamp_projects_when_no_options_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cloud_projects = [create_api_project(1, "Project 1"),
                       create_api_project(2, "Project 2"),
@@ -45,7 +45,7 @@ def test_cloud_pull_pulls_all_non_bootcamp_projects_when_no_options_given() -> N
 
 
 def test_cloud_pull_pulls_all_projects_when_pull_bootcamp_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cloud_projects = [create_api_project(1, "Project 1"),
                       create_api_project(2, "Project 2"),
@@ -68,7 +68,7 @@ def test_cloud_pull_pulls_all_projects_when_pull_bootcamp_option_given() -> None
 
 
 def test_cloud_pull_pulls_project_by_id() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cloud_projects = [create_api_project(1, "Project 1"),
                       create_api_project(2, "Project 2"),
@@ -91,7 +91,7 @@ def test_cloud_pull_pulls_project_by_id() -> None:
 
 
 def test_cloud_pull_pulls_project_by_name() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cloud_projects = [create_api_project(1, "Project 1"),
                       create_api_project(2, "Project 2"),
@@ -114,7 +114,7 @@ def test_cloud_pull_pulls_project_by_name() -> None:
 
 
 def test_cloud_pull_aborts_when_project_input_matches_no_cloud_projects() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     cloud_projects = [create_api_project(1, "Project 1"),
                       create_api_project(2, "Project 2"),

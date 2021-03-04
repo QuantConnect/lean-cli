@@ -23,7 +23,7 @@ from lean.constants import RESEARCH_IMAGE
 from lean.container import container
 
 
-@click.command(cls=LeanCommand, requires_cli_project=True)
+@click.command(cls=LeanCommand, requires_cli_directory=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
 @click.option("--update",

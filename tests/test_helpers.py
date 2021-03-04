@@ -20,7 +20,7 @@ from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NO
 from lean.models.api import QCLanguage, QCLiveResults, QCProject
 
 
-def create_fake_lean_cli_project() -> None:
+def create_fake_lean_cli_directory() -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project."""
     (Path.cwd() / "data").mkdir()
 

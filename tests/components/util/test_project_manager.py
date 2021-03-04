@@ -16,11 +16,11 @@ from pathlib import Path
 import pytest
 
 from lean.components.util.project_manager import ProjectManager
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = ProjectManager()
     result = manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
@@ -29,7 +29,7 @@ def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
 
 
 def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = ProjectManager()
     result = manager.find_algorithm_file(Path.cwd() / "Python Project")
@@ -38,7 +38,7 @@ def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() 
 
 
 def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     manager = ProjectManager()
     result = manager.find_algorithm_file(Path.cwd() / "CSharp Project")
@@ -47,7 +47,7 @@ def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() 
 
 
 def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     (Path.cwd() / "Empty Project").mkdir()
 

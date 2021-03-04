@@ -39,7 +39,7 @@ def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> Non
 
 
 def test_lean_command_sets_default_lean_config_path_when_lean_config_option_given() -> None:
-    @click.command(cls=LeanCommand, requires_cli_project=True)
+    @click.command(cls=LeanCommand, requires_cli_directory=True)
     def command() -> None:
         pass
 
@@ -56,8 +56,8 @@ def test_lean_command_sets_default_lean_config_path_when_lean_config_option_give
     lean_config_manager.set_default_lean_config_path.assert_called_once_with(Path.cwd() / "custom-config.json")
 
 
-def test_lean_command_fails_when_not_executed_in_cli_project() -> None:
-    @click.command(cls=LeanCommand, requires_cli_project=True)
+def test_lean_command_fails_when_not_executed_in_cli_directory() -> None:
+    @click.command(cls=LeanCommand, requires_cli_directory=True)
     def command() -> None:
         pass
 

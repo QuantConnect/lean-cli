@@ -21,7 +21,7 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCBacktest
-from tests.test_helpers import create_api_project, create_fake_lean_cli_project
+from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 
 
 def create_api_backtest() -> QCBacktest:
@@ -39,7 +39,7 @@ def create_api_backtest() -> QCBacktest:
 
 
 def test_cloud_backtest_runs_project_by_id() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -60,7 +60,7 @@ def test_cloud_backtest_runs_project_by_id() -> None:
 
 
 def test_cloud_backtest_runs_project_by_name() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -81,7 +81,7 @@ def test_cloud_backtest_runs_project_by_name() -> None:
 
 
 def test_cloud_backtest_uses_given_name() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -105,7 +105,7 @@ def test_cloud_backtest_uses_given_name() -> None:
 
 
 def test_cloud_backtest_logs_statistics() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -140,7 +140,7 @@ def test_cloud_backtest_logs_statistics() -> None:
 
 @mock.patch("webbrowser.open")
 def test_cloud_backtest_opens_browser_when_open_option_given(open) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -162,7 +162,7 @@ def test_cloud_backtest_opens_browser_when_open_option_given(open) -> None:
 
 @mock.patch("webbrowser.open")
 def test_cloud_backtest_does_not_open_browser_when_init_error_happens(open) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -184,7 +184,7 @@ def test_cloud_backtest_does_not_open_browser_when_init_error_happens(open) -> N
 
 
 def test_cloud_backtest_pushes_project_when_push_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "Python Project")
     backtest = create_api_backtest()
@@ -208,7 +208,7 @@ def test_cloud_backtest_pushes_project_when_push_option_given() -> None:
 
 
 def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()
@@ -232,7 +232,7 @@ def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> 
 
 
 def test_cloud_backtest_aborts_when_backtest_fails() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
 
@@ -255,7 +255,7 @@ def test_cloud_backtest_aborts_when_backtest_fails() -> None:
 
 
 def test_cloud_backtest_aborts_when_input_matches_no_cloud_project() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     backtest = create_api_backtest()

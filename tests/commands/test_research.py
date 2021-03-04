@@ -22,7 +22,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
-from tests.test_helpers import create_fake_lean_cli_project
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +34,7 @@ def update_manager_mock() -> mock.Mock:
 
 
 def test_research_runs_research_container() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -51,7 +51,7 @@ def test_research_runs_research_container() -> None:
 
 
 def test_research_mounts_config_file() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -67,7 +67,7 @@ def test_research_mounts_config_file() -> None:
 
 
 def test_research_adds_required_keys_to_project_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -89,7 +89,7 @@ def test_research_adds_required_keys_to_project_config() -> None:
 
 
 def test_research_adds_credentials_to_project_config() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -114,7 +114,7 @@ def test_research_adds_credentials_to_project_config() -> None:
 
 
 def test_research_mounts_data_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -130,7 +130,7 @@ def test_research_mounts_data_directory() -> None:
 
 
 def test_research_mounts_project_directory() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -146,7 +146,7 @@ def test_research_mounts_project_directory() -> None:
 
 
 def test_research_exposes_8888_when_no_port_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -162,7 +162,7 @@ def test_research_exposes_8888_when_no_port_given() -> None:
 
 
 def test_research_exposes_custom_port_when_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -179,7 +179,7 @@ def test_research_exposes_custom_port_when_given() -> None:
 
 @mock.patch("webbrowser.open")
 def test_research_opens_browser_when_container_started(open) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -198,7 +198,7 @@ def test_research_opens_browser_when_container_started(open) -> None:
 
 
 def test_research_forces_update_when_update_option_given() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -212,7 +212,7 @@ def test_research_forces_update_when_update_option_given() -> None:
 
 
 def test_research_runs_custom_version() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -229,7 +229,7 @@ def test_research_runs_custom_version() -> None:
 
 
 def test_research_aborts_when_version_invalid() -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.tag_exists.return_value = False
@@ -252,7 +252,7 @@ def test_research_checks_for_updates(update_manager_mock: mock.Mock,
                                      version_option: Optional[str],
                                      update_flag: bool,
                                      update_check_expected: bool) -> None:
-    create_fake_lean_cli_project()
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
