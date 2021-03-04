@@ -102,9 +102,9 @@ Options:
   --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
   --update                      Pull the selected LEAN engine version before running the backtest
   --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
-  --help                        Show this message and exit.
   --lean-config FILE            The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                     Enable debug logging
+  --help                        Show this message and exit.
 ```
 
 _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
@@ -127,8 +127,8 @@ Options:
   --name TEXT  The name of the backtest (a random one is generated if not specified)
   --push       Push local modifications to the cloud before running the backtest
   --open       Automatically open the browser with the results when the backtest is finished
-  --help       Show this message and exit.
   --verbose    Enable debug logging
+  --help       Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
@@ -149,8 +149,8 @@ Usage: lean cloud pull [OPTIONS]
 Options:
   --project TEXT   Name or id of the project to pull (all cloud projects if not specified)
   --pull-bootcamp  Pull Boot Camp projects (disabled by default)
-  --help           Show this message and exit.
   --verbose        Enable debug logging
+  --help           Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/pull.py](lean/commands/cloud/pull.py)_
@@ -170,8 +170,8 @@ Usage: lean cloud push [OPTIONS]
 
 Options:
   --project DIRECTORY  Path to the local project to push (all local projects if not specified)
-  --help               Show this message and exit.
   --verbose            Enable debug logging
+  --help               Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
@@ -191,8 +191,8 @@ Usage: lean config get [OPTIONS] KEY
   Run `lean config list` to show all available options.
 
 Options:
-  --help     Show this message and exit.
   --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/config/get.py](lean/commands/config/get.py)_
@@ -207,8 +207,8 @@ Usage: lean config list [OPTIONS]
   List the configurable options and their current values.
 
 Options:
-  --help     Show this message and exit.
   --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/config/list.py](lean/commands/config/list.py)_
@@ -225,8 +225,8 @@ Usage: lean config set [OPTIONS] KEY VALUE
   Run `lean config list` to show all available options.
 
 Options:
-  --help     Show this message and exit.
   --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/config/set.py](lean/commands/config/set.py)_
@@ -246,8 +246,8 @@ Usage: lean create-project [OPTIONS] NAME
 
 Options:
   -l, --language [python|csharp]  The language of the project to create
-  --help                          Show this message and exit.
   --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
@@ -262,8 +262,8 @@ Usage: lean init [OPTIONS]
   Bootstrap a Lean CLI directory.
 
 Options:
-  --help     Show this message and exit.
   --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/init.py](lean/commands/init.py)_
@@ -284,8 +284,8 @@ Usage: lean login [OPTIONS]
 Options:
   -u, --user-id TEXT    QuantConnect.com user id
   -t, --api-token TEXT  QuantConnect.com API token
-  --help                Show this message and exit.
   --verbose             Enable debug logging
+  --help                Show this message and exit.
 ```
 
 _See code: [lean/commands/login.py](lean/commands/login.py)_
@@ -300,8 +300,8 @@ Usage: lean logout [OPTIONS]
   Log out and remove stored credentials.
 
 Options:
-  --help     Show this message and exit.
   --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/logout.py](lean/commands/logout.py)_
@@ -329,9 +329,9 @@ Options:
   --optimizer-config FILE  The optimizer configuration file that should be used
   --update                 Pull the selected LEAN engine version before running the optimizer
   --version TEXT           The LEAN engine version to run (defaults to the latest installed version)
-  --help                   Show this message and exit.
   --lean-config FILE       The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                Enable debug logging
+  --help                   Show this message and exit.
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
@@ -349,9 +349,9 @@ Options:
   --port INTEGER      The port to run Jupyter Lab on (defaults to 8888)
   --update            Pull the selected research environment version before starting it
   --version TEXT      The version of the research environment version to run (defaults to the latest installed version)
-  --help              Show this message and exit.
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
