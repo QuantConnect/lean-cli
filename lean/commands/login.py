@@ -20,8 +20,8 @@ from lean.container import container
 
 
 @click.command(cls=LeanCommand)
-@click.option("--user-id", "-u", type=str, help="QuantConnect.com user id")
-@click.option("--api-token", "-t", type=str, help="QuantConnect.com API token")
+@click.option("--user-id", "-u", type=str, help="QuantConnect user id")
+@click.option("--api-token", "-t", type=str, help="QuantConnect API token")
 def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     """Log in with a QuantConnect account.
 
