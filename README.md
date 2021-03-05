@@ -45,17 +45,17 @@ After installing the CLI, simply `cd` into an empty directory and run `lean init
 The Lean CLI supports multiple workflows. The examples below serve as a starting point, you're free to mix local and cloud features in any way you'd like.
 
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
-1. `cd` into the Lean CLI directory.
+1. Open a terminal in the Lean CLI directory.
 2. Run `lean cloud pull` to pull remotely changed files.
 3. Start programming locally and run backtests in the cloud with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
-4. Whenever you need to create a new project, run `lean create-project "Project Name"` and `lean cloud push --project "Project Name"` to create a new project containing some basic code and to push it to the cloud.
-5. When you're done for the moment, run `lean cloud push` to push all locally changed files to the cloud.
+4. Whenever you want to create a new project, run `lean create-project "Project Name"` and `lean cloud push --project "Project Name"` to create a new project containing some basic code and to push it to the cloud.
+5. When you're finished for the moment, run `lean cloud push` to push all locally changed files to the cloud.
 
 A locally-focused workflow (local development, local execution) with the CLI may look like this:
-1. `cd` into the Lean CLI directory.
+1. Open a terminal in the Lean CLI directory.
 2. Run `lean create-project "Project Name"` to create a new project with some basic code to get you started.
 3. Work on your strategy in `./Project Name`.
-4. Run `lean research "Project Name"` to launch a Jupyter Lab session to perform research in research notebooks. 
+4. Run `lean research "Project Name"` to start a Jupyter Lab session to perform research in. 
 5. Run `lean backtest "Project Name"` to run a backtest whenever there's something to test. This runs your strategy in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
 ## Commands
@@ -249,12 +249,12 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean init`
 
-Bootstrap a Lean CLI directory.
+Scaffold a Lean CLI directory.
 
 ```
 Usage: lean init [OPTIONS]
 
-  Bootstrap a Lean CLI directory.
+  Scaffold a Lean CLI directory.
 
 Options:
   --verbose  Enable debug logging

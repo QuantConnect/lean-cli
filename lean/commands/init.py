@@ -160,7 +160,7 @@ VSCODE_LAUNCH_JSON = """
 
 @click.command(cls=LeanCommand)
 def init() -> None:
-    """Bootstrap a Lean CLI directory."""
+    """Scaffold a Lean CLI directory."""
     current_dir = Path.cwd()
     data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
     lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
