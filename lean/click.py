@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -83,7 +84,6 @@ class LeanCommand(click.Command):
 
         # Add --verbose option
         params.insert(len(params) - 1, click.Option(["--verbose"],
-                                                    type=bool,
                                                     help="Enable debug logging",
                                                     is_flag=True,
                                                     default=False,
@@ -131,3 +131,18 @@ class PathParameter(click.ParamType):
             self.fail(f"{self._path_type} '{value}' is a directory.", param, ctx)
 
         return path
+
+
+class DateParameter(click.ParamType):
+    """A click parameter which returns datetime.datetime objects and requires yyyyMMdd input."""
+
+    name = "date"
+
+    def get_metavar(self, param: click.Parameter) -> str:
+        return "[yyyyMMdd]"
+
+    def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> datetime:
+        try:
+            return datetime.strptime(value, "%Y%m%d")
+        except ValueError:
+            self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)

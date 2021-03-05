@@ -237,3 +237,37 @@ class QCOrganization(BaseModel):
     organizationId: str
     creditBalance: float
     card: QCCard
+
+
+class QCSecurityType(str, Enum):
+    Equity = "Equity"
+    Forex = "Forex"
+    CFD = "Cfd"
+    Future = "Future"
+    Crypto = "Crypto"
+    Option = "Option"
+    FutureOption = "FutureOption"
+
+
+class QCResolution(str, Enum):
+    Tick = "Tick"
+    Second = "Second"
+    Minute = "Minute"
+    Hour = "Hour"
+    Daily = "Daily"
+
+    @classmethod
+    def by_name(cls, name: str) -> 'QCResolution':
+        """Returns the enum member with the same name as the given one, case insensitively.
+
+        :param name: the name of the enum member (case insensitive)
+        :return: the matching enum member
+        """
+        for k, v in cls.__members__.items():
+            if k.lower() == name.lower():
+                return v
+        raise ValueError(f"QCResolution has no member named '{name}'")
+
+
+class QCLink(BaseModel):
+    link: str

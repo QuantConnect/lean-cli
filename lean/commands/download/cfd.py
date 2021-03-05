@@ -1,0 +1,75 @@
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# Lean CLI v1.0. Copyright 2021 QuantConnect Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from datetime import datetime
+from typing import Optional
+
+import click
+
+from lean.click import DateParameter, LeanCommand
+from lean.container import container
+from lean.models.api import QCResolution, QCSecurityType
+
+
+@click.command(cls=LeanCommand, requires_cli_directory=True)
+@click.option("--ticker", type=str, required=True, help="The ticker of the data")
+@click.option("--resolution",
+              type=click.Choice(["tick", "second", "minute", "hour", "daily"], case_sensitive=False),
+              required=True,
+              help="The resolution of the data")
+@click.option("--start",
+              type=DateParameter(),
+              help="The start date of the data (ignored for daily and hourly data)")
+@click.option("--end",
+              type=DateParameter(),
+              help="The end date of the data (ignored for daily and hourly data)")
+@click.option("--overwrite",
+              is_flag=True,
+              default=False,
+              help="Whether existing data should be overwritten (defaults to False)")
+def cfd(ticker: str, resolution: str, start: Optional[datetime], end: Optional[datetime], overwrite: bool) -> None:
+    """Download free CFD data from QuantConnect's Data Library.
+
+    \b
+    This command can only download data that you have previously added to your QuantConnect account.
+    See the following url for instructions on how to do so:
+    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+
+    \b
+    See the following url for the data that can be downloaded with this command:
+    https://www.quantconnect.com/data/tree/cfd/oanda
+
+    \b
+    Example of downloading https://www.quantconnect.com/data/file/cfd/oanda/daily/au200aud.zip/au200aud.csv:
+    $ lean download cfd --ticker au200aud --resolution daily
+    """
+    ticker = ticker.lower()
+
+    if resolution == "hour" or resolution == "daily":
+        start = None
+        end = None
+        path_template = f"cfd/oanda/{resolution}/{ticker}.zip"
+    else:
+        if start is None or end is None:
+            raise RuntimeError(f"Both --start and --end must be given for {resolution} resolution")
+        path_template = f"cfd/oanda/{resolution}/{ticker}/$DAY$_quote.zip"
+
+    data_downloader = container.data_downloader()
+    data_downloader.download_data(security_type=QCSecurityType.CFD,
+                                  ticker=ticker,
+                                  market="oanda",
+                                  resolution=QCResolution.by_name(resolution),
+                                  start=start,
+                                  end=end,
+                                  path_template=path_template,
+                                  overwrite=overwrite)

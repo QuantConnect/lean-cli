@@ -21,6 +21,7 @@ import requests
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
+from lean.components.api.data_client import DataClient
 from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
@@ -48,6 +49,7 @@ class APIClient:
         self.accounts = AccountClient(self)
         self.backtests = BacktestClient(self)
         self.compiles = CompileClient(self)
+        self.data = DataClient(self)
         self.files = FileClient(self)
         self.live = LiveClient(self)
         self.nodes = NodeClient(self)

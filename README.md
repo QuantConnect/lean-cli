@@ -71,6 +71,9 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean config list`](#lean-config-list)
 - [`lean config set`](#lean-config-set)
 - [`lean create-project`](#lean-create-project)
+- [`lean download cfd`](#lean-download-cfd)
+- [`lean download forex`](#lean-download-forex)
+- [`lean generate`](#lean-generate)
 - [`lean init`](#lean-init)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
@@ -246,6 +249,124 @@ Options:
 ```
 
 _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
+
+### `lean download cfd`
+
+Download free CFD data from QuantConnect's Data Library.
+
+```
+Usage: lean download cfd [OPTIONS]
+
+  Download free CFD data from QuantConnect's Data Library.
+
+  This command can only download data that you have previously added to your QuantConnect account.
+  See the following url for instructions on how to do so:
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+
+  See the following url for the data that can be downloaded with this command:
+  https://www.quantconnect.com/data/tree/cfd/oanda
+
+  Example of downloading https://www.quantconnect.com/data/file/cfd/oanda/daily/au200aud.zip/au200aud.csv:
+  $ lean download cfd --ticker au200aud --resolution daily
+
+Options:
+  --ticker TEXT                   The ticker of the data  [required]
+  --resolution [tick|second|minute|hour|daily]
+                                  The resolution of the data  [required]
+  --start [yyyyMMdd]              The start date of the data (ignored for daily and hourly data)
+  --end [yyyyMMdd]                The end date of the data (ignored for daily and hourly data)
+  --overwrite                     Whether existing data should be overwritten (defaults to False)
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/download/cfd.py](lean/commands/download/cfd.py)_
+
+### `lean download forex`
+
+Download free Forex data from QuantConnect's Data Library.
+
+```
+Usage: lean download forex [OPTIONS]
+
+  Download free Forex data from QuantConnect's Data Library.
+
+  This command can only download data that you have previously added to your QuantConnect account.
+  See the following url for instructions on how to do so:
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+
+  See the following url for the data that can be downloaded with this command:
+  https://www.quantconnect.com/data/tree/forex
+
+  Example of downloading 2019 data of https://www.quantconnect.com/data/tree/forex/fxcm/minute/eurusd:
+  $ lean download forex --ticker eurusd --market fxcm --resolution minute --start 20190101 --end 20191231
+
+Options:
+  --ticker TEXT                   The ticker of the data  [required]
+  --market [fxcm|oanda]           The market of the data  [required]
+  --resolution [tick|second|minute|hour|daily]
+                                  The resolution of the data  [required]
+  --start [yyyyMMdd]              The start date of the data (ignored for daily and hourly data)
+  --end [yyyyMMdd]                The end date of the data (ignored for daily and hourly data)
+  --overwrite                     Whether existing data should be overwritten (defaults to False)
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/download/forex.py](lean/commands/download/forex.py)_
+
+### `lean generate`
+
+Generate random market data.
+
+```
+Usage: lean generate [OPTIONS]
+
+  Generate random market data.
+
+  This uses the random data generator in LEAN to generate realistic market data using a Brownian motion model.
+  This generator supports the following security types, tick types and resolutions:
+  | Security type | Supported tick types | Supported resolutions                |
+  | ------------- | -------------------- | ------------------------------------ |
+  | Equity        | Trade                | Tick, Second, Minute, Hour and Daily |
+  | Forex         | Quote                | Tick, Second, Minute, Hour and Daily |
+  | CFD           | Quote                | Tick, Second, Minute, Hour and Daily |
+  | Future        | Trade and Quote      | Tick, Second, Minute, Hour and Daily |
+  | Crypto        | Trade and Quote      | Tick, Second, Minute, Hour and Daily |
+  | Option        | Trade and Quote      | Minute                               |
+
+  The following data densities are available:
+  - Dense: at least one data point per resolution step.
+  - Sparse: at least one data point per 5 resolution steps.
+  - VerySparse: at least one data point per 50 resolution steps.
+
+  Example which generates minute data for 100 equity symbols since 2015-01-01:
+  $ lean generate --start=20150101 --symbol-count=100
+
+  Example which generates daily data for 100 crypto symbols since 2015-01-01:
+  $ lean generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
+
+Options:
+  --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
+  --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
+  --symbol-count INTEGER RANGE    The amount of symbols to generate data for  [required]
+  --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
+                                  The security type to generate data for (defaults to Equity)
+  --resolution [Tick|Second|Minute|Hour|Daily]
+                                  The resolution of the generated data (defaults to Minute)
+  --data-density [Dense|Sparse|VerySparse]
+                                  The density of the generated data (defaults to Dense)
+  --include-coarse                Whether coarse universe data should be generated for Equity data (defaults to True)
+  --update                        Pull the selected LEAN engine version before running the generator
+  --version TEXT                  The LEAN engine version to use (defaults to the latest installed version)
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/generate.py](lean/commands/generate.py)_
 
 ### `lean init`
 

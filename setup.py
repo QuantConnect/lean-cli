@@ -26,6 +26,7 @@ install_requires = [
     "rich~=9.10.0",
     "dependency-injector~=4.20.1",
     "pydantic~=1.7.3",
+    "python-dateutil~=2.8.1",
     "quantconnect-stubs"
 ]
 
