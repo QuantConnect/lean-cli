@@ -26,6 +26,7 @@ The following features are currently planned to be implemented (in order of prio
 - [ ] **First beta release**
 - [x] Local data downloading
 - [x] Local optimization
+- [ ] Local backtest report generation
 - [ ] Local backtest visualization
 - [ ] Local live trading
 - [ ] Cloud optimization
