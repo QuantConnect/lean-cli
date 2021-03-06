@@ -44,8 +44,7 @@ from lean.models.api import QCResolution, QCSecurityType
 def forex(ticker: str,
           market: str,
           resolution: str,
-          start:
-          Optional[datetime],
+          start: Optional[datetime],
           end: Optional[datetime],
           overwrite: bool) -> None:
     """Download free Forex data from QuantConnect's Data Library.
