@@ -273,9 +273,9 @@ Options:
   --ticker TEXT                   The ticker of the data  [required]
   --resolution [tick|second|minute|hour|daily]
                                   The resolution of the data  [required]
-  --start [yyyyMMdd]              The start date of the data (ignored for daily and hourly data)
-  --end [yyyyMMdd]                The end date of the data (ignored for daily and hourly data)
-  --overwrite                     Whether existing data should be overwritten (defaults to False)
+  --start [yyyyMMdd]              The inclusive start date of the data (ignored for daily and hourly data)
+  --end [yyyyMMdd]                The inclusive end date of the data (ignored for daily and hourly data)
+  --overwrite                     Overwrite existing local data
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -307,9 +307,9 @@ Options:
   --market [fxcm|oanda]           The market of the data  [required]
   --resolution [tick|second|minute|hour|daily]
                                   The resolution of the data  [required]
-  --start [yyyyMMdd]              The start date of the data (ignored for daily and hourly data)
-  --end [yyyyMMdd]                The end date of the data (ignored for daily and hourly data)
-  --overwrite                     Whether existing data should be overwritten (defaults to False)
+  --start [yyyyMMdd]              The inclusive start date of the data (ignored for daily and hourly data)
+  --end [yyyyMMdd]                The inclusive end date of the data (ignored for daily and hourly data)
+  --overwrite                     Overwrite existing local data
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.

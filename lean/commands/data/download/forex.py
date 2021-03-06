@@ -33,14 +33,11 @@ from lean.models.api import QCResolution, QCSecurityType
               help="The resolution of the data")
 @click.option("--start",
               type=DateParameter(),
-              help="The start date of the data (ignored for daily and hourly data)")
+              help="The inclusive start date of the data (ignored for daily and hourly data)")
 @click.option("--end",
               type=DateParameter(),
-              help="The end date of the data (ignored for daily and hourly data)")
-@click.option("--overwrite",
-              is_flag=True,
-              default=False,
-              help="Whether existing data should be overwritten (defaults to False)")
+              help="The inclusive end date of the data (ignored for daily and hourly data)")
+@click.option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 def forex(ticker: str,
           market: str,
           resolution: str,
