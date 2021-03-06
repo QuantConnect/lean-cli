@@ -13,17 +13,17 @@
 
 import click
 
-from lean.commands.download.forex import forex
-from lean.commands.download.cfd import cfd
+from lean.commands.data.download import download
+from lean.commands.data.generate import generate
 
 
 @click.group()
-def download() -> None:
-    """Download data from QuantConnect's Data Library."""
+def data() -> None:
+    """Download or generate data for local use."""
     # This method is intentionally empty
-    # It is used as the command group for all `lean download <command>` commands
+    # It is used as the command group for all `lean data <command>` commands
     pass
 
 
-download.add_command(cfd)
-download.add_command(forex)
+data.add_command(download)
+data.add_command(generate)

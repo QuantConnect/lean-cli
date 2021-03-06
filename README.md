@@ -24,7 +24,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] Cloud synchronization
 - [x] Cloud backtesting
 - [ ] **First beta release**
-- [ ] Local data downloading
+- [x] Local data downloading
 - [x] Local optimization
 - [ ] Local backtest visualization
 - [ ] Local live trading
@@ -71,9 +71,9 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean config list`](#lean-config-list)
 - [`lean config set`](#lean-config-set)
 - [`lean create-project`](#lean-create-project)
-- [`lean download cfd`](#lean-download-cfd)
-- [`lean download forex`](#lean-download-forex)
-- [`lean generate`](#lean-generate)
+- [`lean data download cfd`](#lean-data-download-cfd)
+- [`lean data download forex`](#lean-data-download-forex)
+- [`lean data generate`](#lean-data-generate)
 - [`lean init`](#lean-init)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
@@ -250,12 +250,12 @@ Options:
 
 _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
-### `lean download cfd`
+### `lean data download cfd`
 
 Download free CFD data from QuantConnect's Data Library.
 
 ```
-Usage: lean download cfd [OPTIONS]
+Usage: lean data download cfd [OPTIONS]
 
   Download free CFD data from QuantConnect's Data Library.
 
@@ -281,14 +281,14 @@ Options:
   --help                          Show this message and exit.
 ```
 
-_See code: [lean/commands/download/cfd.py](lean/commands/download/cfd.py)_
+_See code: [lean/commands/data/download/cfd.py](lean/commands/data/download/cfd.py)_
 
-### `lean download forex`
+### `lean data download forex`
 
 Download free Forex data from QuantConnect's Data Library.
 
 ```
-Usage: lean download forex [OPTIONS]
+Usage: lean data download forex [OPTIONS]
 
   Download free Forex data from QuantConnect's Data Library.
 
@@ -315,20 +315,20 @@ Options:
   --help                          Show this message and exit.
 ```
 
-_See code: [lean/commands/download/forex.py](lean/commands/download/forex.py)_
+_See code: [lean/commands/data/download/forex.py](lean/commands/data/download/forex.py)_
 
-### `lean generate`
+### `lean data generate`
 
 Generate random market data.
 
 ```
-Usage: lean generate [OPTIONS]
+Usage: lean data generate [OPTIONS]
 
   Generate random market data.
 
   This uses the random data generator in LEAN to generate realistic market data using a Brownian motion model.
   This generator supports the following security types, tick types and resolutions:
-  | Security type | Supported tick types | Supported resolutions                |
+  | Security type | Generated tick types | Supported resolutions                |
   | ------------- | -------------------- | ------------------------------------ |
   | Equity        | Trade                | Tick, Second, Minute, Hour and Daily |
   | Forex         | Quote                | Tick, Second, Minute, Hour and Daily |
@@ -358,7 +358,7 @@ Options:
                                   The resolution of the generated data (defaults to Minute)
   --data-density [Dense|Sparse|VerySparse]
                                   The density of the generated data (defaults to Dense)
-  --include-coarse                Whether coarse universe data should be generated for Equity data (defaults to True)
+  --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
   --update                        Pull the selected LEAN engine version before running the generator
   --version TEXT                  The LEAN engine version to use (defaults to the latest installed version)
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -366,7 +366,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-_See code: [lean/commands/generate.py](lean/commands/generate.py)_
+_See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
 
 ### `lean init`
 

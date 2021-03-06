@@ -46,7 +46,7 @@ from lean.container import container
               default="Dense",
               help="The density of the generated data (defaults to Dense)")
 @click.option("--include-coarse",
-              is_flag=True,
+              type=bool,
               default=True,
               help="Whether coarse universe data should be generated for Equity data (defaults to True)")
 @click.option("--update",
@@ -71,7 +71,7 @@ def generate(start: datetime,
     \b
     This uses the random data generator in LEAN to generate realistic market data using a Brownian motion model.
     This generator supports the following security types, tick types and resolutions:
-    | Security type | Supported tick types | Supported resolutions                |
+    | Security type | Generated tick types | Supported resolutions                |
     | ------------- | -------------------- | ------------------------------------ |
     | Equity        | Trade                | Tick, Second, Minute, Hour and Daily |
     | Forex         | Quote                | Tick, Second, Minute, Hour and Daily |
@@ -126,6 +126,9 @@ def generate(start: datetime,
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
-
     if not success:
         raise RuntimeError("Something went wrong while running the generator")
+
+    if version == "latest" and not update:
+        update_manager = container.update_manager()
+        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)

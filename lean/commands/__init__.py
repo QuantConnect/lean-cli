@@ -18,8 +18,7 @@ from lean.commands.backtest import backtest
 from lean.commands.cloud import cloud
 from lean.commands.config import config
 from lean.commands.create_project import create_project
-from lean.commands.download import download
-from lean.commands.generate import generate
+from lean.commands.data import data
 from lean.commands.init import init
 from lean.commands.login import login
 from lean.commands.logout import logout
@@ -38,7 +37,7 @@ def lean() -> None:
 
 lean.add_command(config)
 lean.add_command(cloud)
-lean.add_command(download)
+lean.add_command(data)
 
 lean.add_command(login)
 lean.add_command(logout)
@@ -47,4 +46,3 @@ lean.add_command(create_project)
 lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)
-lean.add_command(generate)
