@@ -484,4 +484,4 @@ The automated tests can be ran by running `pytest`. The filesystem and HTTP requ
 
 To update the commands reference part of the readme run `python scripts/readme.py` from the root of the project.
 
-Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `main` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".
+Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `master` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".
