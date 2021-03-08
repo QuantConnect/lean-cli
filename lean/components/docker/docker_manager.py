@@ -40,7 +40,7 @@ class DockerManager:
         :param image: the name of the image to pull
         :param tag: the image's tag to pull
         """
-        self._logger.info(f"Pulling {image}:{tag}, this may take a while...")
+        self._logger.info(f"Pulling {image}:{tag}...")
 
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
