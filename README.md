@@ -6,8 +6,6 @@
 [![PyPI Version](https://img.shields.io/pypi/v/lean)](https://pypi.org/project/lean/)
 [![Project Status](https://img.shields.io/pypi/status/lean)](https://pypi.org/project/lean/)
 
-**This CLI is still in development. Bugs may still occur and breaking changes may still happen before the first beta release on March 8th. Use with caution.**
-
 The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
 Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
