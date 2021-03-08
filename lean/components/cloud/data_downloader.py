@@ -179,5 +179,5 @@ class DataDownloader:
         for holiday in entry.holidays:
             rules.exdate(holiday)
 
-        # Return all the dates of all tradable weekdays minus the holidays
+        # Return the dates of all tradable weekdays minus the holidays
         return rules.between(start, end, inc=True)
