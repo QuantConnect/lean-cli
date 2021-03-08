@@ -12,6 +12,27 @@ The Lean CLI is a cross-platform CLI aimed at making it easier to develop with t
 
 Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
 
+## Roadmap
+
+The following features are currently planned to be implemented (in order of priority):
+- [x] Project scaffolding
+- [x] Local autocompletion
+- [x] CLI configuration
+- [x] Local backtesting
+- [x] Local debugging
+- [x] Local research environment
+- [x] Cloud synchronization
+- [x] Cloud backtesting
+- [ ] **First beta release**
+- [x] Local data downloading
+- [x] Local optimization
+- [ ] Local backtest report creation
+- [ ] Local backtest visualization
+- [ ] Local live trading
+- [ ] Cloud optimization
+- [ ] Cloud live trading
+- [ ] Local library support
+
 ## Installation
 
 The CLI can be installed and updated by running `pip install --upgrade lean`.
@@ -37,27 +58,6 @@ A locally-focused workflow (local development, local execution) with the CLI may
 3. Work on your strategy in `./Project Name`.
 4. Run `lean research "Project Name"` to start a Jupyter Lab session to perform research in.
 5. Run `lean backtest "Project Name"` to run a backtest whenever there's something to test. This runs your strategy in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
-
-## Roadmap
-
-The following features are currently planned to be implemented (in order of priority):
-- [x] Project scaffolding
-- [x] Local autocompletion
-- [x] CLI configuration
-- [x] Local backtesting
-- [x] Local debugging
-- [x] Local research environment
-- [x] Cloud synchronization
-- [x] Cloud backtesting
-- [ ] **First beta release**
-- [x] Local data downloading
-- [x] Local optimization
-- [ ] Local backtest report creation
-- [ ] Local backtest visualization
-- [ ] Local live trading
-- [ ] Cloud optimization
-- [ ] Cloud live trading
-- [ ] Local library support
 
 ## Commands
 
