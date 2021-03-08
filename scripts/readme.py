@@ -20,7 +20,7 @@ from typing import List
 
 from click import Command, Group
 from click.testing import CliRunner
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from lean.commands import lean
 

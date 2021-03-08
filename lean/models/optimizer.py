@@ -13,8 +13,7 @@
 
 from enum import Enum
 
-from pydantic.fields import Field
-from pydantic.main import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OptimizationExtremum(str, Enum):

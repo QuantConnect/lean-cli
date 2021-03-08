@@ -15,7 +15,7 @@ import itertools
 from typing import Any, List
 
 import click
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from lean.components.util.logger import Logger
 from lean.models.api import QCParameter

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -178,7 +177,7 @@ class DataDownloader:
 
         # There is no data for holidays
         for holiday in entry.holidays:
-            rules.exdate(datetime.strptime(holiday, "%m/%d/%Y"))
+            rules.exdate(holiday)
 
         # Return all the dates of all tradable weekdays minus the holidays
         return rules.between(start, end, inc=True)

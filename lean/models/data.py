@@ -12,9 +12,9 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel, validator
 
 from lean.models.api import QCResolution, QCSecurityType
 
@@ -44,5 +44,12 @@ class MarketHoursDatabaseEntry(BaseModel):
     friday: List[MarketHoursSegment] = []
     saturday: List[MarketHoursSegment] = []
     sunday: List[MarketHoursSegment] = []
-    holidays: List[str] = []
+    holidays: List[datetime] = []
     earlyCloses: Dict[str, str] = {}
+    lateOpens: Dict[str, str] = {}
+
+    @validator("holidays", pre=True)
+    def parse_holidays(cls, value: Any) -> Any:
+        if isinstance(value, list):
+            return [datetime.strptime(x, "%m/%d/%Y") for x in value]
+        return value
