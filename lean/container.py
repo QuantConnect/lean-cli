@@ -28,6 +28,7 @@ from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.update_manager import UpdateManager
@@ -54,6 +55,8 @@ class Container(DeclarativeContainer):
 
     project_manager = Singleton(ProjectManager)
 
+    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager=lean_config_manager)
+
     api_client = Factory(APIClient,
                          logger=logger,
                          user_id=cli_config_manager.provided.user_id.get_value()(),
@@ -72,7 +75,8 @@ class Container(DeclarativeContainer):
     data_downloader = Singleton(DataDownloader,
                                 logger=logger,
                                 api_client=api_client,
-                                lean_config_manager=lean_config_manager)
+                                lean_config_manager=lean_config_manager,
+                                market_hours_database=market_hours_database)
 
     docker_manager = Singleton(DockerManager, logger=logger)
 

@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 
 from pydantic.main import BaseModel
 
@@ -26,3 +26,23 @@ class DataFile(BaseModel):
     market: str
     resolution: QCResolution
     date: Optional[datetime]
+
+
+class MarketHoursSegment(BaseModel):
+    start: str
+    end: str
+    state: str
+
+
+class MarketHoursDatabaseEntry(BaseModel):
+    dataTimeZone: str
+    exchangeTimeZone: str
+    monday: List[MarketHoursSegment] = []
+    tuesday: List[MarketHoursSegment] = []
+    wednesday: List[MarketHoursSegment] = []
+    thursday: List[MarketHoursSegment] = []
+    friday: List[MarketHoursSegment] = []
+    saturday: List[MarketHoursSegment] = []
+    sunday: List[MarketHoursSegment] = []
+    holidays: List[str] = []
+    earlyCloses: Dict[str, str] = {}

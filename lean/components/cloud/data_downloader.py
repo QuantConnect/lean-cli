@@ -22,6 +22,7 @@ from dateutil.rrule import DAILY, rrule, rruleset, weekday
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.models.api import QCResolution, QCSecurityType
 from lean.models.data import DataFile
 from lean.models.errors import RequestFailedError
@@ -30,16 +31,22 @@ from lean.models.errors import RequestFailedError
 class DataDownloader:
     """The DataDownloader is responsible for downloading data from the QuantConnect Data Library."""
 
-    def __init__(self, logger: Logger, api_client: APIClient, lean_config_manager: LeanConfigManager):
+    def __init__(self,
+                 logger: Logger,
+                 api_client: APIClient,
+                 lean_config_manager: LeanConfigManager,
+                 market_hours_database: MarketHoursDatabase):
         """Creates a new CloudBacktestRunner instance.
 
         :param logger: the logger to use to log messages with
         :param api_client: the APIClient instance to use when communicating with the QuantConnect API
         :param lean_config_manager: the LeanConfigManager instance to retrieve the data directory from
+        :param market_hours_database: the MarketHoursDatabase instance to retrieve tradable days from
         """
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
+        self._market_hours_database = market_hours_database
 
     def download_data(self,
                       security_type: QCSecurityType,
@@ -66,7 +73,7 @@ class DataDownloader:
         if start is None or end is None:
             dates = [None]
         else:
-            dates = self._get_dates_with_data(security_type, market, start, end)
+            dates = self._get_dates_with_data(security_type, market, ticker, start, end)
 
         files = []
         for date in dates:
@@ -143,6 +150,7 @@ class DataDownloader:
     def _get_dates_with_data(self,
                              security_type: QCSecurityType,
                              market: str,
+                             symbol: str,
                              start: datetime,
                              end: datetime) -> List[datetime]:
         """Returns the dates between two dates for which the QuantConnect Data Library has data.
@@ -152,16 +160,11 @@ class DataDownloader:
 
         :param security_type: the security type of the data
         :param market: the market of the data
+        :param symbol: the symbol of the data
         :param start: the inclusive start date
         :param end: the inclusive end date
         """
-        data_dir = self._lean_config_manager.get_data_directory()
-        market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
-        market_hours_database = json.loads(market_hours_database_path.read_text())
-
-        key_prefix = f"{security_type.value}-{market}-"
-        entry_key = next(k for k in market_hours_database["entries"].keys() if k.startswith(key_prefix))
-        entry = market_hours_database["entries"][entry_key]
+        entry = self._market_hours_database.get_entry(security_type, market, symbol)
 
         # Create the set of rules containing all date rules
         rules = rruleset()
@@ -169,12 +172,12 @@ class DataDownloader:
         # There is data on all weekdays on which the security trades
         weekdays_with_data = []
         for index, day in enumerate(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]):
-            if len(entry[day]) > 0:
+            if len(getattr(entry, day)) > 0:
                 weekdays_with_data.append(weekday(index))
         rules.rrule(rrule(DAILY, dtstart=start, until=end, byweekday=weekdays_with_data))
 
         # There is no data for holidays
-        for holiday in entry["holidays"]:
+        for holiday in entry.holidays:
             rules.exdate(datetime.strptime(holiday, "%m/%d/%Y"))
 
         # Return all the dates of all tradable weekdays minus the holidays
