@@ -19,6 +19,7 @@ import click
 # The default templates are coming from the "Create New Algorithm" feature in the Algorithm Lab
 from lean.click import LeanCommand
 from lean.container import container
+from lean.models.api import QCLanguage
 
 DEFAULT_PYTHON_MAIN = '''
 from QuantConnect import Resolution
@@ -225,7 +226,8 @@ def create_project(name: str, language: str) -> None:
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists")
     else:
-        full_path.mkdir(parents=True)
+        project_manager = container.project_manager()
+        project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
     # Convert the project name into a valid class name by removing all non-alphanumeric characters
     class_name = re.sub(f"[^a-zA-Z0-9]", "", full_path.name)
@@ -239,11 +241,6 @@ def create_project(name: str, language: str) -> None:
 
     with (full_path / "research.ipynb").open("w+") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
-
-    project_config_manager = container.project_config_manager()
-    project_config = project_config_manager.get_project_config(full_path)
-    project_config.set("algorithm-language", "Python" if language == "python" else "CSharp")
-    project_config.set("parameters", {})
 
     logger = container.logger()
     logger.info(f"Successfully created project '{name}'")

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -22,7 +23,7 @@ from tests.test_helpers import create_fake_lean_cli_directory
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager()
+    manager = ProjectManager(mock.Mock(), mock.Mock())
     result = manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -31,7 +32,7 @@ def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
 def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager()
+    manager = ProjectManager(mock.Mock(), mock.Mock())
     result = manager.find_algorithm_file(Path.cwd() / "Python Project")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -40,7 +41,7 @@ def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() 
 def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager()
+    manager = ProjectManager(mock.Mock(), mock.Mock())
     result = manager.find_algorithm_file(Path.cwd() / "CSharp Project")
 
     assert result == Path.cwd() / "CSharp Project" / "Main.cs"
@@ -51,7 +52,7 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
 
     (Path.cwd() / "Empty Project").mkdir()
 
-    manager = ProjectManager()
+    manager = ProjectManager(mock.Mock(), mock.Mock())
 
     with pytest.raises(Exception):
         manager.find_algorithm_file(Path.cwd() / "Empty Project")

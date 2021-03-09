@@ -134,20 +134,3 @@ def validate_xml(text: str) -> bool:
         return True
     except ElementTree.ParseError:
         return False
-
-
-@pytest.mark.parametrize("file,validator", [("LeanCLI.csproj", validate_xml),
-                                            (".idea/workspace.xml", validate_xml),
-                                            (".idea/.idea.LeanCLI.dir/.idea/workspace.xml", validate_xml),
-                                            (".vscode/launch.json", validate_json),
-                                            (".vscode/settings.json", validate_json)])
-def test_init_creates_valid_files_supporting_autocompletion_and_debugging(file: str,
-                                                                          validator: Callable[[str], bool]) -> None:
-    result = CliRunner().invoke(lean, ["init"], input="csharp\n")
-
-    assert result.exit_code == 0
-
-    assert (Path.cwd() / file).exists()
-
-    with open(file) as f:
-        assert validator(f.read())

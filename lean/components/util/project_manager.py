@@ -11,11 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import platform
+import sys
 from pathlib import Path
+from xml.etree import ElementTree
+
+from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.models.api import QCLanguage
 
 
 class ProjectManager:
-    """The ProjectManager class provides utilities for finding specific files in projects."""
+    """The ProjectManager class provides utilities for handling a single project."""
+
+    def __init__(self, lean_config_manager: LeanConfigManager, project_config_manager: ProjectConfigManager) -> None:
+        """Creates a new ProjectManager instance.
+
+        :param lean_config_manager: the LeanConfigManager to use when creating new projects
+        :param project_config_manager: the ProjectConfigManager to use when creating new projects
+        """
+        self._lean_config_manager = lean_config_manager
+        self._project_config_manager = project_config_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -34,3 +51,319 @@ class ProjectManager:
                 return target_file
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
+
+    def create_new_project(self, project_dir: Path, language: QCLanguage) -> None:
+        """Creates a new project directory and fills it with some useful files.
+
+        :param project_dir: the directory of the new project
+        :param language: the language of the new project
+        """
+        project_dir.mkdir(parents=True, exist_ok=True)
+
+        project_config = self._project_config_manager.get_project_config(project_dir)
+        project_config.set("algorithm-language", language.name)
+        project_config.set("parameters", {})
+
+        if language == QCLanguage.Python:
+            self._generate_vscode_python_config(project_dir)
+            self._generate_pycharm_config(project_dir)
+        else:
+            self._generate_vscode_csharp_config(project_dir)
+            csproj_file = self._generate_csproj(project_dir)
+            self._generate_rider_config(project_dir, csproj_file)
+
+    def _generate_vscode_python_config(self, project_dir: Path) -> None:
+        """Generates Python interpreter configuration and Python debugging configuration for VS Code.
+
+        :param project_dir: the directory of the new project
+        """
+        self._generate_file(project_dir / ".vscode" / "settings.json", json.dumps({
+            "python.pythonPath": sys.executable,
+            "python.languageServer": "Pylance"
+        }, indent=4))
+
+        self._generate_file(project_dir / ".vscode" / "launch.json", """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with Lean CLI",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/LeanCLI"
+                }
+            ]
+        }
+    ]
+}
+        """)
+
+    def _generate_pycharm_config(self, project_dir: Path) -> None:
+        """Generates Python interpreter configuration and Python debugging configuration for PyCharm.
+
+        :param project_dir: the directory of the new project
+        """
+        self._generate_pycharm_jdk_entry()
+
+        self._generate_file(project_dir / ".idea" / f"{project_dir.name}.iml", """
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="jdk" jdkName="Lean CLI" jdkType="Python SDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
+        """)
+
+        self._generate_file(project_dir / ".idea" / "misc.xml", """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectRootManager" version="2" project-jdk-name="Lean CLI" project-jdk-type="Python SDK" />
+</project>
+        """)
+
+        self._generate_file(project_dir / ".idea" / "modules.xml", f"""
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/{project_dir.name}.iml" filepath="$PROJECT_DIR$/.idea/{project_dir.name}.iml" />
+    </modules>
+  </component>
+</project>
+        """)
+
+        self._generate_file(project_dir / ".idea" / "workspace.xml", """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager" selected="Python Debug Server.Debug with Lean CLI">
+    <configuration name="Debug with Lean CLI" type="PyRemoteDebugConfigurationType" factoryName="Python Remote Debug">
+      <module name="LEAN" />
+      <option name="PORT" value="6000" />
+      <option name="HOST" value="localhost" />
+      <PathMappingSettings>
+        <option name="pathMappings">
+          <list>
+            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+          </list>
+        </option>
+      </PathMappingSettings>
+      <option name="REDIRECT_OUTPUT" value="true" />
+      <option name="SUSPEND_AFTER_CONNECT" value="true" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python Debug Server.Debug with Lean CLI" />
+    </list>
+  </component>
+</project>
+        """)
+
+    def _generate_pycharm_jdk_entry(self) -> None:
+        """Generates a "LeanCLI" Python JDK entry to PyCharm's internal JDK table.
+
+        When we generate PyCharm's .idea directory we want to tell PyCharm where the Python interpreter is located.
+        PyCharm stores this bit of configuration globally, so we find the global location and update it to our needs.
+
+        If PyCharm is not installed yet, we create the configuration anyways.
+        Once the user installs PyCharm, it will then automatically pick up the configuration we created in the past.
+        """
+        # Find JetBrains' global config directory
+        # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
+        if platform.system() == "Windows":
+            # Windows
+            jetbrains_config_dir = Path.home() / "AppData" / "Roaming" / "JetBrains"
+        elif platform.system() == "Darwin":
+            # macOS
+            jetbrains_config_dir = Path("~/Library/Application Support/JetBrains").expanduser()
+        else:
+            # Linux
+            jetbrains_config_dir = Path("~/.config/JetBrains").expanduser()
+
+        # Find PyCharm's global config directory
+        pycharm_config_dirs = sorted(p for p in jetbrains_config_dir.glob("PyCharm*"))
+        if len(pycharm_config_dirs) > 0:
+            pycharm_config_dir = pycharm_config_dirs[-1]
+        else:
+            pycharm_config_dir = jetbrains_config_dir / "PyCharm"
+
+        # Parse the file containing PyCharm's internal table of Python interpreters
+        jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
+        if jdk_table_file.exists():
+            root = ElementTree.fromstring(jdk_table_file.read_text())
+        else:
+            root = ElementTree.fromstring("""
+<application>
+  <component name="ProjectJdkTable">
+  </component>
+</application>
+            """)
+
+        # Don't do anything if the LeanCLI interpreter entry already exists
+        if root.find(".//jdk/name[@value='Lean CLI']") is not None:
+            return
+
+        # Add the new JDK entry to the XML tree
+        classpath_entries = [Path(p).as_posix() for p in sys.path if p != "" and not p.endswith(".zip")]
+        classpath_entries = [f'<root url="{p}" type="simple" />' for p in classpath_entries]
+        classpath_entries = "\n".join(classpath_entries)
+
+        component_element = root.find(".//component[@name='ProjectJdkTable']")
+        component_element.append(ElementTree.fromstring(f"""
+<jdk version="2">
+  <name value="Lean CLI" />
+  <type value="Python SDK" />
+  <version value="Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}" />
+  <homePath value="{Path(sys.executable).as_posix()}" />
+  <roots>
+    <classPath>
+      <root type="composite">
+        {classpath_entries}
+        <root url="file://$APPLICATION_HOME_DIR$/plugins/python/helpers/python-skeletons" type="simple" />
+        <root url="file://$APPLICATION_HOME_DIR$/plugins/python/helpers/typeshed/stdlib/3" type="simple" />
+        <root url="file://$APPLICATION_HOME_DIR$/plugins/python/helpers/typeshed/stdlib/2and3" type="simple" />
+        <root url="file://$APPLICATION_HOME_DIR$/plugins/python/helpers/typeshed/third_party/3" type="simple" />
+        <root url="file://$APPLICATION_HOME_DIR$/plugins/python/helpers/typeshed/third_party/2and3" type="simple" />
+      </root>
+    </classPath>
+    <sourcePath>
+      <root type="composite" />
+    </sourcePath>
+  </roots>
+</jdk>
+        """))
+
+        # Save the modified XML tree
+        self._generate_file(jdk_table_file, ElementTree.tostring(root, encoding="utf-8", method="xml").decode("utf-8"))
+
+    def _generate_vscode_csharp_config(self, project_dir: Path) -> None:
+        """Generates C# debugging configuration for VS Code.
+
+        :param project_dir: the directory of the new project
+        """
+        self._generate_file(project_dir / ".vscode" / "launch.json", """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with Lean CLI",
+            "request": "attach",
+            "type": "mono",
+            "address": "localhost",
+            "port": 55555
+        }
+    ]
+}
+        """)
+
+    def _generate_csproj(self, project_dir: Path) -> Path:
+        """Generates a .csproj file for the given project and returns the path to it.
+
+        :param project_dir: the path of the new project
+        :return: the path to the generated .csproj file
+        """
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        csproj_name = project_dir.relative_to(cli_root_dir).as_posix().replace('/', '.')
+        csproj_path = project_dir / f"{csproj_name}.csproj"
+
+        self._generate_file(csproj_path, """
+<!--
+This file exists to make C# autocompletion and debugging work.
+
+Custom libraries added in this file won't be used when compiling your code.
+When using the Lean CLI to run algorithms, this csproj file is overwritten
+to make your code compile against all the DLLs in the QuantConnect/Lean
+Docker container. This container contains the following libraries besides
+the System.* and QuantConnect.* libraries:
+https://www.quantconnect.com/docs/key-concepts/supported-libraries
+
+If you want to get autocompletion to work for any of the C# libraries listed
+on the page above, you can add a PackageReference for it.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net462</TargetFramework>
+        <LangVersion>6</LangVersion>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    </PropertyGroup>
+     <PropertyGroup>
+        <IsWindows>false</IsWindows>
+        <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+        <IsOSX>false</IsOSX>
+        <IsOSX Condition="'$(IsWindows)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+        <IsLinux>false</IsLinux>
+        <IsLinux Condition="'$(IsWindows)' != 'true' AND '$(IsOSX)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+    </PropertyGroup>
+    <Choose>
+        <When Condition="$(IsWindows)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/win/Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+        <When Condition="$(IsLinux)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/linux/Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+        <When Condition="$(IsOSX)">
+            <ItemGroup>
+                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
+                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/osx/Python.Runtime.dll</HintPath>
+                </Reference>
+            </ItemGroup>
+        </When>
+    </Choose>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.*"/>
+    </ItemGroup>
+</Project>
+        """)
+
+        return csproj_path
+
+    def _generate_rider_config(self, project_dir: Path, csproj_file: Path) -> None:
+        """Generates C# debugging configuration for Rider.
+
+        :param project_dir: the directory of the new project
+        :param csproj_file: the path to the .csproj file
+        """
+        self._generate_file(project_dir / ".idea" / f".idea.{csproj_file.stem}.dir" / ".idea" / "workspace.xml", """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55555" address="localhost">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
+  </component>
+</project>
+        """)
+
+    def _generate_file(self, file: Path, content: str) -> None:
+        """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.
+
+        :param file: the file to write to
+        :param content: the content to write to the file
+        """
+        file.parent.mkdir(parents=True, exist_ok=True)
+        with file.open("w+") as file:
+            file.write(content.strip() + "\n")

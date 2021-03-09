@@ -18,21 +18,28 @@ from typing import List
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 
 
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
 
-    def __init__(self, logger: Logger, api_client: APIClient, project_config_manager: ProjectConfigManager) -> None:
+    def __init__(self,
+                 logger: Logger,
+                 api_client: APIClient,
+                 project_manager: ProjectManager,
+                 project_config_manager: ProjectConfigManager) -> None:
         """Creates a new PullManager instance.
 
         :param logger: the logger to use when printing messages
         :param api_client: the APIClient instance to use when communicating with the cloud
+        :param project_manager: the ProjectManager instance to use when creating new projects
         :param project_config_manager: the ProjectConfigManager instance to use
         """
         self._logger = logger
         self._api_client = api_client
+        self._project_manager = project_manager
         self._project_config_manager = project_config_manager
 
     def pull_projects(self, projects_to_pull: List[QCProject]) -> None:
@@ -110,7 +117,7 @@ class PullManager:
         # Finalize pulling by updating the project config with the latest details
         project_config = self._project_config_manager.get_project_config(local_path)
         project_config.set("cloud-id", project.projectId)
-        project_config.set("algorithm-language", "Python" if project.language == QCLanguage.Python else "CSharp")
+        project_config.set("algorithm-language", project.language.name)
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
 
     def _pull_files(self, project: QCProject) -> None:
@@ -118,6 +125,11 @@ class PullManager:
 
         :param project: the cloud project of which the files need to be pulled
         """
+        local_project_path = Path.cwd() / project.name
+
+        if not local_project_path.exists():
+            self._project_manager.create_new_project(local_project_path, project.language)
+
         for cloud_file in self._api_client.files.get_all(project.projectId):
             if cloud_file.isLibrary:
                 continue
