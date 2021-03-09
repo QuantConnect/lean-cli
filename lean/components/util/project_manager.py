@@ -17,7 +17,6 @@ import sys
 from pathlib import Path
 from xml.etree import ElementTree
 
-from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.models.api import QCLanguage
 
@@ -25,13 +24,11 @@ from lean.models.api import QCLanguage
 class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
 
-    def __init__(self, lean_config_manager: LeanConfigManager, project_config_manager: ProjectConfigManager) -> None:
+    def __init__(self, project_config_manager: ProjectConfigManager) -> None:
         """Creates a new ProjectManager instance.
 
-        :param lean_config_manager: the LeanConfigManager to use when creating new projects
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
         """
-        self._lean_config_manager = lean_config_manager
         self._project_config_manager = project_config_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
@@ -69,8 +66,8 @@ class ProjectManager:
             self._generate_pycharm_config(project_dir)
         else:
             self._generate_vscode_csharp_config(project_dir)
-            csproj_file = self._generate_csproj(project_dir)
-            self._generate_rider_config(project_dir, csproj_file)
+            self._generate_csproj(project_dir)
+            self._generate_rider_config(project_dir)
 
     def _generate_vscode_python_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for VS Code.
@@ -264,17 +261,12 @@ class ProjectManager:
 }
         """)
 
-    def _generate_csproj(self, project_dir: Path) -> Path:
+    def _generate_csproj(self, project_dir: Path) -> None:
         """Generates a .csproj file for the given project and returns the path to it.
 
         :param project_dir: the path of the new project
-        :return: the path to the generated .csproj file
         """
-        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        csproj_name = project_dir.relative_to(cli_root_dir).as_posix().replace('/', '.')
-        csproj_path = project_dir / f"{csproj_name}.csproj"
-
-        self._generate_file(csproj_path, """
+        self._generate_file(project_dir / f"{project_dir.name}.csproj", """
 <!--
 This file exists to make C# autocompletion and debugging work.
 
@@ -334,15 +326,12 @@ on the page above, you can add a PackageReference for it.
 </Project>
         """)
 
-        return csproj_path
-
-    def _generate_rider_config(self, project_dir: Path, csproj_file: Path) -> None:
+    def _generate_rider_config(self, project_dir: Path) -> None:
         """Generates C# debugging configuration for Rider.
 
         :param project_dir: the directory of the new project
-        :param csproj_file: the path to the .csproj file
         """
-        self._generate_file(project_dir / ".idea" / f".idea.{csproj_file.stem}.dir" / ".idea" / "workspace.xml", """
+        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea" / "workspace.xml", """
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RunManager">

@@ -53,9 +53,7 @@ class Container(DeclarativeContainer):
                                     cli_config_manager=cli_config_manager,
                                     project_config_manager=project_config_manager)
 
-    project_manager = Singleton(ProjectManager,
-                                lean_config_manager=lean_config_manager,
-                                project_config_manager=project_config_manager)
+    project_manager = Singleton(ProjectManager, project_config_manager=project_config_manager)
 
     market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager=lean_config_manager)
 
