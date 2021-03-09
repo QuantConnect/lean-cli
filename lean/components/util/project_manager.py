@@ -107,7 +107,9 @@ class ProjectManager:
 
         :param project_dir: the directory of the new project
         """
-        self._generate_pycharm_jdk_entry()
+        # Generate Python JDK entry for PyCharm Professional and PyCharm Community
+        self._generate_pycharm_jdk_entry("PyCharm")
+        self._generate_pycharm_jdk_entry("PyCharmCE")
 
         self._generate_file(project_dir / ".idea" / f"{project_dir.name}.iml", """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -164,7 +166,7 @@ class ProjectManager:
 </project>
         """)
 
-    def _generate_pycharm_jdk_entry(self) -> None:
+    def _generate_pycharm_jdk_entry(self, editor_name: str) -> None:
         """Generates a "LeanCLI" Python JDK entry to PyCharm's internal JDK table.
 
         When we generate PyCharm's .idea directory we want to tell PyCharm where the Python interpreter is located.
@@ -172,6 +174,8 @@ class ProjectManager:
 
         If PyCharm is not installed yet, we create the configuration anyways.
         Once the user installs PyCharm, it will then automatically pick up the configuration we created in the past.
+
+        :param editor_name: the name of the JetBrains editor, like PyCharm or PyCharmCE
         """
         # Find JetBrains' global config directory
         # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
@@ -186,11 +190,11 @@ class ProjectManager:
             jetbrains_config_dir = Path("~/.config/JetBrains").expanduser()
 
         # Find PyCharm's global config directory
-        pycharm_config_dirs = sorted(p for p in jetbrains_config_dir.glob("PyCharm*"))
+        pycharm_config_dirs = sorted(p for p in jetbrains_config_dir.glob(f"{editor_name}*"))
         if len(pycharm_config_dirs) > 0:
             pycharm_config_dir = pycharm_config_dirs[-1]
         else:
-            pycharm_config_dir = jetbrains_config_dir / "PyCharm"
+            pycharm_config_dir = jetbrains_config_dir / editor_name
 
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
