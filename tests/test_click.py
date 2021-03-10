@@ -12,14 +12,17 @@
 # limitations under the License.
 
 import os
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from unittest import mock
 
 import click
+import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
-from lean.click import LeanCommand, PathParameter
+from lean.click import DateParameter, LeanCommand, PathParameter
 from lean.container import container
 
 
@@ -99,7 +102,7 @@ def test_lean_command_does_not_check_for_cli_updates_when_command_raises() -> No
 
 
 def test_path_parameter_fails_when_input_not_existent_and_exists_required() -> None:
-    @click.command(cls=LeanCommand)
+    @click.command()
     @click.argument("arg", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
     def command(arg: Path) -> None:
         pass
@@ -110,7 +113,7 @@ def test_path_parameter_fails_when_input_not_existent_and_exists_required() -> N
 
 
 def test_path_parameter_fails_when_input_is_file_and_file_not_okay() -> None:
-    @click.command(cls=LeanCommand)
+    @click.command()
     @click.argument("arg", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
     def command(arg: Path) -> None:
         pass
@@ -123,7 +126,7 @@ def test_path_parameter_fails_when_input_is_file_and_file_not_okay() -> None:
 
 
 def test_path_parameter_fails_when_input_is_directory_and_directory_not_okay() -> None:
-    @click.command(cls=LeanCommand)
+    @click.command()
     @click.argument("arg", type=PathParameter(exists=True, file_okay=True, dir_okay=False))
     def command(arg: Path) -> None:
         pass
@@ -131,5 +134,36 @@ def test_path_parameter_fails_when_input_is_directory_and_directory_not_okay() -
     (Path.cwd() / "Empty Directory").mkdir()
 
     result = CliRunner().invoke(command, ["Empty Directory"])
+
+    assert result.exit_code != 0
+
+
+def test_date_parameter_returns_datetime_object() -> None:
+    given_arg: Optional[datetime] = None
+
+    @click.command()
+    @click.argument("arg", type=DateParameter())
+    def command(arg: datetime) -> None:
+        nonlocal given_arg
+        given_arg = arg
+
+    result = CliRunner().invoke(command, ["20201231"])
+
+    assert result.exit_code == 0
+
+    assert given_arg is not None
+    assert given_arg.year == 2020
+    assert given_arg.month == 12
+    assert given_arg.day == 31
+
+
+@pytest.mark.parametrize("input", ["2020-31-12", "12-31-2020", "yyyymmdd"])
+def test_date_parameter_fails_when_input_not_formatted_as_yyyymmdd(input: str) -> None:
+    @click.command()
+    @click.argument("arg", type=DateParameter())
+    def command(arg: datetime) -> None:
+        pass
+
+    result = CliRunner().invoke(command, [input])
 
     assert result.exit_code != 0

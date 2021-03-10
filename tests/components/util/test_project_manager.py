@@ -11,20 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
+from typing import Callable
 from unittest import mock
+from xml.etree import ElementTree
 
 import pytest
 
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.project_manager import ProjectManager
+from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager(mock.Mock())
-    result = manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
+    project_manager = ProjectManager(ProjectConfigManager())
+    result = project_manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
 
@@ -32,8 +37,8 @@ def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
 def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager(mock.Mock())
-    result = manager.find_algorithm_file(Path.cwd() / "Python Project")
+    project_manager = ProjectManager(ProjectConfigManager())
+    result = project_manager.find_algorithm_file(Path.cwd() / "Python Project")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
 
@@ -41,8 +46,8 @@ def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() 
 def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    manager = ProjectManager(mock.Mock())
-    result = manager.find_algorithm_file(Path.cwd() / "CSharp Project")
+    project_manager = ProjectManager(ProjectConfigManager())
+    result = project_manager.find_algorithm_file(Path.cwd() / "CSharp Project")
 
     assert result == Path.cwd() / "CSharp Project" / "Main.cs"
 
@@ -52,7 +57,152 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
 
     (Path.cwd() / "Empty Project").mkdir()
 
-    manager = ProjectManager(mock.Mock())
+    project_manager = ProjectManager(ProjectConfigManager())
 
     with pytest.raises(Exception):
-        manager.find_algorithm_file(Path.cwd() / "Empty Project")
+        project_manager.find_algorithm_file(Path.cwd() / "Empty Project")
+
+
+def test_create_new_project_creates_project_directory() -> None:
+    project_path = Path.cwd() / "Python Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, QCLanguage.Python)
+
+    assert project_path.is_dir()
+
+
+def validate_json(text: str) -> bool:
+    try:
+        json.loads(text)
+        return True
+    except ValueError:
+        return False
+
+
+def validate_xml(text: str) -> bool:
+    try:
+        ElementTree.fromstring(text)
+        return True
+    except ElementTree.ParseError:
+        return False
+
+
+@pytest.mark.parametrize("file,validator", [(".vscode/launch.json", validate_json),
+                                            (".vscode/settings.json", validate_json),
+                                            (".idea/Python Project.iml", validate_xml),
+                                            (".idea/misc.xml", validate_xml),
+                                            (".idea/modules.xml", validate_xml),
+                                            (".idea/workspace.xml", validate_xml)])
+def test_create_new_project_creates_valid_python_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
+    project_path = Path.cwd() / "Python Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, QCLanguage.Python)
+
+    assert (project_path / file).is_file()
+
+    with open(project_path / file) as f:
+        assert validator(f.read())
+
+
+@pytest.mark.parametrize("file,validator", [("CSharp Project.csproj", validate_xml),
+                                            (".vscode/launch.json", validate_json),
+                                            (".idea/.idea.CSharp Project.dir/.idea/workspace.xml", validate_xml)])
+def test_create_new_project_creates_valid_csharp_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
+    project_path = Path.cwd() / "CSharp Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, QCLanguage.CSharp)
+
+    assert (project_path / file).is_file()
+
+    with open(project_path / file) as f:
+        assert validator(f.read())
+
+
+@mock.patch("platform.system")
+@pytest.mark.parametrize("editor,os,path", [("PyCharm", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharm", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharm", "Linux", "~/.config/JetBrains"),
+                                            ("PyCharmCE", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharmCE", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharmCE", "Linux", "~/.config/JetBrains")])
+def test_create_new_project_creates_pycharm_jdk_entry_when_not_set_yet(system: mock.Mock,
+                                                                       editor: str,
+                                                                       os: str,
+                                                                       path: str) -> None:
+    system.return_value = os
+
+    jdk_table_file = Path(path).expanduser() / f"{editor}2020.3" / "options" / "jdk.table.xml"
+    jdk_table_file.parent.mkdir(parents=True, exist_ok=True)
+    with jdk_table_file.open("w+") as file:
+        file.write("""
+<application>
+  <component name="ProjectJdkTable">
+  </component>
+</application>
+        """)
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
+
+    jdk_table = ElementTree.fromstring(jdk_table_file.read_text())
+    assert jdk_table.find(".//jdk/name[@value='Lean CLI']") is not None
+
+
+@mock.patch("platform.system")
+@pytest.mark.parametrize("editor,os,path", [("PyCharm", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharm", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharm", "Linux", "~/.config/JetBrains"),
+                                            ("PyCharmCE", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharmCE", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharmCE", "Linux", "~/.config/JetBrains")])
+def test_create_new_project_creates_pycharm_jdk_entry_when_pycharm_not_installed_yet(system: mock.Mock,
+                                                                                     editor: str,
+                                                                                     os: str,
+                                                                                     path: str) -> None:
+    system.return_value = os
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
+
+    jdk_table_file = Path(path).expanduser() / editor / "options" / "jdk.table.xml"
+    assert jdk_table_file.is_file()
+
+    jdk_table = ElementTree.fromstring(jdk_table_file.read_text())
+    assert jdk_table.find(".//jdk/name[@value='Lean CLI']") is not None
+
+
+@mock.patch("platform.system")
+@pytest.mark.parametrize("editor,os,path", [("PyCharm", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharm", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharm", "Linux", "~/.config/JetBrains"),
+                                            ("PyCharmCE", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharmCE", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharmCE", "Linux", "~/.config/JetBrains")])
+def test_create_new_project_does_not_update_pycharm_jdk_table_when_jdk_entry_already_set(system: mock.Mock,
+                                                                                         editor: str,
+                                                                                         os: str,
+                                                                                         path: str) -> None:
+    system.return_value = os
+
+    jdk_table = """
+<application>
+  <component name="ProjectJdkTable">
+    <jdk version="2">
+      <name value="Lean CLI" />
+    </jdk>
+  </component>
+</application>
+    """
+
+    jdk_table_file = Path(path).expanduser() / f"{editor}2020.3" / "options" / "jdk.table.xml"
+    jdk_table_file.parent.mkdir(parents=True, exist_ok=True)
+    with jdk_table_file.open("w+") as file:
+        file.write(jdk_table)
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
+
+    assert jdk_table_file.read_text() == jdk_table

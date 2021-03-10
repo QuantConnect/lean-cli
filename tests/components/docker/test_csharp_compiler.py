@@ -103,3 +103,18 @@ def test_compile_csharp_project_copies_generated_dll_to_project_bin() -> None:
     compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
 
     assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / "CSharp Project.dll").exists()
+
+def test_compile_csharp_project_disables_msbuild_telemetry() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+
+    compiler = create_csharp_compiler(docker_manager)
+
+    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert kwargs["environment"]["DOTNET_CLI_TELEMETRY_OPTOUT"] == "true"
