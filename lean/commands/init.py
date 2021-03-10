@@ -89,7 +89,6 @@ Successfully bootstrapped your Lean CLI directory!
 The following structure has been created:
 - {DEFAULT_LEAN_CONFIG_FILE_NAME} contains the configuration used when running the LEAN engine locally
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
-- The .idea and .vscode directories and the LeanCLI.csproj file contain data to make setting up local autocomplete and debugging easier
 
 The following documentation pages may be useful:
 - Setting up local autocomplete: https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete
