@@ -77,6 +77,7 @@ class CSharpCompiler:
                                                  version,
                                                  entrypoint=["dotnet", "msbuild",
                                                              "-restore", f"/LeanCLI/{project_dir.name}.csproj"],
+                                                 environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true"},
                                                  volumes={
                                                      str(compile_dir): {
                                                          "bind": "/LeanCLI",
