@@ -92,6 +92,12 @@ def test_projects_crud() -> None:
 
     assert retrieved_project.name == "New Name"
 
+    # Test the project's description can be updated
+    project_client.update(created_project.projectId, description="New description")
+    retrieved_project = project_client.get(created_project.projectId)
+
+    assert retrieved_project.description == "New description"
+
     # Test the project's parameters can be updated
     project_client.update(created_project.projectId, parameters={"key1": "value1", "key2": "value2", "key3": "value3"})
     retrieved_project = project_client.get(created_project.projectId)
