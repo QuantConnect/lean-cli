@@ -61,7 +61,7 @@ class LeanCommand(click.Command):
             except Exception:
                 # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI directory
                 raise RuntimeError(
-                    "This command should be executed in a Lean CLI directory, run `lean init` in an empty directory to create one or specify the Lean configuration file to use with --lean-config")
+                    "This command should be executed in a Lean CLI directory, run `lean init` in an empty directory to create one, or specify the Lean configuration file to use with --lean-config")
 
         result = super().invoke(ctx)
 
