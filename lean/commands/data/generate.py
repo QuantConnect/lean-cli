@@ -32,7 +32,7 @@ from lean.container import container
 @click.option("--symbol-count",
               type=click.IntRange(min=0),
               required=True,
-              help="The amount of symbols to generate data for")
+              help="The number of symbols to generate data for")
 @click.option("--security-type",
               type=click.Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
               default="Equity",

@@ -349,7 +349,7 @@ Usage: lean data generate [OPTIONS]
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
-  --symbol-count INTEGER RANGE    The amount of symbols to generate data for  [required]
+  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [required]
   --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
                                   The security type to generate data for (defaults to Equity)
   --resolution [Tick|Second|Minute|Hour|Daily]
