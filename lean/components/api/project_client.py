@@ -61,11 +61,16 @@ class ProjectClient:
 
         return self._process_project(QCCreatedProject(**data["projects"][0]))
 
-    def update(self, project_id: int, name: Optional[str] = None, parameters: Optional[Dict[str, str]] = None) -> None:
+    def update(self,
+               project_id: int,
+               name: Optional[str] = None,
+               description: Optional[str] = None,
+               parameters: Optional[Dict[str, str]] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
         :param name: the new name to assign to the project, or None if the name shouldn't be changed
+        :param description: the new description to assign to the project, or None if the description shouldn't be changed
         :param parameters: the new parameters of the project, or None if the parameters shouldn't be changed
         """
         request_parameters = {
@@ -74,6 +79,9 @@ class ProjectClient:
 
         if name is not None:
             request_parameters["name"] = name
+
+        if description is not None:
+            request_parameters["description"] = description
 
         if parameters is not None:
             index = 0

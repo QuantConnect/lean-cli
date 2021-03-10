@@ -98,10 +98,10 @@ class PushManager:
         self._push_files(project, cloud_project)
 
         # Finalize pushing by updating locally modified metadata
-        self._push_parameters(project, cloud_project)
+        self._push_metadata(project, cloud_project)
 
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
-        """Push the files of a local project to the cloud.
+        """Pushes the files of a local project to the cloud.
 
         :param project: the local project to push the files of
         :param cloud_project: the cloud project to push the files to
@@ -111,8 +111,10 @@ class PushManager:
 
         for local_file in local_files:
             file_name = local_file.relative_to(project).as_posix()
-            file_content = local_file.read_text()
+            if "bin/" in file_name or "obj/" in file_name:
+                continue
 
+            file_content = local_file.read_text()
             cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
 
             if cloud_file is None:
@@ -122,15 +124,30 @@ class PushManager:
                 self._api_client.files.update(cloud_project.projectId, file_name, file_content)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
 
-    def _push_parameters(self, project: Path, cloud_project: QCProject) -> None:
-        """Push local parameters to the cloud. Does nothing if the cloud is already up-to-date.
+    def _push_metadata(self, project: Path, cloud_project: QCProject) -> None:
+        """Pushes local project description and parameters to the cloud.
+
+        Does nothing if the cloud is already up-to-date.
 
         :param project: the local project to push the parameters of
         :param cloud_project: the cloud project to push the parameters to
         """
-        local_parameters = self._project_config_manager.get_project_config(project).get("parameters", {})
+        project_config = self._project_config_manager.get_project_config(project)
+
+        local_description = project_config.get("description", "")
+        cloud_description = cloud_project.description
+
+        local_parameters = project_config.get("parameters", {})
         cloud_parameters = {parameter.key: parameter.value for parameter in cloud_project.parameters}
 
+        update_args = {}
+
+        if local_description != cloud_description:
+            update_args["description"] = local_description
+
         if local_parameters != cloud_parameters and local_parameters != {}:
-            self._api_client.projects.update(cloud_project.projectId, parameters=local_parameters)
-            self._logger.info(f"Successfully updated cloud parameters for '{cloud_project.name}'")
+            update_args["parameters"] = local_parameters
+
+        if update_args != {}:
+            self._api_client.projects.update(cloud_project.projectId, **update_args)
+            self._logger.info(f"Successfully updated {' and '.join(update_args.keys())} for '{cloud_project.name}'")

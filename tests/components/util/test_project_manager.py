@@ -20,6 +20,7 @@ from xml.etree import ElementTree
 import pytest
 
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.config.storage import Storage
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -70,6 +71,40 @@ def test_create_new_project_creates_project_directory() -> None:
     project_manager.create_new_project(project_path, QCLanguage.Python)
 
     assert project_path.is_dir()
+
+
+@pytest.mark.parametrize("language", [QCLanguage.Python, QCLanguage.CSharp])
+def test_create_new_project_sets_language_in_project_config(language: QCLanguage) -> None:
+    project_path = Path.cwd() / f"{language.name} Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, language)
+
+    config = Storage(str(project_path / "config.json"))
+
+    assert config.get("algorithm-language") == language.name
+
+
+def test_create_new_project_sets_parameters_in_project_config() -> None:
+    project_path = Path.cwd() / "Python Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, QCLanguage.Python)
+
+    config = Storage(str(project_path / "config.json"))
+
+    assert config.get("parameters") == {}
+
+
+def test_create_new_project_sets_description_in_project_config() -> None:
+    project_path = Path.cwd() / "Python Project"
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(project_path, QCLanguage.Python)
+
+    config = Storage(str(project_path / "config.json"))
+
+    assert config.get("description") == ""
 
 
 def validate_json(text: str) -> bool:

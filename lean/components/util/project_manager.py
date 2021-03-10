@@ -60,6 +60,7 @@ class ProjectManager:
         project_config = self._project_config_manager.get_project_config(project_dir)
         project_config.set("algorithm-language", language.name)
         project_config.set("parameters", {})
+        project_config.set("description", "")
 
         if language == QCLanguage.Python:
             self._generate_vscode_python_config(project_dir)
