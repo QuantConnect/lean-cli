@@ -177,7 +177,7 @@ class ProjectManager:
         # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
         if platform.system() == "Windows":
             # Windows
-            jetbrains_config_dir = Path.home() / "AppData" / "Roaming" / "JetBrains"
+            jetbrains_config_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
         elif platform.system() == "Darwin":
             # macOS
             jetbrains_config_dir = Path("~/Library/Application Support/JetBrains").expanduser()

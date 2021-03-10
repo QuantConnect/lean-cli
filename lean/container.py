@@ -81,10 +81,7 @@ class Container(DeclarativeContainer):
 
     docker_manager = Singleton(DockerManager, logger=logger)
 
-    csharp_compiler = Singleton(CSharpCompiler,
-                                logger=logger,
-                                lean_config_manager=lean_config_manager,
-                                docker_manager=docker_manager)
+    csharp_compiler = Singleton(CSharpCompiler, logger=logger, docker_manager=docker_manager)
     lean_runner = Singleton(LeanRunner,
                             logger=logger,
                             csharp_compiler=csharp_compiler,

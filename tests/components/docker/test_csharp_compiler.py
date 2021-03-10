@@ -16,8 +16,6 @@ from unittest import mock
 
 import pytest
 
-from lean.components.config.lean_config_manager import LeanConfigManager
-from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.csharp_compiler import CSharpCompiler
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -28,7 +26,9 @@ def run_image(image: str, tag: str, **kwargs) -> bool:
     assert len(volumes) == 1
     compile_dir = Path(list(volumes)[0])
 
-    dll_path = compile_dir / "bin" / "Debug" / "LeanCLI.dll"
+    csproj_file = Path(kwargs.get("entrypoint")[-1])
+
+    dll_path = compile_dir / "bin" / "Debug" / f"{csproj_file.stem}.dll"
     dll_path.parent.mkdir(parents=True, exist_ok=True)
     dll_path.touch()
 
@@ -36,7 +36,7 @@ def run_image(image: str, tag: str, **kwargs) -> bool:
 
 
 def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
-    return CSharpCompiler(mock.Mock(), LeanConfigManager(mock.Mock(), ProjectConfigManager()), docker_manager)
+    return CSharpCompiler(mock.Mock(), docker_manager)
 
 
 def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
@@ -54,7 +54,7 @@ def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
 
     assert args[0] == "quantconnect/lean"
     assert args[1] == "latest"
-    assert kwargs["entrypoint"][0] == "msbuild"
+    assert "msbuild" in kwargs["entrypoint"]
 
 
 def test_compile_csharp_project_raises_when_msbuild_fails() -> None:
@@ -88,11 +88,11 @@ def test_compile_csharp_project_only_mounts_files_from_given_project() -> None:
     assert len(volumes) == 1
     compile_dir = Path(list(volumes)[0])
 
-    assert (compile_dir / "CSharp Project" / "Main.cs").exists()
-    assert not (compile_dir / "Python Project" / "main.py").exists()
+    assert (compile_dir / "Main.cs").exists()
+    assert not (compile_dir / "main.py").exists()
 
 
-def test_compile_csharp_project_copies_generated_dll_to_cli_bin() -> None:
+def test_compile_csharp_project_copies_generated_dll_to_project_bin() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -102,4 +102,4 @@ def test_compile_csharp_project_copies_generated_dll_to_cli_bin() -> None:
 
     compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
 
-    assert (Path.cwd() / "bin" / "Debug" / "LeanCLI.dll").exists()
+    assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / "CSharp Project.dll").exists()

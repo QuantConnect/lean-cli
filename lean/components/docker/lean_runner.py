@@ -176,17 +176,15 @@ class LeanRunner:
 
         # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
-            # To get Python debugging to work correctly we need to mount all projects
-            # Without this editors won't be able to distinguish between main.py in project A and main.py in project B
-            run_options["volumes"][str(self._lean_config_manager.get_cli_root_directory())] = {
+            run_options["volumes"][str(algorithm_file.parent)] = {
                 "bind": "/LeanCLI",
                 "mode": "ro"
             }
         else:
             for extension in ["dll", "pdb"]:
                 run_options["mounts"].append(
-                    Mount(target=f"/Lean/Launcher/bin/Debug/LeanCLI.{extension}",
-                          source=str(csharp_dll_dir / f"LeanCLI.{extension}"),
+                    Mount(target=f"/Lean/Launcher/bin/Debug/{project_dir.name}.{extension}",
+                          source=str(csharp_dll_dir / f"{project_dir.name}.{extension}"),
                           type="bind"))
 
         return run_options

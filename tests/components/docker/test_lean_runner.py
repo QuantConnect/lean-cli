@@ -191,7 +191,7 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
     assert (Path.cwd() / "output").is_dir()
 
 
-def test_run_lean_mounts_entire_cli_root_when_running_python_algorithm() -> None:
+def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -208,10 +208,10 @@ def test_run_lean_mounts_entire_cli_root_when_running_python_algorithm() -> None
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert str(Path.cwd()) in kwargs["volumes"]
+    assert str(Path.cwd() / "Python Project") in kwargs["volumes"]
 
 
-def test_run_lean_mounts_dlls_when_running_csharp_algorithm() -> None:
+def test_run_lean_mounts_dll_and_pdb_when_running_csharp_algorithm() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -228,8 +228,8 @@ def test_run_lean_mounts_dlls_when_running_csharp_algorithm() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any(["LeanCLI.dll" in mount["Target"] for mount in kwargs["mounts"]])
-    assert any(["LeanCLI.pdb" in mount["Target"] for mount in kwargs["mounts"]])
+    assert any(["CSharp Project.dll" in mount["Target"] for mount in kwargs["mounts"]])
+    assert any(["CSharp Project.pdb" in mount["Target"] for mount in kwargs["mounts"]])
 
 
 @mock.patch("platform.system")

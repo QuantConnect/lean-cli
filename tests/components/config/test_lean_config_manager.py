@@ -285,7 +285,7 @@ def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
 
     assert config["algorithm-type-name"] == "main"
     assert config["algorithm-language"] == "Python"
-    assert config["algorithm-location"] == "/LeanCLI/Python Project/main.py"
+    assert config["algorithm-location"] == "/LeanCLI/main.py"
 
 
 def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
@@ -296,7 +296,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
 
     assert config["algorithm-type-name"] == "CSharpProject"
     assert config["algorithm-language"] == "CSharp"
-    assert config["algorithm-location"] == "LeanCLI.dll"
+    assert config["algorithm-location"] == "CSharp Project.dll"
 
 
 def test_get_complete_lean_config_sets_parameters() -> None:

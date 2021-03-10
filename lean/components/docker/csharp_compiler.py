@@ -14,9 +14,7 @@
 import shutil
 import tempfile
 from pathlib import Path
-from typing import List
 
-from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.constants import ENGINE_IMAGE
@@ -25,15 +23,13 @@ from lean.constants import ENGINE_IMAGE
 class CSharpCompiler:
     """The CSharpCompiler class is responsible for compiling C# projects."""
 
-    def __init__(self, logger: Logger, lean_config_manager: LeanConfigManager, docker_manager: DockerManager) -> None:
+    def __init__(self, logger: Logger, docker_manager: DockerManager) -> None:
         """Creates a new CSharpCompiler instance.
 
         :param logger: the logger that is used to print messages
-        :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         """
         self._logger = logger
-        self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
 
     def compile_csharp_project(self, project_dir: Path, version: str) -> Path:
@@ -45,25 +41,16 @@ class CSharpCompiler:
         :param version: the LEAN version to compile against
         :return: the path to the directory containing the LeanCLI.{dll,pdb} files
         """
-        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-
         self._logger.info(f"Compiling all C# files in '{project_dir}'")
 
         # Create a temporary directory used for compiling the C# files
         compile_dir = Path(tempfile.mkdtemp())
 
-        # Copy all C# files in the project directory to the temporary directory
-        # To make debugging work we need to preserve the directory structure of the projects in the Lean CLI directory
-        def get_objects_to_ignore(directory: str, objects: List[str]) -> List[str]:
-            paths = [(Path(directory) / x) for x in objects]
-            files = [p for p in paths if p.is_file()]
-            return [f.name for f in files] if str(project_dir) + "/" not in directory + "/" else []
-
         # shutil.copytree() requires the destination not to exist yet, so we delete it first
         compile_dir.rmdir()
-        shutil.copytree(str(cli_root_dir), str(compile_dir), ignore=get_objects_to_ignore)
+        shutil.copytree(str(project_dir), str(compile_dir))
 
-        with (compile_dir / "LeanCLI.csproj").open("w+") as file:
+        with (compile_dir / f"{project_dir.name}.csproj").open("w+") as file:
             file.write(f"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
@@ -76,7 +63,7 @@ class CSharpCompiler:
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <PathMap>/LeanCLI={str(cli_root_dir)}</PathMap>
+        <PathMap>/LeanCLI={str(project_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="/Lean/Launcher/bin/Debug/*.dll">
@@ -88,7 +75,8 @@ class CSharpCompiler:
 
         success = self._docker_manager.run_image(ENGINE_IMAGE,
                                                  version,
-                                                 entrypoint=["msbuild", "-restore", "/LeanCLI/LeanCLI.csproj"],
+                                                 entrypoint=["dotnet", "msbuild",
+                                                             "-restore", f"/LeanCLI/{project_dir.name}.csproj"],
                                                  volumes={
                                                      str(compile_dir): {
                                                          "bind": "/LeanCLI",
@@ -99,10 +87,10 @@ class CSharpCompiler:
         if not success:
             raise RuntimeError("Something went wrong while running msbuild")
 
-        # Copy the generated LeanCLI.dll file to the user's CLI directory
+        # Copy the generated dll file to the user's project directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code
-        compiled_dll = compile_dir / "bin" / "Debug" / "LeanCLI.dll"
-        local_path = cli_root_dir / "bin" / "Debug" / "LeanCLI.dll"
+        compiled_dll = compile_dir / "bin" / "Debug" / f"{project_dir.name}.dll"
+        local_path = project_dir / "bin" / "Debug" / f"{project_dir.name}.dll"
         local_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(compiled_dll, local_path)
 
