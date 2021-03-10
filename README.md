@@ -14,7 +14,7 @@ Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/
 
 The following features are currently planned to be implemented (in order of priority):
 - [x] [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management#02-Creating-new-projectshtml)
-- [x] [Local autocompletion](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocompletion)
+- [x] [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
 - [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#02-Running-local-backtestshtml)
 - [x] [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#03-Debugging-local-backtestshtml)
 - [x] [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)

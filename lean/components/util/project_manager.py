@@ -272,7 +272,7 @@ class ProjectManager:
         """
         self._generate_file(project_dir / f"{project_dir.name}.csproj", """
 <!--
-This file exists to make C# autocompletion and debugging work.
+This file exists to make C# autocomplete and debugging work.
 
 Custom libraries added in this file won't be used when compiling your code.
 When using the Lean CLI to run algorithms, this csproj file is overwritten
@@ -281,7 +281,7 @@ Docker container. This container contains the following libraries besides
 the System.* and QuantConnect.* libraries:
 https://www.quantconnect.com/docs/key-concepts/supported-libraries
 
-If you want to get autocompletion to work for any of the C# libraries listed
+If you want to get autocomplete to work for any of the C# libraries listed
 on the page above, you can add a PackageReference for it.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
