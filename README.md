@@ -76,6 +76,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean optimize`](#lean-optimize)
+- [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
 
 ### `lean backtest`
@@ -449,6 +450,41 @@ Options:
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
+
+### `lean report`
+
+Generate a report of a backtest.
+
+```
+Usage: lean report [OPTIONS]
+
+  Generate a report of a backtest.
+
+  This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
+
+  The name, description, and version are optional and will be blank if not given.
+
+  If the given backtest data source file is stored in a project directory (or one of its subdirectories, like the
+  default <project>/backtests/<timestamp>), the default name is the name of the project directory and the default
+  description is the description stored in the project's config.json file.
+
+Options:
+  --backtest-data-source-file FILE
+                                  Path to the JSON file containing the backtest results  [required]
+  --live-data-source-file FILE    Path to the JSON file containing the live trading results
+  --report-destination FILE       Path where the generated report is stored as HTML (defaults to ./report.html)
+  --strategy-name TEXT            Name of the strategy, will appear at the top-right corner of each page
+  --strategy-version TEXT         Version number of the strategy, will appear next to the project name
+  --strategy-description TEXT     Description of the strategy, will appear under the 'Strategy Description' section
+  --overwrite                     Overwrite --report-destination if it already contains a file (defaults to False)
+  --update                        Pull the selected LEAN engine version before running the report creator
+  --version TEXT                  The LEAN engine version to run (defaults to the latest installed version)
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/report.py](lean/commands/report.py)_
 
 ### `lean research`
 

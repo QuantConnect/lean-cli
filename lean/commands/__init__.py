@@ -47,5 +47,4 @@ lean.add_command(create_project)
 lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)
-# TODO: Uncomment when https://github.com/QuantConnect/Lean/pull/5386 is merged
-# lean.add_command(report)
+lean.add_command(report)

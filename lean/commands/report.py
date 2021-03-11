@@ -44,11 +44,11 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 
 
 @click.command(cls=LeanCommand, requires_cli_directory=True)
-@click.option("--backtest-file",
+@click.option("--backtest-data-source-file",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               required=True,
               help="Path to the JSON file containing the backtest results")
-@click.option("--live-file",
+@click.option("--live-data-source-file",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the JSON file containing the live trading results")
 @click.option("--report-destination",
@@ -57,17 +57,17 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
 @click.option("--strategy-name",
               type=str,
-              help="Name of the strategy, will appear at the top-right corner of each page (defaults to project name)")
+              help="Name of the strategy, will appear at the top-right corner of each page")
 @click.option("--strategy-version",
               type=str,
               help="Version number of the strategy, will appear next to the project name")
 @click.option("--strategy-description",
               type=str,
-              help="Description of the strategy, will appear under the 'Strategy Description' section (defaults to the description in the project's config.json)")
+              help="Description of the strategy, will appear under the 'Strategy Description' section")
 @click.option("--overwrite",
               is_flag=True,
               default=False,
-              help="Overwrite report if one already exists at given --report-destination (defaults to False)")
+              help="Overwrite --report-destination if it already contains a file (defaults to False)")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -76,8 +76,8 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               type=str,
               default="latest",
               help="The LEAN engine version to run (defaults to the latest installed version)")
-def report(backtest_file: Path,
-           live_file: Optional[Path],
+def report(backtest_data_source_file: Path,
+           live_data_source_file: Optional[Path],
            report_destination: Path,
            strategy_name: Optional[str],
            strategy_version: Optional[str],
@@ -89,14 +89,16 @@ def report(backtest_file: Path,
 
     This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
-    The name, description and version are optional and will be blank if not given.
-    The name and description only have default values if the backtest file is stored in the project directory or one of its subdirectories (like the default <project>/backtests/<timestamp>).
-    In that case, the CLI uses the name of the project directory as strategy name and the description in the project's config.json as description.
+    The name, description, and version are optional and will be blank if not given.
+
+    If the given backtest data source file is stored in a project directory (or one of its subdirectories, like the
+    default <project>/backtests/<timestamp>), the default name is the name of the project directory and the default
+    description is the description stored in the project's config.json file.
     """
     if report_destination.exists() and not overwrite:
         raise RuntimeError("Given --report-destination already exists, use --overwrite to overwrite it")
 
-    project_directory = _find_project_directory(backtest_file)
+    project_directory = _find_project_directory(backtest_data_source_file)
 
     if project_directory is not None:
         if strategy_name is None:
@@ -114,8 +116,8 @@ def report(backtest_file: Path,
         "strategy-name": strategy_name or "",
         "strategy-version": strategy_version or "",
         "strategy-description": strategy_description or "",
-        "live-data-source-file": "live-file.json" if live_file is not None else "",
-        "backtest-data-source-file": "backtest-file.json",
+        "live-data-source-file": "live-data-source-file.json" if live_data_source_file is not None else "",
+        "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/Results/report.html",
 
         "environment": "report",
@@ -161,8 +163,8 @@ def report(backtest_file: Path,
                   source=str(config_path),
                   type="bind",
                   read_only=True),
-            Mount(target="/Lean/Report/bin/Debug/backtest-file.json",
-                  source=str(backtest_file),
+            Mount(target="/Lean/Report/bin/Debug/backtest-data-source-file.json",
+                  source=str(backtest_data_source_file),
                   type="bind",
                   read_only=True)
         ],
@@ -178,9 +180,9 @@ def report(backtest_file: Path,
         }
     }
 
-    if live_file is not None:
-        run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-file.json",
-                                           source=str(live_file),
+    if live_data_source_file is not None:
+        run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
+                                           source=str(live_data_source_file),
                                            type="bind",
                                            read_only=True))
 
