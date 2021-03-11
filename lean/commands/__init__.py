@@ -23,6 +23,7 @@ from lean.commands.init import init
 from lean.commands.login import login
 from lean.commands.logout import logout
 from lean.commands.optimize import optimize
+from lean.commands.report import report
 from lean.commands.research import research
 
 
@@ -46,3 +47,5 @@ lean.add_command(create_project)
 lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)
+# TODO: Uncomment when https://github.com/QuantConnect/Lean/pull/5386 is merged
+# lean.add_command(report)

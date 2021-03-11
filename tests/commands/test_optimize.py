@@ -397,6 +397,22 @@ def test_optimize_aborts_when_project_has_no_parameters() -> None:
     docker_manager.run_image.assert_not_called()
 
 
+def test_optimize_aborts_when_run_image_fails() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = False
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", "Python Project"])
+
+    assert result.exit_code != 0
+
+    docker_manager.run_image.assert_called_once()
+
+
 def test_optimize_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
 
@@ -446,22 +462,6 @@ def test_optimize_aborts_when_version_invalid() -> None:
     assert result.exit_code != 0
 
     docker_manager.run_lean.assert_not_called()
-
-
-def test_optimize_aborts_when_run_image_fails() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.return_value = False
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
-
-    result = CliRunner().invoke(lean, ["optimize", "Python Project"])
-
-    assert result.exit_code != 0
-
-    docker_manager.run_image.assert_called_once()
 
 
 @pytest.mark.parametrize("version_option,update_flag,update_check_expected", [(None, True, False),
