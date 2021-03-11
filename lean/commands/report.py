@@ -50,7 +50,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               help="Path to the JSON file containing the backtest results")
 @click.option("--live-file",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-              help="Path to the JSON file containing the live results")
+              help="Path to the JSON file containing the live trading results")
 @click.option("--report-destination",
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
