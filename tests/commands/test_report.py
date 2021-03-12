@@ -295,6 +295,29 @@ def test_report_uses_given_strategy_version() -> None:
     assert config["strategy-version"] == "1.2.3"
 
 
+def test_report_uses_given_blank_name_version_description_when_not_given_and_backtest_not_stored_in_project() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    with (Path.cwd() / "results.json").open("w+") as file:
+        file.write("{}")
+
+    result = CliRunner().invoke(lean, ["report", "--backtest-data-source-file", "results.json"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
+    config = json.loads(Path(config_mount["Source"]).read_text())
+
+    assert config["strategy-name"] == ""
+    assert config["strategy-version"] == ""
+    assert config["strategy-description"] == ""
+
+
 def test_report_writes_to_report_html_when_no_report_destination_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
