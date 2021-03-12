@@ -149,7 +149,7 @@ class PullManager:
         if platform.system() == "Windows":
             new_components = []
 
-            for component in Path(name).parts:
+            for component in name.split("/"):
                 # Some names are reserved
                 for reserved_name in ["CON", "PRN", "AUX", "NUL",
                                       "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
