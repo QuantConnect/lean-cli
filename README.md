@@ -15,11 +15,11 @@ Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/
 The following features are currently planned to be implemented (in order of priority):
 - [x] [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management#02-Creating-new-projectshtml)
 - [x] [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
-- [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#02-Running-local-backtestshtml)
-- [x] [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#03-Debugging-local-backtestshtml)
+- [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtestshtml)
+- [x] [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests)
 - [x] [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
 - [x] [Cloud synchronization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization)
-- [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#04-Running-cloud-backtestshtml)
+- [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtestshtml)
 - [ ] **First beta release**
 - [x] [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
 - [x] [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization)
@@ -92,7 +92,7 @@ Usage: lean backtest [OPTIONS] PROJECT
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
   Go to the following url to learn how to debug backtests locally using the Lean CLI:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#03-Debugging-local-backtestshtml
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests
 
 Options:
   --output DIRECTORY            Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
@@ -453,14 +453,14 @@ _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 
 ### `lean report`
 
-Create a report of a backtest.
+Generate a report of a backtest.
 
 ```
 Usage: lean report [OPTIONS]
 
-  Create a report of a backtest.
+  Generate a report of a backtest.
 
-  This runs the LEAN Report Creator in Docker to create a polished, professional-grade report of a backtest.
+  This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
   The name, description, and version are optional and will be blank if not given.
 

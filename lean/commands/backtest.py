@@ -48,7 +48,7 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
 
     \b
     Go to the following url to learn how to debug backtests locally using the Lean CLI:
-    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting#03-Debugging-local-backtestshtml
+    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))

@@ -85,9 +85,9 @@ def report(backtest_data_source_file: Path,
            overwrite: bool,
            update: bool,
            version: str) -> None:
-    """Create a report of a backtest.
+    """Generate a report of a backtest.
 
-    This runs the LEAN Report Creator in Docker to create a polished, professional-grade report of a backtest.
+    This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
     The name, description, and version are optional and will be blank if not given.
 
