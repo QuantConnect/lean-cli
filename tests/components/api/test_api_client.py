@@ -80,7 +80,7 @@ def test_post_sets_body_of_request_as_form_data(requests_mock: RequestsMock) -> 
     assert requests_mock.calls[0].request.body == "key1=value1&key2=value2"
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_makes_authenticated_requests(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
@@ -95,7 +95,7 @@ def test_api_client_makes_authenticated_requests(method: str, requests_mock: Req
     assert headers["Authorization"].startswith("Basic ")
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_returns_data_when_success_is_true(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
@@ -106,7 +106,7 @@ def test_api_client_returns_data_when_success_is_true(method: str, requests_mock
     assert response["success"]
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_authentication_error_on_http_500(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=500)
 
@@ -116,7 +116,7 @@ def test_api_client_raises_authentication_error_on_http_500(method: str, request
         getattr(api, method)("endpoint")
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_request_failed_error_on_failing_response_non_http_500(method: str,
                                                                                  requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=404)
@@ -127,7 +127,7 @@ def test_api_client_raises_request_failed_error_on_failing_response_non_http_500
         getattr(api, method)("endpoint")
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_authentication_error_on_error_complaining_about_hash(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
@@ -139,7 +139,7 @@ def test_api_client_raises_authentication_error_on_error_complaining_about_hash(
         getattr(api, method)("endpoint")
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_request_failed_error_when_response_contains_errors(method: str,
                                                                               requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
@@ -153,7 +153,7 @@ def test_api_client_raises_request_failed_error_when_response_contains_errors(me
     assert str(error.value) == "Error 1\nError 2"
 
 
-@pytest.mark.parametrize("method", [("get"), ("post")])
+@pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_request_failed_error_when_response_contains_messages(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(),
@@ -166,6 +166,21 @@ def test_api_client_raises_request_failed_error_when_response_contains_messages(
         getattr(api, method)("endpoint")
 
     assert str(error.value) == "Message 1\nMessage 2"
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_api_client_raises_request_failed_error_when_response_contains_internal_error(method: str,
+                                                                                      requests_mock: RequestsMock) -> None:
+    requests_mock.add(method.upper(),
+                      API_BASE_URL + "endpoint",
+                      '{ "success": false, "Message": "Internal Error 21" }')
+
+    api = APIClient(mock.Mock(), "123", "456")
+
+    with pytest.raises(RequestFailedError) as error:
+        getattr(api, method)("endpoint")
+
+    assert str(error.value) == "Internal Error 21"
 
 
 def test_is_authenticated_returns_true_when_authenticated_request_succeeds(requests_mock: RequestsMock) -> None:

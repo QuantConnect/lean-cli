@@ -142,4 +142,7 @@ class APIClient:
         if "messages" in data and len(data["messages"]) > 0:
             raise RequestFailedError(response, "\n".join(data["messages"]))
 
+        if "Message" in data:
+            raise RequestFailedError(response, data["Message"])
+
         raise RequestFailedError(response)
