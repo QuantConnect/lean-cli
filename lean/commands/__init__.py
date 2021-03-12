@@ -20,6 +20,7 @@ from lean.commands.config import config
 from lean.commands.create_project import create_project
 from lean.commands.data import data
 from lean.commands.init import init
+from lean.commands.live import live
 from lean.commands.login import login
 from lean.commands.logout import logout
 from lean.commands.optimize import optimize
@@ -48,3 +49,4 @@ lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)
 lean.add_command(report)
+lean.add_command(live)
