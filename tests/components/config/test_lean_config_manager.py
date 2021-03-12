@@ -127,7 +127,26 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
     // handlers
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
     "messaging-handler": "QuantConnect.Messaging.Messaging",
-    "job-queue-handler": "QuantConnect.Queues.JobQueue"
+    "job-queue-handler": "QuantConnect.Queues.JobQueue",
+    
+    // interactive brokers configuration
+    "ib-account": "",
+    "ib-user-name": "",
+    "ib-password": "",
+    "ib-host": "127.0.0.1",
+    "ib-port": "4002",
+    "ib-agent-description": "Individual",
+    "ib-tws-dir": "C:\\Jts",
+    "ib-trading-mode": "paper",
+    "ib-enable-delayed-streaming-data": false,
+    "ib-version": "974",
+
+    // iqfeed configuration
+    "iqfeed-host": "127.0.0.1",
+    "iqfeed-username": "",
+    "iqfeed-password": "",
+    "iqfeed-productName": "",
+    "iqfeed-version": "1.0"
 }
     """
 
@@ -138,10 +157,15 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
                 "algorithm-type-name", "algorithm-language", "algorithm-location",
                 "composer-dll-directory",
                 "debugging", "debugging-method",
-                "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow"]:
+                "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow",
+                "ib-host", "ib-port", "ib-tws-dir", "ib-version",
+                "iqfeed-host"]:
         assert f'"{key}"' not in clean_config
 
-    for key in ["data-folder", "log-handler", "messaging-handler", "job-queue-handler"]:
+    for key in ["data-folder", "log-handler", "messaging-handler", "job-queue-handler",
+                "ib-account", "ib-user-name", "ib-password", "ib-agent-description",
+                "ib-trading-mode", "ib-enable-delayed-streaming-data",
+                "iqfeed-username", "iqfeed-password", "iqfeed-productName", "iqfeed-version"]:
         assert f'"{key}"' in clean_config
 
 
@@ -190,7 +214,26 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     // handlers
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
     "messaging-handler": "QuantConnect.Messaging.Messaging",
-    "job-queue-handler": "QuantConnect.Queues.JobQueue"
+    "job-queue-handler": "QuantConnect.Queues.JobQueue",
+    
+    // interactive brokers configuration
+    "ib-account": "",
+    "ib-user-name": "",
+    "ib-password": "",
+    "ib-host": "127.0.0.1",
+    "ib-port": "4002",
+    "ib-agent-description": "Individual",
+    "ib-tws-dir": "C:\\Jts",
+    "ib-trading-mode": "paper",
+    "ib-enable-delayed-streaming-data": false,
+    "ib-version": "974",
+
+    // iqfeed configuration
+    "iqfeed-host": "127.0.0.1",
+    "iqfeed-username": "",
+    "iqfeed-password": "",
+    "iqfeed-productName": "",
+    "iqfeed-version": "1.0"
 }
     """
 
@@ -207,6 +250,8 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
 
     assert "// engine" in clean_config
     assert "// handlers" in clean_config
+    assert "// interactive brokers configuration" in clean_config
+    assert "// iqfeed configuration" in clean_config
 
 
 def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_lean_config() -> None:
@@ -275,6 +320,27 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
 
     assert config["job-user-id"] == "123"
     assert config["api-access-token"] == "456"
+
+
+def test_get_complete_lean_config_sets_interactive_brokers_config() -> None:
+    create_fake_lean_cli_directory()
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+
+    assert config["ib-host"] == "127.0.0.1"
+    assert config["ib-port"] == "4002"
+    assert config["ib-tws-dir"] == "/root/Jts"
+    assert config["ib-version"] == "978"
+
+
+def test_get_complete_lean_config_sets_iqfeed_host() -> None:
+    create_fake_lean_cli_directory()
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+
+    assert config["iqfeed-host"] == "host.docker.internal"
 
 
 def test_get_complete_lean_config_sets_python_algorithm_details() -> None:

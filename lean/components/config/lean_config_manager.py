@@ -118,12 +118,19 @@ class LeanConfigManager:
                           "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow"]
 
         # This function is implemented by doing string manipulation because the config contains comments
-        # If we were to parse it as JSON, we would have to remove the comments which we don't want to do
+        # If we were to parse it as JSON, we would have to remove the comments, which we don't want to do
         sections = re.split(r"\n\s*\n", config)
         for key in keys_to_remove:
             sections = [section for section in sections if f"\"{key}\": " not in section]
+        config = "\n\n".join(sections)
 
-        return "\n\n".join(sections)
+        # For some keys we should only remove the key itself, instead of their entire section
+        lines = config.split("\n")
+        for key in ["ib-host", "ib-port", "ib-tws-dir", "ib-version", "iqfeed-host"]:
+            lines = [line for line in lines if f"\"{key}\": " not in line]
+        config = "\n".join(lines)
+
+        return config
 
     def get_complete_lean_config(self,
                                  environment: str,
@@ -133,7 +140,7 @@ class LeanConfigManager:
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
 
-        It is assumed that the default LEAN Docker image is used and that the Lean CLI directory is mounted at /LeanCLI.
+        It is assumed that the default LEAN Docker image is used.
 
         :param environment: the environment to set
         :param algorithm_file: the path to the algorithm that will be ran
@@ -151,6 +158,13 @@ class LeanConfigManager:
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
+
+        config["ib-host"] = "127.0.0.1"
+        config["ib-port"] = "4002"
+        config["ib-tws-dir"] = "/root/Jts"
+        config["ib-version"] = "978"
+
+        config["iqfeed-host"] = "host.docker.internal"
 
         if algorithm_file.name.endswith(".py"):
             config["algorithm-type-name"] = algorithm_file.name.split(".")[0]

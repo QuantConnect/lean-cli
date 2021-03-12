@@ -98,7 +98,7 @@ class LeanRunner:
                 f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
         else:
             raise RuntimeError(
-                f"Something went wrong while running '{relative_project_dir}'  in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
+                f"Something went wrong while running '{relative_project_dir}' in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
 
     def get_basic_docker_config(self,
                                 environment: str,

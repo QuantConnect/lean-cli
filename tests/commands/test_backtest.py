@@ -82,7 +82,7 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom-backtests"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom"])
 
     assert result.exit_code == 0
 
@@ -90,7 +90,7 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     args, _ = lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/custom-backtests
-    args[2].relative_to(Path("Python Project/custom-backtests").resolve())
+    args[2].relative_to(Path("Python Project/custom").resolve())
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
