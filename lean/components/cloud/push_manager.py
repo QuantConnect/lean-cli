@@ -44,11 +44,8 @@ class PushManager:
     def push_projects(self, projects_to_push: List[Path]) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
-        The libraries the projects depend on will be added to the list of projects to be pushed.
-
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         """
-        # Resolve the library dependencies of all projects which need to be pushed
         projects_to_push = sorted(projects_to_push)
 
         cloud_projects = self._api_client.projects.get_all()

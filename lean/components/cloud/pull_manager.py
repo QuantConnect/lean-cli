@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
+import platform
 from pathlib import Path
 from typing import List
 
@@ -19,7 +19,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCProject
+from lean.models.api import QCProject
 
 
 class PullManager:
@@ -45,11 +45,8 @@ class PullManager:
     def pull_projects(self, projects_to_pull: List[QCProject]) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
-        The libraries the projects depend on will be added to the list of projects to be pulled.
-
         :param projects_to_pull: the cloud projects that need to be pulled
         """
-        projects_to_pull = self._resolve_projects_to_pull(projects_to_pull, self._api_client.projects.get_all())
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
 
         for index, project in enumerate(projects_to_pull, start=1):
@@ -59,30 +56,6 @@ class PullManager:
             except Exception as ex:
                 self._logger.warn(f"Cannot pull '{project.name}' ({project.projectId}): {ex}")
 
-    def _resolve_projects_to_pull(self,
-                                  projects_to_pull: List[QCProject],
-                                  all_projects: List[QCProject]) -> List[QCProject]:
-        """Resolves all library dependencies in projects_to_pull.
-
-         :param projects_to_pull: the projects that need to be pulled
-         :param all_projects: all cloud projects accessible by the user
-         :return: a list containing all projects in projects_to_pull where no project has a dependency on a project not in the list
-         """
-        required_library_ids = set(itertools.chain(*[p.libraries for p in projects_to_pull]))
-        missing_library_ids = [library_id for library_id in required_library_ids if
-                               not any([p.projectId == library_id for p in projects_to_pull])]
-
-        # If all required libraries are already in projects_to_pull we're done
-        if len(missing_library_ids) == 0:
-            return projects_to_pull
-
-        # Add all not-yet-added libraries which are depended upon by projects in projects_to_pull
-        for library_id in missing_library_ids:
-            projects_to_pull.append([p for p in all_projects if p.projectId == library_id][0])
-
-        # Resolve the dependencies of dependencies recursively
-        return self._resolve_projects_to_pull(projects_to_pull, all_projects)
-
     def _pull_project(self, project: QCProject) -> None:
         """Pulls a single project from the cloud to the local drive.
 
@@ -90,14 +63,14 @@ class PullManager:
 
         :param project: the cloud project to pull
         """
-        local_path = Path.cwd() / project.name
-        if local_path.exists():
-            project_config = self._project_config_manager.get_project_config(local_path)
+        local_project_path = self._get_local_project_path(project)
+        if local_project_path.exists():
+            project_config = self._project_config_manager.get_project_config(local_project_path)
 
             if project_config.has("cloud-id"):
                 if project_config.get("cloud-id") == project.projectId:
                     # There is a local project which is linked to this cloud project
-                    self._pull_files(project)
+                    self._pull_files(project, local_project_path)
                 else:
                     # There is a local project but the project config's cloud id doesn't match this cloud project's id
                     raise RuntimeError(
@@ -112,22 +85,21 @@ class PullManager:
                     f"The local directory matching the project's name is not a Lean project")
         else:
             # There is no local directory with the same path as the cloud project
-            self._pull_files(project)
+            self._pull_files(project, local_project_path)
 
         # Finalize pulling by updating the project config with the latest details
-        project_config = self._project_config_manager.get_project_config(local_path)
+        project_config = self._project_config_manager.get_project_config(local_project_path)
         project_config.set("cloud-id", project.projectId)
         project_config.set("algorithm-language", project.language.name)
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
         project_config.set("description", project.description)
 
-    def _pull_files(self, project: QCProject) -> None:
+    def _pull_files(self, project: QCProject, local_project_path: Path) -> None:
         """Pull the files of a single project.
 
         :param project: the cloud project of which the files need to be pulled
+        :param local_project_path: the path to the local project directory
         """
-        local_project_path = Path.cwd() / project.name
-
         if not local_project_path.exists():
             self._project_manager.create_new_project(local_project_path, project.language)
 
@@ -135,7 +107,7 @@ class PullManager:
             if cloud_file.isLibrary:
                 continue
 
-            local_file_path = Path.cwd() / project.name / cloud_file.name
+            local_file_path = local_project_path / cloud_file.name
 
             # Skip if the local file already exists with the correct content
             if local_file_path.exists() and local_file_path.read_text().strip() == cloud_file.content.strip():
@@ -149,3 +121,49 @@ class PullManager:
                     local_file.write(cloud_file.content)
 
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
+
+    def _get_local_project_path(self, project: QCProject) -> Path:
+        """Returns the local path where a certain cloud project should be stored.
+
+        :param project: the cloud project to get the project path of
+        :return: the path to the local project directory
+        """
+        name = project.name
+
+        # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
+        if platform.system() == "Windows":
+            # Windows, \":*?"<>| are forbidden
+            # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
+            forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
+        elif platform.system() == "Darwin":
+            # macOS, : is a path separator, but : is not a path separator on QuantConnect
+            forbidden_characters = [":"]
+        else:
+            # Linux, no forbidden characters
+            forbidden_characters = []
+
+        for forbidden_character in forbidden_characters:
+            name = name.replace(forbidden_character, "")
+
+        # On Windows we need to ensure each path component is valid
+        if platform.system() == "Windows":
+            new_components = []
+
+            for component in Path(name).parts:
+                # Some names are reserved
+                for reserved_name in ["CON", "PRN", "AUX", "NUL",
+                                      "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                                      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
+                    # If the component is a reserved name, we add an underscore to it so it can be used
+                    if component == reserved_name:
+                        component += "_"
+
+                # Components cannot end with a space or a dot
+                component = component.rstrip(" ")
+                component = component.rstrip(".")
+
+                new_components.append(component)
+
+            name = "/".join(new_components)
+
+        return Path.cwd() / name
