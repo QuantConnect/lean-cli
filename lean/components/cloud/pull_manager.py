@@ -143,7 +143,7 @@ class PullManager:
             forbidden_characters = []
 
         for forbidden_character in forbidden_characters:
-            name = name.replace(forbidden_character, "")
+            name = name.replace(forbidden_character, " ")
 
         # On Windows we need to ensure each path component is valid
         if platform.system() == "Windows":
