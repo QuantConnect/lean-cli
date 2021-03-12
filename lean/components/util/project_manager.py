@@ -326,7 +326,7 @@ on the page above, you can add a PackageReference for it.
         </When>
     </Choose>
     <ItemGroup>
-        <PackageReference Include="QuantConnect.Lean" Version="2.*"/>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.11072"/>
     </ItemGroup>
 </Project>
         """)
