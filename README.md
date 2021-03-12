@@ -23,7 +23,7 @@ The following features are currently planned to be implemented (in order of prio
 - [ ] **First beta release**
 - [x] [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
 - [x] [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization)
-- [ ] Local backtest report creation
+- [x] [Local backtest report creation](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/generating-backtest-reports)
 - [ ] Local backtest visualization
 - [ ] Local live trading
 - [ ] Cloud optimization
