@@ -453,14 +453,14 @@ _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 
 ### `lean report`
 
-Generate a report of a backtest.
+Create a report of a backtest.
 
 ```
 Usage: lean report [OPTIONS]
 
-  Generate a report of a backtest.
+  Create a report of a backtest.
 
-  This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
+  This runs the LEAN Report Creator in Docker to create a polished, professional-grade report of a backtest.
 
   The name, description, and version are optional and will be blank if not given.
 
