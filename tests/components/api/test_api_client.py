@@ -130,7 +130,8 @@ def test_api_client_raises_request_failed_error_on_failing_response_non_http_500
 @pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_authentication_error_on_error_complaining_about_hash(method: str,
                                                                                 requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
+    requests_mock.add(method.upper(),
+                      API_BASE_URL + "endpoint",
                       '{ "success": false, "errors": ["Hash doesn\'t match."] }')
 
     api = APIClient(mock.Mock(), "123", "456")
@@ -142,7 +143,8 @@ def test_api_client_raises_authentication_error_on_error_complaining_about_hash(
 @pytest.mark.parametrize("method", ["get", "post"])
 def test_api_client_raises_request_failed_error_when_response_contains_errors(method: str,
                                                                               requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), API_BASE_URL + "endpoint",
+    requests_mock.add(method.upper(),
+                      API_BASE_URL + "endpoint",
                       '{ "success": false, "errors": ["Error 1", "Error 2"] }')
 
     api = APIClient(mock.Mock(), "123", "456")
