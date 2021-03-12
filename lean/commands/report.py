@@ -67,7 +67,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 @click.option("--overwrite",
               is_flag=True,
               default=False,
-              help="Overwrite --report-destination if it already contains a file (defaults to False)")
+              help="Overwrite --report-destination if it already contains a file")
 @click.option("--update",
               is_flag=True,
               default=False,
