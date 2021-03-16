@@ -84,7 +84,7 @@ def init() -> None:
         cli_config_manager.default_language.set_value(default_language)
 
     logger.info(f"""
-The following objects has been created:
+The following objects have been created:
 - {DEFAULT_LEAN_CONFIG_FILE_NAME} contains the configuration used when running the LEAN engine locally
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
 
