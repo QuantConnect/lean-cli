@@ -53,11 +53,11 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     lean_config_manager = container.lean_config_manager()
-    lean_config_path = lean_config_manager.get_lean_config_path()
     lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None)
 
     if "environments" not in lean_config or environment not in lean_config["environments"]:
-        raise RuntimeError(f"{lean_config_path} does not contain an environment called '{environment}'")
+        lean_config_path = lean_config_manager.get_lean_config_path()
+        raise RuntimeError(f"{lean_config_path} does not contain an environment named '{environment}'")
 
     if not lean_config["environments"][environment]["live-mode"]:
         raise RuntimeError(f"The '{environment}' is not a live trading environment (live-mode is set to false)")
