@@ -114,3 +114,14 @@ def test_create_project_creates_subdirectories() -> None:
     assert result.exit_code == 0
 
     assert (Path.cwd() / "My First Category" / "My First Project").exists()
+
+
+def test_create_project_title_cases_class_name() -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", "my first project"])
+
+    assert result.exit_code == 0
+
+    with open(Path.cwd() / "my first project" / "main.py") as file:
+        assert "class MyFirstProject(QCAlgorithm)" in file.read()

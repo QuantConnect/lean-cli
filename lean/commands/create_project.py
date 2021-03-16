@@ -230,7 +230,7 @@ def create_project(name: str, language: str) -> None:
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
     # Convert the project name into a valid class name by removing all non-alphanumeric characters
-    class_name = re.sub(f"[^a-zA-Z0-9]", "", full_path.name)
+    class_name = re.sub(f"[^a-zA-Z0-9]", "", full_path.name.title())
 
     if language == "python":
         with (full_path / "main.py").open("w+") as file:
