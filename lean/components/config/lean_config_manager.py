@@ -70,7 +70,7 @@ class LeanConfigManager:
         self._default_path = path
 
     def get_cli_root_directory(self) -> Path:
-        """Returns the path to the root of the current Lean CLI directory.
+        """Returns the path to the directory containing the Lean config file.
 
         :return: the path to the directory containing the Lean config file
         """

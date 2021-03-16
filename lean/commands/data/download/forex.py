@@ -21,7 +21,7 @@ from lean.container import container
 from lean.models.api import QCResolution, QCSecurityType
 
 
-@click.command(cls=LeanCommand, requires_cli_directory=True)
+@click.command(cls=LeanCommand, requires_lean_config=True)
 @click.option("--ticker", type=str, required=True, help="The ticker of the data")
 @click.option("--market",
               type=click.Choice(["fxcm", "oanda"], case_sensitive=False),

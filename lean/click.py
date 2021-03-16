@@ -38,14 +38,14 @@ def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Opti
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_cli_directory: bool = False, *args, **kwargs):
+    def __init__(self, requires_lean_config: bool = False, *args, **kwargs):
         """Creates a new LeanCommand instance.
 
-        :param requires_cli_directory: True if this command needs to be ran in a Lean CLI directory, False if not
+        :param requires_lean_config: True if this command requires a Lean config, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
-        self._requires_cli_directory = requires_cli_directory
+        self._requires_lean_config = requires_lean_config
 
         super().__init__(*args, **kwargs)
 
@@ -54,14 +54,14 @@ class LeanCommand(click.Command):
         self.context_settings["max_content_width"] = 120
 
     def invoke(self, ctx):
-        if self._requires_cli_directory:
+        if self._requires_lean_config:
             try:
                 # This method will throw if the directory cannot be found
                 container.lean_config_manager().get_cli_root_directory()
             except Exception:
-                # Abort with a display-friendly error message if the command needs to be ran inside a Lean CLI directory
+                # Abort with a display-friendly error message if the command requires a Lean config
                 raise RuntimeError(
-                    "This command should be executed in a Lean CLI directory, run `lean init` in an empty directory to create one, or specify the Lean configuration file to use with --lean-config")
+                    "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config")
 
         result = super().invoke(ctx)
 
@@ -73,8 +73,8 @@ class LeanCommand(click.Command):
     def get_params(self, ctx):
         params = super().get_params(ctx)
 
-        # Add --config option if the commands needs to be ran inside a Lean CLI directory
-        if self._requires_cli_directory:
+        # Add --lean-config option if the command requires a Lean config
+        if self._requires_lean_config:
             params.insert(len(params) - 1, click.Option(["--lean-config"],
                                                         type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                                                         help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",

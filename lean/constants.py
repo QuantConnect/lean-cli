@@ -23,13 +23,13 @@ CREDENTIALS_CONFIG_PATH = str(Path("~/.lean/credentials").expanduser())
 
 CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
-# The default name of the configuration file in a Lean CLI directory containing the Lean engine configuration
+# The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
 
-# The default name of the data directory in a Lean CLI directory containing the market data
+# The default name of the directory containing the market data
 DEFAULT_DATA_DIRECTORY_NAME = "data"
 
-# The name of the configuration file in a project in a Lean CLI directory
+# The name of the file in containing the project configuration
 PROJECT_CONFIG_FILE_NAME = "config.json"
 
 # The Docker image used when running the LEAN engine locally

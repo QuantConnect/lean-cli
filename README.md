@@ -36,21 +36,21 @@ The CLI can be installed and updated by running `pip install --upgrade lean`.
 
 Note that many commands in the CLI require Docker to run. See [Get Docker](https://docs.docker.com/get-docker/) for instructions on how to install Docker for your operating system.
 
-After installing the CLI, simply open a terminal in an empty directory and run `lean init` to set up a Lean CLI directory. This will scaffold a standard directory structure for you to hit the ground running.
+After installing the CLI, simply open a terminal in an empty directory and run `lean init` to set up a Lean configuration file and data directory. This command downloads the latest configuration file and sample data from the [QuantConnect/Lean](https://github.com/QuantConnect/Lean) repository.
 
 ## Usage
 
 The Lean CLI supports multiple workflows. The examples below serve as a starting point, you're free to mix local and cloud features in any way you'd like.
 
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
-1. Open a terminal in the Lean CLI directory.
+1. Open a terminal in the directory you ran `lean init` in.
 2. Run `lean cloud pull` to pull remotely changed files.
 3. Start programming locally and run backtests in the cloud with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
 4. Whenever you want to create a new project, run `lean create-project "Project Name"` and `lean cloud push --project "Project Name"` to create a new project containing some basic code and to push it to the cloud.
 5. When you're finished for the moment, run `lean cloud push` to push all locally changed files to the cloud.
 
 A locally-focused workflow (local development, local execution) with the CLI may look like this:
-1. Open a terminal in the Lean CLI directory.
+1. Open a terminal in the directory you ran `lean init` in.
 2. Run `lean create-project "Project Name"` to create a new project with some basic code to get you started.
 3. Work on your strategy in `./Project Name`.
 4. Run `lean research "Project Name"` to start a Jupyter Lab session to perform research in.
@@ -73,6 +73,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean data download forex`](#lean-data-download-forex)
 - [`lean data generate`](#lean-data-generate)
 - [`lean init`](#lean-init)
+- [`lean live`](#lean-live)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean optimize`](#lean-optimize)
@@ -369,12 +370,12 @@ _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
 
 ### `lean init`
 
-Scaffold a Lean CLI directory.
+Scaffold a Lean configuration file and data directory.
 
 ```
 Usage: lean init [OPTIONS]
 
-  Scaffold a Lean CLI directory.
+  Scaffold a Lean configuration file and data directory.
 
 Options:
   --verbose  Enable debug logging
@@ -382,6 +383,31 @@ Options:
 ```
 
 _See code: [lean/commands/init.py](lean/commands/init.py)_
+
+### `lean live`
+
+Start live trading a project locally using Docker.
+
+```
+Usage: lean live [OPTIONS] PROJECT ENVIRONMENT
+
+  Start live trading a project locally using Docker.
+
+  If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
+  If PROJECT is a file, the algorithm in the specified file will be executed.
+
+  The ENVIRONMENT should be an environment in the Lean configuration file with live-mode set to true.
+
+Options:
+  --output DIRECTORY  Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
+  --update            Pull the selected LEAN engine version before starting live trading
+  --version TEXT      The LEAN engine version to run (defaults to the latest installed version)
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
+```
+
+_See code: [lean/commands/live.py](lean/commands/live.py)_
 
 ### `lean login`
 

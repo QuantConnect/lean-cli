@@ -26,7 +26,7 @@ from lean.container import container
 
 @click.command(cls=LeanCommand)
 def init() -> None:
-    """Scaffold a Lean CLI directory."""
+    """Scaffold a Lean configuration file and data directory."""
     current_dir = Path.cwd()
     data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
     lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
@@ -41,7 +41,7 @@ def init() -> None:
 
     # Warn the user if the current directory is not empty
     if next(current_dir.iterdir(), None) is not None:
-        logger.info("This command will bootstrap a Lean CLI directory in the current directory")
+        logger.info("This command will create a Lean configuration file and data directory in the current directory")
         click.confirm("The current directory is not empty, continue?", default=False, abort=True)
 
     # Download the Lean repository
@@ -84,9 +84,7 @@ def init() -> None:
         cli_config_manager.default_language.set_value(default_language)
 
     logger.info(f"""
-Successfully bootstrapped your Lean CLI directory!
-
-The following structure has been created:
+The following objects has been created:
 - {DEFAULT_LEAN_CONFIG_FILE_NAME} contains the configuration used when running the LEAN engine locally
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
 
