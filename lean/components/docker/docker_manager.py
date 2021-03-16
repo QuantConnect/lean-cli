@@ -87,7 +87,7 @@ class DockerManager:
         def print_logs() -> None:
             on_run_called = False
 
-            # Capture all logs and print it to stdout if not running in quiet mode
+            # Capture all logs and print it to stdout
             for line in container.logs(stream=True, follow=True):
                 if not on_run_called:
                     on_run()
