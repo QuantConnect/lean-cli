@@ -44,7 +44,7 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
     \b
-    The ENVIRONMENT should be an environment in the Lean configuration file with live-mode set to true.
+    ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))

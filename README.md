@@ -396,7 +396,7 @@ Usage: lean live [OPTIONS] PROJECT ENVIRONMENT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  The ENVIRONMENT should be an environment in the Lean configuration file with live-mode set to true.
+  ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
 
 Options:
   --output DIRECTORY  Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
