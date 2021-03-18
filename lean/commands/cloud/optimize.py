@@ -32,7 +32,7 @@ def _calculate_backtest_count(parameters: List[OptimizationParameter]) -> int:
     :param parameters: the parameters to optimize
     :return: the number of backtests a grid search on the parameters would require
     """
-    steps_per_parameter = [((p.max - p.min) / p.step) + 1 for p in parameters]
+    steps_per_parameter = [round((p.max - p.min) / p.step) + 1 for p in parameters]
     return int(functools.reduce(operator.mul, steps_per_parameter, 1))
 
 
