@@ -43,7 +43,7 @@ class CloudRunner:
         :param name: the name of the backtest
         :return: the completed backtest
         """
-        finished_compile = self._compile_project(project)
+        finished_compile = self.compile_project(project)
         created_backtest = self._api_client.backtests.create(project.projectId, finished_compile.compileId, name)
 
         self._logger.info(f"Started backtest named '{name}' for project '{project.name}'")

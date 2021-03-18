@@ -149,7 +149,6 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
 Options:
   --name TEXT  The name of the optimization (a random one is generated if not specified)
   --push       Push local modifications to the cloud before starting the optimization
-  --open       Automatically open the project in the browser when the optimization has started
   --verbose    Enable debug logging
   --help       Show this message and exit.
 ```

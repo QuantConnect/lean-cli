@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
@@ -22,23 +21,20 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.components.config.optimizer_config_manager import NodeType
 from lean.container import container
-from lean.models.api import QCBacktest, QCOptimizationEstimate
+from lean.models.api import QCOptimization, QCOptimizationEstimate
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 
 
-def create_api_backtest() -> QCBacktest:
-    return QCBacktest(
-        backtestId="123",
+def create_api_optimization() -> QCOptimization:
+    return QCOptimization(
+        optimizationId="123",
         projectId=1,
-        status="Completed.",
-        name="Backtest name",
-        created=datetime.now(),
-        completed=True,
-        progress=1.0,
-        runtimeStatistics={},
-        statistics={}
+        status="completed",
+        name="Optimization name",
+        backtests={},
+        runtimeStatistics={}
     )
 
 
@@ -77,6 +73,7 @@ def test_cloud_optimize_runs_optimization_by_project_id() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -84,6 +81,7 @@ def test_cloud_optimize_runs_optimization_by_project_id() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "1"])
@@ -100,6 +98,7 @@ def test_cloud_optimize_runs_optimization_by_project_name() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -107,6 +106,7 @@ def test_cloud_optimize_runs_optimization_by_project_name() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
@@ -123,6 +123,7 @@ def test_cloud_optimize_uses_given_name() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -130,6 +131,7 @@ def test_cloud_optimize_uses_given_name() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
@@ -146,6 +148,7 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -153,6 +156,7 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
@@ -171,31 +175,11 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
                                                           optimizer_config_manager.configure_node()[1])
 
 
-@mock.patch("webbrowser.open")
-def test_cloud_optimize_opens_browser_when_open_option_given(open) -> None:
-    create_fake_lean_cli_directory()
-
-    project = create_api_project(1, "My Project")
-
-    api_client = mock.Mock()
-    api_client.projects.get_all.return_value = [project]
-    api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
-    container.api_client.override(providers.Object(api_client))
-
-    cloud_runner = mock.Mock()
-    container.cloud_runner.override(providers.Object(cloud_runner))
-
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--open"])
-
-    assert result.exit_code == 0
-
-    open.assert_called_once_with(project.get_url())
-
-
 def test_cloud_optimize_pushes_project_when_push_option_given() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "Python Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -203,6 +187,7 @@ def test_cloud_optimize_pushes_project_when_push_option_given() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     push_manager = mock.Mock()
@@ -219,6 +204,7 @@ def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> 
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -226,6 +212,7 @@ def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> 
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     push_manager = mock.Mock()
@@ -266,6 +253,7 @@ def test_cloud_optimize_aborts_when_input_matches_no_cloud_project() -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
@@ -273,6 +261,7 @@ def test_cloud_optimize_aborts_when_input_matches_no_cloud_project() -> None:
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
+    cloud_runner.run_optimization.return_value = optimization
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "Fake Project"])

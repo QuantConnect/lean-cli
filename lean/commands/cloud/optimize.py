@@ -13,7 +13,6 @@
 
 import functools
 import operator
-import webbrowser
 from datetime import timedelta
 from math import ceil
 from pathlib import Path
@@ -23,7 +22,8 @@ import click
 
 from lean.click import LeanCommand
 from lean.container import container
-from lean.models.optimizer import OptimizationParameter
+from lean.models.api import QCOptimizationBacktest
+from lean.models.optimizer import OptimizationConstraint, OptimizationExtremum, OptimizationParameter
 
 
 def _calculate_backtest_count(parameters: List[OptimizationParameter]) -> int:
@@ -71,6 +71,46 @@ def _format_hours(hours: float) -> str:
     return f"{amount:,} {unit}{unit_suffix}"
 
 
+def _get_backtest_statistic(backtest: QCOptimizationBacktest, target: str) -> float:
+    """Returns a statistic of a backtest.
+
+    :param backtest: the backtest to retrieve the statistic from
+    :param target: the target statistic to retrieve, must be one of OptimizerConfigManager.available_targets
+    :return: the value of the target statistic on the backtest
+    """
+    if target == "TotalPerformance.PortfolioStatistics.SharpeRatio":
+        return backtest.statistics[14]
+    elif target == "TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn":
+        return backtest.statistics[6]
+    elif target == "TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio":
+        return backtest.statistics[12]
+    elif target == "TotalPerformance.PortfolioStatistics.Drawdown":
+        return backtest.statistics[7]
+    else:
+        raise ValueError(f"Target is not supported: {target}")
+
+
+def _backtest_meets_constraints(backtest: QCOptimizationBacktest, constraints: List[OptimizationConstraint]) -> bool:
+    """Returns whether the backtest meets all constraints.
+
+    :param backtest: the backtest to check
+    :param constraints: the constraints the backtest has to meet
+    :return: True if the backtest meets all constraints, False if not
+    """
+    optimizer_config_manager = container.optimizer_config_manager()
+
+    for constraint in constraints:
+        expression = str(constraint)
+
+        for target, _ in optimizer_config_manager.available_targets:
+            expression = expression.replace(target, str(_get_backtest_statistic(backtest, target)))
+
+        if not eval(expression):
+            return False
+
+    return True
+
+
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
 @click.option("--name", type=str, help="The name of the optimization (a random one is generated if not specified)")
@@ -78,11 +118,7 @@ def _format_hours(hours: float) -> str:
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before starting the optimization")
-@click.option("--open", "open_browser",
-              is_flag=True,
-              default=False,
-              help="Automatically open the project in the browser when the optimization has started")
-def optimize(project: str, name: Optional[str], push: bool, open_browser: bool) -> None:
+def optimize(project: str, name: Optional[str], push: bool) -> None:
     """Optimize a project in the cloud.
 
     PROJECT should be the name or id of a cloud project.
@@ -149,15 +185,36 @@ def optimize(project: str, name: Optional[str], push: bool, open_browser: bool) 
         if click.confirm("Do you want to start the optimization on the selected node type?", default=True):
             break
 
-    cloud_runner.run_optimization(cloud_project,
-                                  finished_compile,
-                                  name,
-                                  optimization_strategy,
-                                  optimization_target,
-                                  optimization_parameters,
-                                  optimization_constraints,
-                                  node.name,
-                                  parallel_nodes)
+    optimization = cloud_runner.run_optimization(cloud_project,
+                                                 finished_compile,
+                                                 name,
+                                                 optimization_strategy,
+                                                 optimization_target,
+                                                 optimization_parameters,
+                                                 optimization_constraints,
+                                                 node.name,
+                                                 parallel_nodes)
 
-    if open_browser:
-        webbrowser.open(cloud_project.get_url())
+    backtests = optimization.backtests.values()
+    backtests = [b for b in backtests if b.exitCode == 0]
+    backtests = [b for b in backtests if _backtest_meets_constraints(b, optimization_constraints)]
+
+    if len(backtests) == 0:
+        logger.info("No optimal parameter combination found, no successful backtests meet all constraints")
+        return
+
+    scores = [(b, _get_backtest_statistic(b, optimization_target.target)) for b in backtests]
+    scores = sorted(scores,
+                    key=lambda item: item[1],
+                    reverse=optimization_target.extremum == OptimizationExtremum.Maximum)
+
+    parameters = scores[0][0].parameterSet
+    parameters = ", ".join(f"{key}: {parameters[key]}" for key in parameters)
+    logger.info(f"Optimal parameters: {parameters}")
+
+    optimal_backtest = api_client.backtests.get(cloud_project.projectId, scores[0][0].id)
+
+    logger.info(f"Optimal backtest name: {optimal_backtest.name}")
+    logger.info(f"Optimal backtest id: {optimal_backtest.backtestId}")
+    logger.info(f"Optimal backtest results:")
+    logger.info(optimal_backtest.get_statistics_table())

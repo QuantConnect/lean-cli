@@ -16,56 +16,9 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from rich import box
-from rich.table import Table
-from rich.text import Text
 
 from lean.click import LeanCommand
 from lean.container import container
-from lean.models.api import QCBacktest
-
-
-def _log_backtest_stats(backtest: QCBacktest) -> None:
-    """Logs the results of the backtest in a nice table.
-
-    :param backtest: the backtest to log the results of
-    """
-    stats = []
-
-    for key, value in backtest.runtimeStatistics.items():
-        stats.append(key)
-
-        if "-" in value:
-            stats.append(Text.from_markup(f"[red]{value}[/red]"))
-        elif any(char.isdigit() and int(char) > 0 for char in value):
-            stats.append(Text.from_markup(f"[green]{value}[/green]"))
-        else:
-            stats.append(value)
-
-    if len(stats) % 4 != 0:
-        stats.extend(["", ""])
-
-    end_of_first_section = len(stats)
-
-    for key, value in backtest.statistics.items():
-        stats.extend([key, value])
-
-    if len(stats) % 4 != 0:
-        stats.extend(["", ""])
-
-    table = Table(box=box.SQUARE)
-    table.add_column("Statistic")
-    table.add_column("Value")
-    table.add_column("Statistic")
-    table.add_column("Value")
-
-    for i in range(int(len(stats) / 4)):
-        start = i * 4
-        end = (i + 1) * 4
-        table.add_row(*stats[start:end], end_section=end_of_first_section == end)
-
-    logger = container.logger()
-    logger.info(table)
 
 
 @click.command(cls=LeanCommand)
@@ -114,7 +67,7 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     cloud_runner = container.cloud_runner()
     finished_backtest = cloud_runner.run_backtest(cloud_project, name)
 
-    _log_backtest_stats(finished_backtest)
+    logger.info(finished_backtest.get_statistics_table())
 
     logger.info(f"Backtest id: {finished_backtest.backtestId}")
     logger.info(f"Backtest name: {finished_backtest.name}")

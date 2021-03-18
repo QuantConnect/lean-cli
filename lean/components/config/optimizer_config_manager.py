@@ -50,7 +50,7 @@ class OptimizerConfigManager:
         self._logger = logger
 
         # The targets that are available in the cloud
-        self._available_targets = [
+        self.available_targets = [
             ("TotalPerformance.PortfolioStatistics.SharpeRatio", "Sharpe Ratio"),
             ("TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn", "Compounding Annual Return"),
             ("TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio", "Probabilistic Sharpe Ratio"),
@@ -106,7 +106,7 @@ class OptimizerConfigManager:
         :return: the chosen optimization target
         """
         # Create a list of options containing a "<target> (min)" and "<target> (max)" option for every target
-        options = list(itertools.product(self._available_targets,
+        options = list(itertools.product(self.available_targets,
                                          [OptimizationExtremum.Minimum, OptimizationExtremum.Maximum]))
         options = [Option(id=OptimizationTarget(target=option[0][0], extremum=option[1]),
                           label=f"{option[0][1]} ({option[1]})") for option in options]
@@ -152,7 +152,7 @@ class OptimizerConfigManager:
             if not click.confirm("Do you want to add a constraint?", default=False):
                 return results
 
-            target_options = [Option(id=target[0], label=target[1]) for target in self._available_targets]
+            target_options = [Option(id=target[0], label=target[1]) for target in self.available_targets]
             target = self._choose_from_list("Select a constraint target", target_options)
 
             operator = self._choose_from_list("Select a constraint operator (<value> will be asked after this)", [

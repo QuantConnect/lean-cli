@@ -16,10 +16,12 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
-
-
+from rich import box
+from rich.table import Table
 # The models in this module are all parts of responses from the QuantConnect API
-# The keys of properties are not changed so they don't obey the rest of the project's naming conventions
+# The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
+from rich.text import Text
+
 
 class QCCollaborator(BaseModel):
     id: int
@@ -176,6 +178,47 @@ class QCBacktest(BaseModel):
         """
         return f"https://www.quantconnect.com/terminal/#open/{self.projectId}/{self.backtestId}"
 
+    def get_statistics_table(self) -> Table:
+        """Converts the statistics into a pretty table.
+
+        :return: a table containing all statistics
+        """
+        stats = []
+
+        for key, value in self.runtimeStatistics.items():
+            stats.append(key)
+
+            if "-" in value:
+                stats.append(Text.from_markup(f"[red]{value}[/red]"))
+            elif any(char.isdigit() and int(char) > 0 for char in value):
+                stats.append(Text.from_markup(f"[green]{value}[/green]"))
+            else:
+                stats.append(value)
+
+        if len(stats) % 4 != 0:
+            stats.extend(["", ""])
+
+        end_of_first_section = len(stats)
+
+        for key, value in self.statistics.items():
+            stats.extend([key, value])
+
+        if len(stats) % 4 != 0:
+            stats.extend(["", ""])
+
+        table = Table(box=box.SQUARE)
+        table.add_column("Statistic")
+        table.add_column("Value")
+        table.add_column("Statistic")
+        table.add_column("Value")
+
+        for i in range(int(len(stats) / 4)):
+            start = i * 4
+            end = (i + 1) * 4
+            table.add_row(*stats[start:end], end_section=end_of_first_section == end)
+
+        return table
+
 
 class QCBacktestReport(BaseModel):
     report: str
@@ -280,12 +323,20 @@ class QCLink(BaseModel):
     link: str
 
 
+class QCOptimizationBacktest(BaseModel):
+    id: str
+    name: str
+    exitCode: int
+    parameterSet: Dict[str, str]
+    statistics: List[float] = []
+
+
 class QCOptimization(BaseModel):
     optimizationId: str
     projectId: int
     status: str
     name: str
-    backtests: Dict[str, Any] = {}
+    backtests: Dict[str, QCOptimizationBacktest] = {}
     runtimeStatistics: Dict[str, str] = {}
 
     @validator("backtests", "runtimeStatistics", pre=True)
