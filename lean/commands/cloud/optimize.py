@@ -158,7 +158,7 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
     optimizer_config_manager = container.optimizer_config_manager()
     optimization_strategy = optimizer_config_manager.configure_strategy(cloud=True)
     optimization_target = optimizer_config_manager.configure_target()
-    optimization_parameters = optimizer_config_manager.configure_parameters(cloud_project.parameters)
+    optimization_parameters = optimizer_config_manager.configure_parameters(cloud_project.parameters, cloud=True)
     optimization_constraints = optimizer_config_manager.configure_constraints()
 
     backtest_count = _calculate_backtest_count(optimization_parameters)

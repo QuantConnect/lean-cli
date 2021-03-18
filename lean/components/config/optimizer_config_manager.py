@@ -113,15 +113,20 @@ class OptimizerConfigManager:
 
         return self._choose_from_list("Select an optimization target", options)
 
-    def configure_parameters(self, project_parameters: List[QCParameter]) -> List[OptimizationParameter]:
+    def configure_parameters(self, project_parameters: List[QCParameter], cloud: bool) -> List[OptimizationParameter]:
         """Asks the user which parameters need to be optimized and with what constraints.
 
         :param project_parameters: the parameters of the project that will be optimized
+        :param cloud: True if the optimization will be ran in the cloud, False if not
         :return: the chosen optimization parameters
         """
         results: List[OptimizationParameter] = []
 
         for parameter in project_parameters:
+            if cloud and len(results) == 2:
+                self._logger.warn(f"You can optimize up to 2 parameters in the cloud, skipping '{parameter.key}'")
+                continue
+
             if not click.confirm(f"Should the '{parameter.key}' parameter be optimized?", default=True):
                 continue
 

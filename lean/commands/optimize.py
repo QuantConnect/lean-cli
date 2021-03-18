@@ -78,7 +78,7 @@ def optimize(project: Path,
         optimizer_config_manager = container.optimizer_config_manager()
         optimization_strategy = optimizer_config_manager.configure_strategy(cloud=False)
         optimization_target = optimizer_config_manager.configure_target()
-        optimization_parameters = optimizer_config_manager.configure_parameters(project_parameters)
+        optimization_parameters = optimizer_config_manager.configure_parameters(project_parameters, cloud=False)
         optimization_constraints = optimizer_config_manager.configure_constraints()
 
         config = {
