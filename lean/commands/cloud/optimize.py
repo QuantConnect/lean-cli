@@ -146,6 +146,7 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
         if local_path.exists():
             push_manager = container.push_manager()
             push_manager.push_projects([local_path])
+            cloud_project = api_client.projects.get(cloud_project.projectId)
         else:
             logger.info(f"'{cloud_project.name}' does not exist locally, not pushing anything")
 
