@@ -203,18 +203,16 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
         logger.info("No optimal parameter combination found, no successful backtests meet all constraints")
         return
 
-    scores = [(b, _get_backtest_statistic(b, optimization_target.target)) for b in backtests]
-    scores = sorted(scores,
-                    key=lambda item: item[1],
-                    reverse=optimization_target.extremum == OptimizationExtremum.Maximum)
+    optimal_backtest = sorted(backtests,
+                              key=lambda backtest: _get_backtest_statistic(backtest, optimization_target.target),
+                              reverse=optimization_target.extremum == OptimizationExtremum.Maximum)[0]
 
-    parameters = scores[0][0].parameterSet
-    parameters = ", ".join(f"{key}: {parameters[key]}" for key in parameters)
+    parameters = ", ".join(f"{key}: {optimal_backtest.parameterSet[key]}" for key in optimal_backtest.parameterSet)
     logger.info(f"Optimal parameters: {parameters}")
 
-    optimal_backtest = api_client.backtests.get(cloud_project.projectId, scores[0][0].id)
+    optimal_backtest = api_client.backtests.get(cloud_project.projectId, optimal_backtest.id)
 
-    logger.info(f"Optimal backtest name: {optimal_backtest.name}")
     logger.info(f"Optimal backtest id: {optimal_backtest.backtestId}")
+    logger.info(f"Optimal backtest name: {optimal_backtest.name}")
     logger.info(f"Optimal backtest results:")
     logger.info(optimal_backtest.get_statistics_table())
