@@ -13,7 +13,6 @@
 
 import webbrowser
 from pathlib import Path
-from random import choice
 from typing import Optional
 
 import click
@@ -24,29 +23,6 @@ from rich.text import Text
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCBacktest
-
-# Name generation logic is based on
-# https://github.com/QuantConnect/Lean/blob/5034c28c2efb4691a148b2c4a59f1c7ceb5f3b7e/VisualStudioPlugin/BacktestNameProvider.cs
-
-VERBS = ["Determined", "Pensive", "Adaptable", "Calculating", "Logical", "Energetic", "Creative", "Smooth", "Calm",
-         "Hyper-Active", "Measured", "Fat", "Emotional", "Crying", "Jumping", "Swimming", "Crawling", "Dancing",
-         "Focused", "Well Dressed", "Retrospective", "Hipster", "Square", "Upgraded", "Ugly", "Casual", "Formal",
-         "Geeky", "Virtual", "Muscular", "Alert", "Sleepy"]
-
-COLORS = ["Red", "Red-Orange", "Orange", "Yellow", "Tan", "Yellow-Green", "Yellow-Green", "Fluorescent Orange",
-          "Apricot", "Green", "Fluorescent Pink", "Sky Blue", "Fluorescent Yellow", "Asparagus", "Blue", "Violet",
-          "Light Brown", "Brown", "Magenta", "Black"]
-
-ANIMALS = ["Horse", "Zebra", "Whale", "Tapir", "Barracuda", "Cow", "Cat", "Wolf", "Hamster", "Monkey", "Pelican",
-           "Snake", "Albatross", "Viper", "Guanaco", "Anguilline", "Badger", "Dogfish", "Duck", "Butterfly", "Gaur",
-           "Rat", "Termite", "Eagle", "Dinosaur", "Pig", "Seahorse", "Hornet", "Koala", "Hippopotamus", "Cormorant",
-           "Jackal", "Rhinoceros", "Panda", "Elephant", "Penguin", "Beaver", "Hyena", "Parrot", "Crocodile", "Baboon",
-           "Pony", "Chinchilla", "Fox", "Lion", "Mosquito", "Cobra", "Mule", "Coyote", "Alligator", "Pigeon",
-           "Antelope", "Goat", "Falcon", "Owlet", "Llama", "Gull", "Chicken", "Caterpillar", "Giraffe", "Rabbit",
-           "Flamingo", "Caribou", "Goshawk", "Galago", "Bee", "Jellyfish", "Buffalo", "Salmon", "Bison", "Dolphin",
-           "Jaguar", "Dog", "Armadillo", "Gorilla", "Alpaca", "Kangaroo", "Dragonfly", "Salamander", "Owl", "Bat",
-           "Sheep", "Frog", "Chimpanzee", "Bull", "Scorpion", "Lemur", "Camel", "Leopard", "Fish", "Donkey", "Manatee",
-           "Shark", "Bear", "kitten", "Fly", "Ant", "Sardine"]
 
 
 def _log_backtest_stats(backtest: QCBacktest) -> None:
@@ -133,7 +109,7 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
             logger.info(f"'{cloud_project.name}' does not exist locally, not pushing anything")
 
     if name is None:
-        name = f"{choice(VERBS)} {choice(COLORS)} {choice(ANIMALS)}"
+        name = container.name_generator().generate_name()
 
     cloud_runner = container.cloud_runner()
     finished_backtest = cloud_runner.run_backtest(cloud_project, name)

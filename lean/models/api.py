@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 # The models in this module are all parts of responses from the QuantConnect API
@@ -81,6 +81,13 @@ class QCProject(BaseModel):
     parameters: List[QCParameter]
     liveResults: QCLiveResults
     libraries: List[int]
+
+    def get_url(self) -> str:
+        """Returns the url of the project page in the cloud.
+
+        :return: a url which when visited opens an Algorithm Lab tab containing the project
+        """
+        return f"https://www.quantconnect.com/terminal/#open/{self.projectId}"
 
 
 class QCCreatedProject(BaseModel):
@@ -271,3 +278,38 @@ class QCResolution(str, Enum):
 
 class QCLink(BaseModel):
     link: str
+
+
+class QCOptimization(BaseModel):
+    optimizationId: str
+    projectId: int
+    status: str
+    name: str
+    backtests: Dict[str, Any] = {}
+    runtimeStatistics: Dict[str, str] = {}
+
+    @validator("backtests", "runtimeStatistics", pre=True)
+    def parse_empty_lists(cls, value: Any) -> Any:
+        # If these fields have no data, they are assigned an array by default
+        # For consistency we convert those empty arrays to empty dicts
+        if isinstance(value, list):
+            return {}
+        return value
+
+    def get_progress(self) -> float:
+        """Returns the progress of the optimization between 0.0 and 1.0.
+
+        :return: 0.0 if the optimization is 0% done, 1.0 if the optimization is 100% done, or somewhere in between
+        """
+        stats = self.runtimeStatistics
+        if "Completed" in stats and "Failed" in stats and "Total" in stats:
+            finished_backtests = float(stats["Completed"]) + float(stats["Failed"])
+            total_backtests = float(stats["Total"])
+            return finished_backtests / total_backtests
+        return 0.0
+
+
+class QCOptimizationEstimate(BaseModel):
+    estimateId: str
+    time: int
+    balance: int

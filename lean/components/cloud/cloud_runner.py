@@ -10,13 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import List
 
 import click
 
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.components.util.task_manager import TaskManager
-from lean.models.api import QCBacktest, QCCompileState, QCCompileWithLogs, QCProject
+from lean.models.api import QCBacktest, QCCompileState, QCCompileWithLogs, QCOptimization, QCProject
+from lean.models.errors import RequestFailedError
+from lean.models.optimizer import OptimizationConstraint, OptimizationParameter, OptimizationTarget
 
 
 class CloudRunner:
@@ -34,6 +37,12 @@ class CloudRunner:
         self._task_manager = task_manager
 
     def run_backtest(self, project: QCProject, name: str) -> QCBacktest:
+        """Runs a backtest in the cloud.
+
+        :param project: the project to backtest
+        :param name: the name of the backtest
+        :return: the completed backtest
+        """
         finished_compile = self._compile_project(project)
         created_backtest = self._api_client.backtests.create(project.projectId, finished_compile.compileId, name)
 
@@ -52,7 +61,61 @@ class CloudRunner:
                 self._logger.info(f"Successfully cancelled and deleted backtest '{name}'")
             raise e
 
-    def _compile_project(self, project: QCProject) -> QCCompileWithLogs:
+    def run_optimization(self,
+                         project: QCProject,
+                         finished_compile: QCCompileWithLogs,
+                         name: str,
+                         strategy: str,
+                         target: OptimizationTarget,
+                         parameters: List[OptimizationParameter],
+                         constraints: List[OptimizationConstraint],
+                         node_type: str,
+                         parallel_nodes: int) -> QCOptimization:
+        """Runs an optimization in the cloud.
+
+        :param project: the project to optimize
+        :param finished_compile: a finished compile of the given project
+        :param name: the name of the optimization
+        :param strategy: the strategy to optimize with
+        :param target: the target of the optimization
+        :param parameters: the parameters to optimize
+        :param constraints: the constraints of the optimization
+        :param node_type: the type of the node to run the optimization on
+        :param parallel_nodes: the number of parallel nodes to run the optimization on
+        :return: the completed optimization
+        """
+        created_optimization = self._api_client.optimizations.create(project.projectId,
+                                                                     finished_compile.compileId,
+                                                                     name,
+                                                                     strategy,
+                                                                     target,
+                                                                     parameters,
+                                                                     constraints,
+                                                                     node_type,
+                                                                     parallel_nodes)
+
+        self._logger.info(f"Started optimization named '{name}' for project '{project.name}'")
+        self._logger.info(f"Project url: {project.get_url()}")
+
+        try:
+            return self._task_manager.poll(
+                make_request=lambda: self._api_client.optimizations.get(created_optimization.optimizationId),
+                is_done=lambda data: data.status != "active" and data.status != "running",
+                get_progress=lambda data: data.get_progress()
+            )
+        except KeyboardInterrupt as e:
+            if click.confirm("Do you want to cancel and delete the running optimization?", True):
+                try:
+                    self._api_client.optimizations.abort(created_optimization.optimizationId)
+                except RequestFailedError:
+                    # The optimization finished between the user pressed Ctrl+C and confirmed the deletion
+                    pass
+                finally:
+                    self._api_client.optimizations.delete(created_optimization.optimizationId)
+                    self._logger.info(f"Successfully cancelled and deleted optimization '{name}'")
+            raise e
+
+    def compile_project(self, project: QCProject) -> QCCompileWithLogs:
         """Compiles a project in the cloud.
 
         :param project: the project to compile

@@ -11,23 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
-
-from lean.commands.cloud.backtest import backtest
-from lean.commands.cloud.optimize import optimize
-from lean.commands.cloud.pull import pull
-from lean.commands.cloud.push import push
+from lean.components.util.name_generator import NameGenerator
 
 
-@click.group()
-def cloud() -> None:
-    """Interact with the QuantConnect cloud."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean cloud <command>` commands
-    pass
+def test_generate_name_generates_names_with_at_least_three_words() -> None:
+    name_generator = NameGenerator()
+    name = name_generator.generate_name()
+
+    assert name.count(" ") >= 2
 
 
-cloud.add_command(pull)
-cloud.add_command(push)
-cloud.add_command(backtest)
-cloud.add_command(optimize)
+def test_generate_name_generates_names_randomly() -> None:
+    name_generator = NameGenerator()
+
+    assert name_generator.generate_name() != name_generator.generate_name()

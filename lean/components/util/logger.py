@@ -33,7 +33,7 @@ class Logger:
         :param message: the message to log
         """
         if self._debug_logging_enabled:
-            self._console.print(f"[grey50]{message}[/grey50]", markup=True)
+            self._console.print(message, style="grey50")
 
     def info(self, message: RenderableType) -> None:
         """Logs an info message.
@@ -47,14 +47,14 @@ class Logger:
 
         :param message: the message to log
         """
-        self._console.print(f"[yellow]{message}[/yellow]", markup=True)
+        self._console.print(message, style="yellow")
 
     def error(self, message: RenderableType) -> None:
         """Logs an error message.
 
         :param message: the message to log
         """
-        self._console.print(f"[red]{message}[/red]", markup=True)
+        self._console.print(message, style="red")
 
     def progress(self) -> Progress:
         """Creates a Progress instance.

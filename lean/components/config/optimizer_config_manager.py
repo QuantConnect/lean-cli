@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import itertools
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import click
 from pydantic import BaseModel
@@ -27,6 +27,16 @@ class Option(BaseModel):
     """The Option class represents a choosable option with an internal id and a display-friendly label."""
     id: Any
     label: str
+
+
+class NodeType(BaseModel):
+    name: str
+    ram: int
+    cores: int
+    price: float
+    min_nodes: int
+    max_nodes: int
+    default_nodes: int
 
 
 class OptimizerConfigManager:
@@ -45,6 +55,32 @@ class OptimizerConfigManager:
             ("TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn", "Compounding Annual Return"),
             ("TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio", "Probabilistic Sharpe Ratio"),
             ("TotalPerformance.PortfolioStatistics.Drawdown", "Drawdown")
+        ]
+
+        # The nodes that are available in the cloud
+        # Copied from ViewsOptimization.NodeTypes in js/views/ViewsOptimization.js
+        self._available_nodes = [
+            NodeType(name="O2-8",
+                     ram=8,
+                     cores=2,
+                     price=0.15,
+                     min_nodes=1,
+                     max_nodes=24,
+                     default_nodes=12),
+            NodeType(name="O4-12",
+                     ram=12,
+                     cores=4,
+                     price=0.3,
+                     min_nodes=1,
+                     max_nodes=12,
+                     default_nodes=6),
+            NodeType(name="O8-16",
+                     ram=16,
+                     cores=8,
+                     price=0.6,
+                     min_nodes=1,
+                     max_nodes=6,
+                     default_nodes=3)
         ]
 
     def configure_strategy(self, cloud: bool) -> str:
@@ -132,6 +168,23 @@ class OptimizerConfigManager:
 
             results.append(OptimizationConstraint(**{"target": target, "operator": operator, "target-value": value}))
 
+    def configure_node(self) -> Tuple[NodeType, int]:
+        """Asks the user for the node type and number of parallel nodes to run on.
+
+        :return: the type of the node and the amount of parallel nodes to run
+        """
+        node_options = [
+            Option(id=node, label=f"{node.name} ({node.cores} cores, {node.ram} GB RAM) @ ${node.price:.2f} per hour")
+            for node in self._available_nodes
+        ]
+
+        node = self._choose_from_list("Select the optimization node type", node_options)
+        parallel_nodes = click.prompt(f"How many nodes should run in parallel ({node.min_nodes}-{node.max_nodes})",
+                                      type=click.IntRange(min=node.min_nodes, max=node.max_nodes),
+                                      default=node.default_nodes)
+
+        return node, parallel_nodes
+
     def _choose_from_list(self, text: str, options: List[Option]) -> Any:
         """Asks the user to select an option from a list of possible options.
 
@@ -142,10 +195,9 @@ class OptimizerConfigManager:
         :return: the chosen option's id
         """
         if len(options) == 1:
-            return options[0]
+            return options[0].id
 
         self._logger.info(f"{text}:")
-
         for i, option in enumerate(options):
             self._logger.info(f"{i + 1}) {option.label}")
 
