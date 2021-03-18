@@ -63,6 +63,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
 - [`lean cloud backtest`](#lean-cloud-backtest)
+- [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
 - [`lean config get`](#lean-config-get)
@@ -130,6 +131,30 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
+
+### `lean cloud optimize`
+
+Optimize a project in the cloud.
+
+```
+Usage: lean cloud optimize [OPTIONS] PROJECT
+
+  Optimize a project in the cloud.
+
+  PROJECT should be the name or id of a cloud project.
+
+  If the project that has to be optimized has been pulled to the local drive with `lean cloud pull` it is possible to
+  use the --push option to push local modifications to the cloud before running the optimization.
+
+Options:
+  --name TEXT  The name of the optimization (a random one is generated if not specified)
+  --push       Push local modifications to the cloud before starting the optimization
+  --open       Automatically open the project in the browser when the optimization has started
+  --verbose    Enable debug logging
+  --help       Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/optimize.py](lean/commands/cloud/optimize.py)_
 
 ### `lean cloud pull`
 
