@@ -121,6 +121,8 @@ def _backtest_meets_constraints(backtest: QCOptimizationBacktest, constraints: L
 def optimize(project: str, name: Optional[str], push: bool) -> None:
     """Optimize a project in the cloud.
 
+    An interactive prompt will be shown to configure the optimizer.
+
     PROJECT should be the name or id of a cloud project.
 
     If the project that has to be optimized has been pulled to the local drive

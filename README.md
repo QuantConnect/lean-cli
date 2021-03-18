@@ -141,6 +141,8 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
 
   Optimize a project in the cloud.
 
+  An interactive prompt will be shown to configure the optimizer.
+
   PROJECT should be the name or id of a cloud project.
 
   If the project that has to be optimized has been pulled to the local drive with `lean cloud pull` it is possible to
