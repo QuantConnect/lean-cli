@@ -18,10 +18,11 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, validator
 from rich import box
 from rich.table import Table
-# The models in this module are all parts of responses from the QuantConnect API
-# The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 from rich.text import Text
 
+
+# The models in this module are all parts of responses from the QuantConnect API
+# The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 
 class QCCollaborator(BaseModel):
     id: int
