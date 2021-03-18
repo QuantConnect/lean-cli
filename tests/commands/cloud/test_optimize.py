@@ -19,7 +19,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.components.config.optimizer_config_manager import NodeType
+from lean.components.config.optimizer_config_manager import NodeType, OptimizerConfigManager
 from lean.container import container
 from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizationEstimate
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
@@ -58,12 +58,7 @@ def optimizer_config_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the optimizer config manager before every test."""
     optimizer_config_manager = mock.Mock()
 
-    optimizer_config_manager.available_targets = [
-        ("TotalPerformance.PortfolioStatistics.SharpeRatio", "Sharpe Ratio"),
-        ("TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn", "Compounding Annual Return"),
-        ("TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio", "Probabilistic Sharpe Ratio"),
-        ("TotalPerformance.PortfolioStatistics.Drawdown", "Drawdown")
-    ]
+    optimizer_config_manager.available_targets = OptimizerConfigManager(mock.Mock()).available_targets
 
     optimizer_config_manager.configure_strategy.return_value = "QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy"
     optimizer_config_manager.configure_target.return_value = OptimizationTarget(
@@ -281,7 +276,6 @@ def test_cloud_optimize_displays_optimal_backtest_results(optimizer_config_manag
     )
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
-    print(result.output)
 
     assert result.exit_code == 0
 
@@ -309,7 +303,6 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_succeed() ->
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
-    print(result.output)
 
     assert result.exit_code == 0
 
@@ -335,7 +328,6 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_meet_constra
     container.cloud_runner.override(providers.Object(cloud_runner))
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
-    print(result.output)
 
     assert result.exit_code == 0
 
