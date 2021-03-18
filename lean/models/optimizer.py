@@ -27,7 +27,7 @@ class OptimizationConstraintOperator(str, Enum):
     Greater = "greater"
     GreaterOrEqual = "greaterOrEqual"
     Equals = "equals"
-    NotEquals = "notEqual"
+    NotEqual = "notEqual"
 
 
 class OptimizationTarget(BaseModel):
@@ -47,7 +47,7 @@ class OptimizationConstraint(BaseModel):
             OptimizationConstraintOperator.Greater: ">",
             OptimizationConstraintOperator.GreaterOrEqual: ">=",
             OptimizationConstraintOperator.Equals: "==",
-            OptimizationConstraintOperator.NotEquals: "!=",
+            OptimizationConstraintOperator.NotEqual: "!=",
         }[self.operator]
 
         return f"{self.target} {operator} {self.target_value}"

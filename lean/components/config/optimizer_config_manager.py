@@ -161,7 +161,7 @@ class OptimizerConfigManager:
                 Option(id=OptimizationConstraintOperator.Greater, label="Greater than <value>"),
                 Option(id=OptimizationConstraintOperator.GreaterOrEqual, label="Greater than or equal to <value>"),
                 Option(id=OptimizationConstraintOperator.Equals, label="Equal to <value>"),
-                Option(id=OptimizationConstraintOperator.NotEquals, label="Not equal to <value>")
+                Option(id=OptimizationConstraintOperator.NotEqual, label="Not equal to <value>")
             ])
 
             value = click.prompt("Set the <value> for the selected operator", type=click.FLOAT)

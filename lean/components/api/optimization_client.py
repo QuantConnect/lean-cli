@@ -167,7 +167,7 @@ class OptimizationClient:
 
         for index, constraint in enumerate(constraints):
             request_parameters[f"constraints[{index}][target]"] = constraint.target
-            request_parameters[f"constraints[{index}][operator]"] = constraint.operator
+            request_parameters[f"constraints[{index}][operator]"] = constraint.operator.name
             request_parameters[f"constraints[{index}][target-value]"] = constraint.target_value
 
         return request_parameters
