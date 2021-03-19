@@ -27,7 +27,7 @@ The following features are currently planned to be implemented (in order of prio
 - [ ] Local backtest visualization
 - [x] [Local live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading)
 - [x] [Cloud optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization#04-Running-cloud-optimizations)
-- [ ] Cloud live trading
+- [x] [Cloud live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/cloud-live-trading)
 - [ ] Local library support
 
 ## Installation
