@@ -12,21 +12,16 @@
 # limitations under the License.
 
 import itertools
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import click
 from pydantic import BaseModel
 
 from lean.components.util.logger import Logger
 from lean.models.api import QCParameter
+from lean.models.logger import Option
 from lean.models.optimizer import (OptimizationConstraint, OptimizationConstraintOperator, OptimizationExtremum,
                                    OptimizationParameter, OptimizationTarget)
-
-
-class Option(BaseModel):
-    """The Option class represents a choosable option with an internal id and a display-friendly label."""
-    id: Any
-    label: str
 
 
 class NodeType(BaseModel):
@@ -98,7 +93,7 @@ class OptimizerConfigManager:
                 Option(id="QuantConnect.Optimizer.Strategies.EulerSearchOptimizationStrategy", label="Euler Search")
             )
 
-        return self._choose_from_list("Select the optimization strategy to use", options)
+        return self._logger.prompt_list("Select the optimization strategy to use", options)
 
     def configure_target(self) -> OptimizationTarget:
         """Asks the user for the optimization target.
@@ -111,7 +106,7 @@ class OptimizerConfigManager:
         options = [Option(id=OptimizationTarget(target=option[0][0], extremum=option[1]),
                           label=f"{option[0][1]} ({option[1]})") for option in options]
 
-        return self._choose_from_list("Select an optimization target", options)
+        return self._logger.prompt_list("Select an optimization target", options)
 
     def configure_parameters(self, project_parameters: List[QCParameter], cloud: bool) -> List[OptimizationParameter]:
         """Asks the user which parameters need to be optimized and with what constraints.
@@ -158,9 +153,9 @@ class OptimizerConfigManager:
                 return results
 
             target_options = [Option(id=target[0], label=target[1]) for target in self.available_targets]
-            target = self._choose_from_list("Select a constraint target", target_options)
+            target = self._logger.prompt_list("Select a constraint target", target_options)
 
-            operator = self._choose_from_list("Select a constraint operator (<value> will be asked after this)", [
+            operator = self._logger.prompt_list("Select a constraint operator (<value> will be asked after this)", [
                 Option(id=OptimizationConstraintOperator.Less, label="Less than <value>"),
                 Option(id=OptimizationConstraintOperator.LessOrEqual, label="Less than or equal to <value>"),
                 Option(id=OptimizationConstraintOperator.Greater, label="Greater than <value>"),
@@ -183,28 +178,9 @@ class OptimizerConfigManager:
             for node in self._available_nodes
         ]
 
-        node = self._choose_from_list("Select the optimization node type", node_options)
+        node = self._logger.prompt_list("Select the optimization node type", node_options)
         parallel_nodes = click.prompt(f"How many nodes should run in parallel ({node.min_nodes}-{node.max_nodes})",
                                       type=click.IntRange(min=node.min_nodes, max=node.max_nodes),
                                       default=node.default_nodes)
 
         return node, parallel_nodes
-
-    def _choose_from_list(self, text: str, options: List[Option]) -> Any:
-        """Asks the user to select an option from a list of possible options.
-
-        The user will not be prompted for input if there is only a single option.
-
-        :param text: the text to display before prompting
-        :param options: the available options
-        :return: the chosen option's id
-        """
-        if len(options) == 1:
-            return options[0].id
-
-        self._logger.info(f"{text}:")
-        for i, option in enumerate(options):
-            self._logger.info(f"{i + 1}) {option.label}")
-
-        number = click.prompt("Enter a number", type=click.IntRange(min=1, max=len(options)))
-        return options[number - 1].id

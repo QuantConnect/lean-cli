@@ -270,12 +270,7 @@ class QCLiveAlgorithmStatus(str, Enum):
 class QCLiveAlgorithm(BaseModel):
     projectId: int
     deployId: str
-    status: QCLiveAlgorithmStatus
-    launched: datetime
-    stopped: Optional[datetime]
-    brokerage: str
-    subscription: str
-    error: str
+    status: Optional[QCLiveAlgorithmStatus] = None
 
 
 class QCCard(BaseModel):

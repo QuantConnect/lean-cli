@@ -63,6 +63,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
 - [`lean cloud backtest`](#lean-cloud-backtest)
+- [`lean cloud live`](#lean-cloud-live)
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
@@ -110,12 +111,12 @@ _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
 
 ### `lean cloud backtest`
 
-Run a backtest in the cloud.
+Backtest a project in the cloud.
 
 ```
 Usage: lean cloud backtest [OPTIONS] PROJECT
 
-  Run a backtest in the cloud.
+  Backtest a project in the cloud.
 
   PROJECT should be the name or id of a cloud project.
 
@@ -131,6 +132,31 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
+
+### `lean cloud live`
+
+Start live trading for a project in the cloud.
+
+```
+Usage: lean cloud live [OPTIONS] PROJECT
+
+  Start live trading for a project in the cloud.
+
+  An interactive prompt will be shown to configure the deployment.
+
+  PROJECT should be the name or id of a cloud project.
+
+  If the project that has to be live traded has been pulled to the local drive with `lean cloud pull` it is possible
+  to use the --push option to push local modifications to the cloud before starting live trading.
+
+Options:
+  --push     Push local modifications to the cloud before starting live trading
+  --open     Automatically open the live results in the browser once the project has been deployed
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
 
 ### `lean cloud optimize`
 

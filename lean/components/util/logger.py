@@ -11,8 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, List
+
+import click
 from rich.console import Console, RenderableType
 from rich.progress import BarColumn, Progress, TextColumn
+
+from lean.models.logger import Option
 
 
 class Logger:
@@ -64,3 +69,22 @@ class Logger:
         progress = Progress(TextColumn(""), BarColumn(), TextColumn("{task.percentage:0.0f}%"), console=self._console)
         progress.start()
         return progress
+
+    def prompt_list(self, text: str, options: List[Option]) -> Any:
+        """Asks the user to select an option from a list of possible options.
+
+        The user will not be prompted for input if there is only a single option.
+
+        :param text: the text to display before prompting
+        :param options: the available options
+        :return: the chosen option's id
+        """
+        if len(options) == 1:
+            return options[0].id
+
+        self.info(f"{text}:")
+        for i, option in enumerate(options):
+            self.info(f"{i + 1}) {option.label}")
+
+        number = click.prompt("Enter a number", type=click.IntRange(min=1, max=len(options)))
+        return options[number - 1].id

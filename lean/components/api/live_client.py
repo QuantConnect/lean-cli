@@ -55,9 +55,10 @@ class LiveClient:
               project_id: int,
               compile_id: str,
               node_id: str,
-              brokerage_settings: Any,
+              brokerage_settings: Dict[str, str],
               price_data_handler: str,
-              tiingo_token: Optional[str] = None) -> QCLiveAlgorithm:
+              automatic_redeploy: bool,
+              version_id: int) -> QCLiveAlgorithm:
         """Starts live trading for a project.
 
         :param project_id: the id of the project to start live trading for
@@ -65,26 +66,23 @@ class LiveClient:
         :param node_id: the id of the node to start live trading on
         :param brokerage_settings: the brokerage settings to use
         :param price_data_handler: the data feed to use
-        :param tiingo_token: the Tiingo token to use for the Tiingo data feed or None to disable the Tiingo data feed
+        :param automatic_redeploy: whether automatic redeploys are enabled
+        :param version_id: the id of the LEAN version to use
         :return: the created live algorithm
         """
         parameters = {
             "projectId": project_id,
             "compileId": compile_id,
             "nodeId": node_id,
-            "brokerage": brokerage_settings,
             "dataHandler": price_data_handler,
-            "versionId": "-1"
+            "automaticRedeploy": automatic_redeploy,
+            "versionId": version_id
         }
 
-        if tiingo_token is not None:
-            parameters["addOnDataFeed"] = {
-                "TiingoNews": {
-                    "token": tiingo_token
-                }
-            }
+        for key, value in brokerage_settings.items():
+            parameters[f"brokerage[{key}]"] = value
 
-        data = self._api.post("live/create", parameters)
+        data = self._api.post("live/create", parameters, data_as_json=False)
         return QCLiveAlgorithm(**data)
 
     def stop(self, project_id: int) -> None:

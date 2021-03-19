@@ -33,7 +33,7 @@ from lean.container import container
               default=False,
               help="Automatically open the results in the browser when the backtest is finished")
 def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) -> None:
-    """Run a backtest in the cloud.
+    """Backtest a project in the cloud.
 
     PROJECT should be the name or id of a cloud project.
 

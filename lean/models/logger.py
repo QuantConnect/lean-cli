@@ -11,25 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from typing import Any
 
-from lean.commands.cloud.backtest import backtest
-from lean.commands.cloud.live import live
-from lean.commands.cloud.optimize import optimize
-from lean.commands.cloud.pull import pull
-from lean.commands.cloud.push import push
+from pydantic import BaseModel
 
 
-@click.group()
-def cloud() -> None:
-    """Interact with the QuantConnect cloud."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean cloud <command>` commands
-    pass
-
-
-cloud.add_command(pull)
-cloud.add_command(push)
-cloud.add_command(backtest)
-cloud.add_command(optimize)
-cloud.add_command(live)
+class Option(BaseModel):
+    """The Option class represents a choosable option with an internal id and a display-friendly label."""
+    id: Any
+    label: str
