@@ -273,6 +273,23 @@ class QCLiveAlgorithm(BaseModel):
     status: Optional[QCLiveAlgorithmStatus] = None
 
 
+class QCEmailNotificationMethod(BaseModel):
+    address: str
+    subject: str
+
+
+class QCWebhookNotificationMethod(BaseModel):
+    address: str
+    headers: Dict[str, str]
+
+
+class QCSMSNotificationMethod(BaseModel):
+    phoneNumber: str
+
+
+QCNotificationMethod = Union[QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod]
+
+
 class QCCard(BaseModel):
     brand: str
     expiration: str

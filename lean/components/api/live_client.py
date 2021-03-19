@@ -16,7 +16,7 @@ from math import floor
 from typing import List, Optional
 
 from lean.components.api.api_client import *
-from lean.models.api import QCLiveAlgorithm, QCLiveAlgorithmStatus
+from lean.models.api import QCLiveAlgorithm, QCLiveAlgorithmStatus, QCNotificationMethod
 
 
 class LiveClient:
@@ -58,7 +58,10 @@ class LiveClient:
               brokerage_settings: Dict[str, str],
               price_data_handler: str,
               automatic_redeploy: bool,
-              version_id: int) -> QCLiveAlgorithm:
+              version_id: int,
+              notify_order_events: bool,
+              notify_insights: bool,
+              notify_methods: List[QCNotificationMethod]) -> QCLiveAlgorithm:
         """Starts live trading for a project.
 
         :param project_id: the id of the project to start live trading for
@@ -68,21 +71,35 @@ class LiveClient:
         :param price_data_handler: the data feed to use
         :param automatic_redeploy: whether automatic redeploys are enabled
         :param version_id: the id of the LEAN version to use
+        :param notify_order_events: whether notifications should be sent on order events
+        :param notify_insights: whether notifications should be sent on insights
+        :param notify_methods: the places to send notifications to
         :return: the created live algorithm
         """
+
         parameters = {
             "projectId": project_id,
             "compileId": compile_id,
             "nodeId": node_id,
+            "brokerage": brokerage_settings,
             "dataHandler": price_data_handler,
             "automaticRedeploy": automatic_redeploy,
             "versionId": version_id
         }
 
-        for key, value in brokerage_settings.items():
-            parameters[f"brokerage[{key}]"] = value
+        if notify_order_events or notify_insights:
+            events = []
+            if notify_order_events:
+                events.append("orderEvent")
+            if notify_insights:
+                events.append("insight")
 
-        data = self._api.post("live/create", parameters, data_as_json=False)
+            parameters["notification"] = {
+                "events": events,
+                "targets": [method.dict() for method in notify_methods]
+            }
+
+        data = self._api.post("live/create", parameters)
         return QCLiveAlgorithm(**data)
 
     def stop(self, project_id: int) -> None:
