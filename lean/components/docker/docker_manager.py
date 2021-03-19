@@ -68,6 +68,7 @@ class DockerManager:
         docker_client = self._get_docker_client()
 
         kwargs["detach"] = True
+        kwargs["remove"] = True
         container = docker_client.containers.run(f"{image}:{tag}", None, **kwargs)
 
         # Kill the container on Ctrl+C
