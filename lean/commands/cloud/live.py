@@ -178,9 +178,9 @@ def live(project: str, push: bool, open_browser: bool) -> None:
     logger.info(f"LEAN version: {cloud_project.leanVersionId}")
     logger.info(f"Order event notifications: {'Yes' if notify_order_events else 'No'}")
     logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")
-
     if notify_order_events or notify_insights:
         _log_notification_methods(notify_methods)
+    logger.info(f"Automatic algorithm restarting: {'Yes' if automatic_redeploy else 'No'}")
 
     click.confirm(f"Are you sure you want to start live trading for project '{cloud_project.name}'?",
                   default=False,
