@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 from _pytest.capture import CaptureFixture
 
 from lean.components.util.logger import Logger
+from lean.models.logger import Option
 
 
 def assert_stdout_stderr(capsys: CaptureFixture, stdout: str, stderr: str) -> None:
@@ -60,7 +63,7 @@ def test_error_logs_message(capsys: CaptureFixture) -> None:
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> None:
+def test_progress_creates_started_progress_instance() -> None:
     logger = Logger()
     progress = logger.progress()
 
@@ -68,3 +71,40 @@ def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> N
 
     progress.stop()
     assert result
+
+
+@mock.patch("click.prompt")
+def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock) -> None:
+    logger = Logger()
+    options = [Option(id=1, label="Option 1"), Option(id=2, label="Option 2"), Option(id=3, label="Option 3")]
+
+    prompt.return_value = 3
+    selected_option = logger.prompt_list("Select an option", options)
+
+    assert selected_option == 3
+
+
+@mock.patch("click.prompt")
+def test_prompt_list_displays_all_options(prompt: mock.Mock, capsys: CaptureFixture) -> None:
+    logger = Logger()
+    options = [Option(id=1, label="Option 1"), Option(id=2, label="Option 2"), Option(id=3, label="Option 3")]
+
+    prompt.return_value = 3
+    logger.prompt_list("Select an option", options)
+
+    stdout, stderr = capsys.readouterr()
+    assert "Option 1" in stdout
+    assert "Option 2" in stdout
+    assert "Option 3" in stdout
+
+
+def test_prompt_returns_single_option_without_prompting(capsys: CaptureFixture) -> None:
+    logger = Logger()
+    options = [Option(id=1, label="Option 1")]
+
+    selected_option = logger.prompt_list("Select an option", options)
+
+    assert selected_option == 1
+
+    stdout, stderr = capsys.readouterr()
+    assert "Option 1" not in stdout
