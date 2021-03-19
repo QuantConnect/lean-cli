@@ -151,7 +151,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
 
 Options:
   --push     Push local modifications to the cloud before starting live trading
-  --open     Automatically open the live results in the browser once the project has been deployed
+  --open     Automatically open the live results in the browser once the deployment starts
   --verbose  Enable debug logging
   --help     Show this message and exit.
 ```

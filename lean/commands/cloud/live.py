@@ -88,7 +88,7 @@ def _prompt_notification_method() -> QCNotificationMethod:
 @click.option("--open", "open_browser",
               is_flag=True,
               default=False,
-              help="Automatically open the live results in the browser once the project has been deployed")
+              help="Automatically open the live results in the browser once the deployment starts")
 def live(project: str, push: bool, open_browser: bool) -> None:
     """Start live trading for a project in the cloud.
 
