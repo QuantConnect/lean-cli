@@ -44,7 +44,7 @@ class DockerManager:
 
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
-        # Since the pull command is the same on Windows, Linux and macOS we can safely use a system call
+        # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
         os.system(f"docker image pull {image}:{tag}")
 
     def run_image(self, image: str, tag: str, **kwargs) -> bool:
@@ -84,7 +84,7 @@ class DockerManager:
         signal.signal(signal.SIGINT, signal_handler)
 
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
-        # If we run this code on the current thread, SIGINT won't be triggered on Windows for some reason
+        # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
         def print_logs() -> None:
             on_run_called = False
 
