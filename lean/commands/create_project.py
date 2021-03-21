@@ -203,6 +203,17 @@ DEFAULT_CSHARP_NOTEBOOK = """
 """.strip() + "\n"
 
 
+def _capitalize(word: str) -> str:
+    """Capitalizes the given word.
+
+    :param word: the word to capitalize
+    :return: the word with the first letter capitalized (any other uppercase characters are preserved)
+    """
+    if word == "":
+        return word
+    return word[0].upper() + word[1:]
+
+
 @click.command(cls=LeanCommand)
 @click.argument("name", type=str)
 @click.option("--language", "-l",
@@ -230,7 +241,7 @@ def create_project(name: str, language: str) -> None:
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
     # Convert the project name into a valid class name by removing all non-alphanumeric characters
-    class_name = re.sub(f"[^a-zA-Z0-9]", "", full_path.name.title())
+    class_name = re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, name.split(" "))))
 
     if language == "python":
         with (full_path / "main.py").open("w+") as file:
@@ -243,4 +254,4 @@ def create_project(name: str, language: str) -> None:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
     logger = container.logger()
-    logger.info(f"Successfully created project '{name}'")
+    logger.info(f"Successfully created {'Python' if language == 'python' else 'C#'} project '{name}'")

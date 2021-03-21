@@ -125,3 +125,14 @@ def test_create_project_title_cases_class_name() -> None:
 
     with open(Path.cwd() / "my first project" / "main.py") as file:
         assert "class MyFirstProject(QCAlgorithm)" in file.read()
+
+
+def test_create_project_preserves_capitals_in_class_name() -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", "my FIRST project"])
+
+    assert result.exit_code == 0
+
+    with open(Path.cwd() / "my FIRST project" / "main.py") as file:
+        assert "class MyFIRSTProject(QCAlgorithm)" in file.read()
