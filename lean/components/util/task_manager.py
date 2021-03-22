@@ -14,14 +14,13 @@
 import time
 from typing import Callable, List, Optional, TypeVar
 
-from pydantic import BaseModel
-
 from lean.components.util.logger import Logger
+from lean.models.pydantic import WrappedBaseModel
 
 T = TypeVar("T")
 
 
-class Interval(BaseModel):
+class Interval(WrappedBaseModel):
     # The duration of the interval
     interval_seconds: float
 

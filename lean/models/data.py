@@ -14,12 +14,13 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import validator
 
 from lean.models.api import QCResolution, QCSecurityType
+from lean.models.pydantic import WrappedBaseModel
 
 
-class DataFile(BaseModel):
+class DataFile(WrappedBaseModel):
     path: str
     security_type: QCSecurityType
     ticker: str
@@ -28,13 +29,13 @@ class DataFile(BaseModel):
     date: Optional[datetime]
 
 
-class MarketHoursSegment(BaseModel):
+class MarketHoursSegment(WrappedBaseModel):
     start: str
     end: str
     state: str
 
 
-class MarketHoursDatabaseEntry(BaseModel):
+class MarketHoursDatabaseEntry(WrappedBaseModel):
     dataTimeZone: str
     exchangeTimeZone: str
     monday: List[MarketHoursSegment] = []

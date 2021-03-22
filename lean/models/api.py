@@ -16,6 +16,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
+from lean.models.pydantic import WrappedBaseModel
 from rich import box
 from rich.table import Table
 from rich.text import Text
@@ -24,7 +25,8 @@ from rich.text import Text
 # The models in this module are all parts of responses from the QuantConnect API
 # The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 
-class QCCollaborator(BaseModel):
+
+class QCCollaborator(WrappedBaseModel):
     id: int
     uid: int
     blivecontrol: bool
@@ -34,7 +36,7 @@ class QCCollaborator(BaseModel):
     owner: bool = False
 
 
-class QCParameter(BaseModel):
+class QCParameter(WrappedBaseModel):
     key: str
     value: str
     min: Optional[float]
@@ -43,7 +45,7 @@ class QCParameter(BaseModel):
     type: Optional[str]
 
 
-class QCLiveResults(BaseModel):
+class QCLiveResults(WrappedBaseModel):
     eStatus: str
     sDeployID: Optional[str] = None
     sServerType: Optional[str] = None
@@ -70,7 +72,7 @@ class QCLanguage(str, Enum):
     Python = "Py"
 
 
-class QCProject(BaseModel):
+class QCProject(WrappedBaseModel):
     projectId: int
     organizationId: str
     name: str
@@ -93,32 +95,32 @@ class QCProject(BaseModel):
         return f"https://www.quantconnect.com/terminal/#open/{self.projectId}"
 
 
-class QCCreatedProject(BaseModel):
+class QCCreatedProject(WrappedBaseModel):
     projectId: int
     name: str
     modified: datetime
     created: datetime
 
 
-class QCFullFile(BaseModel):
+class QCFullFile(WrappedBaseModel):
     name: str
     content: str
     modified: datetime
     isLibrary: bool
 
 
-class QCMinimalFile(BaseModel):
+class QCMinimalFile(WrappedBaseModel):
     name: str
     content: str
     modified: datetime
 
 
-class QCCompileParameter(BaseModel):
+class QCCompileParameter(WrappedBaseModel):
     line: int
     type: str
 
 
-class QCCompileParameterContainer(BaseModel):
+class QCCompileParameterContainer(WrappedBaseModel):
     file: str
     parameters: List[QCCompileParameter]
 
@@ -129,19 +131,19 @@ class QCCompileState(str, Enum):
     BuildError = "BuildError"
 
 
-class QCCompileWithLogs(BaseModel):
+class QCCompileWithLogs(WrappedBaseModel):
     compileId: str
     state: QCCompileState
     logs: List[str]
 
 
-class QCCompileWithParameters(BaseModel):
+class QCCompileWithParameters(WrappedBaseModel):
     compileId: str
     state: QCCompileState
     parameters: List[QCCompileParameterContainer]
 
 
-class QCBacktest(BaseModel):
+class QCBacktest(WrappedBaseModel):
     backtestId: str
     projectId: int
     status: str
@@ -221,16 +223,16 @@ class QCBacktest(BaseModel):
         return table
 
 
-class QCBacktestReport(BaseModel):
+class QCBacktestReport(WrappedBaseModel):
     report: str
 
 
-class QCNodePrice(BaseModel):
+class QCNodePrice(WrappedBaseModel):
     monthly: int
     yearly: int
 
 
-class QCNode(BaseModel):
+class QCNode(WrappedBaseModel):
     id: str
     name: str
     projectName: str
@@ -246,7 +248,7 @@ class QCNode(BaseModel):
     host: Optional[str]
 
 
-class QCNodeList(BaseModel):
+class QCNodeList(WrappedBaseModel):
     backtest: List[QCNode]
     research: List[QCNode]
     live: List[QCNode]
@@ -267,36 +269,36 @@ class QCLiveAlgorithmStatus(str, Enum):
     History = "History"
 
 
-class QCLiveAlgorithm(BaseModel):
+class QCLiveAlgorithm(WrappedBaseModel):
     projectId: int
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
 
 
-class QCEmailNotificationMethod(BaseModel):
+class QCEmailNotificationMethod(WrappedBaseModel):
     address: str
     subject: str
 
 
-class QCWebhookNotificationMethod(BaseModel):
+class QCWebhookNotificationMethod(WrappedBaseModel):
     address: str
     headers: Dict[str, str]
 
 
-class QCSMSNotificationMethod(BaseModel):
+class QCSMSNotificationMethod(WrappedBaseModel):
     phoneNumber: str
 
 
 QCNotificationMethod = Union[QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod]
 
 
-class QCCard(BaseModel):
+class QCCard(WrappedBaseModel):
     brand: str
     expiration: str
     last4: str
 
 
-class QCOrganization(BaseModel):
+class QCOrganization(WrappedBaseModel):
     organizationId: str
     creditBalance: float
     card: QCCard
@@ -332,11 +334,11 @@ class QCResolution(str, Enum):
         raise ValueError(f"QCResolution has no member named '{name}'")
 
 
-class QCLink(BaseModel):
+class QCLink(WrappedBaseModel):
     link: str
 
 
-class QCOptimizationBacktest(BaseModel):
+class QCOptimizationBacktest(WrappedBaseModel):
     id: str
     name: str
     exitCode: int
@@ -344,7 +346,7 @@ class QCOptimizationBacktest(BaseModel):
     statistics: List[float] = []
 
 
-class QCOptimization(BaseModel):
+class QCOptimization(WrappedBaseModel):
     optimizationId: str
     projectId: int
     status: str
@@ -373,7 +375,7 @@ class QCOptimization(BaseModel):
         return 0.0
 
 
-class QCOptimizationEstimate(BaseModel):
+class QCOptimizationEstimate(WrappedBaseModel):
     estimateId: str
     time: int
     balance: int

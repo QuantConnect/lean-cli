@@ -11,12 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
-
-from lean.models.pydantic import WrappedBaseModel
+from pydantic import BaseModel, ValidationError
 
 
-class Option(WrappedBaseModel):
-    """The Option class represents a choosable option with an internal id and a display-friendly label."""
-    id: Any
-    label: str
+class WrappedBaseModel(BaseModel):
+    """A version of Pydantic's BaseModel which makes the input data accessible in case of a validation error."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        """Creates a new WrappedBaseModel instance.
+
+        :param args: args to pass on to the BaseModel constructor
+        :param kwargs: kwargs to pass on to the BaseModel constructor
+        """
+        try:
+            super().__init__(*args, **kwargs)
+        except ValidationError as error:
+            error.input_value = kwargs
+            raise error

@@ -13,7 +13,9 @@
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from lean.models.pydantic import WrappedBaseModel
 
 
 class OptimizationExtremum(str, Enum):
@@ -30,12 +32,12 @@ class OptimizationConstraintOperator(str, Enum):
     NotEqual = "notEqual"
 
 
-class OptimizationTarget(BaseModel):
+class OptimizationTarget(WrappedBaseModel):
     target: str
     extremum: OptimizationExtremum
 
 
-class OptimizationConstraint(BaseModel):
+class OptimizationConstraint(WrappedBaseModel):
     target: str
     operator: OptimizationConstraintOperator
     target_value: float = Field(alias="target-value")
@@ -53,7 +55,7 @@ class OptimizationConstraint(BaseModel):
         return f"{self.target} {operator} {self.target_value}"
 
 
-class OptimizationParameter(BaseModel):
+class OptimizationParameter(WrappedBaseModel):
     name: str
     min: float
     max: float

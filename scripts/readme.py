@@ -20,12 +20,12 @@ from typing import List
 
 from click import Command, Group
 from click.testing import CliRunner
-from pydantic import BaseModel
 
 from lean.commands import lean
+from lean.models.pydantic import WrappedBaseModel
 
 
-class NamedCommand(BaseModel):
+class NamedCommand(WrappedBaseModel):
     name: str
     command: Command
 

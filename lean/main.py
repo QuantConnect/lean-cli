@@ -14,6 +14,8 @@
 import sys
 import traceback
 
+from pydantic.error_wrappers import ValidationError
+
 from lean.commands import lean
 from lean.container import container
 
@@ -25,5 +27,10 @@ def main() -> None:
     except Exception as exception:
         logger = container.logger()
         logger.debug(traceback.format_exc().strip())
+
+        if isinstance(exception, ValidationError) and hasattr(exception, "input_value"):
+            logger.debug("Value that failed validation:")
+            logger.debug(exception.input_value)
+
         logger.error(f"Error: {exception}")
         sys.exit(1)

@@ -15,16 +15,16 @@ import itertools
 from typing import List, Tuple
 
 import click
-from pydantic import BaseModel
 
 from lean.components.util.logger import Logger
 from lean.models.api import QCParameter
 from lean.models.logger import Option
 from lean.models.optimizer import (OptimizationConstraint, OptimizationConstraintOperator, OptimizationExtremum,
                                    OptimizationParameter, OptimizationTarget)
+from lean.models.pydantic import WrappedBaseModel
 
 
-class NodeType(BaseModel):
+class NodeType(WrappedBaseModel):
     name: str
     ram: int
     cores: int
