@@ -15,11 +15,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, validator
-from lean.models.pydantic import WrappedBaseModel
+from pydantic import validator
 from rich import box
 from rich.table import Table
 from rich.text import Text
+
+from lean.models.pydantic import WrappedBaseModel
 
 
 # The models in this module are all parts of responses from the QuantConnect API
@@ -86,6 +87,12 @@ class QCProject(WrappedBaseModel):
     parameters: List[QCParameter]
     liveResults: QCLiveResults
     libraries: List[int]
+
+    @validator("parameters", pre=True)
+    def process_parameters_dict(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            return list(value.values())
+        return value
 
     def get_url(self) -> str:
         """Returns the url of the project page in the cloud.
