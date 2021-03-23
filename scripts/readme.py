@@ -97,7 +97,7 @@ def main() -> None:
                             readme_content,
                             flags=re.DOTALL)
 
-    readme_path.write_text(readme_content)
+    readme_path.write_text(readme_content, encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     }},
     """)
 
-    path.write_text(config)
+    path.write_text(config, encoding="utf-8")
 
 
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
