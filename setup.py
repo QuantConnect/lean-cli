@@ -23,6 +23,7 @@ def get_description() -> str:
     readme = readme.replace("- [ ] ", "- 🔲 ")
     return readme
 
+
 # Production dependencies
 install_requires = [
     "click~=7.1.2",
