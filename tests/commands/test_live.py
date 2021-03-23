@@ -35,7 +35,7 @@ def update_manager_mock() -> mock.Mock:
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
 
-    config = path.read_text()
+    config = path.read_text(encoding="utf-8")
     config = config.replace("{", f"""
 {{
     "environments": {{

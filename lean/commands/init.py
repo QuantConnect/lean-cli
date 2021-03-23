@@ -67,13 +67,13 @@ def init() -> None:
 
     # Create the config file
     lean_config_manager = container.lean_config_manager()
-    config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text()
+    config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")
     config = lean_config_manager.clean_lean_config(config)
 
     # Update the data-folder configuration
     config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
 
-    with lean_config_path.open("w+") as file:
+    with lean_config_path.open("w+", encoding="utf-8") as file:
         file.write(config)
 
     # Prompt for some general configuration if not set yet

@@ -105,7 +105,7 @@ def test_init_creates_clean_config_file_from_repo() -> None:
 
     config_path = Path.cwd() / "lean.json"
     assert config_path.exists()
-    assert config_path.read_text() == """
+    assert config_path.read_text(encoding="utf-8") == """
 {
   // this configuration file works by first loading all top-level
   // configuration items and then will load the specified environment

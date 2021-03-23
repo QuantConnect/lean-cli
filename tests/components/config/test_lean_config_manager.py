@@ -60,7 +60,7 @@ def test_get_cli_root_directory_returns_path_to_directory_containing_config_file
 
 
 def test_get_data_directory_returns_path_to_data_directory_as_configured_in_config() -> None:
-    with (Path.cwd() / "lean.json").open("w+") as file:
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write('{ "data-folder": "sub1/sub2/sub3/data" }')
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
@@ -69,7 +69,7 @@ def test_get_data_directory_returns_path_to_data_directory_as_configured_in_conf
 
 
 def test_get_data_directory_returns_path_to_data_directory_when_config_contains_comments() -> None:
-    with (Path.cwd() / "lean.json").open("w+") as file:
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
     // some comment about the data-folder

@@ -244,13 +244,13 @@ def create_project(name: str, language: str) -> None:
     class_name = re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, name.split(" "))))
 
     if language == "python":
-        with (full_path / "main.py").open("w+") as file:
+        with (full_path / "main.py").open("w+", encoding="utf-8") as file:
             file.write(DEFAULT_PYTHON_MAIN.replace("$NAME$", class_name))
     else:
-        with (full_path / "Main.cs").open("w+") as file:
+        with (full_path / "Main.cs").open("w+", encoding="utf-8") as file:
             file.write(DEFAULT_CSHARP_MAIN.replace("$NAME$", class_name))
 
-    with (full_path / "research.ipynb").open("w+") as file:
+    with (full_path / "research.ipynb").open("w+", encoding="utf-8") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
     logger = container.logger()

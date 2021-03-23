@@ -171,7 +171,7 @@ def test_create_new_project_creates_pycharm_jdk_entry_when_not_set_yet(system: m
 
     jdk_table_file = Path(path).expanduser() / f"{editor}2020.3" / "options" / "jdk.table.xml"
     jdk_table_file.parent.mkdir(parents=True, exist_ok=True)
-    with jdk_table_file.open("w+") as file:
+    with jdk_table_file.open("w+", encoding="utf-8") as file:
         file.write("""
 <application>
   <component name="ProjectJdkTable">
@@ -182,7 +182,7 @@ def test_create_new_project_creates_pycharm_jdk_entry_when_not_set_yet(system: m
     project_manager = ProjectManager(ProjectConfigManager())
     project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
 
-    jdk_table = ElementTree.fromstring(jdk_table_file.read_text())
+    jdk_table = ElementTree.fromstring(jdk_table_file.read_text(encoding="utf-8"))
     assert jdk_table.find(".//jdk/name[@value='Lean CLI']") is not None
 
 
@@ -205,7 +205,7 @@ def test_create_new_project_creates_pycharm_jdk_entry_when_pycharm_not_installed
     jdk_table_file = Path(path).expanduser() / editor / "options" / "jdk.table.xml"
     assert jdk_table_file.is_file()
 
-    jdk_table = ElementTree.fromstring(jdk_table_file.read_text())
+    jdk_table = ElementTree.fromstring(jdk_table_file.read_text(encoding="utf-8"))
     assert jdk_table.find(".//jdk/name[@value='Lean CLI']") is not None
 
 
@@ -234,10 +234,10 @@ def test_create_new_project_does_not_update_pycharm_jdk_table_when_jdk_entry_alr
 
     jdk_table_file = Path(path).expanduser() / f"{editor}2020.3" / "options" / "jdk.table.xml"
     jdk_table_file.parent.mkdir(parents=True, exist_ok=True)
-    with jdk_table_file.open("w+") as file:
+    with jdk_table_file.open("w+", encoding="utf-8") as file:
         file.write(jdk_table)
 
     project_manager = ProjectManager(ProjectConfigManager())
     project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
 
-    assert jdk_table_file.read_text() == jdk_table
+    assert jdk_table_file.read_text(encoding="utf-8") == jdk_table

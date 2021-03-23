@@ -50,7 +50,7 @@ class CSharpCompiler:
         compile_dir.rmdir()
         shutil.copytree(str(project_dir), str(compile_dir))
 
-        with (compile_dir / f"{project_dir.name}.csproj").open("w+") as file:
+        with (compile_dir / f"{project_dir.name}.csproj").open("w+", encoding="utf-8") as file:
             file.write(f"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>

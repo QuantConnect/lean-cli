@@ -49,7 +49,7 @@ def test_lean_command_sets_default_lean_config_path_when_lean_config_option_give
     lean_config_manager = mock.Mock()
     container.lean_config_manager.override(providers.Object(lean_config_manager))
 
-    with (Path.cwd() / "custom-config.json").open("w+") as file:
+    with (Path.cwd() / "custom-config.json").open("w+", encoding="utf-8") as file:
         file.write("{}")
 
     result = CliRunner().invoke(command, ["--lean-config", "custom-config.json"])

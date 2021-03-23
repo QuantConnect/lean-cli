@@ -200,7 +200,7 @@ class ProjectManager:
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
         if jdk_table_file.exists():
-            root = ElementTree.fromstring(jdk_table_file.read_text())
+            root = ElementTree.fromstring(jdk_table_file.read_text(encoding="utf-8"))
         else:
             root = ElementTree.fromstring("""
 <application>
@@ -359,5 +359,5 @@ on the page above, you can add a PackageReference for it.
         :param content: the content to write to the file
         """
         file.parent.mkdir(parents=True, exist_ok=True)
-        with file.open("w+") as file:
+        with file.open("w+", encoding="utf-8") as file:
             file.write(content.strip() + "\n")

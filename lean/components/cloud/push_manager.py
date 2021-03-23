@@ -111,7 +111,7 @@ class PushManager:
             if "bin/" in file_name or "obj/" in file_name:
                 continue
 
-            file_content = local_file.read_text()
+            file_content = local_file.read_text(encoding="utf-8")
             cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
 
             if cloud_file is None:

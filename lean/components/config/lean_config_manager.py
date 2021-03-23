@@ -171,7 +171,7 @@ class LeanConfigManager:
             config["algorithm-language"] = "Python"
             config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
         else:
-            algorithm_text = algorithm_file.read_text()
+            algorithm_text = algorithm_file.read_text(encoding="utf-8")
             config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
             config["algorithm-location"] = f"{algorithm_file.parent.name}.dll"
@@ -186,7 +186,7 @@ class LeanConfigManager:
 
         :return: a dict containing the contents of the Lean config file
         """
-        config_text = self.get_lean_config_path().read_text()
+        config_text = self.get_lean_config_path().read_text(encoding="utf-8")
 
         # JsonComment can parse JSON with non-inline comments, so we remove the inline ones first
         config_without_inline_comments = re.sub(r",\s*//.*", ",", config_text, flags=re.MULTILINE)

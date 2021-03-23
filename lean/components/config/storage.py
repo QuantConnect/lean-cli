@@ -27,7 +27,7 @@ class Storage:
         self.file = Path(file)
 
         if self.file.exists():
-            self._data = json.loads(self.file.read_text())
+            self._data = json.loads(self.file.read_text(encoding="utf-8"))
         else:
             self._data = {}
 
@@ -74,7 +74,7 @@ class Storage:
         if len(self._data) > 0:
             self.file.parent.mkdir(parents=True, exist_ok=True)
 
-            with self.file.open("w+") as file:
+            with self.file.open("w+", encoding="utf-8") as file:
                 file.write(json.dumps(self._data, indent=4) + "\n")
         else:
             if self.file.exists():

@@ -26,7 +26,7 @@ def create_market_hours_database() -> None:
     path = Path.cwd() / "data" / "market-hours" / "market-hours-database.json"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    with path.open("w+") as file:
+    with path.open("w+", encoding="utf-8") as file:
         file.write("""
 {
   "entries": {

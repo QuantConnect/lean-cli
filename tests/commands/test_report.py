@@ -41,19 +41,19 @@ def setup_backtest_results() -> None:
 
     results_path = Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "results.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)
-    with results_path.open("w+") as file:
+    with results_path.open("w+", encoding="utf-8") as file:
         file.write("{}")
 
 
 def run_image(image: str, tag: str, **kwargs) -> bool:
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     results_path = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Results")
 
     output_file = Path(results_path) / Path(config["report-destination"]).name
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with output_file.open("w+") as file:
+    with output_file.open("w+", encoding="utf-8") as file:
         file.write("<html></html>")
 
     return True
@@ -205,7 +205,7 @@ def test_report_uses_project_directory_as_strategy_name_when_strategy_name_not_g
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-name"] == "Python Project"
 
@@ -226,7 +226,7 @@ def test_report_uses_given_strategy_name() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-name"] == "My Strategy"
 
@@ -248,7 +248,7 @@ def test_report_uses_description_from_config_when_strategy_description_not_given
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-description"] == "My description"
 
@@ -269,7 +269,7 @@ def test_report_uses_given_strategy_description() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-description"] == "My strategy description"
 
@@ -290,7 +290,7 @@ def test_report_uses_given_strategy_version() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-version"] == "1.2.3"
 
@@ -300,7 +300,7 @@ def test_report_uses_given_blank_name_version_description_when_not_given_and_bac
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    with (Path.cwd() / "results.json").open("w+") as file:
+    with (Path.cwd() / "results.json").open("w+", encoding="utf-8") as file:
         file.write("{}")
 
     result = CliRunner().invoke(lean, ["report", "--backtest-data-source-file", "results.json"])
@@ -311,7 +311,7 @@ def test_report_uses_given_blank_name_version_description_when_not_given_and_bac
     args, kwargs = docker_manager.run_image.call_args
 
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
-    config = json.loads(Path(config_mount["Source"]).read_text())
+    config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["strategy-name"] == ""
     assert config["strategy-version"] == ""
@@ -354,7 +354,7 @@ def test_report_aborts_when_report_destination_already_exists() -> None:
 
     output_path = Path.cwd() / "path" / "to" / "report.html"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w+") as file:
+    with output_path.open("w+", encoding="utf-8") as file:
         file.write("<h1>My strategy</h1>")
 
     result = CliRunner().invoke(lean, ["report",
@@ -364,7 +364,7 @@ def test_report_aborts_when_report_destination_already_exists() -> None:
 
     assert result.exit_code != 0
 
-    assert output_path.read_text() == "<h1>My strategy</h1>"
+    assert output_path.read_text(encoding="utf-8") == "<h1>My strategy</h1>"
 
 
 def test_report_overwrites_report_destination_when_overwrite_flag_given() -> None:
@@ -374,7 +374,7 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
 
     output_path = Path.cwd() / "path" / "to" / "report.html"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w+") as file:
+    with output_path.open("w+", encoding="utf-8") as file:
         file.write("<h1>My strategy</h1>")
 
     result = CliRunner().invoke(lean, ["report",
@@ -385,7 +385,7 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
 
     assert result.exit_code == 0
 
-    assert output_path.read_text() != "<h1>My strategy</h1>"
+    assert output_path.read_text(encoding="utf-8") != "<h1>My strategy</h1>"
 
 
 def test_report_aborts_when_run_image_fails() -> None:

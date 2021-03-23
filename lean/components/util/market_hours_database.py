@@ -57,6 +57,6 @@ class MarketHoursDatabase:
         data_dir = self._lean_config_manager.get_data_directory()
         market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
 
-        market_hours_database = json.loads(market_hours_database_path.read_text())
+        market_hours_database = json.loads(market_hours_database_path.read_text(encoding="utf-8"))
 
         return {key: MarketHoursDatabaseEntry(**value) for key, value in market_hours_database["entries"].items()}

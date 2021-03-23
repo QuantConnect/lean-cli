@@ -90,7 +90,7 @@ def main() -> None:
     full_text = "\n".join(["<!-- commands start -->", full_text, "<!-- commands end -->"])
 
     readme_path = Path.cwd() / "README.md"
-    readme_content = readme_path.read_text()
+    readme_content = readme_path.read_text(encoding="utf-8")
 
     readme_content = re.sub(r"<!-- commands start -->.*<!-- commands end -->",
                             full_text,

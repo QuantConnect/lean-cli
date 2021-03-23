@@ -95,7 +95,7 @@ def optimize(project: Path,
             "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
         }
     else:
-        config_text = optimizer_config.read_text()
+        config_text = optimizer_config.read_text(encoding="utf-8")
 
         # JsonComment can parse JSON with non-inline comments, so we remove the inline ones first
         config_without_inline_comments = re.sub(r",\s*//.*", ",", config_text, flags=re.MULTILINE)
@@ -110,7 +110,7 @@ def optimize(project: Path,
 
     config_path = output / "config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with config_path.open("w+") as file:
+    with config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps(config, indent=4) + "\n")
 
     lean_runner = container.lean_runner()

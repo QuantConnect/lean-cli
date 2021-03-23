@@ -138,7 +138,7 @@ class LeanRunner:
         config["results-destination-folder"] = "/Results"
 
         config_path = Path(tempfile.mkdtemp()) / "config.json"
-        with config_path.open("w+") as file:
+        with config_path.open("w+", encoding="utf-8") as file:
             file.write(json.dumps(config, indent=4))
 
         # The dict containing all options passed to `docker run`

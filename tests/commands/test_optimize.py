@@ -207,7 +207,7 @@ def test_optimize_creates_correct_config_from_optimizer_config_manager_output() 
     args, kwargs = docker_manager.run_image.call_args
 
     mount = next(m for m in kwargs["mounts"] if m["Target"] == "/Lean/Optimizer.Launcher/bin/Debug/config.json")
-    config = json.loads(Path(mount["Source"]).read_text())
+    config = json.loads(Path(mount["Source"]).read_text(encoding="utf-8"))
 
     assert config["results-destination-folder"] == "/Results"
 
@@ -243,7 +243,7 @@ def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
-    with (Path.cwd() / "optimizer-config.json").open("w+") as file:
+    with (Path.cwd() / "optimizer-config.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
   // optional: algorithm class selector
@@ -310,7 +310,7 @@ def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     mount = next(m for m in kwargs["mounts"] if m["Target"] == "/Lean/Optimizer.Launcher/bin/Debug/config.json")
-    config = json.loads(Path(mount["Source"]).read_text())
+    config = json.loads(Path(mount["Source"]).read_text(encoding="utf-8"))
 
     assert not any([key.startswith("algorithm-") for key in config.keys()])
 
@@ -354,7 +354,7 @@ def test_optimize_writes_config_to_output_directory() -> None:
     assert result.exit_code == 0
 
     assert (Path.cwd() / "output" / "config.json").exists()
-    config = json.loads((Path.cwd() / "output" / "config.json").read_text())
+    config = json.loads((Path.cwd() / "output" / "config.json").read_text(encoding="utf-8"))
 
     assert config["results-destination-folder"] == "/Results"
 

@@ -110,11 +110,11 @@ class PullManager:
             local_file_path = local_project_path / cloud_file.name
 
             # Skip if the local file already exists with the correct content
-            if local_file_path.exists() and local_file_path.read_text().strip() == cloud_file.content.strip():
+            if local_file_path.exists() and local_file_path.read_text(encoding="utf-8").strip() == cloud_file.content.strip():
                 continue
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
-            with local_file_path.open("w+") as local_file:
+            with local_file_path.open("w+", encoding="utf-8") as local_file:
                 if cloud_file.content != "" and not cloud_file.content.endswith("\n"):
                     local_file.write(cloud_file.content + "\n")
                 else:

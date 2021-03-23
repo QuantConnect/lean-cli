@@ -149,7 +149,7 @@ def report(backtest_data_source_file: Path,
     output_dir = Path(tempfile.mkdtemp())
 
     config_path = output_dir / "config.json"
-    with config_path.open("w+") as file:
+    with config_path.open("w+", encoding="utf-8") as file:
         json.dump(report_config, file)
 
     lean_config_manager = container.lean_config_manager()
