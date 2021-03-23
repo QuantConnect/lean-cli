@@ -69,17 +69,16 @@ class PushManager:
         project_name = project.relative_to(Path.cwd()).as_posix()
 
         project_config = self._project_config_manager.get_project_config(project)
-        project_id = project_config.get("cloud-id")
+        cloud_id = project_config.get("cloud-id")
 
-        cloud_project_by_id = next(iter([p for p in cloud_projects if p.projectId == project_id]), None)
-        cloud_project_by_name = next(iter([p for p in cloud_projects if p.name == project_name]), None)
+        cloud_project_by_id = next(iter([p for p in cloud_projects if p.projectId == cloud_id]), None)
 
         # Find the cloud project to push the files to
         if cloud_project_by_id is not None:
-            # Project has id which matches cloud project, update cloud project
+            # Project has cloud id which matches cloud project, update cloud project
             cloud_project = cloud_project_by_id
-        elif cloud_project_by_name is None:
-            # Project has invalid id or no id at all and no cloud project has same name, create cloud project
+        else:
+            # Project has invalid cloud id or no cloud id at all, create new cloud project
             new_project = self._api_client.projects.create(project_name,
                                                            QCLanguage[project_config.get("algorithm-language")])
             self._logger.info(f"Successfully created cloud project '{project_name}'")
@@ -88,8 +87,6 @@ class PushManager:
 
             # We need to retrieve the created project again to get all project details
             cloud_project = self._api_client.projects.get(new_project.projectId)
-        else:
-            raise RuntimeError("There already exists a project with the same name in the cloud")
 
         # Push local files to cloud
         self._push_files(project, cloud_project)
@@ -108,7 +105,7 @@ class PushManager:
 
         for local_file in local_files:
             file_name = local_file.relative_to(project).as_posix()
-            if "bin/" in file_name or "obj/" in file_name:
+            if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
                 continue
 
             file_content = local_file.read_text(encoding="utf-8")

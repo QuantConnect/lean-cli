@@ -34,11 +34,8 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
 
     # Parse which projects need to be pulled
     if project is not None:
-        for p in all_projects:
-            if str(p.projectId) == project or p.name == project:
-                projects_to_pull = [p]
-                break
-        else:
+        projects_to_pull = [p for p in all_projects if str(p.projectId) == project or p.name == project]
+        if len(projects_to_pull) == 0:
             raise RuntimeError("No project with the given name or id exists in the cloud")
     else:
         projects_to_pull = all_projects

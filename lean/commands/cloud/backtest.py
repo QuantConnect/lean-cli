@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import webbrowser
-from pathlib import Path
 from typing import Optional
 
 import click
@@ -43,23 +42,8 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     """
     logger = container.logger()
 
-    api_client = container.api_client()
-    all_projects = api_client.projects.get_all()
-
-    for p in all_projects:
-        if str(p.projectId) == project or p.name == project:
-            cloud_project = p
-            break
-    else:
-        raise RuntimeError("No project with the given name or id exists in the cloud")
-
-    if push:
-        local_path = Path.cwd() / cloud_project.name
-        if local_path.exists():
-            push_manager = container.push_manager()
-            push_manager.push_projects([local_path])
-        else:
-            logger.info(f"'{cloud_project.name}' does not exist locally, not pushing anything")
+    cloud_project_manager = container.cloud_project_manager()
+    cloud_project = cloud_project_manager.get_cloud_project(project, push)
 
     if name is None:
         name = container.name_generator().generate_name()

@@ -15,6 +15,7 @@ from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Factory, Singleton
 
 from lean.components.api.api_client import APIClient
+from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
 from lean.components.cloud.data_downloader import DataDownloader
 from lean.components.cloud.pull_manager import PullManager
@@ -80,6 +81,11 @@ class Container(DeclarativeContainer):
                                 api_client=api_client,
                                 lean_config_manager=lean_config_manager,
                                 market_hours_database=market_hours_database)
+    cloud_project_manager = Singleton(CloudProjectManager,
+                                      api_client=api_client,
+                                      project_config_manager=project_config_manager,
+                                      pull_manager=pull_manager,
+                                      push_manager=push_manager)
 
     docker_manager = Singleton(DockerManager, logger=logger)
 

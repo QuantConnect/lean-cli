@@ -162,31 +162,6 @@ def test_cloud_optimize_uses_given_name() -> None:
     assert args[2] == "My Name"
 
 
-def test_cloud_optimize_pushes_project_when_push_option_given() -> None:
-    create_fake_lean_cli_directory()
-
-    project = create_api_project(1, "Python Project")
-    optimization = create_api_optimization()
-
-    api_client = mock.Mock()
-    api_client.projects.get_all.return_value = [project]
-    api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
-    container.api_client.override(providers.Object(api_client))
-
-    cloud_runner = mock.Mock()
-    cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner.override(providers.Object(cloud_runner))
-
-    push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
-
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "Python Project", "--push"])
-
-    assert result.exit_code == 0
-
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
-
-
 def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> None:
     create_fake_lean_cli_directory()
 

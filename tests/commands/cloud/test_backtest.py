@@ -12,7 +12,6 @@
 # limitations under the License.
 
 from datetime import datetime
-from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
@@ -181,30 +180,6 @@ def test_cloud_backtest_does_not_open_browser_when_init_error_happens(open) -> N
     assert result.exit_code == 0
 
     open.assert_not_called()
-
-
-def test_cloud_backtest_pushes_project_when_push_option_given() -> None:
-    create_fake_lean_cli_directory()
-
-    project = create_api_project(1, "Python Project")
-    backtest = create_api_backtest()
-
-    api_client = mock.Mock()
-    api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
-
-    cloud_runner = mock.Mock()
-    cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
-
-    push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
-
-    result = CliRunner().invoke(lean, ["cloud", "backtest", "Python Project", "--push"])
-
-    assert result.exit_code == 0
-
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
 
 
 def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> None:

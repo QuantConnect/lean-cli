@@ -63,31 +63,12 @@ class PullManager:
 
         :param project: the cloud project to pull
         """
-        local_project_path = self._get_local_project_path(project)
-        if local_project_path.exists():
-            project_config = self._project_config_manager.get_project_config(local_project_path)
+        local_project_path = self.get_local_project_path(project)
 
-            if project_config.has("cloud-id"):
-                if project_config.get("cloud-id") == project.projectId:
-                    # There is a local project which is linked to this cloud project
-                    self._pull_files(project, local_project_path)
-                else:
-                    # There is a local project but the project config's cloud id doesn't match this cloud project's id
-                    raise RuntimeError(
-                        f"The local directory matching the project's name is configured to synchronize with cloud project {project_config.get('cloud-id')}")
-            elif project_config.file.exists():
-                # There is a local project but the project config does not contain a cloud id
-                raise RuntimeError(
-                    f"The local directory matching the project's name already contains a Lean project which is not linked to a cloud project")
-            else:
-                # There is a local directory but it doesn't have a project config
-                raise RuntimeError(
-                    f"The local directory matching the project's name is not a Lean project")
-        else:
-            # There is no local directory with the same path as the cloud project
-            self._pull_files(project, local_project_path)
+        # Pull the cloud files to the local drive
+        self._pull_files(project, local_project_path)
 
-        # Finalize pulling by updating the project config with the latest details
+        # Update the local project config with the latest details
         project_config = self._project_config_manager.get_project_config(local_project_path)
         project_config.set("cloud-id", project.projectId)
         project_config.set("algorithm-language", project.language.name)
@@ -110,8 +91,9 @@ class PullManager:
             local_file_path = local_project_path / cloud_file.name
 
             # Skip if the local file already exists with the correct content
-            if local_file_path.exists() and local_file_path.read_text(encoding="utf-8").strip() == cloud_file.content.strip():
-                continue
+            if local_file_path.exists():
+                if local_file_path.read_text(encoding="utf-8").strip() == cloud_file.content.strip():
+                    continue
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
             with local_file_path.open("w+", encoding="utf-8") as local_file:
@@ -122,14 +104,36 @@ class PullManager:
 
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
 
-    def _get_local_project_path(self, project: QCProject) -> Path:
+    def get_local_project_path(self, project: QCProject) -> Path:
         """Returns the local path where a certain cloud project should be stored.
+
+        If two cloud projects are named "Project", they are pulled to ./Project and ./Project 2.
 
         :param project: the cloud project to get the project path of
         :return: the path to the local project directory
         """
-        name = project.name
+        local_path = self._format_local_path(project.name)
 
+        current_index = 1
+        while True:
+            path_suffix = "" if current_index == 1 else f" {current_index}"
+            current_path = Path.cwd() / (local_path + path_suffix)
+
+            if not current_path.exists():
+                return current_path
+
+            current_project_config = self._project_config_manager.get_project_config(current_path)
+            if current_project_config.get("cloud-id") == project.projectId:
+                return current_path
+
+            current_index += 1
+
+    def _format_local_path(self, cloud_path: str) -> str:
+        """Converts the given cloud path into a local path which is valid for the current operating system.
+
+        :param cloud_path: the path of the project in the cloud
+        :return: the converted cloud_path so that it is valid locally
+        """
         # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
         if platform.system() == "Windows":
             # Windows, \":*?"<>| are forbidden
@@ -143,13 +147,13 @@ class PullManager:
             forbidden_characters = []
 
         for forbidden_character in forbidden_characters:
-            name = name.replace(forbidden_character, " ")
+            cloud_path = cloud_path.replace(forbidden_character, " ")
 
         # On Windows we need to ensure each path component is valid
         if platform.system() == "Windows":
             new_components = []
 
-            for component in name.split("/"):
+            for component in cloud_path.split("/"):
                 # Some names are reserved
                 for reserved_name in ["CON", "PRN", "AUX", "NUL",
                                       "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
@@ -164,6 +168,6 @@ class PullManager:
 
                 new_components.append(component)
 
-            name = "/".join(new_components)
+            cloud_path = "/".join(new_components)
 
-        return Path.cwd() / name
+        return cloud_path
