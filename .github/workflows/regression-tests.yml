@@ -1,4 +1,4 @@
-name: Regression
+name: Regression Testing
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     - cron: 0 0 * * *
 
 jobs:
-  regression:
+  test:
     runs-on: ubuntu-latest
 
     steps:
