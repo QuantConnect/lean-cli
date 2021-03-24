@@ -135,7 +135,14 @@ def optimize(project: Path,
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
-    if not success:
+
+    if success:
+        logger = container.logger()
+        cli_root_dir = container.lean_config_manager().get_cli_root_directory()
+        relative_project_dir = project.relative_to(cli_root_dir)
+        relative_output_dir = output.relative_to(cli_root_dir)
+        logger.info(f"Successfully optimized '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
+    else:
         raise RuntimeError("Something went wrong while running the optimization")
 
     if version == "latest" and not update:
