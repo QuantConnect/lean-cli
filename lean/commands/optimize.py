@@ -108,7 +108,7 @@ def optimize(project: Path,
     config["optimizer-close-automatically"] = True
     config["results-destination-folder"] = "/Results"
 
-    config_path = output / "config.json"
+    config_path = output / "optimizer-config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps(config, indent=4) + "\n")

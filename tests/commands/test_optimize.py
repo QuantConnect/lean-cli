@@ -353,8 +353,8 @@ def test_optimize_writes_config_to_output_directory() -> None:
 
     assert result.exit_code == 0
 
-    assert (Path.cwd() / "output" / "config.json").exists()
-    config = json.loads((Path.cwd() / "output" / "config.json").read_text(encoding="utf-8"))
+    assert (Path.cwd() / "output" / "optimizer-config.json").exists()
+    config = json.loads((Path.cwd() / "output" / "optimizer-config.json").read_text(encoding="utf-8"))
 
     assert config["results-destination-folder"] == "/Results"
 
