@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import contextlib
+import os
 from datetime import datetime
 from time import sleep
 from typing import ContextManager
@@ -32,6 +33,7 @@ from lean.constants import API_BASE_URL
 from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
 
 # These tests require a QuantConnect user id and API token
+# The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
 USER_ID = ""
 API_TOKEN = ""
 
@@ -43,10 +45,13 @@ def allow_http_requests(requests_mock: RequestsMock) -> None:
 
 
 def create_api_client() -> APIClient:
-    if USER_ID == "" or API_TOKEN == "":
+    user_id = USER_ID or os.getenv("QC_USER_ID", "")
+    api_token = API_TOKEN or os.getenv("QC_API_TOKEN", "")
+
+    if user_id == "" or api_token == "":
         pytest.skip("API credentials not specified")
 
-    return APIClient(mock.Mock(), USER_ID, API_TOKEN)
+    return APIClient(mock.Mock(), user_id, api_token)
 
 
 @contextlib.contextmanager

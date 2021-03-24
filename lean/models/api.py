@@ -308,7 +308,7 @@ class QCCard(WrappedBaseModel):
 class QCOrganization(WrappedBaseModel):
     organizationId: str
     creditBalance: float
-    card: QCCard
+    card: Optional[QCCard] = None
 
 
 class QCSecurityType(str, Enum):
