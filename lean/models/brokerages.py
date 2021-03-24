@@ -190,11 +190,11 @@ Create an API key by logging in and accessing the Bitfinex API Management page (
         """.strip())
 
     def _get_settings(self) -> Dict[str, str]:
-        key_id = click.prompt("Key id")
+        api_key = click.prompt("API key")
         secret_key = click.prompt("Secret key")
 
         return {
-            "key": key_id,
+            "key": api_key,
             "secret": secret_key,
             "environment": "live"
         }
