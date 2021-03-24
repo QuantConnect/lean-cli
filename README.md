@@ -118,7 +118,7 @@ Usage: lean cloud backtest [OPTIONS] PROJECT
 
   Backtest a project in the cloud.
 
-  PROJECT must be the name of a project or the id of a cloud project.
+  PROJECT must be the name or id of the project to run a backtest for.
 
   If the project that has to be backtested has been pulled to the local drive with `lean cloud pull` it is possible to
   use the --push option to push local modifications to the cloud before running the backtest.
@@ -144,7 +144,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
 
   An interactive prompt will be shown to configure the deployment.
 
-  PROJECT must be the name of a project or the id of a cloud project.
+  PROJECT must be the name or the id of the project to start live trading for.
 
   If the project that has to be live traded has been pulled to the local drive with `lean cloud pull` it is possible
   to use the --push option to push local modifications to the cloud before starting live trading.
@@ -169,7 +169,7 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
 
   An interactive prompt will be shown to configure the optimizer.
 
-  PROJECT must be the name of a project or the id of a cloud project.
+  PROJECT must be the name or id of the project to optimize.
 
   If the project that has to be optimized has been pulled to the local drive with `lean cloud pull` it is possible to
   use the --push option to push local modifications to the cloud before running the optimization.
