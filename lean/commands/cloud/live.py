@@ -93,7 +93,7 @@ def live(project: str, push: bool, open_browser: bool) -> None:
 
     An interactive prompt will be shown to configure the deployment.
 
-    PROJECT should be the name or id of a cloud project.
+    PROJECT must be the name of a project or the id of a cloud project.
 
     If the project that has to be live traded has been pulled to the local drive
     with `lean cloud pull` it is possible to use the --push option to push local
