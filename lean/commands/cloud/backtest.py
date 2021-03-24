@@ -34,7 +34,7 @@ from lean.container import container
 def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) -> None:
     """Backtest a project in the cloud.
 
-    PROJECT must be the name of a project or the id of a cloud project.
+    PROJECT must be the name or id of the project to run a backtest for.
 
     If the project that has to be backtested has been pulled to the local drive
     with `lean cloud pull` it is possible to use the --push option to push local

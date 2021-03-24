@@ -122,7 +122,7 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
 
     An interactive prompt will be shown to configure the optimizer.
 
-    PROJECT must be the name of a project or the id of a cloud project.
+    PROJECT must be the name or id of the project to optimize.
 
     If the project that has to be optimized has been pulled to the local drive
     with `lean cloud pull` it is possible to use the --push option to push local
