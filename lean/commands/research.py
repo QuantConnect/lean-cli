@@ -16,6 +16,7 @@ import webbrowser
 from pathlib import Path
 
 import click
+from docker.errors import APIError
 from docker.types import Mount
 
 from lean.click import LeanCommand, PathParameter
@@ -90,3 +91,10 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
     if version == "latest" and not update:
         update_manager = container.update_manager()
         update_manager.warn_if_docker_image_outdated(RESEARCH_IMAGE)
+
+    try:
+        docker_manager.run_image(RESEARCH_IMAGE, version, **run_options)
+    except APIError as error:
+        if "port is already allocated" in error.explanation:
+            raise RuntimeError(f"Port {port} is already in use, please specify a different port using --port")
+        raise error
