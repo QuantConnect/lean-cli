@@ -96,7 +96,7 @@ def report(backtest_data_source_file: Path,
     description is the description stored in the project's config.json file.
     """
     if report_destination.exists() and not overwrite:
-        raise RuntimeError("Given --report-destination already exists, use --overwrite to overwrite it")
+        raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
     project_directory = _find_project_directory(backtest_data_source_file)
 

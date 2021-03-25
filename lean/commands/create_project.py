@@ -16,7 +16,6 @@ from pathlib import Path
 
 import click
 
-# The default templates are coming from the "Create New Algorithm" feature in the Algorithm Lab
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCLanguage
@@ -66,8 +65,8 @@ DEFAULT_PYTHON_NOTEBOOK = """
                 "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
                 "\\n",
                 "# Indicator Analysis\\n",
-                "bbdf = qb.Indicator(ExponentialMovingAverage(10), spy.Symbol, 360, Resolution.Daily)\\n",
-                "bbdf.plot()"
+                "ema = qb.Indicator(ExponentialMovingAverage(10), spy.Symbol, 360, Resolution.Daily)\\n",
+                "ema.plot()"
             ]
         },
         {

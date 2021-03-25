@@ -172,7 +172,7 @@ class LeanConfigManager:
             config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
         else:
             algorithm_text = algorithm_file.read_text(encoding="utf-8")
-            config["algorithm-type-name"] = re.findall(f"class ([a-zA-Z0-9]+)", algorithm_text)[0]
+            config["algorithm-type-name"] = re.findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
             config["algorithm-location"] = f"{algorithm_file.parent.name}.dll"
 

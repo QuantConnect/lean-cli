@@ -354,13 +354,84 @@ def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
     assert config["algorithm-location"] == "/LeanCLI/main.py"
 
 
-def test_get_complete_lean_config_sets_csharp_algorithm_details() -> None:
+@pytest.mark.parametrize("csharp_code,class_name", [("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class CSharpProject : QCAlgorithm
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class CSharpProject:QCAlgorithm
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class     CSharpProject     :     QCAlgorithm
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class CSharpProject
+        : QCAlgorithm
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class
+        CSharpProject
+        : QCAlgorithm
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class SymbolData1
+    {
+    }
+
+    public class CSharpProject : QCAlgorithm
+    {
+    }
+    
+    public class SymbolData2
+    {
+    }
+}
+                                                    """, "CSharpProject"),
+                                                    ("""
+namespace QuantConnect.Algorithm.CSharp
+{
+    public class _ĝᾌᾫि‿ : QCAlgorithm
+    {
+    }
+}
+                                                    """, "_ĝᾌᾫि‿")])
+def test_get_complete_lean_config_sets_csharp_algorithm_details(csharp_code: str, class_name: str) -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "CSharp Project" / "Main.cs", None)
+    csharp_path = Path.cwd() / "CSharp Project" / "Main.cs"
+    with csharp_path.open("w+") as file:
+        file.write(csharp_code.strip() + "\n")
 
-    assert config["algorithm-type-name"] == "CSharpProject"
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
+    config = manager.get_complete_lean_config("my-environment", csharp_path, None)
+
+    assert config["algorithm-type-name"] == class_name
     assert config["algorithm-language"] == "CSharp"
     assert config["algorithm-location"] == "CSharp Project.dll"
 

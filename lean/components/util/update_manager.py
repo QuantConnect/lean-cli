@@ -59,7 +59,7 @@ class UpdateManager:
 
         if StrictVersion(latest_version) > StrictVersion(current_version):
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
-            self._logger.warn("Run `pip install -U lean` to update to the latest version")
+            self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
     def warn_if_docker_image_outdated(self, image: str) -> None:
         """Warns the user if the latest installed version of a Docker image is outdated.
