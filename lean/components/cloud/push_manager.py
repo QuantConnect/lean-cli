@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import traceback
 from pathlib import Path
 from typing import List
 
@@ -56,6 +57,7 @@ class PushManager:
                 self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
                 self._push_project(project, cloud_projects)
             except Exception as ex:
+                self._logger.debug(traceback.format_exc().strip())
                 self._logger.warn(f"Could not push '{relative_path}': {ex}")
 
     def _push_project(self, project: Path, cloud_projects: List[QCProject]) -> None:

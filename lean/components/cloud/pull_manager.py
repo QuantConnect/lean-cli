@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import platform
+import traceback
 from pathlib import Path
 from typing import List
 
@@ -54,6 +55,7 @@ class PullManager:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
                 self._pull_project(project)
             except Exception as ex:
+                self._logger.debug(traceback.format_exc().strip())
                 self._logger.warn(f"Cannot pull '{project.name}' ({project.projectId}): {ex}")
 
     def _pull_project(self, project: QCProject) -> None:
