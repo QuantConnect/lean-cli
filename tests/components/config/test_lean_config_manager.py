@@ -425,7 +425,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details(csharp_code: str
     create_fake_lean_cli_directory()
 
     csharp_path = Path.cwd() / "CSharp Project" / "Main.cs"
-    with csharp_path.open("w+") as file:
+    with csharp_path.open("w+", encoding="utf-8") as file:
         file.write(csharp_code.strip() + "\n")
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())

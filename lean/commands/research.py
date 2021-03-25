@@ -90,5 +90,3 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
     if version == "latest" and not update:
         update_manager = container.update_manager()
         update_manager.warn_if_docker_image_outdated(RESEARCH_IMAGE)
-
-    docker_manager.run_image(RESEARCH_IMAGE, version, **run_options)
