@@ -42,6 +42,7 @@ class PullManager:
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._last_file = None
 
     def pull_projects(self, projects_to_pull: List[QCProject]) -> None:
         """Pulls the given projects from the cloud to the local drive.
@@ -56,7 +57,11 @@ class PullManager:
                 self._pull_project(project)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
-                self._logger.warn(f"Cannot pull '{project.name}' ({project.projectId}): {ex}")
+                if self._last_file is not None:
+                    self._logger.warn(
+                        f"Cannot pull '{project.name}' (id {project.projectId}, failed on {self._last_file}): {ex}")
+                else:
+                    self._logger.warn(f"Cannot pull '{project.name}' (id {project.projectId}): {ex}")
 
     def _pull_project(self, project: QCProject) -> None:
         """Pulls a single project from the cloud to the local drive.
@@ -87,6 +92,8 @@ class PullManager:
             self._project_manager.create_new_project(local_project_path, project.language)
 
         for cloud_file in self._api_client.files.get_all(project.projectId):
+            self._last_file = cloud_file.name
+
             if cloud_file.isLibrary:
                 continue
 
@@ -105,6 +112,8 @@ class PullManager:
                     local_file.write(cloud_file.content)
 
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
+
+        self._last_file = None
 
     def get_local_project_path(self, project: QCProject) -> Path:
         """Returns the local path where a certain cloud project should be stored.

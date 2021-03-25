@@ -41,6 +41,7 @@ class PushManager:
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._last_file = None
 
     def push_projects(self, projects_to_push: List[Path]) -> None:
         """Pushes the given projects from the local drive to the cloud.
@@ -58,7 +59,10 @@ class PushManager:
                 self._push_project(project, cloud_projects)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
-                self._logger.warn(f"Could not push '{relative_path}': {ex}")
+                if self._last_file is not None:
+                    self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
+                else:
+                    self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
     def _push_project(self, project: Path, cloud_projects: List[QCProject]) -> None:
         """Pushes a single local project to the cloud.
@@ -107,6 +111,8 @@ class PushManager:
 
         for local_file in local_files:
             file_name = local_file.relative_to(project).as_posix()
+            self._last_file = local_file
+
             if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
                 continue
 
@@ -119,6 +125,8 @@ class PushManager:
             elif cloud_file.content.strip() != file_content.strip():
                 self._api_client.files.update(cloud_project.projectId, file_name, file_content)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
+
+        self._last_file = None
 
     def _push_metadata(self, project: Path, cloud_project: QCProject) -> None:
         """Pushes local project description and parameters to the cloud.
