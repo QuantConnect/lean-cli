@@ -40,7 +40,7 @@ def cfd(ticker: str, resolution: str, start: Optional[datetime], end: Optional[d
     \b
     This command can only download data that you have previously added to your QuantConnect account.
     See the following url for instructions on how to do so:
-    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
 
     \b
     See the following url for the data that can be downloaded with this command:

@@ -13,13 +13,13 @@ Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/
 ## Roadmap
 
 The following features are currently planned to be implemented (in order of priority):
-- [x] [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management#02-Creating-new-projectshtml)
+- [x] [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management)
 - [x] [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
-- [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtestshtml)
+- [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
 - [x] [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests)
 - [x] [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
 - [x] [Cloud synchronization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization)
-- [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtestshtml)
+- [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
 - [ ] **First beta release**
 - [x] [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
 - [x] [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/local-optimizations)

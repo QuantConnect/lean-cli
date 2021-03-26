@@ -13,13 +13,75 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import click
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
 from lean.container import container
+
+# Brokerage -> required configuration properties
+_required_brokerage_properties = {
+    "InteractiveBrokersBrokerage": ["ib-account", "ib-user-name", "ib-password",
+                                    "ib-agent-description", "ib-trading-mode", "ib-enable-delayed-streaming-data"],
+    "TradierBrokerage": ["tradier-use-sandbox", "tradier-account-id", "tradier-access-token"],
+    "OandaBrokerage": ["oanda-environment", "oanda-access-token", "oanda-account-id"],
+    "FxcmBrokerage": ["fxcm-server", "fxcm-terminal", "fxcm-user-name", "fxcm-password", "fxcm-account-id"],
+    "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
+    "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
+    "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
+    "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key",
+                         "zerodha-product-type", "zeroda-trading-segment", "zerodha-history-subscription"]
+}
+
+# Data queue handler -> required configuration properties
+_required_data_queue_handler_properties = {
+    "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage":
+        _required_brokerage_properties["InteractiveBrokersBrokerage"],
+    "TradierBrokerage": _required_brokerage_properties["TradierBrokerage"],
+    "OandaBrokerage": _required_brokerage_properties["OandaBrokerage"],
+    "FxcmBrokerage": _required_brokerage_properties["FxcmBrokerage"],
+    "GDAXDataQueueHandler": _required_brokerage_properties["GDAXBrokerage"],
+    "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
+    "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
+    "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"]
+}
+
+
+def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
+    """Raises an error if any required properties are missing.
+
+    :param lean_config: the LEAN configuration that should be used
+    :param environment_name: the name of the environment
+    :param lean_config_path: the path to the LEAN configuration file
+    """
+    environment = lean_config["environments"][environment_name]
+    if "live-mode-brokerage" not in environment:
+        raise RuntimeError(f"The '{environment_name}' environment does not specify a live-mode-brokerage")
+    if "data-queue-handler" not in environment:
+        raise RuntimeError(f"The '{environment_name}' environment does not specify a data-queue-handler")
+
+    brokerage = environment["live-mode-brokerage"]
+    data_queue_handler = environment["data-queue-handler"]
+
+    brokerage_properties = _required_brokerage_properties.get(brokerage, [])
+    data_queue_handler_properties = _required_data_queue_handler_properties.get(data_queue_handler, [])
+
+    required_properties = brokerage_properties + data_queue_handler_properties
+    missing_properties = [p for p in required_properties if p not in lean_config or lean_config[p] == ""]
+    missing_properties = set(missing_properties)
+    if len(missing_properties) == 0:
+        return
+
+    missing_properties = "\n".join(f"- {p}" for p in missing_properties)
+
+    raise RuntimeError(f"""
+Please configure the following missing properties in {lean_config_path}:
+{missing_properties}
+Go to the following url for documentation on these properties:
+https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading
+    """.strip())
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True)
@@ -61,6 +123,8 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
 
     if not lean_config["environments"][environment]["live-mode"]:
         raise RuntimeError(f"The '{environment}' is not a live trading environment (live-mode is set to false)")
+
+    _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
 
     docker_manager = container.docker_manager()
 

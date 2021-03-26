@@ -13,7 +13,9 @@
 
 import sys
 import traceback
+from io import StringIO
 
+import click
 from pydantic.error_wrappers import ValidationError
 
 from lean.commands import lean
@@ -23,7 +25,7 @@ from lean.container import container
 def main() -> None:
     """This function is the entrypoint when running a Lean command in a terminal."""
     try:
-        lean.main()
+        lean.main(standalone_mode=False)
     except Exception as exception:
         logger = container.logger()
         logger.debug(traceback.format_exc().strip())
@@ -32,5 +34,19 @@ def main() -> None:
             logger.debug("Value that failed validation:")
             logger.debug(exception.input_value)
 
-        logger.error(f"Error: {exception}")
+        if isinstance(exception, click.UsageError):
+            io = StringIO()
+            exception.show(file=io)
+
+            exception_str = io.getvalue().strip()
+            exception_str = exception_str.replace("Try 'lean", "\nTry 'lean")
+            exception_str = exception_str.replace("for help.",
+                                                  "for help or go to the following url for a list of common errors:\nhttps://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting")
+
+            logger.info(exception_str)
+        elif isinstance(exception, click.Abort):
+            logger.error("Aborted!")
+        else:
+            logger.error(f"Error: {exception}")
+
         sys.exit(1)

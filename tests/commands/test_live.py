@@ -38,9 +38,25 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     config = path.read_text(encoding="utf-8")
     config = config.replace("{", f"""
 {{
+    "ib-account": "DU1234567",
+    "ib-user-name": "trader777",
+    "ib-password": "hunter2",
+    "ib-agent-description": "Individual",
+    "ib-trading-mode": "paper",
+    "ib-enable-delayed-streaming-data": false,
+    
     "environments": {{
         "{name}": {{
-            "live-mode": {str(live_mode).lower()}
+            "live-mode": {str(live_mode).lower()},
+            
+            "live-mode-brokerage": "InteractiveBrokersBrokerage",
+            "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
+            "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
+            "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
+            "data-queue-handler": "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage",
+            "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
+            "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler",
+            "history-provider": "BrokerageHistoryProvider"
         }}
     }},
     """)
@@ -172,6 +188,28 @@ def test_live_aborts_when_project_does_not_contain_algorithm_file() -> None:
     container.lean_runner.override(providers.Object(lean_runner))
 
     result = CliRunner().invoke(lean, ["live", "data"])
+
+    assert result.exit_code != 0
+
+    lean_runner.run_lean.assert_not_called()
+
+
+@pytest.mark.parametrize("target,replacement", [("DU1234567", ""), ('"ib-account": "DU1234567",', "")])
+def test_live_aborts_when_lean_config_is_missing_properties(target: str, replacement: str) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    config_path = Path.cwd() / "lean.json"
+    config = config_path.read_text(encoding="utf-8")
+    config_path.write_text(config.replace(target, replacement), encoding="utf-8")
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper"])
 
     assert result.exit_code != 0
 
