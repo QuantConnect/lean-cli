@@ -313,7 +313,7 @@ Usage: lean data download cfd [OPTIONS]
 
   This command can only download data that you have previously added to your QuantConnect account.
   See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
 
   See the following url for the data that can be downloaded with this command:
   https://www.quantconnect.com/data/tree/cfd/oanda
@@ -346,7 +346,7 @@ Usage: lean data download forex [OPTIONS]
 
   This command can only download data that you have previously added to your QuantConnect account.
   See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Libraryhtml
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
 
   See the following url for the data that can be downloaded with this command:
   https://www.quantconnect.com/data/tree/forex
