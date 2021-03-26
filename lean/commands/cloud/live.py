@@ -21,7 +21,8 @@ from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod)
 from lean.models.brokerages import (BitfinexBrokerage, CloudBrokerage, CoinbaseProBrokerage, FXCMBrokerage,
-                                    InteractiveBrokersBrokerage, OANDABrokerage, PaperTradingBrokerage)
+                                    InteractiveBrokersBrokerage, OANDABrokerage, PaperTradingBrokerage,
+                                    TradierBrokerage)
 from lean.models.logger import Option
 
 
@@ -111,6 +112,7 @@ def live(project: str, push: bool, open_browser: bool) -> None:
     brokerages = [
         PaperTradingBrokerage(),
         InteractiveBrokersBrokerage(),
+        TradierBrokerage(),
         FXCMBrokerage(),
         OANDABrokerage(),
         BitfinexBrokerage(),

@@ -125,6 +125,29 @@ Interactive Brokers Lite accounts do not support API trading.
         return "InteractiveBrokersHandler" if click.confirm(message, default=False) else "QuantConnectHandler"
 
 
+class TradierBrokerage(CloudBrokerage):
+    """A CloudBrokerage implementation for Tradier."""
+
+    def __init__(self) -> None:
+        super().__init__("TradierBrokerage", "Tradier", """
+Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api).
+The account id is the alpha-numeric code in a dropdown box on that page.
+Your account details are not saved on QuantConnect.
+        """.strip())
+
+    def _get_settings(self) -> Dict[str, str]:
+        account_id = click.prompt("Account id")
+        access_token = click.prompt("Access token", hide_input=True)
+
+        environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
+
+        return {
+            "account": account_id,
+            "token": access_token,
+            "environment": "live" if environment == "real" else "paper"
+        }
+
+
 class FXCMBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for FXCM."""
 
@@ -162,7 +185,7 @@ class OANDABrokerage(CloudBrokerage):
 
     def __init__(self) -> None:
         super().__init__("OandaBrokerage", "OANDA", """
-Your OANDA Account Number can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/).
+Your OANDA account number can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/).
 It follows the following format: ###-###-######-###.
 You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token).
 Your account details are not saved on QuantConnect.
@@ -205,7 +228,7 @@ class CoinbaseProBrokerage(CloudBrokerage):
 
     def __init__(self) -> None:
         super().__init__("GDAXBrokerage", "Coinbase Pro", """
-You can generate Coinbase Pro API credentials on Coinbase Pro page.
+You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api).
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
