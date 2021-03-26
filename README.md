@@ -20,7 +20,7 @@ The following features are currently planned to be implemented (in order of prio
 - [x] [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
 - [x] [Cloud synchronization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization)
 - [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
-- [ ] **First beta release**
+- [x] **First beta release**
 - [x] [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
 - [x] [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/local-optimizations)
 - [x] [Local backtest report creation](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/generating-reports)
