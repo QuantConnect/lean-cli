@@ -74,12 +74,15 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     if len(missing_properties) == 0:
         return
 
+    properties_str = "properties" if len(missing_properties) > 1 else "property"
+    these_str = "these" if len(missing_properties) > 1 else "this"
+
     missing_properties = "\n".join(f"- {p}" for p in missing_properties)
 
     raise RuntimeError(f"""
-Please configure the following missing properties in {lean_config_path}:
+Please configure the following missing {properties_str} in {lean_config_path}:
 {missing_properties}
-Go to the following url for documentation on these properties:
+Go to the following url for documentation on {these_str} {properties_str}:
 https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading
     """.strip())
 
