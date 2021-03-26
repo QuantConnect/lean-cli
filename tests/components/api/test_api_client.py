@@ -185,6 +185,18 @@ def test_api_client_raises_request_failed_error_when_response_contains_internal_
     assert str(error.value) == "Internal Error 21"
 
 
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_api_client_retries_request_when_response_is_http_500_error(method: str, requests_mock: RequestsMock) -> None:
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=500)
+
+    api = APIClient(mock.Mock(), "123", "456")
+
+    with pytest.raises(AuthenticationError):
+        getattr(api, method)("endpoint")
+
+    requests_mock.assert_call_count(API_BASE_URL + "endpoint", 2)
+
+
 def test_is_authenticated_returns_true_when_authenticated_request_succeeds(requests_mock: RequestsMock) -> None:
     requests_mock.assert_all_requests_are_fired = False
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": true }')

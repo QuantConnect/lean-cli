@@ -92,12 +92,13 @@ class APIClient:
         except (RequestFailedError, AuthenticationError):
             return False
 
-    def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}) -> Any:
+    def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}, retry_http_500: bool = True) -> Any:
         """Makes an authenticated request to the given endpoint.
 
         :param method: the HTTP method to use for the request
         :param endpoint: the API endpoint to send the request to
         :param options: additional options to pass on to requests.request()
+        :param retry_http_500: True if the request should be retried on an HTTP 500 response, False if not
         :return: the parsed response of the request
         """
         full_url = urljoin(API_BASE_URL, endpoint)
@@ -115,7 +116,10 @@ class APIClient:
                                     **options)
 
         if response.status_code == 500:
-            raise AuthenticationError()
+            if retry_http_500:
+                return self._request(method, endpoint, options, False)
+            else:
+                raise AuthenticationError()
 
         if not response.ok or response.status_code < 200 or response.status_code >= 300:
             raise RequestFailedError(response)
