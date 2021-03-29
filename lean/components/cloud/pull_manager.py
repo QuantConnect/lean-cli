@@ -170,7 +170,7 @@ class PullManager:
                                       "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
                                       "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
                     # If the component is a reserved name, we add an underscore to it so it can be used
-                    if component == reserved_name:
+                    if component.upper() == reserved_name:
                         component += "_"
 
                 # Components cannot end with a space or a dot
