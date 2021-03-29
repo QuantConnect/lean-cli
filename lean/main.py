@@ -33,7 +33,7 @@ def main() -> None:
         if isinstance(exception, ValidationError) and hasattr(exception, "input_value"):
             logger.debug("Value that failed validation:")
             logger.debug(exception.input_value)
-
+            logger.error(f"Error: {exception}")
         if isinstance(exception, click.UsageError):
             io = StringIO()
             exception.show(file=io)
@@ -45,7 +45,7 @@ def main() -> None:
 
             logger.info(exception_str)
         elif isinstance(exception, click.Abort):
-            logger.error("Aborted!")
+            logger.info("Aborted!")
         else:
             logger.error(f"Error: {exception}")
 
