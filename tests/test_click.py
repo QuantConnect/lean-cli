@@ -21,6 +21,7 @@ import click
 import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
+from dependency_injector.providers import Object
 
 from lean.click import DateParameter, LeanCommand, PathParameter
 from lean.container import container
@@ -99,6 +100,21 @@ def test_lean_command_does_not_check_for_cli_updates_when_command_raises() -> No
     assert result.exit_code != 0
 
     update_manager.warn_if_cli_outdated.assert_not_called()
+
+
+def test_path_parameter_fails_when_input_not_valid_path() -> None:
+    @click.command()
+    @click.argument("arg", type=PathParameter(exists=False, file_okay=True, dir_okay=True))
+    def command(arg: Path) -> None:
+        pass
+
+    path_validator = mock.Mock()
+    path_validator.is_path_valid.return_value = False
+    container.path_validator.override(Object(path_validator))
+
+    result = CliRunner().invoke(command, ["invalid-path.txt"])
+
+    assert result.exit_code != 0
 
 
 def test_path_parameter_fails_when_input_not_existent_and_exists_required() -> None:

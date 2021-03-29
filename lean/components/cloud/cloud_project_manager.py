@@ -17,6 +17,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.path_validator import PathValidator
 from lean.models.api import QCProject
 
 
@@ -27,18 +28,21 @@ class CloudProjectManager:
                  api_client: APIClient,
                  project_config_manager: ProjectConfigManager,
                  pull_manager: PullManager,
-                 push_manager: PushManager) -> None:
+                 push_manager: PushManager,
+                 path_validator: PathValidator) -> None:
         """Creates a new PullManager instance.
 
         :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_config_manager: the ProjectConfigManager instance to use
         :param pull_manager: the PullManager instance to use
         :param push_manager: the PushManager instance to use
+        :param path_validator: the PathValidator instance to use when validating paths
         """
         self._api_client = api_client
         self._project_config_manager = project_config_manager
         self._pull_manager = pull_manager
         self._push_manager = push_manager
+        self._path_validator = path_validator
 
     def get_cloud_project(self, input: str, push: bool) -> QCProject:
         """Retrieves the cloud project to use given a certain input and whether the local project needs to be pushed.
@@ -53,7 +57,9 @@ class CloudProjectManager:
         """
         # If the given input is a valid project directory, we try to use that project
         local_path = Path.cwd() / input
-        if local_path.is_dir() and self._project_config_manager.get_project_config(local_path).file.exists():
+        if self._path_validator.is_path_valid(local_path) \
+                and local_path.is_dir() \
+                and self._project_config_manager.get_project_config(local_path).file.exists():
             if push:
                 self._push_manager.push_projects([local_path])
 

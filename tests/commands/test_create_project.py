@@ -13,8 +13,10 @@
 
 import json
 from pathlib import Path
+from unittest import mock
 
 from click.testing import CliRunner
+from dependency_injector.providers import Object
 
 from lean.commands import lean
 from lean.container import container
@@ -136,3 +138,15 @@ def test_create_project_preserves_capitals_in_class_name() -> None:
 
     with open(Path.cwd() / "my FIRST project" / "main.py") as file:
         assert "class MyFIRSTProject(QCAlgorithm)" in file.read()
+
+
+def test_create_project_aborts_when_path_invalid() -> None:
+    create_fake_lean_cli_directory()
+
+    path_validator = mock.Mock()
+    path_validator.is_path_valid.return_value = False
+    container.path_validator.override(Object(path_validator))
+
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
+
+    assert result.exit_code != 0

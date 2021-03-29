@@ -233,6 +233,11 @@ def create_project(name: str, language: str) -> None:
             "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`")
 
     full_path = Path.cwd() / name
+
+    path_validator = container.path_validator()
+    if not path_validator.is_path_valid(full_path):
+        raise RuntimeError(f"'{name}' is not a valid path on your operating system")
+
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists")
     else:

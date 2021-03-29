@@ -31,6 +31,7 @@ from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
+from lean.components.util.path_validator import PathValidator
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.update_manager import UpdateManager
@@ -43,6 +44,7 @@ class Container(DeclarativeContainer):
 
     task_manager = Singleton(TaskManager, logger=logger)
     name_generator = Singleton(NameGenerator)
+    path_validator = Singleton(PathValidator)
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
@@ -85,7 +87,8 @@ class Container(DeclarativeContainer):
                                       api_client=api_client,
                                       project_config_manager=project_config_manager,
                                       pull_manager=pull_manager,
-                                      push_manager=push_manager)
+                                      push_manager=push_manager,
+                                      path_validator=path_validator)
 
     docker_manager = Singleton(DockerManager, logger=logger)
 
