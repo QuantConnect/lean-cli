@@ -57,10 +57,9 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     :param lean_config_path: the path to the LEAN configuration file
     """
     environment = lean_config["environments"][environment_name]
-    if "live-mode-brokerage" not in environment:
-        raise RuntimeError(f"The '{environment_name}' environment does not specify a live-mode-brokerage")
-    if "data-queue-handler" not in environment:
-        raise RuntimeError(f"The '{environment_name}' environment does not specify a data-queue-handler")
+    for key in ["live-mode-brokerage", "data-queue-handler"]:
+        if key not in environment:
+            raise RuntimeError(f"The '{environment_name}' environment does not specify a {key}")
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handler = environment["data-queue-handler"]
@@ -133,7 +132,8 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
 
     if version != "latest":
         if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError("The specified version does not exist")
+            raise RuntimeError(
+                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
 
     if update:
         docker_manager.pull_image(ENGINE_IMAGE, version)

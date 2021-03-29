@@ -83,7 +83,8 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
 
     if version != "latest":
         if not docker_manager.tag_exists(RESEARCH_IMAGE, version):
-            raise RuntimeError("The specified version does not exist")
+            raise RuntimeError(
+                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{RESEARCH_IMAGE}/tags")
 
     if update:
         docker_manager.pull_image(RESEARCH_IMAGE, version)

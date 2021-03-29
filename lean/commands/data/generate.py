@@ -120,7 +120,8 @@ def generate(start: datetime,
 
     if version != "latest":
         if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError("The specified version does not exist")
+            raise RuntimeError(
+                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
 
     if update:
         docker_manager.pull_image(ENGINE_IMAGE, version)
