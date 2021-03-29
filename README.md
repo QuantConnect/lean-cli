@@ -10,25 +10,21 @@ The Lean CLI is a cross-platform CLI aimed at making it easier to develop with t
 
 Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
 
-## Roadmap
+## Highlights
 
-The following features are currently planned to be implemented (in order of priority):
-- [x] [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management)
-- [x] [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
-- [x] [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
-- [x] [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests)
-- [x] [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
-- [x] [Cloud synchronization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization)
-- [x] [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
-- [ ] **First beta release**
-- [x] [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
-- [x] [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/local-optimizations)
-- [x] [Local backtest report creation](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/generating-reports)
-- [ ] Local backtest visualization
-- [x] [Local live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading)
-- [x] [Cloud optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/cloud-optimizations)
-- [x] [Cloud live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/cloud-live-trading)
-- [ ] Local library support
+- [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management)
+- [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
+- [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
+- [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
+- [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests)
+- [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
+- [Local optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/local-optimizations)
+- [Local live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading)
+- [Local backtest report creation](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/generating-reports)
+- [Cloud synchronization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization)
+- [Cloud backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
+- [Cloud optimization](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/cloud-optimizations)
+- [Cloud live trading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/cloud-live-trading)
 
 ## Installation
 
@@ -36,7 +32,7 @@ The CLI can be installed and updated by running `pip install --upgrade lean`.
 
 Note that many commands in the CLI require Docker to run. See [Get Docker](https://docs.docker.com/get-docker/) for instructions on how to install Docker for your operating system.
 
-After installing the CLI, simply open a terminal in an empty directory and run `lean init` to set up a Lean configuration file and data directory. This command downloads the latest configuration file and sample data from the [QuantConnect/Lean](https://github.com/QuantConnect/Lean) repository.
+After installing the CLI, open a terminal in an empty directory and run `lean init`. This command downloads the latest configuration file and sample data from the [QuantConnect/Lean](https://github.com/QuantConnect/Lean) repository. We recommend running all Lean CLI commands in the same directory `lean init` was ran in.
 
 ## Usage
 

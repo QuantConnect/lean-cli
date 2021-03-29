@@ -39,10 +39,10 @@ from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_P
 
 
 class Container(DeclarativeContainer):
-    """The Container class contains providers for all reusable components used by the CLI."""
+    """The Container class wires all reusable components together."""
     logger = Singleton(Logger)
 
-    task_manager = Singleton(TaskManager, logger=logger)
+    task_manager = Singleton(TaskManager, logger)
     name_generator = Singleton(NameGenerator)
     path_validator = Singleton(PathValidator)
 
@@ -51,57 +51,36 @@ class Container(DeclarativeContainer):
     cache_storage = Singleton(Storage, file=CACHE_PATH)
 
     project_config_manager = Singleton(ProjectConfigManager)
-    cli_config_manager = Singleton(CLIConfigManager,
-                                   general_storage=general_storage,
-                                   credentials_storage=credentials_storage)
-    lean_config_manager = Singleton(LeanConfigManager,
-                                    cli_config_manager=cli_config_manager,
-                                    project_config_manager=project_config_manager)
+    cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
+    lean_config_manager = Singleton(LeanConfigManager, cli_config_manager, project_config_manager)
+    optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
-    project_manager = Singleton(ProjectManager, project_config_manager=project_config_manager)
+    project_manager = Singleton(ProjectManager, project_config_manager)
 
-    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager=lean_config_manager)
+    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
     api_client = Factory(APIClient,
-                         logger=logger,
+                         logger,
                          user_id=cli_config_manager.provided.user_id.get_value()(),
                          api_token=cli_config_manager.provided.api_token.get_value()())
 
-    cloud_runner = Singleton(CloudRunner, logger=logger, api_client=api_client, task_manager=task_manager)
-    pull_manager = Singleton(PullManager,
-                             logger=logger,
-                             api_client=api_client,
-                             project_manager=project_manager,
-                             project_config_manager=project_config_manager)
-    push_manager = Singleton(PushManager,
-                             logger=logger,
-                             api_client=api_client,
-                             project_manager=project_manager,
-                             project_config_manager=project_config_manager)
-    data_downloader = Singleton(DataDownloader,
-                                logger=logger,
-                                api_client=api_client,
-                                lean_config_manager=lean_config_manager,
-                                market_hours_database=market_hours_database)
+    cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
+    pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager)
+    push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
+    data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager, market_hours_database)
     cloud_project_manager = Singleton(CloudProjectManager,
-                                      api_client=api_client,
-                                      project_config_manager=project_config_manager,
-                                      pull_manager=pull_manager,
-                                      push_manager=push_manager,
-                                      path_validator=path_validator)
+                                      api_client,
+                                      project_config_manager,
+                                      pull_manager,
+                                      push_manager,
+                                      path_validator)
 
-    docker_manager = Singleton(DockerManager, logger=logger)
+    docker_manager = Singleton(DockerManager, logger)
 
-    csharp_compiler = Singleton(CSharpCompiler, logger=logger, docker_manager=docker_manager)
-    lean_runner = Singleton(LeanRunner,
-                            logger=logger,
-                            csharp_compiler=csharp_compiler,
-                            lean_config_manager=lean_config_manager,
-                            docker_manager=docker_manager)
+    csharp_compiler = Singleton(CSharpCompiler, logger, docker_manager)
+    lean_runner = Singleton(LeanRunner, logger, csharp_compiler, lean_config_manager, docker_manager)
 
-    update_manager = Singleton(UpdateManager, logger=logger, cache_storage=cache_storage, docker_manager=docker_manager)
-
-    optimizer_config_manager = Singleton(OptimizerConfigManager, logger=logger)
+    update_manager = Singleton(UpdateManager, logger, cache_storage, docker_manager)
 
 
 container = Container()

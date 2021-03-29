@@ -17,13 +17,6 @@ def get_version() -> str:
     return version_match.group(1)
 
 
-def get_description() -> str:
-    readme = read("README.md")
-    readme = readme.replace("- [x] ", "- ✅ ")
-    readme = readme.replace("- [ ] ", "- 🔲 ")
-    return readme
-
-
 # Production dependencies
 install_requires = [
     "click~=7.1.2",
@@ -44,7 +37,7 @@ setup(
     author="QuantConnect",
     author_email="support@quantconnect.com",
     url="https://github.com/QuantConnect/lean-cli",
-    long_description=get_description(),
+    long_description=read("README.md"),
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     entry_points={
