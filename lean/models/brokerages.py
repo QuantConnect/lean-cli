@@ -17,6 +17,7 @@ from typing import Dict, Optional
 import click
 
 from lean.components.util.logger import Logger
+from lean.models.errors import MoreInfoError
 
 
 class CloudBrokerage(abc.ABC):
@@ -110,7 +111,8 @@ Interactive Brokers Lite accounts do not support API trading.
                 environment = "live"
 
         if environment is None:
-            raise RuntimeError(f"Account id '{account_id}' does not look like a valid account name")
+            raise MoreInfoError(f"Account id '{account_id}' does not look like a valid account name",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/cloud-live-trading#03-Interactive-Brokers")
 
         return {
             "user": username,

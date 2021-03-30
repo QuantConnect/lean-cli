@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from lean.components.config.storage import Storage
+from lean.models.errors import MoreInfoError
 from lean.models.options import ChoiceOption, Option
 
 
@@ -57,6 +58,7 @@ class CLIConfigManager:
         option = next((x for x in self.all_options if x.key == key), None)
 
         if option is None:
-            raise ValueError(f"There doesn't exist an option with key '{key}'")
+            raise MoreInfoError(f"There doesn't exist an option with key '{key}'",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-config-set#02-Description")
 
         return option

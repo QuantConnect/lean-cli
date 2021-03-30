@@ -19,6 +19,7 @@ import click
 from lean.click import DateParameter, LeanCommand
 from lean.container import container
 from lean.models.api import QCResolution, QCSecurityType
+from lean.models.errors import MoreInfoError
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True)
@@ -67,7 +68,8 @@ def forex(ticker: str,
         path_template = f"forex/{market}/{resolution}/{ticker}.zip"
     else:
         if start is None or end is None:
-            raise RuntimeError(f"Both --start and --end must be given for {resolution} resolution")
+            raise MoreInfoError(f"Both --start and --end must be given for {resolution} resolution",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#03-Downloading-data-from-Data-Library")
         path_template = f"forex/{market}/{resolution}/{ticker}/$DAY$_quote.zip"
 
     data_downloader = container.data_downloader()

@@ -22,6 +22,7 @@ import docker
 import requests
 
 from lean.components.util.logger import Logger
+from lean.models.errors import MoreInfoError
 
 
 class DockerManager:
@@ -143,17 +144,18 @@ class DockerManager:
 
         :return: a DockerClient instance which responds to requests
         """
-        error_message = "Please make sure Docker is installed and running"
+        error = MoreInfoError("Please make sure Docker is installed and running",
+                              "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
         try:
             docker_client = docker.from_env()
         except Exception:
-            raise RuntimeError(error_message)
+            raise error
 
         try:
             if not docker_client.ping():
-                raise RuntimeError(error_message)
+                raise error
         except Exception:
-            raise RuntimeError(error_message)
+            raise error
 
         return docker_client

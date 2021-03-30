@@ -17,6 +17,7 @@ import click
 
 from lean.click import LeanCommand
 from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 @click.command(cls=LeanCommand)
@@ -45,7 +46,8 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
 
     api_client = container.api_client(user_id=user_id, api_token=api_token)
     if not api_client.is_authenticated():
-        raise RuntimeError("Credentials are invalid")
+        raise MoreInfoError("Credentials are invalid",
+                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/authentication#02-Logging-in")
 
     cli_config_manager = container.cli_config_manager()
     cli_config_manager.user_id.set_value(user_id)

@@ -25,6 +25,7 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter
+from lean.models.errors import MoreInfoError
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True)
@@ -73,7 +74,8 @@ def optimize(project: Path,
         project_parameters = [QCParameter(key=k, value=v) for k, v in project_config.get("parameters", {}).items()]
 
         if len(project_parameters) == 0:
-            raise RuntimeError("The given project has no parameters to optimize")
+            raise MoreInfoError("The given project has no parameters to optimize",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/project-parameters")
 
         optimizer_config_manager = container.optimizer_config_manager()
         optimization_strategy = optimizer_config_manager.configure_strategy(cloud=False)
@@ -137,14 +139,16 @@ def optimize(project: Path,
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
 
+    cli_root_dir = container.lean_config_manager().get_cli_root_directory()
+    relative_project_dir = project.relative_to(cli_root_dir)
+    relative_output_dir = output.relative_to(cli_root_dir)
+
     if success:
         logger = container.logger()
-        cli_root_dir = container.lean_config_manager().get_cli_root_directory()
-        relative_project_dir = project.relative_to(cli_root_dir)
-        relative_output_dir = output.relative_to(cli_root_dir)
         logger.info(f"Successfully optimized '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
     else:
-        raise RuntimeError("Something went wrong while running the optimization")
+        raise RuntimeError(
+            f"Something went wrong while running the optimization, the output is stored in '{relative_output_dir}'")
 
     if version == "latest" and not update:
         update_manager = container.update_manager()

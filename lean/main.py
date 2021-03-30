@@ -20,6 +20,7 @@ from pydantic.error_wrappers import ValidationError
 
 from lean.commands import lean
 from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 def main() -> None:
@@ -34,7 +35,10 @@ def main() -> None:
             logger.debug("Value that failed validation:")
             logger.debug(exception.input_value)
             logger.error(f"Error: {exception}")
-        if isinstance(exception, click.UsageError):
+        elif isinstance(exception, MoreInfoError):
+            logger.error(f"Error: {exception}")
+            logger.error(f"Visit {exception.link} for more information")
+        elif isinstance(exception, click.UsageError):
             io = StringIO()
             exception.show(file=io)
 

@@ -24,7 +24,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.models.api import QCResolution, QCSecurityType
 from lean.models.data import DataFile
-from lean.models.errors import RequestFailedError
+from lean.models.errors import MoreInfoError, RequestFailedError
 
 
 class DataDownloader:
@@ -128,8 +128,9 @@ class DataDownloader:
             link = link.link
         except RequestFailedError as error:
             if "Data not found for the given information" in str(error):
-                raise RuntimeError(
-                    "The requested data cannot be found, please make sure you added it to your QuantConnect account")
+                raise MoreInfoError(
+                    "The requested data cannot be found, please make sure you added it to your QuantConnect account",
+                    "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library")
             raise error
 
         local_path.parent.mkdir(parents=True, exist_ok=True)

@@ -34,8 +34,24 @@ class RequestFailedError(Exception):
         self.response = response
 
 
-class AuthenticationError(Exception):
+class MoreInfoError(Exception):
+    """An error which consists of a message and a link to documentation with more information."""
+
+    def __init__(self, message: str, link: str) -> None:
+        """Creates a new LinkedError instance.
+
+        :param message: the error message
+        :param link: the link to documentation containing more information
+        """
+        super().__init__(message)
+
+        self.link = link
+
+
+class AuthenticationError(MoreInfoError):
     """An error indicating that a request has failed because the used credentials were invalid."""
 
     def __init__(self) -> None:
-        super().__init__("Invalid credentials, please log in using `lean login`")
+        """Creates a new AuthenticationError instance."""
+        super().__init__("Invalid credentials, please log in using `lean login`",
+                         "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/authentication#02-Logging-in")

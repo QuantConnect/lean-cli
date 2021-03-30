@@ -36,7 +36,7 @@ def push(project: Optional[Path]) -> None:
     if project is not None:
         project_config_manager = container.project_config_manager()
         if not project_config_manager.get_project_config(project).file.exists():
-            raise RuntimeError("Given directory is not a Lean project")
+            raise RuntimeError(f"'{project}' is not a Lean project")
 
         projects_to_push = [project]
     else:

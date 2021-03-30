@@ -57,6 +57,7 @@ class CSharpCompiler:
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <TargetFramework>net462</TargetFramework>
+        <FrameworkPathOverride>/usr/lib/mono/4.6.2-api</FrameworkPathOverride>
         <LangVersion>6</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <OutputPath>bin/$(Configuration)/</OutputPath>

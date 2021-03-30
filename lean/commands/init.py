@@ -22,6 +22,7 @@ import requests
 from lean.click import LeanCommand
 from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 @click.command(cls=LeanCommand)
@@ -35,7 +36,8 @@ def init() -> None:
     for path in [data_dir, lean_config_path]:
         if path.exists():
             relative_path = path.relative_to(current_dir)
-            raise RuntimeError(f"{relative_path} already exists, please run this command in an empty directory")
+            raise MoreInfoError(f"{relative_path} already exists, please run this command in an empty directory",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/directory-structure#02-lean-init")
 
     logger = container.logger()
 

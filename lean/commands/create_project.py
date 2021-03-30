@@ -19,6 +19,7 @@ import click
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCLanguage
+from lean.models.errors import MoreInfoError
 
 DEFAULT_PYTHON_MAIN = '''
 from QuantConnect import Resolution
@@ -229,17 +230,19 @@ def create_project(name: str, language: str) -> None:
 
     language = language if language is not None else cli_config_manager.default_language.get_value()
     if language is None:
-        raise RuntimeError(
-            "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`")
+        raise MoreInfoError(
+            "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`",
+            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management")
 
     full_path = Path.cwd() / name
 
     path_validator = container.path_validator()
     if not path_validator.is_path_valid(full_path):
-        raise RuntimeError(f"'{name}' is not a valid path on your operating system")
+        raise MoreInfoError(f"'{name}' is not a valid path",
+                            "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
     if full_path.exists():
-        raise RuntimeError(f"A project named '{name}' already exists")
+        raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")
     else:
         project_manager = container.project_manager()
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)

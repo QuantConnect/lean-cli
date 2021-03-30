@@ -21,6 +21,7 @@ from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.models.config import DebuggingMethod
+from lean.models.errors import MoreInfoError
 
 
 class LeanConfigManager:
@@ -58,7 +59,8 @@ class LeanConfigManager:
 
             # If the parent directory is the same as the current directory we can't go up any more
             if current_dir.parent == current_dir:
-                raise RuntimeError(f"'{DEFAULT_LEAN_CONFIG_FILE_NAME}' not found")
+                raise MoreInfoError(f"'{DEFAULT_LEAN_CONFIG_FILE_NAME}' not found",
+                                    "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/configuration#03-Lean-configuration")
 
             current_dir = current_dir.parent
 

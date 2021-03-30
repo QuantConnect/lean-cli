@@ -20,8 +20,9 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
 from lean.container import container
-
 # Brokerage -> required configuration properties
+from lean.models.errors import MoreInfoError
+
 _required_brokerage_properties = {
     "InteractiveBrokersBrokerage": ["ib-account", "ib-user-name", "ib-password",
                                     "ib-agent-description", "ib-trading-mode", "ib-enable-delayed-streaming-data"],
@@ -59,7 +60,8 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     environment = lean_config["environments"][environment_name]
     for key in ["live-mode-brokerage", "data-queue-handler"]:
         if key not in environment:
-            raise RuntimeError(f"The '{environment_name}' environment does not specify a {key}")
+            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
+                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handler = environment["data-queue-handler"]
@@ -121,10 +123,12 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
 
     if "environments" not in lean_config or environment not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
-        raise RuntimeError(f"{lean_config_path} does not contain an environment named '{environment}'")
+        raise MoreInfoError(f"{lean_config_path} does not contain an environment named '{environment}'",
+                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
 
     if not lean_config["environments"][environment]["live-mode"]:
-        raise RuntimeError(f"The '{environment}' is not a live trading environment (live-mode is set to false)")
+        raise MoreInfoError(f"The '{environment}' is not a live trading environment (live-mode is set to false)",
+                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
 
     _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
 

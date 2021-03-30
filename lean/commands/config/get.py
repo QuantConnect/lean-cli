@@ -15,6 +15,7 @@ import click
 
 from lean.click import LeanCommand
 from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 @click.command(cls=LeanCommand)
@@ -36,7 +37,8 @@ def get(key: str) -> None:
 
     value = option.get_value()
     if value is None:
-        raise RuntimeError(f"The option with key '{key}' doesn't have a value set")
+        raise MoreInfoError(f"The option with key '{key}' doesn't have a value set",
+                            "https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-config-set")
 
     logger = container.logger()
     logger.info(value)

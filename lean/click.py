@@ -19,6 +19,7 @@ import click
 
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 def parse_config_option(ctx: click.Context, param: click.Parameter, value: Optional[Path]) -> None:
@@ -60,8 +61,9 @@ class LeanCommand(click.Command):
                 container.lean_config_manager().get_cli_root_directory()
             except Exception:
                 # Abort with a display-friendly error message if the command requires a Lean config
-                raise RuntimeError(
-                    "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config")
+                raise MoreInfoError(
+                    "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
+                    "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
         result = super().invoke(ctx)
 
