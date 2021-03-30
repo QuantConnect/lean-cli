@@ -90,9 +90,10 @@ class CSharpCompiler:
 
         # Copy the generated dll file to the user's project directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code
-        compiled_dll = compile_dir / "bin" / "Debug" / f"{project_dir.name}.dll"
-        local_path = project_dir / "bin" / "Debug" / f"{project_dir.name}.dll"
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(compiled_dll, local_path)
+        for extension in ["dll", "pdb"]:
+            compiled_path = compile_dir / "bin" / "Debug" / f"{project_dir.name}.{extension}"
+            local_path = project_dir / "bin" / "Debug" / f"{project_dir.name}.{extension}"
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(compiled_path, local_path)
 
         return compile_dir / "bin" / "Debug"
