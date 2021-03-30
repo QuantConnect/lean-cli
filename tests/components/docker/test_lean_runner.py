@@ -298,7 +298,7 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
     assert kwargs["ports"]["5678"] == "5678"
 
 
-def test_run_lean_exposes_55555_when_debugging_with_mono() -> None:
+def test_run_lean_exposes_55556_when_debugging_with_mono() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -315,7 +315,7 @@ def test_run_lean_exposes_55555_when_debugging_with_mono() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert kwargs["ports"]["55555"] == "55555"
+    assert kwargs["ports"]["55556"] == "55556"
 
 
 def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:

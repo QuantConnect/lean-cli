@@ -260,7 +260,7 @@ class ProjectManager:
             "request": "attach",
             "type": "mono",
             "address": "localhost",
-            "port": 55555
+            "port": 55556
         }
     ]
 }
@@ -340,7 +340,7 @@ on the page above, you can add a PackageReference for it.
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RunManager">
-    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55555" address="localhost">
+    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55556" address="localhost">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
       <option name="selectedOptions">

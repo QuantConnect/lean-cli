@@ -77,14 +77,14 @@ class LeanRunner:
 
         # Set up Mono debugging
         if debugging_method == DebuggingMethod.Mono:
-            run_options["ports"]["55555"] = "55555"
+            run_options["ports"]["55556"] = "55556"
             run_options["entrypoint"] = ["mono",
                                          "--debug",
-                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55555,suspend=y",
+                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55556,suspend=y",
                                          "QuantConnect.Lean.Launcher.exe",
                                          *run_options["entrypoint"][2:]]
 
-            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55555 to begin")
+            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55556 to begin")
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
