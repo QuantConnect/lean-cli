@@ -28,9 +28,10 @@ def run_image(image: str, tag: str, **kwargs) -> bool:
 
     csproj_file = Path(kwargs.get("entrypoint")[-1])
 
-    dll_path = compile_dir / "bin" / "Debug" / f"{csproj_file.stem}.dll"
-    dll_path.parent.mkdir(parents=True, exist_ok=True)
-    dll_path.touch()
+    for extension in ["dll", "pdb"]:
+        path = compile_dir / "bin" / "Debug" / f"{csproj_file.stem}.{extension}"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
 
     return True
 
@@ -92,7 +93,8 @@ def test_compile_csharp_project_only_mounts_files_from_given_project() -> None:
     assert not (compile_dir / "main.py").exists()
 
 
-def test_compile_csharp_project_copies_generated_dll_to_project_bin() -> None:
+@pytest.mark.parametrize("extension", ["dll", "pdb"])
+def test_compile_csharp_project_copies_generated_files_to_project_bin(extension: str) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -102,7 +104,8 @@ def test_compile_csharp_project_copies_generated_dll_to_project_bin() -> None:
 
     compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
 
-    assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / "CSharp Project.dll").exists()
+    assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / f"CSharp Project.{extension}").exists()
+
 
 def test_compile_csharp_project_disables_msbuild_telemetry() -> None:
     create_fake_lean_cli_directory()
