@@ -69,18 +69,20 @@ class FileClient:
 
         return QCMinimalFile(**data["files"][0])
 
-    def update(self, project_id: int, file_name: str, content: str) -> None:
+    def update(self, project_id: int, file_name: str, content: str) -> QCMinimalFile:
         """Updates an existing file.
 
         :param project_id: the id of the project to update a file in
         :param file_name: the name of the file to update
         :param content: the new content of the file
         """
-        self._api.post("files/update", {
+        data = self._api.post("files/update", {
             "projectId": project_id,
             "name": file_name,
             "content": content
         })
+
+        return QCMinimalFile(**data["files"][0])
 
     def delete(self, project_id: int, file_name: str) -> None:
         """Deletes an existing file.

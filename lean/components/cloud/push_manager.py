@@ -10,8 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -106,10 +106,12 @@ class PushManager:
         :param project: the local project to push the files of
         :param cloud_project: the cloud project to push the files to
         """
-        local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
+        if not self._project_manager.should_update_cloud(project, cloud_project):
+            return
+
         cloud_files = self._api_client.files.get_all(cloud_project.projectId)
 
-        for local_file in local_files:
+        for local_file in self._project_manager.get_files_to_sync(project):
             file_name = local_file.relative_to(project).as_posix()
             self._last_file = local_file
 
@@ -120,10 +122,12 @@ class PushManager:
             cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
 
             if cloud_file is None:
-                self._api_client.files.create(cloud_project.projectId, file_name, file_content)
+                new_file = self._api_client.files.create(cloud_project.projectId, file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file, new_file)
                 self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
             elif cloud_file.content.strip() != file_content.strip():
-                self._api_client.files.update(cloud_project.projectId, file_name, file_content)
+                new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file, new_file)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
 
         self._last_file = None

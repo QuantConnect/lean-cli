@@ -10,7 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import platform
 import traceback
 from pathlib import Path
@@ -90,6 +89,8 @@ class PullManager:
         """
         if not local_project_path.exists():
             self._project_manager.create_new_project(local_project_path, project.language)
+        elif not self._project_manager.should_update_cloud(local_project_path, project):
+            return
 
         for cloud_file in self._api_client.files.get_all(project.projectId):
             self._last_file = cloud_file.name
@@ -102,6 +103,7 @@ class PullManager:
             # Skip if the local file already exists with the correct content
             if local_file_path.exists():
                 if local_file_path.read_text(encoding="utf-8").strip() == cloud_file.content.strip():
+                    self._project_manager.update_last_modified_time(local_file_path, cloud_file)
                     continue
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +113,7 @@ class PullManager:
                 else:
                     local_file.write(cloud_file.content)
 
+            self._project_manager.update_last_modified_time(local_file_path, cloud_file)
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
 
         self._last_file = None

@@ -12,13 +12,16 @@
 # limitations under the License.
 
 import json
+import os
 import platform
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import List
 from xml.etree import ElementTree
 
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.models.api import QCLanguage
+from lean.models.api import QCLanguage, QCMinimalFile, QCProject
 
 
 class ProjectManager:
@@ -48,6 +51,63 @@ class ProjectManager:
                 return target_file
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
+
+    def get_files_to_sync(self, project: Path) -> List[Path]:
+        """Returns the paths of all the local files that need to be synchronized with the cloud.
+
+        :param project: the path to a local project directory
+        :return: the list of files in the given project directory that need to be synchronized with the cloud
+        """
+        local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
+        files_to_push = []
+
+        for local_file in local_files:
+            posix_path = local_file.as_posix()
+            if "bin/" in posix_path or "obj/" in posix_path or ".ipynb_checkpoints/" in posix_path:
+                continue
+
+            files_to_push.append(local_file)
+
+        return files_to_push
+
+    def should_update_cloud(self, local_project: Path, cloud_project: QCProject) -> bool:
+        """Returns whether there are changes to synchronize based on last modified times.
+
+        Without the logic in this method the pull/push flow looks like this:
+        1. Retrieve all project information from projects/read endpoint
+        2. For each project, retrieve all remote files from files/read endpoint
+        3. For each file, check if the local content differs from the remote content
+
+        This method uses the last modified times of local files and the information retrieved in step 1 to
+        skip step 2 and 3 for projects of which we know there is nothing to pull/push. This lowers the
+        amount of API requests which speeds up pull/push, especially if the user has a lot of projects.
+
+        This method is not perfect as it may return True if there are no updates to pull/push.
+        This happens due to the limited amount of information that is available after step 1.
+        In that case the only way to know whether there is something to update is by querying the files/read endpoint.
+
+        :param local_project: the path to the local project directory
+        :param cloud_project: the cloud counterpart of the local project
+        :return: True if there may be updates to synchronize, False if not
+        """
+        files_to_sync = self.get_files_to_sync(local_project)
+
+        last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in files_to_sync)
+        last_modified_time = datetime.fromtimestamp(last_modified_time).astimezone(tz=timezone.utc)
+
+        # If the last modified time of the local files equal the last modified time of the project,
+        # we can safely assume there are no changes to pull/push.
+        return last_modified_time.replace(tzinfo=None, microsecond=0) != cloud_project.modified
+
+    def update_last_modified_time(self, local_file_path: Path, cloud_file: QCMinimalFile) -> None:
+        """Updates the last modified time of a local file to that of the cloud counterpart.
+
+        :param local_file_path: the path to the local file to update the last modified time of
+        :param cloud_file: the counterpart of the local file in the cloud to copy the last modified time from
+        """
+        time = cloud_file.modified.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        time = round(time.timestamp() * 1e9)
+        os.utime(local_file_path, ns=(time, time))
 
     def create_new_project(self, project_dir: Path, language: QCLanguage) -> None:
         """Creates a new project directory and fills it with some useful files.
