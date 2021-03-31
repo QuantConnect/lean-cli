@@ -88,11 +88,11 @@ def generate(start: datetime,
 
     \b
     Example which generates minute data for 100 equity symbols since 2015-01-01:
-    $ lean generate --start=20150101 --symbol-count=100
+    $ lean data generate --start=20150101 --symbol-count=100
 
     \b
     Example which generates daily data for 100 crypto symbols since 2015-01-01:
-    $ lean generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
+    $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
     """
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
