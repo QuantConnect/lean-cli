@@ -67,7 +67,7 @@ class CSharpCompiler:
         <PathMap>/LeanCLI={str(project_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="/usr/lib/mono/4.6.2-api/*.dll">
+        <Reference Include="/usr/lib/mono/4.6.2-api/Microsoft.CSharp.dll">
             <Private>False</Private>
         </Reference>
         <Reference Include="/Lean/Launcher/bin/Debug/*.dll">
@@ -81,7 +81,8 @@ class CSharpCompiler:
                                                  version,
                                                  entrypoint=["dotnet", "msbuild",
                                                              "-restore", f"/LeanCLI/{project_dir.name}.csproj"],
-                                                 environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true"},
+                                                 environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
+                                                              "DOTNET_NOLOGO": "true"},
                                                  volumes={
                                                      str(compile_dir): {
                                                          "bind": "/LeanCLI",
