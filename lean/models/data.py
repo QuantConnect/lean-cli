@@ -28,6 +28,15 @@ class DataFile(WrappedBaseModel):
     resolution: QCResolution
     date: Optional[datetime]
 
+    def get_url(self) -> str:
+        """Returns the link to the data in QuantConnect's Data Library."""
+        if self.resolution == QCResolution.Daily or self.resolution == QCResolution.Hour:
+            return f"https://www.quantconnect.com/data/file/{self.path}/{self.ticker.lower()}.csv"
+        else:
+            type = self.security_type.value.lower()
+            resolution = self.resolution.value.lower()
+            return f"https://www.quantconnect.com/data/tree/{type}/{self.market}/{resolution}/{self.ticker.lower()}"
+
 
 class MarketHoursSegment(WrappedBaseModel):
     start: str

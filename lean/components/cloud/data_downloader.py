@@ -129,7 +129,7 @@ class DataDownloader:
         except RequestFailedError as error:
             if "Data not found for the given information" in str(error):
                 raise MoreInfoError(
-                    "The requested data cannot be found, please make sure you added it to your QuantConnect account",
+                    f"Please add {file.get_url()} to your QuantConnect account and run this command again",
                     "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library")
             raise error
 
