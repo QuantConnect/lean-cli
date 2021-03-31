@@ -391,10 +391,10 @@ Usage: lean data generate [OPTIONS]
   - VerySparse: at least one data point per 50 resolution steps.
 
   Example which generates minute data for 100 equity symbols since 2015-01-01:
-  $ lean generate --start=20150101 --symbol-count=100
+  $ lean data generate --start=20150101 --symbol-count=100
 
   Example which generates daily data for 100 crypto symbols since 2015-01-01:
-  $ lean generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
+  $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
 
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
