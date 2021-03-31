@@ -128,7 +128,8 @@ def generate(start: datetime,
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
     if not success:
-        raise RuntimeError("Something went wrong while running the generator")
+        raise RuntimeError(
+            "Something went wrong while running the random data generator, see the logs above for more information")
 
     if version == "latest" and not update:
         update_manager = container.update_manager()

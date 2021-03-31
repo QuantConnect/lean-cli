@@ -198,7 +198,8 @@ def report(backtest_data_source_file: Path,
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
     if not success:
-        raise RuntimeError("Something went wrong while running the LEAN Report Creator")
+        raise RuntimeError(
+            "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
 
     report_destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(output_dir / "report.html", report_destination)

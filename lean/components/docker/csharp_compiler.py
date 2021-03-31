@@ -90,7 +90,7 @@ class CSharpCompiler:
                                                  })
 
         if not success:
-            raise RuntimeError("Something went wrong while running msbuild")
+            raise RuntimeError("Something went wrong while running msbuild, see the logs above for more information")
 
         # Copy the generated dll file to the user's project directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code
