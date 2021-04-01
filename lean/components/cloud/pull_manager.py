@@ -103,7 +103,7 @@ class PullManager:
             # Skip if the local file already exists with the correct content
             if local_file_path.exists():
                 if local_file_path.read_text(encoding="utf-8").strip() == cloud_file.content.strip():
-                    self._project_manager.update_last_modified_time(local_file_path, cloud_file)
+                    self._project_manager.update_last_modified_time(local_file_path, cloud_file.modified)
                     continue
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -113,10 +113,11 @@ class PullManager:
                 else:
                     local_file.write(cloud_file.content)
 
-            self._project_manager.update_last_modified_time(local_file_path, cloud_file)
+            self._project_manager.update_last_modified_time(local_file_path, cloud_file.modified)
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
 
         self._last_file = None
+        self._project_manager.update_last_modified_time(local_project_path, project.modified)
 
     def get_local_project_path(self, project: QCProject) -> Path:
         """Returns the local path where a certain cloud project should be stored.

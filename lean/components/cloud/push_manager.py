@@ -123,11 +123,11 @@ class PushManager:
 
             if cloud_file is None:
                 new_file = self._api_client.files.create(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file)
+                self._project_manager.update_last_modified_time(local_file, new_file.modified)
                 self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
             elif cloud_file.content.strip() != file_content.strip():
                 new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file)
+                self._project_manager.update_last_modified_time(local_file, new_file.modified)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
 
         self._last_file = None

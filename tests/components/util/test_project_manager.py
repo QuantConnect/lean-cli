@@ -23,7 +23,7 @@ import pytest
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCMinimalFile
+from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -100,16 +100,16 @@ def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> Non
 
 def test_update_last_modified_time_updates_file_properties() -> None:
     local_file = Path.cwd() / "file.txt"
-    cloud_file = QCMinimalFile(name="file.txt", content="", modified=datetime(2020, 1, 1, 1, 1, 1))
-
     local_file.touch()
 
+    new_timestamp = datetime(2020, 1, 1, 1, 1, 1)
+
     project_manager = ProjectManager(ProjectConfigManager())
-    project_manager.update_last_modified_time(local_file, cloud_file)
+    project_manager.update_last_modified_time(local_file, new_timestamp)
 
     timestamp = local_file.stat().st_mtime_ns / 1e9
     timestamp = datetime.fromtimestamp(timestamp)
-    assert timestamp.astimezone(tz=timezone.utc).replace(tzinfo=None) == datetime(2020, 1, 1, 1, 1, 1)
+    assert timestamp.astimezone(tz=timezone.utc).replace(tzinfo=None) == new_timestamp
 
 
 def test_create_new_project_creates_project_directory() -> None:

@@ -21,7 +21,7 @@ from typing import List
 from xml.etree import ElementTree
 
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.models.api import QCLanguage, QCMinimalFile, QCProject
+from lean.models.api import QCLanguage, QCProject
 
 
 class ProjectManager:
@@ -90,22 +90,23 @@ class ProjectManager:
         :param cloud_project: the cloud counterpart of the local project
         :return: True if there may be updates to synchronize, False if not
         """
-        files_to_sync = self.get_files_to_sync(local_project)
+        paths_to_check = [local_project] + self.get_files_to_sync(local_project)
 
-        last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in files_to_sync)
+        last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in paths_to_check)
         last_modified_time = datetime.fromtimestamp(last_modified_time).astimezone(tz=timezone.utc)
 
         # If the last modified time of the local files equal the last modified time of the project,
         # we can safely assume there are no changes to pull/push.
         return last_modified_time.replace(tzinfo=None, microsecond=0) != cloud_project.modified
 
-    def update_last_modified_time(self, local_file_path: Path, cloud_file: QCMinimalFile) -> None:
-        """Updates the last modified time of a local file to that of the cloud counterpart.
+    def update_last_modified_time(self, local_file_path: Path, cloud_timestamp: datetime) -> None:
+        """Updates the last modified time of a local path to that of the cloud counterpart.
 
         :param local_file_path: the path to the local file to update the last modified time of
-        :param cloud_file: the counterpart of the local file in the cloud to copy the last modified time from
+        :param cloud_timestamp: the last modified time of the counterpart of the local file in the cloud
         """
-        time = cloud_file.modified.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        # Timestamps are stored in UTC in the cloud, but utime() requires them in the local timezone
+        time = cloud_timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None)
         time = round(time.timestamp() * 1e9)
         os.utime(local_file_path, ns=(time, time))
 
