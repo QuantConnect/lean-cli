@@ -143,6 +143,7 @@ def test_create_new_project_creates_valid_python_editor_configs(file: str, valid
 
 @pytest.mark.parametrize("file,validator", [("CSharp Project.csproj", validate_xml),
                                             (".vscode/launch.json", validate_json),
+                                            (".idea/.idea.CSharp Project/.idea/workspace.xml", validate_xml),
                                             (".idea/.idea.CSharp Project.dir/.idea/workspace.xml", validate_xml)])
 def test_create_new_project_creates_valid_csharp_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
     project_path = Path.cwd() / "CSharp Project"

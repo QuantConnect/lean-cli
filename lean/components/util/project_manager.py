@@ -336,7 +336,7 @@ on the page above, you can add a PackageReference for it.
 
         :param project_dir: the directory of the new project
         """
-        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea" / "workspace.xml", """
+        workspace_xml = """
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RunManager">
@@ -350,7 +350,12 @@ on the page above, you can add a PackageReference for it.
     </configuration>
   </component>
 </project>
-        """)
+        """
+
+        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}" / ".idea" / "workspace.xml",
+                            workspace_xml)
+        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea" / "workspace.xml",
+                            workspace_xml)
 
     def _generate_file(self, file: Path, content: str) -> None:
         """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.
