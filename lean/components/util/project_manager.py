@@ -59,16 +59,16 @@ class ProjectManager:
         :return: the list of files in the given project directory that need to be synchronized with the cloud
         """
         local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
-        files_to_push = []
+        files_to_sync = []
 
         for local_file in local_files:
             posix_path = local_file.as_posix()
             if "bin/" in posix_path or "obj/" in posix_path or ".ipynb_checkpoints/" in posix_path:
                 continue
 
-            files_to_push.append(local_file)
+            files_to_sync.append(local_file)
 
-        return files_to_push
+        return files_to_sync
 
     def should_update_cloud(self, local_project: Path, cloud_project: QCProject) -> bool:
         """Returns whether there are changes to synchronize based on last modified times.
