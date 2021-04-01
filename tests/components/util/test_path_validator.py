@@ -25,7 +25,12 @@ def fake_filesystem() -> None:
     return None
 
 
-@pytest.mark.skip
+def test_is_path_valid_returns_true_for_valid_path() -> None:
+    path_validator = PathValidator()
+
+    assert path_validator.is_path_valid(Path.cwd() / "My Path/file.txt")
+
+
 @pytest.mark.parametrize("path,valid", [("My Path/file.txt", True),
                                         ("My > Path/file.txt", False),
                                         ("My < Path/file.txt", False),

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
 from pathlib import Path
 
 
@@ -24,8 +25,22 @@ class PathValidator:
         :return: True if the path is valid on the current operating system, False if not
         """
         try:
-            # This call fails if the path is invalid
+            # This call fails if the path contains invalid characters
             path.exists()
-            return True
         except OSError:
             return False
+
+        # On Windows path.exists() doesn't throw for paths like CON/file.txt
+        # Trying to create them does raise errors, so we manually validate path components
+        if platform.system() == "Windows":
+            for component in path.as_posix().split("/"):
+                if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
+                    return False
+
+                for reserved_name in ["CON", "PRN", "AUX", "NUL",
+                                      "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                                      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
+                    if component.upper() == reserved_name:
+                        return False
+
+        return True
