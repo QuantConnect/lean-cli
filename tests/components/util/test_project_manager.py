@@ -69,7 +69,7 @@ def test_get_files_to_sync_returns_all_source_files() -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
-    files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.cs"]
+    files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.py"]
     files = [project_path / file for file in files]
 
     for file in files:
