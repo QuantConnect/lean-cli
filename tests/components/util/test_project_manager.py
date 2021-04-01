@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 from unittest import mock
@@ -22,7 +23,7 @@ import pytest
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage
+from lean.models.api import QCLanguage, QCMinimalFile
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -62,6 +63,53 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
 
     with pytest.raises(Exception):
         project_manager.find_algorithm_file(Path.cwd() / "Empty Project")
+
+
+def test_get_files_to_sync_returns_all_source_files() -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.cs"]
+    files = [project_path / file for file in files]
+
+    for file in files:
+        file.mkdir(parents=True, exist_ok=True)
+        file.touch()
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    files_to_sync = project_manager.get_files_to_sync(project_path)
+
+    assert sorted(files_to_sync) == sorted(files)
+
+
+@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints"])
+def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = [project_path / "main.py", project_path / directory / "main.py"]
+    for file in files:
+        file.mkdir(parents=True, exist_ok=True)
+        file.touch()
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    files_to_sync = project_manager.get_files_to_sync(project_path)
+
+    assert files_to_sync == [files[0]]
+
+
+def test_update_last_modified_time_updates_file_properties() -> None:
+    local_file = Path.cwd() / "file.txt"
+    cloud_file = QCMinimalFile(name="file.txt", content="", modified=datetime(2020, 1, 1, 1, 1, 1))
+
+    local_file.touch()
+
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.update_last_modified_time(local_file, cloud_file)
+
+    timestamp = local_file.stat().st_mtime_ns / 1e9
+    timestamp = datetime.fromtimestamp(timestamp)
+    assert timestamp.astimezone(tz=timezone.utc).replace(tzinfo=None) == datetime(2020, 1, 1, 1, 1, 1)
 
 
 def test_create_new_project_creates_project_directory() -> None:
