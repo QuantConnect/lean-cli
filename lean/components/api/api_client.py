@@ -18,6 +18,7 @@ from urllib.parse import urljoin
 
 import requests
 
+import lean
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -111,7 +112,7 @@ class APIClient:
 
         response = requests.request(method,
                                     full_url,
-                                    headers={"Timestamp": timestamp},
+                                    headers={"Timestamp": timestamp, "User-Agent": f"Lean CLI {lean.__version__}"},
                                     auth=(self._user_id, password),
                                     **options)
 

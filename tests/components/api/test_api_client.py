@@ -197,6 +197,19 @@ def test_api_client_retries_request_when_response_is_http_500_error(method: str,
     requests_mock.assert_call_count(API_BASE_URL + "endpoint", 2)
 
 
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_api_client_sets_user_agent(method: str, requests_mock: RequestsMock) -> None:
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
+
+    api = APIClient(mock.Mock(), "123", "456")
+    getattr(api, method)("endpoint")
+
+    assert len(requests_mock.calls) == 1
+
+    headers = requests_mock.calls[0].request.headers
+    assert headers["User-Agent"].startswith("Lean CLI ")
+
+
 def test_is_authenticated_returns_true_when_authenticated_request_succeeds(requests_mock: RequestsMock) -> None:
     requests_mock.assert_all_requests_are_fired = False
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": true }')

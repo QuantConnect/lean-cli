@@ -64,7 +64,8 @@ class BacktestClient:
         data = self._api.post("backtests/create", {
             "projectId": project_id,
             "compileId": compile_id,
-            "backtestName": name
+            "backtestName": name,
+            "requestSource": f"CLI {lean.__version__}"
         })
 
         return QCBacktest(**data["backtest"])
