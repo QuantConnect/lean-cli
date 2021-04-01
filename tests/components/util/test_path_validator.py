@@ -25,6 +25,7 @@ def fake_filesystem() -> None:
     return None
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("path,valid", [("My Path/file.txt", True),
                                         ("My > Path/file.txt", False),
                                         ("My < Path/file.txt", False),
