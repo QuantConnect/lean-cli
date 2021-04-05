@@ -128,9 +128,13 @@ class LeanConfigManager:
 
         # For some keys we should only remove the key itself, instead of their entire section
         lines = config.split("\n")
-        for key in ["ib-host", "ib-port", "ib-tws-dir", "ib-version", "iqfeed-host"]:
+        for key in ["ib-host", "ib-port", "ib-tws-dir", "ib-version"]:
             lines = [line for line in lines if f"\"{key}\": " not in line]
         config = "\n".join(lines)
+
+        # Instead of setting the IQFeed host we require the user to set the IQConnect location
+        config = config.replace('"iqfeed-host": "127.0.0.1"',
+                                '"iqfeed-iqconnect": "C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe"')
 
         return config
 

@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -20,9 +22,9 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
 from lean.container import container
-# Brokerage -> required configuration properties
 from lean.models.errors import MoreInfoError
 
+# Brokerage -> required configuration properties
 _required_brokerage_properties = {
     "InteractiveBrokersBrokerage": ["ib-account", "ib-user-name", "ib-password",
                                     "ib-agent-description", "ib-trading-mode", "ib-enable-delayed-streaming-data"],
@@ -46,7 +48,8 @@ _required_data_queue_handler_properties = {
     "GDAXDataQueueHandler": _required_brokerage_properties["GDAXBrokerage"],
     "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
-    "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"]
+    "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"],
+    "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"]
 }
 
 
@@ -86,6 +89,34 @@ Please configure the following missing {properties_str} in {lean_config_path}:
 Go to the following url for documentation on {these_str} {properties_str}:
 https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading
     """.strip())
+
+
+def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name: str) -> None:
+    """Starts IQConnect if the given environment uses IQFeed as data queue handler.
+
+    :param lean_config: the LEAN configuration that should be used
+    :param environment_name: the name of the environment
+    """
+    environment = lean_config["environments"][environment_name]
+    if environment["data-queue-handler"] != "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler":
+        return
+
+    args = [lean_config["iqfeed-iqconnect"],
+            "-product", lean_config["iqfeed-productName"],
+            "-version", lean_config["iqfeed-version"]]
+
+    username = lean_config.get("iqfeed-username", "")
+    if username != "":
+        args.extend(["-login", username])
+
+    password = lean_config.get("iqfeed-password", "")
+    if password != "":
+        args.extend(["-password", password])
+
+    subprocess.Popen(args)
+
+    container.logger().info("Waiting 10 seconds for IQFeed to start")
+    time.sleep(10)
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True)
@@ -131,6 +162,7 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
                             "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
 
     _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
+    _start_iqconnect_if_necessary(lean_config, environment)
 
     docker_manager = container.docker_manager()
 

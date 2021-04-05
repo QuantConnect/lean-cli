@@ -165,7 +165,7 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
     for key in ["data-folder", "log-handler", "messaging-handler", "job-queue-handler",
                 "ib-account", "ib-user-name", "ib-password", "ib-agent-description",
                 "ib-trading-mode", "ib-enable-delayed-streaming-data",
-                "iqfeed-username", "iqfeed-password", "iqfeed-productName", "iqfeed-version"]:
+                "iqfeed-iqconnect", "iqfeed-username", "iqfeed-password", "iqfeed-productName", "iqfeed-version"]:
         assert f'"{key}"' in clean_config
 
 
