@@ -89,7 +89,7 @@ class PullManager:
         """
         if not local_project_path.exists():
             self._project_manager.create_new_project(local_project_path, project.language)
-        elif not self._project_manager.should_update_cloud(local_project_path, project):
+        elif not self._project_manager.should_sync_files(local_project_path, project):
             return
 
         for cloud_file in self._api_client.files.get_all(project.projectId):

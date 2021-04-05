@@ -70,8 +70,8 @@ class ProjectManager:
 
         return files_to_sync
 
-    def should_update_cloud(self, local_project: Path, cloud_project: QCProject) -> bool:
-        """Returns whether there are changes to synchronize based on last modified times.
+    def should_sync_files(self, local_project: Path, cloud_project: QCProject) -> bool:
+        """Returns whether there are files to synchronize based on last modified times.
 
         Without the logic in this method the pull/push flow looks like this:
         1. Retrieve all project information from projects/read endpoint
@@ -80,11 +80,11 @@ class ProjectManager:
 
         This method uses the last modified times of local files and the information retrieved in step 1 to
         skip step 2 and 3 for projects of which we know there is nothing to pull/push. This lowers the
-        amount of API requests which speeds up pull/push, especially if the user has a lot of projects.
+        amount of API requests, speeds up pull/push (especially if the user has a lot of projects).
 
         This method is not perfect as it may return True if there are no updates to pull/push.
         This happens due to the limited amount of information that is available after step 1.
-        In that case the only way to know whether there is something to update is by querying the files/read endpoint.
+        In that case the only way to know whether there is something to sync is by querying the files/read endpoint.
 
         :param local_project: the path to the local project directory
         :param cloud_project: the cloud counterpart of the local project

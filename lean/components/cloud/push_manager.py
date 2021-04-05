@@ -106,7 +106,7 @@ class PushManager:
         :param project: the local project to push the files of
         :param cloud_project: the cloud project to push the files to
         """
-        if not self._project_manager.should_update_cloud(project, cloud_project):
+        if not self._project_manager.should_sync_files(project, cloud_project):
             return
 
         cloud_files = self._api_client.files.get_all(cloud_project.projectId)
