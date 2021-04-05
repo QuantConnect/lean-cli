@@ -51,14 +51,16 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     cloud_runner = container.cloud_runner()
     finished_backtest = cloud_runner.run_backtest(cloud_project, name)
 
-    logger.info(finished_backtest.get_statistics_table())
+    if finished_backtest.error is None and finished_backtest.stacktrace is None:
+        logger.info(finished_backtest.get_statistics_table())
 
     logger.info(f"Backtest id: {finished_backtest.backtestId}")
     logger.info(f"Backtest name: {finished_backtest.name}")
     logger.info(f"Backtest url: {finished_backtest.get_url()}")
 
-    if finished_backtest.error is not None:
+    if finished_backtest.error is not None or finished_backtest.stacktrace is not None:
         error = finished_backtest.stacktrace or finished_backtest.error
+        error = error.strip()
 
         logger.error("An error occurred during this backtest:")
         logger.error(error)
