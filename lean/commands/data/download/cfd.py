@@ -41,7 +41,7 @@ def cfd(ticker: str, resolution: str, start: Optional[datetime], end: Optional[d
     \b
     This command can only download data that you have previously added to your QuantConnect account.
     See the following url for instructions on how to do so:
-    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
+    https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library
 
     \b
     See the following url for the data that can be downloaded with this command:
@@ -60,7 +60,7 @@ def cfd(ticker: str, resolution: str, start: Optional[datetime], end: Optional[d
     else:
         if start is None or end is None:
             raise MoreInfoError(f"Both --start and --end must be given for {resolution} resolution",
-                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#03-Downloading-data-from-Data-Library")
+                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#03-Downloading-data-from-Data-Library")
         path_template = f"cfd/oanda/{resolution}/{ticker}/$DAY$_quote.zip"
 
     data_downloader = container.data_downloader()

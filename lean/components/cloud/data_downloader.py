@@ -130,7 +130,7 @@ class DataDownloader:
             if "Data not found for the given information" in str(error):
                 raise MoreInfoError(
                     f"Please add {file.get_url()} to your QuantConnect account and run this command again",
-                    "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library")
+                    "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library")
             raise error
 
         local_path.parent.mkdir(parents=True, exist_ok=True)

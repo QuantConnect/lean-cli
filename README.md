@@ -14,7 +14,7 @@ Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/
 
 - [Project scaffolding](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management)
 - [Local autocomplete](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete)
-- [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data)
+- [Local data downloading](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect)
 - [Local backtesting](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
 - [Local debugging](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests)
 - [Local research environment](https://www.quantconnect.com/docs/v2/lean-cli/tutorials/research)
@@ -309,7 +309,7 @@ Usage: lean data download cfd [OPTIONS]
 
   This command can only download data that you have previously added to your QuantConnect account.
   See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library
 
   See the following url for the data that can be downloaded with this command:
   https://www.quantconnect.com/data/tree/cfd/oanda
@@ -342,7 +342,7 @@ Usage: lean data download forex [OPTIONS]
 
   This command can only download data that you have previously added to your QuantConnect account.
   See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data#02-QuantConnect-Data-Library
+  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library
 
   See the following url for the data that can be downloaded with this command:
   https://www.quantconnect.com/data/tree/forex
