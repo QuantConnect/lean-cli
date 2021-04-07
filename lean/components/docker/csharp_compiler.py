@@ -46,9 +46,15 @@ class CSharpCompiler:
         # Create a temporary directory used for compiling the C# files
         compile_dir = Path(tempfile.mkdtemp())
 
-        # shutil.copytree() requires the destination not to exist yet, so we delete it first
-        compile_dir.rmdir()
-        shutil.copytree(str(project_dir), str(compile_dir))
+        # Copy all the C# files in the project to compile_dir
+        for source_path in project_dir.rglob("*.cs"):
+            posix_path = source_path.relative_to(project_dir).as_posix()
+            if "bin/" in posix_path or "obj/" in posix_path or ".ipynb_checkpoints/" in posix_path:
+                continue
+
+            new_path = compile_dir / source_path.relative_to(project_dir)
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, new_path)
 
         with (compile_dir / f"{project_dir.name}.csproj").open("w+", encoding="utf-8") as file:
             file.write(f"""
@@ -93,12 +99,12 @@ class CSharpCompiler:
         if not success:
             raise RuntimeError("Something went wrong while running msbuild, see the logs above for more information")
 
-        # Copy the generated dll file to the user's project directory
+        # Copy the generated dll and pdb files to the user's project directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code
         for extension in ["dll", "pdb"]:
-            compiled_path = compile_dir / "bin" / "Debug" / f"{project_dir.name}.{extension}"
+            compile_path = compile_dir / "bin" / "Debug" / f"{project_dir.name}.{extension}"
             local_path = project_dir / "bin" / "Debug" / f"{project_dir.name}.{extension}"
             local_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(compiled_path, local_path)
+            shutil.copy2(compile_path, local_path)
 
         return compile_dir / "bin" / "Debug"
