@@ -46,7 +46,11 @@ class DockerManager:
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        os.system(f"docker image pull {image}:{tag}")
+        return_code = os.system(f"docker image pull {image}:{tag}")
+
+        if return_code != 0:
+            raise RuntimeError(
+                f"Something went wrong while pulling {image}:{tag}, see the logs above for more information")
 
     def run_image(self, image: str, tag: str, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available yet it will be pulled first.
@@ -117,15 +121,26 @@ class DockerManager:
         installed_tags = list(itertools.chain(*[x.tags for x in docker_client.images.list()]))
         return f"{image}:{tag}" in installed_tags
 
-    def tag_exists(self, image: str, tag: str) -> bool:
-        """Returns whether a certain tag exists for a certain image in the Docker registry.
+    def tag_exists_on_docker_hub(self, image: str, tag: str) -> bool:
+        """Returns whether a certain tag exists for a certain image on Docker Hub.
 
         :param image: the image to check the tag of
         :param tag: the tag to check the existence of
-        :return: True if the tag exists for the given image on the Docker Registry, False if not
+        :return: True if the tag exists for the given image on Docker Hub, False if not
         """
         tags_list = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags").json()
         return any([x["name"] == tag for x in tags_list])
+
+    def tag_exists(self, image: str, tag: str) -> bool:
+        """Returns whether a certain tag exists for a certain image in the local Docker registry or on Docker Hub.
+
+        :param image: the image to check the tag of
+        :param tag: the tag to check the existence of
+        :return: True if the tag exists for the given image in the local Docker registry or on Docker Hub, False if not
+        """
+        # The order of these two methods must not be swapped
+        # We only need to query Docker Hub if the tag does not exist locally
+        return self.tag_installed(image, tag) or self.tag_exists_on_docker_hub(image, tag)
 
     def get_tag_digest(self, image: str, tag: str) -> str:
         """Returns the digest of a locally installed image's tag.

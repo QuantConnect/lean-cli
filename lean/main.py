@@ -16,7 +16,8 @@ import traceback
 from io import StringIO
 
 import click
-from pydantic.error_wrappers import ValidationError
+import requests
+from pydantic import ValidationError
 
 from lean.commands import lean
 from lean.container import container
@@ -50,6 +51,9 @@ def main() -> None:
             logger.info(exception_str)
         elif isinstance(exception, click.Abort):
             logger.info("Aborted!")
+        elif isinstance(exception, requests.exceptions.ConnectionError):
+            logger.error(f"Error: {exception}")
+            logger.error("It looks like you don't have an internet connection, please check your system settings")
         else:
             logger.error(f"Error: {exception}")
 

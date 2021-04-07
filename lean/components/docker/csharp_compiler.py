@@ -70,6 +70,7 @@ class CSharpCompiler:
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+        <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
         <PathMap>/LeanCLI={str(project_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>

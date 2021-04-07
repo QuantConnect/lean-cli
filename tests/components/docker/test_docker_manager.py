@@ -18,21 +18,21 @@ from responses import RequestsMock
 from lean.components.docker.docker_manager import DockerManager
 
 
-def test_tag_exists_returns_true_when_tag_exists_in_registry(requests_mock: RequestsMock) -> None:
+def test_tag_exists_on_docker_hub_returns_true_when_tag_exists(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
                       "https://registry.hub.docker.com/v1/repositories/quantconnect/lean/tags",
                       '[{ "layer": "", "name": "122" }, { "layer": "", "name": "123" }]')
 
     docker_manager = DockerManager(mock.Mock())
 
-    assert docker_manager.tag_exists("quantconnect/lean", "123")
+    assert docker_manager.tag_exists_on_docker_hub("quantconnect/lean", "123")
 
 
-def test_tag_exists_returns_false_when_tag_does_not_exist_in_registry(requests_mock: RequestsMock) -> None:
+def test_tag_exists_on_docker_hub_returns_false_when_tag_does_not_exist(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
                       "https://registry.hub.docker.com/v1/repositories/quantconnect/lean/tags",
                       '[{ "layer": "", "name": "122" }, { "layer": "", "name": "124" }]')
 
     docker_manager = DockerManager(mock.Mock())
 
-    assert not docker_manager.tag_exists("quantconnect/lean", "123")
+    assert not docker_manager.tag_exists_on_docker_hub("quantconnect/lean", "123")

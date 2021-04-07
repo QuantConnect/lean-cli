@@ -38,7 +38,7 @@ class MoreInfoError(Exception):
     """An error which consists of a message and a link to documentation with more information."""
 
     def __init__(self, message: str, link: str) -> None:
-        """Creates a new LinkedError instance.
+        """Creates a new MoreInfoError instance.
 
         :param message: the error message
         :param link: the link to documentation containing more information

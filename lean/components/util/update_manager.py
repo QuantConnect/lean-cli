@@ -51,7 +51,12 @@ class UpdateManager:
         if not self._should_check_for_updates("cli", UPDATE_CHECK_INTERVAL_CLI):
             return
 
-        response = requests.get("https://pypi.org/pypi/lean/json")
+        try:
+            response = requests.get("https://pypi.org/pypi/lean/json")
+        except requests.exceptions.ConnectionError:
+            # The user may be offline, do nothing
+            return
+
         if not response.ok:
             return
 
@@ -75,7 +80,12 @@ class UpdateManager:
 
         current_digest = self._docker_manager.get_tag_digest(image, "latest")
 
-        response = requests.get(f"https://registry.hub.docker.com/v2/repositories/{image}/tags/latest")
+        try:
+            response = requests.get(f"https://registry.hub.docker.com/v2/repositories/{image}/tags/latest")
+        except requests.exceptions.ConnectionError:
+            # The user may be offline, do nothing
+            return
+
         if not response.ok:
             return
 
