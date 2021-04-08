@@ -116,14 +116,13 @@ class APIClient:
                                     auth=(self._user_id, password),
                                     **options)
 
-        if 500 <= response.status_code < 600:
-            if retry_http_5xx:
-                return self._request(method, endpoint, options, False)
-            else:
-                if response.status_code == 500:
-                    raise AuthenticationError()
+        if 500 <= response.status_code < 600 and retry_http_5xx:
+            return self._request(method, endpoint, options, False)
 
-        if not response.ok or response.status_code < 200 or response.status_code >= 300:
+        if response.status_code == 500:
+            raise AuthenticationError()
+
+        if response.status_code < 200 or response.status_code >= 300:
             raise RequestFailedError(response)
 
         return self._parse_response(response)
