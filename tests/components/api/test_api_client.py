@@ -13,6 +13,7 @@
 
 import json
 import re
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -185,13 +186,19 @@ def test_api_client_raises_request_failed_error_when_response_contains_internal_
     assert str(error.value) == "Internal Error 21"
 
 
-@pytest.mark.parametrize("method", ["get", "post"])
-def test_api_client_retries_request_when_response_is_http_500_error(method: str, requests_mock: RequestsMock) -> None:
-    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=500)
+@pytest.mark.parametrize("method,status_code,expected_error", [("get", 500, AuthenticationError),
+                                                               ("post", 500, AuthenticationError),
+                                                               ("get", 502, RequestFailedError),
+                                                               ("post", 502, RequestFailedError)])
+def test_api_client_retries_request_when_response_is_http_5xx_error(method: str,
+                                                                    status_code: int,
+                                                                    expected_error: Any,
+                                                                    requests_mock: RequestsMock) -> None:
+    requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=status_code)
 
     api = APIClient(mock.Mock(), "123", "456")
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(expected_error):
         getattr(api, method)("endpoint")
 
     requests_mock.assert_call_count(API_BASE_URL + "endpoint", 2)
