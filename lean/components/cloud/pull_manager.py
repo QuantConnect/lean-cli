@@ -177,8 +177,10 @@ class PullManager:
                     if component.upper() == reserved_name:
                         component += "_"
 
-                # Components cannot end with a space or a dot
-                component = component.rstrip(" ")
+                # Components cannot start or end with a space
+                component = component.strip(" ")
+
+                # Components cannot end with a period
                 component = component.rstrip(".")
 
                 new_components.append(component)
