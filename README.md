@@ -407,6 +407,7 @@ Options:
   --data-density [Dense|Sparse|VerySparse]
                                   The density of the generated data (defaults to Dense)
   --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
+  --market TEXT                   The market to generate data for (defaults to standard market for the security type)
   --update                        Pull the selected LEAN engine version before running the generator
   --version TEXT                  The LEAN engine version to use (defaults to the latest installed version)
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)

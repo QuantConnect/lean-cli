@@ -49,6 +49,10 @@ from lean.container import container
               type=bool,
               default=True,
               help="Whether coarse universe data should be generated for Equity data (defaults to True)")
+@click.option("--market",
+              type=str,
+              default="",
+              help="The market to generate data for (defaults to standard market for the security type)")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -64,6 +68,7 @@ def generate(start: datetime,
              resolution: str,
              data_density: str,
              include_coarse: bool,
+             market: str,
              update: bool,
              version: str) -> None:
     """Generate random market data.
@@ -107,7 +112,8 @@ def generate(start: datetime,
                        "--security-type", security_type,
                        "--resolution", resolution,
                        "--data-density", data_density,
-                       "--include-coarse", str(include_coarse).lower()],
+                       "--include-coarse", str(include_coarse).lower(),
+                       "--market", market.lower()],
         "volumes": {
             str(data_dir): {
                 "bind": "/Lean/Data",

@@ -81,7 +81,8 @@ def test_data_generate_adds_parameters_to_entrypoint() -> None:
                                        "--symbol-count", "1",
                                        "--security-type", "Crypto",
                                        "--resolution", "Daily",
-                                       "--data-density", "Sparse"])
+                                       "--data-density", "Sparse",
+                                       "--market", "bitfinex"])
 
     assert result.exit_code == 0
 
@@ -94,6 +95,7 @@ def test_data_generate_adds_parameters_to_entrypoint() -> None:
     assert "--security-type Crypto" in " ".join(kwargs["entrypoint"])
     assert "--resolution Daily" in " ".join(kwargs["entrypoint"])
     assert "--data-density Sparse" in " ".join(kwargs["entrypoint"])
+    assert "--market bitfinex" in " ".join(kwargs["entrypoint"])
 
 
 def test_data_generate_forces_update_when_update_option_given() -> None:
