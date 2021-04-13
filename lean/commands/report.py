@@ -13,7 +13,6 @@
 
 import json
 import shutil
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -146,7 +145,7 @@ def report(backtest_data_source_file: Path,
         }
     }
 
-    output_dir = Path(tempfile.mkdtemp())
+    output_dir = container.temp_manager().create_temporary_directory()
 
     config_path = output_dir / "config.json"
     with config_path.open("w+", encoding="utf-8") as file:

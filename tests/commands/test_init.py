@@ -15,7 +15,6 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable
 from xml.etree import ElementTree
 
 import pytest

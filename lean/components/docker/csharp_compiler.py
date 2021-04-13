@@ -12,25 +12,27 @@
 # limitations under the License.
 
 import shutil
-import tempfile
 from pathlib import Path
 
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
+from lean.components.util.temp_manager import TempManager
 from lean.constants import ENGINE_IMAGE
 
 
 class CSharpCompiler:
     """The CSharpCompiler class is responsible for compiling C# projects."""
 
-    def __init__(self, logger: Logger, docker_manager: DockerManager) -> None:
+    def __init__(self, logger: Logger, docker_manager: DockerManager, temp_manager: TempManager) -> None:
         """Creates a new CSharpCompiler instance.
 
         :param logger: the logger that is used to print messages
         :param docker_manager: the DockerManager instance which is used to interact with Docker
+        :param temp_manager: the TempManager instance to use when creating temporary directories
         """
         self._logger = logger
         self._docker_manager = docker_manager
+        self._temp_manager = temp_manager
 
     def compile_csharp_project(self, project_dir: Path, version: str) -> Path:
         """Compiles a C# project and returns the directory containing the generated DLLs.
@@ -44,7 +46,7 @@ class CSharpCompiler:
         self._logger.info(f"Compiling all C# files in '{project_dir}'")
 
         # Create a temporary directory used for compiling the C# files
-        compile_dir = Path(tempfile.mkdtemp())
+        compile_dir = self._temp_manager.create_temporary_directory()
 
         # Copy all the C# files in the project to compile_dir
         for source_path in project_dir.rglob("*.cs"):

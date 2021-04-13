@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 
 from lean.components.docker.csharp_compiler import CSharpCompiler
+from lean.components.util.temp_manager import TempManager
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -37,7 +38,7 @@ def run_image(image: str, tag: str, **kwargs) -> bool:
 
 
 def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
-    return CSharpCompiler(mock.Mock(), docker_manager)
+    return CSharpCompiler(mock.Mock(), docker_manager, TempManager())
 
 
 def test_compile_csharp_project_runs_msbuild_in_docker() -> None:

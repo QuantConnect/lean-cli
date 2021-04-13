@@ -28,6 +28,7 @@ def main() -> None:
     """This function is the entrypoint when running a Lean command in a terminal."""
     try:
         lean.main(standalone_mode=False)
+        container.temp_manager().delete_temporary_directories()
     except Exception as exception:
         logger = container.logger()
         logger.debug(traceback.format_exc().strip())

@@ -13,7 +13,6 @@
 
 import json
 import platform
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -23,6 +22,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
+from lean.components.util.temp_manager import TempManager
 from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 
@@ -34,18 +34,21 @@ class LeanRunner:
                  logger: Logger,
                  csharp_compiler: CSharpCompiler,
                  lean_config_manager: LeanConfigManager,
-                 docker_manager: DockerManager) -> None:
+                 docker_manager: DockerManager,
+                 temp_manager: TempManager) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
         :param csharp_compiler: the CSharpCompiler instance used to compile C# projects before running them
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
+        :param temp_manager: the TempManager instance to use when creating temporary directories
         """
         self._logger = logger
         self._csharp_compiler = csharp_compiler
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
+        self._temp_manager = temp_manager
 
     def run_lean(self,
                  environment: str,
@@ -137,7 +140,7 @@ class LeanRunner:
         config["data-folder"] = "/Lean/Data"
         config["results-destination-folder"] = "/Results"
 
-        config_path = Path(tempfile.mkdtemp()) / "config.json"
+        config_path = self._temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
             file.write(json.dumps(config, indent=4))
 

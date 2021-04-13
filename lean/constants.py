@@ -21,6 +21,7 @@ GENERAL_CONFIG_PATH = str(Path("~/.lean/config").expanduser())
 # The file in which credentials are stored
 CREDENTIALS_CONFIG_PATH = str(Path("~/.lean/credentials").expanduser())
 
+# The file in which we store when we last checked for updates
 CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
 # The default name of the file containing the Lean engine configuration

@@ -22,20 +22,6 @@ from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-def parse_config_option(ctx: click.Context, param: click.Parameter, value: Optional[Path]) -> None:
-    """Parses the --config option."""
-    if value is not None:
-        lean_config_manager = container.lean_config_manager()
-        lean_config_manager.set_default_lean_config_path(value)
-
-
-def parse_verbose_option(ctx: click.Context, param: click.Parameter, value: Optional[bool]) -> None:
-    """Parses the --verbose option."""
-    if value:
-        logger = container.logger()
-        logger.enable_debug_logging()
-
-
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
@@ -82,7 +68,7 @@ class LeanCommand(click.Command):
                                                         help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
                                                         expose_value=False,
                                                         is_eager=True,
-                                                        callback=parse_config_option))
+                                                        callback=self._parse_config_option))
 
         # Add --verbose option
         params.insert(len(params) - 1, click.Option(["--verbose"],
@@ -91,9 +77,21 @@ class LeanCommand(click.Command):
                                                     default=False,
                                                     expose_value=False,
                                                     is_eager=True,
-                                                    callback=parse_verbose_option))
+                                                    callback=self._parse_verbose_option))
 
         return params
+
+    def _parse_config_option(self, ctx: click.Context, param: click.Parameter, value: Optional[Path]) -> None:
+        """Parses the --config option."""
+        if value is not None:
+            lean_config_manager = container.lean_config_manager()
+            lean_config_manager.set_default_lean_config_path(value)
+
+    def _parse_verbose_option(self, ctx: click.Context, param: click.Parameter, value: Optional[bool]) -> None:
+        """Parses the --verbose option."""
+        if value:
+            logger = container.logger()
+            logger.enable_debug_logging()
 
 
 class PathParameter(click.ParamType):

@@ -20,6 +20,7 @@ import pytest
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
+from lean.components.util.temp_manager import TempManager
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -43,7 +44,8 @@ def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = c
     return LeanRunner(mock.Mock(),
                       csharp_compiler,
                       LeanConfigManager(cli_config_manager, ProjectConfigManager()),
-                      docker_manager)
+                      docker_manager,
+                      TempManager())
 
 
 def test_run_lean_compiles_csharp_project() -> None:

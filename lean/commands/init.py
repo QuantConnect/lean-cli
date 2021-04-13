@@ -88,7 +88,7 @@ def init() -> None:
         click.confirm("The current directory is not empty, continue?", default=False, abort=True)
 
     # Download the Lean repository
-    tmp_directory = Path(tempfile.mkdtemp())
+    tmp_directory = container.temp_manager().create_temporary_directory()
     _download_repository(tmp_directory / "master.zip")
 
     # Extract the downloaded repository

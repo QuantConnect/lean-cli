@@ -34,6 +34,7 @@ from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_validator import PathValidator
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
+from lean.components.util.temp_manager import TempManager
 from lean.components.util.update_manager import UpdateManager
 from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
@@ -45,6 +46,7 @@ class Container(DeclarativeContainer):
     task_manager = Singleton(TaskManager, logger)
     name_generator = Singleton(NameGenerator)
     path_validator = Singleton(PathValidator)
+    temp_manager = Singleton(TempManager)
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
@@ -77,8 +79,8 @@ class Container(DeclarativeContainer):
 
     docker_manager = Singleton(DockerManager, logger)
 
-    csharp_compiler = Singleton(CSharpCompiler, logger, docker_manager)
-    lean_runner = Singleton(LeanRunner, logger, csharp_compiler, lean_config_manager, docker_manager)
+    csharp_compiler = Singleton(CSharpCompiler, logger, docker_manager, temp_manager)
+    lean_runner = Singleton(LeanRunner, logger, csharp_compiler, lean_config_manager, docker_manager, temp_manager)
 
     update_manager = Singleton(UpdateManager, logger, cache_storage, docker_manager)
 
