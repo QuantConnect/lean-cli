@@ -13,6 +13,7 @@
 
 import os
 import platform
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -57,6 +58,16 @@ class LeanCommand(click.Command):
                     "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
         if self._requires_docker and "pytest" not in sys.modules:
+            # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root
+            # These files cannot be deleted by the CLI itself, so we rely on the OS to empty /tmp on reboot
+            # The Snap version of Docker does not provide access to files outside $HOME, so we can't support it
+            if platform.system() == "Linux":
+                docker_path = shutil.which("docker")
+                if docker_path is not None and docker_path.startswith("/snap"):
+                    raise MoreInfoError(
+                        "The Lean CLI does not work with the Snap version of Docker, please re-install Docker via the official installation instructions",
+                        "https://docs.docker.com/engine/install/")
+
             # A usual Docker installation on Linux requires the user to use sudo to run Docker
             # If we detect that this is the case and the CLI was started without sudo we elevate automatically
             if platform.system() == "Linux" and os.getuid() != 0 and container.docker_manager().is_missing_permission():
