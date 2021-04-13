@@ -60,6 +60,9 @@ class LeanCommand(click.Command):
             # A usual Docker installation on Linux requires the user to use sudo to run Docker
             # If we detect that this is the case and the CLI was started without sudo we elevate automatically
             if platform.system() == "Linux" and os.getuid() != 0 and container.docker_manager().is_missing_permission():
+                container.logger().info(
+                    "This command requires access to Docker, you may be asked to enter your password")
+
                 args = ["sudo", "--preserve-env=HOME", sys.executable, *sys.argv]
                 os.execlp(args[0], *args)
 
