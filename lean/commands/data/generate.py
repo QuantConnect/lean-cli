@@ -20,7 +20,7 @@ from lean.constants import ENGINE_IMAGE
 from lean.container import container
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True)
+@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.option("--start",
               type=DateParameter(),
               required=True,

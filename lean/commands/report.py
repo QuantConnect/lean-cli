@@ -42,7 +42,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
     return None
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True)
+@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.option("--backtest-data-source-file",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               required=True,

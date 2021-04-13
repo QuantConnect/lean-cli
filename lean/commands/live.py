@@ -119,7 +119,7 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     time.sleep(10)
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True)
+@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.argument("environment", type=str)
 @click.option("--output",

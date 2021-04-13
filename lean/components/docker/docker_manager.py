@@ -152,6 +152,19 @@ class DockerManager:
         image = self._get_docker_client().images.get(f"{image}:{tag}")
         return image.attrs["RepoDigests"][0].split("@")[1]
 
+    def is_missing_permission(self) -> bool:
+        """Returns whether we cannot connect to the Docker client because of a permissions issue.
+
+        A permissions issue usually indicates that the client can only be used with root privileges.
+
+        :return: True if we cannot connect to the Docker client because of a permissions issue, False if that's not
+        """
+        try:
+            docker.from_env()
+        except Exception as exception:
+            return "Permission denied" in str(exception)
+        return False
+
     def _get_docker_client(self) -> docker.DockerClient:
         """Creates a DockerClient instance.
 

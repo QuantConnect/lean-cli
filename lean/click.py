@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import platform
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -25,14 +28,16 @@ from lean.models.errors import MoreInfoError
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_lean_config: bool = False, *args, **kwargs):
+    def __init__(self, requires_lean_config: bool = False, requires_docker: bool = False, *args, **kwargs):
         """Creates a new LeanCommand instance.
 
         :param requires_lean_config: True if this command requires a Lean config, False if not
+        :param requires_docker: True if this command uses Docker, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
         self._requires_lean_config = requires_lean_config
+        self._requires_docker = requires_docker
 
         super().__init__(*args, **kwargs)
 
@@ -50,6 +55,13 @@ class LeanCommand(click.Command):
                 raise MoreInfoError(
                     "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
                     "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
+
+        if self._requires_docker and "pytest" not in sys.modules:
+            # A usual Docker installation on Linux requires the user to use sudo to run Docker
+            # If we detect that this is the case and the CLI was started without sudo we elevate automatically
+            if platform.system() == "Linux" and os.getuid() != 0 and container.docker_manager().is_missing_permission():
+                args = ["sudo", "--preserve-env=HOME", sys.executable, *sys.argv]
+                os.execlp(args[0], *args)
 
         result = super().invoke(ctx)
 
