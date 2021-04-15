@@ -15,11 +15,11 @@ jobs:
         python-version: [ "3.6", "3.7", "3.8", "3.9" ]
         include:
           - os: ubuntu-latest
-            script: unix.sh
+            script: scripts/unix.sh
           - os: macos-latest
-            script: unix.sh
+            script: scripts/unix.sh
           - os: windows-latest
-            script: windows.sh
+            script: scripts/windows.sh
 
     steps:
       - name: Checkout
