@@ -14,13 +14,10 @@ jobs:
         python-version: [ "3.6", "3.7", "3.8", "3.9" ]
         include:
           - os: ubuntu-latest
-            shell: bash
             script: scripts/unix.sh
           - os: macos-latest
-            shell: bash
             script: tests/regressions/unix.sh
           - os: windows-latest
-            shell: pwsh
             script: tests/regressions/windows.ps1
 
     steps:
@@ -42,5 +39,4 @@ jobs:
 #          QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
 
       - name: Run regression tests
-        shell: ${{ matrix.shell }}
         run: ${{ matrix.script }}
