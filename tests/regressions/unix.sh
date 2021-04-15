@@ -12,7 +12,8 @@ fail () {
 # Usage: assert_exit_code <expected code> <command>
 assert_exit_code () {
     expected="$1"
-    actual=$(eval "${@:2}")
+    eval "${@:2}"
+    actual=$?
 
     if [[ "$expected" != "$actual" ]]; then
         fail "'${@:2}' exited with code $actual, expected $expected"

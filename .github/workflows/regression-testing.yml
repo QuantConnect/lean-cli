@@ -18,10 +18,10 @@ jobs:
         include:
           - os: ubuntu-latest
             script: tests/regressions/unix.sh
-          - os: macos-latest
-            script: tests/regressions/unix.sh
-          - os: windows-latest
-            script: tests/regressions/windows.ps1
+#          - os: macos-latest
+#            script: tests/regressions/unix.sh
+#          - os: windows-latest
+#            script: tests/regressions/windows.ps1
 
     steps:
       - name: Checkout
