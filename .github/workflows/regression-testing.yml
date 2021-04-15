@@ -21,7 +21,7 @@ jobs:
             script: tests/regressions/unix.sh
           - os: windows-latest
             shell: pwsh
-            script: tests/regressions/windows.bat
+            script: tests/regressions/windows.ps1
 
     steps:
       - name: Checkout
@@ -42,5 +42,5 @@ jobs:
 #          QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
 
       - name: Run regression tests
-        run: ${{ matrix.script }}
         shell: ${{ matrix.shell }}
+        run: ${{ matrix.script }}
