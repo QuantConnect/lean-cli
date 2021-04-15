@@ -42,5 +42,5 @@ jobs:
 #          QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
 
       - name: Run regression tests
-        shell: ${{ matrix.shell }}
         run: ${{ matrix.script }}
+        shell: ${{ matrix.shell }}
