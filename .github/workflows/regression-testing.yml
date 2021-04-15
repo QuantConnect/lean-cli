@@ -40,3 +40,6 @@ jobs:
 
       - name: Run regression tests
         run: ${{ matrix.script }}
+        env:
+          QC_USER_ID: ${{ secrets.QC_USER_ID }}
+          QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
