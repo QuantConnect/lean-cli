@@ -63,7 +63,7 @@ def test_error_logs_message(capsys: CaptureFixture) -> None:
     assert_stdout_stderr(capsys, "Message\n", "")
 
 
-def test_progress_creates_started_progress_instance() -> None:
+def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> None:
     logger = Logger()
     progress = logger.progress()
 
@@ -72,9 +72,11 @@ def test_progress_creates_started_progress_instance() -> None:
     progress.stop()
     assert result
 
+    capsys.readouterr()
+
 
 @mock.patch("click.prompt")
-def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock) -> None:
+def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock, capsys: CaptureFixture) -> None:
     logger = Logger()
     options = [Option(id=1, label="Option 1"), Option(id=2, label="Option 2"), Option(id=3, label="Option 3")]
 
@@ -82,6 +84,8 @@ def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock) -> None:
     selected_option = logger.prompt_list("Select an option", options)
 
     assert selected_option == 3
+
+    capsys.readouterr()
 
 
 @mock.patch("click.prompt")
