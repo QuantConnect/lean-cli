@@ -6,14 +6,16 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    # Regression tests only run on Linux because:
+    # - GitHub Actions only supports Windows-based Docker containers on Windows:
+    #   https://github.com/actions/virtual-environments/issues/1143
+    # - GitHub Actions doesn't support Docker on macOS:
+    #   https://github.community/t/is-it-possible-to-install-and-configure-docker-on-macos-runner/16981/7
+    runs-on: ubuntu-latest
 
     strategy:
       max-parallel: 1
       matrix:
-        # GitHub Actions doesn't support Docker on macOS:
-        # https://github.community/t/is-it-possible-to-install-and-configure-docker-on-macos-runner/16981/7
-        os: [ ubuntu-latest, windows-latest ]
         # python-version: [ "3.6", "3.7", "3.8", "3.9" ]
         python-version: [ "3.6" ]
 
