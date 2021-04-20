@@ -47,33 +47,36 @@ def run_command(args: List[str],
                 cwd: Optional[Path] = None,
                 input: List[str] = [],
                 expected_return_code: int = 0,
-                expected_output: Optional[str] = None) -> None:
-    """Runs a CLI command and fails the test if the exit code is not 0.
+                expected_output: Optional[str] = None,
+                timeout: int = 120) -> None:
+    """Runs a command and runs assertions on the return code and output.
 
     :param args: the arguments to pass to the CLI
     :param cwd: the directory to run the command in, or None to use the current directory
     :param input: the lines to provide to stdin
     :param expected_return_code: the expected return code of the command
     :param expected_output: the string the output of the command is expected to contain
+    :param timeout: the timeout of the command in seconds
     """
-    args = ["lean"] + args
-
     print(f"\nRunning {args}")
 
-    process = subprocess.Popen(args, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    process.stdin.write(str.encode("\n".join(input) + "\n"))
-    process.stdin.close()
+    try:
+        process = subprocess.run(args,
+                                 cwd=cwd,
+                                 input=str.encode("\n".join(input) + "\n"),
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        print(error.stdout.decode("utf-8"))
+        raise error
 
-    lines = []
+    print(process.stdout.decode("utf-8"))
 
-    for line in process.stdout:
-        print(line.decode("utf-8").strip())
-        lines.append(line.decode("utf-8"))
-
-    assert process.wait() == expected_return_code
+    assert process.returncode == expected_return_code
 
     if expected_output is not None:
-        assert expected_output in "\n".join(lines)
+        assert expected_output in process.stdout.decode("utf-8")
 
 
 def test_cli() -> None:
@@ -103,7 +106,7 @@ def test_cli() -> None:
     shutil.rmtree(global_config_path, ignore_errors=True)
 
     # Log in
-    run_command(["login"], input=[user_id, api_token])
+    run_command(["lean", "login"], input=[user_id, api_token])
     assert credentials_path.exists()
     assert json.loads(credentials_path.read_text(encoding="utf-8")) == {
         "user-id": user_id,
@@ -111,12 +114,12 @@ def test_cli() -> None:
     }
 
     # Download sample data and LEAN configuration file
-    run_command(["init"], cwd=test_dir, input=["python"])
+    run_command(["lean", "init"], cwd=test_dir, input=["python"])
     assert (test_dir / "data").is_dir()
     assert (test_dir / "lean.json").is_file()
 
     # Create Python project
-    run_command(["create-project", "--language", "python", python_project_name], cwd=test_dir)
+    run_command(["lean", "create-project", "--language", "python", python_project_name], cwd=test_dir)
     python_project_dir = test_dir / python_project_name
     assert (python_project_dir / "main.py").is_file()
     assert (python_project_dir / "research.ipynb").is_file()
@@ -129,7 +132,7 @@ def test_cli() -> None:
     assert (python_project_dir / ".idea" / "workspace.xml").is_file()
 
     # Create C# project
-    run_command(["create-project", "--language", "csharp", csharp_project_name], cwd=test_dir)
+    run_command(["lean", "create-project", "--language", "csharp", csharp_project_name], cwd=test_dir)
     csharp_project_dir = test_dir / csharp_project_name
     assert (csharp_project_dir / "Main.cs").is_file()
     assert (csharp_project_dir / "research.ipynb").is_file()
@@ -145,29 +148,30 @@ def test_cli() -> None:
     shutil.copy(fixtures_dir / "Main.cs", csharp_project_dir / "Main.cs")
 
     # Backtest Python project
-    run_command(["backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1")
+    # This is the first command that uses the LEAN Docker image, so we increase the timeout to have time to pull it
+    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1", timeout=600)
 
     # Backtest C# project
-    run_command(["backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
+    run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
 
     # Push projects
-    run_command(["cloud", "push", "--project", python_project_name], cwd=test_dir)
-    run_command(["cloud", "push", "--project", csharp_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "push", "--project", python_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "push", "--project", csharp_project_name], cwd=test_dir)
 
     # Remove some files and see if we can successfully pull them from the cloud
     (python_project_dir / "main.py").unlink()
     (csharp_project_dir / "Main.cs").unlink()
 
     # Pull projects
-    run_command(["cloud", "pull", "--project", python_project_name], cwd=test_dir)
-    run_command(["cloud", "pull", "--project", csharp_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "pull", "--project", python_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "pull", "--project", csharp_project_name], cwd=test_dir)
 
     # Ensure deleted files have been pulled
     (python_project_dir / "main.py").is_file()
     (csharp_project_dir / "Main.cs").is_file()
 
     # Log out
-    run_command(["logout"])
+    run_command(["lean", "logout"])
     assert not credentials_path.exists()
 
     # Delete the test directory that we used
