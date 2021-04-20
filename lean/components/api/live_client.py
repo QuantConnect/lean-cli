@@ -31,7 +31,8 @@ class LiveClient:
 
     def get_all(self,
                 status: Optional[QCLiveAlgorithmStatus] = None,
-                start: datetime = datetime.fromtimestamp(0),
+                # Values less than 86400 cause errors on Windows: https://bugs.python.org/issue37527
+                start: datetime = datetime.fromtimestamp(86400),
                 end: datetime = datetime.now()) -> List[QCLiveAlgorithm]:
         """Retrieves all live algorithms.
 
