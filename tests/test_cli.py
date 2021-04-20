@@ -58,7 +58,7 @@ def run_command(args: List[str],
     :param expected_output: the string the output of the command is expected to contain
     :param timeout: the timeout of the command in seconds
     """
-    print(f"\nRunning {args}")
+    print(f"Running {args}")
 
     try:
         process = subprocess.run(args,
@@ -147,14 +147,14 @@ def test_cli() -> None:
     shutil.copy(fixtures_dir / "main.py", python_project_dir / "main.py")
     shutil.copy(fixtures_dir / "Main.cs", csharp_project_dir / "Main.cs")
 
-    # Backtest Python project
+    # Backtest Python project locally
     # This is the first command that uses the LEAN Docker image, so we increase the timeout to have time to pull it
     run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1", timeout=600)
 
-    # Backtest C# project
+    # Backtest C# project locally
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
 
-    # Push projects
+    # Push projects to cloud
     run_command(["lean", "cloud", "push", "--project", python_project_name], cwd=test_dir)
     run_command(["lean", "cloud", "push", "--project", csharp_project_name], cwd=test_dir)
 
@@ -162,13 +162,19 @@ def test_cli() -> None:
     (python_project_dir / "main.py").unlink()
     (csharp_project_dir / "Main.cs").unlink()
 
-    # Pull projects
+    # Pull projects from cloud
     run_command(["lean", "cloud", "pull", "--project", python_project_name], cwd=test_dir)
     run_command(["lean", "cloud", "pull", "--project", csharp_project_name], cwd=test_dir)
 
     # Ensure deleted files have been pulled
     (python_project_dir / "main.py").is_file()
     (csharp_project_dir / "Main.cs").is_file()
+
+    # Run Python backtest in cloud
+    run_command(["lean", "cloud", "backtest", python_project_name], cwd=test_dir)
+
+    # Run C# backtest in cloud
+    run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir)
 
     # Log out
     run_command(["lean", "logout"])
