@@ -11,7 +11,9 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        # GitHub Actions doesn't support Docker on macOS:
+        # https://github.community/t/is-it-possible-to-install-and-configure-docker-on-macos-runner/16981/7
+        os: [ ubuntu-latest, windows-latest ]
         # python-version: [ "3.6", "3.7", "3.8", "3.9" ]
         python-version: [ "3.6" ]
 
