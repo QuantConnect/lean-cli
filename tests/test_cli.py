@@ -13,6 +13,7 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -22,11 +23,14 @@ from typing import List, Optional
 
 import pytest
 
+# These tests require a QuantConnect user id and API token
+# The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
+from lean.components.api.api_client import APIClient
+from lean.components.util.logger import Logger
+
 # The tests in this file call the CLI itself to verify it works as expected
 # Be aware that these tests change the global CLI configuration on this system
 
-# These tests require a QuantConnect user id and API token
-# The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
 USER_ID = ""
 API_TOKEN = ""
 
@@ -48,15 +52,16 @@ def run_command(args: List[str],
                 input: List[str] = [],
                 expected_return_code: int = 0,
                 expected_output: Optional[str] = None,
-                timeout: int = 120) -> None:
+                timeout: int = 120) -> str:
     """Runs a command and runs assertions on the return code and output.
 
-    :param args: the arguments to pass to the CLI
+    :param args: the command to run
     :param cwd: the directory to run the command in, or None to use the current directory
     :param input: the lines to provide to stdin
     :param expected_return_code: the expected return code of the command
     :param expected_output: the string the output of the command is expected to contain
     :param timeout: the timeout of the command in seconds
+    :return: the output of the command
     """
     print(f"Running {args}")
 
@@ -71,12 +76,15 @@ def run_command(args: List[str],
         print(error.stdout.decode("utf-8"))
         raise error
 
-    print(process.stdout.decode("utf-8"))
+    output = process.stdout.decode("utf-8")
+    print(output)
 
     assert process.returncode == expected_return_code
 
     if expected_output is not None:
-        assert expected_output in process.stdout.decode("utf-8")
+        assert expected_output in output
+
+    return output
 
 
 def test_cli() -> None:
@@ -118,6 +126,25 @@ def test_cli() -> None:
     assert (test_dir / "data").is_dir()
     assert (test_dir / "lean.json").is_file()
 
+    # Generate random data
+    generate_output = run_command(["lean", "data", "generate",
+                                   "--start", "20150101",
+                                   "--symbol-count", "1",
+                                   "--resolution", "Daily"],
+                                  cwd=test_dir)
+    matches = re.findall(r"Begin data generation of 1 randomly generated Equity assets\.\.\.\nSymbol\[1]: ([A-Z]+)",
+                         generate_output)
+    assert len(matches) == 1
+    assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{matches[0].lower()}.zip").is_file()
+
+    # Get/set global configuration
+    run_command(["lean", "config", "set", "default-language", "csharp"])
+    run_command(["lean", "config", "get", "default-language"], expected_output="csharp")
+    run_command(["lean", "config", "set", "default-language", "python"])
+    run_command(["lean", "config", "get", "default-language"], expected_output="python")
+    list_output = run_command(["lean", "config", "list"])
+    assert len(re.findall(r"default-language[ ]+[^ ] python", list_output)) == 1
+
     # Create Python project
     run_command(["lean", "create-project", "--language", "python", python_project_name], cwd=test_dir)
     python_project_dir = test_dir / python_project_name
@@ -150,9 +177,20 @@ def test_cli() -> None:
     # Backtest Python project locally
     # This is the first command that uses the LEAN Docker image, so we increase the timeout to have time to pull it
     run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1", timeout=600)
+    python_backtest_dirs = list((python_project_dir / "backtests").iterdir())
+    assert len(python_backtest_dirs) == 1
 
     # Backtest C# project locally
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
+    csharp_backtest_dirs = list((csharp_project_dir / "backtests").iterdir())
+    assert len(csharp_backtest_dirs) == 1
+
+    # Generate report
+    run_command(["lean", "report",
+                 "--backtest-data-source-file",
+                 f"{python_project_name}/backtests/{python_backtest_dirs[0].name}/main.json"],
+                cwd=test_dir)
+    assert (test_dir / "report.html").is_file()
 
     # Push projects to cloud
     run_command(["lean", "cloud", "push", "--project", python_project_name], cwd=test_dir)
@@ -182,3 +220,9 @@ def test_cli() -> None:
 
     # Delete the test directory that we used
     shutil.rmtree(test_dir, ignore_errors=True)
+
+    # Delete the cloud projects that we used
+    api_client = APIClient(Logger(), user_id, api_token)
+    cloud_projects = api_client.projects.get_all()
+    api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == python_project_name))
+    api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == csharp_project_name))
