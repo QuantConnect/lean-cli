@@ -1,8 +1,6 @@
 name: Build
 
-# Temporarily disabled on push so I can test the regression testing workflow faster
-# on: [push, pull_request]
-on: [pull_request]
+on: [push, pull_request]
 
 jobs:
   test:

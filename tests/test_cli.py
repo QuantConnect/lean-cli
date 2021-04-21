@@ -23,10 +23,11 @@ from typing import List, Optional
 
 import pytest
 
-# These tests require a QuantConnect user id and API token
-# The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
+
+# These tests require a QuantConnect user id and API token
+# The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
 
 # The tests in this file call the CLI itself to verify it works as expected
 # Be aware that these tests change the global CLI configuration on this system
@@ -193,7 +194,7 @@ def test_cli() -> None:
                 cwd=test_dir)
     assert (test_dir / "report.html").is_file()
 
-    # Push projects to cloud
+    # Push projects to the cloud
     run_command(["lean", "cloud", "push", "--project", python_project_name], cwd=test_dir)
     run_command(["lean", "cloud", "push", "--project", csharp_project_name], cwd=test_dir)
 
@@ -201,7 +202,7 @@ def test_cli() -> None:
     (python_project_dir / "main.py").unlink()
     (csharp_project_dir / "Main.cs").unlink()
 
-    # Pull projects from cloud
+    # Pull projects from the cloud
     run_command(["lean", "cloud", "pull", "--project", python_project_name], cwd=test_dir)
     run_command(["lean", "cloud", "pull", "--project", csharp_project_name], cwd=test_dir)
 
@@ -209,10 +210,10 @@ def test_cli() -> None:
     (python_project_dir / "main.py").is_file()
     (csharp_project_dir / "Main.cs").is_file()
 
-    # Run Python backtest in cloud
+    # Run Python backtest in the cloud
     run_command(["lean", "cloud", "backtest", python_project_name], cwd=test_dir)
 
-    # Run C# backtest in cloud
+    # Run C# backtest in the cloud
     run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir)
 
     # Log out
