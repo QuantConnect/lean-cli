@@ -127,11 +127,13 @@ def test_cli() -> None:
     assert (test_dir / "lean.json").is_file()
 
     # Generate random data
+    # This is the first command that uses the LEAN Docker image, so we increase the timeout to have time to pull it
     generate_output = run_command(["lean", "data", "generate",
                                    "--start", "20150101",
                                    "--symbol-count", "1",
                                    "--resolution", "Daily"],
-                                  cwd=test_dir)
+                                  cwd=test_dir,
+                                  timeout=600)
     matches = re.findall(r"Begin data generation of 1 randomly generated Equity assets\.\.\.\nSymbol\[1]: ([A-Z]+)",
                          generate_output)
     assert len(matches) == 1
@@ -175,8 +177,7 @@ def test_cli() -> None:
     shutil.copy(fixtures_dir / "Main.cs", csharp_project_dir / "Main.cs")
 
     # Backtest Python project locally
-    # This is the first command that uses the LEAN Docker image, so we increase the timeout to have time to pull it
-    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1", timeout=600)
+    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1")
     python_backtest_dirs = list((python_project_dir / "backtests").iterdir())
     assert len(python_backtest_dirs) == 1
 
