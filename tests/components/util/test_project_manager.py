@@ -290,6 +290,14 @@ def test_create_new_project_does_not_update_pycharm_jdk_table_when_jdk_entry_alr
     assert jdk_table_file.read_text(encoding="utf-8") == jdk_table
 
 
+def test_create_new_project_copies_ssh_keys_to_global_config_dir() -> None:
+    project_manager = ProjectManager(ProjectConfigManager())
+    project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
+
+    for name in ["key", "key.pub", "README.md"]:
+        assert Path(f"~/.lean/ssh/{name}").expanduser().is_file()
+
+
 @mock.patch("platform.system")
 @pytest.mark.parametrize("os,path", [("Windows", "~/AppData/Roaming/JetBrains"),
                                      ("Darwin", "~/Library/Application Support/JetBrains"),
