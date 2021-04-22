@@ -13,9 +13,11 @@
 
 import json
 import platform
+import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import pkg_resources
 from docker.types import Mount
 
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -87,15 +89,7 @@ class LeanRunner:
             my_init_dir = self._temp_manager.create_temporary_directory()
             enable_ssh_path = my_init_dir / "enable_ssh.sh"
 
-            with enable_ssh_path.open("w+", encoding="utf-8") as file:
-                file.write("""
-#!/bin/sh
-rm -f /etc/service/sshd/down
-/usr/sbin/enable_insecure_key
-chmod 600 /etc/insecure_key
-echo "HostKey /etc/insecure_key" >> /etc/ssh/sshd_config
-                """.strip() + "\n")
-
+            shutil.copy(pkg_resources.resource_filename("lean", "ssh/enable_ssh.sh"), enable_ssh_path)
             enable_ssh_path.chmod(755)
 
             run_options["entrypoint"] = ["/sbin/my_init", "dotnet", "QuantConnect.Lean.Launcher.dll"]
