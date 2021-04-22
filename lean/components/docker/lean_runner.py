@@ -72,22 +72,38 @@ class LeanRunner:
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, version, debugging_method)
 
-        run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe"]
+        run_options["entrypoint"] = ["dotnet", "QuantConnect.Lean.Launcher.dll"]
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
             run_options["ports"]["5678"] = "5678"
 
-        # Set up Mono debugging
-        if debugging_method == DebuggingMethod.Mono:
-            run_options["ports"]["55556"] = "55556"
-            run_options["entrypoint"] = ["mono",
-                                         "--debug",
-                                         "--debugger-agent=transport=dt_socket,server=y,address=0.0.0.0:55556,suspend=y",
-                                         "QuantConnect.Lean.Launcher.exe",
-                                         *run_options["entrypoint"][2:]]
+        # Set up VSDBG debugging
+        if debugging_method == DebuggingMethod.VSDBG:
+            run_options["name"] = "lean_cli_vsdbg"
 
-            self._logger.info("Docker container starting, attach to Mono debugger at localhost:55556 to begin")
+        # Set up Rider debugging
+        if debugging_method == DebuggingMethod.Rider:
+            my_init_dir = self._temp_manager.create_temporary_directory()
+            enable_ssh_path = my_init_dir / "enable_ssh.sh"
+
+            with enable_ssh_path.open("w+", encoding="utf-8") as file:
+                file.write("""
+#!/bin/sh
+rm -f /etc/service/sshd/down
+/usr/sbin/enable_insecure_key
+chmod 600 /etc/insecure_key
+echo "HostKey /etc/insecure_key" >> /etc/ssh/sshd_config
+                """.strip() + "\n")
+
+            enable_ssh_path.chmod(755)
+
+            run_options["entrypoint"] = ["/sbin/my_init", "dotnet", "QuantConnect.Lean.Launcher.dll"]
+            run_options["ports"]["22"] = "2222"
+            run_options["volumes"][str(my_init_dir)] = {
+                "bind": "/etc/my_init.d",
+                "mode": "rw"
+            }
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)

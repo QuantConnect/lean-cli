@@ -20,6 +20,8 @@ from pathlib import Path
 from typing import List
 from xml.etree import ElementTree
 
+import pkg_resources
+
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.models.api import QCLanguage, QCProject
 
@@ -129,7 +131,7 @@ class ProjectManager:
         else:
             self._generate_vscode_csharp_config(project_dir)
             self._generate_csproj(project_dir)
-            self._generate_rider_config(project_dir)
+            self._generate_rider_config()
 
     def _generate_vscode_python_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for VS Code.
@@ -239,24 +241,7 @@ class ProjectManager:
 
         :param editor_name: the name of the JetBrains editor, like PyCharm or PyCharmCE
         """
-        # Find JetBrains' global config directory
-        # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
-        if platform.system() == "Windows":
-            # Windows
-            jetbrains_config_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
-        elif platform.system() == "Darwin":
-            # macOS
-            jetbrains_config_dir = Path("~/Library/Application Support/JetBrains").expanduser()
-        else:
-            # Linux
-            jetbrains_config_dir = Path("~/.config/JetBrains").expanduser()
-
-        # Find PyCharm's global config directory
-        pycharm_config_dirs = sorted(p for p in jetbrains_config_dir.glob(f"{editor_name}*"))
-        if len(pycharm_config_dirs) > 0:
-            pycharm_config_dir = pycharm_config_dirs[-1]
-        else:
-            pycharm_config_dir = jetbrains_config_dir / editor_name
+        pycharm_config_dir = self._get_jetbrains_config_dir(editor_name)
 
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
@@ -319,9 +304,18 @@ class ProjectManager:
         {
             "name": "Debug with Lean CLI",
             "request": "attach",
-            "type": "mono",
-            "address": "localhost",
-            "port": 55556
+            "type": "coreclr",
+            "processId": "1",
+            "pipeTransport": {
+                "pipeCwd": "${workspaceRoot}",
+                "pipeProgram": "docker",
+                "pipeArgs": ["exec", "-i", "lean_cli_vsdbg"],
+                "debuggerPath": "/root/vsdbg/vsdbg",
+                "quoteArgs": false
+            },
+            "logging": {
+                "moduleLoad": false
+            }
         }
     ]
 }
@@ -332,6 +326,7 @@ class ProjectManager:
 
         :param project_dir: the path of the new project
         """
+        # TODO: Update TargetFramework to net5.0 and PackageReference to a .NET 5 LEAN version when ready
         self._generate_file(project_dir / f"{project_dir.name}.csproj", """
 <!--
 This file exists to make C# autocomplete and debugging work.
@@ -355,68 +350,71 @@ on the page above, you can add a PackageReference for it.
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
-     <PropertyGroup>
-        <IsWindows>false</IsWindows>
-        <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
-        <IsOSX>false</IsOSX>
-        <IsOSX Condition="'$(IsWindows)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
-        <IsLinux>false</IsLinux>
-        <IsLinux Condition="'$(IsWindows)' != 'true' AND '$(IsOSX)' != 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-    </PropertyGroup>
-    <Choose>
-        <When Condition="$(IsWindows)">
-            <ItemGroup>
-                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/win/Python.Runtime.dll</HintPath>
-                </Reference>
-            </ItemGroup>
-        </When>
-        <When Condition="$(IsLinux)">
-            <ItemGroup>
-                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/linux/Python.Runtime.dll</HintPath>
-                </Reference>
-            </ItemGroup>
-        </When>
-        <When Condition="$(IsOSX)">
-            <ItemGroup>
-                <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-                    <HintPath>$(NuGetPackageRoot)/quantconnect.pythonnet/1.0.5.30/lib/osx/Python.Runtime.dll</HintPath>
-                </Reference>
-            </ItemGroup>
-        </When>
-    </Choose>
     <ItemGroup>
         <PackageReference Include="QuantConnect.Lean" Version="2.5.11072"/>
     </ItemGroup>
 </Project>
         """)
 
-    def _generate_rider_config(self, project_dir: Path) -> None:
-        """Generates C# debugging configuration for Rider.
+    def _generate_rider_config(self) -> None:
+        """Generates C# debugging configuration for Rider."""
+        ssh_dir = Path("~/.lean/ssh").expanduser()
 
-        :param project_dir: the directory of the new project
-        """
-        workspace_xml = """
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="RunManager">
-    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55556" address="localhost">
-      <option name="allowRunningInParallel" value="false" />
-      <option name="listenPortForConnections" value="false" />
-      <option name="selectedOptions">
-        <list />
-      </option>
-      <method v="2" />
+        # Add SSH keys to .lean/ssh if necessary
+        if not ssh_dir.exists():
+            ssh_dir.mkdir(parents=True)
+            for name in ["key", "key.pub", "README.md"]:
+                with (ssh_dir / name).open("wb+") as file:
+                    file.write(pkg_resources.resource_string("lean", f"ssh/{name}"))
+
+        # Find Rider's global configuration directory
+        rider_config_dir = self._get_jetbrains_config_dir("Rider")
+
+        # Parse the file containing Rider's internal list of remote hosts
+        debugger_file = rider_config_dir / "options" / "debugger.xml"
+        if debugger_file.exists():
+            root = ElementTree.fromstring(debugger_file.read_text(encoding="utf-8"))
+        else:
+            root = ElementTree.fromstring("""
+<application>
+    <component name="XDebuggerSettings">
+    </component>
+</application>
+            """)
+
+        component_element = root.find(".//component[@name='XDebuggerSettings']")
+
+        if root.find(".//debuggers") is None:
+            component_element.append(ElementTree.fromstring("<debuggers></debuggers>"))
+
+        debuggers = root.find(".//debuggers")
+
+        if debuggers.find(".//debugger[@id='dotnet_debugger']") is None:
+            debuggers.append(ElementTree.fromstring("""
+<debugger id="dotnet_debugger">
+    <configuration>
+        <option name="needNotifyWhenStoppedInExternalCode" value="false"/>
+        <option name="sshCredentials">
+        </option>
     </configuration>
-  </component>
-</project>
-        """
+</debugger>
+            """.strip()))
 
-        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}" / ".idea" / "workspace.xml",
-                            workspace_xml)
-        self._generate_file(project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea" / "workspace.xml",
-                            workspace_xml)
+        dotnet_debugger = debuggers.find(".//debugger[@id='dotnet_debugger']")
+        ssh_credentials = dotnet_debugger.find(".//option[@name='sshCredentials']")
+
+        required_value = f"&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{ssh_dir.as_posix()}/key&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;"
+
+        # Don't do anything if the required entry already exists
+        for option in ssh_credentials.findall(f".//option"):
+            if option.get("value") == required_value.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"'):
+                return
+
+        # Add the new entry to the XML tree
+        ssh_credentials.append(ElementTree.fromstring(f'<option value="{required_value}"/>'))
+
+        # Save the modified XML tree
+        self._generate_file(debugger_file, ElementTree.tostring(root, encoding="utf-8", method="xml").decode("utf-8"))
 
     def _generate_file(self, file: Path, content: str) -> None:
         """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.
@@ -427,3 +425,25 @@ on the page above, you can add a PackageReference for it.
         file.parent.mkdir(parents=True, exist_ok=True)
         with file.open("w+", encoding="utf-8") as file:
             file.write(content.strip() + "\n")
+
+    def _get_jetbrains_config_dir(self, editor_name: str) -> Path:
+        """Returns the path to the global configuration directory of a JetBrains IDE.
+
+        :param editor_name: the name of the JetBrains IDE
+        :return: the path to the directory holding the global configuration for the specified IDE
+        """
+        # Find JetBrains' global config directory
+        # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
+        if platform.system() == "Windows":
+            jetbrains_config_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
+        elif platform.system() == "Darwin":
+            jetbrains_config_dir = Path("~/Library/Application Support/JetBrains").expanduser()
+        else:
+            jetbrains_config_dir = Path("~/.config/JetBrains").expanduser()
+
+        # Find the global config directory for the given editor
+        config_dirs = sorted(p for p in jetbrains_config_dir.glob(f"{editor_name}*"))
+        if len(config_dirs) > 0:
+            return config_dirs[-1]
+        else:
+            return jetbrains_config_dir / editor_name

@@ -119,7 +119,7 @@ def optimize(project: Path,
     run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, version, None)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
-    run_options["entrypoint"] = ["mono", "QuantConnect.Optimizer.Launcher.exe"]
+    run_options["entrypoint"] = ["dotnet", "QuantConnect.Optimizer.Launcher.dll"]
     run_options["mounts"].append(
         Mount(target="/Lean/Optimizer.Launcher/bin/Debug/config.json",
               source=str(config_path),

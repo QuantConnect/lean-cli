@@ -21,6 +21,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.temp_manager import TempManager
+from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -106,7 +107,7 @@ def test_run_lean_runs_lean_container() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == "quantconnect/lean"
+    assert args[0] == ENGINE_IMAGE
     assert args[1] == "latest"
 
 
@@ -300,7 +301,7 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
     assert kwargs["ports"]["5678"] == "5678"
 
 
-def test_run_lean_exposes_55556_when_debugging_with_mono() -> None:
+def test_run_lean_sets_image_name_when_debugging_with_vsdbg() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -312,15 +313,15 @@ def test_run_lean_exposes_55556_when_debugging_with_mono() -> None:
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          "latest",
-                         DebuggingMethod.Mono)
+                         DebuggingMethod.VSDBG)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert kwargs["ports"]["55556"] == "55556"
+    assert kwargs["name"] == "lean_cli_vsdbg"
 
 
-def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
+def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -332,13 +333,12 @@ def test_run_lean_sets_correct_command_when_debugging_with_mono() -> None:
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          "latest",
-                         DebuggingMethod.Mono)
+                         DebuggingMethod.Rider)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert kwargs["entrypoint"][0] == "mono"
-    assert "--debug" in kwargs["entrypoint"]
+    assert kwargs["ports"]["22"] == "2222"
 
 
 def test_run_lean_raises_when_run_image_fails() -> None:
@@ -354,6 +354,6 @@ def test_run_lean_raises_when_run_image_fails() -> None:
                              Path.cwd() / "Python Project" / "main.py",
                              Path.cwd() / "output",
                              "latest",
-                             DebuggingMethod.Mono)
+                             DebuggingMethod.PTVSD)
 
     docker_manager.run_image.assert_called_once()

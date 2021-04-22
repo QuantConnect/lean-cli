@@ -18,6 +18,7 @@ import pytest
 
 from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.util.temp_manager import TempManager
+from lean.constants import ENGINE_IMAGE
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -41,7 +42,7 @@ def create_csharp_compiler(docker_manager: mock.Mock) -> CSharpCompiler:
     return CSharpCompiler(mock.Mock(), docker_manager, TempManager())
 
 
-def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
+def test_compile_csharp_project_runs_dotnet_build_in_docker() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -54,12 +55,12 @@ def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == "quantconnect/lean"
+    assert args[0] == ENGINE_IMAGE
     assert args[1] == "latest"
-    assert "msbuild" in kwargs["entrypoint"]
+    assert "dotnet build" in " ".join(kwargs["entrypoint"])
 
 
-def test_compile_csharp_project_raises_when_msbuild_fails() -> None:
+def test_compile_csharp_project_raises_when_dotnet_build_fails() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -108,7 +109,7 @@ def test_compile_csharp_project_copies_generated_files_to_project_bin(extension:
     assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / f"CSharp Project.{extension}").exists()
 
 
-def test_compile_csharp_project_disables_msbuild_telemetry() -> None:
+def test_compile_csharp_project_disables_dotnet_telemetry() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()

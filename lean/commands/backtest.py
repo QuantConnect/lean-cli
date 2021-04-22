@@ -29,7 +29,7 @@ from lean.models.config import DebuggingMethod
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
 @click.option("--debug",
-              type=click.Choice(["pycharm", "ptvsd", "mono"], case_sensitive=False),
+              type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @click.option("--update",
               is_flag=True,
@@ -56,14 +56,18 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+    # TODO: Show a link to migration docs when starting debugging telling users we recently switched to .NET 5
+
     # Convert the given --debug value to the debugging method to use
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
     if debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
-    if debug == "mono":
-        debugging_method = DebuggingMethod.Mono
+    if debug == "vsdbg":
+        debugging_method = DebuggingMethod.VSDBG
+    if debug == "rider":
+        debugging_method = DebuggingMethod.Rider
 
     docker_manager = container.docker_manager()
 

@@ -156,7 +156,7 @@ def report(backtest_data_source_file: Path,
 
     run_options: Dict[str, Any] = {
         "working_dir": "/Lean/Report/bin/Debug",
-        "entrypoint": ["mono", "QuantConnect.Report.exe"],
+        "entrypoint": ["dotnet", "QuantConnect.Report.dll"],
         "mounts": [
             Mount(target="/Lean/Report/bin/Debug/config.json",
                   source=str(config_path),

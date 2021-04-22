@@ -103,7 +103,7 @@ def generate(start: datetime,
     data_dir = lean_config_manager.get_data_directory()
 
     run_options = {
-        "entrypoint": ["mono", "QuantConnect.ToolBox.exe",
+        "entrypoint": ["dotnet", "QuantConnect.ToolBox.dll",
                        "--destination-dir", "/Lean/Data",
                        "--app", "randomdatagenerator",
                        "--start", start.strftime("%Y%m%d"),

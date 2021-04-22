@@ -159,8 +159,12 @@ class LeanConfigManager:
 
         config["composer-dll-directory"] = "."
 
-        config["debugging"] = debugging_method is not None and debugging_method != DebuggingMethod.Mono
-        config["debugging-method"] = debugging_method.value if debugging_method is not None else "LocalCmdline"
+        if debugging_method is not None:
+            config["debugging"] = True
+            config["debugging-method"] = debugging_method.get_internal_name()
+        else:
+            config["debugging"] = False
+            config["debugging-method"] = "LocalCmdline"
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")

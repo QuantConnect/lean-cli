@@ -27,6 +27,7 @@ install_requires = [
     "dependency-injector~=4.20.1",
     "pydantic~=1.7.3",
     "python-dateutil~=2.8.1",
+    "setuptools",
     "quantconnect-stubs"
 ]
 
@@ -40,6 +41,9 @@ setup(
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
+    package_data={
+        "lean": ["ssh/*"]
+    },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]
     },

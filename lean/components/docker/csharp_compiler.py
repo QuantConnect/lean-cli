@@ -64,21 +64,18 @@ class CSharpCompiler:
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net462</TargetFramework>
-        <FrameworkPathOverride>/usr/lib/mono/4.6.2-api</FrameworkPathOverride>
+        <TargetFramework>net5.0</TargetFramework>
         <LangVersion>6</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <OutputPath>bin/$(Configuration)/</OutputPath>
+        <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+        <NoWarn>CS0618</NoWarn>
         <PathMap>/LeanCLI={str(project_dir)}</PathMap>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="/usr/lib/mono/4.6.2-api/Microsoft.CSharp.dll">
-            <Private>False</Private>
-        </Reference>
         <Reference Include="/Lean/Launcher/bin/Debug/*.dll">
             <Private>False</Private>
         </Reference>
@@ -88,8 +85,7 @@ class CSharpCompiler:
 
         success = self._docker_manager.run_image(ENGINE_IMAGE,
                                                  version,
-                                                 entrypoint=["dotnet", "msbuild",
-                                                             "-restore", f"/LeanCLI/{project_dir.name}.csproj"],
+                                                 entrypoint=["dotnet", "build", f"/LeanCLI/{project_dir.name}.csproj"],
                                                  environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
                                                               "DOTNET_NOLOGO": "true"},
                                                  volumes={
@@ -100,7 +96,7 @@ class CSharpCompiler:
                                                  })
 
         if not success:
-            raise RuntimeError("Something went wrong while running msbuild, see the logs above for more information")
+            raise RuntimeError("Something went wrong while building your code, see the logs above for more information")
 
         # Copy the generated dll and pdb files to the user's project directory
         # This is required for C# debugging to work with Visual Studio and Visual Studio Code

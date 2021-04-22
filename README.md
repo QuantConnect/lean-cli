@@ -94,13 +94,14 @@ Usage: lean backtest [OPTIONS] PROJECT
   https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests
 
 Options:
-  --output DIRECTORY            Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
-  --debug [pycharm|ptvsd|mono]  Enable a certain debugging method (see --help for more information)
-  --update                      Pull the selected LEAN engine version before running the backtest
-  --version TEXT                The LEAN engine version to run (defaults to the latest installed version)
-  --lean-config FILE            The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                     Enable debug logging
-  --help                        Show this message and exit.
+  --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --debug [pycharm|ptvsd|vsdbg|rider]
+                                  Enable a certain debugging method (see --help for more information)
+  --update                        Pull the selected LEAN engine version before running the backtest
+  --version TEXT                  The LEAN engine version to run (defaults to the latest installed version)
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_

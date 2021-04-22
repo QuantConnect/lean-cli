@@ -297,18 +297,15 @@ def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> N
 
 @pytest.mark.parametrize("method,value", [(DebuggingMethod.PyCharm, "PyCharm"),
                                           (DebuggingMethod.PTVSD, "PTVSD"),
-                                          (DebuggingMethod.Mono, "LocalCmdline")])
+                                          (DebuggingMethod.VSDBG, "LocalCmdline"),
+                                          (DebuggingMethod.Rider, "LocalCmdline")])
 def test_get_complete_lean_config_parses_debugging_method_correctly(method: DebuggingMethod, value: str) -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager())
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method)
 
-    if method == DebuggingMethod.Mono:
-        assert not config["debugging"]
-    else:
-        assert config["debugging"]
-
+    assert config["debugging"]
     assert config["debugging-method"] == value
 
 

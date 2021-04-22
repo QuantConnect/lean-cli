@@ -22,6 +22,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
+from lean.constants import ENGINE_IMAGE
 from lean.container import container
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)
@@ -74,7 +75,7 @@ def test_optimize_runs_lean_container() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == "quantconnect/lean"
+    assert args[0] == ENGINE_IMAGE
     assert args[1] == "latest"
 
 
@@ -94,8 +95,8 @@ def test_optimize_runs_optimizer() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert kwargs["working_dir"] == "/Lean/Optimizer.Launcher/bin/Debug"
-    assert kwargs["entrypoint"][0] == "mono"
-    assert kwargs["entrypoint"][1] == "QuantConnect.Optimizer.Launcher.exe"
+    assert kwargs["entrypoint"][0] == "dotnet"
+    assert kwargs["entrypoint"][1] == "QuantConnect.Optimizer.Launcher.dll"
 
 
 def test_optimize_mounts_optimizer_config() -> None:
@@ -425,7 +426,7 @@ def test_optimize_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with("quantconnect/lean", "latest")
+    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE, "latest")
     docker_manager.run_image.assert_called_once()
 
 
@@ -444,7 +445,7 @@ def test_optimize_runs_custom_version() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == "quantconnect/lean"
+    assert args[0] == ENGINE_IMAGE
     assert args[1] == "3"
 
 
@@ -492,6 +493,6 @@ def test_optimize_checks_for_updates(update_manager_mock: mock.Mock,
     assert result.exit_code == 0
 
     if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with("quantconnect/lean")
+        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
     else:
         update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

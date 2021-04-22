@@ -20,6 +20,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.constants import ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -138,7 +139,7 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with("quantconnect/lean", "latest")
+    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE, "latest")
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -188,8 +189,10 @@ def test_backtest_aborts_when_version_invalid() -> None:
                                                     ("PyCharm", DebuggingMethod.PyCharm),
                                                     ("ptvsd", DebuggingMethod.PTVSD),
                                                     ("PTVSD", DebuggingMethod.PTVSD),
-                                                    ("mono", DebuggingMethod.Mono),
-                                                    ("Mono", DebuggingMethod.Mono)])
+                                                    ("vsdbg", DebuggingMethod.VSDBG),
+                                                    ("VSDBG", DebuggingMethod.VSDBG),
+                                                    ("rider", DebuggingMethod.Rider),
+                                                    ("Rider", DebuggingMethod.Rider)])
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
     create_fake_lean_cli_directory()
 
@@ -239,6 +242,6 @@ def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
     assert result.exit_code == 0
 
     if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with("quantconnect/lean")
+        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
     else:
         update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

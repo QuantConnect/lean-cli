@@ -11,22 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import Enum
+import pytest
+
+from lean.models.config import DebuggingMethod
 
 
-class DebuggingMethod(Enum):
-    """The debugging methods supported by the CLI."""
-    PyCharm = 1
-    PTVSD = 2
-    VSDBG = 3
-    Rider = 4
-
-    def get_internal_name(self) -> str:
-        """Returns the LEAN debugging method that should be used for the current enum member.
-
-        :return: a valid LEAN debugging method that should be used for the current enum member
-        """
-        return {
-            DebuggingMethod.PyCharm: "PyCharm",
-            DebuggingMethod.PTVSD: "PTVSD"
-        }.get(self, "LocalCmdline")
+@pytest.mark.parametrize("member,result", [(DebuggingMethod.PyCharm, "PyCharm"),
+                                           (DebuggingMethod.PTVSD, "PTVSD"),
+                                           (DebuggingMethod.VSDBG, "LocalCmdline"),
+                                           (DebuggingMethod.Rider, "LocalCmdline")])
+def test_debugging_method_get_internal_name_returns_correct_name(member: DebuggingMethod, result: str) -> None:
+    assert member.get_internal_name() == result

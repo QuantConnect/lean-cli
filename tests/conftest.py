@@ -36,6 +36,9 @@ def fake_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     # This is required to be able to send HTTP requests using requests
     fs.add_real_file(certifi.where())
 
+    # Proxy access to package data to the real filesystem
+    fs.add_real_directory(os.path.join(os.path.dirname(__file__), "../lean/ssh"))
+
     # Create a fake home directory and set the cwd to an empty directory
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
