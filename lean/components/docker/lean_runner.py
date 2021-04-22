@@ -86,18 +86,10 @@ class LeanRunner:
 
         # Set up Rider debugging
         if debugging_method == DebuggingMethod.Rider:
-            my_init_dir = self._temp_manager.create_temporary_directory()
-            enable_ssh_path = my_init_dir / "enable_ssh.sh"
-
-            shutil.copy(pkg_resources.resource_filename("lean", "ssh/enable_ssh.sh"), enable_ssh_path)
-            enable_ssh_path.chmod(755)
-
-            run_options["entrypoint"] = ["/sbin/my_init", "dotnet", "QuantConnect.Lean.Launcher.dll"]
             run_options["ports"]["22"] = "2222"
-            run_options["volumes"][str(my_init_dir)] = {
-                "bind": "/etc/my_init.d",
-                "mode": "rw"
-            }
+            run_options["entrypoint"] = ["/sbin/my_init", "--enable-insecure-key", "--",
+                                         "bash", "-c",
+                                         "chmod 600 /etc/insecure_key && echo 'HostKey /etc/insecure_key' >> /etc/ssh/sshd_config && /usr/sbin/sshd && dotnet QuantConnect.Lean.Launcher.dll"]
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
