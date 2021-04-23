@@ -158,7 +158,7 @@ class ProjectManager:
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/LeanCLI"
+                    "remoteRoot": "/Lean/Launcher/bin/Debug"
                 }
             ]
         }
@@ -215,7 +215,7 @@ class ProjectManager:
       <PathMappingSettings>
         <option name="pathMappings">
           <list>
-            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+            <mapping local-root="$PROJECT_DIR$" remote-root="/Lean/Launcher/bin/Debug" />
           </list>
         </option>
       </PathMappingSettings>
@@ -231,7 +231,7 @@ class ProjectManager:
         """)
 
     def _generate_pycharm_jdk_entry(self, editor_name: str) -> None:
-        """Generates a "LeanCLI" Python JDK entry to PyCharm's internal JDK table.
+        """Generates a "Lean CLI" Python JDK entry to PyCharm's internal JDK table.
 
         When we generate PyCharm's .idea directory we want to tell PyCharm where the Python interpreter is located.
         PyCharm stores this bit of configuration globally, so we find the global location and update it to our needs.
@@ -255,7 +255,7 @@ class ProjectManager:
 </application>
             """)
 
-        # Don't do anything if the LeanCLI interpreter entry already exists
+        # Don't do anything if the Lean CLI interpreter entry already exists
         if root.find(".//jdk/name[@value='Lean CLI']") is not None:
             return
 
