@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from xml.etree import ElementTree
 
 import click
 
@@ -21,6 +23,144 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
+
+
+# The _migrate_dotnet_5_* methods automatically update launch configurations for a given debugging method.
+#
+# In the update to .NET 5, debugging changed considerably.
+# This lead to some required changes in the launch configurations users use to start debugging.
+# Projects which are created after the update to .NET 5 have the correct configuration already,
+# but projects created before that need changes to their launch configurations.
+#
+# These methods checks if the project have outdated configurations, and if so, update them to keep it working.
+# These methods will only be useful for the first few weeks after the update to .NET 5 and will be removed afterwards.
+
+def _migrate_dotnet_5_python_pycharm(project_dir: Path) -> None:
+    workspace_xml_path = project_dir / ".idea" / "workspace.xml"
+    if not workspace_xml_path.is_file():
+        return
+
+    current_content = workspace_xml_path.read_text(encoding="utf-8")
+    if 'remote-root="/LeanCLI"' not in current_content:
+        return
+
+    new_content = current_content.replace('remote-root="/LeanCLI"', 'remote-root="/Lean/Launcher/bin/Debug"')
+    workspace_xml_path.write_text(new_content, encoding="utf-8")
+
+    logger = container.logger()
+    logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
+    logger.warn("Please restart the debugger in PyCharm and run this command again")
+
+    raise click.Abort()
+
+
+def _migrate_dotnet_5_python_vscode(project_dir: Path) -> None:
+    launch_json_path = project_dir / ".vscode" / "launch.json"
+    if not launch_json_path.is_file():
+        return
+
+    current_content = launch_json_path.read_text(encoding="utf-8")
+    if '"remoteRoot": "/LeanCLI"' not in current_content:
+        return
+
+    new_content = current_content.replace('"remoteRoot": "/LeanCLI"',
+                                          '"remoteRoot": "/Lean/Launcher/bin/Debug"')
+    launch_json_path.write_text(new_content, encoding="utf-8")
+
+
+def _migrate_dotnet_5_csharp_rider(project_dir: Path) -> None:
+    made_changes = False
+
+    for dir_name in [f".idea.{project_dir.stem}", f".idea.{project_dir.stem}.dir"]:
+        workspace_xml_path = project_dir / ".idea" / dir_name / ".idea" / "workspace.xml"
+        if not workspace_xml_path.is_file():
+            continue
+
+        current_content = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+
+        run_manager = current_content.find(".//component[@name='RunManager']")
+        if run_manager is None:
+            continue
+
+        config = run_manager.find(".//configuration[@name='Debug with Lean CLI']")
+        if config is None:
+            continue
+
+        run_manager.remove(config)
+
+        new_content = ElementTree.tostring(current_content, encoding="utf-8", method="xml").decode("utf-8")
+        workspace_xml_path.write_text(new_content, encoding="utf-8")
+
+        made_changes = True
+
+    if made_changes:
+        container.project_manager().generate_rider_config()
+
+        logger = container.logger()
+        logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
+        logger.warn("Please restart Rider and start debugging again")
+        logger.warn(
+            "See https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests#05-C-and-Rider for the updated instructions")
+
+        raise click.Abort()
+
+
+def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
+    launch_json_path = project_dir / ".vscode" / "launch.json"
+    if not launch_json_path.is_file():
+        return
+
+    current_content = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    if "configurations" not in current_content or not isinstance(current_content["configurations"], list):
+        return
+
+    config = next((c for c in current_content["configurations"] if c["name"] == "Debug with Lean CLI"), None)
+    if config is None or config["type"] != "mono":
+        return
+
+    del config["address"]
+    del config["port"]
+
+    config["type"] = "coreclr"
+    config["processId"] = "1"
+
+    config["pipeTransport"] = {
+        "pipeCwd": "${workspaceRoot}",
+        "pipeProgram": "docker",
+        "pipeArgs": ["exec", "-i", "lean_cli_vsdbg"],
+        "debuggerPath": "/root/vsdbg/vsdbg",
+        "quoteArgs": False
+    }
+
+    config["logging"] = {
+        "moduleLoad": False
+    }
+
+    launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
+
+
+def _migrate_dotnet_5(project_dir: Path, debugging_method: DebuggingMethod) -> None:
+    """Automatically updates a project's launch configurations for a given debugging method.
+
+    In the update to .NET 5, debugging changed considerably.
+    This lead to some required changes in the launch configurations users use to start debugging.
+    Projects which are created after the update to .NET 5 have the correct configuration already,
+    but projects created before that need changes to their launch configurations.
+
+    This method checks if the project has outdated configurations, and if so, updates it to keep it working.
+    This method will only be useful for the first few weeks after the update to .NET 5 and will be removed afterwards.
+
+    :param project_dir: the path to the project directory
+    :param debugging_method: the selected debugging method
+    """
+    if debugging_method == DebuggingMethod.PyCharm:
+        _migrate_dotnet_5_python_pycharm(project_dir)
+    elif debugging_method == DebuggingMethod.PTVSD:
+        _migrate_dotnet_5_python_vscode(project_dir)
+    elif debugging_method == DebuggingMethod.VSDBG:
+        _migrate_dotnet_5_csharp_vscode(project_dir)
+    elif debugging_method == DebuggingMethod.Rider:
+        _migrate_dotnet_5_csharp_rider(project_dir)
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -56,21 +196,23 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    # TODO: Show a link to migration docs when starting debugging telling users we recently switched to .NET 5
-
-    # Convert the given --debug value to the debugging method to use
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
-    if debug == "ptvsd":
+        _migrate_dotnet_5_python_pycharm(project)
+    elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
-    if debug == "vsdbg":
+        _migrate_dotnet_5_python_vscode(project)
+    elif debug == "vsdbg":
         debugging_method = DebuggingMethod.VSDBG
-    if debug == "rider":
+        _migrate_dotnet_5_csharp_vscode(project)
+    elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
+        _migrate_dotnet_5_csharp_rider(project)
 
     docker_manager = container.docker_manager()
 
+    # TODO: Force LEAN Docker update if still using pre-.NET 5-version
     if version != "latest":
         if not docker_manager.tag_exists(ENGINE_IMAGE, version):
             raise RuntimeError(

@@ -131,7 +131,7 @@ class ProjectManager:
         else:
             self._generate_vscode_csharp_config(project_dir)
             self._generate_csproj(project_dir)
-            self._generate_rider_config()
+            self.generate_rider_config()
 
     def _generate_vscode_python_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for VS Code.
@@ -356,7 +356,7 @@ on the page above, you can add a PackageReference for it.
 </Project>
         """)
 
-    def _generate_rider_config(self) -> None:
+    def generate_rider_config(self) -> None:
         """Generates C# debugging configuration for Rider."""
         ssh_dir = Path("~/.lean/ssh").expanduser()
 
@@ -386,22 +386,19 @@ on the page above, you can add a PackageReference for it.
 
         if root.find(".//debuggers") is None:
             component_element.append(ElementTree.fromstring("<debuggers></debuggers>"))
-
         debuggers = root.find(".//debuggers")
 
         if debuggers.find(".//debugger[@id='dotnet_debugger']") is None:
-            debuggers.append(ElementTree.fromstring("""
-<debugger id="dotnet_debugger">
-    <configuration>
-        <option name="needNotifyWhenStoppedInExternalCode" value="false"/>
-        <option name="sshCredentials">
-        </option>
-    </configuration>
-</debugger>
-            """.strip()))
-
+            debuggers.append(ElementTree.fromstring('<debugger id="dotnet_debugger"></debugger>'))
         dotnet_debugger = debuggers.find(".//debugger[@id='dotnet_debugger']")
-        ssh_credentials = dotnet_debugger.find(".//option[@name='sshCredentials']")
+
+        if dotnet_debugger.find(".//configuration") is None:
+            dotnet_debugger.append(ElementTree.fromstring("<configuration></configuration>"))
+        configuration = dotnet_debugger.find(".//configuration")
+
+        if configuration.find(".//option[@name='sshCredentials']") is None:
+            configuration.append(ElementTree.fromstring('<option name="sshCredentials"></option>'))
+        ssh_credentials = configuration.find(".//option[@name='sshCredentials']")
 
         required_value = f"&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{ssh_dir.as_posix()}/key&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;"
 

@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 from typing import Optional
 from unittest import mock
+from xml.etree import ElementTree
 
 import pytest
 from click.testing import CliRunner
@@ -32,6 +34,17 @@ def update_manager_mock() -> mock.Mock:
     update_manager = mock.Mock()
     container.update_manager.override(providers.Object(update_manager))
     return update_manager
+
+
+def _generate_file(file: Path, content: str) -> None:
+    """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.
+
+    :param file: the file to write to
+    :param content: the content to write to the file
+    """
+    file.parent.mkdir(parents=True, exist_ok=True)
+    with file.open("w+", encoding="utf-8") as file:
+        file.write(content.strip() + "\n")
 
 
 def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
@@ -245,3 +258,189 @@ def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
         update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
     else:
         update_manager_mock.warn_if_docker_image_outdated.assert_not_called()
+
+
+def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
+    create_fake_lean_cli_directory()
+
+    workspace_xml_path = Path.cwd() / "Python Project" / ".idea" / "workspace.xml"
+    _generate_file(workspace_xml_path, """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager" selected="Python Debug Server.Debug with Lean CLI">
+    <configuration name="Debug with Lean CLI" type="PyRemoteDebugConfigurationType" factoryName="Python Remote Debug">
+      <module name="LEAN" />
+      <option name="PORT" value="6000" />
+      <option name="HOST" value="localhost" />
+      <PathMappingSettings>
+        <option name="pathMappings">
+          <list>
+            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+          </list>
+        </option>
+      </PathMappingSettings>
+      <option name="REDIRECT_OUTPUT" value="true" />
+      <option name="SUSPEND_AFTER_CONNECT" value="true" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python Debug Server.Debug with Lean CLI" />
+    </list>
+  </component>
+</project>
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", "pycharm"])
+
+    assert result.exit_code == 1
+
+    workspace_xml = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+    assert workspace_xml.find(".//mapping[@remote-root='/LeanCLI']") is None
+    assert workspace_xml.find(".//mapping[@remote-root='/Lean/Launcher/bin/Debug']") is not None
+
+
+def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
+    create_fake_lean_cli_directory()
+
+    launch_json_path = Path.cwd() / "Python Project" / ".vscode" / "launch.json"
+    _generate_file(launch_json_path, """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with Lean CLI",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/LeanCLI"
+                }
+            ]
+        }
+    ]
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", "ptvsd"])
+
+    assert result.exit_code == 0
+
+    launch_json = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    assert len(launch_json["configurations"]) == 1
+    assert launch_json["configurations"][0] == {
+        "name": "Debug with Lean CLI",
+        "type": "python",
+        "request": "attach",
+        "connect": {
+            "host": "localhost",
+            "port": 5678
+        },
+        "pathMappings": [
+            {
+                "localRoot": "${workspaceFolder}",
+                "remoteRoot": "/Lean/Launcher/bin/Debug"
+            }
+        ]
+    }
+
+
+def test_backtest_auto_updates_outdated_csharp_vscode_debug_config() -> None:
+    create_fake_lean_cli_directory()
+
+    launch_json_path = Path.cwd() / "CSharp Project" / ".vscode" / "launch.json"
+    _generate_file(launch_json_path, """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with Lean CLI",
+            "request": "attach",
+            "type": "mono",
+            "address": "localhost",
+            "port": 55556
+        }
+    ]
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--debug", "vsdbg"])
+
+    assert result.exit_code == 0
+
+    launch_json = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    assert len(launch_json["configurations"]) == 1
+    assert launch_json["configurations"][0] == {
+        "name": "Debug with Lean CLI",
+        "request": "attach",
+        "type": "coreclr",
+        "processId": "1",
+        "pipeTransport": {
+            "pipeCwd": "${workspaceRoot}",
+            "pipeProgram": "docker",
+            "pipeArgs": ["exec", "-i", "lean_cli_vsdbg"],
+            "debuggerPath": "/root/vsdbg/vsdbg",
+            "quoteArgs": False
+        },
+        "logging": {
+            "moduleLoad": False
+        }
+    }
+
+
+def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
+    create_fake_lean_cli_directory()
+
+    for dir_name in [".idea.CSharp Project", ".idea.CSharp Project.dir"]:
+        _generate_file(Path.cwd() / "CSharp Project" / ".idea" / dir_name / ".idea" / "workspace.xml", """
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="Debug with Lean CLI" type="ConnectRemote" factoryName="Mono Remote" show_console_on_std_err="false" show_console_on_std_out="false" port="55556" address="localhost">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
+  </component>
+</project>
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--debug", "rider"])
+
+    assert result.exit_code == 1
+
+    for dir_name in [".idea.CSharp Project", ".idea.CSharp Project.dir"]:
+        workspace_xml_path = Path.cwd() / "CSharp Project" / ".idea" / dir_name / ".idea" / "workspace.xml"
+        workspace_xml = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+        assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
