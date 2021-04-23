@@ -85,7 +85,7 @@ def research(project: Path, port: int, update: bool, version: str) -> None:
             raise RuntimeError(
                 f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{RESEARCH_IMAGE}/tags")
 
-    if update:
+    if update or not docker_manager.supports_dotnet_5(RESEARCH_IMAGE, version):
         docker_manager.pull_image(RESEARCH_IMAGE, version)
 
     if version == "latest" and not update:

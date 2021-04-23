@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
@@ -34,10 +36,14 @@ DEFAULT_DATA_DIRECTORY_NAME = "data"
 PROJECT_CONFIG_FILE_NAME = "config.json"
 
 # The Docker image used when running the LEAN engine locally
-ENGINE_IMAGE = "jmerle/lean"
+ENGINE_IMAGE = "quantconnect/lean"
 
 # The Docker image used when running a Jupyter Lab environment locally
-RESEARCH_IMAGE = "jmerle/research"
+RESEARCH_IMAGE = "quantconnect/research"
+
+# The creation timestamp of the first image supporting .NET 5
+# TODO: Update this to match the actual created timestamp seen in `docker inspect quantconnect/lean:latest`
+DOTNET_5_IMAGE_CREATED_TIMESTAMP = datetime(2021, 4, 24, tzinfo=timezone.utc)
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash

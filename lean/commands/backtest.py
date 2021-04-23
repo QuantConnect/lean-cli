@@ -188,19 +188,12 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
 
     docker_manager = container.docker_manager()
 
-    # Debugging requires a .NET 5 version of LEAN
-    if debugging_method is not None:
-        # Try to run `mono --version` inside the image, the .NET 5 images don't contain mono so it should fail
-        if docker_manager.run_image(ENGINE_IMAGE, version, entrypoint=["bash", "-c", "mono --version"], quiet=True):
-            # Force an update if the user is using a pre-.NET 5 version of LEAN
-            update = True
-
     if version != "latest":
         if not docker_manager.tag_exists(ENGINE_IMAGE, version):
             raise RuntimeError(
                 f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
 
-    if update:
+    if update or not docker_manager.supports_dotnet_5(ENGINE_IMAGE, version):
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
     lean_runner = container.lean_runner()

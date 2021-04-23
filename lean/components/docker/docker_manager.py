@@ -20,8 +20,10 @@ import types
 
 import docker
 import requests
+from dateutil.parser import isoparse
 
 from lean.components.util.logger import Logger
+from lean.constants import DOTNET_5_IMAGE_CREATED_TIMESTAMP
 from lean.models.errors import MoreInfoError
 
 
@@ -60,8 +62,6 @@ class DockerManager:
         If kwargs contains an "on_run" property, it is removed before passing it on to docker.containers.run
         and the given lambda is ran when the Docker container has started.
 
-        If kwargs contains "quiet" set to True, the output of the container will not be printed to stdout.
-
         :param image: the name of the image to run
         :param tag: the image's tag to run
         :param kwargs: the kwargs to forward to docker.containers.run
@@ -71,7 +71,6 @@ class DockerManager:
             self.pull_image(image, tag)
 
         on_run = kwargs.pop("on_run", lambda: None)
-        quiet = kwargs.pop("quiet", False)
 
         docker_client = self._get_docker_client()
 
@@ -90,9 +89,6 @@ class DockerManager:
                 sys.exit(1)
 
         signal.signal(signal.SIGINT, signal_handler)
-
-        if quiet:
-            return container.wait()["StatusCode"] == 0
 
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
@@ -169,6 +165,16 @@ class DockerManager:
             docker.from_env()
         except Exception as exception:
             return "Permission denied" in str(exception)
+        return False
+
+    def supports_dotnet_5(self, image: str, tag: str) -> bool:
+        """Returns whether an image supports .NET 5 based on its creation date.
+
+        :return: True if we think the image supports .NET 5, False if not or if the tag is not installed
+        """
+        for img in self._get_docker_client().images.list():
+            if f"{image}:{tag}" in img.tags:
+                return isoparse(img.attrs["Created"]) >= DOTNET_5_IMAGE_CREATED_TIMESTAMP
         return False
 
     def _get_docker_client(self) -> docker.DockerClient:

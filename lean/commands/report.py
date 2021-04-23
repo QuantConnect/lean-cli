@@ -192,7 +192,7 @@ def report(backtest_data_source_file: Path,
             raise RuntimeError(
                 f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
 
-    if update:
+    if update or not docker_manager.supports_dotnet_5(ENGINE_IMAGE, version):
         docker_manager.pull_image(ENGINE_IMAGE, version)
 
     success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
