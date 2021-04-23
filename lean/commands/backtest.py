@@ -139,30 +139,6 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
     launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
-def _migrate_dotnet_5(project_dir: Path, debugging_method: DebuggingMethod) -> None:
-    """Automatically updates a project's launch configurations for a given debugging method.
-
-    In the update to .NET 5, debugging changed considerably.
-    This lead to some required changes in the launch configurations users use to start debugging.
-    Projects which are created after the update to .NET 5 have the correct configuration already,
-    but projects created before that need changes to their launch configurations.
-
-    This method checks if the project has outdated configurations, and if so, updates it to keep it working.
-    This method will only be useful for the first few weeks after the update to .NET 5 and will be removed afterwards.
-
-    :param project_dir: the path to the project directory
-    :param debugging_method: the selected debugging method
-    """
-    if debugging_method == DebuggingMethod.PyCharm:
-        _migrate_dotnet_5_python_pycharm(project_dir)
-    elif debugging_method == DebuggingMethod.PTVSD:
-        _migrate_dotnet_5_python_vscode(project_dir)
-    elif debugging_method == DebuggingMethod.VSDBG:
-        _migrate_dotnet_5_csharp_vscode(project_dir)
-    elif debugging_method == DebuggingMethod.Rider:
-        _migrate_dotnet_5_csharp_rider(project_dir)
-
-
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
@@ -199,20 +175,26 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
-        _migrate_dotnet_5_python_pycharm(project)
+        _migrate_dotnet_5_python_pycharm(algorithm_file.parent)
     elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
-        _migrate_dotnet_5_python_vscode(project)
+        _migrate_dotnet_5_python_vscode(algorithm_file.parent)
     elif debug == "vsdbg":
         debugging_method = DebuggingMethod.VSDBG
-        _migrate_dotnet_5_csharp_vscode(project)
+        _migrate_dotnet_5_csharp_vscode(algorithm_file.parent)
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
-        _migrate_dotnet_5_csharp_rider(project)
+        _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
     docker_manager = container.docker_manager()
 
-    # TODO: Force LEAN Docker update if still using pre-.NET 5-version
+    # Debugging requires a .NET 5 version of LEAN
+    if debugging_method is not None:
+        # Try to run `mono --version` inside the image, the .NET 5 images don't contain mono so it should fail
+        if docker_manager.run_image(ENGINE_IMAGE, version, entrypoint=["bash", "-c", "mono --version"], quiet=True):
+            # Force an update if the user is using a pre-.NET 5 version of LEAN
+            update = True
+
     if version != "latest":
         if not docker_manager.tag_exists(ENGINE_IMAGE, version):
             raise RuntimeError(
