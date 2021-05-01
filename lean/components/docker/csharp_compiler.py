@@ -66,7 +66,7 @@ class CSharpCompiler:
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <TargetFramework>net462</TargetFramework>
         <FrameworkPathOverride>/usr/lib/mono/4.6.2-api</FrameworkPathOverride>
-        <LangVersion>6</LangVersion>
+        <LangVersion>7</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <OutputPath>bin/$(Configuration)/</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -74,6 +74,7 @@ class CSharpCompiler:
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
         <PathMap>/LeanCLI={str(project_dir)}</PathMap>
+        <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="/usr/lib/mono/4.6.2-api/Microsoft.CSharp.dll">
