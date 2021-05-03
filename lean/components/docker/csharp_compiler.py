@@ -65,15 +65,15 @@ class CSharpCompiler:
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <TargetFramework>net5.0</TargetFramework>
-        <LangVersion>6</LangVersion>
+        <LangVersion>9</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
-        <NoWarn>CS0618</NoWarn>
         <PathMap>/LeanCLI={str(project_dir)}</PathMap>
+        <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="/Lean/Launcher/bin/Debug/*.dll">

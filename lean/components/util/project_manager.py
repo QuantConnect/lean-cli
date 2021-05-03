@@ -326,7 +326,10 @@ class ProjectManager:
 
         :param project_dir: the path of the new project
         """
-        # TODO: Update TargetFramework to net5.0 and PackageReference to a .NET 5 LEAN version when ready
+        # TODO: Update default csproj to use .NET 5 version of LEAN and allow C# 9 to be used:
+        # - TargetFramework -> net5.0
+        # - LangVersion -> 9
+        # - PackageReference -> .NET 5 LEAN version on NuGet
         self._generate_file(project_dir / f"{project_dir.name}.csproj", """
 <!--
 This file exists to make C# autocomplete and debugging work.
@@ -349,6 +352,7 @@ on the page above, you can add a PackageReference for it.
         <LangVersion>6</LangVersion>
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="QuantConnect.Lean" Version="2.5.11072"/>
