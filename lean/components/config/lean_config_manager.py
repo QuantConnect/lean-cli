@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from jsoncomment import JsonComment
+import json5
 
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -192,9 +192,4 @@ class LeanConfigManager:
 
         :return: a dict containing the contents of the Lean config file
         """
-        config_text = self.get_lean_config_path().read_text(encoding="utf-8")
-
-        # JsonComment can parse JSON with non-inline comments, so we remove the inline ones first
-        config_without_inline_comments = re.sub(r",\s*//.*", ",", config_text, flags=re.MULTILINE)
-
-        return JsonComment().loads(config_without_inline_comments)
+        return json5.loads(self.get_lean_config_path().read_text(encoding="utf-8"))

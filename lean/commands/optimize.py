@@ -12,14 +12,13 @@
 # limitations under the License.
 
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import click
+import json5
 from docker.types import Mount
-from jsoncomment import JsonComment
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -100,11 +99,7 @@ def optimize(project: Path,
             "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
         }
     else:
-        config_text = optimizer_config.read_text(encoding="utf-8")
-
-        # JsonComment can parse JSON with non-inline comments, so we remove the inline ones first
-        config_without_inline_comments = re.sub(r",\s*//.*", ",", config_text, flags=re.MULTILINE)
-        config = JsonComment().loads(config_without_inline_comments)
+        config = json5.loads(optimizer_config.read_text(encoding="utf-8"))
 
         # Remove keys which are configured in the Lean config
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
