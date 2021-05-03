@@ -33,11 +33,11 @@ DEFAULT_DATA_DIRECTORY_NAME = "data"
 # The name of the file in containing the project configuration
 PROJECT_CONFIG_FILE_NAME = "config.json"
 
-# The Docker image used when running the LEAN engine locally
-ENGINE_IMAGE = "quantconnect/lean"
+# The default Docker image used when running the LEAN engine locally
+DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 
-# The Docker image used when running a Jupyter Lab environment locally
-RESEARCH_IMAGE = "quantconnect/research"
+# The default Docker image used when running a Jupyter Lab environment locally
+DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash

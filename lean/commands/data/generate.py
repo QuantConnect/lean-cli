@@ -12,11 +12,12 @@
 # limitations under the License.
 
 from datetime import datetime
+from typing import Optional
 
 import click
 
 from lean.click import DateParameter, LeanCommand
-from lean.constants import ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 
 
@@ -53,14 +54,13 @@ from lean.container import container
               type=str,
               default="",
               help="The market to generate data for (defaults to standard market for the security type)")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
-              help="Pull the selected LEAN engine version before running the generator")
-@click.option("--version",
-              type=str,
-              default="latest",
-              help="The LEAN engine version to use (defaults to the latest installed version)")
+              help="Pull the LEAN engine image before running the generator")
 def generate(start: datetime,
              end: datetime,
              symbol_count: int,
@@ -69,8 +69,8 @@ def generate(start: datetime,
              data_density: str,
              include_coarse: bool,
              market: str,
-             update: bool,
-             version: str) -> None:
+             image: Optional[str],
+             update: bool) -> None:
     """Generate random market data.
 
     \b
@@ -98,6 +98,10 @@ def generate(start: datetime,
     \b
     Example which generates daily data for 100 crypto symbols since 2015-01-01:
     $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
+
+    By default the official LEAN engine image is used.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
@@ -122,21 +126,19 @@ def generate(start: datetime,
         }
     }
 
+    cli_config_manager = container.cli_config_manager()
+    engine_image = cli_config_manager.get_engine_image(image)
+
     docker_manager = container.docker_manager()
 
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError(
-                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
-
     if update:
-        docker_manager.pull_image(ENGINE_IMAGE, version)
+        docker_manager.pull_image(engine_image)
 
-    success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
+    success = docker_manager.run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the random data generator, see the logs above for more information")
 
-    if version == "latest" and not update:
+    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)
+        update_manager.warn_if_docker_image_outdated(engine_image)

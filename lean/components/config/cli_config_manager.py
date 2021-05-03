@@ -11,7 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 from lean.components.config.storage import Storage
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE
+from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 from lean.models.options import ChoiceOption, Option
 
@@ -41,10 +45,22 @@ class CLIConfigManager:
                                              False,
                                              general_storage)
 
+        self.engine_image = Option("engine-image",
+                                   "The Docker image used when running the LEAN engine or one of its components.",
+                                   False,
+                                   general_storage)
+
+        self.research_image = Option("research-image",
+                                     "The Docker image used when running the research environment.",
+                                     False,
+                                     general_storage)
+
         self.all_options = [
             self.user_id,
             self.api_token,
-            self.default_language
+            self.default_language,
+            self.engine_image,
+            self.research_image
         ]
 
     def get_option_by_key(self, key: str) -> Option:
@@ -62,3 +78,34 @@ class CLIConfigManager:
                                 "https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-config-set#02-Description")
 
         return option
+
+    def get_engine_image(self, override: Optional[str] = None) -> DockerImage:
+        """Returns the LEAN engine image to use.
+
+        :param override: the image name to use, overriding any defaults or previously configured options
+        :return: the image that should be used when running the LEAN engine
+        """
+        return self._get_image_name(self.engine_image, DEFAULT_ENGINE_IMAGE, override)
+
+    def get_research_image(self, override: Optional[str] = None) -> DockerImage:
+        """Returns the LEAN research image to use.
+
+        :param override: the image name to use, overriding any defaults or previously configured options
+        :return: the image that should be used when running the research environment
+        """
+        return self._get_image_name(self.research_image, DEFAULT_RESEARCH_IMAGE, override)
+
+    def _get_image_name(self, option: Option, default: str, override: Optional[str]) -> DockerImage:
+        """Returns the image to use.
+
+        :param option: the CLI option that configures the image type
+        :param override: the image name to use, overriding any defaults or previously configured options
+        :param default: the default image to use when the option is not set and no override is given
+        :return: the image to use
+        """
+        if override is not None:
+            image = override
+        else:
+            image = option.get_value(default)
+
+        return DockerImage.parse(image)

@@ -22,7 +22,7 @@ from docker.types import Mount
 from jsoncomment import JsonComment
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter
 from lean.models.errors import MoreInfoError
@@ -36,19 +36,18 @@ from lean.models.errors import MoreInfoError
 @click.option("--optimizer-config",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help=f"The optimizer configuration file that should be used")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
-              help="Pull the selected LEAN engine version before running the optimizer")
-@click.option("--version",
-              type=str,
-              default="latest",
-              help="The LEAN engine version to run (defaults to the latest installed version)")
+              help="Pull the LEAN engine image before running the optimizer")
 def optimize(project: Path,
              output: Optional[Path],
              optimizer_config: Optional[Path],
-             update: bool,
-             version: str) -> None:
+             image: Optional[str],
+             update: bool) -> None:
     """Optimize a project's parameters locally using Docker.
 
     \b
@@ -61,6 +60,10 @@ def optimize(project: Path,
     https://github.com/QuantConnect/Lean/blob/master/Optimizer.Launcher/config.json
 
     When --optimizer-config is not set, an interactive prompt will be shown to configure the optimizer.
+
+    By default the official LEAN engine image is used.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -115,8 +118,11 @@ def optimize(project: Path,
     with config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps(config, indent=4) + "\n")
 
+    cli_config_manager = container.cli_config_manager()
+    engine_image = cli_config_manager.get_engine_image(image)
+
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, version, None)
+    run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, engine_image, None)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["entrypoint"] = ["mono", "QuantConnect.Optimizer.Launcher.exe"]
@@ -129,15 +135,10 @@ def optimize(project: Path,
 
     docker_manager = container.docker_manager()
 
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError(
-                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
-
     if update:
-        docker_manager.pull_image(ENGINE_IMAGE, version)
+        docker_manager.pull_image(engine_image)
 
-    success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
+    success = docker_manager.run_image(engine_image, **run_options)
 
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
@@ -150,6 +151,6 @@ def optimize(project: Path,
         raise RuntimeError(
             f"Something went wrong while running the optimization, the output is stored in '{relative_output_dir}'")
 
-    if version == "latest" and not update:
+    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)
+        update_manager.warn_if_docker_image_outdated(engine_image)

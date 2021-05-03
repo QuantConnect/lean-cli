@@ -13,21 +13,21 @@
 
 import click
 
-from lean.commands.config.get import get
-from lean.commands.config.list import list
-from lean.commands.config.set import set
-from lean.commands.config.unset import unset
+from lean.click import LeanCommand
+from lean.container import container
 
 
-@click.group()
-def config() -> None:
-    """Configure Lean CLI options."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean config <command>` commands
-    pass
+@click.command(cls=LeanCommand)
+@click.argument("key", type=str)
+def unset(key: str) -> None:
+    """Unset a configurable option.
 
+    Run `lean config list` to show all available options.
+    """
+    cli_config_manager = container.cli_config_manager()
 
-config.add_command(get)
-config.add_command(set)
-config.add_command(unset)
-config.add_command(list)
+    option = cli_config_manager.get_option_by_key(key)
+    option.unset()
+
+    logger = container.logger()
+    logger.info(f"Successfully unset '{key}'")

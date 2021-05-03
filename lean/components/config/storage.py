@@ -56,6 +56,14 @@ class Storage:
         self._data[key] = value
         self._save()
 
+    def delete(self, key: str) -> None:
+        """Deletes a key.
+
+        :param key: the key to delete
+        """
+        self._data.pop(key, None)
+        self._save()
+
     def has(self, key: str) -> bool:
         """Returns whether the Storage instance has a value assigned to the given key.
 

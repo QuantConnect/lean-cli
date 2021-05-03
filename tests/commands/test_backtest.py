@@ -20,9 +20,13 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
+from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
+
+ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
 @pytest.fixture(autouse=True)
@@ -49,7 +53,7 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 "latest",
+                                                 ENGINE_IMAGE,
                                                  None)
 
 
@@ -138,15 +142,15 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with("quantconnect/lean", "latest")
+    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 "latest",
+                                                 ENGINE_IMAGE,
                                                  None)
 
 
-def test_backtest_passes_custom_version_to_lean_runner() -> None:
+def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -155,18 +159,20 @@ def test_backtest_passes_custom_version_to_lean_runner() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--version", "3"])
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 "3",
+                                                 DockerImage(name="custom/lean", tag="123"),
                                                  None)
 
 
-def test_backtest_aborts_when_version_invalid() -> None:
+def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -175,13 +181,17 @@ def test_backtest_aborts_when_version_invalid() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    docker_manager.tag_exists.return_value = False
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--version", "3"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--image", "custom/lean:456"])
 
-    assert result.exit_code != 0
+    assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_not_called()
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 DockerImage(name="custom/lean", tag="456"),
+                                                 None)
 
 
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
@@ -206,18 +216,18 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
     lean_runner.run_lean.assert_called_once_with("backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 "latest",
+                                                 ENGINE_IMAGE,
                                                  debugging_method)
 
 
-@pytest.mark.parametrize("version_option,update_flag,update_check_expected", [(None, True, False),
-                                                                              (None, False, True),
-                                                                              ("3", True, False),
-                                                                              ("3", False, False),
-                                                                              ("latest", True, False),
-                                                                              ("latest", False, True)])
+@pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
+                                                                            (None, False, True),
+                                                                            ("custom/lean:3", True, False),
+                                                                            ("custom/lean:3", False, False),
+                                                                            (DEFAULT_ENGINE_IMAGE, True, False),
+                                                                            (DEFAULT_ENGINE_IMAGE, False, True)])
 def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
-                                     version_option: Optional[str],
+                                     image_option: Optional[str],
                                      update_flag: bool,
                                      update_check_expected: bool) -> None:
     create_fake_lean_cli_directory()
@@ -229,8 +239,8 @@ def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
     container.lean_runner.override(providers.Object(lean_runner))
 
     options = []
-    if version_option is not None:
-        options.extend(["--version", version_option])
+    if image_option is not None:
+        options.extend(["--image", image_option])
     if update_flag:
         options.extend(["--update"])
 
@@ -239,6 +249,6 @@ def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
     assert result.exit_code == 0
 
     if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with("quantconnect/lean")
+        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
     else:
         update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

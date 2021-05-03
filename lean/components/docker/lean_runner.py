@@ -23,8 +23,8 @@ from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
-from lean.constants import ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
+from lean.models.docker import DockerImage
 
 
 class LeanRunner:
@@ -54,7 +54,7 @@ class LeanRunner:
                  environment: str,
                  algorithm_file: Path,
                  output_dir: Path,
-                 version: str,
+                 image: DockerImage,
                  debugging_method: Optional[DebuggingMethod]) -> None:
         """Runs the LEAN engine locally in Docker.
 
@@ -63,14 +63,14 @@ class LeanRunner:
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
-        :param version: the LEAN engine version to run
+        :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, version, debugging_method)
+        run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, image, debugging_method)
 
         run_options["entrypoint"] = ["mono", "QuantConnect.Lean.Launcher.exe"]
 
@@ -90,7 +90,7 @@ class LeanRunner:
             self._logger.info("Docker container starting, attach to Mono debugger at localhost:55556 to begin")
 
         # Run the engine and log the result
-        success = self._docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
+        success = self._docker_manager.run_image(image, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
@@ -107,7 +107,7 @@ class LeanRunner:
                                 environment: str,
                                 algorithm_file: Path,
                                 output_dir: Path,
-                                version: str,
+                                image: DockerImage,
                                 debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
@@ -116,7 +116,7 @@ class LeanRunner:
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
-        :param version: the LEAN engine version to run
+        :param image: the LEAN engine image to run
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :return: the Docker configuration containing basic configuration to run Lean
         """
@@ -126,7 +126,7 @@ class LeanRunner:
         # If compilation fails, there is no need to do anything else
         csharp_dll_dir = None
         if algorithm_file.name.endswith(".cs"):
-            csharp_dll_dir = self._csharp_compiler.compile_csharp_project(project_dir, version)
+            csharp_dll_dir = self._csharp_compiler.compile_csharp_project(project_dir, image)
 
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():

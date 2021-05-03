@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import click
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
@@ -125,15 +125,14 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
-              help="Pull the selected LEAN engine version before starting live trading")
-@click.option("--version",
-              type=str,
-              default="latest",
-              help="The LEAN engine version to run (defaults to the latest installed version)")
-def live(project: Path, environment: str, output: Optional[Path], update: bool, version: str) -> None:
+              help="Pull the LEAN engine image before starting live trading")
+def live(project: Path, environment: str, output: Optional[Path], image: Optional[str], update: bool) -> None:
     """Start live trading a project locally using Docker.
 
     \b
@@ -142,6 +141,10 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
 
     \b
     ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
+
+    By default the official LEAN engine image is used.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -164,19 +167,17 @@ def live(project: Path, environment: str, output: Optional[Path], update: bool, 
     _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
     _start_iqconnect_if_necessary(lean_config, environment)
 
+    cli_config_manager = container.cli_config_manager()
+    engine_image = cli_config_manager.get_engine_image(image)
+
     docker_manager = container.docker_manager()
 
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError(
-                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
-
     if update:
-        docker_manager.pull_image(ENGINE_IMAGE, version)
+        docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(environment, algorithm_file, output, version, None)
+    lean_runner.run_lean(environment, algorithm_file, output, engine_image, None)
 
-    if version == "latest" and not update:
+    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)
+        update_manager.warn_if_docker_image_outdated(engine_image)
