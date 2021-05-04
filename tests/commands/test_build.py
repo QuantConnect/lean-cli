@@ -10,7 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import platform
 from pathlib import Path
 from unittest import mock
 
@@ -62,14 +61,14 @@ def test_build_does_not_compile_lean_when_no_compile_passed() -> None:
     docker_manager.run_image.assert_not_called()
 
 
-@mock.patch("platform.uname")
-@pytest.mark.parametrize("machine,file", [("x86_64", "DockerfileLeanFoundation"),
-                                          ("arm64", "DockerfileLeanFoundationARM"),
-                                          ("aarch64", "DockerfileLeanFoundationARM")])
-def test_build_builds_foundation_image(uname: mock.Mock, machine: str, file: str) -> None:
+@mock.patch("platform.machine")
+@pytest.mark.parametrize("architecture,file", [("x86_64", "DockerfileLeanFoundation"),
+                                               ("arm64", "DockerfileLeanFoundationARM"),
+                                               ("aarch64", "DockerfileLeanFoundationARM")])
+def test_build_builds_foundation_image(machine: mock.Mock, architecture: str, file: str) -> None:
     create_lean_repository()
 
-    uname.return_value = platform.uname_result("system", "node", "release", "version", machine, "processor")
+    machine.return_value = architecture
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

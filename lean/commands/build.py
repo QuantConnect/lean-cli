@@ -97,7 +97,7 @@ def build(lean: Path, no_compile: bool) -> None:
     if not no_compile:
         _compile_lean(lean)
 
-    is_arm = platform.uname().machine in ["arm64", "aarch64"]
+    is_arm = platform.machine() in ["arm64", "aarch64"]
     if is_arm and (lean / "DockerfileLeanFoundationARM").is_file():
         foundation_dockerfile = lean / "DockerfileLeanFoundationARM"
     else:
