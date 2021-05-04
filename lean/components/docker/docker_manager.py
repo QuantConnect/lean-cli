@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import pprint
 import signal
+import subprocess
 import sys
 import threading
 import types
+from pathlib import Path
 
 import docker
 
@@ -45,9 +46,9 @@ class DockerManager:
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        return_code = os.system(f"docker image pull {image}")
+        process = subprocess.run(["docker", "image", "pull", str(image)])
 
-        if return_code != 0:
+        if process.returncode != 0:
             raise RuntimeError(
                 f"Something went wrong while pulling {image}, see the logs above for more information")
 
@@ -110,6 +111,22 @@ class DockerManager:
             thread.join(0.1)
 
         return container.wait()["StatusCode"] == 0
+
+    def build_image(self, dockerfile: Path, target: DockerImage) -> None:
+        """Builds a Docker image.
+
+        :param dockerfile: the path to the Dockerfile to build
+        :param target: the target name and tag
+        """
+        # We cannot really use docker_client.images.build() here as it doesn't let us log the progress
+        # Building images without showing progress does not provide good developer experience
+        # Since the build command is the same on Windows, macOS and Linux we can safely use a system call
+        process = subprocess.run(["docker", "build", "-t", str(target), "-f", dockerfile.name, "."],
+                                 cwd=dockerfile.parent)
+
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Something went wrong while building '{dockerfile}', see the logs above for more information")
 
     def image_installed(self, image: DockerImage) -> bool:
         """Returns whether a certain image is installed.

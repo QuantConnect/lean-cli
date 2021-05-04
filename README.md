@@ -58,6 +58,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
+- [`lean build`](#lean-build)
 - [`lean cloud backtest`](#lean-cloud-backtest)
 - [`lean cloud live`](#lean-cloud-live)
 - [`lean cloud optimize`](#lean-cloud-optimize)
@@ -108,6 +109,33 @@ Options:
 ```
 
 _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
+
+### `lean build`
+
+Build Docker images of your own version of LEAN.
+
+```
+Usage: lean build [OPTIONS] LEAN
+
+  Build Docker images of your own version of LEAN.
+
+  LEAN must point to a directory containing (a modified version of) the LEAN repository:
+  https://github.com/QuantConnect/Lean
+
+  The CLI automatically updates the "FROM" line in each Dockerfile to ensure all images extend from each other.
+
+  By default the CLI compiles LEAN in a Docker container before building the images. If you already did this yourself
+  you can pass the --no-compile flag to skip this step.
+
+  After building your global CLI configuration is updated to use your custom images instead of the default ones.
+
+Options:
+  --no-compile  Skip compiling LEAN before building the images
+  --verbose     Enable debug logging
+  --help        Show this message and exit.
+```
+
+_See code: [lean/commands/build.py](lean/commands/build.py)_
 
 ### `lean cloud backtest`
 
