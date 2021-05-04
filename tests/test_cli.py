@@ -140,7 +140,7 @@ def test_cli() -> None:
     assert len(matches) == 1
     assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{matches[0].lower()}.zip").is_file()
 
-    # Get/set/unset global configuration
+    # Configure global settings
     run_command(["lean", "config", "set", "default-language", "csharp"])
     run_command(["lean", "config", "get", "default-language"], expected_output="csharp")
     run_command(["lean", "config", "unset", "default-language"])
