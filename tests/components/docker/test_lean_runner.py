@@ -176,6 +176,29 @@ def test_run_lean_mounts_output_directory() -> None:
     assert key == str(Path.cwd() / "output")
 
 
+def test_run_lean_mounts_storage_directory() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean("backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         "latest",
+                         None)
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert any([volume["bind"] == "/Storage" for volume in kwargs["volumes"].values()])
+
+    key = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Storage")
+    assert key == str(Path.cwd() / "Python Project" / "storage")
+
+
 def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
     create_fake_lean_cli_directory()
 

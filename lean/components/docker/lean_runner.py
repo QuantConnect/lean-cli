@@ -139,6 +139,7 @@ class LeanRunner:
 
         config["data-folder"] = "/Lean/Data"
         config["results-destination-folder"] = "/Results"
+        config["object-store-root"] = "/Storage"
 
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
@@ -170,6 +171,12 @@ class LeanRunner:
             "mode": "rw"
         }
 
+        # Mount the local object store directory
+        run_options["volumes"][str(project_dir / "storage")] = {
+            "bind": "/Storage",
+            "mode": "rw"
+        }
+
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
         if platform.system() == "Linux":
@@ -179,7 +186,7 @@ class LeanRunner:
 
         # Mount the project which needs to be ran
         if algorithm_file.name.endswith(".py"):
-            run_options["volumes"][str(algorithm_file.parent)] = {
+            run_options["volumes"][str(project_dir)] = {
                 "bind": "/LeanCLI",
                 "mode": "ro"
             }
