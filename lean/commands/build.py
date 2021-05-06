@@ -60,7 +60,10 @@ def _build_image(dockerfile: Path, base_image: Optional[DockerImage], target_ima
     :param target_image: the name of the new image
     """
     logger = container.logger()
-    logger.info(f"Building '{target_image}' based on '{dockerfile}'")
+    if base_image is not None:
+        logger.info(f"Building '{target_image}' from '{dockerfile}' using '{base_image}' as base image")
+    else:
+        logger.info(f"Building '{target_image}' from '{dockerfile}'")
 
     if not dockerfile.is_file():
         raise RuntimeError(f"'{dockerfile}' does not exist")
