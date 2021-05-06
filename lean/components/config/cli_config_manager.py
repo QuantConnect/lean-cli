@@ -46,12 +46,12 @@ class CLIConfigManager:
                                              general_storage)
 
         self.engine_image = Option("engine-image",
-                                   "The Docker image used when running the LEAN engine or one of its components.",
+                                   f"The Docker image used when running the LEAN engine ({DEFAULT_ENGINE_IMAGE} if not set).",
                                    False,
                                    general_storage)
 
         self.research_image = Option("research-image",
-                                     "The Docker image used when running the research environment.",
+                                     f"The Docker image used when running the research environment ({DEFAULT_RESEARCH_IMAGE} if not set).",
                                      False,
                                      general_storage)
 
