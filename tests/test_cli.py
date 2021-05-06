@@ -171,8 +171,6 @@ def test_cli() -> None:
     assert (csharp_project_dir / "config.json").is_file()
     assert (csharp_project_dir / f"{csharp_project_name}.csproj").is_file()
     assert (csharp_project_dir / ".vscode" / "launch.json").is_file()
-    assert (csharp_project_dir / ".idea" / f".idea.{csharp_project_name}" / ".idea" / "workspace.xml").is_file()
-    assert (csharp_project_dir / ".idea" / f".idea.{csharp_project_name}.dir" / ".idea" / "workspace.xml").is_file()
 
     # Copy over algorithms containing a SPY buy-and-hold strategy
     fixtures_dir = Path(__file__).parent / "fixtures"
