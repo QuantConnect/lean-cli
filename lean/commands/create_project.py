@@ -147,9 +147,25 @@ DEFAULT_CSHARP_NOTEBOOK = """
             "metadata": {},
             "outputs": [],
             "source": [
+                "// We need to load assemblies at the start in their own cell\\n",
+                "#load \\"../Initialize.csx\\""
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
                 "// QuantBook C# Research Environment\\n",
                 "// For more information see https://www.quantconnect.com/docs/research/overview\\n",
                 "#load \\"../QuantConnect.csx\\"\\n",
+                "\\n",
+                "using QuantConnect;\\n",
+                "using QuantConnect.Data;\\n",
+                "using QuantConnect.Research;\\n",
+                "using QuantConnect.Algorithm;\\n",
+                "\\n",
                 "var qb = new QuantBook();\\n",
                 "var spy = qb.AddEquity(\\"SPY\\");\\n",
                 "var history = qb.History(qb.Securities.Keys, 360, Resolution.Daily);"
@@ -186,15 +202,6 @@ DEFAULT_CSHARP_NOTEBOOK = """
             "name": "C#",
             "pygments_lexer": "c#",
             "version": "4.0.30319"
-        },
-        "pycharm": {
-            "stem_cell": {
-                "cell_type": "raw",
-                "source": [],
-                "metadata": {
-                    "collapsed": false
-                }
-            }
         }
     },
     "nbformat": 4,
