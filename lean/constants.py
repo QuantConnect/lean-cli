@@ -41,8 +41,7 @@ DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 
 # The creation timestamp of the first image supporting .NET 5
-# TODO: Update this to match the actual created timestamp seen in `docker inspect quantconnect/lean:latest`
-DOTNET_5_IMAGE_CREATED_TIMESTAMP = datetime(2021, 4, 24, tzinfo=timezone.utc)
+DOTNET_5_IMAGE_CREATED_TIMESTAMP = datetime(2021, 5, 6, 21, 32, 26, tzinfo=timezone.utc)
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
