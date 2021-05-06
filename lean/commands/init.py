@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import shutil
-import tempfile
 import zipfile
 from pathlib import Path
 

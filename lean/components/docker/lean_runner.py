@@ -13,11 +13,9 @@
 
 import json
 import platform
-import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import pkg_resources
 from docker.types import Mount
 
 from lean.components.config.lean_config_manager import LeanConfigManager
