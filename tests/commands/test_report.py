@@ -22,9 +22,12 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
+
+ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
 @pytest.fixture(autouse=True)
@@ -46,7 +49,7 @@ def setup_backtest_results() -> None:
         file.write("{}")
 
 
-def run_image(image: str, tag: str, **kwargs) -> bool:
+def run_image(image: DockerImage, **kwargs) -> bool:
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
     config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
@@ -75,7 +78,6 @@ def test_report_runs_lean_container() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == ENGINE_IMAGE
-    assert args[1] == "latest"
 
 
 def test_report_runs_report_creator() -> None:
@@ -411,57 +413,62 @@ def test_report_forces_update_when_update_option_given() -> None:
     result = CliRunner().invoke(lean,
                                 ["report",
                                  "--backtest-data-source-file",
-                                 "Python Project/backtests/2020-01-01_00-00-00/results.json", "--update"])
+                                 "Python Project/backtests/2020-01-01_00-00-00/results.json",
+                                 "--update"])
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE, "latest")
+    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
     docker_manager.run_image.assert_called_once()
 
 
-def test_report_runs_custom_version() -> None:
+def test_report_runs_custom_image_when_set_in_config() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-data-source-file",
-                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       "--version", "3"])
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == ENGINE_IMAGE
-    assert args[1] == "3"
+    assert args[0] == DockerImage(name="custom/lean", tag="123")
 
 
-def test_report_aborts_when_version_invalid() -> None:
+def test_report_runs_custom_image_when_given_as_option() -> None:
     docker_manager = mock.Mock()
-    docker_manager.tag_exists.return_value = False
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-data-source-file",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       "--version", "3"])
+                                       "--image", "custom/lean:456"])
 
-    assert result.exit_code != 0
+    assert result.exit_code == 0
 
-    docker_manager.run_lean.assert_not_called()
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == DockerImage(name="custom/lean", tag="456")
 
 
-@pytest.mark.parametrize("version_option,update_flag,update_check_expected", [(None, True, False),
-                                                                              (None, False, True),
-                                                                              ("3", True, False),
-                                                                              ("3", False, False),
-                                                                              ("latest", True, False),
-                                                                              ("latest", False, True)])
+@pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
+                                                                            (None, False, True),
+                                                                            ("custom/lean:3", True, False),
+                                                                            ("custom/lean:3", False, False),
+                                                                            (DEFAULT_ENGINE_IMAGE, True, False),
+                                                                            (DEFAULT_ENGINE_IMAGE, False, True)])
 def test_report_checks_for_updates(update_manager_mock: mock.Mock,
-                                   version_option: Optional[str],
+                                   image_option: Optional[str],
                                    update_flag: bool,
                                    update_check_expected: bool) -> None:
     docker_manager = mock.Mock()
@@ -469,8 +476,8 @@ def test_report_checks_for_updates(update_manager_mock: mock.Mock,
     container.docker_manager.override(providers.Object(docker_manager))
 
     options = []
-    if version_option is not None:
-        options.extend(["--version", version_option])
+    if image_option is not None:
+        options.extend(["--image", image_option])
     if update_flag:
         options.extend(["--update"])
 

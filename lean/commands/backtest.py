@@ -20,7 +20,7 @@ from xml.etree import ElementTree
 import click
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
 
@@ -147,15 +147,14 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
-              help="Pull the selected LEAN engine version before running the backtest")
-@click.option("--version",
-              type=str,
-              default="latest",
-              help="The LEAN engine version to run (defaults to the latest installed version)")
-def backtest(project: Path, output: Optional[Path], debug: Optional[str], update: bool, version: str) -> None:
+              help="Pull the LEAN engine image before running the backtest")
+def backtest(project: Path, output: Optional[Path], debug: Optional[str], image: Optional[str], update: bool) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -165,6 +164,10 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
     \b
     Go to the following url to learn how to debug backtests locally using the Lean CLI:
     https://www.quantconnect.com/docs/v2/lean-cli/tutorials/backtesting/debugging-local-backtests
+
+    By default the official LEAN engine image is used.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -186,19 +189,17 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], update
         debugging_method = DebuggingMethod.Rider
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
+    cli_config_manager = container.cli_config_manager()
+    engine_image = cli_config_manager.get_engine_image(image)
+
     docker_manager = container.docker_manager()
 
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError(
-                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
-
-    if update or not docker_manager.supports_dotnet_5(ENGINE_IMAGE, version):
-        docker_manager.pull_image(ENGINE_IMAGE, version)
+    if update or not docker_manager.supports_dotnet_5(engine_image):
+        docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean("backtesting", algorithm_file, output, version, debugging_method)
+    lean_runner.run_lean("backtesting", algorithm_file, output, engine_image, debugging_method)
 
-    if version == "latest" and not update:
+    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)
+        update_manager.warn_if_docker_image_outdated(engine_image)

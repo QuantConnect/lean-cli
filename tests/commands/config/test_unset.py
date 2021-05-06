@@ -11,23 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click.testing import CliRunner
 
-from lean.commands.config.get import get
-from lean.commands.config.list import list
-from lean.commands.config.set import set
-from lean.commands.config.unset import unset
+from lean.commands import lean
+from lean.container import container
 
 
-@click.group()
-def config() -> None:
-    """Configure Lean CLI options."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean config <command>` commands
-    pass
+def test_config_unset_removes_the_value_of_the_option() -> None:
+    container.cli_config_manager().user_id.set_value("12345")
+
+    result = CliRunner().invoke(lean, ["config", "unset", "user-id"])
+
+    assert result.exit_code == 0
+
+    assert container.cli_config_manager().user_id.get_value() is None
 
 
-config.add_command(get)
-config.add_command(set)
-config.add_command(unset)
-config.add_command(list)
+def test_config_unset_aborts_when_no_option_with_given_key_exists() -> None:
+    result = CliRunner().invoke(lean, ["config", "unset", "this-option-does-not-exist"])
+
+    assert result.exit_code != 0

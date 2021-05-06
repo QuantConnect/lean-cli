@@ -21,7 +21,7 @@ def get_version() -> str:
 install_requires = [
     "click~=7.1.2",
     "requests~=2.25.1",
-    "jsoncomment~=0.4.2",
+    "json5~=0.9.5",
     "docker~=4.4.1",
     "rich~=9.10.0",
     "dependency-injector~=4.20.1",

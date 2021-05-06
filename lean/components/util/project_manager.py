@@ -349,7 +349,7 @@ on the page above, you can add a PackageReference for it.
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <TargetFramework>net462</TargetFramework>
-        <LangVersion>6</LangVersion>
+        <LangVersion>7</LangVersion>
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <NoWarn>CS0618</NoWarn>

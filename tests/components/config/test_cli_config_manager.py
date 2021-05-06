@@ -11,22 +11,70 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
+import tempfile
+from pathlib import Path
 
 import pytest
 
 from lean.components.config.cli_config_manager import CLIConfigManager
+from lean.components.config.storage import Storage
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE
+from lean.models.docker import DockerImage
+
+
+def create_storage() -> Storage:
+    return Storage(str(Path(tempfile.mkdtemp()) / "storage"))
 
 
 def test_get_option_by_key_returns_option_with_matching_key() -> None:
-    manager = CLIConfigManager(mock.Mock(), mock.Mock())
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
 
     for key in ["user-id", "api-token", "default-language"]:
-        assert manager.get_option_by_key(key).key == key
+        assert cli_config_manager.get_option_by_key(key).key == key
 
 
 def test_get_option_by_key_raises_error_when_no_option_with_matching_key_exists() -> None:
-    manager = CLIConfigManager(mock.Mock(), mock.Mock())
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
 
     with pytest.raises(Exception):
-        manager.get_option_by_key("this-option-does-not-exist")
+        cli_config_manager.get_option_by_key("this-option-does-not-exist")
+
+
+def test_get_engine_image_returns_default_image_when_nothing_configured() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    assert cli_config_manager.get_engine_image() == DockerImage.parse(DEFAULT_ENGINE_IMAGE)
+
+
+def test_get_engine_image_returns_image_configured_via_option() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+    cli_config_manager.engine_image.set_value("custom/lean:3")
+
+    assert cli_config_manager.get_engine_image() == DockerImage(name="custom/lean", tag="3")
+
+
+def test_get_engine_image_returns_override_when_given() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+    cli_config_manager.engine_image.set_value("custom/lean:3")
+
+    assert cli_config_manager.get_engine_image("custom/lean:5") == DockerImage(name="custom/lean", tag="5")
+
+
+def test_get_research_image_returns_default_image_when_nothing_configured() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    assert cli_config_manager.get_research_image() == DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
+
+
+def test_get_research_image_returns_image_configured_via_option() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+    cli_config_manager.research_image.set_value("custom/research:3")
+
+    assert cli_config_manager.get_research_image() == DockerImage(name="custom/research", tag="3")
+
+
+def test_get_research_image_returns_override_when_given() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+    cli_config_manager.research_image.set_value("custom/research:3")
+
+    assert cli_config_manager.get_research_image("custom/research:5") == DockerImage(name="custom/research", tag="5")
