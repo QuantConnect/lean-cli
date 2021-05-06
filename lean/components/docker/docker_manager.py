@@ -75,7 +75,6 @@ class DockerManager:
         docker_client = self._get_docker_client()
 
         kwargs["detach"] = True
-        kwargs["remove"] = True
         container = docker_client.containers.run(str(image), None, **kwargs)
 
         # Kill the container on Ctrl+C
@@ -110,7 +109,13 @@ class DockerManager:
         while thread.is_alive():
             thread.join(0.1)
 
-        return container.wait()["StatusCode"] == 0
+        container.wait()
+
+        container.reload()
+        success = container.attrs["State"]["ExitCode"] == 0
+
+        container.remove()
+        return success
 
     def build_image(self, dockerfile: Path, target: DockerImage) -> None:
         """Builds a Docker image.
