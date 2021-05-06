@@ -20,7 +20,7 @@ import click
 from docker.types import Mount
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 
 
@@ -67,14 +67,13 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               is_flag=True,
               default=False,
               help="Overwrite --report-destination if it already contains a file")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
-              help="Pull the selected LEAN engine version before running the report creator")
-@click.option("--version",
-              type=str,
-              default="latest",
-              help="The LEAN engine version to run (defaults to the latest installed version)")
+              help="Pull the LEAN engine image before running the report creator")
 def report(backtest_data_source_file: Path,
            live_data_source_file: Optional[Path],
            report_destination: Path,
@@ -82,8 +81,8 @@ def report(backtest_data_source_file: Path,
            strategy_version: Optional[str],
            strategy_description: Optional[str],
            overwrite: bool,
-           update: bool,
-           version: str) -> None:
+           image: Optional[str],
+           update: bool) -> None:
     """Generate a report of a backtest.
 
     This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
@@ -93,6 +92,10 @@ def report(backtest_data_source_file: Path,
     If the given backtest data source file is stored in a project directory (or one of its subdirectories, like the
     default <project>/backtests/<timestamp>), the default name is the name of the project directory and the default
     description is the description stored in the project's config.json file.
+
+    By default the official LEAN engine image is used.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
@@ -185,17 +188,15 @@ def report(backtest_data_source_file: Path,
                                            type="bind",
                                            read_only=True))
 
+    cli_config_manager = container.cli_config_manager()
+    engine_image = cli_config_manager.get_engine_image(image)
+
     docker_manager = container.docker_manager()
 
-    if version != "latest":
-        if not docker_manager.tag_exists(ENGINE_IMAGE, version):
-            raise RuntimeError(
-                f"The specified version does not exist, please pick a valid tag from https://hub.docker.com/r/{ENGINE_IMAGE}/tags")
-
     if update:
-        docker_manager.pull_image(ENGINE_IMAGE, version)
+        docker_manager.pull_image(engine_image)
 
-    success = docker_manager.run_image(ENGINE_IMAGE, version, **run_options)
+    success = docker_manager.run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
@@ -206,6 +207,6 @@ def report(backtest_data_source_file: Path,
     logger = container.logger()
     logger.info(f"Successfully generated report to '{report_destination}'")
 
-    if version == "latest" and not update:
+    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(ENGINE_IMAGE)
+        update_manager.warn_if_docker_image_outdated(engine_image)

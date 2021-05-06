@@ -22,6 +22,7 @@ from responses import RequestsMock
 import lean
 from lean.components.config.storage import Storage
 from lean.components.util.update_manager import UpdateManager
+from lean.models.docker import DockerImage
 
 
 def create_objects() -> Tuple[mock.Mock, Storage, mock.Mock, UpdateManager]:
@@ -97,15 +98,15 @@ def test_warn_if_cli_outdated_does_nothing_when_pypi_responds_with_error(request
 
 def test_warn_if_docker_image_outdated_warns_when_docker_hub_has_newer_version(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
-                      "https://registry.hub.docker.com/v2/repositories/my-image/tags/latest",
+                      "https://registry.hub.docker.com/v2/repositories/quantconnect/lean/tags/latest",
                       '{ "images": [ { "digest": "abc" } ] }')
 
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.tag_installed.return_value = True
-    docker_manager.get_tag_digest.return_value = "def"
+    docker_manager.get_digest.return_value = "def"
 
-    update_manager.warn_if_docker_image_outdated("my-image")
+    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     logger.warn.assert_called()
 
@@ -114,9 +115,9 @@ def test_warn_if_docker_image_outdated_does_nothing_when_latest_tag_not_installe
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.tag_installed.return_value = False
-    docker_manager.get_tag_digest.return_value = "def"
+    docker_manager.get_digest.return_value = "def"
 
-    update_manager.warn_if_docker_image_outdated("my-image")
+    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     logger.warn.assert_not_called()
 
@@ -127,16 +128,16 @@ def test_warn_if_docker_image_outdated_only_checks_once_every_two_weeks(requests
                                                                         update_warning_expected: bool) -> None:
     if update_warning_expected:
         requests_mock.add(requests_mock.GET,
-                          "https://registry.hub.docker.com/v2/repositories/my-image/tags/latest",
+                          "https://registry.hub.docker.com/v2/repositories/quantconnect/lean/tags/latest",
                           '{ "images": [ { "digest": "abc" } ] }')
 
     logger, storage, docker_manager, update_manager = create_objects()
     storage.set("last-update-check-my-image", (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
 
     docker_manager.tag_installed.return_value = True
-    docker_manager.get_tag_digest.return_value = "def"
+    docker_manager.get_digest.return_value = "def"
 
-    update_manager.warn_if_docker_image_outdated("my-image")
+    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     if update_warning_expected:
         logger.warn.assert_called()
@@ -146,30 +147,30 @@ def test_warn_if_docker_image_outdated_only_checks_once_every_two_weeks(requests
 
 def test_warn_if_docker_image_outdated_does_nothing_when_not_outdated(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
-                      "https://registry.hub.docker.com/v2/repositories/my-image/tags/latest",
+                      "https://registry.hub.docker.com/v2/repositories/quantconnect/lean/tags/latest",
                       '{ "images": [ { "digest": "abc" } ] }')
 
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.tag_installed.return_value = True
-    docker_manager.get_tag_digest.return_value = "abc"
+    docker_manager.get_digest.return_value = "abc"
 
-    update_manager.warn_if_docker_image_outdated("my-image")
+    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     logger.warn.assert_not_called()
 
 
 def test_warn_if_docker_image_outdated_does_nothing_when_api_responds_with_error(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
-                      "https://registry.hub.docker.com/v2/repositories/my-image/tags/latest",
+                      "https://registry.hub.docker.com/v2/repositories/quantconnect/lean/tags/latest",
                       "",
                       status=500)
 
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.tag_installed.return_value = True
-    docker_manager.get_tag_digest.return_value = "abc"
+    docker_manager.get_digest.return_value = "abc"
 
-    update_manager.warn_if_docker_image_outdated("my-image")
+    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     logger.warn.assert_not_called()

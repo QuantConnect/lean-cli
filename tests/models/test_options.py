@@ -47,6 +47,15 @@ def test_option_set_value_raises_when_new_value_blank() -> None:
     storage.set.assert_not_called()
 
 
+def test_option_unset_deletes_key_from_storage() -> None:
+    storage = mock.Mock()
+
+    option = Option("my-key", "Documentation for my-key.", False, storage)
+    option.unset()
+
+    storage.delete.assert_called_once_with("my-key")
+
+
 def test_choice_option_adds_allowed_values_to_description() -> None:
     storage = mock.Mock()
 

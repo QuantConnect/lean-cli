@@ -11,17 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
-import os
+import pprint
 import signal
+import subprocess
 import sys
 import threading
 import types
+from pathlib import Path
 
 import docker
-import requests
 
 from lean.components.util.logger import Logger
+from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 
 
@@ -35,38 +36,39 @@ class DockerManager:
         """
         self._logger = logger
 
-    def pull_image(self, image: str, tag: str) -> None:
+    def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
 
-        :param image: the name of the image to pull
-        :param tag: the image's tag to pull
+        :param image: the image to pull
         """
-        self._logger.info(f"Pulling {image}:{tag}...")
+        self._logger.info(f"Pulling {image}...")
 
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        return_code = os.system(f"docker image pull {image}:{tag}")
+        process = subprocess.run(["docker", "image", "pull", str(image)])
 
-        if return_code != 0:
+        if process.returncode != 0:
             raise RuntimeError(
-                f"Something went wrong while pulling {image}:{tag}, see the logs above for more information")
+                f"Something went wrong while pulling {image}, see the logs above for more information")
 
-    def run_image(self, image: str, tag: str, **kwargs) -> bool:
-        """Runs a Docker image. If the image is not available yet it will be pulled first.
+    def run_image(self, image: DockerImage, **kwargs) -> bool:
+        """Runs a Docker image. If the image is not available locally it will be pulled first.
 
         See https://docker-py.readthedocs.io/en/stable/containers.html for all the supported kwargs.
 
         If kwargs contains an "on_run" property, it is removed before passing it on to docker.containers.run
         and the given lambda is ran when the Docker container has started.
 
-        :param image: the name of the image to run
-        :param tag: the image's tag to run
+        :param image: the image to run
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
-        if not self.tag_installed(image, tag):
-            self.pull_image(image, tag)
+        self._logger.debug(f"Running '{image}' with the following configuration:")
+        self._logger.debug(pprint.pformat(kwargs, compact=True))
+
+        if not self.image_installed(image):
+            self.pull_image(image)
 
         on_run = kwargs.pop("on_run", lambda: None)
 
@@ -74,7 +76,7 @@ class DockerManager:
 
         kwargs["detach"] = True
         kwargs["remove"] = True
-        container = docker_client.containers.run(f"{image}:{tag}", None, **kwargs)
+        container = docker_client.containers.run(str(image), None, **kwargs)
 
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
@@ -110,47 +112,39 @@ class DockerManager:
 
         return container.wait()["StatusCode"] == 0
 
-    def tag_installed(self, image: str, tag: str) -> bool:
-        """Returns whether a certain image's tag is installed.
+    def build_image(self, dockerfile: Path, target: DockerImage) -> None:
+        """Builds a Docker image.
 
-        :param image: the name of the image to check availability for
-        :param tag: the image's tag to check availability for
-        :return: True if the image's tag has been pulled before, False if not
+        :param dockerfile: the path to the Dockerfile to build
+        :param target: the target name and tag
+        """
+        # We cannot really use docker_client.images.build() here as it doesn't let us log the progress
+        # Building images without showing progress does not provide good developer experience
+        # Since the build command is the same on Windows, macOS and Linux we can safely use a system call
+        process = subprocess.run(["docker", "build", "-t", str(target), "-f", dockerfile.name, "."],
+                                 cwd=dockerfile.parent)
+
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Something went wrong while building '{dockerfile}', see the logs above for more information")
+
+    def image_installed(self, image: DockerImage) -> bool:
+        """Returns whether a certain image is installed.
+
+        :param image: the image to check availability for
+        :return: True if the image is available locally, False if not
         """
         docker_client = self._get_docker_client()
-        installed_tags = list(itertools.chain(*[x.tags for x in docker_client.images.list()]))
-        return f"{image}:{tag}" in installed_tags
+        return any(str(image) in x.tags for x in docker_client.images.list())
 
-    def tag_exists_on_docker_hub(self, image: str, tag: str) -> bool:
-        """Returns whether a certain tag exists for a certain image on Docker Hub.
+    def get_digest(self, image: DockerImage) -> str:
+        """Returns the digest of a locally installed image.
 
-        :param image: the image to check the tag of
-        :param tag: the tag to check the existence of
-        :return: True if the tag exists for the given image on Docker Hub, False if not
+        :param image: the image to get the digest of
+        :return: the local digest of the image
         """
-        tags_list = requests.get(f"https://registry.hub.docker.com/v1/repositories/{image}/tags").json()
-        return any([x["name"] == tag for x in tags_list])
-
-    def tag_exists(self, image: str, tag: str) -> bool:
-        """Returns whether a certain tag exists for a certain image in the local Docker registry or on Docker Hub.
-
-        :param image: the image to check the tag of
-        :param tag: the tag to check the existence of
-        :return: True if the tag exists for the given image in the local Docker registry or on Docker Hub, False if not
-        """
-        # The order of these two methods must not be swapped
-        # We only need to query Docker Hub if the tag does not exist locally
-        return self.tag_installed(image, tag) or self.tag_exists_on_docker_hub(image, tag)
-
-    def get_tag_digest(self, image: str, tag: str) -> str:
-        """Returns the digest of a locally installed image's tag.
-
-        :param image: the image to get the digest of a tag of
-        :param tag: the image's tag to get the digest of
-        :return: the local digest of the image's tag
-        """
-        image = self._get_docker_client().images.get(f"{image}:{tag}")
-        return image.attrs["RepoDigests"][0].split("@")[1]
+        img = self._get_docker_client().images.get(str(image))
+        return img.attrs["RepoDigests"][0].split("@")[1]
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.

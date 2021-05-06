@@ -18,10 +18,14 @@ import pytest
 
 from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.util.temp_manager import TempManager
+from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
 
+ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
-def run_image(image: str, tag: str, **kwargs) -> bool:
+
+def run_image(image: DockerImage, **kwargs) -> bool:
     volumes = kwargs.get("volumes")
 
     assert len(volumes) == 1
@@ -49,13 +53,12 @@ def test_compile_csharp_project_runs_msbuild_in_docker() -> None:
 
     compiler = create_csharp_compiler(docker_manager)
 
-    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", ENGINE_IMAGE)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == "quantconnect/lean"
-    assert args[1] == "latest"
+    assert args[0] == ENGINE_IMAGE
     assert "msbuild" in kwargs["entrypoint"]
 
 
@@ -68,7 +71,7 @@ def test_compile_csharp_project_raises_when_msbuild_fails() -> None:
     compiler = create_csharp_compiler(docker_manager)
 
     with pytest.raises(Exception):
-        compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+        compiler.compile_csharp_project(Path.cwd() / "CSharp Project", ENGINE_IMAGE)
 
     docker_manager.run_image.assert_called_once()
 
@@ -81,7 +84,7 @@ def test_compile_csharp_project_only_mounts_files_from_given_project() -> None:
 
     compiler = create_csharp_compiler(docker_manager)
 
-    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", ENGINE_IMAGE)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -103,7 +106,7 @@ def test_compile_csharp_project_copies_generated_files_to_project_bin(extension:
 
     compiler = create_csharp_compiler(docker_manager)
 
-    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", ENGINE_IMAGE)
 
     assert (Path.cwd() / "CSharp Project" / "bin" / "Debug" / f"CSharp Project.{extension}").exists()
 
@@ -116,7 +119,7 @@ def test_compile_csharp_project_disables_msbuild_telemetry() -> None:
 
     compiler = create_csharp_compiler(docker_manager)
 
-    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", "latest")
+    compiler.compile_csharp_project(Path.cwd() / "CSharp Project", ENGINE_IMAGE)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args

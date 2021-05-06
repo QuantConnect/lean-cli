@@ -52,6 +52,10 @@ class Option:
 
         self._storage.set(self.key, value)
 
+    def unset(self) -> None:
+        """Unsets any value of the option."""
+        self._storage.delete(self.key)
+
 
 class ChoiceOption(Option):
     """A variant of Option where only a few values are allowed.

@@ -15,6 +15,7 @@ import click
 
 from lean import __version__
 from lean.commands.backtest import backtest
+from lean.commands.build import build
 from lean.commands.cloud import cloud
 from lean.commands.config import config
 from lean.commands.create_project import create_project
@@ -50,3 +51,4 @@ lean.add_command(optimize)
 lean.add_command(research)
 lean.add_command(report)
 lean.add_command(live)
+lean.add_command(build)

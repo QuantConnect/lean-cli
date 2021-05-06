@@ -17,7 +17,7 @@ from pathlib import Path
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
-from lean.constants import ENGINE_IMAGE
+from lean.models.docker import DockerImage
 
 
 class CSharpCompiler:
@@ -34,13 +34,13 @@ class CSharpCompiler:
         self._docker_manager = docker_manager
         self._temp_manager = temp_manager
 
-    def compile_csharp_project(self, project_dir: Path, version: str) -> Path:
+    def compile_csharp_project(self, project_dir: Path, image: DockerImage) -> Path:
         """Compiles a C# project and returns the directory containing the generated DLLs.
 
         Raises an error if something goes wrong during compilation.
 
         :param project_dir: the project to compile
-        :param version: the LEAN version to compile against
+        :param image: the LEAN engine image to compile in
         :return: the path to the directory containing the LeanCLI.{dll,pdb} files
         """
         self._logger.info(f"Compiling all C# files in '{project_dir}'")
@@ -87,8 +87,7 @@ class CSharpCompiler:
 </Project>
             """.strip())
 
-        success = self._docker_manager.run_image(ENGINE_IMAGE,
-                                                 version,
+        success = self._docker_manager.run_image(image,
                                                  entrypoint=["dotnet", "msbuild",
                                                              "-restore", f"/LeanCLI/{project_dir.name}.csproj"],
                                                  environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",

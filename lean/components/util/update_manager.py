@@ -21,6 +21,7 @@ from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.constants import UPDATE_CHECK_INTERVAL_CLI, UPDATE_CHECK_INTERVAL_DOCKER_IMAGE
+from lean.models.docker import DockerImage
 
 
 class UpdateManager:
@@ -66,22 +67,22 @@ class UpdateManager:
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
             self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
-    def warn_if_docker_image_outdated(self, image: str) -> None:
+    def warn_if_docker_image_outdated(self, image: DockerImage) -> None:
         """Warns the user if the latest installed version of a Docker image is outdated.
 
         An update check is performed once every UPDATE_CHECK_INTERVAL_DOCKER_IMAGE hours (the interval is per image).
         """
         # Don't consider checking for updates if the latest version of the image isn't installed yet
-        if not self._docker_manager.tag_installed(image, "latest"):
+        if not self._docker_manager.image_installed(image):
             return
 
-        if not self._should_check_for_updates(image, UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
+        if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
             return
 
-        current_digest = self._docker_manager.get_tag_digest(image, "latest")
+        current_digest = self._docker_manager.get_digest(image)
 
         try:
-            response = requests.get(f"https://registry.hub.docker.com/v2/repositories/{image}/tags/latest")
+            response = requests.get(f"https://registry.hub.docker.com/v2/repositories/{image.name}/tags/{image.tag}")
         except requests.exceptions.ConnectionError:
             # The user may be offline, do nothing
             return

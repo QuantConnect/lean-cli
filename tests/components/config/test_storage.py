@@ -59,6 +59,29 @@ def test_set_creates_new_file_when_file_does_not_exist() -> None:
     assert data == {"key": "value"}
 
 
+def test_delete_unsets_value() -> None:
+    path = Path.cwd() / "config.json"
+
+    storage = Storage(str(path))
+    storage.set("key1", "value1")
+    storage.set("key2", "value2")
+    storage.set("key3", "value3")
+    storage.delete("key2")
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data == {"key1": "value1", "key3": "value3"}
+
+
+def test_delete_deletes_file_when_last_key() -> None:
+    path = Path.cwd() / "config.json"
+
+    storage = Storage(str(path))
+    storage.set("key", "value")
+    storage.delete("key")
+
+    assert not path.exists()
+
+
 def test_has_returns_true_when_key_exists_in_file() -> None:
     path = Path.cwd() / "config.json"
     with path.open("w+", encoding="utf-8") as file:
