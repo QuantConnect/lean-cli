@@ -49,19 +49,6 @@ def test_build_compiles_lean() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_build_does_not_compile_lean_when_no_compile_passed() -> None:
-    create_lean_repository()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    result = CliRunner().invoke(lean, ["build", "Lean", "--no-compile"])
-
-    assert result.exit_code == 0
-
-    docker_manager.run_image.assert_not_called()
-
-
 @mock.patch("platform.machine")
 @pytest.mark.parametrize("architecture,file", [("x86_64", "DockerfileLeanFoundation"),
                                                ("arm64", "DockerfileLeanFoundationARM"),
