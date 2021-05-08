@@ -21,6 +21,7 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.commands.build import CUSTOM_ENGINE_IMAGE, CUSTOM_FOUNDATION_IMAGE, CUSTOM_RESEARCH_IMAGE
 from lean.container import container
+from lean.models.docker import DockerImage
 
 
 def create_lean_repository() -> None:
@@ -34,6 +35,13 @@ def create_lean_repository() -> None:
 FROM ubuntu
 RUN true
             """.strip())
+
+
+dockerfiles_seen = []
+
+
+def build_image(dockerfile: Path, target_image: DockerImage) -> None:
+    dockerfiles_seen.append(dockerfile.read_text(encoding="utf-8").strip())
 
 
 def test_build_compiles_lean() -> None:
@@ -78,6 +86,7 @@ def test_build_builds_engine_image_based_on_custom_foundation_image() -> None:
     create_lean_repository()
 
     docker_manager = mock.Mock()
+    docker_manager.build_image.side_effect = build_image
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["build", "Lean"])
@@ -87,16 +96,17 @@ def test_build_builds_engine_image_based_on_custom_foundation_image() -> None:
     dockerfile = Path.cwd() / "Lean" / "Dockerfile"
 
     docker_manager.build_image.assert_any_call(dockerfile, CUSTOM_ENGINE_IMAGE)
-    assert dockerfile.read_text(encoding="utf-8").strip() == f"""
+    assert f"""
 FROM {CUSTOM_FOUNDATION_IMAGE}
 RUN true
-    """.strip()
+    """.strip() in dockerfiles_seen
 
 
 def test_build_builds_research_image_based_on_custom_engine_image() -> None:
     create_lean_repository()
 
     docker_manager = mock.Mock()
+    docker_manager.build_image.side_effect = build_image
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["build", "Lean"])
@@ -106,10 +116,10 @@ def test_build_builds_research_image_based_on_custom_engine_image() -> None:
     dockerfile = Path.cwd() / "Lean" / "DockerfileJupyter"
 
     docker_manager.build_image.assert_any_call(dockerfile, CUSTOM_RESEARCH_IMAGE)
-    assert dockerfile.read_text(encoding="utf-8").strip() == f"""
+    assert f"""
 FROM {CUSTOM_ENGINE_IMAGE}
 RUN true
-    """.strip()
+    """.strip() in dockerfiles_seen
 
 
 def test_build_aborts_when_invalid_lean_directory_passed() -> None:

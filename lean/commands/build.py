@@ -36,6 +36,7 @@ def _compile_lean(lean_dir: Path) -> None:
     logger.info(f"Compiling the C# code in '{lean_dir}'")
 
     docker_manager = container.docker_manager()
+    docker_manager.create_volume("lean_cli_nuget")
     success = docker_manager.run_image(CUSTOM_FOUNDATION_IMAGE,
                                        entrypoint=["dotnet", "build", f"/LeanCLI"],
                                        environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
@@ -43,6 +44,10 @@ def _compile_lean(lean_dir: Path) -> None:
                                        volumes={
                                            str(lean_dir): {
                                                "bind": "/LeanCLI",
+                                               "mode": "rw"
+                                           },
+                                           "lean_cli_nuget": {
+                                               "bind": "/root/.nuget/packages",
                                                "mode": "rw"
                                            }
                                        })
@@ -67,13 +72,18 @@ def _build_image(dockerfile: Path, base_image: Optional[DockerImage], target_ima
     if not dockerfile.is_file():
         raise RuntimeError(f"'{dockerfile}' does not exist")
 
-    if base_image is not None:
-        content = dockerfile.read_text(encoding="utf-8")
-        content = re.sub(r"^FROM.*$", f"FROM {base_image}", content, flags=re.MULTILINE)
-        dockerfile.write_text(content, encoding="utf-8")
+    current_content = dockerfile.read_text(encoding="utf-8")
 
-    docker_manager = container.docker_manager()
-    docker_manager.build_image(dockerfile, target_image)
+    if base_image is not None:
+        new_content = re.sub(r"^FROM.*$", f"FROM {base_image}", current_content, flags=re.MULTILINE)
+        dockerfile.write_text(new_content, encoding="utf-8")
+
+    try:
+        docker_manager = container.docker_manager()
+        docker_manager.build_image(dockerfile, target_image)
+    finally:
+        if base_image is not None:
+            dockerfile.write_text(current_content, encoding="utf-8")
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
