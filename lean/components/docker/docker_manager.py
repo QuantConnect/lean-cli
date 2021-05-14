@@ -153,6 +153,15 @@ class DockerManager:
         img = self._get_docker_client().images.get(str(image))
         return img.attrs["RepoDigests"][0].split("@")[1]
 
+    def create_volume(self, name: str) -> None:
+        """Creates a new volume, or does nothing if a volume with the name already exists.
+
+        :param name: the name of the volume to create
+        """
+        docker_client = self._get_docker_client()
+        if not any(v.name == name for v in docker_client.volumes.list()):
+            docker_client.volumes.create(name)
+
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.
 

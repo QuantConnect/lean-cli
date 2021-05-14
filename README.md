@@ -123,17 +123,17 @@ Usage: lean build [OPTIONS] LEAN
   LEAN must point to a directory containing (a modified version of) the LEAN repository:
   https://github.com/QuantConnect/Lean
 
-  The CLI automatically updates the "FROM" line in each Dockerfile to ensure all images extend from each other.
-
-  By default the CLI compiles LEAN in a Docker container before building the images. If you already did this yourself
-  you can pass the --no-compile flag to skip this step.
-
-  After building your global CLI configuration is updated to use your custom images instead of the default ones.
+  This command performs the following actions:
+  1. The lean-cli/foundation:latest image is built from DockerfileLeanFoundation(ARM).
+  2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
+  3. The lean-cli/engine:latest image is built from Dockerfile using lean-cli/foundation:latest as base image.
+  4. The lean-cli/research:latest image is built from DockerfileJupyter using lean-cli/engine:latest as base image.
+  5. The default engine image is set to lean-cli/engine:latest.
+  6. The default research image is set to lean-cli/research:latest.
 
 Options:
-  --no-compile  Skip compiling LEAN before building the images
-  --verbose     Enable debug logging
-  --help        Show this message and exit.
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/build.py](lean/commands/build.py)_

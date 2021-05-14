@@ -89,6 +89,12 @@ class LeanRunner:
                                          "bash", "-c",
                                          "chmod 600 /etc/insecure_key && echo 'HostKey /etc/insecure_key' >> /etc/ssh/sshd_config && /usr/sbin/sshd && dotnet QuantConnect.Lean.Launcher.dll"]
 
+            self._docker_manager.create_volume("lean_cli_rider")
+            run_options["volumes"]["lean_cli_rider"] = {
+                "bind": "/root/.local/share/JetBrains",
+                "mode": "rw"
+            }
+
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
 
@@ -132,6 +138,11 @@ class LeanRunner:
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
 
+        # Create the storage directory if it doesn't exist yet
+        storage_dir = project_dir / "storage"
+        if not storage_dir.exists():
+            storage_dir.mkdir(parents=True)
+
         # Create a file containing the complete Lean configuration
         config = self._lean_config_manager.get_complete_lean_config(environment,
                                                                     algorithm_file,
@@ -172,7 +183,7 @@ class LeanRunner:
         }
 
         # Mount the local object store directory
-        run_options["volumes"][str(project_dir / "storage")] = {
+        run_options["volumes"][str(storage_dir)] = {
             "bind": "/Storage",
             "mode": "rw"
         }

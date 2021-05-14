@@ -22,7 +22,6 @@ from lean.click import LeanCommand, PathParameter
 from lean.container import container
 from lean.models.docker import DockerImage
 
-DEFAULT_FOUNDATION_IMAGE = DockerImage(name="quantconnect/lean", tag="foundation")
 CUSTOM_FOUNDATION_IMAGE = DockerImage(name="lean-cli/foundation", tag="latest")
 CUSTOM_ENGINE_IMAGE = DockerImage(name="lean-cli/engine", tag="latest")
 CUSTOM_RESEARCH_IMAGE = DockerImage(name="lean-cli/research", tag="latest")
@@ -37,13 +36,18 @@ def _compile_lean(lean_dir: Path) -> None:
     logger.info(f"Compiling the C# code in '{lean_dir}'")
 
     docker_manager = container.docker_manager()
-    success = docker_manager.run_image(DEFAULT_FOUNDATION_IMAGE,
+    docker_manager.create_volume("lean_cli_nuget")
+    success = docker_manager.run_image(CUSTOM_FOUNDATION_IMAGE,
                                        entrypoint=["dotnet", "build", f"/LeanCLI"],
                                        environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
                                                     "DOTNET_NOLOGO": "true"},
                                        volumes={
                                            str(lean_dir): {
                                                "bind": "/LeanCLI",
+                                               "mode": "rw"
+                                           },
+                                           "lean_cli_nuget": {
+                                               "bind": "/root/.nuget/packages",
                                                "mode": "rw"
                                            }
                                        })
@@ -68,45 +72,45 @@ def _build_image(dockerfile: Path, base_image: Optional[DockerImage], target_ima
     if not dockerfile.is_file():
         raise RuntimeError(f"'{dockerfile}' does not exist")
 
-    if base_image is not None:
-        content = dockerfile.read_text(encoding="utf-8")
-        content = re.sub(r"^FROM.*$", f"FROM {base_image}", content, flags=re.MULTILINE)
-        dockerfile.write_text(content, encoding="utf-8")
+    current_content = dockerfile.read_text(encoding="utf-8")
 
-    docker_manager = container.docker_manager()
-    docker_manager.build_image(dockerfile, target_image)
+    if base_image is not None:
+        new_content = re.sub(r"^FROM.*$", f"FROM {base_image}", current_content, flags=re.MULTILINE)
+        dockerfile.write_text(new_content, encoding="utf-8")
+
+    try:
+        docker_manager = container.docker_manager()
+        docker_manager.build_image(dockerfile, target_image)
+    finally:
+        if base_image is not None:
+            dockerfile.write_text(current_content, encoding="utf-8")
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
 @click.argument("lean", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.option("--no-compile",
-              is_flag=True,
-              default=False,
-              help="Skip compiling LEAN before building the images")
-def build(lean: Path, no_compile: bool) -> None:
+def build(lean: Path) -> None:
     """Build Docker images of your own version of LEAN.
 
     \b
     LEAN must point to a directory containing (a modified version of) the LEAN repository:
     https://github.com/QuantConnect/Lean
 
-    The CLI automatically updates the "FROM" line in each Dockerfile to ensure all images extend from each other.
-
-    By default the CLI compiles LEAN in a Docker container before building the images.
-    If you already did this yourself you can pass the --no-compile flag to skip this step.
-
-    After building your global CLI configuration is updated to use your custom images instead of the default ones.
+    \b
+    This command performs the following actions:
+    1. The lean-cli/foundation:latest image is built from DockerfileLeanFoundation(ARM).
+    2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
+    3. The lean-cli/engine:latest image is built from Dockerfile using lean-cli/foundation:latest as base image.
+    4. The lean-cli/research:latest image is built from DockerfileJupyter using lean-cli/engine:latest as base image.
+    5. The default engine image is set to lean-cli/engine:latest.
+    6. The default research image is set to lean-cli/research:latest.
     """
-    if not no_compile:
-        _compile_lean(lean)
-
-    is_arm = platform.machine() in ["arm64", "aarch64"]
-    if is_arm and (lean / "DockerfileLeanFoundationARM").is_file():
+    if platform.machine() in ["arm64", "aarch64"] and (lean / "DockerfileLeanFoundationARM").is_file():
         foundation_dockerfile = lean / "DockerfileLeanFoundationARM"
     else:
         foundation_dockerfile = lean / "DockerfileLeanFoundation"
 
     _build_image(foundation_dockerfile, None, CUSTOM_FOUNDATION_IMAGE)
+    _compile_lean(lean)
     _build_image(lean / "Dockerfile", CUSTOM_FOUNDATION_IMAGE, CUSTOM_ENGINE_IMAGE)
     _build_image(lean / "DockerfileJupyter", CUSTOM_ENGINE_IMAGE, CUSTOM_RESEARCH_IMAGE)
 
