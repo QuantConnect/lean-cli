@@ -42,6 +42,23 @@ class $NAME$(QCAlgorithm):
         #     self.Debug("Purchased Stock")
 '''.strip() + "\n"
 
+DEFAULT_PYTHON_CONFIG = """
+{
+    "data-folder": "../data",
+    "algorithm-language": "Python",
+    
+    "composer-dll-directory": "/Lean/Launcher/bin/Debug",
+    "plugin-directory": "./bin",
+    
+    "log-handler": "QuantConnect.Logging.ConsoleLogHandler",
+    "messaging-handler": "QuantConnect.Messaging.Messaging",
+    "job-queue-handler": "QuantConnect.Queues.JobQueue",
+    "api-handler": "QuantConnect.Api.Api",
+    "job-user-id": "1",
+    "api-access-token": "token"
+}
+""".strip() + "\n"
+
 DEFAULT_PYTHON_NOTEBOOK = """
 {
     "cells": [
@@ -59,12 +76,29 @@ DEFAULT_PYTHON_NOTEBOOK = """
             "metadata": {},
             "outputs": [],
             "source": [
+                "# Load in QuantConnect libraries:\\n",
+                "%run /Lean/Launcher/bin/Debug/start.py"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
                 "# QuantBook Analysis Tool\\n",
                 "# For more information see https://www.quantconnect.com/docs/research/overview\\n",
                 "qb = QuantBook()\\n",
                 "spy = qb.AddEquity(\\"SPY\\")\\n",
-                "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
-                "\\n",
+                "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
                 "# Indicator Analysis\\n",
                 "ema = qb.Indicator(ExponentialMovingAverage(10), spy.Symbol, 360, Resolution.Daily)\\n",
                 "ema.plot()"
@@ -98,7 +132,24 @@ DEFAULT_PYTHON_NOTEBOOK = """
         }
     },
     "nbformat": 4,
-    "nbformat_minor": 2
+    "nbformat_minor": 4
+}
+""".strip() + "\n"
+
+DEFAULT_CSHARP_CONFIG = """
+{
+    "data-folder": "../data",
+    "algorithm-language": "CSharp",
+    
+    "composer-dll-directory": "/Lean/Launcher/bin/Debug",
+    "plugin-directory": "./bin",
+    
+    "log-handler": "QuantConnect.Logging.ConsoleLogHandler",
+    "messaging-handler": "QuantConnect.Messaging.Messaging",
+    "job-queue-handler": "QuantConnect.Queues.JobQueue",
+    "api-handler": "QuantConnect.Api.Api",
+    "job-user-id": "1",
+    "api-access-token": "token"
 }
 """.strip() + "\n"
 
@@ -132,81 +183,74 @@ namespace QuantConnect.Algorithm.CSharp
 
 DEFAULT_CSHARP_NOTEBOOK = """
 {
-    "cells": [
-        {
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": [
-                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",
-                "<hr>"
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": null,
-            "metadata": {},
-            "outputs": [],
-            "source": [
-                "// We need to load assemblies at the start in their own cell\\n",
-                "#load \\"../Initialize.csx\\""
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": null,
-            "metadata": {},
-            "outputs": [],
-            "source": [
-                "// QuantBook C# Research Environment\\n",
-                "// For more information see https://www.quantconnect.com/docs/research/overview\\n",
-                "#load \\"../QuantConnect.csx\\"\\n",
-                "\\n",
-                "using QuantConnect;\\n",
-                "using QuantConnect.Data;\\n",
-                "using QuantConnect.Research;\\n",
-                "using QuantConnect.Algorithm;\\n",
-                "\\n",
-                "var qb = new QuantBook();\\n",
-                "var spy = qb.AddEquity(\\"SPY\\");\\n",
-                "var history = qb.History(qb.Securities.Keys, 360, Resolution.Daily);"
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": null,
-            "metadata": {},
-            "outputs": [],
-            "source": [
-                "foreach (var slice in history.Take(5)) {\\n",
-                "    Console.WriteLine(slice.Bars[spy.Symbol].ToString());\\n",
-                "}"
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": null,
-            "metadata": {},
-            "outputs": [],
-            "source": []
-        }
-    ],
-    "metadata": {
-        "kernelspec": {
-            "display_name": "C#",
-            "language": "csharp",
-            "name": "csharp"
-        },
-        "language_info": {
-            "file_extension": ".cs",
-            "mimetype": "text/x-csharp",
-            "name": "C#",
-            "pygments_lexer": "c#",
-            "version": "4.0.30319"
-        }
-    },
-    "nbformat": 4,
-    "nbformat_minor": 2
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",
+    "<hr>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "// We need to load assemblies at the start in their own cell\\n",
+    "#load \\"/Lean/Launcher/bin/Debug/Initialize.csx\\"\\n",
+    "#load \\"/Lean/Launcher/bin/Debug/QuantConnect.csx\\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "// QuantBook C# Research Environment\\n",
+    "// For more information see https://www.quantconnect.com/docs/research/overview\\n",
+    "using QuantConnect;\\n",
+    "using QuantConnect.Data;\\n",
+    "using QuantConnect.Research;\\n",
+    "using QuantConnect.Algorithm;\\n",
+    "\\n",
+    "var qb = new QuantBook();\\n",
+    "var spy = qb.AddEquity(\\"SPY\\");\\n",
+    "var history = qb.History(qb.Securities.Keys, 360, Resolution.Daily);"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "foreach (var slice in history.Take(5)) {\\n",
+    "    Console.WriteLine(slice.Bars[spy.Symbol].ToString());\\n",
+    "}"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": ".NET (C#)",
+   "language": "C#",
+   "name": ".net-csharp"
+  },
+  "language_info": {
+   "file_extension": ".cs",
+   "mimetype": "text/x-csharp",
+   "name": "C#",
+   "pygments_lexer": "csharp",
+   "version": "9.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
 }
+
 """.strip() + "\n"
 
 
@@ -266,6 +310,9 @@ def create_project(name: str, language: str) -> None:
 
     with (full_path / "research.ipynb").open("w+", encoding="utf-8") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
+
+    with (full_path / "config.json").open("w+", encoding="utf-8") as file:
+        file.write(DEFAULT_PYTHON_CONFIG if language == "python" else DEFAULT_CSHARP_CONFIG)
 
     logger = container.logger()
     logger.info(f"Successfully created {'Python' if language == 'python' else 'C#'} project '{name}'")
