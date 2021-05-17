@@ -33,7 +33,8 @@ class PathValidator:
         # On Windows path.exists() doesn't throw for paths like CON/file.txt
         # Trying to create them does raise errors, so we manually validate path components
         if platform.system() == "Windows":
-            for component in path.as_posix().split("/"):
+            # Skip the first component, which contains the drive name
+            for component in path.as_posix().split("/")[1:]:
                 if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                     return False
 
@@ -41,6 +42,10 @@ class PathValidator:
                                       "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
                                       "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
                     if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
+                        return False
+
+                for forbidden_character in [":", "*", "?", '"', "<", ">", "|"]:
+                    if forbidden_character in component:
                         return False
 
         return True
