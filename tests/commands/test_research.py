@@ -194,8 +194,19 @@ def test_research_opens_browser_when_container_started(open) -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert "on_run" in kwargs
-    kwargs["on_run"]()
+    logs = """
+[I 21:06:21.500 LabApp] Writing notebook server cookie secret to /root/.local/share/jupyter/runtime/notebook_cookie_secret
+[W 21:06:21.692 LabApp] All authentication is disabled.  Anyone who can connect to this server will be able to run code.
+[I 21:06:21.698 LabApp] JupyterLab extension loaded from /opt/miniconda3/lib/python3.6/site-packages/jupyterlab
+[I 21:06:21.698 LabApp] JupyterLab application directory is /opt/miniconda3/share/jupyter/lab
+[I 21:06:21.700 LabApp] Serving notebooks from local directory: /Lean/Launcher/bin/Debug/Notebooks
+[I 21:06:21.700 LabApp] The Jupyter Notebook is running at:
+[I 21:06:21.700 LabApp] http://290fd51da0b5:8888/
+    """.strip()
+
+    assert "on_output" in kwargs
+    for line in logs.splitlines():
+        kwargs["on_output"](line)
 
     open.assert_called_once_with("http://localhost:8888/")
 

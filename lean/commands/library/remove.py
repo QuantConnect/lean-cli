@@ -23,13 +23,15 @@ from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-def _remove_csharp(project_dir: Path, name: str) -> None:
+def _remove_csharp(project_dir: Path, name: str, no_local: bool) -> None:
     """Removes a custom C# library from a C# project.
 
-    Removes the library from the project's .csproj file, and restores the project if dotnet is on the user's PATH.
+    Removes the library from the project's .csproj file,
+    and restores the project if dotnet is on the user's PATH and no_local is False.
 
     :param project_dir: the path to the project directory
     :param name: the name of the library to remove
+    :param no_local:
     """
     logger = container.logger()
     path_manager = container.path_manager()
@@ -46,7 +48,7 @@ def _remove_csharp(project_dir: Path, name: str) -> None:
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
-    if shutil.which("dotnet") is not None:
+    if not no_local and shutil.which("dotnet") is not None:
         logger.info(f"Restoring packages in '{path_manager.get_relative_path(project_dir)}'")
 
         process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
@@ -58,8 +60,7 @@ def _remove_csharp(project_dir: Path, name: str) -> None:
 def _remove_python(project_dir: Path, name: str) -> None:
     """Removes a custom Python library from a Python project.
 
-    Removes the library from the project's requirements.txt file,
-    and purges the packages cache used when running LEAN with Docker.
+    Removes the library from the project's requirements.txt file.
 
     :param project_dir: the path to the project directory
     :param name: the name of the library to remove
@@ -84,23 +85,26 @@ def _remove_python(project_dir: Path, name: str) -> None:
         except ValueError:
             new_lines.append(line)
 
-    requirements_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    new_content = "\n".join(new_lines).strip()
+    new_content = new_content + "\n" if len(new_content) > 0 else new_content
+    requirements_file.write_text(new_content, encoding="utf-8")
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.argument("name", type=str)
-def remove(project: Path, name: str) -> None:
+@click.option("--no-local", is_flag=True, default=False, help="Skip making changes to your local environment")
+def remove(project: Path, name: str, no_local: bool) -> None:
     """Remove a custom library from a project.
 
     PROJECT must be the path to the project directory.
 
     NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
 
-    Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH.
+    Custom C# libraries are removed from the project's .csproj file,
+    which is then restored if dotnet is on your PATH and the --no-local flag has not been given.
 
-    Custom Python libraries are removed from the project's requirements.txt file, and from the packages cache that is
-    used when running LEAN locally using Docker.
+    Custom Python libraries are removed from the project's requirements.txt file.
 
     \b
     C# example usage:
@@ -118,6 +122,6 @@ def remove(project: Path, name: str) -> None:
                             "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management#02-Creating-new-projects")
 
     if project_language == "CSharp":
-        _remove_csharp(project, name)
+        _remove_csharp(project, name, no_local)
     else:
         _remove_python(project, name)

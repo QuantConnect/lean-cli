@@ -97,8 +97,7 @@ def test_optimize_runs_optimizer() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert kwargs["working_dir"] == "/Lean/Optimizer.Launcher/bin/Debug"
-    assert kwargs["entrypoint"][0] == "dotnet"
-    assert kwargs["entrypoint"][1] == "QuantConnect.Optimizer.Launcher.dll"
+    assert "dotnet QuantConnect.Optimizer.Launcher.dll" in kwargs["commands"]
 
 
 def test_optimize_mounts_optimizer_config() -> None:

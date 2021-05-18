@@ -13,6 +13,8 @@
 
 from enum import Enum
 
+from lean.models.pydantic import WrappedBaseModel
+
 
 class DebuggingMethod(Enum):
     """The debugging methods supported by the CLI."""
@@ -30,3 +32,9 @@ class DebuggingMethod(Enum):
             DebuggingMethod.PyCharm: "PyCharm",
             DebuggingMethod.PTVSD: "PTVSD"
         }.get(self, "LocalCmdline")
+
+
+class CSharpLibrary(WrappedBaseModel):
+    """The information of a PackageReference tag in a .csproj file."""
+    name: str
+    version: str

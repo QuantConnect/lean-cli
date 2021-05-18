@@ -370,11 +370,8 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
     }
 
 
-def test_backtest_auto_updates_outdated_csharp_vscode_debug_config() -> None:
-    create_fake_lean_cli_directory()
-
-    launch_json_path = Path.cwd() / "CSharp Project" / ".vscode" / "launch.json"
-    _generate_file(launch_json_path, """
+@pytest.mark.parametrize("config", [
+    """
 {
     "version": "0.2.0",
     "configurations": [
@@ -387,7 +384,36 @@ def test_backtest_auto_updates_outdated_csharp_vscode_debug_config() -> None:
         }
     ]
 }
-        """)
+    """,
+    """
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with Lean CLI",
+            "request": "attach",
+            "type": "coreclr",
+            "processId": "1",
+            "pipeTransport": {
+                "pipeCwd": "${workspaceRoot}",
+                "pipeProgram": "docker",
+                "pipeArgs": ["exec", "-i", "lean_cli_vsdbg"],
+                "debuggerPath": "/root/vsdbg/vsdbg",
+                "quoteArgs": false
+            },
+            "logging": {
+                "moduleLoad": false
+            }
+        }
+    ]
+}
+    """
+])
+def test_backtest_auto_updates_outdated_csharp_vscode_debug_config(config: str) -> None:
+    create_fake_lean_cli_directory()
+
+    launch_json_path = Path.cwd() / "CSharp Project" / ".vscode" / "launch.json"
+    _generate_file(launch_json_path, config)
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -405,7 +431,7 @@ def test_backtest_auto_updates_outdated_csharp_vscode_debug_config() -> None:
         "name": "Debug with Lean CLI",
         "request": "attach",
         "type": "coreclr",
-        "processId": "1",
+        "processId": "${command:pickRemoteProcess}",
         "pipeTransport": {
             "pipeCwd": "${workspaceRoot}",
             "pipeProgram": "docker",

@@ -113,14 +113,17 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
         return
 
     config = next((c for c in current_content["configurations"] if c["name"] == "Debug with Lean CLI"), None)
-    if config is None or config["type"] != "mono":
+    if config is None:
         return
 
-    del config["address"]
-    del config["port"]
+    if config["type"] != "mono" and config["processId"] != "1":
+        return
+
+    config.pop("address", None)
+    config.pop("port", None)
 
     config["type"] = "coreclr"
-    config["processId"] = "1"
+    config["processId"] = "${command:pickRemoteProcess}"
 
     config["pipeTransport"] = {
         "pipeCwd": "${workspaceRoot}",

@@ -506,10 +506,11 @@ Usage: lean library add [OPTIONS] PROJECT NAME
   latest available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what
   the Docker images use).
 
-  Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH.
+  Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH and
+  the --no-local flag has not been given.
 
   Custom Python libraries are added to your project's requirements.txt file and are installed in your local Python
-  environment so you get local autocomplete for the library.
+  environment so you get local autocomplete for the library. The last step can be skipped with the --no-local flag.
 
   C# example usage:
   $ lean library add "My CSharp Project" Microsoft.ML
@@ -521,6 +522,7 @@ Usage: lean library add [OPTIONS] PROJECT NAME
 
 Options:
   --version TEXT  The version of the library to add (defaults to latest compatible version)
+  --no-local      Skip making changes to your local environment
   --verbose       Enable debug logging
   --help          Show this message and exit.
 ```
@@ -540,10 +542,10 @@ Usage: lean library remove [OPTIONS] PROJECT NAME
 
   NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
 
-  Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH.
+  Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH
+  and the --no-local flag has not been given.
 
-  Custom Python libraries are removed from the project's requirements.txt file, and from the packages cache that is
-  used when running LEAN locally using Docker.
+  Custom Python libraries are removed from the project's requirements.txt file.
 
   C# example usage:
   $ lean library remove "My CSharp Project" Microsoft.ML
@@ -552,8 +554,9 @@ Usage: lean library remove [OPTIONS] PROJECT NAME
   $ lean library remove "My Python Project" tensorflow
 
 Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  --no-local  Skip making changes to your local environment
+  --verbose   Enable debug logging
+  --help      Show this message and exit.
 ```
 
 _See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_

@@ -32,7 +32,7 @@ class Logger:
         """Enables debug messages to be printed."""
         self._debug_logging_enabled = True
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: Any) -> None:
         """Logs a debug message if debug logging is enabled.
 
         :param message: the message to log
@@ -40,21 +40,21 @@ class Logger:
         if self._debug_logging_enabled:
             self._console.print(message, style="grey50")
 
-    def info(self, message: RenderableType) -> None:
+    def info(self, message: Any) -> None:
         """Logs an info message.
 
         :param message: the message to log
         """
         self._console.print(message)
 
-    def warn(self, message: str) -> None:
+    def warn(self, message: Any) -> None:
         """Logs a warning message.
 
         :param message: the message to log
         """
         self._console.print(message, style="yellow")
 
-    def error(self, message: RenderableType) -> None:
+    def error(self, message: Any) -> None:
         """Logs an error message.
 
         :param message: the message to log

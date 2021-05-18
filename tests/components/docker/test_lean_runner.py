@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tempfile
 from pathlib import Path
 from unittest import mock
 
@@ -21,6 +20,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.temp_manager import TempManager
+from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
@@ -29,25 +29,16 @@ from tests.test_helpers import create_fake_lean_cli_directory
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
-def create_csharp_compiler() -> mock.Mock:
-    compile_dir = Path(tempfile.mkdtemp())
-    (compile_dir / "bin" / "Debug").mkdir(parents=True)
-    (compile_dir / "bin" / "Debug" / "LeanCLI.dll").touch()
-
-    csharp_compiler = mock.Mock()
-    csharp_compiler.compile_csharp_project.return_value = (compile_dir / "bin" / "Debug" / "LeanCLI.dll")
-
-    return csharp_compiler
-
-
-def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = create_csharp_compiler()) -> LeanRunner:
+def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     cli_config_manager = mock.Mock()
     cli_config_manager.user_id.get_value.return_value = "123"
     cli_config_manager.api_token.get_value.return_value = "456"
 
+    project_config_manager = ProjectConfigManager(XMLManager())
+
     return LeanRunner(mock.Mock(),
-                      csharp_compiler,
-                      LeanConfigManager(cli_config_manager, ProjectConfigManager()),
+                      project_config_manager,
+                      LeanConfigManager(cli_config_manager, project_config_manager),
                       docker_manager,
                       TempManager())
 
@@ -55,12 +46,10 @@ def create_lean_runner(docker_manager: mock.Mock, csharp_compiler: mock.Mock = c
 def test_run_lean_compiles_csharp_project() -> None:
     create_fake_lean_cli_directory()
 
-    csharp_compiler = create_csharp_compiler()
-
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
 
-    lean_runner = create_lean_runner(docker_manager, csharp_compiler)
+    lean_runner = create_lean_runner(docker_manager)
 
     lean_runner.run_lean("backtesting",
                          Path.cwd() / "CSharp Project" / "Main.cs",
@@ -68,29 +57,10 @@ def test_run_lean_compiles_csharp_project() -> None:
                          ENGINE_IMAGE,
                          None)
 
-    csharp_compiler.compile_csharp_project.assert_called_once()
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
 
-
-def test_run_lean_fails_when_csharp_compilation_fails() -> None:
-    create_fake_lean_cli_directory()
-
-    def compile_csharp_project(*args) -> None:
-        raise RuntimeError("Oops")
-
-    csharp_compiler = mock.Mock()
-    csharp_compiler.compile_csharp_project.side_effect = compile_csharp_project
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.return_value = True
-
-    lean_runner = create_lean_runner(docker_manager, csharp_compiler)
-
-    with pytest.raises(Exception):
-        lean_runner.run_lean("backtesting",
-                             Path.cwd() / "CSharp Project" / "Main.cs",
-                             Path.cwd() / "output",
-                             ENGINE_IMAGE,
-                             None)
+    assert any(cmd for cmd in kwargs["commands"] if cmd.startswith("dotnet build"))
 
 
 def test_run_lean_runs_lean_container() -> None:
@@ -190,7 +160,7 @@ def test_run_lean_mounts_storage_directory() -> None:
     lean_runner.run_lean("backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
-                         "latest",
+                         ENGINE_IMAGE,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -237,27 +207,6 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
     args, kwargs = docker_manager.run_image.call_args
 
     assert str(Path.cwd() / "Python Project") in kwargs["volumes"]
-
-
-def test_run_lean_mounts_dll_and_pdb_when_running_csharp_algorithm() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.return_value = True
-
-    lean_runner = create_lean_runner(docker_manager)
-
-    lean_runner.run_lean("backtesting",
-                         Path.cwd() / "CSharp Project" / "Main.cs",
-                         Path.cwd() / "output",
-                         ENGINE_IMAGE,
-                         None)
-
-    docker_manager.run_image.assert_called_once()
-    args, kwargs = docker_manager.run_image.call_args
-
-    assert any(["CSharp Project.dll" in mount["Target"] for mount in kwargs["mounts"]])
-    assert any(["CSharp Project.pdb" in mount["Target"] for mount in kwargs["mounts"]])
 
 
 @mock.patch("platform.system")

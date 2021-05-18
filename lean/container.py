@@ -25,7 +25,6 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.optimizer_config_manager import OptimizerConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
-from lean.components.docker.csharp_compiler import CSharpCompiler
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
@@ -54,7 +53,7 @@ class Container(DeclarativeContainer):
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
     cache_storage = Singleton(Storage, file=CACHE_PATH)
 
-    project_config_manager = Singleton(ProjectConfigManager)
+    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
     cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
     lean_config_manager = Singleton(LeanConfigManager, cli_config_manager, project_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
@@ -79,10 +78,14 @@ class Container(DeclarativeContainer):
                                       push_manager,
                                       path_manager)
 
-    docker_manager = Singleton(DockerManager, logger)
+    docker_manager = Singleton(DockerManager, logger, temp_manager)
 
-    csharp_compiler = Singleton(CSharpCompiler, logger, docker_manager, temp_manager)
-    lean_runner = Singleton(LeanRunner, logger, csharp_compiler, lean_config_manager, docker_manager, temp_manager)
+    lean_runner = Singleton(LeanRunner,
+                            logger,
+                            project_config_manager,
+                            lean_config_manager,
+                            docker_manager,
+                            temp_manager)
 
     update_manager = Singleton(UpdateManager, logger, cache_storage, docker_manager)
 

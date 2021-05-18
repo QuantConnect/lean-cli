@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pprint
 import signal
 import subprocess
 import sys
@@ -21,8 +20,10 @@ from pathlib import Path
 
 import docker
 from dateutil.parser import isoparse
+from docker.types import Mount
 
 from lean.components.util.logger import Logger
+from lean.components.util.temp_manager import TempManager
 from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
@@ -31,12 +32,14 @@ from lean.models.errors import MoreInfoError
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
 
-    def __init__(self, logger: Logger) -> None:
+    def __init__(self, logger: Logger, temp_manager: TempManager) -> None:
         """Creates a new DockerManager instance.
 
         :param logger: the logger to use when printing messages
+        :param temp_manager: the TempManager instance used when creating temporary directories
         """
         self._logger = logger
+        self._temp_manager = temp_manager
 
     def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
@@ -59,30 +62,52 @@ class DockerManager:
 
         See https://docker-py.readthedocs.io/en/stable/containers.html for all the supported kwargs.
 
-        If kwargs contains an "on_run" property, it is removed before passing it on to docker.containers.run
-        and the given lambda is ran when the Docker container has started.
+        If kwargs contains an "on_output" property, it is removed before passing it on to docker.containers.run
+        and the given lambda is ran whenever the Docker container prints anything.
+
+        If kwargs contains a "commands" property, it is removed before passing it on to docker.containers.run
+        and the Docker container is configured to run the given commands.
+        This property causes the "entrypoint" property to be overwritten if it exists.
 
         :param image: the image to run
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
-        self._logger.debug(f"Running '{image}' with the following configuration:")
-        self._logger.debug(pprint.pformat(kwargs, compact=True))
-
         if not self.image_installed(image):
             self.pull_image(image)
 
-        on_run = kwargs.pop("on_run", lambda: None)
+        on_output = kwargs.pop("on_output", lambda chunk: None)
+        commands = kwargs.pop("commands", None)
 
-        docker_client = self._get_docker_client()
+        if commands is not None:
+            shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
+            with shell_script_path.open("w+", encoding="utf-8") as file:
+                command_lines = "\n".join(commands)
+                file.write(f"""
+#!/usr/bin/env bash
+set -e
+{command_lines}
+                """.strip() + "\n")
+
+            if "mounts" not in kwargs:
+                kwargs["mounts"] = []
+
+            kwargs["mounts"].append(Mount(target="/lean-cli-start.sh", source=str(shell_script_path), type="bind"))
+            kwargs["entrypoint"] = ["bash", "-c", "chmod +x /lean-cli-start.sh && /lean-cli-start.sh"]
 
         kwargs["detach"] = True
+
+        self._logger.debug(f"Running '{image}' with the following configuration:")
+        self._logger.debug(kwargs)
+
+        docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
 
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
             try:
                 container.kill()
+                container.remove()
             except:
                 # container.kill() throws if the container has already stopped running
                 pass
@@ -94,15 +119,14 @@ class DockerManager:
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
         def print_logs() -> None:
-            on_run_called = False
-
             # Capture all logs and print it to stdout
-            for line in container.logs(stream=True, follow=True):
-                if not on_run_called:
-                    on_run()
-                    on_run_called = True
+            for chunk in container.logs(stream=True, follow=True):
+                chunk = chunk.decode("utf-8")
 
-                self._logger.info(line.decode("utf-8").strip())
+                if on_output is not None:
+                    on_output(chunk)
+
+                self._logger.info(chunk.strip())
 
         thread = threading.Thread(target=print_logs)
         thread.daemon = True
@@ -154,7 +178,7 @@ class DockerManager:
         return img.attrs["RepoDigests"][0].split("@")[1]
 
     def create_volume(self, name: str) -> None:
-        """Creates a new volume, or does nothing if a volume with the name already exists.
+        """Creates a new volume, or does nothing if a volume with the given name already exists.
 
         :param name: the name of the volume to create
         """

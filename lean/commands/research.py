@@ -13,7 +13,7 @@
 
 import webbrowser
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import click
 from docker.errors import APIError
@@ -22,6 +22,16 @@ from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE
 from lean.container import container
+
+
+def _check_docker_output(chunk: str, port: int) -> None:
+    """Checks the output of the Docker container and opens the browser if Jupyter Lab has started.
+
+    :param chunk: the output chunk
+    :param port: the port Jupyter Lab will be running on
+    """
+    if "The Jupyter Notebook is running at:" in chunk:
+        webbrowser.open(f"http://localhost:{port}/")
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -60,7 +70,9 @@ def research(project: Path, port: int, image: Optional[str], update: bool) -> No
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
 
-    run_options = {
+    run_options: Dict[str, Any] = {
+        "commands": [],
+        "environment": {},
         "mounts": [
             Mount(target="/Lean/Launcher/bin/Debug/Notebooks/config.json",
                   source=str(config_path),
@@ -71,17 +83,32 @@ def research(project: Path, port: int, image: Optional[str], update: bool) -> No
             str(data_dir): {
                 "bind": "/Lean/Launcher/Data",
                 "mode": "rw"
-            },
-            str(project): {
-                "bind": "/Lean/Launcher/bin/Debug/Notebooks",
-                "mode": "rw"
             }
         },
         "ports": {
             "8888": str(port)
         },
-        "on_run": lambda: webbrowser.open(f"http://localhost:{port}/")
+        "on_output": lambda chunk: _check_docker_output(chunk, port)
     }
+
+    lean_runner = container.lean_runner()
+    if project_config.get("algorithm-language", "Python") == "Python":
+        lean_runner.set_up_python_options(project, "/Lean/Launcher/bin/Debug/Notebooks", run_options)
+    else:
+        lean_runner.set_up_csharp_options(project, run_options)
+        run_options["volumes"][str(project)] = {
+            "bind": "/Lean/Launcher/bin/Debug/Notebooks",
+            "mode": "rw"
+        }
+
+    # Add references to all DLLs in QuantConnect.csx so custom C# libraries can be imported with using statements
+    run_options["commands"].append(" && ".join([
+        'find . -maxdepth 1 -iname "*.dll" | xargs -I _ echo \'#r "_"\' | cat - QuantConnect.csx > NewQuantConnect.csx',
+        "mv NewQuantConnect.csx QuantConnect.csx"
+    ]))
+
+    # Run the script that starts Jupyter Lab when all set up has been done
+    run_options["commands"].append("./start.sh")
 
     cli_config_manager = container.cli_config_manager()
     research_image = cli_config_manager.get_research_image(image)
