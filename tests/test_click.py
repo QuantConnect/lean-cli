@@ -108,9 +108,9 @@ def test_path_parameter_fails_when_input_not_valid_path() -> None:
     def command(arg: Path) -> None:
         pass
 
-    path_validator = mock.Mock()
-    path_validator.is_path_valid.return_value = False
-    container.path_validator.override(Object(path_validator))
+    path_manager = mock.Mock()
+    path_manager.is_path_valid.return_value = False
+    container.path_manager.override(Object(path_manager))
 
     result = CliRunner().invoke(command, ["invalid-path.txt"])
 

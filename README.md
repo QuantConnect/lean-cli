@@ -73,6 +73,8 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean data download forex`](#lean-data-download-forex)
 - [`lean data generate`](#lean-data-generate)
 - [`lean init`](#lean-init)
+- [`lean library add`](#lean-library-add)
+- [`lean library remove`](#lean-library-remove)
 - [`lean live`](#lean-live)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
@@ -486,6 +488,75 @@ Options:
 ```
 
 _See code: [lean/commands/init.py](lean/commands/init.py)_
+
+### `lean library add`
+
+Add a custom library to a project.
+
+```
+Usage: lean library add [OPTIONS] PROJECT NAME
+
+  Add a custom library to a project.
+
+  PROJECT must be the path to the project.
+
+  NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
+
+  If --version is not specified, the package is pinned to the latest compatible version. For C# projects, this is the
+  latest available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what
+  the Docker images use).
+
+  Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH.
+
+  Custom Python libraries are added to your project's requirements.txt file and are installed in your local Python
+  environment so you get local autocomplete for the library.
+
+  C# example usage:
+  $ lean library add "My CSharp Project" Microsoft.ML
+  $ lean library add "My CSharp Project" Microsoft.ML --version 1.5.5
+
+  Python example usage:
+  $ lean library add "My Python Project" tensorflow
+  $ lean library add "My Python Project" tensorflow --version 2.5.0
+
+Options:
+  --version TEXT  The version of the library to add (defaults to latest compatible version)
+  --verbose       Enable debug logging
+  --help          Show this message and exit.
+```
+
+_See code: [lean/commands/library/add.py](lean/commands/library/add.py)_
+
+### `lean library remove`
+
+Remove a custom library from a project.
+
+```
+Usage: lean library remove [OPTIONS] PROJECT NAME
+
+  Remove a custom library from a project.
+
+  PROJECT must be the path to the project directory.
+
+  NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
+
+  Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH.
+
+  Custom Python libraries are removed from the project's requirements.txt file, and from the packages cache that is
+  used when running LEAN locally using Docker.
+
+  C# example usage:
+  $ lean library remove "My CSharp Project" Microsoft.ML
+
+  Python example usage:
+  $ lean library remove "My Python Project" tensorflow
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_
 
 ### `lean live`
 

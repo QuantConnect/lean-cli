@@ -15,13 +15,13 @@ import json
 from pathlib import Path
 from typing import Optional
 from unittest import mock
-from xml.etree import ElementTree
 
 import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.config import DebuggingMethod
@@ -309,7 +309,7 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
 
     assert result.exit_code == 1
 
-    workspace_xml = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+    workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
     assert workspace_xml.find(".//mapping[@remote-root='/LeanCLI']") is None
     assert workspace_xml.find(".//mapping[@remote-root='/Lean/Launcher/bin/Debug']") is not None
 
@@ -451,5 +451,5 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
 
     for dir_name in [".idea.CSharp Project", ".idea.CSharp Project.dir"]:
         workspace_xml_path = Path.cwd() / "CSharp Project" / ".idea" / dir_name / ".idea" / "workspace.xml"
-        workspace_xml = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+        workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None

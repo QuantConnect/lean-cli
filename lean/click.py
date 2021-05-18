@@ -147,8 +147,7 @@ class PathParameter(click.ParamType):
     def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> Path:
         path = Path(value).expanduser().resolve()
 
-        path_validator = container.path_validator()
-        if not path_validator.is_path_valid(path):
+        if not container.path_manager().is_path_valid(path):
             self.fail(f"{self._path_type} '{value}' is not a valid path.", param, ctx)
 
         if self._exists and not path.exists():

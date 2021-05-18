@@ -27,6 +27,7 @@ from lean.commands.logout import logout
 from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
+from lean.commands.library import library
 
 
 @click.group()
@@ -41,6 +42,7 @@ def lean() -> None:
 lean.add_command(config)
 lean.add_command(cloud)
 lean.add_command(data)
+lean.add_command(library)
 
 lean.add_command(login)
 lean.add_command(logout)

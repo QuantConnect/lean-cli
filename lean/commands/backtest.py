@@ -15,7 +15,6 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from xml.etree import ElementTree
 
 import click
 
@@ -70,13 +69,14 @@ def _migrate_dotnet_5_python_vscode(project_dir: Path) -> None:
 
 def _migrate_dotnet_5_csharp_rider(project_dir: Path) -> None:
     made_changes = False
+    xml_manager = container.xml_manager()
 
     for dir_name in [f".idea.{project_dir.stem}", f".idea.{project_dir.stem}.dir"]:
         workspace_xml_path = project_dir / ".idea" / dir_name / ".idea" / "workspace.xml"
         if not workspace_xml_path.is_file():
             continue
 
-        current_content = ElementTree.fromstring(workspace_xml_path.read_text(encoding="utf-8"))
+        current_content = xml_manager.parse(workspace_xml_path.read_text(encoding="utf-8"))
 
         run_manager = current_content.find(".//component[@name='RunManager']")
         if run_manager is None:
@@ -88,9 +88,7 @@ def _migrate_dotnet_5_csharp_rider(project_dir: Path) -> None:
 
         run_manager.remove(config)
 
-        new_content = ElementTree.tostring(current_content, encoding="utf-8", method="xml").decode("utf-8")
-        workspace_xml_path.write_text(new_content, encoding="utf-8")
-
+        workspace_xml_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
         made_changes = True
 
     if made_changes:

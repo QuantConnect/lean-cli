@@ -31,11 +31,12 @@ from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
-from lean.components.util.path_validator import PathValidator
+from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.update_manager import UpdateManager
+from lean.components.util.xml_manager import XMLManager
 from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
 
@@ -45,8 +46,9 @@ class Container(DeclarativeContainer):
 
     task_manager = Singleton(TaskManager, logger)
     name_generator = Singleton(NameGenerator)
-    path_validator = Singleton(PathValidator)
+    path_manager = Singleton(PathManager)
     temp_manager = Singleton(TempManager)
+    xml_manager = Singleton(XMLManager)
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
@@ -57,7 +59,7 @@ class Container(DeclarativeContainer):
     lean_config_manager = Singleton(LeanConfigManager, cli_config_manager, project_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
-    project_manager = Singleton(ProjectManager, project_config_manager)
+    project_manager = Singleton(ProjectManager, project_config_manager, xml_manager)
 
     market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
@@ -75,7 +77,7 @@ class Container(DeclarativeContainer):
                                       project_config_manager,
                                       pull_manager,
                                       push_manager,
-                                      path_validator)
+                                      path_manager)
 
     docker_manager = Singleton(DockerManager, logger)
 

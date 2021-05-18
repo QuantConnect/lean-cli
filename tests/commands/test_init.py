@@ -11,11 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import tempfile
 import zipfile
 from pathlib import Path
-from xml.etree import ElementTree
 
 import pytest
 from click.testing import CliRunner
@@ -117,19 +115,3 @@ def test_init_creates_clean_config_file_from_repo() -> None:
   "data-folder": "data"
 }
     """.strip()
-
-
-def validate_json(text: str) -> bool:
-    try:
-        json.loads(text)
-        return True
-    except ValueError:
-        return False
-
-
-def validate_xml(text: str) -> bool:
-    try:
-        ElementTree.fromstring(text)
-        return True
-    except ElementTree.ParseError:
-        return False

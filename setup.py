@@ -27,6 +27,7 @@ install_requires = [
     "dependency-injector~=4.20.1",
     "pydantic~=1.7.3",
     "python-dateutil~=2.8.1",
+    "lxml~=4.6.3",
     "setuptools",
     "quantconnect-stubs"
 ]

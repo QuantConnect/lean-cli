@@ -243,8 +243,7 @@ def create_project(name: str, language: str) -> None:
 
     full_path = Path.cwd() / name
 
-    path_validator = container.path_validator()
-    if not path_validator.is_path_valid(full_path):
+    if not container.path_manager().is_path_valid(full_path):
         raise MoreInfoError(f"'{name}' is not a valid path",
                             "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
 

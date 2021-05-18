@@ -15,8 +15,20 @@ import platform
 from pathlib import Path
 
 
-class PathValidator:
-    """The PathValidator validates paths."""
+class PathManager:
+    """The PathManager class provides utilities for working with paths."""
+
+    def get_relative_path(self, destination: Path, source: Path = Path.cwd()) -> Path:
+        """Returns a path relative to another one.
+
+        :param destination: the path to point to
+        :param source: the root where the relative path is relative to
+        :return: the destination path relative to the source path, or destination path if it is not relative
+        """
+        try:
+            return destination.relative_to(source)
+        except ValueError:
+            return destination
 
     def is_path_valid(self, path: Path) -> bool:
         """Returns whether a path is valid on the current operating system.

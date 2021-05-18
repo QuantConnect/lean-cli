@@ -18,23 +18,25 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
-from xml.etree import ElementTree
 
 import pkg_resources
 
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.xml_manager import XMLManager
 from lean.models.api import QCLanguage, QCProject
 
 
 class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
 
-    def __init__(self, project_config_manager: ProjectConfigManager) -> None:
+    def __init__(self, project_config_manager: ProjectConfigManager, xml_manager: XMLManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
+        :param xml_manager: the XMLManager to use when working with XML
         """
         self._project_config_manager = project_config_manager
+        self._xml_manager = xml_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -246,9 +248,9 @@ class ProjectManager:
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
         if jdk_table_file.exists():
-            root = ElementTree.fromstring(jdk_table_file.read_text(encoding="utf-8"))
+            root = self._xml_manager.parse(jdk_table_file.read_text(encoding="utf-8"))
         else:
-            root = ElementTree.fromstring("""
+            root = self._xml_manager.parse("""
 <application>
   <component name="ProjectJdkTable">
   </component>
@@ -265,7 +267,7 @@ class ProjectManager:
         classpath_entries = "\n".join(classpath_entries)
 
         component_element = root.find(".//component[@name='ProjectJdkTable']")
-        component_element.append(ElementTree.fromstring(f"""
+        component_element.append(self._xml_manager.parse(f"""
 <jdk version="2">
   <name value="Lean CLI" />
   <type value="Python SDK" />
@@ -290,7 +292,7 @@ class ProjectManager:
         """))
 
         # Save the modified XML tree
-        self._generate_file(jdk_table_file, ElementTree.tostring(root, encoding="utf-8", method="xml").decode("utf-8"))
+        self._generate_file(jdk_table_file, self._xml_manager.to_string(root))
 
     def _generate_vscode_csharp_config(self, project_dir: Path) -> None:
         """Generates C# debugging configuration for VS Code.
@@ -373,9 +375,9 @@ on the page above, you can add a PackageReference for it.
         # Parse the file containing Rider's internal list of remote hosts
         debugger_file = rider_config_dir / "options" / "debugger.xml"
         if debugger_file.exists():
-            root = ElementTree.fromstring(debugger_file.read_text(encoding="utf-8"))
+            root = self._xml_manager.parse(debugger_file.read_text(encoding="utf-8"))
         else:
-            root = ElementTree.fromstring("""
+            root = self._xml_manager.parse("""
 <application>
     <component name="XDebuggerSettings">
     </component>
@@ -385,19 +387,19 @@ on the page above, you can add a PackageReference for it.
         component_element = root.find(".//component[@name='XDebuggerSettings']")
 
         if root.find(".//debuggers") is None:
-            component_element.append(ElementTree.fromstring("<debuggers></debuggers>"))
+            component_element.append(self._xml_manager.parse("<debuggers></debuggers>"))
         debuggers = root.find(".//debuggers")
 
         if debuggers.find(".//debugger[@id='dotnet_debugger']") is None:
-            debuggers.append(ElementTree.fromstring('<debugger id="dotnet_debugger"></debugger>'))
+            debuggers.append(self._xml_manager.parse('<debugger id="dotnet_debugger"></debugger>'))
         dotnet_debugger = debuggers.find(".//debugger[@id='dotnet_debugger']")
 
         if dotnet_debugger.find(".//configuration") is None:
-            dotnet_debugger.append(ElementTree.fromstring("<configuration></configuration>"))
+            dotnet_debugger.append(self._xml_manager.parse("<configuration></configuration>"))
         configuration = dotnet_debugger.find(".//configuration")
 
         if configuration.find(".//option[@name='sshCredentials']") is None:
-            configuration.append(ElementTree.fromstring('<option name="sshCredentials"></option>'))
+            configuration.append(self._xml_manager.parse('<option name="sshCredentials"></option>'))
         ssh_credentials = configuration.find(".//option[@name='sshCredentials']")
 
         required_value = f"&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{ssh_dir.as_posix()}/key&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;"
@@ -408,10 +410,10 @@ on the page above, you can add a PackageReference for it.
                 return
 
         # Add the new entry to the XML tree
-        ssh_credentials.append(ElementTree.fromstring(f'<option value="{required_value}"/>'))
+        ssh_credentials.append(self._xml_manager.parse(f'<option value="{required_value}"/>'))
 
         # Save the modified XML tree
-        self._generate_file(debugger_file, ElementTree.tostring(root, encoding="utf-8", method="xml").decode("utf-8"))
+        self._generate_file(debugger_file, self._xml_manager.to_string(root))
 
     def _generate_file(self, file: Path, content: str) -> None:
         """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.

@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -172,6 +173,29 @@ def test_cli() -> None:
     assert (csharp_project_dir / f"{csharp_project_name}.csproj").is_file()
     assert (csharp_project_dir / ".vscode" / "launch.json").is_file()
 
+    # Add custom Python library
+    run_command(["lean", "library", "add", python_project_name, "matplotlib"], cwd=test_dir)
+    assert (python_project_dir / "requirements.txt").is_file()
+    assert f"matplotlib==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+
+    # Cannot add custom Python library incompatible with Python 3.6
+    run_command(["lean", "library", "add", python_project_name, "PyS3DE"], cwd=test_dir, expected_return_code=1)
+
+    # Cannot add custom Python library without version when it's not on PyPI
+    run_command(["lean", "library", "add", python_project_name, str(uuid.uuid4())],
+                cwd=test_dir,
+                expected_return_code=1)
+
+    # Add custom C# library
+    run_command(["lean", "library", "add", csharp_project_name, "Microsoft.ML"], cwd=test_dir)
+    csproj_file = csharp_project_dir / f"{csharp_project_name}.csproj"
+    assert 'Include="Microsoft.ML"' in csproj_file.read_text(encoding="utf-8")
+
+    # Cannot add custom C# library without version when it's not on NuGet
+    run_command(["lean", "library", "add", csharp_project_name, str(uuid.uuid4())],
+                cwd=test_dir,
+                expected_return_code=1)
+
     # Copy over algorithms containing a SPY buy-and-hold strategy
     fixtures_dir = Path(__file__).parent / "fixtures"
     shutil.copy(fixtures_dir / "main.py", python_project_dir / "main.py")
@@ -186,6 +210,14 @@ def test_cli() -> None:
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
     csharp_backtest_dirs = list((csharp_project_dir / "backtests").iterdir())
     assert len(csharp_backtest_dirs) == 1
+
+    # Remove custom Python library
+    run_command(["lean", "library", "remove", python_project_name, "matplotlib"], cwd=test_dir)
+    assert f"matplotlib==" not in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+
+    # Remove custom C# library
+    run_command(["lean", "library", "remove", csharp_project_name, "Microsoft.ML"], cwd=test_dir)
+    assert 'Include="Microsoft.ML"' not in csproj_file.read_text(encoding="utf-8")
 
     # Generate report
     run_command(["lean", "report",

@@ -58,4 +58,5 @@ def main() -> None:
         else:
             logger.error(f"Error: {exception}")
 
+        container.temp_manager().delete_temporary_directories()
         sys.exit(1)
