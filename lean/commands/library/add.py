@@ -126,26 +126,12 @@ def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version: Stri
     :return: True if the file is compatible with the given Python version, False if not
     """
     major, minor, patch = required_python_version.version
-
     if file["python_version"] not in [f"py{major}", f"py{major}{minor}", f"cp{major}", f"cp{major}{minor}", "source"]:
         return False
 
-    requires_python = file["requires_python"]
-    if requires_python is not None:
-        if requires_python.startswith(">="):
-            try:
-                minimum_python_version = StrictVersion(requires_python[2:])
-                if required_python_version < minimum_python_version:
-                    return False
-            except ValueError:
-                pass
-        elif requires_python.startswith(">"):
-            try:
-                minimum_python_version = StrictVersion(requires_python[1:])
-                if required_python_version <= minimum_python_version:
-                    return False
-            except ValueError:
-                pass
+    if file["requires_python"] is not None:
+        if str(required_python_version) not in Requirement.parse(f"python{file['requires_python']}").specifier:
+            return False
 
     return True
 
@@ -185,11 +171,13 @@ def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
 
     for version, files in versions_to_check.items():
         for file in files:
-            if _is_pypi_file_compatible(file, required_python_version):
-                file_upload_time = isoparse(file["upload_time_iso_8601"])
-                if last_compatible_version is None or file_upload_time >= last_compatible_version_upload_time:
-                    last_compatible_version = version
-                    last_compatible_version_upload_time = file_upload_time
+            if not _is_pypi_file_compatible(file, required_python_version):
+                continue
+
+            file_upload_time = isoparse(file["upload_time_iso_8601"])
+            if last_compatible_version is None or file_upload_time >= last_compatible_version_upload_time:
+                last_compatible_version = version
+                last_compatible_version_upload_time = file_upload_time
 
     if last_compatible_version is None:
         if version is not None:
