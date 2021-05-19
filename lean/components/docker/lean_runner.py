@@ -228,7 +228,7 @@ class LeanRunner:
 
         # Mount a volume to the user packages directory so we only install packages once
         # This volume is project-specific as different projects may use different versions of the same package
-        user_packages_volume = f"lean_cli_python_{self._project_config_manager.get_project_id(project_dir)}"
+        user_packages_volume = f"lean_cli_python_{self._project_config_manager.get_local_id(project_dir)}"
         self._docker_manager.create_volume(user_packages_volume)
         run_options["volumes"][user_packages_volume] = {
             "bind": "/root/.local/lib/python3.6/site-packages",

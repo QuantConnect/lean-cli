@@ -210,13 +210,14 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
 
 
 @mock.patch("platform.system")
-def test_run_lean_adds_internal_host_when_running_linux(system) -> None:
+@pytest.mark.parametrize("os,host_expected", [("Linux", True), ("Windows", False), ("Darwin", False)])
+def test_run_lean_adds_internal_host_when_running_linux(system, os: str, host_expected: bool) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
 
-    system.return_value = "Linux"
+    system.return_value = os
 
     lean_runner = create_lean_runner(docker_manager)
 
@@ -229,30 +230,10 @@ def test_run_lean_adds_internal_host_when_running_linux(system) -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert "extra_hosts" in kwargs
-
-
-@mock.patch("platform.system")
-def test_run_lean_does_not_add_internal_host_when_not_running_linux(system) -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.return_value = True
-
-    system.return_value = "Windows"
-
-    lean_runner = create_lean_runner(docker_manager)
-
-    lean_runner.run_lean("backtesting",
-                         Path.cwd() / "Python Project" / "main.py",
-                         Path.cwd() / "output",
-                         ENGINE_IMAGE,
-                         None)
-
-    docker_manager.run_image.assert_called_once()
-    args, kwargs = docker_manager.run_image.call_args
-
-    assert "extra_hosts" not in kwargs
+    if host_expected:
+        assert "extra_hosts" in kwargs
+    else:
+        assert "extra_hosts" not in kwargs
 
 
 def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:

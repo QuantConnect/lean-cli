@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import uuid
 from pathlib import Path
 from typing import List
@@ -38,21 +39,21 @@ class ProjectConfigManager:
         """
         return Storage(str(project_directory / PROJECT_CONFIG_FILE_NAME))
 
-    def get_project_id(self, project_directory: Path) -> str:
-        """Returns the id of a project.
+    def get_local_id(self, project_directory: Path) -> str:
+        """Returns the local id of a project.
 
-        Every Lean CLI project has a unique id, regardless of whether they are synchronized with the cloud or not.
+        Every Lean CLI project has a unique local id, regardless of whether the project is synchronized with the cloud.
 
-        :param project_directory: the path to the project to retrieve the id of
-        :return: the UUIDv4 id of the given project
+        :param project_directory: the path to the project to retrieve the local id of
+        :return: the local id of the given project
         """
         project_config = self.get_project_config(project_directory)
 
-        if project_config.has("project-id"):
-            return project_config.get("project-id")
+        if project_config.has("local-id"):
+            return project_config.get("local-id")
 
         project_id = str(uuid.uuid4())
-        project_config.set("project-id", project_id)
+        project_config.set("local-id", project_id)
 
         return project_id
 

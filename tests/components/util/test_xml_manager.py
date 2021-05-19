@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from lxml import etree
+
 from lean.components.util.xml_manager import XMLManager
 
 
@@ -23,8 +25,7 @@ def test_parse_parses_xml_string() -> None:
 </Person>
     """
 
-    xml_manager = XMLManager()
-    xml_tree = xml_manager.parse(xml_string)
+    xml_tree = XMLManager().parse(xml_string)
 
     assert xml_tree.find(".//Name") is not None
     assert xml_tree.find(".//Email") is not None
@@ -33,14 +34,12 @@ def test_parse_parses_xml_string() -> None:
 
 
 def test_to_string_turns_xml_element_into_pretty_string() -> None:
-    xml_manager = XMLManager()
+    tree = etree.fromstring("<Person><!-- Person name --><Name>John Doe</Name><Email/></Person>")
 
-    xml_string = """
+    assert XMLManager().to_string(tree) == """
 <Person>
     <!-- Person name -->
     <Name>John Doe</Name>
     <Email/>
 </Person>
     """.strip() + "\n"
-
-    assert xml_manager.to_string(xml_manager.parse(xml_string)) == xml_string

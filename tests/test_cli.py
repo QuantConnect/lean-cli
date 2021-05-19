@@ -22,10 +22,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+import docker
 import pytest
 
 from lean.components.api.api_client import APIClient
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.xml_manager import XMLManager
 
 # These tests require a QuantConnect user id and API token
 # The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
@@ -174,15 +177,25 @@ def test_cli() -> None:
     assert (csharp_project_dir / ".vscode" / "launch.json").is_file()
 
     # Add custom Python library
-    run_command(["lean", "library", "add", python_project_name, "matplotlib"], cwd=test_dir)
+    run_command(["lean", "library", "add", python_project_name, "altair"], cwd=test_dir)
     assert (python_project_dir / "requirements.txt").is_file()
-    assert f"matplotlib==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+    assert f"altair==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
 
     # Cannot add custom Python library incompatible with Python 3.6
     run_command(["lean", "library", "add", python_project_name, "PyS3DE"], cwd=test_dir, expected_return_code=1)
 
     # Cannot add custom Python library without version when it's not on PyPI
     run_command(["lean", "library", "add", python_project_name, str(uuid.uuid4())],
+                cwd=test_dir,
+                expected_return_code=1)
+
+    # Cannot add custom Python library with version when version is invalid
+    run_command(["lean", "library", "add", python_project_name, "matplotlib", "--version", "0.0.0.0.0.1"],
+                cwd=test_dir,
+                expected_return_code=1)
+
+    # Cannot add custom Python library with version when version is incompatible with Python 3.6
+    run_command(["lean", "library", "add", python_project_name, "matplotlib", "--version", "3.4.2"],
                 cwd=test_dir,
                 expected_return_code=1)
 
@@ -196,7 +209,7 @@ def test_cli() -> None:
                 cwd=test_dir,
                 expected_return_code=1)
 
-    # Copy over algorithms containing a SPY buy-and-hold strategy
+    # Copy over algorithms containing a SPY buy-and-hold strategy and which import the custom libraries
     fixtures_dir = Path(__file__).parent / "fixtures"
     shutil.copy(fixtures_dir / "main.py", python_project_dir / "main.py")
     shutil.copy(fixtures_dir / "Main.cs", csharp_project_dir / "Main.cs")
@@ -212,12 +225,18 @@ def test_cli() -> None:
     assert len(csharp_backtest_dirs) == 1
 
     # Remove custom Python library
-    run_command(["lean", "library", "remove", python_project_name, "matplotlib"], cwd=test_dir)
-    assert f"matplotlib==" not in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+    run_command(["lean", "library", "remove", python_project_name, "altair"], cwd=test_dir)
+    assert f"altair==" not in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
 
     # Remove custom C# library
     run_command(["lean", "library", "remove", csharp_project_name, "Microsoft.ML"], cwd=test_dir)
     assert 'Include="Microsoft.ML"' not in csproj_file.read_text(encoding="utf-8")
+
+    # Custom Python library is removed, so Python backtest should now fail
+    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_return_code=1)
+
+    # Custom C# library is removed, so C# backtest should now fail
+    run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_return_code=1)
 
     # Generate report
     run_command(["lean", "report",
@@ -251,6 +270,13 @@ def test_cli() -> None:
     # Log out
     run_command(["lean", "logout"])
     assert not credentials_path.exists()
+
+    # Remove the Docker volume that we used to cache custom Python libraries
+    python_project_id = ProjectConfigManager(XMLManager()).get_local_id(python_project_dir)
+    for volume in docker.from_env().volumes.list():
+        if volume.name == f"lean_cli_python_{python_project_id}":
+            volume.remove()
+            break
 
     # Delete the test directory that we used
     shutil.rmtree(test_dir, ignore_errors=True)
