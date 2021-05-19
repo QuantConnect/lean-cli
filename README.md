@@ -502,7 +502,7 @@ Usage: lean library add [OPTIONS] PROJECT NAME
 
   NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
 
-  If --version is not specified, the package is pinned to the latest compatible version. For C# projects, this is the
+  If --version is not given, the package is pinned to the latest compatible version. For C# projects, this is the
   latest available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what
   the Docker images use).
 

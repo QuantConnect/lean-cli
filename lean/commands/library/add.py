@@ -107,7 +107,8 @@ def _add_csharp(project_dir: Path, name: str, version: Optional[str], no_local: 
     _add_csharp_package_to_csproj(csproj_file, name, version)
 
     if not no_local and shutil.which("dotnet") is not None:
-        logger.info(f"Restoring packages in '{path_manager.get_relative_path(project_dir)}'")
+        logger.info(
+            f"Restoring packages in '{path_manager.get_relative_path(project_dir)}' to provide local autocomplete")
 
         process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
 
@@ -271,7 +272,7 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
 
     NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
 
-    If --version is not specified, the package is pinned to the latest compatible version.
+    If --version is not given, the package is pinned to the latest compatible version.
     For C# projects, this is the latest available version.
     For Python projects, this is the latest version compatible with Python 3.6 (which is what the Docker images use).
 
