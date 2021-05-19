@@ -81,13 +81,8 @@ class DockerManager:
 
         if commands is not None:
             shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
-            with shell_script_path.open("w+", encoding="utf-8") as file:
-                command_lines = "\n".join(commands)
-                file.write(f"""
-#!/usr/bin/env bash
-set -e
-{command_lines}
-                """.strip() + "\n")
+            with shell_script_path.open("w+", encoding="utf-8", newline="\n") as file:
+                file.write("\n".join(["#!/usr/bin/env bash", "set -e"] + commands) + "\n")
 
             if "mounts" not in kwargs:
                 kwargs["mounts"] = []
