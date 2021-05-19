@@ -211,8 +211,8 @@ def test_cli() -> None:
 
     # Copy over algorithms containing a SPY buy-and-hold strategy and which import the custom libraries
     fixtures_dir = Path(__file__).parent / "fixtures"
-    shutil.copy(fixtures_dir / "main.py", python_project_dir / "main.py")
-    shutil.copy(fixtures_dir / "Main.cs", csharp_project_dir / "Main.cs")
+    shutil.copy(fixtures_dir / "local" / "main.py", python_project_dir / "main.py")
+    shutil.copy(fixtures_dir / "local" / "Main.cs", csharp_project_dir / "Main.cs")
 
     # Backtest Python project locally
     run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1")
@@ -244,6 +244,10 @@ def test_cli() -> None:
                  f"{python_project_name}/backtests/{python_backtest_dirs[0].name}/main.json"],
                 cwd=test_dir)
     assert (test_dir / "report.html").is_file()
+
+    # Copy over algorithms containing a SPY buy-and-hold strategy and which don't import the custom libraries
+    shutil.copy(fixtures_dir / "cloud" / "main.py", python_project_dir / "main.py")
+    shutil.copy(fixtures_dir / "cloud" / "Main.cs", csharp_project_dir / "Main.cs")
 
     # Push projects to the cloud
     run_command(["lean", "cloud", "push", "--project", python_project_name], cwd=test_dir)
