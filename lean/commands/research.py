@@ -30,7 +30,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
     :param chunk: the output chunk
     :param port: the port Jupyter Lab will be running on
     """
-    if "The Jupyter Notebook is running at:" in chunk:
+    if "is running at:" in chunk:
         webbrowser.open(f"http://localhost:{port}/")
 
 
