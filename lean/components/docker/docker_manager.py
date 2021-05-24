@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import signal
 import subprocess
 import sys
@@ -21,10 +22,11 @@ from pathlib import Path
 import docker
 from dateutil.parser import isoparse
 from docker.types import Mount
+from pkg_resources import Requirement
 
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP
+from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 
@@ -88,7 +90,7 @@ class DockerManager:
                 kwargs["mounts"] = []
 
             kwargs["mounts"].append(Mount(target="/lean-cli-start.sh", source=str(shell_script_path), type="bind"))
-            kwargs["entrypoint"] = ["bash", "-c", "chmod +x /lean-cli-start.sh && /lean-cli-start.sh"]
+            kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
         kwargs["detach"] = True
 
@@ -180,6 +182,42 @@ class DockerManager:
         docker_client = self._get_docker_client()
         if not any(v.name == name for v in docker_client.volumes.list()):
             docker_client.volumes.create(name)
+
+    def create_site_packages_volume(self, requirements_file: Path) -> str:
+        """Returns the name of the volume to mount to the user's site-packages directory.
+
+        This method automatically returns the best volume for the given requirements.
+        It also rotates out older volumes as needed to ensure we don't use too much disk space.
+
+        :param requirements_file: the path to the requirements file that will be pip installed in the container
+        :return: the name of the Docker volume to use
+        """
+        requirements = []
+        for line in requirements_file.read_text(encoding="utf-8").splitlines():
+            try:
+                requirements.append(Requirement.parse(line))
+            except ValueError:
+                pass
+
+        requirements = [str(requirement) for requirement in requirements]
+        requirements = sorted(set(requirements))
+        requirements = "\n".join(requirements)
+
+        requirements_hash = hashlib.md5(requirements.encode("utf-8")).hexdigest()
+        required_volume = f"lean_cli_python_{requirements_hash}"
+
+        docker_client = self._get_docker_client()
+        existing_volumes = [v for v in docker_client.volumes.list() if v.name.startswith("lean_cli_python_")]
+
+        if any(v.name == required_volume for v in existing_volumes):
+            return required_volume
+
+        volumes_by_age = sorted(existing_volumes, key=lambda v: isoparse(v.attrs["CreatedAt"]))
+        for i in range((len(volumes_by_age) - SITE_PACKAGES_VOLUME_LIMIT) + 1):
+            volumes_by_age[i].remove()
+
+        docker_client.volumes.create(required_volume)
+        return required_volume
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.

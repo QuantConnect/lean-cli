@@ -275,13 +275,6 @@ def test_cli() -> None:
     run_command(["lean", "logout"])
     assert not credentials_path.exists()
 
-    # Remove the Docker volume that we used to cache custom Python libraries
-    python_project_id = ProjectConfigManager(XMLManager()).get_local_id(python_project_dir)
-    for volume in docker.from_env().volumes.list():
-        if volume.name == f"lean_cli_python_{python_project_id}":
-            volume.remove()
-            break
-
     # Delete the test directory that we used
     shutil.rmtree(test_dir, ignore_errors=True)
 

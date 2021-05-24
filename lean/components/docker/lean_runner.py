@@ -226,11 +226,9 @@ class LeanRunner:
             "mode": "rw"
         }
 
-        # Mount a volume to the user packages directory so we only install packages once
-        # This volume is project-specific as different projects may use different versions of the same package
-        user_packages_volume = f"lean_cli_python_{self._project_config_manager.get_local_id(project_dir)}"
-        self._docker_manager.create_volume(user_packages_volume)
-        run_options["volumes"][user_packages_volume] = {
+        # Mount a volume to the user packages directory so we don't install packages every time
+        site_packages_volume = self._docker_manager.create_site_packages_volume(project_dir / "requirements.txt")
+        run_options["volumes"][site_packages_volume] = {
             "bind": "/root/.local/lib/python3.6/site-packages",
             "mode": "rw"
         }
@@ -238,20 +236,15 @@ class LeanRunner:
         # Update PATH in the Docker container to prevent pip install warnings
         run_options["commands"].append('export PATH="$PATH:/root/.local/bin"')
 
-        # Re-install dependencies if requirements.txt changed to make sure we don't run LEAN with unwanted packages
-        cached_requirements_path = "/root/.local/lib/python3.6/site-packages/requirements.txt"
-        run_options["commands"].append(" && ".join([
-            f"test -f {cached_requirements_path}",
-            f"! cmp --silent {remote_directory}/requirements.txt {cached_requirements_path}",
-            'test "$(pip freeze --user)" != ""',
-            "pip uninstall -y -r <(pip freeze --user)"
-        ]) + " || true")
-
         # Install custom libraries to the cached user packages directory
-        run_options["commands"].append(f"pip install --user -r {remote_directory}/requirements.txt")
-
-        # Save the requirements.txt file to the user packages directory so we can detect changes to it across runs
-        run_options["commands"].append(f"cp {remote_directory}/requirements.txt {cached_requirements_path}")
+        # We only need to do this if it hasn't already been done before for this site packages volume
+        # To keep track of this we create a special file in the site packages directory after installation
+        # If this file already exists we can skip pip install completely
+        marker_file = "/root/.local/lib/python3.6/site-packages/pip-install-done"
+        run_options["commands"].extend([
+            f"! test -f {marker_file} && pip install --user -r {remote_directory}/requirements.txt",
+            f"touch {marker_file}"
+        ])
 
     def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to C# projects.

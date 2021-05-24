@@ -43,6 +43,12 @@ DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 # The creation timestamp of the first image supporting .NET 5
 DOTNET_5_IMAGE_CREATED_TIMESTAMP = datetime(2021, 5, 6, 21, 32, 26, tzinfo=timezone.utc)
 
+# When we install custom Python libraries, we first mount a volume to the user site packages directory
+# This caches the installation and makes subsequent backtests much faster
+# Because the site packages are not versioned, we cannot reuse the volume between algorithms with different requirements
+# This constant defines how many site packages volumes get created before old ones are removed
+SITE_PACKAGES_VOLUME_LIMIT = 10
+
 # The base url of the QuantConnect API
 # This url should end with a forward slash
 API_BASE_URL = "https://www.quantconnect.com/api/v2/"
