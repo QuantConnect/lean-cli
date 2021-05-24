@@ -91,6 +91,8 @@ class DockerManager:
         commands = kwargs.pop("commands", None)
 
         if commands is not None:
+            commands[-1] = "exec " + commands[-1]
+
             shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
             with shell_script_path.open("w+", encoding="utf-8", newline="\n") as file:
                 file.write("\n".join(["#!/usr/bin/env bash", "set -e"] + commands) + "\n")
@@ -103,6 +105,7 @@ class DockerManager:
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
+        kwargs["stop_signal"] = "SIGINT"
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
@@ -113,7 +116,7 @@ class DockerManager:
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
             try:
-                container.kill()
+                container.stop(timeout=10)
                 container.remove()
             except:
                 # container.kill() throws if the container has already stopped running
@@ -150,17 +153,17 @@ class DockerManager:
         container.remove()
         return success
 
-    def build_image(self, dockerfile: Path, target: DockerImage) -> None:
+    def build_image(self, root: Path, dockerfile: Path, target: DockerImage) -> None:
         """Builds a Docker image.
 
+        :param root: the path build from
         :param dockerfile: the path to the Dockerfile to build
         :param target: the target name and tag
         """
         # We cannot really use docker_client.images.build() here as it doesn't let us log the progress
         # Building images without showing progress does not provide good developer experience
         # Since the build command is the same on Windows, macOS and Linux we can safely use a system call
-        process = subprocess.run(["docker", "build", "-t", str(target), "-f", dockerfile.name, "."],
-                                 cwd=dockerfile.parent)
+        process = subprocess.run(["docker", "build", "-t", str(target), "-f", str(dockerfile), "."], cwd=root)
 
         if process.returncode != 0:
             raise RuntimeError(

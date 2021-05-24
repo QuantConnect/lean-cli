@@ -27,22 +27,24 @@ CUSTOM_ENGINE_IMAGE = DockerImage(name="lean-cli/engine", tag="latest")
 CUSTOM_RESEARCH_IMAGE = DockerImage(name="lean-cli/research", tag="latest")
 
 
-def _compile_lean(lean_dir: Path) -> None:
-    """Compiles LEAN's C# code.
+def _compile_csharp(root: Path, csharp_dir: Path) -> None:
+    """Compiles C# code.
 
-    :param lean_dir: the directory containing the LEAN repository
+    :param csharp_dir: the directory containing the C# code
     """
     logger = container.logger()
-    logger.info(f"Compiling the C# code in '{lean_dir}'")
+    logger.info(f"Compiling the C# code in '{csharp_dir}'")
+
+    build_path = Path("/LeanCLI") / csharp_dir.relative_to(root)
 
     docker_manager = container.docker_manager()
     docker_manager.create_volume("lean_cli_nuget")
     success = docker_manager.run_image(CUSTOM_FOUNDATION_IMAGE,
-                                       entrypoint=["dotnet", "build", f"/LeanCLI"],
+                                       entrypoint=["dotnet", "build", str(build_path)],
                                        environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
                                                     "DOTNET_NOLOGO": "true"},
                                        volumes={
-                                           str(lean_dir): {
+                                           str(root): {
                                                "bind": "/LeanCLI",
                                                "mode": "rw"
                                            },
@@ -56,9 +58,10 @@ def _compile_lean(lean_dir: Path) -> None:
         raise RuntimeError("Something went wrong while running dotnet build, see the logs above for more information")
 
 
-def _build_image(dockerfile: Path, base_image: Optional[DockerImage], target_image: DockerImage) -> None:
+def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage], target_image: DockerImage) -> None:
     """Builds a Docker image.
 
+    :param root: the path to build from
     :param dockerfile: the path to the Dockerfile to build
     :param base_image: the base image to use, or None if the default should be used
     :param target_image: the name of the new image
@@ -80,39 +83,49 @@ def _build_image(dockerfile: Path, base_image: Optional[DockerImage], target_ima
 
     try:
         docker_manager = container.docker_manager()
-        docker_manager.build_image(dockerfile, target_image)
+        docker_manager.build_image(root, dockerfile, target_image)
     finally:
         if base_image is not None:
             dockerfile.write_text(current_content, encoding="utf-8")
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
-@click.argument("lean", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-def build(lean: Path) -> None:
-    """Build Docker images of your own version of LEAN.
+@click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+def build(root: Path) -> None:
+    """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
     \b
-    LEAN must point to a directory containing (a modified version of) the LEAN repository:
-    https://github.com/QuantConnect/Lean
+    ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
+    https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
 
     \b
     This command performs the following actions:
-    1. The lean-cli/foundation:latest image is built from DockerfileLeanFoundation(ARM).
+    1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
     2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
-    3. The lean-cli/engine:latest image is built from Dockerfile using lean-cli/foundation:latest as base image.
-    4. The lean-cli/research:latest image is built from DockerfileJupyter using lean-cli/engine:latest as base image.
-    5. The default engine image is set to lean-cli/engine:latest.
-    6. The default research image is set to lean-cli/research:latest.
+    3. The Alpha Streams SDK is compiled in a Docker container using the lean-cli/foundation:latest image.
+    4. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
+    5. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
+    6. The default engine image is set to lean-cli/engine:latest.
+    7. The default research image is set to lean-cli/research:latest.
     """
-    if platform.machine() in ["arm64", "aarch64"] and (lean / "DockerfileLeanFoundationARM").is_file():
-        foundation_dockerfile = lean / "DockerfileLeanFoundationARM"
-    else:
-        foundation_dockerfile = lean / "DockerfileLeanFoundation"
+    lean_dir = root / "Lean"
+    if not lean_dir.is_dir():
+        raise RuntimeError(f"Please clone https://github.com/QuantConnect/Lean to '{lean_dir}'")
 
-    _build_image(foundation_dockerfile, None, CUSTOM_FOUNDATION_IMAGE)
-    _compile_lean(lean)
-    _build_image(lean / "Dockerfile", CUSTOM_FOUNDATION_IMAGE, CUSTOM_ENGINE_IMAGE)
-    _build_image(lean / "DockerfileJupyter", CUSTOM_ENGINE_IMAGE, CUSTOM_RESEARCH_IMAGE)
+    alpha_streams_dir = root / "AlphaStreams"
+    if not lean_dir.is_dir():
+        raise RuntimeError(f"Please clone https://github.com/QuantConnect/AlphaStreams to '{alpha_streams_dir}'")
+
+    if platform.machine() in ["arm64", "aarch64"]:
+        foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
+    else:
+        foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
+
+    _build_image(root, foundation_dockerfile, None, CUSTOM_FOUNDATION_IMAGE)
+    _compile_csharp(root, lean_dir)
+    _compile_csharp(root, alpha_streams_dir)
+    _build_image(root, lean_dir / "Dockerfile", CUSTOM_FOUNDATION_IMAGE, CUSTOM_ENGINE_IMAGE)
+    _build_image(root, lean_dir / "DockerfileJupyter", CUSTOM_ENGINE_IMAGE, CUSTOM_RESEARCH_IMAGE)
 
     logger = container.logger()
     cli_config_manager = container.cli_config_manager()

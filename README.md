@@ -115,21 +115,22 @@ _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
 
 ### `lean build`
 
-Build Docker images of your own version of LEAN.
+Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
 ```
-Usage: lean build [OPTIONS] LEAN
+Usage: lean build [OPTIONS] ROOT
 
-  Build Docker images of your own version of LEAN.
+  Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
-  LEAN must point to a directory containing (a modified version of) the LEAN repository:
-  https://github.com/QuantConnect/Lean
+  ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
+  https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
 
   This command performs the following actions:
-  1. The lean-cli/foundation:latest image is built from DockerfileLeanFoundation(ARM).
+  1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
   2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
-  3. The lean-cli/engine:latest image is built from Dockerfile using lean-cli/foundation:latest as base image.
-  4. The lean-cli/research:latest image is built from DockerfileJupyter using lean-cli/engine:latest as base image.
+  2. The Alpha Streams SDK is compiled in a Docker container using the lean-cli/foundation:latest image.
+  3. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
+  4. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
   5. The default engine image is set to lean-cli/engine:latest.
   6. The default research image is set to lean-cli/research:latest.
 
