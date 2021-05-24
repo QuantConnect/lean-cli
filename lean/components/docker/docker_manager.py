@@ -23,6 +23,7 @@ import types
 from pathlib import Path
 
 from dateutil.parser import isoparse
+from docker.errors import APIError
 from pkg_resources import Requirement
 
 from lean.components.util.logger import Logger
@@ -101,8 +102,13 @@ class DockerManager:
             kwargs["mounts"].append(Mount(target="/lean-cli-start.sh", source=str(shell_script_path), type="bind"))
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
+        is_tty = sys.stdout.isatty()
+
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
+        kwargs["tty"] = is_tty
+        kwargs["stdin_open"] = is_tty
+        kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
@@ -110,13 +116,21 @@ class DockerManager:
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
 
+        force_kill = False
+
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
+            nonlocal force_kill
             try:
-                container.kill()
+                if not is_tty or force_kill or kwargs["stop_signal"] == "SIGKILL":
+                    container.kill()
+                else:
+                    self._logger.info("Waiting 1 minute for LEAN to exit gracefully, press Ctrl+C again to force stop")
+                    force_kill = True
+                    container.stop(timeout=60)
+
                 container.remove()
-            except:
-                # container.kill() throws if the container has already stopped running
+            except APIError:
                 pass
             finally:
                 sys.exit(1)
@@ -126,14 +140,30 @@ class DockerManager:
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
         def print_logs() -> None:
-            # Capture all logs and print it to stdout
+            chunk_buffer = bytes()
+
+            # Capture all logs and print it to stdout line by line
             for chunk in container.logs(stream=True, follow=True):
-                chunk = chunk.decode("utf-8")
+                chunk_buffer += chunk
+
+                if not chunk_buffer.endswith(b"\n"):
+                    continue
+
+                chunk = chunk_buffer.decode("utf-8")
+                chunk_buffer = bytes()
 
                 if on_output is not None:
                     on_output(chunk)
 
-                self._logger.info(chunk.strip())
+                self._logger.info(chunk.rstrip())
+
+                if not is_tty:
+                    continue
+
+                if "Press any key to exit..." in chunk or "QuantConnect.Report.Main(): Completed." in chunk:
+                    socket = docker_client.api.attach_socket(container.id, params={"stdin": 1, "stream": 1})
+                    socket._sock.send(b"\n")
+                    socket.close()
 
         thread = threading.Thread(target=print_logs)
         thread.daemon = True

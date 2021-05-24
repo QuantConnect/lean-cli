@@ -95,7 +95,7 @@ class LeanRunner:
                 "mode": "rw"
             }
 
-        run_options["commands"].append("dotnet QuantConnect.Lean.Launcher.dll")
+        run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
@@ -156,6 +156,7 @@ class LeanRunner:
         run_options: Dict[str, Any] = {
             "commands": [],
             "environment": {},
+            "stop_signal": "SIGINT",
             "mounts": [
                 Mount(target="/Lean/Launcher/bin/Debug/config.json",
                       source=str(config_path),

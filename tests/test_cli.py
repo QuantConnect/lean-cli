@@ -139,7 +139,7 @@ def test_cli() -> None:
                                    "--resolution", "Daily"],
                                   cwd=test_dir,
                                   timeout=600)
-    matches = re.findall(r"Begin data generation of 1 randomly generated Equity assets\.\.\.\nSymbol\[1]: ([A-Z]+)",
+    matches = re.findall(r"Begin data generation of 1 randomly generated Equity assets\.\.\.\n\s+Symbol\[1]: ([A-Z]+)",
                          generate_output)
     assert len(matches) == 1
     assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{matches[0].lower()}.zip").is_file()
