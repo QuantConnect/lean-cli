@@ -102,6 +102,7 @@ class DockerManager:
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
         kwargs["detach"] = True
+        kwargs["hostname"] = platform.node()
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
