@@ -162,7 +162,7 @@ class DockerManager:
 
                 if "Press any key to exit..." in chunk or "QuantConnect.Report.Main(): Completed." in chunk:
                     socket = docker_client.api.attach_socket(container.id, params={"stdin": 1, "stream": 1})
-                    socket._sock.send(b"\n")
+                    socket.send(b"\n")
                     socket.close()
 
         thread = threading.Thread(target=print_logs)
