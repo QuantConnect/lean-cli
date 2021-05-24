@@ -22,13 +22,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-import docker
 import pytest
 
 from lean.components.api.api_client import APIClient
-from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
-from lean.components.util.xml_manager import XMLManager
 
 # These tests require a QuantConnect user id and API token
 # The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
@@ -139,8 +136,9 @@ def test_cli() -> None:
                                    "--resolution", "Daily"],
                                   cwd=test_dir,
                                   timeout=600)
-    matches = re.findall(r"Begin data generation of 1 randomly generated Equity assets\.\.\.\n\s+Symbol\[1]: ([A-Z]+)",
-                         generate_output)
+    matches = re.findall(
+        r"Begin data generation of 1 randomly generated Equity assets\.\.\.\r?\n\s*Symbol\[1]: ([A-Z]+)",
+        generate_output)
     assert len(matches) == 1
     assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{matches[0].lower()}.zip").is_file()
 
