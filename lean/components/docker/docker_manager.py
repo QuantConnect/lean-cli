@@ -91,8 +91,6 @@ class DockerManager:
         commands = kwargs.pop("commands", None)
 
         if commands is not None:
-            commands[-1] = "exec " + commands[-1]
-
             shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
             with shell_script_path.open("w+", encoding="utf-8", newline="\n") as file:
                 file.write("\n".join(["#!/usr/bin/env bash", "set -e"] + commands) + "\n")
@@ -105,7 +103,6 @@ class DockerManager:
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
-        kwargs["stop_signal"] = "SIGINT"
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
@@ -116,7 +113,7 @@ class DockerManager:
         # Kill the container on Ctrl+C
         def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
             try:
-                container.stop(timeout=10)
+                container.kill()
                 container.remove()
             except:
                 # container.kill() throws if the container has already stopped running
