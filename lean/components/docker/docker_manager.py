@@ -12,16 +12,17 @@
 # limitations under the License.
 
 import hashlib
+import os
+import platform
 import signal
+import site
 import subprocess
 import sys
 import threading
 import types
 from pathlib import Path
 
-import docker
 from dateutil.parser import isoparse
-from docker.types import Mount
 from pkg_resources import Requirement
 
 from lean.components.util.logger import Logger
@@ -29,6 +30,14 @@ from lean.components.util.temp_manager import TempManager
 from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
+
+# This code has to run before Docker is imported
+if platform.system() == "Windows":
+    for site_packages_path in site.getsitepackages() + [site.getusersitepackages()]:
+        os.environ["PATH"] += ";" + os.path.join(site_packages_path, "pywin32_system32")
+
+import docker
+from docker.types import Mount
 
 
 class DockerManager:
