@@ -156,7 +156,7 @@ class LeanRunner:
         run_options: Dict[str, Any] = {
             "commands": [],
             "environment": {},
-            "stop_signal": "SIGINT",
+            "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
             "mounts": [
                 Mount(target="/Lean/Launcher/bin/Debug/config.json",
                       source=str(config_path),
