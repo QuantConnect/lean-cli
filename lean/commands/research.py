@@ -108,7 +108,7 @@ def research(project: Path, port: int, image: Optional[str], update: bool) -> No
     ]))
 
     # Run the script that starts Jupyter Lab when all set up has been done
-    run_options["commands"].append("exec ./start.sh")
+    run_options["commands"].append("./start.sh")
 
     cli_config_manager = container.cli_config_manager()
     research_image = cli_config_manager.get_research_image(image)
