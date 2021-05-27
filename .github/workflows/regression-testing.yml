@@ -40,8 +40,11 @@ jobs:
       #   https://github.community/t/is-it-possible-to-install-and-configure-docker-on-macos-runner/16981/7
       # - GitHub Actions only supports Windows-based Docker containers on Windows:
       #   https://github.com/actions/virtual-environments/issues/1143
+      #
+      # Before running the tests we free up some disk space to prevent issues.
+      # Removing /usr/local/lib/android frees up ~10GB, which we can safely do because we don't use Android.
       - name: Run CLI tests
-        run: pytest -s tests/test_cli.py
+        run: sudo rm -rf /usr/local/lib/android && pytest -s tests/test_cli.py
         if: runner.os == 'Linux'
         env:
           QC_USER_ID: ${{ secrets.QC_USER_ID }}
