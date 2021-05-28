@@ -11,6 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import platform
+import site
+
+# This code has to run before Docker is imported anywhere in the code
+if platform.system() == "Windows":
+    for site_packages_path in site.getsitepackages() + [site.getusersitepackages()]:
+        os.environ["PATH"] += ";" + os.path.join(site_packages_path, "pywin32_system32")
+
 import sys
 import traceback
 from io import StringIO
