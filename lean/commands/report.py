@@ -173,7 +173,7 @@ def report(backtest_data_source_file: Path,
         "volumes": {
             str(data_dir): {
                 "bind": "/Lean/Data",
-                "mode": "ro"
+                "mode": "rw"
             },
             str(output_dir): {
                 "bind": "/Results",

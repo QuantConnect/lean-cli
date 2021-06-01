@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -140,6 +141,27 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
     launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
+def _update_data_provider(new_value: str) -> None:
+    """Updates the data provider in the Lean configuration file.
+
+    :param new_value: the new value to set the data provider to
+    """
+    lean_config_manager = container.lean_config_manager()
+    config = lean_config_manager.get_lean_config()
+
+    config_path = lean_config_manager.get_lean_config_path()
+    config_text = config_path.read_text(encoding="utf-8")
+
+    # We can only use regex to update the property because converting config back to JSON drops all comments
+
+    if "data-provider" in config:
+        config_text = re.sub(r'"data-provider":\s*"([^"]*)"', f'"data-provider": "{new_value}"', config_text)
+    else:
+        config_text = config_text.replace("{", f'{{\n  "data-provider": "{new_value}",', 1)
+
+    config_path.write_text(config_text, encoding="utf-8")
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
@@ -148,6 +170,13 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
+@click.option("--download-data",
+              is_flag=True,
+              default=False,
+              help="Update the Lean configuration file to download data from the QuantConnect API")
+@click.option("--data-purchase-limit",
+              type=int,
+              help="The maximum amount of QCC to spend on downloading data during this backtest")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -155,7 +184,13 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the backtest")
-def backtest(project: Path, output: Optional[Path], debug: Optional[str], image: Optional[str], update: bool) -> None:
+def backtest(project: Path,
+             output: Optional[Path],
+             debug: Optional[str],
+             download_data: bool,
+             data_purchase_limit: Optional[int],
+             image: Optional[str],
+             update: bool) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -190,6 +225,16 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], image:
         debugging_method = DebuggingMethod.Rider
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
+    if download_data:
+        _update_data_provider("QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
+
+    if data_purchase_limit is not None:
+        config = container.lean_config_manager().get_lean_config()
+        if config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
+            container.logger().warn(
+                "--data-purchase-limit is ignored because the data provider is not set to download from the API, use --download-data to set that up")
+            data_purchase_limit = None
+
     cli_config_manager = container.cli_config_manager()
     engine_image = cli_config_manager.get_engine_image(image)
 
@@ -199,7 +244,7 @@ def backtest(project: Path, output: Optional[Path], debug: Optional[str], image:
         docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean("backtesting", algorithm_file, output, engine_image, debugging_method)
+    lean_runner.run_lean("backtesting", algorithm_file, output, engine_image, debugging_method, data_purchase_limit)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

@@ -176,7 +176,7 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
         docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(environment, algorithm_file, output, engine_image, None)
+    lean_runner.run_lean(environment, algorithm_file, output, engine_image, None, None)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

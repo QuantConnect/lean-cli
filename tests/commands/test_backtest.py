@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 from unittest import mock
 
+import json5
 import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
@@ -67,6 +68,7 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
+                                                 None,
                                                  None)
 
 
@@ -160,6 +162,7 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
+                                                 None,
                                                  None)
 
 
@@ -182,6 +185,7 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
+                                                 None,
                                                  None)
 
 
@@ -204,6 +208,7 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
+                                                 None,
                                                  None)
 
 
@@ -232,7 +237,8 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 debugging_method)
+                                                 debugging_method,
+                                                 None)
 
 
 @pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
@@ -479,3 +485,119 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
         workspace_xml_path = Path.cwd() / "CSharp Project" / ".idea" / dir_name / ".idea" / "workspace.xml"
         workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
+
+
+def test_backtest_updates_config_when_download_data_flag_given_and_data_provider_set_already() -> None:
+    create_fake_lean_cli_directory()
+
+    _generate_file(Path.cwd() / "lean.json", """
+{
+    // data-folder documentation
+    "data-folder": "data",
+    "data-provider": "not api data provider"
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
+
+    assert result.exit_code == 0
+
+    config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
+    assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+
+
+def test_backtest_updates_config_when_download_data_flag_given_and_data_provider_not_set_yet() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
+
+    assert result.exit_code == 0
+
+    config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
+    assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+
+
+def test_backtest_preserves_comments_when_updating_config() -> None:
+    create_fake_lean_cli_directory()
+
+    _generate_file(Path.cwd() / "lean.json", """
+{
+    // data-folder documentation
+    "data-folder": "data",
+    "data-provider": "not api data provider"
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
+
+    assert result.exit_code == 0
+
+    assert "// data-folder documentation" in (Path.cwd() / "lean.json").read_text(encoding="utf-8")
+
+
+def test_backtest_passes_data_purchase_limit_to_run_lean() -> None:
+    create_fake_lean_cli_directory()
+
+    _generate_file(Path.cwd() / "lean.json", """
+{
+    // data-folder documentation
+    "data-folder": "data",
+    "data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 1000)
+
+
+def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 None)

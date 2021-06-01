@@ -86,6 +86,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
+                                                 None,
                                                  None)
 
 
@@ -239,6 +240,7 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
+                                                 None,
                                                  None)
 
 
@@ -262,6 +264,7 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
+                                                 None,
                                                  None)
 
 
@@ -285,6 +288,7 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
+                                                 None,
                                                  None)
 
 

@@ -56,7 +56,8 @@ class LeanRunner:
                  algorithm_file: Path,
                  output_dir: Path,
                  image: DockerImage,
-                 debugging_method: Optional[DebuggingMethod]) -> None:
+                 debugging_method: Optional[DebuggingMethod],
+                 data_purchase_limit: Optional[int]) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -95,7 +96,11 @@ class LeanRunner:
                 "mode": "rw"
             }
 
-        run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
+        lean_command = "exec dotnet QuantConnect.Lean.Launcher.dll"
+        if data_purchase_limit is not None:
+            lean_command += f" --data-purchase-limit {data_purchase_limit}"
+
+        run_options["commands"].append(lean_command)
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
