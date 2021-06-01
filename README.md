@@ -69,8 +69,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean config set`](#lean-config-set)
 - [`lean config unset`](#lean-config-unset)
 - [`lean create-project`](#lean-create-project)
-- [`lean data download cfd`](#lean-data-download-cfd)
-- [`lean data download forex`](#lean-data-download-forex)
+- [`lean data download`](#lean-data-download)
 - [`lean data generate`](#lean-data-generate)
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
@@ -128,11 +127,11 @@ Usage: lean build [OPTIONS] ROOT
   This command performs the following actions:
   1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
   2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
-  2. The Alpha Streams SDK is compiled in a Docker container using the lean-cli/foundation:latest image.
-  3. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
-  4. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
-  5. The default engine image is set to lean-cli/engine:latest.
-  6. The default research image is set to lean-cli/research:latest.
+  3. The Alpha Streams SDK is compiled in a Docker container using the lean-cli/foundation:latest image.
+  4. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
+  5. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
+  6. The default engine image is set to lean-cli/engine:latest.
+  7. The default research image is set to lean-cli/research:latest.
 
 Options:
   --verbose  Enable debug logging
@@ -352,72 +351,29 @@ Options:
 
 _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
-### `lean data download cfd`
+### `lean data download`
 
-Download free CFD data from QuantConnect's Data Library.
+Purchase and download data from QuantConnect's Data Library.
 
 ```
-Usage: lean data download cfd [OPTIONS]
+Usage: lean data download [OPTIONS]
 
-  Download free CFD data from QuantConnect's Data Library.
+  Purchase and download data from QuantConnect's Data Library.
 
-  This command can only download data that you have previously added to your QuantConnect account.
-  See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library
+  An interactive wizard will show to walk you through the process of selecting data, agreeing to the distribution
+  agreements and payment. After this wizard the selected data will be downloaded automatically.
 
-  See the following url for the data that can be downloaded with this command:
-  https://www.quantconnect.com/data/tree/cfd/oanda
-
-  Example of downloading https://www.quantconnect.com/data/file/cfd/oanda/daily/au200aud.zip/au200aud.csv:
-  $ lean download cfd --ticker au200aud --resolution daily
+  See the following url for the data that can be purchased and downloaded with this command:
+  https://www.quantconnect.com/data/tree
 
 Options:
-  --ticker TEXT                   The ticker of the data  [required]
-  --resolution [tick|second|minute|hour|daily]
-                                  The resolution of the data  [required]
-  --start [yyyyMMdd]              The inclusive start date of the data (ignored for daily and hourly data)
-  --end [yyyyMMdd]                The inclusive end date of the data (ignored for daily and hourly data)
-  --overwrite                     Overwrite existing local data
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --overwrite         Overwrite existing local data
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
-_See code: [lean/commands/data/download/cfd.py](lean/commands/data/download/cfd.py)_
-
-### `lean data download forex`
-
-Download free Forex data from QuantConnect's Data Library.
-
-```
-Usage: lean data download forex [OPTIONS]
-
-  Download free Forex data from QuantConnect's Data Library.
-
-  This command can only download data that you have previously added to your QuantConnect account.
-  See the following url for instructions on how to do so:
-  https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-data/downloading-from-quantconnect#02-QuantConnect-Data-Library
-
-  See the following url for the data that can be downloaded with this command:
-  https://www.quantconnect.com/data/tree/forex
-
-  Example of downloading 2019 data of https://www.quantconnect.com/data/tree/forex/fxcm/minute/eurusd:
-  $ lean download forex --ticker eurusd --market fxcm --resolution minute --start 20190101 --end 20191231
-
-Options:
-  --ticker TEXT                   The ticker of the data  [required]
-  --market [fxcm|oanda]           The market of the data  [required]
-  --resolution [tick|second|minute|hour|daily]
-                                  The resolution of the data  [required]
-  --start [yyyyMMdd]              The inclusive start date of the data (ignored for daily and hourly data)
-  --end [yyyyMMdd]                The inclusive end date of the data (ignored for daily and hourly data)
-  --overwrite                     Overwrite existing local data
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
-```
-
-_See code: [lean/commands/data/download/forex.py](lean/commands/data/download/forex.py)_
+_See code: [lean/commands/data/download.py](lean/commands/data/download.py)_
 
 ### `lean data generate`
 
