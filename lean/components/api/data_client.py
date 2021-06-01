@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
-from typing import Optional
+from typing import List
 
 from lean.components.api.api_client import *
-from lean.models.api import QCLink, QCResolution, QCSecurityType
+from lean.models.api import QCDataInformation
 
 
 class DataClient:
@@ -28,31 +27,41 @@ class DataClient:
         """
         self._api = api_client
 
-    def get_link(self,
-                 security_type: QCSecurityType,
-                 ticker: str,
-                 market: str,
-                 resolution: QCResolution,
-                 date: Optional[datetime]) -> QCLink:
-        """Returns the link to the downloadable data.
+    def download_file(self, file_path: str, organization_id: str) -> bytes:
+        """Downloads the content of a downloadable data file.
 
-        :param security_type: the security type of the data
-        :param ticker: the ticker of the data
-        :param market: the market of the data
-        :param resolution: the resolution of the data
-        :param date: the date of the data, may be None
-        :return: an object containing the download link for the data
+        :param file_path: the path of the data file
+        :param organization_id: the id of the organization that should be billed
+        :return: the content of the data file
         """
-        parameters = {
+        data = self._api.post("data/read", {
             "format": "link",
-            "type": security_type.value.lower(),
-            "ticker": ticker,
-            "market": market,
-            "resolution": resolution.value.lower()
-        }
+            "filePath": file_path,
+            "organizationId": organization_id
+        })
 
-        if date is not None:
-            parameters["date"] = date.strftime("%Y%m%d")
+        response = requests.get(data["link"])
+        if not response.ok:
+            raise RequestFailedError(response)
 
-        data = self._api.post("data/read", parameters)
-        return QCLink(**data)
+        return response.content
+
+    def list_objects(self, directory_path: str) -> List[str]:
+        """Returns the remote directory listing of a directory.
+
+        :param directory_path: the path to the directory to get a directory listing of
+        :return: the list of objects in the given directory
+        """
+        data = self._api.post("data/list", {
+            "filePath": directory_path
+        })
+
+        return data["objects"]
+
+    def get_info(self) -> QCDataInformation:
+        """Returns the available data vendors, their prices and a link to the data agreement.
+
+        :return: the latest information on the downloadable data
+        """
+        data = self._api.post("data/prices")
+        return QCDataInformation(**data)

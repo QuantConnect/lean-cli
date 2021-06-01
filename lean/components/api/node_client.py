@@ -26,7 +26,7 @@ class NodeClient:
         self._api = api_client
 
     def get_all(self, organization_id: str) -> QCNodeList:
-        """Returns all the nodes in a project.
+        """Returns all the nodes in an organization.
 
         :param organization_id: the id of the organization to retrieve the nodes for
         :return: the nodes in the specified organization

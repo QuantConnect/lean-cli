@@ -11,26 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import List
 
 from lean.components.api.api_client import *
-from lean.models.api import QCAccount
+from lean.models.api import QCFullOrganization, QCMinimalOrganization
 
 
-class AccountClient:
-    """The AccountClient class contains methods to interact with account/* API endpoints."""
+class OrganizationClient:
+    """The OrganizationClient class contains methods to interact with organizations/* API endpoints."""
 
     def __init__(self, api_client: 'APIClient') -> None:
-        """Creates a new AccountClient instance.
+        """Creates a new OrganizationClient instance.
 
         :param api_client: the APIClient instance to use when making requests
         """
         self._api = api_client
 
-    def get_organization(self, organization_id: Optional[str] = None) -> QCAccount:
+    def get(self, organization_id: str) -> QCFullOrganization:
         """Returns the details of an organization.
 
-        :param organization_id: the id of the organization or None to select the preferred organization
+        :param organization_id: the id of the organization to retrieve the details of
         :return: the details of the organization
         """
         parameters = {}
@@ -38,5 +38,13 @@ class AccountClient:
         if organization_id is not None:
             parameters["organizationId"] = organization_id
 
-        data = self._api.post("account/read", parameters)
-        return QCAccount(**data)
+        data = self._api.post("organizations/read", parameters)
+        return QCFullOrganization(**data["organization"])
+
+    def get_all(self) -> List[QCMinimalOrganization]:
+        """Returns all the organizations the user is a member of.
+
+        :return: the organizations the user is a member of
+        """
+        data = self._api.post("organizations/list")
+        return [QCMinimalOrganization(**organization) for organization in data["organizations"]]

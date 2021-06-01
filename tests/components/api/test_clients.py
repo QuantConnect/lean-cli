@@ -28,6 +28,7 @@ from lean.components.api.compile_client import CompileClient
 from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
+from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
 from lean.constants import API_BASE_URL
 from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
@@ -259,9 +260,28 @@ def test_node_client_get_all_parses_response() -> None:
 def test_account_client_get_organization() -> None:
     api_client = create_api_client()
     account_client = AccountClient(api_client)
+    organization_client = OrganizationClient(api_client)
 
-    # Test get_organization() returns the same value when retrieving default organization with and without parameter
-    default_organization = account_client.get_organization()
-    specific_organization = account_client.get_organization(default_organization.organizationId)
+    # Test get_organization() returns the same value when retrieving preferred organization with and without parameter
+    preferred_organization = account_client.get_organization()
+    specific_organization = account_client.get_organization(preferred_organization.organizationId)
 
-    assert default_organization == specific_organization
+    # Test default organization is preferred organization
+    all_organizations = organization_client.get_all()
+    assert next(x.id for x in all_organizations if x.preferred) == preferred_organization.organizationId
+
+    assert preferred_organization == specific_organization
+
+
+def test_organization_client_get_details() -> None:
+    api_client = create_api_client()
+    organization_client = OrganizationClient(api_client)
+
+    # Test organizations can be retrieved
+    organizations = organization_client.get_all()
+
+    # Test full organization details can be retrieved
+    for organization in organizations:
+        full_organization = organization_client.get(organization.id)
+        assert organization.id == full_organization.id
+        assert organization.name == full_organization.name

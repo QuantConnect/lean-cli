@@ -305,10 +305,76 @@ class QCCard(WrappedBaseModel):
     last4: str
 
 
-class QCOrganization(WrappedBaseModel):
+class QCAccount(WrappedBaseModel):
     organizationId: str
-    creditBalance: float
     card: Optional[QCCard] = None
+
+    # Balance in QCC
+    creditBalance: float
+
+
+class QCOrganizationCreditMovement(WrappedBaseModel):
+    date: str
+    description: str
+    type: str
+    subtype: str
+    amount: float
+
+    # Balance in QCC
+    balance: float
+
+
+class QCOrganizationCredit(WrappedBaseModel):
+    movements: List[QCOrganizationCreditMovement]
+
+    # Balance in USD
+    balance: float
+
+
+class QCOrganizationProductItem(WrappedBaseModel):
+    name: str
+    quantity: int
+    unitPrice: float
+    total: float
+
+
+class QCOrganizationProduct(WrappedBaseModel):
+    name: str
+    items: List[QCOrganizationProductItem]
+
+
+class QCOrganizationData(WrappedBaseModel):
+    signedTime: Optional[str]
+    current: bool
+
+
+class QCFullOrganization(WrappedBaseModel):
+    id: str
+    name: str
+    seats: int
+    type: str
+    credit: QCOrganizationCredit
+    products: List[QCOrganizationProduct]
+    data: QCOrganizationData
+
+    def has_map_factor_files_subscription(self) -> bool:
+        """Returns whether this organization has a map & factor files subscription.
+        :return: True if the organization has a map & factor files subscription, False if not
+        """
+        data_products_product = next((x for x in self.products if x.name == "Data Products"), None)
+        if data_products_product is None:
+            return False
+
+        return any(x.name == "QuantConnect Equity Factor & Map Files" for x in data_products_product.items)
+
+
+class QCMinimalOrganization(WrappedBaseModel):
+    id: str
+    name: str
+    type: str
+    ownerName: str
+    members: int
+    preferred: bool
 
 
 class QCSecurityType(str, Enum):
@@ -386,3 +452,14 @@ class QCOptimizationEstimate(WrappedBaseModel):
     estimateId: str
     time: int
     balance: int
+
+
+class QCDataVendor(WrappedBaseModel):
+    vendorName: str
+    regex: str
+    price: float
+
+
+class QCDataInformation(WrappedBaseModel):
+    prices: List[QCDataVendor]
+    agreement: str

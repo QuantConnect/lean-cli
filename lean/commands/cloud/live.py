@@ -125,8 +125,7 @@ def live(project: str, push: bool, open_browser: bool) -> None:
     brokerage_settings = brokerage.get_settings(logger)
     price_data_handler = brokerage.get_price_data_handler()
 
-    organization = api_client.accounts.get_organization()
-    nodes = api_client.nodes.get_all(organization.organizationId)
+    nodes = api_client.nodes.get_all(cloud_project.organizationId)
 
     live_nodes = [node for node in nodes.live if not node.busy]
     if len(live_nodes) == 0:
