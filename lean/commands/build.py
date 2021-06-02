@@ -116,6 +116,8 @@ def build(root: Path) -> None:
     if not lean_dir.is_dir():
         raise RuntimeError(f"Please clone https://github.com/QuantConnect/AlphaStreams to '{alpha_streams_dir}'")
 
+    (lean_dir / "DataLibraries").mkdir(exist_ok=True)
+
     if platform.machine() in ["arm64", "aarch64"]:
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
     else:

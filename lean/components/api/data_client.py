@@ -26,6 +26,7 @@ class DataClient:
         :param api_client: the APIClient instance to use when making requests
         """
         self._api = api_client
+        self._list_objects_cache = {}
 
     def download_file(self, file_path: str, organization_id: str) -> bytes:
         """Downloads the content of a downloadable data file.
@@ -52,11 +53,19 @@ class DataClient:
         :param directory_path: the path to the directory to get a directory listing of
         :return: the list of objects in the given directory
         """
+        if directory_path in self._list_objects_cache:
+            return self._list_objects_cache[directory_path]
+
         data = self._api.post("data/list", {
             "filePath": directory_path
         })
 
-        return data["objects"]
+        first_part = directory_path.split("/")[0]
+        objects = sorted(f"{first_part}/{obj}" for obj in data["objects"])
+
+        self._list_objects_cache[directory_path] = objects
+
+        return objects
 
     def get_info(self, organization_id: str) -> QCDataInformation:
         """Returns the available data vendors, their prices and a link to the data agreement.

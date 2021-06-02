@@ -165,9 +165,9 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
         batch_time = ceil((hours * 100) / parallel_nodes) / 100
         batch_cost = max(0.01, ceil(node.price * hours * 100) / 100)
 
-        print(f"Estimated number of backtests: {backtest_count:,}")
-        print(f"Estimated batch time: {_format_hours(batch_time)}")
-        print(f"Estimated batch cost: ${batch_cost:,.2f}")
+        logger.info(f"Estimated number of backtests: {backtest_count:,}")
+        logger.info(f"Estimated batch time: {_format_hours(batch_time)}")
+        logger.info(f"Estimated batch cost: ${batch_cost:,.2f}")
 
         if click.confirm("Do you want to start the optimization on the selected node type?", default=True):
             break

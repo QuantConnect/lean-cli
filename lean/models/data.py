@@ -23,6 +23,7 @@ from lean.click import DateParameter
 from lean.container import container
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.logger import Option
+from lean.models.map_file import MapFile, MapFileRange
 from lean.models.market_hours_database import SecurityType
 from lean.models.pydantic import WrappedBaseModel
 
@@ -64,7 +65,7 @@ class Product(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def build(cls, organization: QCFullOrganization) -> List['Product']:
-        """Prompt the user the required questions about the product to add it to the cart.
+        """Asks the user the required questions about the product to add it to the cart.
 
         :param organization: the organization the user selected
         :return: the products to add to the cart
@@ -303,7 +304,7 @@ class EquitySecurityProduct(SecurityProduct):
         if not organization.has_map_factor_files_subscription():
             raise RuntimeError("\n".join([
                 "Your organization needs to have an active map & factor files subscription to download equity data",
-                f"You can buy a subscription at https://www.quantconnect.com/pricing?organization={organization.id}"
+                f"You can add the subscription at https://www.quantconnect.com/pricing?organization={organization.id}"
             ]))
 
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote])
@@ -321,7 +322,48 @@ class EquitySecurityProduct(SecurityProduct):
         ticker = cls._ask_ticker(SecurityType.Equity, market, resolution)
         start_date, end_date = cls._ask_start_end_date(resolution)
 
-        return [EquitySecurityProduct(data_type, market, ticker, resolution, start_date, end_date)]
+        logger = container.logger()
+
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
+            map_files = container.data_downloader().download_map_files(organization.id)
+            map_file_ranges: List[Tuple[MapFile, MapFileRange]] = []
+
+            for map_file in map_files:
+                for r in map_file.get_ticker_ranges(ticker, start_date, end_date):
+                    map_file_ranges.append((map_file, r))
+
+            map_file_ranges = sorted(map_file_ranges, key=lambda r: r[1].start_date)
+
+            if len(map_file_ranges) > 1:
+                logger.info(f"Multiple companies have used the {ticker.upper()} ticker in the requested date range")
+                selected_range = logger.prompt_list("Select the date range you are looking for", [
+                    Option(id=r, label=r[1].get_label()) for r in map_file_ranges
+                ])
+
+                selected_map_file = selected_range[0]
+                start_date = selected_range[1].start_date
+                end_date = selected_range[1].end_date
+            else:
+                selected_map_file = map_file_ranges[0][0]
+        else:
+            selected_map_file = None
+
+        products = [EquitySecurityProduct(data_type, market, ticker, resolution, start_date, end_date)]
+
+        if selected_map_file is not None:
+            historic_ranges = selected_map_file.get_historic_ranges(start_date)
+            for index, r in enumerate(historic_ranges):
+                next_ticker = ticker if index == 0 else historic_ranges[index - 1].ticker
+                logger.info(f"Before trading as {next_ticker}, the selected company traded as {r.ticker}")
+
+                if not click.confirm(
+                        f"Do you also want to download {r.ticker} data from {r.start_date.strftime('%Y-%m-%d')} to {r.end_date.strftime('%Y-%m-%d')}?"):
+                    break
+
+                products.append(
+                    EquitySecurityProduct(data_type, market, r.ticker, resolution, r.start_date, r.end_date))
+
+        return products
 
     def _get_data_files(self) -> Iterator[str]:
         base_directory = f"equity/{self._market.lower()}/{self._resolution.value.lower()}"
