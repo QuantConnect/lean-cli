@@ -14,7 +14,7 @@
 from typing import Any, List
 
 import click
-from rich.console import Console, RenderableType
+from rich.console import Console
 from rich.progress import BarColumn, Progress, TextColumn
 
 from lean.models.logger import Option
@@ -86,5 +86,16 @@ class Logger:
         for i, option in enumerate(options):
             self.info(f"{i + 1}) {option.label}")
 
-        number = click.prompt("Enter a number", type=click.IntRange(min=1, max=len(options)))
-        return options[number - 1].id
+        while True:
+            user_input = click.prompt("Enter an option", type=str)
+
+            try:
+                index = int(user_input)
+                if 0 < index <= len(options):
+                    return options[index - 1].id
+            except ValueError:
+                option = next((option for option in options if option.label == user_input), None)
+                if option is not None:
+                    return option.id
+
+            self.info("Please enter the number or label of an option")

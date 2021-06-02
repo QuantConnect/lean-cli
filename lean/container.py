@@ -17,6 +17,7 @@ from dependency_injector.providers import Factory, Singleton
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
+from lean.components.cloud.data_downloader import DataDownloader
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
 from lean.components.config.cli_config_manager import CLIConfigManager
@@ -27,6 +28,7 @@ from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
@@ -58,6 +60,8 @@ class Container(DeclarativeContainer):
 
     project_manager = Singleton(ProjectManager, project_config_manager, xml_manager)
 
+    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
+
     api_client = Factory(APIClient,
                          logger,
                          user_id=cli_config_manager.provided.user_id.get_value()(),
@@ -66,6 +70,7 @@ class Container(DeclarativeContainer):
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager)
     push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
+    data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
     cloud_project_manager = Singleton(CloudProjectManager,
                                       api_client,
                                       project_config_manager,

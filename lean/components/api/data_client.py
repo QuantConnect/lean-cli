@@ -58,10 +58,14 @@ class DataClient:
 
         return data["objects"]
 
-    def get_info(self) -> QCDataInformation:
+    def get_info(self, organization_id: str) -> QCDataInformation:
         """Returns the available data vendors, their prices and a link to the data agreement.
 
+        :param organization_id: the id of the organization to retrieve the data information for
         :return: the latest information on the downloadable data
         """
-        data = self._api.post("data/prices")
+        data = self._api.post("data/prices", {
+            "organizationId": organization_id
+        })
+
         return QCDataInformation(**data)

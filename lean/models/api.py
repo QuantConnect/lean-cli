@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
@@ -359,9 +360,10 @@ class QCFullOrganization(WrappedBaseModel):
 
     def has_map_factor_files_subscription(self) -> bool:
         """Returns whether this organization has a map & factor files subscription.
+
         :return: True if the organization has a map & factor files subscription, False if not
         """
-        data_products_product = next((x for x in self.products if x.name == "Data Products"), None)
+        data_products_product = next((x for x in self.products if x.name == "Data"), None)
         if data_products_product is None:
             return False
 
@@ -456,8 +458,16 @@ class QCOptimizationEstimate(WrappedBaseModel):
 
 class QCDataVendor(WrappedBaseModel):
     vendorName: str
-    regex: str
-    price: float
+    regex: Any
+
+    # Price in QCC
+    price: Optional[float]
+
+    @validator("regex", pre=True)
+    def parse_regex(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return re.compile(value[value.index("/") + 1:value.rindex("/")])
+        return value
 
 
 class QCDataInformation(WrappedBaseModel):
