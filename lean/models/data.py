@@ -12,9 +12,10 @@
 # limitations under the License.
 
 import abc
+import re
 from datetime import datetime
 from enum import Enum
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import click
 from dateutil.rrule import DAILY, rrule, rruleset, weekday
@@ -149,32 +150,95 @@ class SecurityProduct(Product, abc.ABC):
         ])
 
     @classmethod
-    def _ask_ticker(cls, security_type: SecurityType, market: str, resolution: Union[QCResolution, str]) -> str:
+    def _ask_ticker(cls,
+                    security_type: SecurityType,
+                    market: str,
+                    resolution: Union[QCResolution, str],
+                    validate_ticker: Callable[[str], bool]) -> str:
         security_type = security_type.get_internal_name().lower()
         market = market.lower()
         resolution = resolution.value.lower() if isinstance(resolution, QCResolution) else resolution.lower()
 
         url = f"https://www.quantconnect.com/data/tree/{security_type}/{market}/{resolution}"
-        container.logger().info(f"Browse the available data at {url}")
 
-        return click.prompt("Enter the ticker of the data")
+        logger = container.logger()
+        logger.info(f"Browse the available data at {url}")
+
+        while True:
+            user_input = click.prompt("Enter the ticker of the data")
+
+            if validate_ticker(user_input):
+                return user_input
+
+            logger.info("Error: Invalid ticker")
 
     @classmethod
-    def _ask_start_end_date(cls, resolution: QCResolution) -> Tuple[Optional[datetime], Optional[datetime]]:
-        if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
-            return None, None
+    def _ask_start_end_date(cls, all_dates: Optional[List[datetime]]) -> Tuple[datetime, datetime]:
+        logger = container.logger()
 
-        start_date = click.prompt("Start date of the data (yyyyMMdd)", type=DateParameter())
+        if all_dates is not None and len(all_dates) > 0:
+            start_constraint = all_dates[0]
+            end_constraint = all_dates[-1]
+
+            start_constraint_str = start_constraint.strftime('%Y-%m-%d')
+            end_constraint_str = end_constraint.strftime('%Y-%m-%d')
+
+            logger.info(f"Data is available from {start_constraint_str} to {end_constraint_str}")
+        else:
+            start_constraint, end_constraint = None, None
+            start_constraint_str, end_constraint_str = None, None
+
+        while True:
+            start_date = click.prompt("Start date of the data (yyyyMMdd)", type=DateParameter())
+
+            if start_constraint is not None and start_date < start_constraint:
+                logger.info(f"Error: start date must be at or after {start_constraint_str}")
+            else:
+                break
 
         while True:
             end_date = click.prompt("End date of the data (yyyyMMdd)", type=DateParameter())
+
             if end_date <= start_date:
-                container.logger().info("Error: end date must be later than start date")
+                logger.info("Error: end date must be later than start date")
+            elif end_constraint is not None and end_date > end_constraint:
+                logger.info(f"Error: end date must be at or before {end_constraint_str}")
             else:
                 return start_date, end_date
 
-    def _is_hour_or_daily(self) -> bool:
-        return self._resolution is QCResolution.Hour or self._resolution is QCResolution.Daily
+    @classmethod
+    def _list_files(cls, directory_path: str, pattern: str) -> List[str]:
+        """Lists remote files and allows extracting useful data.
+
+        :param directory_path: the path to the remote directory to list the files of
+        :param pattern: the pattern to match against
+        :return: the list of all matching files, or the list of all captured values if the pattern has a capturing group
+        """
+        files = container.api_client().data.list_objects(directory_path)
+        compiled_pattern = re.compile(pattern)
+
+        results = []
+        for file in files:
+            match = compiled_pattern.search(file)
+            if match is None:
+                continue
+
+            if match.lastindex is not None:
+                results.append(match.group(1))
+            else:
+                results.append(file)
+
+        return results
+
+    @classmethod
+    def _list_dates(cls, directory_path: str, pattern: str) -> List[datetime]:
+        """Lists the dates in the file names of remote files.
+
+        :param directory_path: the path to the remote directory to get the files from
+        :param pattern: the pattern to match against, must have a capturing group capturing a yyyyMMdd timestamp
+        :return: the parsed dates
+        """
+        return [datetime.strptime(timestamp, "%Y%m%d") for timestamp in cls._list_files(directory_path, pattern)]
 
     def _get_dates_with_data(self) -> List[str]:
         """Returns the dates between two dates for which the QuantConnect Data Library has data.
@@ -230,15 +294,29 @@ class CFDSecurityProduct(SecurityProduct):
                                           QCResolution.Minute,
                                           QCResolution.Hour,
                                           QCResolution.Daily])
-        ticker = cls._ask_ticker(SecurityType.CFD, market, resolution)
-        start_date, end_date = cls._ask_start_end_date(resolution)
+
+        base_directory = f"cfd/{market.lower()}/{resolution.value.lower()}"
+
+        def validate_ticker(t: str) -> bool:
+            if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
+                return t.lower() in cls._list_files(f"{base_directory}/", r"/([^/.]+)\.zip")
+
+            return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
+
+        ticker = cls._ask_ticker(SecurityType.CFD, market, resolution, validate_ticker)
+
+        if resolution != QCResolution.Hour or resolution != QCResolution.Daily:
+            dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
+            start_date, end_date = cls._ask_start_end_date(dates)
+        else:
+            start_date, end_date = None, None
 
         return [CFDSecurityProduct(data_type, market, ticker, resolution, start_date, end_date)]
 
     def _get_data_files(self) -> Iterator[str]:
         base_directory = f"cfd/{self._market.lower()}/{self._resolution.value.lower()}"
 
-        if self._is_hour_or_daily():
+        if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
             yield f"{base_directory}/{self._ticker.lower()}.zip"
             return
 
@@ -269,15 +347,29 @@ class CryptoSecurityProduct(SecurityProduct):
                                           QCResolution.Minute,
                                           QCResolution.Hour,
                                           QCResolution.Daily])
-        ticker = cls._ask_ticker(SecurityType.Crypto, market, resolution)
-        start_date, end_date = cls._ask_start_end_date(resolution)
+
+        base_directory = f"crypto/{market.lower()}/{resolution.value.lower()}"
+
+        def validate_ticker(t: str) -> bool:
+            if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
+                return t.lower() in cls._list_files(f"{base_directory}/", fr"/([^/_]+)_{data_type.name.lower()}\.zip")
+
+            return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
+
+        ticker = cls._ask_ticker(SecurityType.Crypto, market, resolution, validate_ticker)
+
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
+            dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
+            start_date, end_date = cls._ask_start_end_date(dates)
+        else:
+            start_date, end_date = None, None
 
         return [CryptoSecurityProduct(data_type, market, ticker, resolution, start_date, end_date)]
 
     def _get_data_files(self) -> Iterator[str]:
         base_directory = f"crypto/{self._market.lower()}/{self._resolution.value.lower()}"
 
-        if self._is_hour_or_daily():
+        if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
             yield f"{base_directory}/{self._ticker.lower()}_{self._data_type.name.lower()}.zip"
             return
 
@@ -319,8 +411,21 @@ class EquitySecurityProduct(SecurityProduct):
         else:
             resolution = cls._ask_resolution([QCResolution.Tick, QCResolution.Second, QCResolution.Minute])
 
-        ticker = cls._ask_ticker(SecurityType.Equity, market, resolution)
-        start_date, end_date = cls._ask_start_end_date(resolution)
+        base_directory = f"equity/{market.lower()}/{resolution.value.lower()}"
+
+        def validate_ticker(t: str) -> bool:
+            if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
+                return t.lower() in cls._list_files(f"{base_directory}/", fr"/([^/.]+)\.zip")
+
+            return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
+
+        ticker = cls._ask_ticker(SecurityType.Equity, market, resolution, validate_ticker)
+
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
+            dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
+            start_date, end_date = cls._ask_start_end_date(dates)
+        else:
+            start_date, end_date = None, None
 
         logger = container.logger()
 
@@ -368,7 +473,7 @@ class EquitySecurityProduct(SecurityProduct):
     def _get_data_files(self) -> Iterator[str]:
         base_directory = f"equity/{self._market.lower()}/{self._resolution.value.lower()}"
 
-        if self._is_hour_or_daily():
+        if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
             yield f"{base_directory}/{self._ticker.lower()}.zip"
             return
 
@@ -398,7 +503,7 @@ class EquityOptionSecurityProduct(SecurityProduct):
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest, DataType.Chains])
         market = "USA"
         resolution = "chains" if data_type is DataType.Chains else QCResolution.Minute
-        ticker = cls._ask_ticker(SecurityType.EquityOption, market, resolution)
+        ticker = cls._ask_ticker(SecurityType.EquityOption, market, resolution, lambda t: True)
 
         if data_type is not DataType.Chains:
             option_style = container.logger().prompt_list("Select the option style of the data", [
@@ -407,7 +512,7 @@ class EquityOptionSecurityProduct(SecurityProduct):
         else:
             option_style = None
 
-        start_date, end_date = cls._ask_start_end_date(resolution)
+        start_date, end_date = cls._ask_start_end_date(None)
 
         return [EquityOptionSecurityProduct(data_type, market, ticker, resolution, option_style, start_date, end_date)]
 
@@ -452,15 +557,29 @@ class ForexSecurityProduct(SecurityProduct):
                                           QCResolution.Minute,
                                           QCResolution.Hour,
                                           QCResolution.Daily])
-        ticker = cls._ask_ticker(SecurityType.Forex, market, resolution)
-        start_date, end_date = cls._ask_start_end_date(resolution)
+
+        base_directory = f"forex/{market.lower()}/{resolution.value.lower()}"
+
+        def validate_ticker(t: str) -> bool:
+            if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
+                return t.lower() in cls._list_files(f"{base_directory}/", fr"/([^/.]+)\.zip")
+
+            return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
+
+        ticker = cls._ask_ticker(SecurityType.Forex, market, resolution, validate_ticker)
+
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
+            dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
+            start_date, end_date = cls._ask_start_end_date(dates)
+        else:
+            start_date, end_date = None, None
 
         return [ForexSecurityProduct(data_type, market, ticker, resolution, start_date, end_date)]
 
     def _get_data_files(self) -> Iterator[str]:
         base_directory = f"forex/{self._market.lower()}/{self._resolution.value.lower()}"
 
-        if self._is_hour_or_daily():
+        if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
             yield f"{base_directory}/{self._ticker.lower()}.zip"
             return
 
@@ -487,8 +606,16 @@ class FutureSecurityProduct(SecurityProduct):
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest])
         market = cls._ask_market(["CBOE", "CBOT", "CME", "COMEX", "HKFE", "ICE", "NYMEX", "SGX"])
         resolution = cls._ask_resolution([QCResolution.Tick, QCResolution.Second, QCResolution.Minute])
-        ticker = cls._ask_ticker(SecurityType.Future, market, resolution)
-        start_date, end_date = cls._ask_start_end_date(resolution)
+
+        base_directory = f"future/{market.lower()}/{resolution.value.lower()}"
+
+        def validate_ticker(t: str) -> bool:
+            return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
+
+        ticker = cls._ask_ticker(SecurityType.Future, market, resolution, validate_ticker)
+
+        dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
+        start_date, end_date = cls._ask_start_end_date(dates)
 
         return [FutureSecurityProduct(data_type, market, ticker, resolution, start_date, end_date),
                 FutureSecurityProduct(DataType.Margins, market, ticker, resolution, None, None)]
