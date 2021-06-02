@@ -21,11 +21,15 @@ from rich.table import Table
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
-from lean.models.data import (CFDSecurityProduct, CryptoSecurityProduct, EquityOptionSecurityProduct,
-                              EquitySecurityProduct, ForexSecurityProduct,
-                              FutureSecurityProduct, Product)
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
+from lean.models.products.base import Product
+from lean.models.products.cfd import CFDProduct
+from lean.models.products.crypto import CryptoProduct
+from lean.models.products.equity import EquityProduct
+from lean.models.products.equity_option import EquityOptionProduct
+from lean.models.products.forex import ForexProduct
+from lean.models.products.future import FutureProduct
 
 data_information: Optional[QCDataInformation] = None
 
@@ -129,12 +133,12 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
     logger = container.logger()
 
     available_product_classes = [
-        CFDSecurityProduct,
-        CryptoSecurityProduct,
-        EquitySecurityProduct,
-        EquityOptionSecurityProduct,
-        ForexSecurityProduct,
-        FutureSecurityProduct
+        CFDProduct,
+        CryptoProduct,
+        EquityProduct,
+        EquityOptionProduct,
+        ForexProduct,
+        FutureProduct
     ]
 
     while True:
