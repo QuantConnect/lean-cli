@@ -33,7 +33,7 @@ class CFDProduct(SecurityProduct):
         super().__init__(SecurityType.CFD, data_type, market, ticker, resolution, start_date, end_date)
 
     @classmethod
-    def get_product_type(cls) -> str:
+    def get_product_name(cls) -> str:
         return SecurityType.CFD.value
 
     @classmethod

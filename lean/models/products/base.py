@@ -17,12 +17,17 @@ from datetime import datetime
 from typing import List
 
 from lean.container import container
-from lean.models.api import QCFullOrganization
+from lean.models.api import QCDataVendor, QCFullOrganization
 from lean.models.pydantic import WrappedBaseModel
 
 
+class DataFile(WrappedBaseModel):
+    file: str
+    vendor: QCDataVendor
+
+
 class ProductDetails(WrappedBaseModel):
-    product_type: str
+    data_type: str
     ticker: str
     market: str
     resolution: str
@@ -38,10 +43,10 @@ class Product(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_product_type(cls) -> str:
-        """Returns the type of this product.
+    def get_product_name(cls) -> str:
+        """Returns the name of this product.
 
-        :return: the type of the product that can be displayed to the user
+        :return: the name of the product that can be displayed to the user
         """
         raise NotImplementedError()
 
@@ -64,7 +69,7 @@ class Product(abc.ABC):
         raise NotImplementedError()
 
     def get_data_files(self) -> List[str]:
-        """Returns the data files this product instance contains.
+        """Returns the data files that must be downloaded when this product is purchased.
 
         :return: the data files for this product instance, relative to the data directory
         """

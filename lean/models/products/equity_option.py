@@ -44,7 +44,7 @@ class EquityOptionProduct(SecurityProduct):
         self._option_style = option_style
 
     @classmethod
-    def get_product_type(cls) -> str:
+    def get_product_name(cls) -> str:
         return SecurityType.EquityOption.value
 
     @classmethod

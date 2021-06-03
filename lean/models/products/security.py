@@ -58,7 +58,7 @@ class SecurityProduct(Product, abc.ABC):
         self._end_date = end_date
 
     def get_details(self) -> ProductDetails:
-        product_type = f"{self.get_product_type()} {self._data_type.value.lower()}"
+        data_type = f"{self.get_product_name()} {self._data_type.value.lower()}"
         ticker = self._ticker.upper()
         market = self._market
         resolution = self._resolution
@@ -68,7 +68,7 @@ class SecurityProduct(Product, abc.ABC):
         else:
             date_range = f"{self._start_date.strftime('%Y-%m-%d')} - {self._end_date.strftime('%Y-%m-%d')}"
 
-        return ProductDetails(product_type=product_type,
+        return ProductDetails(data_type=data_type,
                               ticker=ticker,
                               market=market,
                               resolution=resolution,

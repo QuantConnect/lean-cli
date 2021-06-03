@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
-from lean.models.products.base import Product
+from lean.models.products.base import DataFile, Product
 from lean.models.products.cfd import CFDProduct
 from lean.models.products.crypto import CryptoProduct
 from lean.models.products.equity import EquityProduct
@@ -34,25 +34,26 @@ from lean.models.products.future import FutureProduct
 data_information: Optional[QCDataInformation] = None
 
 
-def _calculate_price(organization: QCFullOrganization, data_files: Iterable[str]) -> float:
-    """Calculates the price of a list of files.
+def _map_files_to_vendors(organization: QCFullOrganization, data_files: Iterable[str]) -> List[DataFile]:
+    """Maps a list of files to the available data vendors.
 
     Uses the API to get the latest price information.
+    Raises an error if there is no vendor that sells the data of a file in the given list.
 
     :param organization: the organization to use the price information of
-    :param data_files: the data files to calculate the price of
-    :return: the price of the list of files in QCC
+    :param data_files: the data files to map to the available vendors
+    :return: the list of data files containing the file and vendor for each file
     """
     global data_information
     if data_information is None:
         data_information = container.api_client().data.get_info(organization.id)
 
     last_vendor: Optional[QCDataVendor] = None
-    total_price = 0
+    mapped_files = []
 
     for file in data_files:
         if last_vendor is not None and last_vendor.regex.search(file):
-            total_price += last_vendor.price
+            mapped_files.append(DataFile(file=file, vendor=last_vendor))
             continue
 
         last_vendor = None
@@ -62,14 +63,25 @@ def _calculate_price(organization: QCFullOrganization, data_files: Iterable[str]
                 continue
 
             if vendor.regex.search(file):
-                total_price += vendor.price
+                mapped_files.append(DataFile(file=file, vendor=vendor))
                 last_vendor = vendor
                 break
 
         if last_vendor is None:
             raise RuntimeError(f"There is no data vendor that sells '{file}'")
 
-    return total_price
+    return mapped_files
+
+
+def _get_data_files(organization: QCFullOrganization, products: List[Product]) -> List[DataFile]:
+    """Returns the unique data files of a list of products mapped to their vendor.
+
+    :param organization: the organization to use the price information of
+    :param products: the list of products to get the data files from
+    :return: the list of unique data files containing the file and vendor for each file for each product
+    """
+    unique_data_files = sorted(list(set(itertools.chain(*[product.get_data_files() for product in products]))))
+    return _map_files_to_vendors(organization, unique_data_files)
 
 
 def _display_products(organization: QCFullOrganization, products: List[Product]) -> None:
@@ -81,30 +93,37 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     logger = container.logger()
     table = Table(box=box.SQUARE)
 
-    for column in ["Product type", "Ticker", "Market", "Resolution", "Date range", "Price"]:
+    for column in ["Data type", "Ticker", "Market", "Resolution", "Date range", "Vendor", "Price"]:
         table.add_column(column)
 
     for product in products:
         details = product.get_details()
-        price = _calculate_price(organization, product.get_data_files())
 
-        table.add_row(details.product_type,
+        mapped_files = _map_files_to_vendors(organization, product.get_data_files())
+        vendor = mapped_files[0].vendor.vendorName
+        price = sum(data_file.vendor.price for data_file in mapped_files)
+
+        table.add_row(details.data_type,
                       details.ticker,
                       details.market,
                       details.resolution,
                       details.date_range,
+                      vendor,
                       f"{price:,.0f} QCC")
 
     logger.info(table)
 
     all_data_files = list(itertools.chain(*[product.get_data_files() for product in products]))
-    unique_data_files = set(all_data_files)
+    if len(all_data_files) > len(set(all_data_files)):
+        logger.warn("The total price is less than the sum of all prices because there is overlapping data")
 
-    if len(all_data_files) > len(unique_data_files):
-        logger.warn("The total price is less than the sum of all product prices because there are overlapping products")
+    all_data_files = _get_data_files(organization, products)
+    total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
-    total_price = _calculate_price(organization, unique_data_files)
+    organization_balance = organization.credit.balance * 100
+
     logger.info(f"Total price: {total_price:,.0f} QCC")
+    logger.info(f"Organization balance: {organization_balance:,.0f} QCC")
 
 
 def _select_organization() -> QCFullOrganization:
@@ -132,7 +151,7 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
 
     logger = container.logger()
 
-    available_product_classes = [
+    security_product_classes = [
         CFDProduct,
         CryptoProduct,
         EquityProduct,
@@ -141,17 +160,29 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         FutureProduct
     ]
 
+    alternative_product_classes = []
+
     while True:
-        product_class = logger.prompt_list("Select the product type", [
-            Option(id=c, label=c.get_product_type()) for c in available_product_classes
+        initial_type = logger.prompt_list("Select whether you want to download security data or alternative data", [
+            Option(id="security", label="Security data"),
+            Option(id="alternative", label="Alternative data")
         ])
 
-        products.extend(product_class.build(organization))
+        product_classes = security_product_classes if initial_type == "security" else alternative_product_classes
+        product_class = logger.prompt_list("Select the data type",
+                                           [Option(id=c, label=c.get_product_name()) for c in product_classes])
 
-        logger.info("Selected products:")
+        current_files = [data_file.file for data_file in _get_data_files(organization, products)]
+
+        for product in product_class.build(organization):
+            product_files = product.get_data_files()
+            if len(set(product_files) - set(current_files)) > 0:
+                products.append(product)
+
+        logger.info("Selected data:")
         _display_products(organization, products)
 
-        if not click.confirm("Do you want to add another product?"):
+        if not click.confirm("Do you want to download more data?"):
             break
 
     return products
@@ -184,8 +215,8 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
     :param organization: the organization that will be billed
     :param products: the list of products selected by the user
     """
-    unique_data_files = set(itertools.chain(*[product.get_data_files() for product in products]))
-    total_price = _calculate_price(organization, unique_data_files)
+    all_data_files = _get_data_files(organization, products)
+    total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
     organization_qcc = organization.credit.balance * 100
 
@@ -221,6 +252,5 @@ def download(overwrite: bool) -> None:
     _accept_data_sales_agreement(organization)
     _confirm_payment(organization, products)
 
-    all_data_files = list(itertools.chain(*[product.get_data_files() for product in products]))
-    unique_data_files = sorted(list(set(all_data_files)))
-    container.data_downloader().download_files(unique_data_files, overwrite, organization.id)
+    all_data_files = _get_data_files(organization, products)
+    container.data_downloader().download_files(all_data_files, overwrite, organization.id)

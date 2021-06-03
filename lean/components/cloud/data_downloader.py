@@ -13,7 +13,7 @@
 
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 import click
 
@@ -40,18 +40,19 @@ class DataDownloader:
         self._force_overwrite = None
         self._map_files_cache = None
 
-    def download_files(self, files: List[str], overwrite_flag: bool, organization_id: str) -> None:
+    def download_files(self, data_files: List[Any], overwrite_flag: bool, organization_id: str) -> None:
         """Downloads files from the QuantConnect Data Library to the local data directory.
 
-        :param files: the list of relative paths to download
+        :param data_files: the list of data files to download
         :param overwrite_flag: whether the user has given permission to overwrite existing files
         :param organization_id: the id of the organization that should be billed
         """
         data_dir = self._lean_config_manager.get_data_directory()
 
-        for index, file in enumerate(files):
-            self._logger.info(f"[{index + 1}/{len(files)}] Downloading {file}")
-            self._download_file(file, overwrite_flag, data_dir, organization_id)
+        for index, data_file in enumerate(data_files):
+            self._logger.info(
+                f"[{index + 1}/{len(data_files)}] Downloading {data_file.file} ({data_file.vendor.price:,.0f} QCC)")
+            self._download_file(data_file.file, overwrite_flag, data_dir, organization_id)
 
     def download_map_files(self, organization_id: str) -> List[MapFile]:
         """Downloads and parses all available map files.
@@ -69,7 +70,7 @@ class DataDownloader:
         map_files_zip_path = data_directory / map_files_zip
 
         if not map_files_zip_path.is_file():
-            self._logger.info("Downloading the latest map files...")
+            self._logger.info("Downloading the latest map files (free)")
             self._download_file(map_files_zip, True, data_directory, organization_id)
 
         map_files = []
@@ -127,7 +128,10 @@ class DataDownloader:
 
         if self._force_overwrite is None:
             self._force_overwrite = click.confirm(
-                "Do you want to temporarily enable overwriting for the previously selected products?",
+                "Do you want to temporarily enable overwriting for the previously selected items?",
                 default=False)
+
+        if not self._force_overwrite:
+            self._logger.warn("You have not been billed for this file")
 
         return self._force_overwrite
