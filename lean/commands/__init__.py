@@ -21,13 +21,13 @@ from lean.commands.config import config
 from lean.commands.create_project import create_project
 from lean.commands.data import data
 from lean.commands.init import init
+from lean.commands.library import library
 from lean.commands.live import live
 from lean.commands.login import login
 from lean.commands.logout import logout
 from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
-from lean.commands.library import library
 
 
 @click.group()
