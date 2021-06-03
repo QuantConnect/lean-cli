@@ -195,7 +195,8 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
     logger = container.logger()
     logger.info(f"You will be billed {total_price:,.0f} QCC from your organization's QCC balance")
-    logger.info(f"After this purchase your organization will have {organization_qcc - total_price:,.0f} QCC left")
+    logger.info(
+        f"After downloading all files your organization will have {organization_qcc - total_price:,.0f} QCC left")
 
     click.confirm("Continue?", abort=True)
 

@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Iterator, List, Optional
+from typing import List, Optional
 
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.market_hours_database import SecurityType
@@ -61,12 +61,11 @@ class FutureProduct(SecurityProduct):
 
         return details
 
-    def _get_data_files(self) -> Iterator[str]:
+    def _get_data_files(self) -> List[str]:
         if self._data_type is DataType.Margins:
-            yield f"future/{self._market.lower()}/margins/{self._ticker.upper()}.csv"
-            return
+            return [f"future/{self._market.lower()}/margins/{self._ticker.upper()}.csv"]
 
-        base_directory = f"future/{self._market.lower()}/{self._resolution.value.lower()}"
-
-        for date in self._get_dates_with_data():
-            yield f"{base_directory}/{self._ticker.lower()}/{date}_{self._data_type.name.lower()}.zip"
+        return self._get_data_files_in_range(
+            f"future/{self._market.lower()}/{self._resolution.value.lower()}/{self._ticker.lower()}/",
+            fr"/(\d+)_{self._data_type.name.lower()}\.zip"
+        )

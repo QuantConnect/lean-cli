@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Iterator, List, Optional
+from typing import List, Optional
 
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.market_hours_database import SecurityType
@@ -62,12 +62,11 @@ class CryptoProduct(SecurityProduct):
 
         return [CryptoProduct(data_type, market, ticker, resolution, start_date, end_date)]
 
-    def _get_data_files(self) -> Iterator[str]:
+    def _get_data_files(self) -> List[str]:
         base_directory = f"crypto/{self._market.lower()}/{self._resolution.value.lower()}"
 
         if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
-            yield f"{base_directory}/{self._ticker.lower()}_{self._data_type.name.lower()}.zip"
-            return
+            return [f"{base_directory}/{self._ticker.lower()}_{self._data_type.name.lower()}.zip"]
 
-        for date in self._get_dates_with_data():
-            yield f"{base_directory}/{self._ticker.lower()}/{date}_{self._data_type.name.lower()}.zip"
+        return self._get_data_files_in_range(f"{base_directory}/{self._ticker.lower()}/",
+                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip")

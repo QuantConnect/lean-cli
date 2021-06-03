@@ -147,44 +147,34 @@ class SecurityProduct(Product, abc.ABC):
             else:
                 return start_date, end_date
 
-    @classmethod
-    def _list_files(cls, directory_path: str, pattern: str) -> List[str]:
-        """Lists remote files and allows extracting useful data.
+    def _get_data_files_in_range(self, directory_path: str, pattern: str) -> List[str]:
+        """Retrieves data files from the API and returns all those with dates between this product's start and end date.
 
-        :param directory_path: the path to the remote directory to list the files of
-        :param pattern: the pattern to match against
-        :return: the list of all matching files, or the list of all captured values if the pattern has a capturing group
+        :param directory_path: the path to the remote directory to get the files from
+        :param pattern: the pattern to match against, must have a capturing group capturing a yyyyMMdd timestamp
+        :return: the data files in the given directory, matching the given pattern, between the start and end date
         """
         files = container.api_client().data.list_objects(directory_path)
         compiled_pattern = re.compile(pattern)
 
         results = []
+
         for file in files:
             match = compiled_pattern.search(file)
             if match is None:
                 continue
 
-            if match.lastindex is not None:
-                results.append(match.group(1))
-            else:
-                results.append(file)
+            date = datetime.strptime(match.group(1), "%Y%m%d")
+            if date < self._start_date or date > self._end_date:
+                continue
+
+            results.append(file)
 
         return results
 
-    @classmethod
-    def _list_dates(cls, directory_path: str, pattern: str) -> List[datetime]:
-        """Lists the dates in the file names of remote files.
+    def _get_tradable_dates(self) -> List[str]:
+        """Returns the dates for which the data in this product is tradable.
 
-        :param directory_path: the path to the remote directory to get the files from
-        :param pattern: the pattern to match against, must have a capturing group capturing a yyyyMMdd timestamp
-        :return: the parsed dates
-        """
-        return [datetime.strptime(timestamp, "%Y%m%d") for timestamp in cls._list_files(directory_path, pattern)]
-
-    def _get_dates_with_data(self) -> List[str]:
-        """Returns the dates between two dates for which the QuantConnect Data Library has data.
-
-        The QuantConnect Data Library has data for all tradable days.
         This method uses the market hours database to find the tradable weekdays and the holidays.
 
         :return: the dates for which there is data for the given product in yyyyMMdd format
