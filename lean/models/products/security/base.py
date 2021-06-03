@@ -134,7 +134,7 @@ class SecurityProduct(Product, abc.ABC):
             if validate_ticker(ticker):
                 return ticker
 
-            logger.info(f"Error: we have no data {ticker.upper()}")
+            logger.info(f"Error: we have no data for {ticker.upper()}")
 
     def _get_tradable_dates(self) -> List[str]:
         """Returns the dates for which the data in this product is tradable.

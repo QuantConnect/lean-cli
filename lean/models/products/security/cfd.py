@@ -56,7 +56,7 @@ class CFDProduct(SecurityProduct):
 
         ticker = cls._ask_ticker(SecurityType.CFD, market, resolution, validate_ticker)
 
-        if resolution != QCResolution.Hour or resolution != QCResolution.Daily:
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
             dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
             start_date, end_date = cls._ask_start_end_date(dates)
         else:
