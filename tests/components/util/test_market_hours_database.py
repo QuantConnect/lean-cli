@@ -30,6 +30,12 @@ def create_market_hours_database() -> None:
         file.write("""
 {
   "entries": {
+    // Documentation about the Cfd-fxcm-[*] entry
+    /*
+    Line 1
+    Line 2
+    Line 3
+    */
     "Cfd-fxcm-[*]": {
       "dataTimeZone": "UTC-05",
       "exchangeTimeZone": "UTC-05",

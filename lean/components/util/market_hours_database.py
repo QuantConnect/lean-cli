@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from typing import Dict
+
+import json5
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.models.market_hours_database import MarketHoursDatabaseEntry, SecurityType
@@ -57,6 +58,6 @@ class MarketHoursDatabase:
         data_dir = self._lean_config_manager.get_data_directory()
         market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
 
-        market_hours_database = json.loads(market_hours_database_path.read_text(encoding="utf-8"))
+        market_hours_database = json5.loads(market_hours_database_path.read_text(encoding="utf-8"))
 
         return {key: MarketHoursDatabaseEntry(**value) for key, value in market_hours_database["entries"].items()}
