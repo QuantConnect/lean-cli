@@ -363,7 +363,7 @@ Usage: lean data download [OPTIONS]
   Purchase and download data from QuantConnect's Data Library.
 
   An interactive wizard will show to walk you through the process of selecting data, agreeing to the distribution
-  agreements and payment. After this wizard the selected data will be downloaded automatically.
+  agreement and payment. After this wizard the selected data will be downloaded automatically.
 
   See the following url for the data that can be purchased and downloaded with this command:
   https://www.quantconnect.com/data/tree
