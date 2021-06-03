@@ -23,13 +23,18 @@ from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
+from lean.models.products.alternative.cboe import CBOEProduct
+from lean.models.products.alternative.fred import FREDProduct
+from lean.models.products.alternative.sec import SECProduct
+from lean.models.products.alternative.usenergy import USEnergyProduct
+from lean.models.products.alternative.ustreasury import USTreasuryProduct
 from lean.models.products.base import DataFile, Product
-from lean.models.products.cfd import CFDProduct
-from lean.models.products.crypto import CryptoProduct
-from lean.models.products.equity import EquityProduct
-from lean.models.products.equity_option import EquityOptionProduct
-from lean.models.products.forex import ForexProduct
-from lean.models.products.future import FutureProduct
+from lean.models.products.security.cfd import CFDProduct
+from lean.models.products.security.crypto import CryptoProduct
+from lean.models.products.security.equity import EquityProduct
+from lean.models.products.security.equity_option import EquityOptionProduct
+from lean.models.products.security.forex import ForexProduct
+from lean.models.products.security.future import FutureProduct
 
 data_information: Optional[QCDataInformation] = None
 
@@ -160,7 +165,13 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         FutureProduct
     ]
 
-    alternative_product_classes = []
+    alternative_product_classes = [
+        CBOEProduct,
+        FREDProduct,
+        SECProduct,
+        USTreasuryProduct,
+        USEnergyProduct
+    ]
 
     while True:
         initial_type = logger.prompt_list("Select whether you want to download security data or alternative data", [
@@ -168,8 +179,14 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
             Option(id="alternative", label="Alternative data")
         ])
 
-        product_classes = security_product_classes if initial_type == "security" else alternative_product_classes
-        product_class = logger.prompt_list("Select the data type",
+        if initial_type == "security":
+            product_classes = security_product_classes
+            product_name_question = "Select the security type"
+        else:
+            product_classes = alternative_product_classes
+            product_name_question = "Select the data type"
+
+        product_class = logger.prompt_list(product_name_question,
                                            [Option(id=c, label=c.get_product_name()) for c in product_classes])
 
         current_files = [data_file.file for data_file in _get_data_files(organization, products)]
@@ -222,7 +239,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
     if total_price > organization_qcc:
         raise MoreInfoError("The total price exceeds your organization's QCC balance",
-                            "https://www.quantconnect.com/terminal/#organization/billing")
+                            f"https://www.quantconnect.com/organization/{organization.id}/billing")
 
     logger = container.logger()
     logger.info(f"You will be billed {total_price:,.0f} QCC from your organization's QCC balance")

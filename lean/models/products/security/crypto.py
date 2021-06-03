@@ -17,11 +17,11 @@ from typing import List, Optional
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.market_hours_database import SecurityType
 from lean.models.products.base import Product
-from lean.models.products.security import DataType, SecurityProduct
+from lean.models.products.security.base import DataType, SecurityProduct
 
 
-class CFDProduct(SecurityProduct):
-    """The CFDProduct class supports downloading CFD data with the `lean data download` command."""
+class CryptoProduct(SecurityProduct):
+    """The CryptoProduct class supports downloading crypto data with the `lean data download` command."""
 
     def __init__(self,
                  data_type: DataType,
@@ -30,45 +30,47 @@ class CFDProduct(SecurityProduct):
                  resolution: QCResolution,
                  start_date: Optional[datetime],
                  end_date: Optional[datetime]) -> None:
-        super().__init__(SecurityType.CFD, data_type, market, ticker, resolution, start_date, end_date)
+        super().__init__(SecurityType.Crypto, data_type, market, ticker, resolution, start_date, end_date)
 
     @classmethod
     def get_product_name(cls) -> str:
-        return SecurityType.CFD.value
+        return SecurityType.Crypto.value
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        data_type = DataType.Quote
-        market = "Oanda"
+        data_type = cls._ask_data_type([DataType.Trade, DataType.Quote])
+        market = cls._ask_market(["Bitfinex", "GDAX"])
         resolution = cls._ask_resolution([QCResolution.Tick,
                                           QCResolution.Second,
                                           QCResolution.Minute,
                                           QCResolution.Hour,
                                           QCResolution.Daily])
 
-        base_directory = f"cfd/{market.lower()}/{resolution.value.lower()}"
+        base_directory = f"crypto/{market.lower()}/{resolution.value.lower()}"
 
         def validate_ticker(t: str) -> bool:
             if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
-                return t.lower() in cls._list_files(f"{base_directory}/", r"/([^/.]+)\.zip")
+                return t.lower() in cls._list_files(f"{base_directory}/", fr"/([^/_]+)_{data_type.name.lower()}\.zip")
 
             return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
 
-        ticker = cls._ask_ticker(SecurityType.CFD, market, resolution, validate_ticker)
+        ticker = cls._ask_ticker(SecurityType.Crypto, market, resolution, validate_ticker)
 
-        if resolution != QCResolution.Hour or resolution != QCResolution.Daily:
+        if resolution != QCResolution.Hour and resolution != QCResolution.Daily:
             dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/", fr"/(\d+)_{data_type.name.lower()}\.zip")
             start_date, end_date = cls._ask_start_end_date(dates)
         else:
             start_date, end_date = None, None
 
-        return [CFDProduct(data_type, market, ticker, resolution, start_date, end_date)]
+        return [CryptoProduct(data_type, market, ticker, resolution, start_date, end_date)]
 
     def _get_data_files(self) -> List[str]:
-        base_directory = f"cfd/{self._market.lower()}/{self._resolution.value.lower()}"
+        base_directory = f"crypto/{self._market.lower()}/{self._resolution.value.lower()}"
 
         if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
-            return [f"{base_directory}/{self._ticker.lower()}.zip"]
+            return [f"{base_directory}/{self._ticker.lower()}_{self._data_type.name.lower()}.zip"]
 
         return self._get_data_files_in_range(f"{base_directory}/{self._ticker.lower()}/",
-                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip")
+                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip",
+                                             self._start_date,
+                                             self._end_date)

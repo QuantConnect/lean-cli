@@ -22,7 +22,7 @@ from lean.models.logger import Option
 from lean.models.map_file import MapFile, MapFileRange
 from lean.models.market_hours_database import SecurityType
 from lean.models.products.base import Product
-from lean.models.products.security import DataType, SecurityProduct
+from lean.models.products.security.base import DataType, SecurityProduct
 
 
 class EquityProduct(SecurityProduct):
@@ -127,4 +127,6 @@ class EquityProduct(SecurityProduct):
             return [f"{base_directory}/{self._ticker.lower()}.zip"]
 
         return self._get_data_files_in_range(f"{base_directory}/{self._ticker.lower()}/",
-                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip")
+                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip",
+                                             self._start_date,
+                                             self._end_date)
