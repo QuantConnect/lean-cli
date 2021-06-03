@@ -18,7 +18,7 @@ from lean.models.pydantic import WrappedBaseModel
 
 
 class MapFileEntry(WrappedBaseModel):
-    timestamp: datetime
+    date: datetime
     ticker: str
 
 
@@ -38,7 +38,13 @@ class MapFileRange(WrappedBaseModel):
 
 
 class MapFile:
+    """The MapFile class handles extracting useful information out of map files."""
+
     def __init__(self, entries: List[MapFileEntry]) -> None:
+        """Creates a new MapFile instance.
+
+        :param entries: the entries of this map file
+        """
         self._ranges: List[MapFileRange] = []
 
         current_start = None
@@ -46,17 +52,17 @@ class MapFile:
             if current_start is not None:
                 if i + 1 < len(entries):
                     end_event = f"changed name to {entries[i + 1].ticker}"
-                elif entry.timestamp.year != 2050:
+                elif entry.date.year != 2050:
                     end_event = "delisted"
                 else:
                     end_event = None
 
                 self._ranges.append(MapFileRange(ticker=entry.ticker,
                                                  start_date=current_start,
-                                                 end_date=entry.timestamp - timedelta(days=1),
+                                                 end_date=entry.date - timedelta(days=1),
                                                  end_event=end_event))
 
-            current_start = entry.timestamp
+            current_start = entry.date
 
     def get_ticker_ranges(self, ticker: str, start_date: datetime, end_date: datetime) -> List[MapFileRange]:
         """Returns the date ranges between two dates during which this map file's symbol traded as the given ticker.
@@ -111,6 +117,6 @@ class MapFile:
         entries = []
         for line in file_content.splitlines():
             parts = line.split(",")
-            entries.append(MapFileEntry(timestamp=datetime.strptime(parts[0], "%Y%m%d"), ticker=parts[1].upper()))
+            entries.append(MapFileEntry(date=datetime.strptime(parts[0], "%Y%m%d"), ticker=parts[1].upper()))
 
         return MapFile(entries)

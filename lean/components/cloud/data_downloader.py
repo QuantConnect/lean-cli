@@ -62,7 +62,7 @@ class DataDownloader:
         if self._map_files_cache is not None:
             return self._map_files_cache
 
-        map_files = self._api_client.data.list_objects("equity/usa/map_files")
+        map_files = self._api_client.data.list_files("equity/usa/map_files")
         map_files_zip = [m for m in map_files if m.endswith(".zip")][-1]
 
         data_directory = self._lean_config_manager.get_data_directory()

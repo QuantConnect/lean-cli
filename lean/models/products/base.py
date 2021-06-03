@@ -30,7 +30,7 @@ class ProductDetails(WrappedBaseModel):
 
 
 class Product(abc.ABC):
-    """A Product represents data that can be purchased and downloaded with the `lean data download` command."""
+    """A Product class contains all the logic for a certain product type in the `lean data download` command."""
 
     def __init__(self) -> None:
         """Creates a new Product instance."""
@@ -57,7 +57,7 @@ class Product(abc.ABC):
 
     @abc.abstractmethod
     def get_details(self) -> ProductDetails:
-        """Returns the details about this product in a way that they can be displayed to the user.
+        """Returns the details about this product in a way that it can be displayed to the user.
 
         :return: the pretty details of this product
         """
@@ -88,7 +88,7 @@ class Product(abc.ABC):
         :param pattern: the pattern to match against
         :return: the list of all matching files, or the list of all captured values if the pattern has a capturing group
         """
-        files = container.api_client().data.list_objects(directory_path)
+        files = container.api_client().data.list_files(directory_path)
         compiled_pattern = re.compile(pattern)
 
         results = []

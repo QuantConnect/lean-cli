@@ -21,6 +21,8 @@ from lean.models.products.security import DataType, SecurityProduct
 
 
 class FutureProduct(SecurityProduct):
+    """The FutureProduct class supports downloading future data with the `lean data download` command."""
+
     def __init__(self,
                  data_type: DataType,
                  market: str,

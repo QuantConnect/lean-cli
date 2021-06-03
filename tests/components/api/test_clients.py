@@ -25,6 +25,7 @@ from lean.components.api.account_client import AccountClient
 from lean.components.api.api_client import APIClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
+from lean.components.api.data_client import DataClient
 from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
@@ -285,3 +286,25 @@ def test_organization_client_get_details() -> None:
         full_organization = organization_client.get(organization.id)
         assert organization.id == full_organization.id
         assert organization.name == full_organization.name
+
+
+def test_data_client_list_files() -> None:
+    api_client = create_api_client()
+    data_client = DataClient(api_client)
+
+    # Test files can be listed
+    files = data_client.list_files("crypto/gdax/daily/")
+
+    # Test all files start with the requested prefix
+    for file in files:
+        assert file.startswith("crypto/gdax/daily/")
+
+
+def test_data_client_get_info() -> None:
+    api_client = create_api_client()
+    account_client = AccountClient(api_client)
+    data_client = DataClient(api_client)
+
+    # Test data information can be parsed
+    preferred_organization = account_client.get_organization()
+    data_client.get_info(preferred_organization.organizationId)

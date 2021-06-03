@@ -20,7 +20,7 @@ from lean.models.api import QCDataInformation
 class DataClient:
     """The DataClient class contains methods to interact with data/* API endpoints."""
 
-    _list_objects_cache: Dict[str, List[str]] = {}
+    _list_files_cache: Dict[str, List[str]] = {}
 
     def __init__(self, api_client: 'APIClient') -> None:
         """Creates a new AccountClient instance.
@@ -48,25 +48,25 @@ class DataClient:
 
         return response.content
 
-    def list_objects(self, directory_path: str) -> List[str]:
-        """Returns the remote directory listing of a directory.
+    def list_files(self, prefix: str) -> List[str]:
+        """Lists all remote files with a given prefix.
 
-        :param directory_path: the path to the directory to get a directory listing of
-        :return: the list of objects in the given directory
+        :param prefix: the prefix of the files to return
+        :return: the list of files with the given prefix
         """
-        if directory_path in DataClient._list_objects_cache:
-            return DataClient._list_objects_cache[directory_path]
+        if prefix in DataClient._list_files_cache:
+            return DataClient._list_files_cache[prefix]
 
         data = self._api.post("data/list", {
-            "filePath": directory_path
+            "filePath": prefix
         })
 
-        first_part = directory_path.split("/")[0]
-        objects = sorted(f"{first_part}/{obj}" for obj in data["objects"])
+        first_part = prefix.split("/")[0]
+        files = sorted(f"{first_part}/{obj}" for obj in data["objects"])
 
-        DataClient._list_objects_cache[directory_path] = objects
+        DataClient._list_files_cache[prefix] = files
 
-        return objects
+        return files
 
     def get_info(self, organization_id: str) -> QCDataInformation:
         """Returns the available data vendors, their prices and a link to the data agreement.

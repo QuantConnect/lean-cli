@@ -21,6 +21,8 @@ from lean.models.products.security import DataType, SecurityProduct
 
 
 class CFDProduct(SecurityProduct):
+    """The CFDProduct class supports downloading CFD data with the `lean data download` command."""
+
     def __init__(self,
                  data_type: DataType,
                  market: str,

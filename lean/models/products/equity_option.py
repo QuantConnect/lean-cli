@@ -29,6 +29,8 @@ class OptionStyle(str, Enum):
 
 
 class EquityOptionProduct(SecurityProduct):
+    """The EquityOptionProduct class supports downloading equity option data with the `lean data download` command."""
+
     def __init__(self,
                  data_type: DataType,
                  market: str,

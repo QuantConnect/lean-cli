@@ -37,6 +37,8 @@ class DataType(str, Enum):
 
 
 class SecurityProduct(Product, abc.ABC):
+    """The SecurityProduct class provides a common base for all non-alternative data Product implementations."""
+
     def __init__(self,
                  security_type: SecurityType,
                  data_type: DataType,
@@ -74,18 +76,33 @@ class SecurityProduct(Product, abc.ABC):
 
     @classmethod
     def _ask_data_type(cls, available_data_types: List[DataType]) -> DataType:
+        """Asks the user to give the data type of the data.
+
+        :param available_data_types: the data types the user can pick from
+        :return: the selected data type
+        """
         return container.logger().prompt_list("Select the data type", [
             Option(id=t, label=t.value) for t in available_data_types
         ])
 
     @classmethod
     def _ask_market(cls, available_markets: List[str]) -> str:
+        """Asks the user to give the market of the data.
+
+        :param available_markets: the markets the user can pick from
+        :return: the selected market
+        """
         return container.logger().prompt_list("Select the market of the data", [
             Option(id=m, label=m) for m in available_markets
         ])
 
     @classmethod
     def _ask_resolution(cls, available_resolutions: List[QCResolution]) -> QCResolution:
+        """Asks the user to give the resolution of the data.
+
+        :param available_resolutions: the resolutions the user can pick from
+        :return: the selected resolution
+        """
         return container.logger().prompt_list("Select the resolution of the data", [
             Option(id=r, label=r.value) for r in available_resolutions
         ])
@@ -96,6 +113,14 @@ class SecurityProduct(Product, abc.ABC):
                     market: str,
                     resolution: Union[QCResolution, str],
                     validate_ticker: Callable[[str], bool]) -> str:
+        """Asks the user to give the ticker of the data.
+
+        :param security_type: the security type of the data
+        :param market: the market of the data
+        :param resolution: the resolution of the data
+        :param validate_ticker: the lambda which is called when verifying whether the ticker the user gives is valid
+        :return: the given ticker
+        """
         security_type = security_type.get_internal_name().lower()
         market = market.lower()
         resolution = resolution.value.lower() if isinstance(resolution, QCResolution) else resolution.lower()
@@ -115,11 +140,18 @@ class SecurityProduct(Product, abc.ABC):
 
     @classmethod
     def _ask_start_end_date(cls, all_dates: Optional[List[datetime]]) -> Tuple[datetime, datetime]:
+        """Asks the user to give the start and the end date of the data.
+
+        If all_dates is not None or empty the min and max date are set to the min and max dates in all_dates.
+
+        :param all_dates: all available dates
+        :return: the chosen start and end date
+        """
         logger = container.logger()
 
         if all_dates is not None and len(all_dates) > 0:
-            start_constraint = all_dates[0]
-            end_constraint = all_dates[-1]
+            start_constraint = min(all_dates)
+            end_constraint = max(all_dates)
 
             start_constraint_str = start_constraint.strftime('%Y-%m-%d')
             end_constraint_str = end_constraint.strftime('%Y-%m-%d')
@@ -154,7 +186,7 @@ class SecurityProduct(Product, abc.ABC):
         :param pattern: the pattern to match against, must have a capturing group capturing a yyyyMMdd timestamp
         :return: the data files in the given directory, matching the given pattern, between the start and end date
         """
-        files = container.api_client().data.list_objects(directory_path)
+        files = container.api_client().data.list_files(directory_path)
         compiled_pattern = re.compile(pattern)
 
         results = []
