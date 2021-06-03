@@ -14,7 +14,7 @@
 import abc
 from datetime import datetime
 from enum import Enum
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional
 
 import click
 from dateutil.rrule import DAILY, rrule, rruleset, weekday
@@ -30,7 +30,6 @@ class DataType(str, Enum):
     Trade = "Trade data"
     Quote = "Quote data"
     OpenInterest = "Open interest data"
-    Chains = "Chains"
     Margins = "Margins data"
 
 
@@ -109,7 +108,7 @@ class SecurityProduct(Product, abc.ABC):
     def _ask_ticker(cls,
                     security_type: SecurityType,
                     market: str,
-                    resolution: Union[QCResolution, str],
+                    resolution: QCResolution,
                     validate_ticker: Callable[[str], bool]) -> str:
         """Asks the user to give the ticker of the data.
 
@@ -121,7 +120,7 @@ class SecurityProduct(Product, abc.ABC):
         """
         security_type = security_type.get_internal_name().lower()
         market = market.lower()
-        resolution = resolution.value.lower() if isinstance(resolution, QCResolution) else resolution.lower()
+        resolution = resolution.value.lower()
 
         url = f"https://www.quantconnect.com/data/tree/{security_type}/{market}/{resolution}"
 

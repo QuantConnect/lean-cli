@@ -19,7 +19,7 @@ from lean.container import container
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.logger import Option
 from lean.models.market_hours_database import SecurityType
-from lean.models.products.base import Product, ProductDetails
+from lean.models.products.base import Product
 from lean.models.products.security.base import DataType, SecurityProduct
 
 
@@ -49,60 +49,32 @@ class EquityOptionProduct(SecurityProduct):
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest, DataType.Chains])
+        data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest])
         market = "USA"
-        resolution = "chains" if data_type is DataType.Chains else QCResolution.Minute
+        resolution = QCResolution.Minute
 
-        if data_type != DataType.Chains:
-            option_style = container.logger().prompt_list("Select the option style of the data", [
-                Option(id=s, label=s.value) for s in OptionStyle.__members__.values()
-            ])
-        else:
-            option_style = None
+        option_style = container.logger().prompt_list("Select the option style of the data", [
+            Option(id=s, label=s.value) for s in OptionStyle.__members__.values()
+        ])
 
-        base_directory = f"option/{market.lower()}/{'chains' if data_type is DataType.Chains else 'minute'}"
+        base_directory = f"option/{market.lower()}/{resolution.value.lower()}"
 
         def validate_ticker(t: str) -> bool:
-            # Chains data is stored by date instead of by ticker, listing all files takes too long
-            if data_type == DataType.Chains:
-                return True
-
             return len(cls._list_files(f"{base_directory}/{t.lower()}/",
                                        fr"/\d+_{data_type.name.lower()}_{option_style.name.lower()}\.zip")) > 0
 
         ticker = cls._ask_ticker(SecurityType.EquityOption, market, resolution, validate_ticker)
 
-        if data_type != DataType.Chains:
-            dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/",
-                                    fr"/(\d+)_{data_type.name.lower()}_{option_style.name.lower()}\.zip")
-        else:
-            dates = None
-
+        dates = cls._list_dates(f"{base_directory}/{ticker.lower()}/",
+                                fr"/(\d+)_{data_type.name.lower()}_{option_style.name.lower()}\.zip")
         start_date, end_date = cls._ask_start_end_date(dates)
 
         return [EquityOptionProduct(data_type, market, ticker, resolution, option_style, start_date, end_date)]
 
-    def get_details(self) -> ProductDetails:
-        details = super().get_details()
-
-        if self._data_type is DataType.Chains:
-            details.resolution = "-"
-
-        return details
-
     def _get_data_files(self) -> List[str]:
-        base_directory = f"option/{self._market.lower()}/{'chains' if self._data_type is DataType.Chains else 'minute'}"
-
-        if self._data_type != DataType.Chains:
-            return self._get_data_files_in_range(
-                f"{base_directory}/{self._ticker.lower()}/",
-                fr"/(\d+)_{self._data_type.name.lower()}_{self._option_style.name.lower()}\.zip",
-                self._start_date,
-                self._end_date
-            )
-
-        files = []
-        for date in self._get_tradable_dates():
-            files.append(f"{base_directory}/{date}/{self._ticker.lower()}.csv")
-
-        return files
+        return self._get_data_files_in_range(
+            f"option/{self._market.lower()}/{self._resolution.value.lower()}/{self._ticker.lower()}/",
+            fr"/(\d+)_{self._data_type.name.lower()}_{self._option_style.name.lower()}\.zip",
+            self._start_date,
+            self._end_date
+        )
