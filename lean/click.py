@@ -171,7 +171,10 @@ class DateParameter(click.ParamType):
         return "[yyyyMMdd]"
 
     def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> datetime:
-        try:
-            return datetime.strptime(value, "%Y%m%d")
-        except ValueError:
-            self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
+        for date_format in ["%Y%m%d", "%Y-%m-%d"]:
+            try:
+                return datetime.strptime(value, date_format)
+            except ValueError:
+                pass
+
+        self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)

@@ -154,7 +154,8 @@ def test_path_parameter_fails_when_input_is_directory_and_directory_not_okay() -
     assert result.exit_code != 0
 
 
-def test_date_parameter_returns_datetime_object() -> None:
+@pytest.mark.parametrize("input", ["20201231", "2020-12-31"])
+def test_date_parameter_returns_datetime_object(input: str) -> None:
     given_arg: Optional[datetime] = None
 
     @click.command()
@@ -163,7 +164,7 @@ def test_date_parameter_returns_datetime_object() -> None:
         nonlocal given_arg
         given_arg = arg
 
-    result = CliRunner().invoke(command, ["20201231"])
+    result = CliRunner().invoke(command, [input])
 
     assert result.exit_code == 0
 
@@ -173,7 +174,7 @@ def test_date_parameter_returns_datetime_object() -> None:
     assert given_arg.day == 31
 
 
-@pytest.mark.parametrize("input", ["2020-31-12", "12-31-2020", "yyyymmdd"])
+@pytest.mark.parametrize("input", ["20203112", "2020-31-12", "yyyymmdd", "this is invalid input"])
 def test_date_parameter_fails_when_input_not_formatted_as_yyyymmdd(input: str) -> None:
     @click.command()
     @click.argument("arg", type=DateParameter())
