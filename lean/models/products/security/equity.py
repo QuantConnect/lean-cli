@@ -65,7 +65,7 @@ class EquityProduct(SecurityProduct):
 
         def validate_ticker(t: str) -> bool:
             if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
-                return t.lower() in cls._list_files(f"{base_directory}/", fr"/([^/.]+)\.zip")
+                return t.lower() in cls._list_files(f"{base_directory}/{t[0].lower()}", fr"/([^/.]+)\.zip")
 
             return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
 
@@ -121,12 +121,22 @@ class EquityProduct(SecurityProduct):
         return products
 
     def _get_data_files(self) -> List[str]:
+        files = []
+
+        data_directory = container.lean_config_manager().get_data_directory()
+        for meta_type in ["map", "factor"]:
+            zip_path = self._list_files(f"equity/{self._market.lower()}/{meta_type}_files/{meta_type}_files_", "")[-1]
+            if not (data_directory / zip_path).is_file():
+                files.append(zip_path)
+
         base_directory = f"equity/{self._market.lower()}/{self._resolution.value.lower()}"
 
         if self._resolution == QCResolution.Hour or self._resolution == QCResolution.Daily:
-            return [f"{base_directory}/{self._ticker.lower()}.zip"]
+            files.append(f"{base_directory}/{self._ticker.lower()}.zip")
+        else:
+            files.extend(self._get_data_files_in_range(f"{base_directory}/{self._ticker.lower()}/",
+                                                       fr"/(\d+)_{self._data_type.name.lower()}\.zip",
+                                                       self._start_date,
+                                                       self._end_date))
 
-        return self._get_data_files_in_range(f"{base_directory}/{self._ticker.lower()}/",
-                                             fr"/(\d+)_{self._data_type.name.lower()}\.zip",
-                                             self._start_date,
-                                             self._end_date)
+        return files
