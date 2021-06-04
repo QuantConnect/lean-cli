@@ -34,7 +34,6 @@ from lean.models.products.security.crypto import CryptoProduct
 from lean.models.products.security.equity import EquityProduct
 from lean.models.products.security.equity_option import EquityOptionProduct
 from lean.models.products.security.forex import ForexProduct
-from lean.models.products.security.future import FutureProduct
 
 data_information: Optional[QCDataInformation] = None
 
@@ -161,8 +160,7 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         CryptoProduct,
         EquityProduct,
         EquityOptionProduct,
-        ForexProduct,
-        FutureProduct
+        ForexProduct
     ]
 
     alternative_product_classes = [
