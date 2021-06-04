@@ -105,7 +105,7 @@ class DataDownloader:
             if "File not found" in str(error):
                 self._logger.warn("\n".join([
                     f"{relative_file} does not exist in the QuantConnect Data Library",
-                    "You have not been billed for this file"
+                    "You have not been charged for this file"
                 ]))
                 return
             raise error
@@ -132,6 +132,6 @@ class DataDownloader:
                 default=False)
 
         if not self._force_overwrite:
-            self._logger.warn("You have not been billed for this file")
+            self._logger.warn("You have not been charged for this file")
 
         return self._force_overwrite

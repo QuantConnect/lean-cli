@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import itertools
+import webbrowser
 from typing import Iterable, List, Optional
 
 import click
@@ -215,6 +216,8 @@ def _accept_data_sales_agreement(organization: QCFullOrganization) -> None:
 
     info = api_client.data.get_info(organization.id)
 
+    webbrowser.open(info.agreement)
+
     logger.info(f"Go to the following url to accept the data sales agreement: {info.agreement}")
     logger.info("Waiting until the data sales agreement has been accepted...")
 
@@ -242,7 +245,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
                             f"https://www.quantconnect.com/organization/{organization.id}/billing")
 
     logger = container.logger()
-    logger.info(f"You will be billed {total_price:,.0f} QCC from your organization's QCC balance")
+    logger.info(f"You will be charged {total_price:,.0f} QCC from your organization's QCC balance")
     logger.info(
         f"After downloading all files your organization will have {organization_qcc - total_price:,.0f} QCC left")
 
