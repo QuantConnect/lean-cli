@@ -345,7 +345,7 @@ class QCOrganizationProduct(WrappedBaseModel):
 
 
 class QCOrganizationData(WrappedBaseModel):
-    signedTime: Optional[str]
+    signedTime: Optional[int]
     current: bool
 
 
