@@ -100,7 +100,7 @@ class QCProject(WrappedBaseModel):
 
         :return: a url which when visited opens an Algorithm Lab tab containing the project
         """
-        return f"https://www.quantconnect.com/terminal/#open/{self.projectId}"
+        return f"https://www.quantconnect.com/project/{self.projectId}"
 
 
 class QCCreatedProject(WrappedBaseModel):
@@ -368,6 +368,17 @@ class QCFullOrganization(WrappedBaseModel):
             return False
 
         return any(x.name == "QuantConnect Equity Factor & Map Files" for x in data_products_product.items)
+
+    def get_qcc_balance(self) -> float:
+        """Returns the QCC balance of this organization.
+
+        :return: the amount of QCC this organization has left
+        """
+        if len(self.credit.movements) > 0:
+            return self.credit.movements[-1].balance
+
+        # If there were no credit movements, the organization does not have any QCC
+        return 0
 
 
 class QCMinimalOrganization(WrappedBaseModel):

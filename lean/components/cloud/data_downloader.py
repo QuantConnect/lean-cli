@@ -88,6 +88,9 @@ class DataDownloader:
                        organization_id: str) -> None:
         """Downloads a single file from the QuantConnect Data Library to the local data directory.
 
+        If this method downloads a map or factor files zip file,
+        it also updates the Lean config file to ensure LEAN uses those files instead of the csv files.
+
         :param relative_file: the relative path to the file in the data directory
         :param overwrite_flag: whether the user has given permission to overwrite existing files
         :param data_directory: the path to the local data directory
@@ -112,6 +115,14 @@ class DataDownloader:
         local_path.parent.mkdir(parents=True, exist_ok=True)
         with local_path.open("wb+") as f:
             f.write(file_content)
+
+        if relative_file.startswith("equity/usa/map_files/map_files_") and relative_file.endswith(".zip"):
+            self._lean_config_manager.set_property("map-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
+
+        if relative_file.startswith("equity/usa/factor_files/factor_files_") and relative_file.endswith(".zip"):
+            self._lean_config_manager.set_property("factor-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
 
     def _should_overwrite(self, overwrite_flag: bool, path: Path) -> bool:
         """Returns whether we should overwrite existing files.

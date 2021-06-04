@@ -366,7 +366,7 @@ Usage: lean data download [OPTIONS]
   agreement and payment. After this wizard the selected data will be downloaded automatically.
 
   See the following url for the data that can be purchased and downloaded with this command:
-  https://www.quantconnect.com/data/tree
+  https://www.quantconnect.com/docs/v2/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
 
 Options:
   --overwrite         Overwrite existing local data

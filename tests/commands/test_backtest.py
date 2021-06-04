@@ -487,7 +487,7 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
 
 
-def test_backtest_updates_config_when_download_data_flag_given_and_data_provider_set_already() -> None:
+def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
     create_fake_lean_cli_directory()
 
     _generate_file(Path.cwd() / "lean.json", """
@@ -510,50 +510,11 @@ def test_backtest_updates_config_when_download_data_flag_given_and_data_provider
 
     config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
     assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+    assert config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+    assert config["factor-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
 
 
-def test_backtest_updates_config_when_download_data_flag_given_and_data_provider_not_set_yet() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
-
-    assert result.exit_code == 0
-
-    config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
-    assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
-
-
-def test_backtest_preserves_comments_when_updating_config() -> None:
-    create_fake_lean_cli_directory()
-
-    _generate_file(Path.cwd() / "lean.json", """
-{
-    // data-folder documentation
-    "data-folder": "data",
-    "data-provider": "not api data provider"
-}
-        """)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
-
-    assert result.exit_code == 0
-
-    assert "// data-folder documentation" in (Path.cwd() / "lean.json").read_text(encoding="utf-8")
-
-
-def test_backtest_passes_data_purchase_limit_to_run_lean() -> None:
+def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
     create_fake_lean_cli_directory()
 
     _generate_file(Path.cwd() / "lean.json", """

@@ -130,7 +130,7 @@ def live(project: str, push: bool, open_browser: bool) -> None:
     live_nodes = [node for node in nodes.live if not node.busy]
     if len(live_nodes) == 0:
         raise RuntimeError(
-            "You don't have any live nodes available, you can manage your nodes on https://www.quantconnect.com/terminal/#organization/resources")
+            f"You don't have any live nodes available, you can manage your nodes on https://www.quantconnect.com/organization/{cloud_project.organizationId}/resources")
 
     node_options = [Option(id=node, label=f"{node.name} - {node.description}") for node in live_nodes]
     node: QCNode = logger.prompt_list("Select a node", node_options)

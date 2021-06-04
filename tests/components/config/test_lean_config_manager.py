@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from unittest import mock
 
+import json5
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -81,6 +82,60 @@ def test_get_data_directory_returns_path_to_data_directory_when_config_contains_
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
 
     assert manager.get_data_directory() == Path.cwd() / "sub1" / "sub2" / "sub3" / "data"
+
+
+def test_set_property_adds_property_when_not_part_of_config_yet() -> None:
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+        file.write("""
+{
+    // some comment about the data-folder
+    "data-folder": "sub1/sub2/sub3/data"
+}
+        """)
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
+    manager.set_property("my-property", "my-value")
+
+    config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
+
+    assert json5.loads(config)["my-property"] == "my-value"
+    assert config.count("my-property") == 1
+
+
+def test_set_property_updates_property_when_part_of_config_already() -> None:
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+        file.write("""
+{
+    // some comment about the data-folder
+    "data-folder": "sub1/sub2/sub3/data",
+    "my-property": "my-value"
+}
+        """)
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
+    manager.set_property("my-property", "my-value")
+
+    config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
+
+    assert json5.loads(config)["my-property"] == "my-value"
+    assert config.count("my-property") == 1
+
+
+def test_set_property_preserves_comments() -> None:
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+        file.write("""
+{
+    // some comment about the data-folder
+    "data-folder": "sub1/sub2/sub3/data"
+}
+        """)
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
+    manager.set_property("my-property", "my-value")
+
+    config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
+
+    assert "// some comment about the data-folder" in config
 
 
 def test_clean_lean_config_removes_auto_configurable_keys_from_original_config() -> None:

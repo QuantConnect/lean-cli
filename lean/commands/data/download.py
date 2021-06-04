@@ -102,12 +102,15 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     for column in ["Data type", "Ticker", "Market", "Resolution", "Date range", "Vendor", "Price"]:
         table.add_column(column)
 
+    summed_price = 0
+
     for product in products:
         details = product.get_details()
 
         mapped_files = _map_files_to_vendors(organization, product.get_data_files())
         vendor = mapped_files[0].vendor.vendorName
         price = sum(data_file.vendor.price for data_file in mapped_files)
+        summed_price += price
 
         table.add_row(details.data_type,
                       details.ticker,
@@ -119,17 +122,14 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
 
     logger.info(table)
 
-    all_data_files = list(itertools.chain(*[product.get_data_files() for product in products]))
-    if len(all_data_files) > len(set(all_data_files)):
-        logger.warn("The total price is less than the sum of all prices because there is overlapping data")
-
     all_data_files = _get_data_files(organization, products)
     total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
-    organization_balance = organization.credit.balance * 100
+    if total_price != summed_price:
+        logger.warn("The total price is less than the sum of all separate prices because there is overlapping data")
 
     logger.info(f"Total price: {total_price:,.0f} QCC")
-    logger.info(f"Organization balance: {organization_balance:,.0f} QCC")
+    logger.info(f"Organization balance: {organization.get_qcc_balance():,.0f} QCC")
 
 
 def _select_organization() -> QCFullOrganization:
@@ -238,7 +238,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
     all_data_files = _get_data_files(organization, products)
     total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
-    organization_qcc = organization.credit.balance * 100
+    organization_qcc = organization.get_qcc_balance()
 
     if total_price > organization_qcc:
         raise MoreInfoError("The total price exceeds your organization's QCC balance",
@@ -263,7 +263,7 @@ def download(overwrite: bool) -> None:
 
     \b
     See the following url for the data that can be purchased and downloaded with this command:
-    https://www.quantconnect.com/data/tree
+    https://www.quantconnect.com/docs/v2/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
     """
     organization = _select_organization()
 

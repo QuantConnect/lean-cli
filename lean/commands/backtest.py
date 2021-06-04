@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -141,27 +140,6 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
     launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
-def _update_data_provider(new_value: str) -> None:
-    """Updates the data provider in the Lean configuration file.
-
-    :param new_value: the new value to set the data provider to
-    """
-    lean_config_manager = container.lean_config_manager()
-    config = lean_config_manager.get_lean_config()
-
-    config_path = lean_config_manager.get_lean_config_path()
-    config_text = config_path.read_text(encoding="utf-8")
-
-    # We can only use regex to update the property because converting config back to JSON drops all comments
-
-    if "data-provider" in config:
-        config_text = re.sub(r'"data-provider":\s*"([^"]*)"', f'"data-provider": "{new_value}"', config_text)
-    else:
-        config_text = config_text.replace("{", f'{{\n  "data-provider": "{new_value}",', 1)
-
-    config_path.write_text(config_text, encoding="utf-8")
-
-
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
@@ -207,6 +185,7 @@ def backtest(project: Path,
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
+    lean_config_manager = container.lean_config_manager()
 
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -226,10 +205,13 @@ def backtest(project: Path,
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
     if download_data:
-        _update_data_provider("QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
+        lean_config_manager.set_property("data-provider", "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
+        lean_config_manager.set_property("map-file-provider", "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
+        lean_config_manager.set_property("factor-file-provider",
+                                         "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
 
     if data_purchase_limit is not None:
-        config = container.lean_config_manager().get_lean_config()
+        config = lean_config_manager.get_lean_config()
         if config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
             container.logger().warn(
                 "--data-purchase-limit is ignored because the data provider is not set to download from the API, use --download-data to set that up")
