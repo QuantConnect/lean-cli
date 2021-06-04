@@ -104,13 +104,9 @@ class DataDownloader:
         try:
             file_content = self._api_client.data.download_file(relative_file, organization_id)
         except RequestFailedError as error:
-            if "File not found" in str(error):
-                self._logger.warn("\n".join([
-                    f"{relative_file} does not exist in the QuantConnect Data Library",
-                    "You have not been charged for this file"
-                ]))
-                return
-            raise error
+            self._logger.warn(str(error))
+            self._logger.warn("You have not been charged for this file")
+            return
 
         local_path.parent.mkdir(parents=True, exist_ok=True)
         with local_path.open("wb+") as f:
