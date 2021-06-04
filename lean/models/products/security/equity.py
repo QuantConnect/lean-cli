@@ -64,7 +64,7 @@ class EquityProduct(SecurityProduct):
 
         def validate_ticker(t: str) -> bool:
             if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
-                return t.lower() in cls._list_files(f"{base_directory}/{t[0].lower()}", fr"/([^/.]+)\.zip")
+                return t.lower() in cls._list_files(f"{base_directory}/{t[0].lower()}", r"/([^/.]+)\.zip")
 
             return len(cls._list_files(f"{base_directory}/{t.lower()}/", fr"/\d+_{data_type.name.lower()}\.zip")) > 0
 

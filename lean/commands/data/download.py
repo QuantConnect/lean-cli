@@ -34,6 +34,7 @@ from lean.models.products.security.crypto import CryptoProduct
 from lean.models.products.security.equity import EquityProduct
 from lean.models.products.security.equity_option import EquityOptionProduct
 from lean.models.products.security.forex import ForexProduct
+from lean.models.products.security.future import FutureProduct
 
 data_information: Optional[QCDataInformation] = None
 
@@ -160,7 +161,8 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         CryptoProduct,
         EquityProduct,
         EquityOptionProduct,
-        ForexProduct
+        ForexProduct,
+        FutureProduct
     ]
 
     alternative_product_classes = [
@@ -187,12 +189,13 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         product_class = logger.prompt_list(product_name_question,
                                            [Option(id=c, label=c.get_product_name()) for c in product_classes])
 
+        new_products = product_class.build(organization)
         current_files = [data_file.file for data_file in _get_data_files(organization, products)]
 
-        for product in product_class.build(organization):
-            product_files = product.get_data_files()
-            if len(set(product_files) - set(current_files)) > 0:
-                products.append(product)
+        for new_product in new_products:
+            new_files = new_product.get_data_files()
+            if len(set(new_files) - set(current_files)) > 0:
+                products.append(new_product)
 
         logger.info("Selected data:")
         _display_products(organization, products)

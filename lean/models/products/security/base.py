@@ -14,7 +14,7 @@
 import abc
 from datetime import datetime
 from enum import Enum
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 import click
 
@@ -28,12 +28,12 @@ class SecurityType(str, Enum):
     CFD = "CFD"
     Crypto = "Crypto"
     Equity = "Equity"
-    EquityOption = "Equity option"
+    EquityOption = "Equity Option"
     Forex = "Forex"
     Future = "Future"
-    FutureOption = "Future option"
+    FutureOption = "Future Option"
     Index = "Index"
-    IndexOption = "Index option"
+    IndexOption = "Index Option"
 
     def get_internal_name(self) -> str:
         """Returns the internal name of the security type.
@@ -135,7 +135,7 @@ class SecurityProduct(Product, abc.ABC):
     def _ask_ticker(cls,
                     security_type: SecurityType,
                     market: str,
-                    resolution: QCResolution,
+                    resolution: Union[QCResolution, str],
                     validate_ticker: Callable[[str], bool]) -> str:
         """Asks the user to give the ticker of the data.
 
@@ -147,7 +147,7 @@ class SecurityProduct(Product, abc.ABC):
         """
         security_type = security_type.get_internal_name().lower()
         market = market.lower()
-        resolution = resolution.value.lower()
+        resolution = resolution.value.lower() if isinstance(resolution, QCResolution) else resolution
 
         url = f"https://www.quantconnect.com/data/tree/{security_type}/{market}/{resolution}"
 
