@@ -129,7 +129,7 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
         logger.warn("The total price is less than the sum of all separate prices because there is overlapping data")
 
     logger.info(f"Total price: {total_price:,.0f} QCC")
-    logger.info(f"Organization balance: {organization.get_qcc_balance():,.0f} QCC")
+    logger.info(f"Organization balance: {organization.credit.balance:,.0f} QCC")
 
 
 def _select_organization() -> QCFullOrganization:
@@ -238,7 +238,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
     all_data_files = _get_data_files(organization, products)
     total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
-    organization_qcc = organization.get_qcc_balance()
+    organization_qcc = organization.credit.balance
 
     if total_price > organization_qcc:
         raise MoreInfoError("The total price exceeds your organization's QCC balance",

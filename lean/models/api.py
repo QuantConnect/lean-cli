@@ -328,7 +328,7 @@ class QCOrganizationCreditMovement(WrappedBaseModel):
 class QCOrganizationCredit(WrappedBaseModel):
     movements: List[QCOrganizationCreditMovement]
 
-    # Balance in USD
+    # Balance in QCC
     balance: float
 
 
@@ -368,17 +368,6 @@ class QCFullOrganization(WrappedBaseModel):
             return False
 
         return any(x.name == "QuantConnect Equity Factor & Map Files" for x in data_products_product.items)
-
-    def get_qcc_balance(self) -> float:
-        """Returns the QCC balance of this organization.
-
-        :return: the amount of QCC this organization has left
-        """
-        if len(self.credit.movements) > 0:
-            return self.credit.movements[-1].balance
-
-        # If there were no credit movements, the organization does not have any QCC
-        return 0
 
 
 class QCMinimalOrganization(WrappedBaseModel):
