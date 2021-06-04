@@ -15,9 +15,8 @@ from datetime import datetime
 from typing import List, Optional
 
 from lean.models.api import QCFullOrganization, QCResolution
-from lean.models.market_hours_database import SecurityType
 from lean.models.products.base import Product
-from lean.models.products.security.base import DataType, SecurityProduct
+from lean.models.products.security.base import DataType, SecurityProduct, SecurityType
 
 
 class ForexProduct(SecurityProduct):

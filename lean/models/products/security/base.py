@@ -17,13 +17,40 @@ from enum import Enum
 from typing import Callable, List, Optional
 
 import click
-from dateutil.rrule import DAILY, rrule, rruleset, weekday
 
 from lean.container import container
 from lean.models.api import QCResolution
 from lean.models.logger import Option
-from lean.models.market_hours_database import SecurityType
 from lean.models.products.base import Product, ProductDetails
+
+
+class SecurityType(str, Enum):
+    CFD = "CFD"
+    Crypto = "Crypto"
+    Equity = "Equity"
+    EquityOption = "Equity option"
+    Forex = "Forex"
+    Future = "Future"
+    FutureOption = "Future option"
+    Index = "Index"
+    IndexOption = "Index option"
+
+    def get_internal_name(self) -> str:
+        """Returns the internal name of the security type.
+
+        :return: the name of the security type in LEAN
+        """
+        return {
+            SecurityType.CFD: "Cfd",
+            SecurityType.Crypto: "Crypto",
+            SecurityType.Equity: "Equity",
+            SecurityType.EquityOption: "Option",
+            SecurityType.Forex: "Forex",
+            SecurityType.Future: "Future",
+            SecurityType.FutureOption: "FutureOption",
+            SecurityType.Index: "Index",
+            SecurityType.IndexOption: "IndexOption"
+        }[self]
 
 
 class DataType(str, Enum):
@@ -134,32 +161,3 @@ class SecurityProduct(Product, abc.ABC):
                 return ticker
 
             logger.info(f"Error: we have no data for {ticker.upper()}")
-
-    def _get_tradable_dates(self) -> List[str]:
-        """Returns the dates for which the data in this product is tradable.
-
-        This method uses the market hours database to find the tradable weekdays and the holidays.
-
-        :return: the dates for which there is data for the given product in yyyyMMdd format
-        """
-        entry = container.market_hours_database().get_entry(self._security_type, self._market, self._ticker)
-
-        # Create the set of rules containing all date rules
-        rules = rruleset()
-
-        # There is data on all weekdays on which the security trades
-        weekdays_with_data = []
-        for index, day in enumerate(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]):
-            if len(getattr(entry, day)) > 0:
-                weekdays_with_data.append(weekday(index))
-        rules.rrule(rrule(DAILY, dtstart=self._start_date, until=self._end_date, byweekday=weekdays_with_data))
-
-        # There is no data for holidays
-        for holiday in entry.holidays:
-            rules.exdate(holiday)
-
-        # Retrieve the dates of all tradable weekdays between the start and end date excluding the holidays
-        dates = rules.between(self._start_date, self._end_date, inc=True)
-
-        # Return the formatted version of all dates
-        return [date.strftime("%Y%m%d") for date in dates]
