@@ -224,8 +224,8 @@ def _confirm_organization_balance(organization: QCFullOrganization, products: Li
         ]))
 
 
-def _accept_data_sales_agreement(organization: QCFullOrganization) -> None:
-    """Asks the user to accept the data sales agreement.
+def _accept_agreement(organization: QCFullOrganization) -> None:
+    """Asks the user to accept the CLI API Access and Data Agreement.
 
     :param organization: the organization that the user selected
     """
@@ -236,8 +236,9 @@ def _accept_data_sales_agreement(organization: QCFullOrganization) -> None:
 
     webbrowser.open(info.agreement)
 
-    logger.info(f"Go to the following url to accept the data sales agreement: {info.agreement}")
-    logger.info("Waiting until the data sales agreement has been accepted...")
+    logger.info(f"Go to the following url to accept the CLI API Access and Data Agreement:")
+    logger.info(info.agreement)
+    logger.info("Waiting until the CLI API Access and Data Agreement has been accepted...")
 
     container.task_manager().poll(
         make_request=lambda: api_client.organizations.get(organization.id),
@@ -284,7 +285,7 @@ def download(overwrite: bool) -> None:
     products = _select_products(organization)
     _confirm_organization_balance(organization, products)
 
-    _accept_data_sales_agreement(organization)
+    _accept_agreement(organization)
     _confirm_payment(organization, products)
 
     all_data_files = _get_data_files(organization, products)
