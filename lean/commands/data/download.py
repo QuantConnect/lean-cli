@@ -22,7 +22,6 @@ from rich.table import Table
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
-from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 from lean.models.products.alternative.cboe import CBOEProduct
 from lean.models.products.alternative.fred import FREDProduct
@@ -206,6 +205,24 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
     return products
 
 
+def _confirm_organization_balance(organization: QCFullOrganization, products: List[Product]) -> None:
+    """Checks whether the selected organization has enough QCC to download all selected data.
+
+    Raises an error if the organization does not have enough QCC.
+
+    :param organization: the organization that the user selected
+    :param products: the list of products selected by the user
+    """
+    all_data_files = _get_data_files(organization, products)
+    total_price = sum(data_file.vendor.price for data_file in all_data_files)
+
+    if total_price > organization.credit.balance:
+        raise RuntimeError("\n".join([
+            "The total price exceeds your organization's QCC balance",
+            f"You can purchase QCC at https://www.quantconnect.com/organization/{organization.id}/billing"
+        ]))
+
+
 def _accept_data_sales_agreement(organization: QCFullOrganization) -> None:
     """Asks the user to accept the data sales agreement.
 
@@ -232,17 +249,13 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
     An abort error is raised if the user decides to cancel.
 
-    :param organization: the organization that will be billed
+    :param organization: the organization that will be charged
     :param products: the list of products selected by the user
     """
     all_data_files = _get_data_files(organization, products)
     total_price = sum(data_file.vendor.price for data_file in all_data_files)
 
     organization_qcc = organization.credit.balance
-
-    if total_price > organization_qcc:
-        raise MoreInfoError("The total price exceeds your organization's QCC balance",
-                            f"https://www.quantconnect.com/organization/{organization.id}/billing")
 
     logger = container.logger()
     logger.info(f"You will be charged {total_price:,.0f} QCC from your organization's QCC balance")
@@ -268,6 +281,7 @@ def download(overwrite: bool) -> None:
     organization = _select_organization()
 
     products = _select_products(organization)
+    _confirm_organization_balance(organization, products)
 
     _accept_data_sales_agreement(organization)
     _confirm_payment(organization, products)
