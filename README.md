@@ -8,7 +8,7 @@
 
 The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
-Visit the [documentation website](https://www.quantconnect.com/docs/v2/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
+Visit the [documentation website](https://www.lean.io/docs/lean-cli) for comprehensive and up-to-date documentation.
 
 ## Highlights
 
