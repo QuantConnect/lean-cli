@@ -77,7 +77,7 @@ def optimize(project: Path,
 
         if len(project_parameters) == 0:
             raise MoreInfoError("The given project has no parameters to optimize",
-                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/optimization/project-parameters")
+                                "https://www.lean.io/docs/lean-cli/tutorials/optimization/project-parameters")
 
         optimizer_config_manager = container.optimizer_config_manager()
         optimization_strategy = optimizer_config_manager.configure_strategy(cloud=False)

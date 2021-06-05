@@ -239,13 +239,13 @@ def create_project(name: str, language: str) -> None:
     if language is None:
         raise MoreInfoError(
             "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`",
-            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management")
+            "https://www.lean.io/docs/lean-cli/tutorials/project-management")
 
     full_path = Path.cwd() / name
 
     if not container.path_manager().is_path_valid(full_path):
         raise MoreInfoError(f"'{name}' is not a valid path",
-                            "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
+                            "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")

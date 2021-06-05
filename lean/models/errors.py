@@ -54,4 +54,4 @@ class AuthenticationError(MoreInfoError):
     def __init__(self) -> None:
         """Creates a new AuthenticationError instance."""
         super().__init__("Invalid credentials, please log in using `lean login`",
-                         "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/authentication#02-Logging-in")
+                         "https://www.lean.io/docs/lean-cli/tutorials/authentication#02-Logging-in")

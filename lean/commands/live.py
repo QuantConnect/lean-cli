@@ -64,7 +64,7 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     for key in ["live-mode-brokerage", "data-queue-handler"]:
         if key not in environment:
             raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
-                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
+                                "https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading")
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handler = environment["data-queue-handler"]
@@ -87,7 +87,7 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
 Please configure the following missing {properties_str} in {lean_config_path}:
 {missing_properties}
 Go to the following url for documentation on {these_str} {properties_str}:
-https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading
+https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading
     """.strip())
 
 
@@ -158,11 +158,11 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
     if "environments" not in lean_config or environment not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
         raise MoreInfoError(f"{lean_config_path} does not contain an environment named '{environment}'",
-                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
+                            "https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading")
 
     if not lean_config["environments"][environment]["live-mode"]:
         raise MoreInfoError(f"The '{environment}' is not a live trading environment (live-mode is set to false)",
-                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/local-live-trading")
+                            "https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading")
 
     _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
     _start_iqconnect_if_necessary(lean_config, environment)

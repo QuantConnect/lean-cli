@@ -55,7 +55,7 @@ class LeanCommand(click.Command):
                 # Abort with a display-friendly error message if the command requires a Lean config
                 raise MoreInfoError(
                     "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
-                    "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting#02-Common-errors")
+                    "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
         if self._requires_docker and "pytest" not in sys.modules:
             # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root

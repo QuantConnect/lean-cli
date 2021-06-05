@@ -119,7 +119,7 @@ def remove(project: Path, name: str, no_local: bool) -> None:
 
     if project_language is None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
-                            "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/project-management#02-Creating-new-projects")
+                            "https://www.lean.io/docs/lean-cli/tutorials/project-management#02-Creating-new-projects")
 
     if project_language == "CSharp":
         _remove_csharp(project, name, no_local)

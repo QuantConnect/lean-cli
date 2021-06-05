@@ -112,7 +112,7 @@ Interactive Brokers Lite accounts do not support API trading.
 
         if environment is None:
             raise MoreInfoError(f"Account id '{account_id}' does not look like a valid account name",
-                                "https://www.quantconnect.com/docs/v2/lean-cli/tutorials/live-trading/cloud-live-trading#03-Interactive-Brokers")
+                                "https://www.lean.io/docs/lean-cli/tutorials/live-trading/cloud-live-trading#03-Interactive-Brokers")
 
         return {
             "user": username,

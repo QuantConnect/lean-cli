@@ -77,7 +77,7 @@ def init() -> None:
         if path.exists():
             relative_path = path.relative_to(current_dir)
             raise MoreInfoError(f"{relative_path} already exists, please run this command in an empty directory",
-                                "https://www.quantconnect.com/docs/v2/lean-cli/user-guides/directory-structure#02-lean-init")
+                                "https://www.lean.io/docs/lean-cli/user-guides/directory-structure#02-lean-init")
 
     logger = container.logger()
 
@@ -121,8 +121,8 @@ The following objects have been created:
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
 
 The following documentation pages may be useful:
-- Setting up local autocomplete: https://www.quantconnect.com/docs/v2/lean-cli/tutorials/local-autocomplete
-- Synchronizing projects with the cloud: https://www.quantconnect.com/docs/v2/lean-cli/tutorials/cloud-synchronization
+- Setting up local autocomplete: https://www.lean.io/docs/lean-cli/tutorials/local-autocomplete
+- Synchronizing projects with the cloud: https://www.lean.io/docs/lean-cli/tutorials/cloud-synchronization
 
 Here are some commands to get you going:
 - Run `lean create-project "My Project"` to create a new project with starter code

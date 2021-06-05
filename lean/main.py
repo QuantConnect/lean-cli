@@ -56,7 +56,7 @@ def main() -> None:
             exception_str = io.getvalue().strip()
             exception_str = exception_str.replace("Try 'lean", "\nTry 'lean")
             exception_str = exception_str.replace("for help.",
-                                                  "for help or go to the following url for a list of common errors:\nhttps://www.quantconnect.com/docs/v2/lean-cli/user-guides/troubleshooting")
+                                                  "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/lean-cli/user-guides/troubleshooting")
 
             logger.info(exception_str)
         elif isinstance(exception, click.Abort):

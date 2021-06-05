@@ -279,7 +279,7 @@ def download(overwrite: bool) -> None:
 
     \b
     See the following url for the data that can be purchased and downloaded with this command:
-    https://www.quantconnect.com/docs/v2/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
+    https://www.lean.io/docs/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
     """
     organization = _select_organization()
 
