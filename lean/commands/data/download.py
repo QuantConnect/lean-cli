@@ -274,7 +274,7 @@ def download(overwrite: bool) -> None:
     """Purchase and download data from QuantConnect's Data Library.
 
     An interactive wizard will show to walk you through the process of selecting data,
-    agreeing to the distribution agreement and payment.
+    accepting the CLI API Access and Data Agreement and payment.
     After this wizard the selected data will be downloaded automatically.
 
     \b

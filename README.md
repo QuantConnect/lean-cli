@@ -362,8 +362,8 @@ Usage: lean data download [OPTIONS]
 
   Purchase and download data from QuantConnect's Data Library.
 
-  An interactive wizard will show to walk you through the process of selecting data, agreeing to the distribution
-  agreement and payment. After this wizard the selected data will be downloaded automatically.
+  An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
+  Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
 
   See the following url for the data that can be purchased and downloaded with this command:
   https://www.quantconnect.com/docs/v2/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
