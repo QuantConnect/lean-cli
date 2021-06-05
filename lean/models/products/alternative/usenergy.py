@@ -231,7 +231,7 @@ class USEnergyProduct(Product):
 
     @classmethod
     def get_product_name(cls) -> str:
-        return "US Energy Information Administration data"
+        return "US Energy Information Administration Data"
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:

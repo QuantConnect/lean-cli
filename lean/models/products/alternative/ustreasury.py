@@ -22,7 +22,7 @@ class USTreasuryProduct(Product):
 
     @classmethod
     def get_product_name(cls) -> str:
-        return "US treasury yield curve rates"
+        return "US Treasury Yield Curve Rates"
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:

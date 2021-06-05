@@ -30,7 +30,7 @@ class CBOEProduct(Product):
 
     @classmethod
     def get_product_name(cls) -> str:
-        return "CBOE volatility index pricing"
+        return "CBOE Volatility Index Pricing"
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:

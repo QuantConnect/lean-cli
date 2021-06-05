@@ -35,7 +35,7 @@ class SECProduct(Product):
 
     @classmethod
     def get_product_name(cls) -> str:
-        return "SEC filings"
+        return "SEC Filings"
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
