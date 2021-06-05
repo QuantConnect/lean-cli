@@ -220,8 +220,8 @@ def _confirm_organization_balance(organization: QCFullOrganization, products: Li
     if total_price > organization.credit.balance:
         raise RuntimeError("\n".join([
             "The total price exceeds your organization's QCC balance",
-            "You can purchase QCC by clicking \"Purchase Credit\" on the bottom of your organization's billing page:",
-            f"https://www.quantconnect.com/organization/{organization.id}/billing"
+            "You can purchase QCC by clicking \"Purchase Credit\" on your organization's home page:",
+            f"https://www.quantconnect.com/organization/{organization.id}"
         ]))
 
 
