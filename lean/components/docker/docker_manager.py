@@ -203,14 +203,23 @@ class DockerManager:
         docker_client = self._get_docker_client()
         return any(str(image) in x.tags for x in docker_client.images.list())
 
-    def get_digest(self, image: DockerImage) -> str:
+    def get_local_digest(self, image: DockerImage) -> str:
         """Returns the digest of a locally installed image.
 
-        :param image: the image to get the digest of
-        :return: the local digest of the image
+        :param image: the local image to get the digest of
+        :return: the digest of the local image
         """
         img = self._get_docker_client().images.get(str(image))
         return img.attrs["RepoDigests"][0].split("@")[1]
+
+    def get_remote_digest(self, image: DockerImage) -> str:
+        """Returns the digest of a remote image.
+
+        :param image: the remote image to get the digest of
+        :return: the digest of the remote image
+        """
+        img = self._get_docker_client().images.get_registry_data(str(image))
+        return img.attrs["Descriptor"]["digest"]
 
     def create_volume(self, name: str) -> None:
         """Creates a new volume, or does nothing if a volume with the given name already exists.

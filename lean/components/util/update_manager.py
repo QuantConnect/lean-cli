@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from distutils.version import StrictVersion
 
 import requests
+from docker.errors import APIError
 
 import lean
 from lean.components.config.storage import Storage
@@ -79,20 +80,15 @@ class UpdateManager:
         if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
             return
 
-        current_digest = self._docker_manager.get_digest(image)
+        local_digest = self._docker_manager.get_local_digest(image)
 
         try:
-            response = requests.get(f"https://registry.hub.docker.com/v2/repositories/{image.name}/tags/{image.tag}")
-        except requests.exceptions.ConnectionError:
+            remote_digest = self._docker_manager.get_remote_digest(image)
+        except APIError:
             # The user may be offline, do nothing
             return
 
-        if not response.ok:
-            return
-
-        latest_digest = response.json()["images"][0]["digest"]
-
-        if current_digest != latest_digest:
+        if local_digest != remote_digest:
             self._logger.warn(f"You are currently using an outdated version of the '{image}' Docker image")
             self._logger.warn(f"Run this command with the --update flag to update it to the latest version")
 
