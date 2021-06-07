@@ -19,7 +19,7 @@ from lean.container import container
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.logger import Option
 from lean.models.products.base import Product
-from lean.models.products.security.base import DataType, SecurityProduct, SecurityType
+from lean.models.products.security.base import DataType, MapFactorSecurityProduct, SecurityType
 
 
 class OptionStyle(str, Enum):
@@ -27,7 +27,7 @@ class OptionStyle(str, Enum):
     European = "European"
 
 
-class EquityOptionProduct(SecurityProduct):
+class EquityOptionProduct(MapFactorSecurityProduct):
     """The EquityOptionProduct class supports downloading equity option data with the `lean data download` command."""
 
     def __init__(self,
@@ -48,6 +48,8 @@ class EquityOptionProduct(SecurityProduct):
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
+        cls._ensure_map_factor_subscription(organization)
+
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest])
         market = "USA"
         resolution = QCResolution.Minute
@@ -68,10 +70,16 @@ class EquityOptionProduct(SecurityProduct):
                                 fr"/(\d+)_{data_type.name.lower()}_{option_style.name.lower()}\.zip")
         start_date, end_date = cls._ask_start_end_date(dates)
 
-        return [EquityOptionProduct(data_type, market, ticker, resolution, option_style, start_date, end_date)]
+        return cls._finalize_build(
+            organization,
+            ticker,
+            start_date,
+            end_date,
+            lambda tick, start, end: EquityOptionProduct(data_type, market, tick, resolution, option_style, start, end)
+        )
 
     def _get_data_files(self) -> List[str]:
-        return self._get_data_files_in_range(
+        return self._get_map_factor_data_files() + self._get_data_files_in_range(
             f"option/{self._market.lower()}/{self._resolution.value.lower()}/{self._ticker.lower()}/",
             fr"/(\d+)_{self._data_type.name.lower()}_{self._option_style.name.lower()}\.zip",
             self._start_date,
