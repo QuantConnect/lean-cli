@@ -28,7 +28,7 @@ class TempManager:
 
         :return: a path to an empty temporary directory
         """
-        path = Path(tempfile.mkdtemp())
+        path = Path(tempfile.mkdtemp(prefix="lean-cli-"))
         self._temporary_directories.append(path)
         return path
 

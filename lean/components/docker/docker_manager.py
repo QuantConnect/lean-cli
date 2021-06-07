@@ -125,6 +125,7 @@ class DockerManager:
             except APIError:
                 pass
             finally:
+                self._temp_manager.delete_temporary_directories()
                 sys.exit(1)
 
         signal.signal(signal.SIGINT, signal_handler)
