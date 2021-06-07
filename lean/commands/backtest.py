@@ -148,14 +148,13 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
-# TODO: Re-enable this when LEAN PR #5251 is merged
-# @click.option("--download-data",
-#               is_flag=True,
-#               default=False,
-#               help="Update the Lean configuration file to download data from the QuantConnect API")
-# @click.option("--data-purchase-limit",
-#               type=int,
-#               help="The maximum amount of QCC to spend on downloading data during this backtest")
+@click.option("--download-data",
+              is_flag=True,
+              default=False,
+              help="Update the Lean configuration file to download data from the QuantConnect API")
+@click.option("--data-purchase-limit",
+              type=int,
+              help="The maximum amount of QCC to spend on downloading data during this backtest")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -166,9 +165,8 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
 def backtest(project: Path,
              output: Optional[Path],
              debug: Optional[str],
-             # TODO: Re-enable this when LEAN PR #5251 is merged
-             # download_data: bool,
-             # data_purchase_limit: Optional[int],
+             download_data: bool,
+             data_purchase_limit: Optional[int],
              image: Optional[str],
              update: bool) -> None:
     """Backtest a project locally using Docker.
@@ -206,22 +204,18 @@ def backtest(project: Path,
         debugging_method = DebuggingMethod.Rider
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
-    # TODO: Remove this when LEAN PR #5251 is merged
-    data_purchase_limit = None
+    if download_data:
+        lean_config_manager.set_property("data-provider", "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
+        lean_config_manager.set_property("map-file-provider", "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
+        lean_config_manager.set_property("factor-file-provider",
+                                         "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
 
-    # TODO: Re-enable this when LEAN PR #5251 is merged
-    # if download_data:
-    #     lean_config_manager.set_property("data-provider", "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
-    #     lean_config_manager.set_property("map-file-provider", "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
-    #     lean_config_manager.set_property("factor-file-provider",
-    #                                      "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
-    #
-    # if data_purchase_limit is not None:
-    #     config = lean_config_manager.get_lean_config()
-    #     if config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
-    #         container.logger().warn(
-    #             "--data-purchase-limit is ignored because the data provider is not set to download from the API, use --download-data to set that up")
-    #         data_purchase_limit = None
+    if data_purchase_limit is not None:
+        config = lean_config_manager.get_lean_config()
+        if config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
+            container.logger().warn(
+                "--data-purchase-limit is ignored because the data provider is not set to download from the API, use --download-data to set that up")
+            data_purchase_limit = None
 
     cli_config_manager = container.cli_config_manager()
     engine_image = cli_config_manager.get_engine_image(image)

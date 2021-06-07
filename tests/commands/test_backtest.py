@@ -486,79 +486,79 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
         workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
 
-# TODO: Re-enable this when LEAN PR #5251 is merged
-# def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
-#     create_fake_lean_cli_directory()
-#
-#     _generate_file(Path.cwd() / "lean.json", """
-# {
-#     // data-folder documentation
-#     "data-folder": "data",
-#     "data-provider": "not api data provider"
-# }
-#         """)
-#
-#     docker_manager = mock.Mock()
-#     container.docker_manager.override(providers.Object(docker_manager))
-#
-#     lean_runner = mock.Mock()
-#     container.lean_runner.override(providers.Object(lean_runner))
-#
-#     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
-#
-#     assert result.exit_code == 0
-#
-#     config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
-#     assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
-#     assert config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
-#     assert config["factor-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
-#
-#
-# def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
-#     create_fake_lean_cli_directory()
-#
-#     _generate_file(Path.cwd() / "lean.json", """
-# {
-#     // data-folder documentation
-#     "data-folder": "data",
-#     "data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
-# }
-#         """)
-#
-#     docker_manager = mock.Mock()
-#     container.docker_manager.override(providers.Object(docker_manager))
-#
-#     lean_runner = mock.Mock()
-#     container.lean_runner.override(providers.Object(lean_runner))
-#
-#     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
-#
-#     assert result.exit_code == 0
-#
-#     lean_runner.run_lean.assert_called_once_with("backtesting",
-#                                                  Path("Python Project/main.py").resolve(),
-#                                                  mock.ANY,
-#                                                  ENGINE_IMAGE,
-#                                                  None,
-#                                                  1000)
-#
-#
-# def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider() -> None:
-#     create_fake_lean_cli_directory()
-#
-#     docker_manager = mock.Mock()
-#     container.docker_manager.override(providers.Object(docker_manager))
-#
-#     lean_runner = mock.Mock()
-#     container.lean_runner.override(providers.Object(lean_runner))
-#
-#     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
-#
-#     assert result.exit_code == 0
-#
-#     lean_runner.run_lean.assert_called_once_with("backtesting",
-#                                                  Path("Python Project/main.py").resolve(),
-#                                                  mock.ANY,
-#                                                  ENGINE_IMAGE,
-#                                                  None,
-#                                                  None)
+
+def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
+    create_fake_lean_cli_directory()
+
+    _generate_file(Path.cwd() / "lean.json", """
+{
+    // data-folder documentation
+    "data-folder": "data",
+    "data-provider": "not api data provider"
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
+
+    assert result.exit_code == 0
+
+    config = json5.loads((Path.cwd() / "lean.json").read_text(encoding="utf-8"))
+    assert config["data-provider"] == "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+    assert config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+    assert config["factor-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
+
+
+def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
+    create_fake_lean_cli_directory()
+
+    _generate_file(Path.cwd() / "lean.json", """
+{
+    // data-folder documentation
+    "data-folder": "data",
+    "data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+}
+        """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 1000)
+
+
+def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with("backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 None)
