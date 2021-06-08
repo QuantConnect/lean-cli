@@ -190,19 +190,19 @@ DEFAULT_CSHARP_NOTEBOOK = """
             "source": []
         }
     ],
-    "metadata": {
-        "kernelspec": {
-            "display_name": "C#",
-            "language": "csharp",
-            "name": "csharp"
-        },
-        "language_info": {
-            "file_extension": ".cs",
-            "mimetype": "text/x-csharp",
-            "name": "C#",
-            "pygments_lexer": "c#",
-            "version": "4.0.30319"
-        }
+     "metadata": {
+      "kernelspec": {
+       "display_name": ".NET (C#)",
+       "language": "C#",
+       "name": ".net-csharp"
+      },
+      "language_info": {
+       "file_extension": ".cs",
+       "mimetype": "text/x-csharp",
+       "name": "C#",
+       "pygments_lexer": "csharp",
+       "version": "9.0"
+      }
     },
     "nbformat": 4,
     "nbformat_minor": 2
