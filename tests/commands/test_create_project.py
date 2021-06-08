@@ -52,7 +52,7 @@ def assert_csharp_project_exists() -> None:
         assert "class MyFirstProject : QCAlgorithm" in file.read()
 
     with open(project_dir / "research.ipynb") as file:
-        assert json.load(file)["metadata"]["kernelspec"]["language"] == "csharp"
+        assert json.load(file)["metadata"]["kernelspec"]["language"] == "C#"
 
     with open(project_dir / "config.json") as file:
         assert json.load(file)["algorithm-language"] == "CSharp"
