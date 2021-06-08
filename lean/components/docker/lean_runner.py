@@ -67,12 +67,17 @@ class LeanRunner:
         :param output_dir: the directory to save output data to
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
+        :param data_purchase_limit: the data purchase limit in QCC
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(environment, algorithm_file, output_dir, debugging_method)
+        run_options = self.get_basic_docker_config(environment,
+                                                   algorithm_file,
+                                                   output_dir,
+                                                   debugging_method,
+                                                   data_purchase_limit)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -96,11 +101,7 @@ class LeanRunner:
                 "mode": "rw"
             }
 
-        lean_command = "exec dotnet QuantConnect.Lean.Launcher.dll"
-        if data_purchase_limit is not None:
-            lean_command += f" --data-purchase-limit {data_purchase_limit}"
-
-        run_options["commands"].append(lean_command)
+        run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
@@ -120,7 +121,8 @@ class LeanRunner:
                                 environment: str,
                                 algorithm_file: Path,
                                 output_dir: Path,
-                                debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
+                                debugging_method: Optional[DebuggingMethod],
+                                data_purchase_limit: Optional[int]) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -128,9 +130,10 @@ class LeanRunner:
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
-        :param image: the LEAN engine image to run
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :return: the Docker configuration containing basic configuration to run Lean
+        :param data_purchase_limit: the data purchase limit in QCC
+        :return: the Docker config to run LEAN with
         """
         project_dir = algorithm_file.parent
 
@@ -146,7 +149,8 @@ class LeanRunner:
         # Create a file containing the complete Lean configuration
         config = self._lean_config_manager.get_complete_lean_config(environment,
                                                                     algorithm_file,
-                                                                    debugging_method)
+                                                                    debugging_method,
+                                                                    data_purchase_limit)
 
         config["data-folder"] = "/Lean/Data"
         config["results-destination-folder"] = "/Results"

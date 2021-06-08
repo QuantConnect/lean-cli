@@ -25,6 +25,7 @@ from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+from lean.models.api import QCMinimalOrganization
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -503,6 +504,12 @@ def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.Mock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
 

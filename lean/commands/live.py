@@ -153,7 +153,7 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     lean_config_manager = container.lean_config_manager()
-    lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None)
+    lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None, None)
 
     if "environments" not in lean_config or environment not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()

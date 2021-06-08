@@ -21,7 +21,9 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+from lean.models.api import QCMinimalOrganization
 from lean.models.config import DebuggingMethod
+from lean.models.logger import Option
 
 
 # The _migrate_dotnet_5_* methods automatically update launch configurations for a given debugging method.
@@ -140,6 +142,20 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
     launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
+def _select_organization() -> QCMinimalOrganization:
+    """Asks the user for the organization that should be charged when downloading data.
+
+    :return: the selected organization
+    """
+    api_client = container.api_client()
+
+    organizations = api_client.organizations.get_all()
+    options = [Option(id=organization, label=organization.name) for organization in organizations]
+
+    logger = container.logger()
+    return logger.prompt_list("Select the organization to purchase and download data with", options)
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--output",
@@ -205,6 +221,8 @@ def backtest(project: Path,
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
     if download_data:
+        organization = _select_organization()
+        lean_config_manager.set_property("job-organization-id", organization.id)
         lean_config_manager.set_property("data-provider", "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
         lean_config_manager.set_property("map-file-provider", "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
         lean_config_manager.set_property("factor-file-provider",

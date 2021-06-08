@@ -184,7 +184,7 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
     "messaging-handler": "QuantConnect.Messaging.Messaging",
     "job-queue-handler": "QuantConnect.Queues.JobQueue",
-    
+
     // interactive brokers configuration
     "ib-account": "",
     "ib-user-name": "",
@@ -271,7 +271,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
     "messaging-handler": "QuantConnect.Messaging.Messaging",
     "job-queue-handler": "QuantConnect.Queues.JobQueue",
-    
+
     // interactive brokers configuration
     "ib-account": "",
     "ib-user-name": "",
@@ -314,7 +314,7 @@ def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_le
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py", None, None)
 
     for key in ["environment",
                 "algorithm-type-name", "algorithm-language", "algorithm-location",
@@ -328,7 +328,7 @@ def test_get_complete_lean_config_sets_environment() -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["environment"] == "my-environment"
 
@@ -337,7 +337,7 @@ def test_get_complete_lean_config_sets_close_automatically() -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["close-automatically"]
 
@@ -346,7 +346,7 @@ def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> N
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert not config["debugging"]
 
@@ -359,7 +359,7 @@ def test_get_complete_lean_config_parses_debugging_method_correctly(method: Debu
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method, None)
 
     assert config["debugging"]
     assert config["debugging-method"] == value
@@ -373,7 +373,7 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
     cli_config_manager.api_token.get_value.return_value = "456"
 
     manager = LeanConfigManager(cli_config_manager, ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["job-user-id"] == "123"
     assert config["api-access-token"] == "456"
@@ -383,7 +383,7 @@ def test_get_complete_lean_config_sets_interactive_brokers_config() -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["ib-host"] == "127.0.0.1"
     assert config["ib-port"] == "4002"
@@ -395,7 +395,7 @@ def test_get_complete_lean_config_sets_iqfeed_host() -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["iqfeed-host"] == "host.docker.internal"
 
@@ -404,7 +404,7 @@ def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
     create_fake_lean_cli_directory()
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["algorithm-type-name"] == "main"
     assert config["algorithm-language"] == "Python"
@@ -464,7 +464,7 @@ namespace QuantConnect.Algorithm.CSharp
     public class CSharpProject : QCAlgorithm
     {
     }
-    
+
     public class SymbolData2
     {
     }
@@ -486,7 +486,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details(csharp_code: str
         file.write(csharp_code.strip() + "\n")
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", csharp_path, None)
+    config = manager.get_complete_lean_config("my-environment", csharp_path, None, None)
 
     assert config["algorithm-type-name"] == class_name
     assert config["algorithm-language"] == "CSharp"
@@ -503,10 +503,19 @@ def test_get_complete_lean_config_sets_parameters() -> None:
     })
 
     manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
-    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, None)
 
     assert config["parameters"] == {
         "key1": "value1",
         "key2": "value2",
         "key3": "value3"
     }
+
+
+def test_get_complete_lean_config_sets_data_purchase_limit() -> None:
+    create_fake_lean_cli_directory()
+
+    manager = LeanConfigManager(mock.Mock(), ProjectConfigManager(XMLManager()))
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None, 1000)
+
+    assert config["data-purchase-limit"] == 1000

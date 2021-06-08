@@ -163,16 +163,16 @@ class LeanConfigManager:
     def get_complete_lean_config(self,
                                  environment: str,
                                  algorithm_file: Path,
-                                 debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
+                                 debugging_method: Optional[DebuggingMethod],
+                                 data_purchase_limit: Optional[int]) -> Dict[str, Any]:
         """Returns a complete Lean config object containing all properties needed for the engine to run.
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
 
-        It is assumed that the default LEAN Docker image is used.
-
         :param environment: the environment to set
         :param algorithm_file: the path to the algorithm that will be ran
         :param debugging_method: the debugging method to use, or None to disable debugging
+        :param data_purchase_limit: the data purchase limit in QCC
         """
         config = self.get_lean_config()
 
@@ -187,6 +187,9 @@ class LeanConfigManager:
         else:
             config["debugging"] = False
             config["debugging-method"] = "LocalCmdline"
+
+        if data_purchase_limit is not None:
+            config["data-purchase-limit"] = data_purchase_limit
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")

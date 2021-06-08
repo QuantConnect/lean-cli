@@ -309,28 +309,6 @@ def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
     assert kwargs["ports"]["22"] == "2222"
 
 
-def test_run_lean_passes_data_purchase_limit_to_launcher() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.return_value = True
-
-    lean_runner = create_lean_runner(docker_manager)
-
-    lean_runner.run_lean("backtesting",
-                         Path.cwd() / "Python Project" / "main.py",
-                         Path.cwd() / "output",
-                         ENGINE_IMAGE,
-                         None,
-                         1000)
-
-    docker_manager.run_image.assert_called_once()
-    args, kwargs = docker_manager.run_image.call_args
-
-    assert any(cmd for cmd in kwargs["commands"] if
-               cmd.endswith("dotnet QuantConnect.Lean.Launcher.dll --data-purchase-limit 1000"))
-
-
 def test_run_lean_raises_when_run_image_fails() -> None:
     create_fake_lean_cli_directory()
 
