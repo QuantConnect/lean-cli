@@ -58,3 +58,6 @@ UPDATE_CHECK_INTERVAL_CLI = 24
 
 # The interval in hours at which the CLI checks for updates to Docker images that are being ran
 UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14
+
+# The interval in hours at which the CLI checks for new announcements
+UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24

@@ -11,17 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 from distutils.version import StrictVersion
 
 import requests
 from docker.errors import APIError
+from rich import box
+from rich.panel import Panel
+from rich.table import Table
 
 import lean
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
-from lean.constants import UPDATE_CHECK_INTERVAL_CLI, UPDATE_CHECK_INTERVAL_DOCKER_IMAGE
+from lean.constants import (UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS, UPDATE_CHECK_INTERVAL_CLI,
+                            UPDATE_CHECK_INTERVAL_DOCKER_IMAGE)
 from lean.models.docker import DockerImage
 
 
@@ -91,6 +96,46 @@ class UpdateManager:
         if local_digest != remote_digest:
             self._logger.warn(f"You are currently using an outdated version of the '{image}' Docker image")
             self._logger.warn(f"Run this command with the --update flag to update it to the latest version")
+
+    def show_announcements(self) -> None:
+        """Shows the announcements if they have been updated.
+
+        We check for new announcements once every UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS hours.
+        """
+        if not self._should_check_for_updates("announcements", UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS):
+            return
+
+        try:
+            response = requests.get("https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json")
+        except requests.exceptions.ConnectionError:
+            # The user may be offline, do nothing
+            return
+
+        if not response.ok:
+            return
+
+        hash_cache_key = "last-announcements-hash"
+
+        remote_hash = hashlib.md5(response.content).hexdigest()
+        local_hash = self._cache_storage.get(hash_cache_key, None)
+
+        if local_hash == remote_hash:
+            return
+
+        self._cache_storage.set(hash_cache_key, remote_hash)
+
+        announcements = response.json()["announcements"]
+        if len(announcements) == 0:
+            return
+
+        table = Table.grid(padding=(0, 1))
+        table.add_column()
+        table.add_column(ratio=1)
+
+        for announcement in announcements:
+            table.add_row(announcement["date"] + ":", announcement["message"])
+
+        self._logger.info(Panel.fit(table, title="Announcements", box=box.SQUARE))
 
     def _should_check_for_updates(self, key: str, interval_hours: int) -> bool:
         """Returns whether an update check should be performed.

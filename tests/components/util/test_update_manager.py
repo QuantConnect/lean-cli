@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Tuple
@@ -124,7 +126,8 @@ def test_warn_if_docker_image_outdated_does_nothing_when_latest_tag_not_installe
 def test_warn_if_docker_image_outdated_only_checks_once_every_two_weeks(hours: int,
                                                                         update_warning_expected: bool) -> None:
     logger, storage, docker_manager, update_manager = create_objects()
-    storage.set("last-update-check-quantconnect/lean:latest", (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
+    storage.set("last-update-check-quantconnect/lean:latest",
+                (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
 
     docker_manager.image_installed.return_value = True
     docker_manager.get_local_digest.return_value = "abc"
@@ -165,3 +168,120 @@ def test_warn_if_docker_image_outdated_does_nothing_when_api_responds_with_error
     update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
 
     logger.warn.assert_not_called()
+
+
+def test_show_announcements_logs_when_announcements_have_never_been_shown(requests_mock: RequestsMock) -> None:
+    requests_mock.add(requests_mock.GET,
+                      "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                      json.dumps({
+                          "announcements": [
+                              {
+                                  "date": "2021-06-04",
+                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+                              }
+                          ]
+                      }))
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    update_manager.show_announcements()
+
+    logger.info.assert_called()
+
+
+def test_show_announcements_logs_when_announcements_have_been_updated(requests_mock: RequestsMock) -> None:
+    requests_mock.add(requests_mock.GET,
+                      "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                      json.dumps({
+                          "announcements": [
+                              {
+                                  "date": "2021-06-04",
+                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+                              }
+                          ]
+                      }))
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    storage.set("last-announcements-hash", "abc")
+
+    update_manager.show_announcements()
+
+    logger.info.assert_called()
+
+
+@pytest.mark.parametrize("hours,update_warning_expected", [(23, False), (24, True)])
+def test_show_announcements_only_checks_once_every_day(requests_mock: RequestsMock,
+                                                       hours: int,
+                                                       update_warning_expected: bool) -> None:
+    if update_warning_expected:
+        requests_mock.add(requests_mock.GET,
+                          "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                          json.dumps({
+                              "announcements": [
+                                  {
+                                      "date": "2021-06-04",
+                                      "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+                                  }
+                              ]
+                          }))
+
+    logger, storage, docker_manager, update_manager = create_objects()
+    storage.set("last-update-check-announcements", (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
+
+    update_manager.show_announcements()
+
+    if update_warning_expected:
+        logger.info.assert_called()
+    else:
+        logger.info.assert_not_called()
+
+
+def test_show_announcements_does_nothing_when_latest_announcements_shown_before(requests_mock: RequestsMock) -> None:
+    announcements_json = json.dumps({
+        "announcements": [
+            {
+                "date": "2021-06-04",
+                "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+            }
+        ]
+    })
+
+    requests_mock.add(requests_mock.GET,
+                      "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                      announcements_json)
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    storage.set("last-announcements-hash", hashlib.md5(announcements_json.encode("utf-8")).hexdigest())
+
+    update_manager.show_announcements()
+
+    logger.info.assert_not_called()
+
+
+def test_show_announcements_does_nothing_when_there_are_no_announcements(requests_mock: RequestsMock) -> None:
+    requests_mock.add(requests_mock.GET,
+                      "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                      json.dumps({
+                          "announcements": []
+                      }))
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    update_manager.show_announcements()
+
+    logger.info.assert_not_called()
+
+
+def test_show_announcement_does_nothing_when_github_responds_with_error(requests_mock: RequestsMock) -> None:
+    requests_mock.add(requests_mock.GET,
+                      "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                      "",
+                      status=500)
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    update_manager.show_announcements()
+
+    logger.info.assert_not_called()

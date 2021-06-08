@@ -1,0 +1,16 @@
+{
+    "announcements": [
+        {
+            "date": "2021-06-04",
+            "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+        },
+        {
+            "date": "2021-06-01",
+            "message": "Check out our write-up on Idea Streams #12:\nhttps://www.quantconnect.com/blog/idea-streams-12-yield-rates/"
+        },
+        {
+            "date": "2021-06-01",
+            "message": "Check out our write-up on Idea Streams #11:\nhttps://www.quantconnect.com/blog/idea-streams-11-replicating-a-goldman-sachs-index-using-quant-strategies/"
+        }
+    ]
+}

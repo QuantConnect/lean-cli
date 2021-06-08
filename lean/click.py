@@ -77,9 +77,11 @@ class LeanCommand(click.Command):
                 args = ["sudo", "--preserve-env=HOME", sys.executable, *sys.argv]
                 os.execlp(args[0], *args)
 
+        update_manager = container.update_manager()
+        update_manager.show_announcements()
+
         result = super().invoke(ctx)
 
-        update_manager = container.update_manager()
         update_manager.warn_if_cli_outdated()
 
         return result
