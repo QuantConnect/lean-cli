@@ -81,6 +81,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean optimize`](#lean-optimize)
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
+- [`lean whoami`](#lean-whoami)
 
 ### `lean backtest`
 
@@ -698,6 +699,22 @@ Options:
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
+
+### `lean whoami`
+
+Display who is logged in.
+
+```
+Usage: lean whoami [OPTIONS]
+
+  Display who is logged in.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/whoami.py](lean/commands/whoami.py)_
 <!-- commands end -->
 
 ## Development

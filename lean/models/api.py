@@ -367,6 +367,13 @@ class QCOrganizationData(WrappedBaseModel):
     current: bool
 
 
+class QCOrganizationMember(WrappedBaseModel):
+    id: int
+    name: str
+    isAdmin: bool
+    email: str
+
+
 class QCFullOrganization(WrappedBaseModel):
     id: str
     name: str
@@ -375,6 +382,7 @@ class QCFullOrganization(WrappedBaseModel):
     credit: QCOrganizationCredit
     products: List[QCOrganizationProduct]
     data: QCOrganizationData
+    members: List[QCOrganizationMember]
 
     def has_map_factor_files_subscription(self) -> bool:
         """Returns whether this organization has a map & factor files subscription.

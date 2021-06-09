@@ -28,6 +28,7 @@ from lean.commands.logout import logout
 from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
+from lean.commands.whoami import whoami
 
 
 @click.group()
@@ -46,6 +47,7 @@ lean.add_command(library)
 
 lean.add_command(login)
 lean.add_command(logout)
+lean.add_command(whoami)
 lean.add_command(init)
 lean.add_command(create_project)
 lean.add_command(backtest)

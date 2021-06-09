@@ -123,6 +123,9 @@ def test_cli() -> None:
         "api-token": api_token
     }
 
+    # Check that we are logged in
+    run_command(["lean", "whoami"])
+
     # Download sample data and LEAN configuration file
     run_command(["lean", "init"], cwd=test_dir, input=["python"])
     assert (test_dir / "data").is_dir()
