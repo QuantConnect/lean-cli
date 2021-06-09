@@ -39,7 +39,7 @@ setup(
     author="QuantConnect",
     author_email="support@quantconnect.com",
     url="https://github.com/QuantConnect/lean-cli",
-    long_description=read("README.md"),
+    long_description=read("README.md").replace("](lean", "](https://github.com/QuantConnect/lean-cli/blob/master/lean"),
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
