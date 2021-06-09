@@ -131,7 +131,7 @@ class TradierBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Tradier."""
 
     def __init__(self) -> None:
-        super().__init__("TradierBrokerage", "Tradier", """
+        super().__init__("TradierBrokerage", "Tradier (beta)", """
 Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api).
 The account id is the alpha-numeric code in a dropdown box on that page.
 Your account details are not saved on QuantConnect.
@@ -146,38 +146,6 @@ Your account details are not saved on QuantConnect.
         return {
             "account": account_id,
             "token": access_token,
-            "environment": "live" if environment == "real" else "paper"
-        }
-
-
-class FXCMBrokerage(CloudBrokerage):
-    """A CloudBrokerage implementation for FXCM."""
-
-    def __init__(self) -> None:
-        super().__init__("FxcmBrokerage", "FXCM", """
-Your account details are not saved on QuantConnect.
-
-By default FXCM does not enable API access.
-
-To request API access, please send an email to pcs@fxcm.com titled "Please enable Java API for my account" containing the following body:
-Hello FXCM staff,
-
-Please enable Java API for all accounts which are associated with this email address.
-
-Also, please respond to this email address once Java API has been enabled, letting me know that the change was done successfully.
-
-Thank you very much in advance
-        """.strip())
-
-    def _get_settings(self) -> Dict[str, str]:
-        username = click.prompt("Username")
-        account_password = click.prompt("Account password", hide_input=True)
-
-        environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
-
-        return {
-            "user": username,
-            "password": account_password,
             "environment": "live" if environment == "real" else "paper"
         }
 
@@ -210,7 +178,7 @@ class BitfinexBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Bitfinex."""
 
     def __init__(self) -> None:
-        super().__init__("BitfinexBrokerage", "Bitfinex", """
+        super().__init__("BitfinexBrokerage", "Bitfinex (beta)", """
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
@@ -251,7 +219,6 @@ all_brokerages = [
     PaperTradingBrokerage(),
     InteractiveBrokersBrokerage(),
     TradierBrokerage(),
-    FXCMBrokerage(),
     OANDABrokerage(),
     BitfinexBrokerage(),
     CoinbaseProBrokerage()

@@ -16,7 +16,7 @@ from math import floor
 from typing import List, Optional
 
 from lean.components.api.api_client import *
-from lean.models.api import QCLiveAlgorithm, QCLiveAlgorithmStatus, QCNotificationMethod
+from lean.models.api import QCFullLiveAlgorithm, QCLiveAlgorithmStatus, QCMinimalLiveAlgorithm, QCNotificationMethod
 
 
 class LiveClient:
@@ -33,7 +33,7 @@ class LiveClient:
                 status: Optional[QCLiveAlgorithmStatus] = None,
                 # Values less than 86400 cause errors on Windows: https://bugs.python.org/issue37527
                 start: datetime = datetime.fromtimestamp(86400),
-                end: datetime = datetime.now()) -> List[QCLiveAlgorithm]:
+                end: datetime = datetime.now()) -> List[QCFullLiveAlgorithm]:
         """Retrieves all live algorithms.
 
         :param status: the status to filter by or None if no status filter should be applied
@@ -50,7 +50,7 @@ class LiveClient:
             parameters["status"] = status.value
 
         data = self._api.get("live/read", parameters)
-        return [QCLiveAlgorithm(**algorithm) for algorithm in data["live"]]
+        return [QCFullLiveAlgorithm(**algorithm) for algorithm in data["live"]]
 
     def start(self,
               project_id: int,
@@ -62,7 +62,7 @@ class LiveClient:
               version_id: int,
               notify_order_events: bool,
               notify_insights: bool,
-              notify_methods: List[QCNotificationMethod]) -> QCLiveAlgorithm:
+              notify_methods: List[QCNotificationMethod]) -> QCMinimalLiveAlgorithm:
         """Starts live trading for a project.
 
         :param project_id: the id of the project to start live trading for
@@ -101,7 +101,7 @@ class LiveClient:
             }
 
         data = self._api.post("live/create", parameters)
-        return QCLiveAlgorithm(**data)
+        return QCMinimalLiveAlgorithm(**data)
 
     def stop(self, project_id: int) -> None:
         """Stops live trading for a certain project without liquidated existing positions.

@@ -277,7 +277,13 @@ class QCLiveAlgorithmStatus(str, Enum):
     History = "History"
 
 
-class QCLiveAlgorithm(WrappedBaseModel):
+class QCMinimalLiveAlgorithm(WrappedBaseModel):
+    projectId: int
+    deployId: str
+    status: Optional[QCLiveAlgorithmStatus] = None
+
+
+class QCFullLiveAlgorithm(WrappedBaseModel):
     projectId: int
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
