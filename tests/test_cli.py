@@ -269,6 +269,10 @@ def test_cli() -> None:
     # Run C# backtest in the cloud
     run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir)
 
+    # Get cloud project status
+    run_command(["lean", "cloud", "status", python_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "status", csharp_project_name], cwd=test_dir)
+
     # Log out
     run_command(["lean", "logout"])
     assert not credentials_path.exists()

@@ -64,6 +64,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
+- [`lean cloud status`](#lean-cloud-status)
 - [`lean config get`](#lean-config-get)
 - [`lean config list`](#lean-config-list)
 - [`lean config set`](#lean-config-set)
@@ -258,6 +259,24 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
+
+### `lean cloud status`
+
+Show the live trading status of a project in the cloud.
+
+```
+Usage: lean cloud status [OPTIONS] PROJECT
+
+  Show the live trading status of a project in the cloud.
+
+  PROJECT must be the name or the id of the project to show the status for.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/status.py](lean/commands/cloud/status.py)_
 
 ### `lean config get`
 

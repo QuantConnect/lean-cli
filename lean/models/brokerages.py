@@ -30,7 +30,7 @@ class CloudBrokerage(abc.ABC):
         :param name: the display-friendly name of the brokerage
         :param notes: notes which need to be shown before prompting for settings
         """
-        self._id = id
+        self.id = id
         self.name = name
         self._notes = notes
 
@@ -43,7 +43,7 @@ class CloudBrokerage(abc.ABC):
             logger.info(self._notes)
 
         settings = self._get_settings()
-        settings["id"] = self._id
+        settings["id"] = self.id
 
         return settings
 
@@ -245,3 +245,14 @@ When creating the key, make sure you authorize it for View and Trading access.
             "passphrase": passphrase,
             "environment": "live"
         }
+
+
+all_brokerages = [
+    PaperTradingBrokerage(),
+    InteractiveBrokersBrokerage(),
+    TradierBrokerage(),
+    FXCMBrokerage(),
+    OANDABrokerage(),
+    BitfinexBrokerage(),
+    CoinbaseProBrokerage()
+]

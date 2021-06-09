@@ -281,6 +281,11 @@ class QCLiveAlgorithm(WrappedBaseModel):
     projectId: int
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
+    launched: datetime
+    stopped: Optional[datetime]
+    brokerage: str
+    subscription: str
+    error: str
 
 
 class QCEmailNotificationMethod(WrappedBaseModel):

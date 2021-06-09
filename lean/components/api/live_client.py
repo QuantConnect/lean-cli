@@ -42,12 +42,12 @@ class LiveClient:
         :return: a list of live algorithms which match the given filters
         """
         parameters = {
-            start: floor(start.timestamp()),
-            end: floor(end.timestamp())
+            "start": floor(start.timestamp()),
+            "end": floor(end.timestamp())
         }
 
         if status is not None:
-            parameters["status"] = status
+            parameters["status"] = status.value
 
         data = self._api.get("live/read", parameters)
         return [QCLiveAlgorithm(**algorithm) for algorithm in data["live"]]
