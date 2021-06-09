@@ -36,9 +36,10 @@ def status(project: str) -> None:
 
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Project name: {cloud_project.name}")
+    logger.info(f"Project url: {cloud_project.get_url()}")
 
     if live_algorithm is None:
-        logger.info("Live status: not deployed")
+        logger.info("Live status: Not deployed")
         return
 
     live_status = {
@@ -55,7 +56,8 @@ def status(project: str) -> None:
         brokerage_name = "Paper Trading"
 
     logger.info(f"Live status: {live_status}")
-    logger.info(f"Deployment id: {live_algorithm.deployId}")
+    logger.info(f"Live id: {live_algorithm.deployId}")
+    logger.info(f"Live url: {live_algorithm.get_url()}")
     logger.info(f"Brokerage: {brokerage_name}")
     logger.info(f"Launched: {live_algorithm.launched.strftime('%Y-%m-%d %H:%M:%S')} UTC")
 

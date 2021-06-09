@@ -282,8 +282,15 @@ class QCMinimalLiveAlgorithm(WrappedBaseModel):
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
 
+    def get_url(self) -> str:
+        """Returns the url of the live deployment in the cloud.
 
-class QCFullLiveAlgorithm(WrappedBaseModel):
+        :return: a url which when visited opens an Algorithm Lab tab containing the live deployment
+        """
+        return f"https://www.quantconnect.com/project/{self.projectId}/live"
+
+
+class QCFullLiveAlgorithm(QCMinimalLiveAlgorithm):
     projectId: int
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
