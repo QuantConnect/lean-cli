@@ -253,8 +253,8 @@ You can generate an API token from the Manage API Access page (https://www.oanda
         lean_config["oanda-account-id"] = click.prompt("Account id")
         lean_config["oanda-access-token"] = logger.prompt_password("Access token")
 
-        environment = click.prompt("Environment", type=click.Choice(["real", "practice"], case_sensitive=False))
-        lean_config["oanda-environment"] = "Trade" if environment == "real" else "Practice"
+        environment = click.prompt("Environment", type=click.Choice(["practice", "trade"], case_sensitive=False))
+        lean_config["oanda-environment"] = environment.title()
 
 
 class OANDADataFeed(LeanConfigConfigurer):
@@ -270,6 +270,44 @@ class OANDADataFeed(LeanConfigConfigurer):
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
         OANDABrokerage.configure_credentials(lean_config, logger)
+
+
+class BitfinexBrokerage(LocalBrokerage):
+    """A LocalBrokerage implementation for the Bitfinex brokerage."""
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "Bitfinex"
+
+    @classmethod
+    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = "BitfinexBrokerage"
+        lean_config["environments"][environment_name]["transaction-handler"] = \
+            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+
+    @classmethod
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
+Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
+        """.strip())
+
+        lean_config["bitfinex-api-key"] = click.prompt("API key")
+        lean_config["bitfinex-api-secret"] = logger.prompt_password("API secret")
+
+
+class BitfinexDataFeed(LeanConfigConfigurer):
+    """A LeanConfigConfigurer implementation for the Bitfinex data feed."""
+
+    @classmethod
+    def get_name(cls) -> str:
+        return BitfinexBrokerage.get_name()
+
+    @classmethod
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
+        lean_config["environments"][environment_name]["data-queue-handler"] = "BitfinexBrokerage"
+        lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
+
+        BitfinexBrokerage.configure_credentials(lean_config, logger)
 
 
 class CoinbaseProBrokerage(LocalBrokerage):
@@ -310,44 +348,6 @@ class CoinbaseProDataFeed(LeanConfigConfigurer):
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
         CoinbaseProBrokerage.configure_credentials(lean_config, logger)
-
-
-class BitfinexBrokerage(LocalBrokerage):
-    """A LocalBrokerage implementation for the Bitfinex brokerage."""
-
-    @classmethod
-    def get_name(cls) -> str:
-        return "Bitfinex"
-
-    @classmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "BitfinexBrokerage"
-        lean_config["environments"][environment_name]["transaction-handler"] = \
-            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-
-    @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
-        logger.info("""
-Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
-        """.strip())
-
-        lean_config["bitfinex-api-key"] = click.prompt("API key")
-        lean_config["bitfinex-api-secret"] = logger.prompt_password("API secret")
-
-
-class BitfinexDataFeed(LeanConfigConfigurer):
-    """A LeanConfigConfigurer implementation for the Bitfinex data feed."""
-
-    @classmethod
-    def get_name(cls) -> str:
-        return BitfinexBrokerage.get_name()
-
-    @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
-        lean_config["environments"][environment_name]["data-queue-handler"] = "BitfinexBrokerage"
-        lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
-
-        BitfinexBrokerage.configure_credentials(lean_config, logger)
 
 
 class BinanceBrokerage(LocalBrokerage):
@@ -478,8 +478,8 @@ all_local_brokerages = [
     InteractiveBrokersBrokerage,
     TradierBrokerage,
     OANDABrokerage,
-    CoinbaseProBrokerage,
     BitfinexBrokerage,
+    CoinbaseProBrokerage,
     BinanceBrokerage,
     ZerodhaBrokerage
 ]
@@ -488,15 +488,16 @@ local_brokerage_data_feeds = {
     PaperTradingBrokerage: [InteractiveBrokersDataFeed,
                             TradierDataFeed,
                             OANDADataFeed,
-                            CoinbaseProDataFeed,
                             BitfinexDataFeed,
+                            CoinbaseProDataFeed,
                             BinanceDataFeed,
-                            ZerodhaDataFeed],
+                            ZerodhaDataFeed,
+                            IQFeedDataFeed],
     InteractiveBrokersBrokerage: [InteractiveBrokersDataFeed],
     TradierBrokerage: [TradierDataFeed],
     OANDABrokerage: [OANDADataFeed],
-    CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BitfinexBrokerage: [BitfinexDataFeed],
+    CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed]
 }
