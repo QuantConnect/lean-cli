@@ -210,7 +210,7 @@ def test_cli() -> None:
                 cwd=test_dir,
                 expected_return_code=1)
 
-    # Copy over algorithms containing a SPY buy-and-hold strategy and which import the custom libraries
+    # Copy over algorithms containing a SPY buy-and-hold strategy with custom libraries
     fixtures_dir = Path(__file__).parent / "fixtures"
     shutil.copy(fixtures_dir / "local" / "main.py", python_project_dir / "main.py")
     shutil.copy(fixtures_dir / "local" / "Main.cs", csharp_project_dir / "Main.cs")
@@ -239,11 +239,15 @@ def test_cli() -> None:
     # Custom C# library is removed, so C# backtest should now fail
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_return_code=1)
 
-    # Generate report
-    run_command(["lean", "report", f"{python_project_name}/backtests/{python_backtest_dirs[0].name}"], cwd=test_dir)
-    assert (test_dir / "report.html").is_file()
+    # Generate reports
+    run_command(["lean", "report", f"{python_project_name}/backtests/{python_backtest_dirs[0].name}",
+                 "--report-destination", "python.html"], cwd=test_dir)
+    run_command(["lean", "report", f"{csharp_project_name}/backtests/{csharp_backtest_dirs[0].name}",
+                 "--report-destination", "csharp.html"], cwd=test_dir)
+    assert (test_dir / "python.html").is_file()
+    assert (test_dir / "csharp.html").is_file()
 
-    # Copy over algorithms containing a SPY buy-and-hold strategy and which don't import the custom libraries
+    # Copy over algorithms containing a SPY buy-and-hold strategy without custom libraries
     shutil.copy(fixtures_dir / "cloud" / "main.py", python_project_dir / "main.py")
     shutil.copy(fixtures_dir / "cloud" / "Main.cs", csharp_project_dir / "Main.cs")
 
