@@ -116,8 +116,11 @@ def optimize(project: Path,
     cli_config_manager = container.cli_config_manager()
     engine_image = cli_config_manager.get_engine_image(image)
 
+    lean_config_manager = container.lean_config_manager()
+    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None, None)
+
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config("backtesting", algorithm_file, output, None, None)
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")

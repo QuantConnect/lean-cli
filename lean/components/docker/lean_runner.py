@@ -52,32 +52,28 @@ class LeanRunner:
         self._temp_manager = temp_manager
 
     def run_lean(self,
+                 lean_config: Dict[str, Any],
                  environment: str,
                  algorithm_file: Path,
                  output_dir: Path,
                  image: DockerImage,
-                 debugging_method: Optional[DebuggingMethod],
-                 data_purchase_limit: Optional[int]) -> None:
+                 debugging_method: Optional[DebuggingMethod]) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
 
+        :param lean_config: the LEAN configuration to use
         :param environment: the environment to run the algorithm in
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
-        :param data_purchase_limit: the data purchase limit in QCC
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(environment,
-                                                   algorithm_file,
-                                                   output_dir,
-                                                   debugging_method,
-                                                   data_purchase_limit)
+        run_options = self.get_basic_docker_config(lean_config, algorithm_file, output_dir, debugging_method)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -118,22 +114,19 @@ class LeanRunner:
                 f"Something went wrong while running '{relative_project_dir}' in the '{environment}' environment, the output is stored in '{relative_output_dir}'")
 
     def get_basic_docker_config(self,
-                                environment: str,
+                                lean_config: Dict[str, Any],
                                 algorithm_file: Path,
                                 output_dir: Path,
-                                debugging_method: Optional[DebuggingMethod],
-                                data_purchase_limit: Optional[int]) -> Dict[str, Any]:
+                                debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
 
-        :param environment: the environment to run the algorithm in
+        :param lean_config: the LEAN configuration to use
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :return: the Docker configuration containing basic configuration to run Lean
-        :param data_purchase_limit: the data purchase limit in QCC
-        :return: the Docker config to run LEAN with
         """
         project_dir = algorithm_file.parent
 
@@ -146,19 +139,13 @@ class LeanRunner:
         if not storage_dir.exists():
             storage_dir.mkdir(parents=True)
 
-        # Create a file containing the complete Lean configuration
-        config = self._lean_config_manager.get_complete_lean_config(environment,
-                                                                    algorithm_file,
-                                                                    debugging_method,
-                                                                    data_purchase_limit)
-
-        config["data-folder"] = "/Lean/Data"
-        config["results-destination-folder"] = "/Results"
-        config["object-store-root"] = "/Storage"
+        lean_config["data-folder"] = "/Lean/Data"
+        lean_config["results-destination-folder"] = "/Results"
+        lean_config["object-store-root"] = "/Storage"
 
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
-            file.write(json.dumps(config, indent=4))
+            file.write(json.dumps(lean_config, indent=4))
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html

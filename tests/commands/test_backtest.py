@@ -65,11 +65,11 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None,
                                                  None)
 
 
@@ -90,7 +90,7 @@ def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
     args, _ = lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/backtests
-    args[2].relative_to(Path("Python Project/backtests").resolve())
+    args[3].relative_to(Path("Python Project/backtests").resolve())
 
 
 def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
@@ -110,7 +110,7 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     args, _ = lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/custom-backtests
-    args[2].relative_to(Path("Python Project/custom").resolve())
+    args[3].relative_to(Path("Python Project/custom").resolve())
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
@@ -159,11 +159,11 @@ def test_backtest_forces_update_when_update_option_given() -> None:
     assert result.exit_code == 0
 
     docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
-    lean_runner.run_lean.assert_called_once_with("backtesting",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None,
                                                  None)
 
 
@@ -182,11 +182,11 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
-                                                 None,
                                                  None)
 
 
@@ -205,11 +205,11 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
-                                                 None,
                                                  None)
 
 
@@ -234,12 +234,12 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 debugging_method,
-                                                 None)
+                                                 debugging_method)
 
 
 @pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
@@ -542,12 +542,10 @@ def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 1000)
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    assert args[0]["data-purchase-limit"] == 1000
 
 
 def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider() -> None:
@@ -563,9 +561,7 @@ def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider()
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 None)
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    assert "data-purchase-limit" not in args[0]

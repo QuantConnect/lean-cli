@@ -243,8 +243,13 @@ def backtest(project: Path,
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
 
+    lean_config = lean_config_manager.get_complete_lean_config("backtesting",
+                                                               algorithm_file,
+                                                               debugging_method,
+                                                               data_purchase_limit)
+
     lean_runner = container.lean_runner()
-    lean_runner.run_lean("backtesting", algorithm_file, output, engine_image, debugging_method, data_purchase_limit)
+    lean_runner.run_lean(lean_config, "backtesting", algorithm_file, output, engine_image, debugging_method)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

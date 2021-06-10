@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
 import subprocess
 import time
 from datetime import datetime
@@ -22,7 +23,9 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+from lean.models.brokerages.local import all_local_brokerages, IQFeedDataFeed, local_brokerage_data_feeds
 from lean.models.errors import MoreInfoError
+from lean.models.logger import Option
 
 # Brokerage -> required configuration properties
 _required_brokerage_properties = {
@@ -30,7 +33,6 @@ _required_brokerage_properties = {
                                     "ib-agent-description", "ib-trading-mode", "ib-enable-delayed-streaming-data"],
     "TradierBrokerage": ["tradier-use-sandbox", "tradier-account-id", "tradier-access-token"],
     "OandaBrokerage": ["oanda-environment", "oanda-access-token", "oanda-account-id"],
-    "FxcmBrokerage": ["fxcm-server", "fxcm-terminal", "fxcm-user-name", "fxcm-password", "fxcm-account-id"],
     "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
@@ -44,7 +46,6 @@ _required_data_queue_handler_properties = {
         _required_brokerage_properties["InteractiveBrokersBrokerage"],
     "TradierBrokerage": _required_brokerage_properties["TradierBrokerage"],
     "OandaBrokerage": _required_brokerage_properties["OandaBrokerage"],
-    "FxcmBrokerage": _required_brokerage_properties["FxcmBrokerage"],
     "GDAXDataQueueHandler": _required_brokerage_properties["GDAXBrokerage"],
     "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
@@ -119,9 +120,48 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     time.sleep(10)
 
 
+def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str) -> None:
+    """Interactively configures the Lean config to use.
+
+    Asks the user all questions required to set up the Lean config for local live trading.
+
+    :param lean_config: the base lean config to use
+    :param environment_name: the name of the environment to configure
+    """
+    logger = container.logger()
+
+    lean_config["environments"] = {
+        environment_name: {
+            "live-mode": True,
+            "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
+            "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
+            "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
+            "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler"
+        }
+    }
+
+    brokerage = logger.prompt_list("Select the brokerage to use", [
+        Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
+    ])
+
+    brokerage.configure(lean_config, environment_name)
+
+    data_feeds = local_brokerage_data_feeds[brokerage]
+    if platform.system() == "Windows":
+        data_feeds.append(IQFeedDataFeed)
+
+    data_feed = logger.prompt_list("Select the data feed to use", [
+        Option(id=data_feed, label=data_feed.get_name()) for data_feed in data_feeds
+    ])
+
+    data_feed.configure(lean_config, environment_name)
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.argument("environment", type=str)
+@click.option("--environment",
+              type=str,
+              help="The environment to use")
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
@@ -132,7 +172,7 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-def live(project: Path, environment: str, output: Optional[Path], image: Optional[str], update: bool) -> None:
+def live(project: Path, environment: Optional[str], output: Optional[Path], image: Optional[str], update: bool) -> None:
     """Start live trading a project locally using Docker.
 
     \b
@@ -140,7 +180,8 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
     \b
-    ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
+    If --environment is given it must be the name of a live environment in the Lean configuration.
+    If --environment is not given an interactive wizard will show letting you configure which brokerage to use.
 
     By default the official LEAN engine image is used.
     You can override this using the --image option.
@@ -153,7 +194,13 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     lean_config_manager = container.lean_config_manager()
-    lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None, None)
+
+    if environment is None:
+        environment = "lean-cli"
+        lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None, None)
+        _configure_lean_config_interactively(lean_config, environment)
+    else:
+        lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None, None)
 
     if "environments" not in lean_config or environment not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
@@ -176,7 +223,7 @@ def live(project: Path, environment: str, output: Optional[Path], image: Optiona
         docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(environment, algorithm_file, output, engine_image, None, None)
+    lean_runner.run_lean(lean_config, environment, algorithm_file, output, engine_image, None)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

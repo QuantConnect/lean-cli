@@ -48,11 +48,11 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": false,
-    
+
     "environments": {{
         "{name}": {{
             "live-mode": {str(live_mode).lower()},
-            
+
             "live-mode-brokerage": "InteractiveBrokersBrokerage",
             "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
             "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
@@ -78,15 +78,15 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("live-paper",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None,
                                                  None)
 
 
@@ -99,7 +99,7 @@ def test_live_aborts_when_environment_does_not_exist() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "fake-environment"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "fake-environment"])
 
     assert result.exit_code != 0
 
@@ -116,7 +116,7 @@ def test_live_aborts_when_environment_has_live_mode_set_to_false() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "backtesting"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "backtesting"])
 
     assert result.exit_code != 0
 
@@ -133,7 +133,7 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 
@@ -141,7 +141,7 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
     args, _ = lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/backtests
-    args[2].relative_to(Path("Python Project/live").resolve())
+    args[3].relative_to(Path("Python Project/live").resolve())
 
 
 def test_live_calls_lean_runner_with_custom_output_directory() -> None:
@@ -154,7 +154,10 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper", "--output", "Python Project/custom"])
+    result = CliRunner().invoke(lean, ["live",
+                                       "Python Project",
+                                       "--environment", "live-paper",
+                                       "--output", "Python Project/custom"])
 
     assert result.exit_code == 0
 
@@ -162,7 +165,7 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     args, _ = lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/custom-backtests
-    args[2].relative_to(Path("Python Project/custom").resolve())
+    args[3].relative_to(Path("Python Project/custom").resolve())
 
 
 def test_live_aborts_when_project_does_not_exist() -> None:
@@ -214,7 +217,7 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code != 0
 
@@ -231,16 +234,16 @@ def test_live_forces_update_when_update_option_given() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper", "--update"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--update"])
 
     assert result.exit_code == 0
 
     docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
-    lean_runner.run_lean.assert_called_once_with("live-paper",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None,
                                                  None)
 
 
@@ -256,15 +259,15 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("live-paper",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
-                                                 None,
                                                  None)
 
 
@@ -280,15 +283,16 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper", "--image", "custom/lean:456"])
+    result = CliRunner().invoke(lean,
+                                ["live", "Python Project", "--environment", "live-paper", "--image", "custom/lean:456"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with("live-paper",
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
-                                                 None,
                                                  None)
 
 
@@ -317,7 +321,7 @@ def test_live_checks_for_updates(update_manager_mock: mock.Mock,
     if update_flag:
         options.extend(["--update"])
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "live-paper", *options])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", *options])
 
     assert result.exit_code == 0
 

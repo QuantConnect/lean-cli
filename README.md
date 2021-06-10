@@ -545,19 +545,21 @@ _See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_
 Start live trading a project locally using Docker.
 
 ```
-Usage: lean live [OPTIONS] PROJECT ENVIRONMENT
+Usage: lean live [OPTIONS] PROJECT
 
   Start live trading a project locally using Docker.
 
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
+  If --environment is given it must be the name of a live environment in the Lean configuration.
+  If --environment is not given an interactive wizard will show letting you configure which brokerage to use.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
+  --environment TEXT  The environment to use
   --output DIRECTORY  Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   --image TEXT        The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update            Pull the LEAN engine image before starting live trading

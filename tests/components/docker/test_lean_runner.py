@@ -51,11 +51,11 @@ def test_run_lean_compiles_csharp_project() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -72,11 +72,11 @@ def test_run_lean_runs_lean_container() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -94,11 +94,11 @@ def test_run_lean_mounts_config_file() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -115,11 +115,11 @@ def test_run_lean_mounts_data_directory() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -139,11 +139,11 @@ def test_run_lean_mounts_output_directory() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -163,11 +163,11 @@ def test_run_lean_mounts_storage_directory() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -187,11 +187,11 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     assert (Path.cwd() / "output").is_dir()
@@ -205,11 +205,11 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -230,11 +230,11 @@ def test_run_lean_adds_internal_host_when_running_linux(system, os: str, host_ex
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None,
                          None)
 
     docker_manager.run_image.assert_called_once()
@@ -254,12 +254,12 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.PTVSD,
-                         None)
+                         DebuggingMethod.PTVSD)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -275,12 +275,12 @@ def test_run_lean_sets_image_name_when_debugging_with_vsdbg() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.VSDBG,
-                         None)
+                         DebuggingMethod.VSDBG)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -296,12 +296,12 @@ def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
 
     lean_runner = create_lean_runner(docker_manager)
 
-    lean_runner.run_lean("backtesting",
+    lean_runner.run_lean({},
+                         "backtesting",
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.Rider,
-                         None)
+                         DebuggingMethod.Rider)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -318,11 +318,11 @@ def test_run_lean_raises_when_run_image_fails() -> None:
     lean_runner = create_lean_runner(docker_manager)
 
     with pytest.raises(Exception):
-        lean_runner.run_lean("backtesting",
+        lean_runner.run_lean({},
+                             "backtesting",
                              Path.cwd() / "Python Project" / "main.py",
                              Path.cwd() / "output",
                              ENGINE_IMAGE,
-                             DebuggingMethod.PTVSD,
-                             None)
+                             DebuggingMethod.PTVSD)
 
     docker_manager.run_image.assert_called_once()

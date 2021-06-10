@@ -215,7 +215,7 @@ When creating the key, make sure you authorize it for View and Trading access.
         }
 
 
-all_brokerages = [
+all_cloud_brokerages = [
     PaperTradingBrokerage(),
     InteractiveBrokersBrokerage(),
     TradierBrokerage(),
