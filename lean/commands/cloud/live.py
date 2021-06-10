@@ -161,19 +161,18 @@ def live(project: str, push: bool, open_browser: bool) -> None:
                   default=False,
                   abort=True)
 
-    api_client.live.start(cloud_project.projectId,
-                          finished_compile.compileId,
-                          node.id,
-                          brokerage_settings,
-                          price_data_handler,
-                          automatic_redeploy,
-                          cloud_project.leanVersionId,
-                          notify_order_events,
-                          notify_insights,
-                          notify_methods)
+    live_algorithm = api_client.live.start(cloud_project.projectId,
+                                           finished_compile.compileId,
+                                           node.id,
+                                           brokerage_settings,
+                                           price_data_handler,
+                                           automatic_redeploy,
+                                           cloud_project.leanVersionId,
+                                           notify_order_events,
+                                           notify_insights,
+                                           notify_methods)
 
-    live_url = cloud_project.get_url().replace("#open", "#openLive")
-    logger.info(f"Live url: {live_url}")
+    logger.info(f"Live url: {live_algorithm.get_url()}")
 
     if open_browser:
-        webbrowser.open(live_url)
+        webbrowser.open(live_algorithm.get_url())
