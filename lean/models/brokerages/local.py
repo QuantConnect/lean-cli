@@ -12,12 +12,13 @@
 # limitations under the License.
 
 import abc
+from pathlib import Path
 from typing import Any, Dict
 
 import click
 
 from lean.click import PathParameter
-from lean.container import container
+from lean.components.util.logger import Logger
 from lean.models.errors import MoreInfoError
 
 
@@ -35,13 +36,14 @@ class LeanConfigConfigurer(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         """Configures the Lean configuration for this brokerage.
 
         If the Lean configuration has been configured for this brokerage before, nothing will be changed.
 
         :param lean_config: the configuration dict to write to
         :param environment_name: the name of the environment to configure
+        :param logger: the logger to use
         """
         raise NotImplementedError()
 
@@ -52,16 +54,16 @@ class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
     _credentials_configured = False
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         cls._configure_environment(lean_config, environment_name)
-        cls.configure_credentials(lean_config)
+        cls.configure_credentials(lean_config, logger)
 
     @classmethod
-    def configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
+    def configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         if cls._credentials_configured:
             return
 
-        cls._configure_credentials(lean_config)
+        cls._configure_credentials(lean_config, logger)
         cls._credentials_configured = True
 
     @classmethod
@@ -76,10 +78,11 @@ class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         """Configures any required credentials in the Lean config.
 
         :param lean_config: the config dict to update
+        :param logger: the logger to use
         """
         raise NotImplementedError()
 
@@ -98,7 +101,7 @@ class PaperTradingBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         pass
 
 
@@ -116,8 +119,8 @@ class InteractiveBrokersBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 To use IB with LEAN you must disable two-factor authentication or only use IBKR Mobile.
 This is done from your IB Account Manage Account -> Settings -> User Settings -> Security -> Secure Login System.
 In the Secure Login System, deselect all options or only select "IB Key Security via IBKR Mobile".
@@ -126,7 +129,7 @@ Interactive Brokers Lite accounts do not support API trading.
 
         username = click.prompt("Username")
         account_id = click.prompt("Account id")
-        account_password = click.prompt("Account password", hide_input=True)
+        account_password = logger.prompt_password("Account password")
 
         agent_description = None
         trading_mode = None
@@ -172,14 +175,14 @@ class InteractiveBrokersDataFeed(LeanConfigConfigurer):
         return InteractiveBrokersBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = \
             "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        InteractiveBrokersBrokerage.configure_credentials(lean_config)
+        InteractiveBrokersBrokerage.configure_credentials(lean_config, logger)
 
-        container.logger().info("""
+        logger.info("""
 Delayed market data is used when you subscribe to data for which you don't have a market data subscription on IB.
 If delayed market data is disabled, live trading will stop and LEAN will shut down when this happens.
         """.strip())
@@ -201,14 +204,14 @@ class TradierBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api).
 The account id is the alpha-numeric code in a dropdown box on that page.
         """.strip())
 
         lean_config["tradier-account-id"] = click.prompt("Account id")
-        lean_config["tradier-access-token"] = click.prompt("Access token", hide_input=True)
+        lean_config["tradier-access-token"] = logger.prompt_password("Access token")
         lean_config["tradier-use-sandbox"] = click.confirm("Use the developer sandbox?")
 
 
@@ -220,10 +223,10 @@ class TradierDataFeed(LeanConfigConfigurer):
         return TradierBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "TradierBrokerage"
 
-        TradierBrokerage.configure_credentials(lean_config)
+        TradierBrokerage.configure_credentials(lean_config, logger)
 
 
 class OANDABrokerage(LocalBrokerage):
@@ -240,15 +243,15 @@ class OANDABrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/).
 It follows the following format: ###-###-######-###.
 You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token).
         """.strip())
 
         lean_config["oanda-account-id"] = click.prompt("Account id")
-        lean_config["oanda-access-token"] = click.prompt("Access token", hide_input=True)
+        lean_config["oanda-access-token"] = logger.prompt_password("Access token")
 
         environment = click.prompt("Environment", type=click.Choice(["real", "practice"], case_sensitive=False))
         lean_config["oanda-environment"] = "Trade" if environment == "real" else "Practice"
@@ -262,11 +265,11 @@ class OANDADataFeed(LeanConfigConfigurer):
         return OANDABrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "OandaBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        OANDABrokerage.configure_credentials(lean_config)
+        OANDABrokerage.configure_credentials(lean_config, logger)
 
 
 class CoinbaseProBrokerage(LocalBrokerage):
@@ -283,15 +286,15 @@ class CoinbaseProBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api).
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
         lean_config["gdax-api-key"] = click.prompt("API key")
-        lean_config["gdax-api-secret"] = click.prompt("API secret")
-        lean_config["gdax-passphrase"] = click.prompt("Passphrase", hide_input=True)
+        lean_config["gdax-api-secret"] = logger.prompt_password("API secret")
+        lean_config["gdax-passphrase"] = logger.prompt_password("Passphrase")
 
 
 class CoinbaseProDataFeed(LeanConfigConfigurer):
@@ -302,11 +305,11 @@ class CoinbaseProDataFeed(LeanConfigConfigurer):
         return CoinbaseProBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "GDAXDataQueueHandler"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        CoinbaseProBrokerage.configure_credentials(lean_config)
+        CoinbaseProBrokerage.configure_credentials(lean_config, logger)
 
 
 class BitfinexBrokerage(LocalBrokerage):
@@ -323,13 +326,13 @@ class BitfinexBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
         lean_config["bitfinex-api-key"] = click.prompt("API key")
-        lean_config["bitfinex-api-secret"] = click.prompt("API secret")
+        lean_config["bitfinex-api-secret"] = logger.prompt_password("API secret")
 
 
 class BitfinexDataFeed(LeanConfigConfigurer):
@@ -340,11 +343,11 @@ class BitfinexDataFeed(LeanConfigConfigurer):
         return BitfinexBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "BitfinexBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        BitfinexBrokerage.configure_credentials(lean_config)
+        BitfinexBrokerage.configure_credentials(lean_config, logger)
 
 
 class BinanceBrokerage(LocalBrokerage):
@@ -361,13 +364,13 @@ class BinanceBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        container.logger().info("""
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+        logger.info("""
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
         lean_config["binance-api-key"] = click.prompt("API key")
-        lean_config["binance-api-secret"] = click.prompt("API secret")
+        lean_config["binance-api-secret"] = logger.prompt_password("API secret")
 
 
 class BinanceDataFeed(LeanConfigConfigurer):
@@ -378,11 +381,11 @@ class BinanceDataFeed(LeanConfigConfigurer):
         return BinanceBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "BinanceBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        BinanceBrokerage.configure_credentials(lean_config)
+        BinanceBrokerage.configure_credentials(lean_config, logger)
 
 
 class ZerodhaBrokerage(LocalBrokerage):
@@ -399,13 +402,11 @@ class ZerodhaBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any]) -> None:
-        logger = container.logger()
-
+    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         logger.info("You need API credentials for Kite Connect (https://kite.trade/) to use the Zerodha brokerage.")
 
         lean_config["zerodha-api-key"] = click.prompt("API key")
-        lean_config["zerodha-access-token"] = click.prompt("Access token")
+        lean_config["zerodha-access-token"] = logger.prompt_password("Access token")
 
         logger.info(
             "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products.")
@@ -432,11 +433,11 @@ class ZerodhaDataFeed(LeanConfigConfigurer):
         return ZerodhaBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "ZerodhaBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        ZerodhaBrokerage.configure_credentials(lean_config)
+        ZerodhaBrokerage.configure_credentials(lean_config, logger)
 
         lean_config["zerodha-history-subscription"] = click.confirm("Do you have a history API subscription?")
 
@@ -449,21 +450,25 @@ class IQFeedDataFeed(LeanConfigConfigurer):
         return "IQFeed"
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = \
             "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
         lean_config["environments"][environment_name]["history-provider"] = \
             "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
 
-        container.logger().info(
-            "The IQFeed data feed requires an IQFeed developer account a locally installed IQFeed client.")
+        logger.info("The IQFeed data feed requires an IQFeed developer account a locally installed IQFeed client.")
+
+        default_binary = Path("C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe")
+        if not default_binary.is_file():
+            default_binary = None
 
         iqconnect_binary = click.prompt("IQConnect binary location",
-                                        type=PathParameter(exists=True, file_okay=True, dir_okay=False))
+                                        type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+                                        default=default_binary)
         lean_config["iqfeed-iqconnect"] = str(iqconnect_binary)
 
         lean_config["iqfeed-username"] = click.prompt("Username")
-        lean_config["iqfeed-password"] = click.prompt("Password")
+        lean_config["iqfeed-password"] = logger.prompt_password("Password")
         lean_config["iqfeed-productName"] = click.prompt("Product id")
         lean_config["iqfeed-version"] = click.prompt("Product version")
 

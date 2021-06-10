@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 from typing import Any, List
 
 import click
+import maskpass
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TextColumn
 
@@ -99,3 +101,18 @@ class Logger:
                     return option.id
 
             self.info("Please enter the number or label of an option")
+
+    def prompt_password(self, text: str) -> str:
+        """Asks the user for a string value while masking the given input.
+
+        :param text: the text to display before prompting
+        :return: the given input
+        """
+        # maskpass does not work when the input is not coming from a keyboard
+        if not sys.stdout.isatty():
+            return click.prompt(text, hide_input=True)
+
+        while True:
+            user_input = maskpass.askpass(f"{text}: ")
+            if len(user_input) > 0:
+                return user_input

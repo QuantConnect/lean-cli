@@ -42,7 +42,7 @@ class CloudBrokerage(abc.ABC):
         if self._notes is not None:
             logger.info(self._notes)
 
-        settings = self._get_settings()
+        settings = self._get_settings(logger)
         settings["id"] = self.id
 
         return settings
@@ -52,9 +52,10 @@ class CloudBrokerage(abc.ABC):
         return "QuantConnectHandler"
 
     @abc.abstractmethod
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         """Returns the brokerage-specific settings, prompting the user for input when necessary.
 
+        :param logger: the logger to use when prompting for passwords
         :return: a dict containing the brokerage-specific settings (all settings except for "id")
         """
         pass
@@ -66,7 +67,7 @@ class PaperTradingBrokerage(CloudBrokerage):
     def __init__(self) -> None:
         super().__init__("QuantConnectBrokerage", "Paper Trading")
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         return {
             "environment": "paper"
         }
@@ -84,10 +85,10 @@ Your account details are not saved on QuantConnect.
 Interactive Brokers Lite accounts do not support API trading.
         """.strip())
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         username = click.prompt("Username")
         account_id = click.prompt("Account id")
-        account_password = click.prompt("Account password", hide_input=True)
+        account_password = logger.prompt_password("Account password")
 
         account_type = None
         environment = None
@@ -137,9 +138,9 @@ The account id is the alpha-numeric code in a dropdown box on that page.
 Your account details are not saved on QuantConnect.
         """.strip())
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         account_id = click.prompt("Account id")
-        access_token = click.prompt("Access token", hide_input=True)
+        access_token = logger.prompt_password("Access token")
 
         environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
 
@@ -161,9 +162,9 @@ You can generate an API token from the Manage API Access page (https://www.oanda
 Your account details are not saved on QuantConnect.
         """.strip())
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         account_id = click.prompt("Account id")
-        access_token = click.prompt("Access token", hide_input=True)
+        access_token = logger.prompt_password("Access token")
 
         environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
 
@@ -182,9 +183,9 @@ class BitfinexBrokerage(CloudBrokerage):
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         api_key = click.prompt("API key")
-        secret_key = click.prompt("Secret key")
+        secret_key = logger.prompt_password("Secret key")
 
         return {
             "key": api_key,
@@ -202,10 +203,10 @@ You can generate Coinbase Pro API credentials on the API settings page (https://
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
-    def _get_settings(self) -> Dict[str, str]:
+    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         api_key = click.prompt("API key")
-        api_secret = click.prompt("API secret")
-        passphrase = click.prompt("Passphrase", hide_input=True)
+        api_secret = logger.prompt_password("API secret")
+        passphrase = logger.prompt_password("Passphrase")
 
         return {
             "key": api_key,

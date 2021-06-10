@@ -144,7 +144,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
 
-    brokerage.configure(lean_config, environment_name)
+    brokerage.configure(lean_config, environment_name, logger)
 
     data_feeds = local_brokerage_data_feeds[brokerage]
     if platform.system() == "Windows":
@@ -154,7 +154,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in data_feeds
     ])
 
-    data_feed.configure(lean_config, environment_name)
+    data_feed.configure(lean_config, environment_name, logger)
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)

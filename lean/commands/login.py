@@ -42,7 +42,7 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
         user_id = click.prompt("User id")
 
     if api_token is None:
-        api_token = click.prompt("API token")
+        api_token = logger.prompt_password("API token")
 
     api_client = container.api_client(user_id=user_id, api_token=api_token)
     if not api_client.is_authenticated():
