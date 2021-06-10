@@ -368,7 +368,7 @@ class BinanceBrokerage(LocalBrokerage):
     @classmethod
     def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         logger.info("""
-Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
+Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management).
         """.strip())
 
         lean_config["binance-api-key"] = click.prompt("API key")
