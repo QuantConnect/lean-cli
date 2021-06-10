@@ -140,7 +140,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         }
     }
 
-    brokerage = logger.prompt_list("Select the brokerage to use", [
+    brokerage = logger.prompt_list("Select a brokerage", [
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
 
@@ -150,7 +150,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     if platform.system() == "Windows":
         data_feeds.append(IQFeedDataFeed)
 
-    data_feed = logger.prompt_list("Select the data feed to use", [
+    data_feed = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in data_feeds
     ])
 
