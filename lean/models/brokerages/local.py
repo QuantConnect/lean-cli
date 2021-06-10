@@ -142,13 +142,13 @@ Interactive Brokers Lite accounts do not support API trading.
                 agent_description = "Individual"
                 trading_mode = "paper"
             elif demo_slice == "di":
-                # TODO: Remove this once we know what ib-agent-description is for Advisor accounts
+                # TODO: Remove this once we know what ib-agent-description should be for Advisor accounts
                 raise RuntimeError("Please use the --environment option for Advisor accounts")
                 agent_description = "Advisor"
                 trading_mode = "paper"
         else:
             if live_slice == "f" or live_slice == "i":
-                # TODO: Remove this once we know what ib-agent-description is for Advisor accounts
+                # TODO: Remove this once we know what ib-agent-description should be for Advisor accounts
                 raise RuntimeError("Please use the --environment option for Advisor accounts")
                 agent_description = "Advisor"
                 trading_mode = "live"

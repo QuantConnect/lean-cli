@@ -108,9 +108,9 @@ class Logger:
         :param text: the text to display before prompting
         :return: the given input
         """
-        # maskpass does not work when the input is not coming from a keyboard
+        # Masking does not work when the input is not coming from a keyboard
         if not sys.stdout.isatty():
-            return click.prompt(text, hide_input=True)
+            return click.prompt(text)
 
         while True:
             user_input = maskpass.askpass(f"{text}: ")

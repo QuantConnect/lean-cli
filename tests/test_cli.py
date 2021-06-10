@@ -240,10 +240,7 @@ def test_cli() -> None:
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_return_code=1)
 
     # Generate report
-    run_command(["lean", "report",
-                 "--backtest-data-source-file",
-                 f"{python_project_name}/backtests/{python_backtest_dirs[0].name}/main.json"],
-                cwd=test_dir)
+    run_command(["lean", "report", f"{python_project_name}/backtests/{python_backtest_dirs[0].name}"], cwd=test_dir)
     assert (test_dir / "report.html").is_file()
 
     # Copy over algorithms containing a SPY buy-and-hold strategy and which don't import the custom libraries
