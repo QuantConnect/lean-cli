@@ -37,7 +37,7 @@ _required_brokerage_properties = {
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key",
-                         "zerodha-product-type", "zeroda-trading-segment", "zerodha-history-subscription"]
+                         "zerodha-product-type", "zerodha-trading-segment", "zerodha-history-subscription"]
 }
 
 # Data queue handler -> required configuration properties
