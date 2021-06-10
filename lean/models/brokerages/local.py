@@ -162,7 +162,7 @@ Interactive Brokers Lite accounts do not support API trading.
 
         lean_config["ib-user-name"] = username
         lean_config["ib-account"] = account_id
-        lean_config["ib-passsword"] = account_password
+        lean_config["ib-password"] = account_password
         lean_config["ib-agent-description"] = agent_description
         lean_config["ib-trading-mode"] = trading_mode
 
