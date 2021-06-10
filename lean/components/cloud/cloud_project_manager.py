@@ -90,4 +90,4 @@ class CloudProjectManager:
 
             return cloud_project
 
-        raise RuntimeError("No project with the given name or id exists in the cloud")
+        raise RuntimeError("No project with the given name or id could be found")
