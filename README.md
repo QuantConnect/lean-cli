@@ -646,11 +646,13 @@ _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 Generate a report of a backtest.
 
 ```
-Usage: lean report [OPTIONS]
+Usage: lean report [OPTIONS] BACKTEST
 
   Generate a report of a backtest.
 
   This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
+
+  BACKTEST must be the path to the backtest output file or directory.
 
   The name, description, and version are optional and will be blank if not given.
 
@@ -662,19 +664,17 @@ Usage: lean report [OPTIONS]
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --backtest-data-source-file FILE
-                                  Path to the JSON file containing the backtest results  [required]
-  --live-data-source-file FILE    Path to the JSON file containing the live trading results
-  --report-destination FILE       Path where the generated report is stored as HTML (defaults to ./report.html)
-  --strategy-name TEXT            Name of the strategy, will appear at the top-right corner of each page
-  --strategy-version TEXT         Version number of the strategy, will appear next to the project name
-  --strategy-description TEXT     Description of the strategy, will appear under the 'Strategy Description' section
-  --overwrite                     Overwrite --report-destination if it already contains a file
-  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update                        Pull the LEAN engine image before running the report creator
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --live-results FILE          Path to the JSON file containing the live trading results
+  --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
+  --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
+  --strategy-version TEXT      Version number of the strategy, will appear next to the project name
+  --strategy-description TEXT  Description of the strategy, will appear under the 'Strategy Description' section
+  --overwrite                  Overwrite --report-destination if it already contains a file
+  --image TEXT                 The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                     Pull the LEAN engine image before running the report creator
+  --lean-config FILE           The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                    Enable debug logging
+  --help                       Show this message and exit.
 ```
 
 _See code: [lean/commands/report.py](lean/commands/report.py)_
