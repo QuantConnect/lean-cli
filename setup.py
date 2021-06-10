@@ -28,6 +28,7 @@ install_requires = [
     "pydantic~=1.7.3",
     "python-dateutil~=2.8.1",
     "lxml~=4.6.3",
+    "maskpass~=0.3.5",
     "setuptools",
     "quantconnect-stubs"
 ]
