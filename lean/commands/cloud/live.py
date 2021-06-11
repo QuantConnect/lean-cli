@@ -20,7 +20,7 @@ from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod)
-from lean.models.brokerages.cloud import all_cloud_brokerages, CloudBrokerage
+from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.logger import Option
 
 
@@ -109,7 +109,7 @@ def live(project: str, push: bool, open_browser: bool) -> None:
 
     brokerage_options = [Option(id=brokerage, label=brokerage.name) for brokerage in all_cloud_brokerages]
 
-    brokerage: CloudBrokerage = logger.prompt_list("Select a brokerage", brokerage_options)
+    brokerage = logger.prompt_list("Select a brokerage", brokerage_options)
     brokerage_settings = brokerage.get_settings(logger)
     price_data_handler = brokerage.get_price_data_handler()
 

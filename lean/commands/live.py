@@ -23,7 +23,8 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.brokerages.local import all_local_brokerages, IQFeedDataFeed, local_brokerage_data_feeds
+from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds
+from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 
