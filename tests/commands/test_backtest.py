@@ -400,7 +400,7 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
             "name": "Debug with Lean CLI",
             "request": "attach",
             "type": "coreclr",
-            "processId": "1",
+            "processId": "${command:pickRemoteProcess}",
             "pipeTransport": {
                 "pipeCwd": "${workspaceRoot}",
                 "pipeProgram": "docker",
@@ -438,7 +438,7 @@ def test_backtest_auto_updates_outdated_csharp_vscode_debug_config(config: str) 
         "name": "Debug with Lean CLI",
         "request": "attach",
         "type": "coreclr",
-        "processId": "${command:pickRemoteProcess}",
+        "processId": "1",
         "pipeTransport": {
             "pipeCwd": "${workspaceRoot}",
             "pipeProgram": "docker",

@@ -118,14 +118,14 @@ def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
     if config is None:
         return
 
-    if config["type"] != "mono" and config["processId"] != "1":
+    if config["type"] != "mono" and config["processId"] != "${command:pickRemoteProcess}":
         return
 
     config.pop("address", None)
     config.pop("port", None)
 
     config["type"] = "coreclr"
-    config["processId"] = "${command:pickRemoteProcess}"
+    config["processId"] = "1"
 
     config["pipeTransport"] = {
         "pipeCwd": "${workspaceRoot}",

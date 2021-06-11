@@ -307,7 +307,7 @@ class ProjectManager:
             "name": "Debug with Lean CLI",
             "request": "attach",
             "type": "coreclr",
-            "processId": "${command:pickRemoteProcess}",
+            "processId": "1",
             "pipeTransport": {
                 "pipeCwd": "${workspaceRoot}",
                 "pipeProgram": "docker",
