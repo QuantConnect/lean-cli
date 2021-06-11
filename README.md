@@ -138,7 +138,7 @@ Usage: lean build [OPTIONS] ROOT
   7. The default research image is set to lean-cli/research:latest.
 
 Options:
-  --tag TEXT  The value to tag new images with (defaults to latest)
+  --tag TEXT  The tag to apply to custom images (defaults to latest)
   --verbose   Enable debug logging
   --help      Show this message and exit.
 ```
