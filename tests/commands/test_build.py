@@ -19,9 +19,12 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.commands.build import CUSTOM_ENGINE_IMAGE, CUSTOM_FOUNDATION_IMAGE, CUSTOM_RESEARCH_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
+
+CUSTOM_FOUNDATION_IMAGE = DockerImage(name="lean-cli/foundation", tag="latest")
+CUSTOM_ENGINE_IMAGE = DockerImage(name="lean-cli/engine", tag="latest")
+CUSTOM_RESEARCH_IMAGE = DockerImage(name="lean-cli/research", tag="latest")
 
 
 def create_fake_repositories() -> None:
@@ -132,3 +135,43 @@ def test_build_aborts_when_invalid_root_directory_passed() -> None:
     result = CliRunner().invoke(lean, ["build", "."])
 
     assert result.exit_code != 0
+
+
+@mock.patch("platform.machine")
+@pytest.mark.parametrize("architecture,foundation_file", [("x86_64", "DockerfileLeanFoundation"),
+                                                          ("arm64", "DockerfileLeanFoundationARM"),
+                                                          ("aarch64", "DockerfileLeanFoundationARM")])
+def test_build_uses_custom_tag_when_given(machine: mock.Mock, architecture: str, foundation_file: str) -> None:
+    create_fake_repositories()
+
+    machine.return_value = architecture
+
+    docker_manager = mock.Mock()
+    docker_manager.build_image.side_effect = build_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    result = CliRunner().invoke(lean, ["build", ".", "--tag", "my-tag"])
+
+    assert result.exit_code == 0
+
+    foundation_dockerfile = Path.cwd() / "Lean" / foundation_file
+    engine_dockerfile = Path.cwd() / "Lean" / "Dockerfile"
+    research_dockerfile = Path.cwd() / "Lean" / "DockerfileJupyter"
+
+    foundation_image = DockerImage(name="lean-cli/foundation", tag="my-tag")
+    engine_image = DockerImage(name="lean-cli/engine", tag="my-tag")
+    research_image = DockerImage(name="lean-cli/research", tag="my-tag")
+
+    docker_manager.build_image.assert_any_call(Path.cwd(), foundation_dockerfile, foundation_image)
+    docker_manager.build_image.assert_any_call(Path.cwd(), engine_dockerfile, engine_image)
+    docker_manager.build_image.assert_any_call(Path.cwd(), research_dockerfile, research_image)
+
+    assert f"""
+FROM {foundation_image}
+RUN true
+    """.strip() in dockerfiles_seen
+
+    assert f"""
+FROM {engine_image}
+RUN true
+    """.strip() in dockerfiles_seen

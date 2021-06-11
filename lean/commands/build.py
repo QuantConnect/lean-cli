@@ -22,15 +22,13 @@ from lean.click import LeanCommand, PathParameter
 from lean.container import container
 from lean.models.docker import DockerImage
 
-CUSTOM_FOUNDATION_IMAGE = DockerImage(name="lean-cli/foundation", tag="latest")
-CUSTOM_ENGINE_IMAGE = DockerImage(name="lean-cli/engine", tag="latest")
-CUSTOM_RESEARCH_IMAGE = DockerImage(name="lean-cli/research", tag="latest")
 
-
-def _compile_csharp(root: Path, csharp_dir: Path) -> None:
+def _compile_csharp(root: Path, csharp_dir: Path, docker_image: DockerImage) -> None:
     """Compiles C# code.
 
+    :param root: the root directory in which the command is ran
     :param csharp_dir: the directory containing the C# code
+    :param docker_image: the Docker image to compile in
     """
     logger = container.logger()
     logger.info(f"Compiling the C# code in '{csharp_dir}'")
@@ -39,7 +37,7 @@ def _compile_csharp(root: Path, csharp_dir: Path) -> None:
 
     docker_manager = container.docker_manager()
     docker_manager.create_volume("lean_cli_nuget")
-    success = docker_manager.run_image(CUSTOM_FOUNDATION_IMAGE,
+    success = docker_manager.run_image(docker_image,
                                        entrypoint=["dotnet", "build", str(build_path)],
                                        environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
                                                     "DOTNET_NOLOGO": "true"},
@@ -91,7 +89,11 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
 
 @click.command(cls=LeanCommand, requires_docker=True)
 @click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-def build(root: Path) -> None:
+@click.option("--tag",
+              type=str,
+              default="latest",
+              help="The value to tag new images with")
+def build(root: Path, tag: str) -> None:
     """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
     \b
@@ -123,17 +125,21 @@ def build(root: Path) -> None:
     else:
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
 
-    _build_image(root, foundation_dockerfile, None, CUSTOM_FOUNDATION_IMAGE)
-    _compile_csharp(root, lean_dir)
-    _compile_csharp(root, alpha_streams_dir)
-    _build_image(root, lean_dir / "Dockerfile", CUSTOM_FOUNDATION_IMAGE, CUSTOM_ENGINE_IMAGE)
-    _build_image(root, lean_dir / "DockerfileJupyter", CUSTOM_ENGINE_IMAGE, CUSTOM_RESEARCH_IMAGE)
+    custom_foundation_image = DockerImage(name="lean-cli/foundation", tag=tag)
+    custom_engine_image = DockerImage(name="lean-cli/engine", tag=tag)
+    custom_research_image = DockerImage(name="lean-cli/research", tag=tag)
+
+    _build_image(root, foundation_dockerfile, None, custom_foundation_image)
+    _compile_csharp(root, lean_dir, custom_foundation_image)
+    _compile_csharp(root, alpha_streams_dir, custom_foundation_image)
+    _build_image(root, lean_dir / "Dockerfile", custom_foundation_image, custom_engine_image)
+    _build_image(root, lean_dir / "DockerfileJupyter", custom_engine_image, custom_research_image)
 
     logger = container.logger()
     cli_config_manager = container.cli_config_manager()
 
-    logger.info(f"Setting default engine image to '{CUSTOM_ENGINE_IMAGE}'")
-    cli_config_manager.engine_image.set_value(str(CUSTOM_ENGINE_IMAGE))
+    logger.info(f"Setting default engine image to '{custom_engine_image}'")
+    cli_config_manager.engine_image.set_value(str(custom_engine_image))
 
-    logger.info(f"Setting default research image to '{CUSTOM_RESEARCH_IMAGE}'")
-    cli_config_manager.research_image.set_value(str(CUSTOM_RESEARCH_IMAGE))
+    logger.info(f"Setting default research image to '{custom_research_image}'")
+    cli_config_manager.research_image.set_value(str(custom_research_image))

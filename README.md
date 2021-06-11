@@ -138,8 +138,9 @@ Usage: lean build [OPTIONS] ROOT
   7. The default research image is set to lean-cli/research:latest.
 
 Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  --tag TEXT  The value to tag new images with
+  --verbose   Enable debug logging
+  --help      Show this message and exit.
 ```
 
 _See code: [lean/commands/build.py](lean/commands/build.py)_
