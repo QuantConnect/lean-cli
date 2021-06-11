@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import sys
-from typing import Any, List
+from typing import Any, List, Optional
 
 import click
 import maskpass
@@ -102,17 +102,25 @@ class Logger:
 
             self.info("Please enter the number or label of an option")
 
-    def prompt_password(self, text: str) -> str:
+    def prompt_password(self, text: str, default: Optional[str] = None) -> str:
         """Asks the user for a string value while masking the given input.
 
         :param text: the text to display before prompting
+        :param default: the default value if no input is given
         :return: the given input
         """
+        if default is not None:
+            text = f"{text} [{'*' * len(default)}]"
+
         # Masking does not work when the input is not coming from a keyboard
         if not sys.stdout.isatty():
-            return click.prompt(text)
+            return click.prompt(text, default=default, show_default=False)
 
         while True:
             user_input = maskpass.askpass(f"{text}: ")
+
+            if len(user_input) == 0 and default is not None:
+                return default
+
             if len(user_input) > 0:
                 return user_input

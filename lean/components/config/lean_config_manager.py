@@ -86,8 +86,8 @@ class LeanConfigManager:
         config = self.get_lean_config()
         return self.get_cli_root_directory() / config["data-folder"]
 
-    def set_property(self, key: str, value: str) -> None:
-        """Sets a string property in the Lean config file.
+    def set_property(self, key: str, value: Any) -> None:
+        """Sets a property in the Lean config file.
 
         If the property does not exist yet it is added automatically.
         Comments in the Lean config file are preserved.
@@ -100,11 +100,13 @@ class LeanConfigManager:
         config_path = self.get_lean_config_path()
         config_text = config_path.read_text(encoding="utf-8")
 
+        json_value = json5.dumps(value)
+
         # We can only use regex to set the property because converting the config back to JSON drops all comments
         if key in config:
-            config_text = re.sub(fr'"{key}":\s*"([^"]*)"', f'"{key}": "{value}"', config_text)
+            config_text = re.sub(fr'"{key}":\s*("?[^",]*"?)', f'"{key}": {json_value}', config_text)
         else:
-            config_text = config_text.replace("{", f'{{\n  "{key}": "{value}",', 1)
+            config_text = config_text.replace("{", f'{{\n  "{key}": {json_value},', 1)
 
         config_path.write_text(config_text, encoding="utf-8")
 

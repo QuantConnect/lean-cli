@@ -13,12 +13,13 @@
 
 import abc
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import click
 
 from lean.click import PathParameter
 from lean.components.util.logger import Logger
+from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
@@ -46,6 +47,34 @@ class LeanConfigConfigurer(abc.ABC):
         :param logger: the logger to use
         """
         raise NotImplementedError()
+
+    @classmethod
+    def _get_default(cls, lean_config: Dict[str, Any], key: str) -> Optional[Any]:
+        """Returns the default value for a property based on the current Lean configuration.
+
+        :param lean_config: the current Lean configuration
+        :param key: the name of the property
+        :return: the default value for the property, or None if there is none
+        """
+        if key not in lean_config:
+            return None
+
+        if lean_config[key] == "":
+            return None
+
+        return lean_config[key]
+
+    @classmethod
+    def _save_properties(cls, lean_config: Dict[str, Any], properties: List[str]) -> None:
+        """Persistently save properties in the Lean configuration.
+
+        :param lean_config: the dict containing all properties
+        :param properties: the names of the properties to save persistently
+        """
+        lean_config_manager = container.lean_config_manager()
+
+        for prop in properties:
+            lean_config_manager.set_property(prop, lean_config[prop])
 
 
 class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
@@ -127,9 +156,9 @@ In the Secure Login System, deselect all options or only select "IB Key Security
 Interactive Brokers Lite accounts do not support API trading.
         """.strip())
 
-        username = click.prompt("Username")
-        account_id = click.prompt("Account id")
-        account_password = logger.prompt_password("Account password")
+        username = click.prompt("Username", cls._get_default(lean_config, "ib-user-name"))
+        account_id = click.prompt("Account id", cls._get_default(lean_config, "ib-account"))
+        account_password = logger.prompt_password("Account password", cls._get_default(lean_config, "ib-password"))
 
         agent_description = None
         trading_mode = None
@@ -168,6 +197,12 @@ Interactive Brokers Lite accounts do not support API trading.
         lean_config["ib-agent-description"] = agent_description
         lean_config["ib-trading-mode"] = trading_mode
 
+        cls._save_properties(lean_config, ["ib-user-name",
+                                           "ib-account",
+                                           "ib-password",
+                                           "ib-agent-description",
+                                           "ib-trading-mode"])
+
 
 class InteractiveBrokersDataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the Interactive Brokers data feed."""
@@ -189,7 +224,12 @@ Delayed market data is used when you subscribe to data for which you don't have 
 If delayed market data is disabled, live trading will stop and LEAN will shut down when this happens.
         """.strip())
 
-        lean_config["ib-enable-delayed-streaming-data"] = click.confirm("Enable delayed market data?")
+        lean_config["ib-enable-delayed-streaming-data"] = click.confirm(
+            "Enable delayed market data?",
+            cls._get_default(lean_config, "ib-enable-delayed-streaming-data")
+        )
+
+        cls._save_properties(lean_config, ["ib-enable-delayed-streaming-data"])
 
 
 class TradierBrokerage(LocalBrokerage):
@@ -212,9 +252,16 @@ Your Tradier account id and API token can be found on your Settings/API Access p
 The account id is the alpha-numeric code in a dropdown box on that page.
         """.strip())
 
-        lean_config["tradier-account-id"] = click.prompt("Account id")
-        lean_config["tradier-access-token"] = logger.prompt_password("Access token")
-        lean_config["tradier-use-sandbox"] = click.confirm("Use the developer sandbox?")
+        lean_config["tradier-account-id"] = click.prompt("Account id",
+                                                         cls._get_default(lean_config, "tradier-account-id"))
+        lean_config["tradier-access-token"] = logger.prompt_password(
+            "Access token",
+            cls._get_default(lean_config, "tradier-access-token")
+        )
+        lean_config["tradier-use-sandbox"] = click.confirm("Use the developer sandbox?",
+                                                           cls._get_default(lean_config, "tradier-use-sandbox"))
+
+        cls._save_properties(lean_config, ["tradier-account-id", "tradier-access-token", "tradier-use-sandbox"])
 
 
 class TradierDataFeed(LeanConfigConfigurer):
@@ -252,11 +299,17 @@ It follows the following format: ###-###-######-###.
 You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token).
         """.strip())
 
-        lean_config["oanda-account-id"] = click.prompt("Account id")
-        lean_config["oanda-access-token"] = logger.prompt_password("Access token")
+        lean_config["oanda-account-id"] = click.prompt("Account id", cls._get_default(lean_config, "oanda-account-id"))
+        lean_config["oanda-access-token"] = logger.prompt_password("Access token",
+                                                                   cls._get_default(lean_config, "oanda-access-token"))
 
-        environment = click.prompt("Environment", type=click.Choice(["practice", "trade"], case_sensitive=False))
+        default_environment = cls._get_default(lean_config, "oanda-environment")
+        environment = click.prompt("Environment",
+                                   default_environment.lower() if default_environment is not None else None,
+                                   type=click.Choice(["practice", "trade"], case_sensitive=False))
         lean_config["oanda-environment"] = environment.title()
+
+        cls._save_properties(lean_config, ["oanda-account-id", "oanda-access-token", "oanda-environment"])
 
 
 class OANDADataFeed(LeanConfigConfigurer):
@@ -293,8 +346,13 @@ class BitfinexBrokerage(LocalBrokerage):
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
-        lean_config["bitfinex-api-key"] = click.prompt("API key")
-        lean_config["bitfinex-api-secret"] = logger.prompt_password("API secret")
+        lean_config["bitfinex-api-key"] = click.prompt("API key", cls._get_default(lean_config, "bitfinex-api-key"))
+        lean_config["bitfinex-api-secret"] = logger.prompt_password(
+            "API secret",
+            cls._get_default(lean_config, "bitfinex-api-secret")
+        )
+
+        cls._save_properties(lean_config, ["bitfinex-api-key", "bitfinex-api-secret"])
 
 
 class BitfinexDataFeed(LeanConfigConfigurer):
@@ -332,9 +390,13 @@ You can generate Coinbase Pro API credentials on the API settings page (https://
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
-        lean_config["gdax-api-key"] = click.prompt("API key")
-        lean_config["gdax-api-secret"] = logger.prompt_password("API secret")
-        lean_config["gdax-passphrase"] = logger.prompt_password("Passphrase")
+        lean_config["gdax-api-key"] = click.prompt("API key", cls._get_default(lean_config, "gdax-api-key"))
+        lean_config["gdax-api-secret"] = logger.prompt_password("API secret",
+                                                                cls._get_default(lean_config, "gdax-api-secret"))
+        lean_config["gdax-passphrase"] = logger.prompt_password("Passphrase",
+                                                                cls._get_default(lean_config, "gdax-passphrase"))
+
+        cls._save_properties(lean_config, ["gdax-api-key", "gdax-api-secret", "gdax-passphrase"])
 
 
 class CoinbaseProDataFeed(LeanConfigConfigurer):
@@ -371,8 +433,11 @@ class BinanceBrokerage(LocalBrokerage):
 Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management).
         """.strip())
 
-        lean_config["binance-api-key"] = click.prompt("API key")
-        lean_config["binance-api-secret"] = logger.prompt_password("API secret")
+        lean_config["binance-api-key"] = click.prompt("API key", cls._get_default(lean_config, "binance-api-key"))
+        lean_config["binance-api-secret"] = logger.prompt_password("API secret",
+                                                                   cls._get_default(lean_config, "binance-api-secret"))
+
+        cls._save_properties(lean_config, ["binance-api-key", "binance-api-secret"])
 
 
 class BinanceDataFeed(LeanConfigConfigurer):
@@ -407,14 +472,18 @@ class ZerodhaBrokerage(LocalBrokerage):
     def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
         logger.info("You need API credentials for Kite Connect (https://kite.trade/) to use the Zerodha brokerage.")
 
-        lean_config["zerodha-api-key"] = click.prompt("API key")
-        lean_config["zerodha-access-token"] = logger.prompt_password("Access token")
+        lean_config["zerodha-api-key"] = click.prompt("API key", cls._get_default(lean_config, "zerodha-api-key"))
+        lean_config["zerodha-access-token"] = logger.prompt_password(
+            "Access token",
+            cls._get_default(lean_config, "zerodha-access-token")
+        )
 
         logger.info(
             "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products.")
 
         lean_config["zerodha-product-type"] = click.prompt(
             "Product type",
+            cls._get_default(lean_config, "zerodha-product-type"),
             type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False)
         )
 
@@ -423,8 +492,14 @@ class ZerodhaBrokerage(LocalBrokerage):
 
         lean_config["zerodha-trading-segment"] = click.prompt(
             "Trading segment",
+            cls._get_default(lean_config, "zerodha-trading-segment"),
             type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False)
         )
+
+        cls._save_properties(lean_config, ["zerodha-api-key",
+                                           "zerodha-access-token",
+                                           "zerodha-product-type",
+                                           "zerodha-trading-segment"])
 
 
 class ZerodhaDataFeed(LeanConfigConfigurer):
@@ -441,7 +516,12 @@ class ZerodhaDataFeed(LeanConfigConfigurer):
 
         ZerodhaBrokerage.configure_credentials(lean_config, logger)
 
-        lean_config["zerodha-history-subscription"] = click.confirm("Do you have a history API subscription?")
+        lean_config["zerodha-history-subscription"] = click.confirm(
+            "Do you have a history API subscription?",
+            cls._get_default(lean_config, "zerodha-history-subscription")
+        )
+
+        cls._save_properties(lean_config, ["zerodha-history-subscription"])
 
 
 class IQFeedDataFeed(LeanConfigConfigurer):
@@ -469,10 +549,18 @@ class IQFeedDataFeed(LeanConfigConfigurer):
                                         default=default_binary)
         lean_config["iqfeed-iqconnect"] = str(iqconnect_binary)
 
-        lean_config["iqfeed-username"] = click.prompt("Username")
-        lean_config["iqfeed-password"] = logger.prompt_password("Password")
-        lean_config["iqfeed-productName"] = click.prompt("Product id")
-        lean_config["iqfeed-version"] = click.prompt("Product version")
+        lean_config["iqfeed-username"] = click.prompt("Username", cls._get_default(lean_config, "iqfeed-username"))
+        lean_config["iqfeed-password"] = logger.prompt_password("Password",
+                                                                cls._get_default(lean_config, "iqfeed-password"))
+        lean_config["iqfeed-productName"] = click.prompt("Product id",
+                                                         cls._get_default(lean_config, "iqfeed-productName"))
+        lean_config["iqfeed-version"] = click.prompt("Product version", cls._get_default(lean_config, "iqfeed-version"))
+
+        cls._save_properties(lean_config, ["iqfeed-iqconnect",
+                                           "iqfeed-username",
+                                           "iqfeed-password",
+                                           "iqfeed-productName",
+                                           "iqfeed-version"])
 
 
 all_local_brokerages = [
