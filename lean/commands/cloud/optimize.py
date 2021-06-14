@@ -22,8 +22,7 @@ import click
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCOptimizationBacktest
-from lean.models.optimizer import OptimizationConstraint, OptimizationExtremum, \
-    OptimizationParameter
+from lean.models.optimizer import OptimizationConstraint, OptimizationExtremum, OptimizationParameter
 
 
 def _calculate_backtest_count(parameters: List[OptimizationParameter]) -> int:
@@ -32,8 +31,7 @@ def _calculate_backtest_count(parameters: List[OptimizationParameter]) -> int:
     :param parameters: the parameters to optimize
     :return: the number of backtests a grid search on the parameters would require
     """
-    steps_per_parameter = [round((p.max - p.min) / p.step) + 1 for p in
-                           parameters]
+    steps_per_parameter = [round((p.max - p.min) / p.step) + 1 for p in parameters]
     return int(functools.reduce(operator.mul, steps_per_parameter, 1))
 
 
@@ -45,8 +43,7 @@ def _calculate_hours(backtest_time: int, backtest_count: int) -> float:
     """
     deploy_time = 30
     backtest_cpu_factor = 1.5
-    seconds = (
-                  deploy_time + backtest_time * backtest_cpu_factor) * backtest_count
+    seconds = (deploy_time + backtest_time * backtest_cpu_factor) * backtest_count
     hours = ceil((seconds * 100) / 3600) / 100
     return max(0.1, hours)
 
@@ -73,8 +70,7 @@ def _format_hours(hours: float) -> str:
     return f"{amount:,} {unit}{unit_suffix}"
 
 
-def _get_backtest_statistic(backtest: QCOptimizationBacktest,
-    target: str) -> float:
+def _get_backtest_statistic(backtest: QCOptimizationBacktest, target: str) -> float:
     """Returns a statistic of a backtest.
 
     :param backtest: the backtest to retrieve the statistic from
@@ -93,8 +89,7 @@ def _get_backtest_statistic(backtest: QCOptimizationBacktest,
         raise ValueError(f"Target is not supported: {target}")
 
 
-def _backtest_meets_constraints(backtest: QCOptimizationBacktest,
-    constraints: List[OptimizationConstraint]) -> bool:
+def _backtest_meets_constraints(backtest: QCOptimizationBacktest, constraints: List[OptimizationConstraint]) -> bool:
     """Returns whether the backtest meets all constraints.
 
     :param backtest: the backtest to check
@@ -107,8 +102,7 @@ def _backtest_meets_constraints(backtest: QCOptimizationBacktest,
         expression = str(constraint)
 
         for target, _ in optimizer_config_manager.available_targets:
-            expression = expression.replace(target, str(_get_backtest_statistic(
-                backtest, target)))
+            expression = expression.replace(target, str(_get_backtest_statistic(backtest, target)))
 
         if not eval(expression):
             return False
@@ -118,8 +112,7 @@ def _backtest_meets_constraints(backtest: QCOptimizationBacktest,
 
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
-@click.option("--name", type=str,
-              help="The name of the optimization (a random one is generated if not specified)")
+@click.option("--name", type=str, help="The name of the optimization (a random one is generated if not specified)")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -148,11 +141,9 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
     finished_compile = cloud_runner.compile_project(cloud_project)
 
     optimizer_config_manager = container.optimizer_config_manager()
-    optimization_strategy = optimizer_config_manager.configure_strategy(
-        cloud=True)
+    optimization_strategy = optimizer_config_manager.configure_strategy(cloud=True)
     optimization_target = optimizer_config_manager.configure_target()
-    optimization_parameters = optimizer_config_manager.configure_parameters(
-        cloud_project.parameters, cloud=True)
+    optimization_parameters = optimizer_config_manager.configure_parameters(cloud_project.parameters, cloud=True)
     optimization_constraints = optimizer_config_manager.configure_constraints()
 
     backtest_count = _calculate_backtest_count(optimization_parameters)
@@ -182,10 +173,7 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
         logger.info(
             f"Organization balance: {organization.credit.balance:,.0f} QCC (${organization.credit.balance / 100:,.2f})")
 
-        if click.confirm(
-            "Do you want to start the optimization on the selected node type?",
-            default=True
-        ):
+        if click.confirm("Do you want to start the optimization on the selected node type?", default=True):
             break
 
     optimization = cloud_runner.run_optimization(cloud_project,
@@ -204,19 +192,14 @@ def optimize(project: str, name: Optional[str], push: bool) -> None:
                  _backtest_meets_constraints(b, optimization_constraints)]
 
     if len(backtests) == 0:
-        logger.info(
-            "No optimal parameter combination found, no successful backtests meet all constraints")
+        logger.info("No optimal parameter combination found, no successful backtests meet all constraints")
         return
 
     optimal_backtest = sorted(backtests,
-                              key=lambda backtest: _get_backtest_statistic(
-                                  backtest, optimization_target.target),
-                              reverse=optimization_target.extremum == OptimizationExtremum.Maximum)[
-        0]
+                              key=lambda backtest: _get_backtest_statistic(backtest, optimization_target.target),
+                              reverse=optimization_target.extremum == OptimizationExtremum.Maximum)[0]
 
-    parameters = ", ".join(
-        f"{key}: {optimal_backtest.parameterSet[key]}" for key in
-        optimal_backtest.parameterSet)
+    parameters = ", ".join(f"{key}: {optimal_backtest.parameterSet[key]}" for key in optimal_backtest.parameterSet)
     logger.info(f"Optimal parameters: {parameters}")
 
     optimal_backtest = api_client.backtests.get(cloud_project.projectId,

@@ -46,8 +46,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
               is_flag=True,
               default=False,
               help="Pull the LEAN research image before starting the research environment")
-def research(project: Path, port: int, image: Optional[str],
-    update: bool) -> None:
+def research(project: Path, port: int, image: Optional[str], update: bool) -> None:
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
@@ -68,8 +67,7 @@ def research(project: Path, port: int, image: Optional[str],
     project_config.set("job-queue-handler", "QuantConnect.Queues.JobQueue")
     project_config.set("api-handler", "QuantConnect.Api.Api")
     project_config.set("job-user-id", cli_config_manager.user_id.get_value("1"))
-    project_config.set("api-access-token",
-                       cli_config_manager.api_token.get_value("default"))
+    project_config.set("api-access-token", cli_config_manager.api_token.get_value("default"))
 
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
@@ -97,9 +95,7 @@ def research(project: Path, port: int, image: Optional[str],
 
     lean_runner = container.lean_runner()
     if project_config.get("algorithm-language", "Python") == "Python":
-        lean_runner.set_up_python_options(project,
-                                          "/Lean/Launcher/bin/Debug/Notebooks",
-                                          run_options)
+        lean_runner.set_up_python_options(project, "/Lean/Launcher/bin/Debug/Notebooks", run_options)
     else:
         lean_runner.set_up_csharp_options(project, run_options)
         run_options["volumes"][str(project)] = {
@@ -133,6 +129,5 @@ def research(project: Path, port: int, image: Optional[str],
     except APIError as error:
         msg = error.explanation
         if isinstance(msg, str) and "port is already allocated" in msg:
-            raise RuntimeError(
-                f"Port {port} is already in use, please specify a different port using --port <number>")
+            raise RuntimeError(f"Port {port} is already in use, please specify a different port using --port <number>")
         raise error
