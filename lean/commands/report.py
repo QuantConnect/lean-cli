@@ -44,7 +44,9 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("backtest", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@click.option("--backtest-results",
+              type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+              help="Path to the JSON file containing the backtest results")
 @click.option("--live-results",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the JSON file containing the live trading results")
@@ -72,7 +74,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the report creator")
-def report(backtest: Path,
+def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
            strategy_name: Optional[str],
@@ -85,7 +87,7 @@ def report(backtest: Path,
 
     This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
-    BACKTEST must be the path to the backtest output file or directory.
+    If --backtest-results is not given, a report is generated for the most recent local backtest.
 
     The name, description, and version are optional and will be blank if not given.
 
@@ -100,17 +102,27 @@ def report(backtest: Path,
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
-    if backtest.is_dir():
-        backtest = next(
-            (f for f in backtest.iterdir() if f.name.endswith(".json") and not f.name.endswith("-order-events.json")),
-            None
-        )
+    if backtest_results is None:
+        backtest_json_files = list(Path.cwd().rglob("backtests/*/*.json"))
+        result_json_files = [f for f in backtest_json_files if
+                             not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json")]
 
-        if backtest is None:
-            raise MoreInfoError("Please provide the path to the backtest output file or directory",
-                                "https://www.lean.io/docs/lean-cli/tutorials/generating-reports")
+        if len(result_json_files) == 0:
+            raise MoreInfoError(
+                "Could not find a recent backtest result file, please use the --backtest-results option",
+                "https://www.lean.io/docs/lean-cli/tutorials/generating-reports"
+            )
 
-    project_directory = _find_project_directory(backtest)
+        backtest_results = sorted(result_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
+
+    logger = container.logger()
+
+    if live_results is None:
+        logger.info(f"Generating a report from '{backtest_results}'")
+    else:
+        logger.info(f"Generating a report from '{backtest_results}' and '{live_results}'")
+
+    project_directory = _find_project_directory(backtest_results)
 
     if project_directory is not None:
         if strategy_name is None:
@@ -176,7 +188,7 @@ def report(backtest: Path,
                   type="bind",
                   read_only=True),
             Mount(target="/Lean/Report/bin/Debug/backtest-data-source-file.json",
-                  source=str(backtest),
+                  source=str(backtest_results),
                   type="bind",
                   read_only=True)
         ],
@@ -214,7 +226,6 @@ def report(backtest: Path,
     report_destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(output_dir / "report.html", report_destination)
 
-    logger = container.logger()
     logger.info(f"Successfully generated report to '{report_destination}'")
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:

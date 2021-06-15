@@ -68,7 +68,9 @@ def test_report_runs_lean_container() -> None:
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -83,7 +85,9 @@ def test_report_runs_report_creator() -> None:
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -100,7 +104,9 @@ def test_report_mounts_report_config() -> None:
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -115,7 +121,9 @@ def test_report_mounts_data_directory() -> None:
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -133,7 +141,9 @@ def test_report_mounts_output_directory() -> None:
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -149,8 +159,8 @@ def test_report_mounts_given_backtest_data_source_file() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
-                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       "--strategy-version", "1.2.3"])
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -161,14 +171,12 @@ def test_report_mounts_given_backtest_data_source_file() -> None:
     assert mount["Source"] == str(Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "results.json")
 
 
-def test_report_finds_backtest_data_source_file_when_directory_given() -> None:
+def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report",
-                                       "Python Project/backtests/2020-01-01_00-00-00",
-                                       "--strategy-version", "1.2.3"])
+    result = CliRunner().invoke(lean, ["report"])
 
     assert result.exit_code == 0
 
@@ -177,6 +185,20 @@ def test_report_finds_backtest_data_source_file_when_directory_given() -> None:
 
     mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/backtest-data-source-file.json"][0]
     assert mount["Source"] == str(Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "results.json")
+
+
+def test_report_aborts_when_backtest_data_source_file_not_given_and_cannot_be_found() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    (Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "results.json").unlink()
+
+    result = CliRunner().invoke(lean, ["report"])
+
+    assert result.exit_code != 0
+
+    docker_manager.run_image.assert_not_called()
 
 
 def test_report_mounts_live_data_source_file_when_given() -> None:
@@ -185,10 +207,10 @@ def test_report_mounts_live_data_source_file_when_given() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--live-results",
-                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       "--strategy-version", "1.2.3"])
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -204,7 +226,9 @@ def test_report_uses_project_directory_as_strategy_name_when_strategy_name_not_g
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -223,6 +247,7 @@ def test_report_uses_given_strategy_name() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--strategy-name", "My Strategy"])
 
@@ -244,7 +269,9 @@ def test_report_uses_description_from_config_when_strategy_description_not_given
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("description", "My description")
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -263,6 +290,7 @@ def test_report_uses_given_strategy_description() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--strategy-description", "My strategy description"])
 
@@ -283,6 +311,7 @@ def test_report_uses_given_strategy_version() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--strategy-version", "1.2.3"])
 
@@ -305,7 +334,7 @@ def test_report_uses_given_blank_name_version_description_when_not_given_and_bac
     with (Path.cwd() / "results.json").open("w+", encoding="utf-8") as file:
         file.write("{}")
 
-    result = CliRunner().invoke(lean, ["report", "results.json"])
+    result = CliRunner().invoke(lean, ["report", "--backtest-results", "results.json"])
 
     assert result.exit_code == 0
 
@@ -325,7 +354,9 @@ def test_report_writes_to_report_html_when_no_report_destination_given() -> None
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -338,6 +369,7 @@ def test_report_writes_to_given_report_destination() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--report-destination", "path/to/report.html"])
 
@@ -357,6 +389,7 @@ def test_report_aborts_when_report_destination_already_exists() -> None:
         file.write("<h1>My strategy</h1>")
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--report-destination", "path/to/report.html"])
 
@@ -376,6 +409,7 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
         file.write("<h1>My strategy</h1>")
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--report-destination", "path/to/report.html",
                                        "--overwrite"])
@@ -390,7 +424,9 @@ def test_report_aborts_when_run_image_fails() -> None:
     docker_manager.run_image.return_value = False
     container.docker_manager.override(providers.Object(docker_manager))
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code != 0
 
@@ -403,7 +439,9 @@ def test_report_forces_update_when_update_option_given() -> None:
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean,
-                                ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json", "--update"])
+                                ["report",
+                                 "--backtest-results", "Python Project/backtests/2020-01-01_00-00-00/results.json",
+                                 "--update"])
 
     assert result.exit_code == 0
 
@@ -418,7 +456,9 @@ def test_report_runs_custom_image_when_set_in_config() -> None:
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
@@ -436,6 +476,7 @@ def test_report_runs_custom_image_when_given_as_option() -> None:
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
                                        "Python Project/backtests/2020-01-01_00-00-00/results.json",
                                        "--image", "custom/lean:456"])
 
@@ -467,7 +508,10 @@ def test_report_checks_for_updates(update_manager_mock: mock.Mock,
     if update_flag:
         options.extend(["--update"])
 
-    result = CliRunner().invoke(lean, ["report", "Python Project/backtests/2020-01-01_00-00-00/results.json", *options])
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
+                                       *options])
 
     assert result.exit_code == 0
 

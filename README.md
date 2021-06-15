@@ -647,13 +647,13 @@ _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 Generate a report of a backtest.
 
 ```
-Usage: lean report [OPTIONS] BACKTEST
+Usage: lean report [OPTIONS]
 
   Generate a report of a backtest.
 
   This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
-  BACKTEST must be the path to the backtest output file or directory.
+  If --backtest-results is not given, a report is generated for the most recent local backtest.
 
   The name, description, and version are optional and will be blank if not given.
 
@@ -665,6 +665,7 @@ Usage: lean report [OPTIONS] BACKTEST
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
+  --backtest-results FILE      Path to the JSON file containing the backtest results
   --live-results FILE          Path to the JSON file containing the live trading results
   --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
