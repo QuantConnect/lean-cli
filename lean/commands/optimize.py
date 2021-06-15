@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -23,7 +24,7 @@ from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.api import QCParameter
+from lean.models.api import QCParameter, QCBacktest
 from lean.models.errors import MoreInfoError
 
 
@@ -144,6 +145,28 @@ def optimize(project: Path,
 
     if success:
         logger = container.logger()
+
+        optimizer_logs = (output / "log.txt").read_text(encoding="utf-8")
+        groups = re.findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
+
+        if len(groups) > 0:
+            optimal_parameters, optimal_id = groups[0]
+
+            optimal_results = json.loads((output / optimal_id / f"{optimal_id}.json").read_text(encoding="utf-8"))
+            optimal_backtest = QCBacktest(backtestId=optimal_id,
+                                          projectId=1,
+                                          status="",
+                                          name=optimal_id,
+                                          created=datetime.now(),
+                                          completed=True,
+                                          progress=1.0,
+                                          runtimeStatistics=optimal_results["RuntimeStatistics"],
+                                          statistics=optimal_results["Statistics"])
+
+            logger.info(f"Optimal parameters: {optimal_parameters.replace(':', ': ').replace(',', ', ')}")
+            logger.info(f"Optimal backtest results:")
+            logger.info(optimal_backtest.get_statistics_table())
+
         logger.info(f"Successfully optimized '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
     else:
         raise RuntimeError(
