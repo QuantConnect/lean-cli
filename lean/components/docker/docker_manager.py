@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import hashlib
+import os
 import platform
 import signal
 import subprocess
@@ -93,6 +94,19 @@ class DockerManager:
 
             kwargs["mounts"].append(Mount(target="/lean-cli-start.sh", source=str(shell_script_path), type="bind"))
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
+
+        # Docker Toolbox requires paths to be like /c/Path instead of C:/Path
+        is_windows = platform.system() == "Windows"
+        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
+        if is_windows and is_docker_toolbox:
+            if "mounts" in kwargs:
+                for mount in kwargs["mounts"]:
+                    mount["Source"] = self._format_path_docker_toolbox(mount["Source"])
+
+            if "volumes" in kwargs:
+                for key in list(kwargs["volumes"].keys()):
+                    new_key = self._format_path_docker_toolbox(key)
+                    kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
         is_tty = sys.stdout.isatty()
 
@@ -315,3 +329,15 @@ class DockerManager:
             raise error
 
         return docker_client
+
+    def _format_path_docker_toolbox(self, path: str) -> str:
+        """Formats a Windows path to make it compatible with Docker Toolbox.
+
+        :param path: the original path
+        :return: the original path formatted in such a way that it works with Docker Toolbox
+        """
+        # Backward slashes to forward slashes
+        path = path.replace('\\', '/')
+
+        # C:/Path to /c/Path
+        return f"/{path[0].lower()}/{path[3:]}"
