@@ -16,10 +16,10 @@ from typing import List, Optional
 
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.products.base import Product
-from lean.models.products.security.base import DataType, MapFactorSecurityProduct, SecurityType
+from lean.models.products.security.base import DataType, SecurityMasterSecurityProduct, SecurityType
 
 
-class EquityProduct(MapFactorSecurityProduct):
+class EquityProduct(SecurityMasterSecurityProduct):
     """The EquityProduct class supports downloading equity data with the `lean data download` command."""
 
     def __init__(self,
@@ -37,7 +37,7 @@ class EquityProduct(MapFactorSecurityProduct):
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        cls._ensure_map_factor_subscription(organization)
+        cls._ensure_security_master_subscription(organization)
 
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote])
         market = "USA"

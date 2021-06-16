@@ -19,7 +19,7 @@ from lean.container import container
 from lean.models.api import QCFullOrganization, QCResolution
 from lean.models.logger import Option
 from lean.models.products.base import Product
-from lean.models.products.security.base import DataType, MapFactorSecurityProduct, SecurityType
+from lean.models.products.security.base import DataType, SecurityMasterSecurityProduct, SecurityType
 
 
 class OptionStyle(str, Enum):
@@ -27,7 +27,7 @@ class OptionStyle(str, Enum):
     European = "European"
 
 
-class EquityOptionProduct(MapFactorSecurityProduct):
+class EquityOptionProduct(SecurityMasterSecurityProduct):
     """The EquityOptionProduct class supports downloading equity option data with the `lean data download` command."""
 
     def __init__(self,
@@ -48,7 +48,7 @@ class EquityOptionProduct(MapFactorSecurityProduct):
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        cls._ensure_map_factor_subscription(organization)
+        cls._ensure_security_master_subscription(organization)
 
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest])
         market = "USA"

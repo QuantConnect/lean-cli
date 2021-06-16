@@ -384,16 +384,17 @@ class QCFullOrganization(WrappedBaseModel):
     data: QCOrganizationData
     members: List[QCOrganizationMember]
 
-    def has_map_factor_files_subscription(self) -> bool:
-        """Returns whether this organization has a map & factor files subscription.
+    def has_security_master_subscription(self) -> bool:
+        """Returns whether this organization has a Security Master subscription.
 
-        :return: True if the organization has a map & factor files subscription, False if not
+        :return: True if the organization has a Security Master subscription, False if not
         """
         data_products_product = next((x for x in self.products if x.name == "Data"), None)
         if data_products_product is None:
             return False
 
-        return any(x.name == "QuantConnect Equity Factor & Map Files" for x in data_products_product.items)
+        # TODO: Update to checking for product id after API changes land in production
+        return any(x.name == "Security Master" for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):

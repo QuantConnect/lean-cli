@@ -164,22 +164,22 @@ class SecurityProduct(Product, abc.ABC):
             logger.info(f"Error: we have no data for {ticker.upper()}")
 
 
-class MapFactorSecurityProduct(SecurityProduct, abc.ABC):
-    """The MapFactorSecurityProduct class provides utilities for securities which require a map/factor subscription."""
+class SecurityMasterSecurityProduct(SecurityProduct, abc.ABC):
+    """The SecurityMasterSecurityProduct class provides utilities for products that require a Security Master subscription."""
 
     @classmethod
-    def _ensure_map_factor_subscription(cls, organization: QCFullOrganization) -> None:
-        """Checks whether the organization has a map/factor subscription, raises an error if not.
+    def _ensure_security_master_subscription(cls, organization: QCFullOrganization) -> None:
+        """Checks whether the organization has a Security Master subscription, raises an error if not.
 
         This method should be called at the start of build().
 
         :param organization: the organization passed to build()
         """
-        if organization.has_map_factor_files_subscription():
+        if organization.has_security_master_subscription():
             return
 
         raise RuntimeError("\n".join([
-            f"Your organization needs to have an active map & factor files subscription to download {cls.get_product_name()} data",
+            f"Your organization needs to have an active Security Master subscription to download {cls.get_product_name()} data",
             f"You can add the subscription at https://www.quantconnect.com/pricing?organization={organization.id}"
         ]))
 
