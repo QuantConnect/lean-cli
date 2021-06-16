@@ -16,6 +16,7 @@ import os
 import platform
 import site
 import sys
+import time
 from pathlib import Path
 
 
@@ -61,6 +62,9 @@ def _ensure_win32_available() -> None:
 
         print(f"Running pywin32's post-install script at {target_file}")
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{target_file}" -install', None, 1)
+
+        # ShellExecuteW returns immediately after the UAC dialog, we wait a second to give the script some time to run
+        time.sleep(1)
 
         if _is_win32_available():
             return
