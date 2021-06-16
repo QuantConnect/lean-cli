@@ -11,18 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ctypes
 import os
 import platform
 import site
-import subprocess
 import sys
 from pathlib import Path
 
 
 # Docker's pywin32 dependency on Windows is a common source of issues
-# In a lot of cases you'd have to manually run pywin32's post-install script after pip installing the library
+# In a lot of cases you'd have to manually run pywin32's post-install script as admin after pip installing the library
 # This is a hassle, so the CLI attempts to automate this step when it's necessary
-# Additionally, we can also fix the issue for some users by updating os.environ["PATH"], which we use as a fallback
+# Additionally, we can also fix the issues for some users by updating os.environ["PATH"]
+# If this works we use this fix instead as it removes the need to request admin permissions
 # This code must run before the Docker package is imported anywhere in the code
 
 def _is_win32_available() -> bool:
@@ -44,22 +45,22 @@ def _ensure_win32_available() -> None:
     possible_directories = set(p for p in possible_paths if p.is_dir())
 
     for directory in possible_directories:
-        target_file = directory / "Scripts" / "pywin32_postinstall.py"
-        if not target_file.is_file():
-            continue
-
-        print(f"Running {target_file}, permission warnings can safely be ignored")
-        subprocess.run([sys.executable, str(target_file), "-install", "-silent", "-quiet"])
-
-        if _is_win32_available():
-            return
-
-    for directory in possible_directories:
         target_directory = directory / "pywin32_system32"
         if not target_directory.is_dir():
             continue
 
         os.environ["PATH"] += ";" + str(target_directory)
+
+        if _is_win32_available():
+            return
+
+    for directory in possible_directories:
+        target_file = directory / "Scripts" / "pywin32_postinstall.py"
+        if not target_file.is_file():
+            continue
+
+        print(f"Running pywin32's post-install script at {target_file}")
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{target_file}" -install', None, 1)
 
         if _is_win32_available():
             return
