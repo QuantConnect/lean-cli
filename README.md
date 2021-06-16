@@ -121,12 +121,14 @@ _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
 Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
 ```
-Usage: lean build [OPTIONS] ROOT
+Usage: lean build [OPTIONS] [ROOT]
 
   Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
   ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
   https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
+
+  When ROOT is not given, the current directory is used as root directory.
 
   This command performs the following actions:
   1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).

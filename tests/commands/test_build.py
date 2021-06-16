@@ -128,6 +128,19 @@ RUN true
     """.strip() in dockerfiles_seen
 
 
+def test_build_uses_current_directory_as_root_directory_when_root_not_given() -> None:
+    create_fake_repositories()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    result = CliRunner().invoke(lean, ["build"])
+
+    assert result.exit_code == 0
+
+    assert docker_manager.build_image.call_count == 3
+
+
 def test_build_aborts_when_invalid_root_directory_passed() -> None:
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

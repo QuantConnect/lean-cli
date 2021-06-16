@@ -88,7 +88,7 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
-@click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+@click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
 @click.option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
 def build(root: Path, tag: str) -> None:
     """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
@@ -96,6 +96,8 @@ def build(root: Path, tag: str) -> None:
     \b
     ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
     https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
+
+    When ROOT is not given, the current directory is used as root directory.
 
     \b
     This command performs the following actions:
