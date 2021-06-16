@@ -351,6 +351,7 @@ class QCOrganizationCredit(WrappedBaseModel):
 
 
 class QCOrganizationProductItem(WrappedBaseModel):
+    productId: int
     name: str
     quantity: int
     unitPrice: float
@@ -393,8 +394,7 @@ class QCFullOrganization(WrappedBaseModel):
         if data_products_product is None:
             return False
 
-        # TODO: Update to checking for product id after API changes land in production
-        return any(x.name == "Security Master" for x in data_products_product.items)
+        return any(x.productId == 37 for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):
