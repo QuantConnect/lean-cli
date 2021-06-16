@@ -35,7 +35,7 @@ class IQFeedDataFeed(LeanConfigConfigurer):
         lean_config["environments"][environment_name]["history-provider"] = \
             "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
 
-        logger.info("The IQFeed data feed requires an IQFeed developer account a locally installed IQFeed client.")
+        logger.info("The IQFeed data feed requires an IQFeed developer account and a locally installed IQFeed client.")
 
         default_binary = Path("C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe")
         if not default_binary.is_file():
