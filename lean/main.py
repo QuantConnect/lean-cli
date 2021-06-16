@@ -14,13 +14,65 @@
 import os
 import platform
 import site
-
-# This code has to run before Docker is imported anywhere in the code
-if platform.system() == "Windows":
-    for site_packages_path in site.getsitepackages() + [site.getusersitepackages()]:
-        os.environ["PATH"] += ";" + os.path.join(site_packages_path, "pywin32_system32")
-
+import subprocess
 import sys
+from pathlib import Path
+
+
+# Docker's pywin32 dependency on Windows is a common source of issues
+# In a lot of cases you'd have to manually run pywin32's post-install script after pip installing the library
+# This is a hassle, so the CLI attempts to automate this step when it's necessary
+# Additionally, we can also fix the issue for some users by updating os.environ["PATH"], which we use as a fallback
+# This code must run before the Docker package is imported anywhere in the code
+
+def _is_win32_available() -> bool:
+    try:
+        # Try the win32 APIs used by https://github.com/docker/docker-py/blob/master/docker/transport/npipesocket.py
+        import win32file
+        import win32pipe
+        return True
+    except:
+        return False
+
+
+def _ensure_win32_available() -> None:
+    if _is_win32_available():
+        return
+
+    possible_paths = sys.path + [sys.prefix] + site.getsitepackages() + [site.getusersitepackages()]
+    possible_paths = [Path(p) for p in possible_paths]
+    possible_directories = set(p for p in possible_paths if p.is_dir())
+
+    for directory in possible_directories:
+        target_file = directory / "Scripts" / "pywin32_postinstall.py"
+        if not target_file.is_file():
+            continue
+
+        print(f"Running {target_file}, permission warnings can safely be ignored")
+        subprocess.run([sys.executable, str(target_file), "-install", "-silent", "-quiet"])
+
+        if _is_win32_available():
+            return
+
+    for directory in possible_directories:
+        target_directory = directory / "pywin32_system32"
+        if not target_directory.is_dir():
+            continue
+
+        os.environ["PATH"] += ";" + str(target_directory)
+
+        if _is_win32_available():
+            return
+
+    print("pywin32 has not been installed completely, which may lead to errors")
+    print("You can fix this issue by running pywin32's post-install script")
+    print(f"Run the following command in an elevated terminal from your Python environment's Scripts directory:")
+    print("python pywin32_postinstall.py -install")
+
+
+if platform.system() == "Windows":
+    _ensure_win32_available()
+
 import traceback
 from io import StringIO
 
