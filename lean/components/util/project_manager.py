@@ -160,7 +160,7 @@ class ProjectManager:
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/Lean/Launcher/bin/Debug"
+                    "remoteRoot": "/LeanCLI"
                 }
             ]
         }
@@ -217,7 +217,7 @@ class ProjectManager:
       <PathMappingSettings>
         <option name="pathMappings">
           <list>
-            <mapping local-root="$PROJECT_DIR$" remote-root="/Lean/Launcher/bin/Debug" />
+            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
           </list>
         </option>
       </PathMappingSettings>

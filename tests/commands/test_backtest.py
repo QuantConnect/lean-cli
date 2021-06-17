@@ -291,7 +291,7 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
       <PathMappingSettings>
         <option name="pathMappings">
           <list>
-            <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+            <mapping local-root="$PROJECT_DIR$" remote-root="/Lean/Launcher/bin/Debug" />
           </list>
         </option>
       </PathMappingSettings>
@@ -317,8 +317,8 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
     assert result.exit_code == 1
 
     workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
-    assert workspace_xml.find(".//mapping[@remote-root='/LeanCLI']") is None
-    assert workspace_xml.find(".//mapping[@remote-root='/Lean/Launcher/bin/Debug']") is not None
+    assert workspace_xml.find(".//mapping[@remote-root='/LeanCLI']") is not None
+    assert workspace_xml.find(".//mapping[@remote-root='/Lean/Launcher/bin/Debug']") is None
 
 
 def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
@@ -340,7 +340,7 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/LeanCLI"
+                    "remoteRoot": "/Lean/Launcher/bin/Debug"
                 }
             ]
         }
@@ -371,7 +371,7 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
         "pathMappings": [
             {
                 "localRoot": "${workspaceFolder}",
-                "remoteRoot": "/Lean/Launcher/bin/Debug"
+                "remoteRoot": "/LeanCLI"
             }
         ]
     }

@@ -42,14 +42,14 @@ def _migrate_dotnet_5_python_pycharm(project_dir: Path) -> None:
         return
 
     current_content = workspace_xml_path.read_text(encoding="utf-8")
-    if 'remote-root="/LeanCLI"' not in current_content:
+    if 'remote-root="/Lean/Launcher/bin/Debug"' not in current_content:
         return
 
-    new_content = current_content.replace('remote-root="/LeanCLI"', 'remote-root="/Lean/Launcher/bin/Debug"')
+    new_content = current_content.replace('remote-root="/Lean/Launcher/bin/Debug"', 'remote-root="/LeanCLI"')
     workspace_xml_path.write_text(new_content, encoding="utf-8")
 
     logger = container.logger()
-    logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
+    logger.warn("Your run configuration has been updated to work with the latest version of LEAN")
     logger.warn("Please restart the debugger in PyCharm and run this command again")
 
     raise click.Abort()
@@ -61,11 +61,11 @@ def _migrate_dotnet_5_python_vscode(project_dir: Path) -> None:
         return
 
     current_content = launch_json_path.read_text(encoding="utf-8")
-    if '"remoteRoot": "/LeanCLI"' not in current_content:
+    if '"remoteRoot": "/Lean/Launcher/bin/Debug"' not in current_content:
         return
 
-    new_content = current_content.replace('"remoteRoot": "/LeanCLI"',
-                                          '"remoteRoot": "/Lean/Launcher/bin/Debug"')
+    new_content = current_content.replace('"remoteRoot": "/Lean/Launcher/bin/Debug"',
+                                          '"remoteRoot": "/LeanCLI"')
     launch_json_path.write_text(new_content, encoding="utf-8")
 
 
