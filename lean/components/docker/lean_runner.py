@@ -265,6 +265,7 @@ class LeanRunner:
         # Create a .csproj file to compile with
         with (compile_dir / f"{project_dir.name}.csproj").open("w+", encoding="utf-8") as file:
             libraries = self._project_config_manager.get_csharp_libraries(project_dir)
+            libraries = [library for library in libraries if not library.name.startswith("QuantConnect.")]
             package_references = "\n".join(
                 f'<PackageReference Include="{library.name}" Version="{library.version}" />' for library in libraries)
 

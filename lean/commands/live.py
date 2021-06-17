@@ -213,15 +213,16 @@ def live(project: Path, environment: Optional[str], output: Optional[Path], imag
                             "https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading")
 
     _raise_for_missing_properties(lean_config, environment, lean_config_manager.get_lean_config_path())
-    _start_iqconnect_if_necessary(lean_config, environment)
 
     cli_config_manager = container.cli_config_manager()
     engine_image = cli_config_manager.get_engine_image(image)
 
     docker_manager = container.docker_manager()
 
-    if update or not docker_manager.supports_dotnet_5(engine_image):
+    if update or not docker_manager.supports_dotnet_5(engine_image) or not docker_manager.image_installed(engine_image):
         docker_manager.pull_image(engine_image)
+
+    _start_iqconnect_if_necessary(lean_config, environment)
 
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment, algorithm_file, output, engine_image, None)
