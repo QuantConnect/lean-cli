@@ -122,25 +122,38 @@ class DockerManager:
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
 
-        force_kill = False
+        force_kill_next = False
+        killed = False
 
-        # Kill the container on Ctrl+C
-        def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
-            nonlocal force_kill
+        def kill_container(force: bool) -> None:
+            nonlocal killed
+            killed = True
             try:
-                if not is_tty or force_kill or kwargs["stop_signal"] == "SIGKILL":
+                if force:
                     container.kill()
                 else:
-                    self._logger.info("Waiting 1 minute for LEAN to exit gracefully, press Ctrl+C again to force stop")
-                    force_kill = True
                     container.stop(timeout=60)
-
                 container.remove()
             except APIError:
                 pass
             finally:
                 self._temp_manager.delete_temporary_directories()
                 sys.exit(1)
+
+        # Kill the container on Ctrl+C
+        def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
+            nonlocal force_kill_next
+            if not is_tty or force_kill_next or kwargs["stop_signal"] == "SIGKILL":
+                force_kill_current = True
+            else:
+                self._logger.info("Waiting 1 minute for LEAN to exit gracefully, press Ctrl+C again to force stop")
+                force_kill_next = True
+                force_kill_current = False
+
+            # If we run this code on the current thread, a second Ctrl+C won't be detected on Windows
+            kill_thread = threading.Thread(target=kill_container, args=[force_kill_current])
+            kill_thread.daemon = True
+            kill_thread.start()
 
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -177,12 +190,20 @@ class DockerManager:
 
                     socket.close()
 
-        thread = threading.Thread(target=print_logs)
-        thread.daemon = True
-        thread.start()
+        logs_thread = threading.Thread(target=print_logs)
+        logs_thread.daemon = True
+        logs_thread.start()
 
-        while thread.is_alive():
-            thread.join(0.1)
+        while logs_thread.is_alive():
+            logs_thread.join(0.1)
+
+        if killed:
+            try:
+                container.remove()
+            except APIError:
+                pass
+            finally:
+                sys.exit(1)
 
         container.wait()
 
