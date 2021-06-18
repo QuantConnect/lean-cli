@@ -277,7 +277,7 @@ class LeanRunner:
         <TargetFramework>net5.0</TargetFramework>
         <LangVersion>9</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <OutputPath>/Lean/Launcher/bin/Debug</OutputPath>
+        <OutputPath>/LeanCLI/bin/Debug</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
@@ -314,3 +314,10 @@ class LeanRunner:
 
         # Build the project before running LEAN
         run_options["commands"].append(f'dotnet build "/LeanCLI/{project_dir.name}.csproj"')
+
+        # Copy over the algorithm DLL
+        run_options["commands"].append(
+            f'cp "/LeanCLI/bin/Debug/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
+
+        # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
+        run_options["commands"].append(f"cp -R -n /LeanCLI/bin/Debug/. /Lean/Launcher/bin/Debug/")
