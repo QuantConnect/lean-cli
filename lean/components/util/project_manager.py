@@ -174,8 +174,9 @@ class ProjectManager:
         :param project_dir: the directory of the new project
         """
         # Generate Python JDK entry for PyCharm Professional and PyCharm Community
-        self._generate_pycharm_jdk_entry("PyCharm")
-        self._generate_pycharm_jdk_entry("PyCharmCE")
+        for editor in ["PyCharm", "PyCharmCE"]:
+            for directory in self._get_jetbrains_config_dirs(editor):
+                self._generate_pycharm_jdk_entry(directory)
 
         self._generate_file(project_dir / ".idea" / f"{project_dir.name}.iml", """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -232,7 +233,7 @@ class ProjectManager:
 </project>
         """)
 
-    def _generate_pycharm_jdk_entry(self, editor_name: str) -> None:
+    def _generate_pycharm_jdk_entry(self, pycharm_config_dir: Path) -> None:
         """Generates a "Lean CLI" Python JDK entry to PyCharm's internal JDK table.
 
         When we generate PyCharm's .idea directory we want to tell PyCharm where the Python interpreter is located.
@@ -241,10 +242,8 @@ class ProjectManager:
         If PyCharm is not installed yet, we create the configuration anyways.
         Once the user installs PyCharm, it will then automatically pick up the configuration we created in the past.
 
-        :param editor_name: the name of the JetBrains editor, like PyCharm or PyCharmCE
+        :param pycharm_config_dir: the path to the global configuration directory of a PyCharm edition
         """
-        pycharm_config_dir = self._get_jetbrains_config_dir(editor_name)
-
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
         if jdk_table_file.exists():
@@ -357,8 +356,18 @@ class ProjectManager:
                     file.write(pkg_resources.resource_string("lean", f"ssh/{name}"))
 
         # Find Rider's global configuration directory
-        rider_config_dir = self._get_jetbrains_config_dir("Rider")
+        for directory in self._get_jetbrains_config_dirs("Rider"):
+            self._generate_rider_debugger_entry(directory, ssh_dir)
 
+    def _generate_rider_debugger_entry(self, rider_config_dir: Path, ssh_dir: Path) -> None:
+        """Generates a "root@localhost:2222" remote debugger entry to Rider's internal debugger configuration.
+
+        If Rider is not installed yet, we create the configuration anyways.
+        Once the user installs Rider, it will then automatically pick up the configuration we created in the past.
+
+        :param rider_config_dir: the path to the global configuration directory of a Rider edition
+        :param ssh_dir: the path to the directory containing the SSH keys
+        """
         # Parse the file containing Rider's internal list of remote hosts
         debugger_file = rider_config_dir / "options" / "debugger.xml"
         if debugger_file.exists():
@@ -412,24 +421,38 @@ class ProjectManager:
         with file.open("w+", encoding="utf-8") as file:
             file.write(content.strip() + "\n")
 
-    def _get_jetbrains_config_dir(self, editor_name: str) -> Path:
-        """Returns the path to the global configuration directory of a JetBrains IDE.
+    def _get_jetbrains_config_dirs(self, editor_name: str) -> List[Path]:
+        """Returns the paths to the global configuration directories for all installed editions of a JetBrains IDE.
 
         :param editor_name: the name of the JetBrains IDE
-        :return: the path to the directory holding the global configuration for the specified IDE
+        :return: the paths to the directories holding the global configuration for the specified IDE
         """
-        # Find JetBrains' global config directory
+        # Find JetBrains' root directory containing the global configuration directories for all installed IDEs
         # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
         if platform.system() == "Windows":
-            jetbrains_config_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
+            root_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
         elif platform.system() == "Darwin":
-            jetbrains_config_dir = Path("~/Library/Application Support/JetBrains").expanduser()
+            root_dir = Path("~/Library/Application Support/JetBrains").expanduser()
         else:
-            jetbrains_config_dir = Path("~/.config/JetBrains").expanduser()
+            root_dir = Path("~/.config/JetBrains").expanduser()
 
-        # Find the global config directory for the given editor
-        config_dirs = sorted(p for p in jetbrains_config_dir.glob(f"{editor_name}*"))
-        if len(config_dirs) > 0:
-            return config_dirs[-1]
-        else:
-            return jetbrains_config_dir / editor_name
+        if not root_dir.exists():
+            root_dir.mkdir(parents=True)
+
+        # Find the global config directories for the given IDE
+        directories = []
+
+        for path in root_dir.iterdir():
+            if not path.is_dir() or not path.name.startswith(editor_name):
+                continue
+
+            suffix = path.name.replace(editor_name, "")
+            if len(suffix) > 0 and not suffix[0].isdigit():
+                continue
+
+            directories.append(path)
+
+        if len(directories) == 0:
+            directories.append(root_dir / editor_name)
+
+        return directories
