@@ -22,8 +22,7 @@ from lean.models.api import QCLanguage
 from lean.models.errors import MoreInfoError
 
 DEFAULT_PYTHON_MAIN = '''
-from QuantConnect import Resolution
-from QuantConnect.Algorithm import QCAlgorithm
+from AlgorithmImports import *
 
 
 class $NAME$(QCAlgorithm):
