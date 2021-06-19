@@ -191,7 +191,7 @@ def is_non_interactive(ctx: click.Context, non_interactive_parameters: List[str]
 
     :param ctx: the click context of the invocation
     :param non_interactive_parameters: the names of the non-interactive parameters
-    :return: True if the user provided at least one non-interactive parameter
+    :return: True if the user provided at least one non-interactive parameter, False if not
     """
     return any(param in ctx.params and ctx.params[param] is not None for param in non_interactive_parameters)
 

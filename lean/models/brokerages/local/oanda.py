@@ -41,12 +41,9 @@ You can generate an API token from the Manage API Access page (https://www.oanda
 
         account_id = click.prompt("Account id", cls._get_default(lean_config, "oanda-account-id"))
         access_token = logger.prompt_password("Access token", cls._get_default(lean_config, "oanda-access-token"))
-
-        default_environment = cls._get_default(lean_config, "oanda-environment")
         environment = click.prompt("Environment",
-                                   default_environment.lower() if default_environment is not None else None,
-                                   type=click.Choice(["practice", "trade"], case_sensitive=False))
-        environment = environment.title()
+                                   cls._get_default(lean_config, "oanda-environment"),
+                                   type=click.Choice(["Practice", "Trade"], case_sensitive=False))
 
         return OANDABrokerage(account_id, access_token, environment)
 

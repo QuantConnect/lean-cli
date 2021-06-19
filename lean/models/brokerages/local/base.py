@@ -35,7 +35,7 @@ class LeanConfigConfigurer(abc.ABC):
         """Configures the Lean configuration for this brokerage.
 
         If the Lean configuration has been configured for this brokerage before, nothing will be changed.
-        Changes made to the Lean configuration are saved persistently so they can be used as defaults later.
+        Non-environment changes are saved persistently to disk so they can be used as defaults later.
 
         :param lean_config: the configuration dict to write to
         :param environment_name: the name of the environment to configure
@@ -83,15 +83,22 @@ class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
     _instance = None
 
     @classmethod
-    @abc.abstractmethod
-    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LocalBrokerage':
-        raise NotImplementedError()
-
-    @classmethod
     def build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LocalBrokerage':
         if cls._instance is None:
             cls._instance = cls._build(lean_config, logger)
         return cls._instance
+
+    @classmethod
+    @abc.abstractmethod
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LocalBrokerage':
+        """Builds a new instance of this class, prompting the user for input when necessary.
+
+        LocalBrokerage.build() ensures this method is called at most once per brokerage.
+
+        :param lean_config: the Lean configuration dict to read defaults from
+        :param logger: the logger to use
+        """
+        raise NotImplementedError()
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._configure_environment(lean_config, environment_name)
@@ -99,8 +106,17 @@ class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
 
     @abc.abstractmethod
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        """Configures the environment in the Lean config for this brokerage.
+
+        :param lean_config: the Lean configuration dict to write to
+        :param environment_name: the name of the environment to update
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.
+
+        :param lean_config: the Lean configuration dict to write to
+        """
         raise NotImplementedError()

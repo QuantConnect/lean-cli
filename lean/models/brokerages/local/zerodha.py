@@ -39,8 +39,9 @@ class ZerodhaBrokerage(LocalBrokerage):
         api_key = click.prompt("API key", cls._get_default(lean_config, "zerodha-api-key"))
         access_token = logger.prompt_password("Access token", cls._get_default(lean_config, "zerodha-access-token"))
 
-        logger.info(
-            "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products.")
+        logger.info("""
+The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products.
+        """.strip())
 
         product_type = click.prompt(
             "Product type",
@@ -48,8 +49,9 @@ class ZerodhaBrokerage(LocalBrokerage):
             type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False)
         )
 
-        logger.info(
-            "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX.")
+        logger.info("""
+The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX.
+        """.strip())
 
         trading_segment = click.prompt(
             "Trading segment",
