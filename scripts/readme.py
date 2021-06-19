@@ -14,6 +14,10 @@
 # This program automatically updates the commands reference part of the readme
 # It should be ran using `python scripts/readme.py` from the root of the project
 
+import os
+
+os.environ["__README__"] = "true"
+
 import re
 from pathlib import Path
 from typing import List

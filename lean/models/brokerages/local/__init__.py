@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import platform
 from typing import Dict, Type, List
 
@@ -63,6 +64,6 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     ZerodhaBrokerage: [ZerodhaDataFeed]
 }
 
-if platform.system() == "Windows":
+if platform.system() == "Windows" or os.environ.get("__README__", "false") == "true":
     all_local_data_feeds.append(IQFeedDataFeed)
     local_brokerage_data_feeds[PaperTradingBrokerage].append(IQFeedDataFeed)
