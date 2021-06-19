@@ -22,44 +22,56 @@ from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokera
 class TradierBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Tradier brokerage."""
 
+    def __init__(self, account_id: str, access_token: str, use_sandbox: bool) -> None:
+        self._account_id = account_id
+        self._access_token = access_token
+        self._use_sandbox = use_sandbox
+
     @classmethod
     def get_name(cls) -> str:
         return "Tradier"
 
     @classmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "TradierBrokerage"
-        lean_config["environments"][environment_name]["transaction-handler"] = \
-            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-
-    @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
         logger.info("""
 Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api).
 The account id is the alpha-numeric code in a dropdown box on that page.
         """.strip())
 
-        lean_config["tradier-account-id"] = click.prompt("Account id",
-                                                         cls._get_default(lean_config, "tradier-account-id"))
-        lean_config["tradier-access-token"] = logger.prompt_password(
-            "Access token",
-            cls._get_default(lean_config, "tradier-access-token")
-        )
-        lean_config["tradier-use-sandbox"] = click.confirm("Use the developer sandbox?",
-                                                           cls._get_default(lean_config, "tradier-use-sandbox"))
+        account_id = click.prompt("Account id", cls._get_default(lean_config, "tradier-account-id"))
+        access_token = logger.prompt_password("Access token", cls._get_default(lean_config, "tradier-access-token"))
+        use_sandbox = click.confirm("Use the developer sandbox?", cls._get_default(lean_config, "tradier-use-sandbox"))
 
-        cls._save_properties(lean_config, ["tradier-account-id", "tradier-access-token", "tradier-use-sandbox"])
+        return TradierBrokerage(account_id, access_token, use_sandbox)
+
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = "TradierBrokerage"
+        lean_config["environments"][environment_name]["transaction-handler"] = \
+            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        lean_config["tradier-account-id"] = self._account_id
+        lean_config["tradier-access-token"] = self._access_token
+        lean_config["tradier-use-sandbox"] = self._use_sandbox
+
+        self._save_properties(lean_config, ["tradier-account-id", "tradier-access-token", "tradier-use-sandbox"])
 
 
 class TradierDataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the Tradier data feed."""
+
+    def __init__(self, brokerage: TradierBrokerage) -> None:
+        self._brokerage = brokerage
 
     @classmethod
     def get_name(cls) -> str:
         return TradierBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
+    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
+        return TradierDataFeed(TradierBrokerage.build(lean_config, logger))
+
+    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "TradierBrokerage"
 
-        TradierBrokerage.configure_credentials(lean_config, logger)
+        self._brokerage.configure_credentials(lean_config)

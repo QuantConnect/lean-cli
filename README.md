@@ -555,20 +555,68 @@ Usage: lean live [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
+  By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If
+  --environment, --brokerage or --data-feed are given the command runs in non-interactive mode.
+
   If --environment is given it must be the name of a live environment in the Lean configuration.
-  If --environment is not given an interactive wizard will show letting you configure which brokerage to use.
+
+  If --brokerage and --data-feed are given, the brokerage/data feed-specific options must also be given. The Lean
+  config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required option is
+  not given and cannot be found in the Lean config the command aborts.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --environment TEXT  The environment to use
-  --output DIRECTORY  Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
-  --image TEXT        The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update            Pull the LEAN engine image before starting live trading
-  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose           Enable debug logging
-  --help              Show this message and exit.
+  --environment TEXT              The environment to use
+  --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha]
+                                  The brokerage to use
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha]
+                                  The data feed to use
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-enable-delayed-streaming-data BOOLEAN
+                                  Whether delayed data may be used when your algorithm subscribes to a security you
+                                  don't have a market data subscription for
+
+  --tradier-account-id TEXT       Your Tradier account id
+  --tradier-access-token TEXT     Your Tradier access token
+  --tradier-use-sandbox BOOLEAN   Whether the developer sandbox should be used
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --gdax-api-key TEXT             Your Coinbase Pro API key
+  --gdax-api-secret TEXT          Your Coinbase Pro API secret
+  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --binance-api-key TEXT          Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --zerodha-api-key TEXT          Your Kite Connect API key
+  --zerodha-access-token TEXT     Your Kite Connect access token
+  --zerodha-product-type [MIS|CNC|NRML]
+                                  MIS if you are targeting intraday products, CNC if you are targeting delivery
+                                  products, NRML if you are targeting carry forward products
+
+  --zerodha-trading-segment [EQUITY|COMMODITY]
+                                  EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
+                                  commodities on MCX
+
+  --zerodha-history-subscription BOOLEAN
+                                  Whether you have a history API subscription for Zerodha
+  --iqfeed-iqconnect FILE         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-product-name TEXT      The product name of your IQFeed developer account
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                        Pull the LEAN engine image before starting live trading
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/live.py](lean/commands/live.py)_

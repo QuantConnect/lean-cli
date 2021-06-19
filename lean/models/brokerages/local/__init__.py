@@ -11,10 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
+from typing import Dict, Type, List
+
+from lean.models.brokerages.local.base import LocalBrokerage, LeanConfigConfigurer
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
+from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
 from lean.models.brokerages.local.oanda import OANDABrokerage, OANDADataFeed
 from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
@@ -31,7 +36,17 @@ all_local_brokerages = [
     ZerodhaBrokerage
 ]
 
-local_brokerage_data_feeds = {
+all_local_data_feeds = [
+    InteractiveBrokersDataFeed,
+    TradierDataFeed,
+    OANDADataFeed,
+    BitfinexDataFeed,
+    CoinbaseProDataFeed,
+    BinanceDataFeed,
+    ZerodhaDataFeed
+]
+
+local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
     PaperTradingBrokerage: [InteractiveBrokersDataFeed,
                             TradierDataFeed,
                             OANDADataFeed,
@@ -47,3 +62,7 @@ local_brokerage_data_feeds = {
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed]
 }
+
+if platform.system() == "Windows":
+    all_local_data_feeds.append(IQFeedDataFeed)
+    local_brokerage_data_feeds[PaperTradingBrokerage].append(IQFeedDataFeed)

@@ -30,15 +30,24 @@ class LeanConfigConfigurer(abc.ABC):
         """
         raise NotImplementedError()
 
-    @classmethod
     @abc.abstractmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
+    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         """Configures the Lean configuration for this brokerage.
 
         If the Lean configuration has been configured for this brokerage before, nothing will be changed.
+        Changes made to the Lean configuration are saved persistently so they can be used as defaults later.
 
         :param lean_config: the configuration dict to write to
         :param environment_name: the name of the environment to configure
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LeanConfigConfigurer':
+        """Builds a new instance of this class, prompting the user for input when necessary.
+
+        :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
         """
         raise NotImplementedError()
@@ -51,16 +60,12 @@ class LeanConfigConfigurer(abc.ABC):
         :param key: the name of the property
         :return: the default value for the property, or None if there is none
         """
-        if key not in lean_config:
-            return None
-
-        if lean_config[key] == "":
+        if key not in lean_config or lean_config[key] == "":
             return None
 
         return lean_config[key]
 
-    @classmethod
-    def _save_properties(cls, lean_config: Dict[str, Any], properties: List[str]) -> None:
+    def _save_properties(self, lean_config: Dict[str, Any], properties: List[str]) -> None:
         """Persistently save properties in the Lean configuration.
 
         :param lean_config: the dict containing all properties
@@ -75,37 +80,27 @@ class LeanConfigConfigurer(abc.ABC):
 class LocalBrokerage(LeanConfigConfigurer, abc.ABC):
     """The LocalBrokerage class is the base class extended for all local brokerages."""
 
-    _credentials_configured = False
-
-    @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
-        cls._configure_environment(lean_config, environment_name)
-        cls.configure_credentials(lean_config, logger)
-
-    @classmethod
-    def configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
-        if cls._credentials_configured:
-            return
-
-        cls._configure_credentials(lean_config, logger)
-        cls._credentials_configured = True
+    _instance = None
 
     @classmethod
     @abc.abstractmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
-        """Configures any required providers in the environments section of the Lean config.
-
-        :param lean_config: the config dict to update
-        :param environment_name: the name of the environment to update
-        """
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LocalBrokerage':
         raise NotImplementedError()
 
     @classmethod
-    @abc.abstractmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
-        """Configures any required credentials in the Lean config.
+    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LocalBrokerage':
+        if cls._instance is None:
+            cls._instance = cls._build(lean_config, logger)
+        return cls._instance
 
-        :param lean_config: the config dict to update
-        :param logger: the logger to use
-        """
+    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        self._configure_environment(lean_config, environment_name)
+        self.configure_credentials(lean_config)
+
+    @abc.abstractmethod
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         raise NotImplementedError()

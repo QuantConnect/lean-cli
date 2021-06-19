@@ -22,42 +22,57 @@ from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokera
 class CoinbaseProBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Coinbase Pro brokerage."""
 
+    def __init__(self, api_key: str, api_secret: str, passphrase: str) -> None:
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._passphrase = passphrase
+
     @classmethod
     def get_name(cls) -> str:
         return "Coinbase Pro"
 
     @classmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "GDAXBrokerage"
-        lean_config["environments"][environment_name]["transaction-handler"] = \
-            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-
-    @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
         logger.info("""
 You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api).
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
-        lean_config["gdax-api-key"] = click.prompt("API key", cls._get_default(lean_config, "gdax-api-key"))
-        lean_config["gdax-api-secret"] = logger.prompt_password("API secret",
-                                                                cls._get_default(lean_config, "gdax-api-secret"))
-        lean_config["gdax-passphrase"] = logger.prompt_password("Passphrase",
-                                                                cls._get_default(lean_config, "gdax-passphrase"))
+        api_key = click.prompt("API key", cls._get_default(lean_config, "gdax-api-key"))
+        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "gdax-api-secret"))
+        passphrase = logger.prompt_password("Passphrase", cls._get_default(lean_config, "gdax-passphrase"))
 
-        cls._save_properties(lean_config, ["gdax-api-key", "gdax-api-secret", "gdax-passphrase"])
+        return CoinbaseProBrokerage(api_key, api_secret, passphrase)
+
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = "GDAXBrokerage"
+        lean_config["environments"][environment_name]["transaction-handler"] = \
+            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        lean_config["gdax-api-key"] = self._api_key
+        lean_config["gdax-api-secret"] = self._api_secret
+        lean_config["gdax-passphrase"] = self._passphrase
+
+        self._save_properties(lean_config, ["gdax-api-key", "gdax-api-secret", "gdax-passphrase"])
 
 
 class CoinbaseProDataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the Coinbase Pro data feed."""
+
+    def __init__(self, brokerage: CoinbaseProBrokerage) -> None:
+        self._brokerage = brokerage
 
     @classmethod
     def get_name(cls) -> str:
         return CoinbaseProBrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
+    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
+        return CoinbaseProDataFeed(CoinbaseProBrokerage.build(lean_config, logger))
+
+    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "GDAXDataQueueHandler"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        CoinbaseProBrokerage.configure_credentials(lean_config, logger)
+        self._brokerage.configure_credentials(lean_config)

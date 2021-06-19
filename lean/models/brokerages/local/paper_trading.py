@@ -25,11 +25,13 @@ class PaperTradingBrokerage(LocalBrokerage):
         return "Paper Trading"
 
     @classmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
+        return PaperTradingBrokerage()
+
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["live-mode-brokerage"] = "PaperBrokerage"
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
 
-    @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         pass

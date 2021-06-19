@@ -22,47 +22,63 @@ from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokera
 class OANDABrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the OANDA brokerage."""
 
+    def __init__(self, account_id: str, access_token: str, environment: str) -> None:
+        self._account_id = account_id
+        self._access_token = access_token
+        self._environment = environment
+
     @classmethod
     def get_name(cls) -> str:
         return "OANDA"
 
     @classmethod
-    def _configure_environment(cls, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "OandaBrokerage"
-        lean_config["environments"][environment_name]["transaction-handler"] = \
-            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-
-    @classmethod
-    def _configure_credentials(cls, lean_config: Dict[str, Any], logger: Logger) -> None:
+    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
         logger.info("""
 Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/).
 It follows the following format: ###-###-######-###.
 You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token).
         """.strip())
 
-        lean_config["oanda-account-id"] = click.prompt("Account id", cls._get_default(lean_config, "oanda-account-id"))
-        lean_config["oanda-access-token"] = logger.prompt_password("Access token",
-                                                                   cls._get_default(lean_config, "oanda-access-token"))
+        account_id = click.prompt("Account id", cls._get_default(lean_config, "oanda-account-id"))
+        access_token = logger.prompt_password("Access token", cls._get_default(lean_config, "oanda-access-token"))
 
         default_environment = cls._get_default(lean_config, "oanda-environment")
         environment = click.prompt("Environment",
                                    default_environment.lower() if default_environment is not None else None,
                                    type=click.Choice(["practice", "trade"], case_sensitive=False))
-        lean_config["oanda-environment"] = environment.title()
+        environment = environment.title()
 
-        cls._save_properties(lean_config, ["oanda-account-id", "oanda-access-token", "oanda-environment"])
+        return OANDABrokerage(account_id, access_token, environment)
+
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = "OandaBrokerage"
+        lean_config["environments"][environment_name]["transaction-handler"] = \
+            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        lean_config["oanda-account-id"] = self._account_id
+        lean_config["oanda-access-token"] = self._access_token
+        lean_config["oanda-environment"] = self._environment
+
+        self._save_properties(lean_config, ["oanda-account-id", "oanda-access-token", "oanda-environment"])
 
 
 class OANDADataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the OANDA data feed."""
+
+    def __init__(self, brokerage: OANDABrokerage) -> None:
+        self._brokerage = brokerage
 
     @classmethod
     def get_name(cls) -> str:
         return OANDABrokerage.get_name()
 
     @classmethod
-    def configure(cls, lean_config: Dict[str, Any], environment_name: str, logger: Logger) -> None:
+    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
+        return OANDADataFeed(OANDABrokerage.build(lean_config, logger))
+
+    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["data-queue-handler"] = "OandaBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
-        OANDABrokerage.configure_credentials(lean_config, logger)
+        self._brokerage.configure_credentials(lean_config)
