@@ -107,8 +107,6 @@ class LeanCommand(click.Command):
                                                     is_eager=True,
                                                     callback=self._parse_verbose_option))
 
-        ctx.obj = params
-
         return params
 
     def _parse_config_option(self, ctx: click.Context, param: click.Parameter, value: Optional[Path]) -> None:
@@ -184,23 +182,11 @@ class DateParameter(click.ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
-def is_non_interactive(ctx: click.Context, non_interactive_parameters: List[str]) -> bool:
-    """Checks whether a command invocation is to be seen as non-interactive.
-
-    In a non-interactive invocation the CLI is not supposed to prompt the user for input.
+def ensure_parameters(ctx: click.Context, parameters: List[str]) -> None:
+    """Ensures certain parameters have values, raises an error if not.
 
     :param ctx: the click context of the invocation
-    :param non_interactive_parameters: the names of the non-interactive parameters
-    :return: True if the user provided at least one non-interactive parameter, False if not
-    """
-    return any(param in ctx.params and ctx.params[param] is not None for param in non_interactive_parameters)
-
-
-def ensure_parameters_exist(ctx: click.Context, parameters: List[str]) -> None:
-    """Ensures the user provided certain parameters, raises an error if not.
-
-    :param ctx: the click context of the invocation
-    :param parameters: the parameters the user must have provided
+    :param parameters: the parameters that must have values
     """
     missing_parameters = [param for param in ctx.params.keys() if ctx.params[param] is None and param in parameters]
     if len(missing_parameters) == 0:
@@ -210,7 +196,7 @@ def ensure_parameters_exist(ctx: click.Context, parameters: List[str]) -> None:
     help_records = []
 
     for name in missing_parameters:
-        parameter = next(param for param in ctx.obj if param.name == name)
+        parameter = next(param for param in ctx.command.params if param.name == name)
         help_records.append(parameter.get_help_record(ctx))
 
     help_formatter = click.HelpFormatter(max_width=120)

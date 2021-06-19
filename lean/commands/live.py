@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 
 import click
 
-from lean.click import LeanCommand, PathParameter, is_non_interactive, ensure_parameters_exist
+from lean.click import LeanCommand, PathParameter, ensure_parameters
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
@@ -381,108 +381,104 @@ def live(ctx: click.Context,
 
     lean_config_manager = container.lean_config_manager()
 
-    if is_non_interactive(ctx, ["environment", "brokerage", "data_feed"]):
-        if environment is not None:
-            environment_name = environment
-            lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
-        else:
-            ensure_parameters_exist(ctx, ["brokerage", "data_feed"])
+    if environment is not None:
+        environment_name = environment
+        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
+    elif brokerage is not None or data_feed is not None:
+        ensure_parameters(ctx, ["brokerage", "data_feed"])
 
-            brokerage_configurer = None
-            data_feed_configurer = None
+        brokerage_configurer = None
+        data_feed_configurer = None
 
-            if brokerage == "Paper Trading":
-                brokerage_configurer = PaperTradingBrokerage()
-            elif brokerage == "Interactive Brokers":
-                ensure_parameters_exist(ctx, ["ib_user_name", "ib_account", "ib_password"])
-                brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
-            elif brokerage == "Tradier":
-                ensure_parameters_exist(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
-                brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
-            elif brokerage == "OANDA":
-                ensure_parameters_exist(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
-                brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
-            elif brokerage == "Bitfinex":
-                ensure_parameters_exist(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
-                brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
-            elif brokerage == "Coinbase Pro":
-                ensure_parameters_exist(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
-                brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
-            elif brokerage == "Binance":
-                ensure_parameters_exist(ctx, ["binance_api_key", "binance_api_secret"])
-                brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
-            elif brokerage == "Zerodha":
-                ensure_parameters_exist(ctx, ["zerodha_api_key",
-                                              "zerodha_access_token",
-                                              "zerodha_product_type",
-                                              "zerodha_trading_segment"])
-                brokerage_configurer = ZerodhaBrokerage(zerodha_api_key,
-                                                        zerodha_access_token,
-                                                        zerodha_product_type,
-                                                        zerodha_trading_segment)
+        if brokerage == "Paper Trading":
+            brokerage_configurer = PaperTradingBrokerage()
+        elif brokerage == "Interactive Brokers":
+            ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password"])
+            brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
+        elif brokerage == "Tradier":
+            ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
+        elif brokerage == "OANDA":
+            ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
+        elif brokerage == "Bitfinex":
+            ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
+        elif brokerage == "Coinbase Pro":
+            ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
+        elif brokerage == "Binance":
+            ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
+            brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
+        elif brokerage == "Zerodha":
+            ensure_parameters(ctx, ["zerodha_api_key",
+                                    "zerodha_access_token",
+                                    "zerodha_product_type",
+                                    "zerodha_trading_segment"])
+            brokerage_configurer = ZerodhaBrokerage(zerodha_api_key,
+                                                    zerodha_access_token,
+                                                    zerodha_product_type,
+                                                    zerodha_trading_segment)
 
-            if data_feed == "Interactive Brokers":
-                ensure_parameters_exist(ctx, ["ib_user_name",
-                                              "ib_account",
-                                              "ib_password",
-                                              "ib_enable_delayed_streaming_data"])
-                data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
-                                                                                              ib_account,
-                                                                                              ib_password),
-                                                                  ib_enable_delayed_streaming_data)
-            elif data_feed == "Tradier":
-                ensure_parameters_exist(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
-                data_feed_configurer = TradierDataFeed(TradierBrokerage(tradier_account_id,
-                                                                        tradier_access_token,
-                                                                        tradier_use_sandbox))
-            elif data_feed == "OANDA":
-                ensure_parameters_exist(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
-                data_feed_configurer = OANDADataFeed(OANDABrokerage(oanda_account_id,
-                                                                    oanda_access_token,
-                                                                    oanda_environment))
-            elif data_feed == "Bitfinex":
-                ensure_parameters_exist(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
-                data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
-            elif data_feed == "Coinbase Pro":
-                ensure_parameters_exist(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
-                data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
-                                                                                gdax_api_secret,
-                                                                                gdax_passphrase))
-            elif data_feed == "Binance":
-                ensure_parameters_exist(ctx, ["binance_api_key", "binance_api_secret"])
-                data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
-            elif data_feed == "Zerodha":
-                ensure_parameters_exist(ctx, ["zerodha_api_key",
-                                              "zerodha_access_token",
-                                              "zerodha_product_type",
-                                              "zerodha_trading_segment",
-                                              "zerodha_history_subscription"])
-                data_feed_configurer = ZerodhaDataFeed(ZerodhaBrokerage(zerodha_api_key,
-                                                                        zerodha_access_token,
-                                                                        zerodha_product_type,
-                                                                        zerodha_trading_segment),
-                                                       zerodha_history_subscription)
-            elif data_feed == "IQFeed":
-                ensure_parameters_exist(ctx, ["iqfeed_iqconnect",
-                                              "iqfeed_username",
-                                              "iqfeed_password",
-                                              "iqfeed_product_name",
-                                              "iqfeed_version"])
-                data_feed_configurer = IQFeedDataFeed(iqfeed_iqconnect,
-                                                      iqfeed_username,
-                                                      iqfeed_password,
-                                                      iqfeed_product_name,
-                                                      iqfeed_version)
+        if data_feed == "Interactive Brokers":
+            ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
+            data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
+                                                                                          ib_account,
+                                                                                          ib_password),
+                                                              ib_enable_delayed_streaming_data)
+        elif data_feed == "Tradier":
+            ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            data_feed_configurer = TradierDataFeed(TradierBrokerage(tradier_account_id,
+                                                                    tradier_access_token,
+                                                                    tradier_use_sandbox))
+        elif data_feed == "OANDA":
+            ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            data_feed_configurer = OANDADataFeed(OANDABrokerage(oanda_account_id,
+                                                                oanda_access_token,
+                                                                oanda_environment))
+        elif data_feed == "Bitfinex":
+            ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
+        elif data_feed == "Coinbase Pro":
+            ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
+                                                                            gdax_api_secret,
+                                                                            gdax_passphrase))
+        elif data_feed == "Binance":
+            ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
+            data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
+        elif data_feed == "Zerodha":
+            ensure_parameters(ctx, ["zerodha_api_key",
+                                    "zerodha_access_token",
+                                    "zerodha_product_type",
+                                    "zerodha_trading_segment",
+                                    "zerodha_history_subscription"])
+            data_feed_configurer = ZerodhaDataFeed(ZerodhaBrokerage(zerodha_api_key,
+                                                                    zerodha_access_token,
+                                                                    zerodha_product_type,
+                                                                    zerodha_trading_segment),
+                                                   zerodha_history_subscription)
+        elif data_feed == "IQFeed":
+            ensure_parameters(ctx, ["iqfeed_iqconnect",
+                                    "iqfeed_username",
+                                    "iqfeed_password",
+                                    "iqfeed_product_name",
+                                    "iqfeed_version"])
+            data_feed_configurer = IQFeedDataFeed(iqfeed_iqconnect,
+                                                  iqfeed_username,
+                                                  iqfeed_password,
+                                                  iqfeed_product_name,
+                                                  iqfeed_version)
 
-            environment_name = "lean-cli"
-            lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
+        environment_name = "lean-cli"
+        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
 
-            lean_config["environments"] = {
-                environment_name: _environment_skeleton
-            }
+        lean_config["environments"] = {
+            environment_name: _environment_skeleton
+        }
 
-            brokerage_configurer.configure(lean_config, environment_name)
-            data_feed_configurer.configure(lean_config, environment_name)
+        brokerage_configurer.configure(lean_config, environment_name)
+        data_feed_configurer.configure(lean_config, environment_name)
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
