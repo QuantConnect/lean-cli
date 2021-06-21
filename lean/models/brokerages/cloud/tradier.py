@@ -22,21 +22,36 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class TradierBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Tradier."""
 
-    def __init__(self) -> None:
-        super().__init__("TradierBrokerage", "Tradier (beta)", """
+    def __init__(self, account_id: str, access_token: str, environment: str) -> None:
+        self._account_id = account_id
+        self._access_token = access_token
+        self._environment = environment
+
+    @classmethod
+    def get_id(cls) -> str:
+        return "TradierBrokerage"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "Tradier"
+
+    @classmethod
+    def build(cls, logger: Logger) -> CloudBrokerage:
+        logger.info("""
 Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api).
 The account id is the alpha-numeric code in a dropdown box on that page.
 Your account details are not saved on QuantConnect.
         """.strip())
 
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         account_id = click.prompt("Account id")
         access_token = logger.prompt_password("Access token")
-
         environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
 
+        return TradierBrokerage(account_id, access_token, environment)
+
+    def _get_settings(self) -> Dict[str, str]:
         return {
-            "account": account_id,
-            "token": access_token,
-            "environment": "live" if environment == "real" else "paper"
+            "account": self._account_id,
+            "token": self._access_token,
+            "environment": "live" if self._environment == "real" else "paper"
         }

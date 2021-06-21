@@ -180,18 +180,47 @@ Usage: lean cloud live [OPTIONS] PROJECT
 
   Start live trading for a project in the cloud.
 
-  An interactive prompt will be shown to configure the deployment.
-
   PROJECT must be the name or the id of the project to start live trading for.
 
-  If the project that has to be live traded has been pulled to the local drive with `lean cloud pull` it is possible
-  to use the --push option to push local modifications to the cloud before starting live trading.
+  By default an interactive wizard is shown letting you configure the deployment. If --brokerage is given the command
+  runs in non-interactive mode and the CLI won't prompt for input. In this mode the brokerage-specific options are
+  required, as well as --node, --auto-restart, --notify-order-events and --notify-insights.
 
 Options:
-  --push     Push local modifications to the cloud before starting live trading
-  --open     Automatically open the live results in the browser once the deployment starts
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro]
+                                  The brokerage to use
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
+                                  QuantConnect price data feed
+
+  --tradier-account-id TEXT       Your Tradier account id
+  --tradier-access-token TEXT     Your Tradier access token
+  --tradier-environment [demo|real]
+                                  The environment to run in, demo for the Developer Sandbox, real for live trading
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [demo|real]
+                                  The environment to run in, demo for fxTrade Practice, real for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --gdax-api-key TEXT             Your Coinbase Pro API key
+  --gdax-api-secret TEXT          Your Coinbase Pro API secret
+  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --node TEXT                     The name or id of the live node to run on
+  --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
+  --notify-order-events BOOLEAN   Whether notifications must be sent for order events
+  --notify-insights TEXT          Whether notifications must be sent for emitted insights
+  --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications
+  --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
+                                  configuring webhook-notifications
+
+  --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
+  --push                          Push local modifications to the cloud before starting live trading
+  --open                          Automatically open the live results in the browser once the deployment starts
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_

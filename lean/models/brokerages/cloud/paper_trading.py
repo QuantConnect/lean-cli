@@ -20,10 +20,19 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class PaperTradingBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for paper trading."""
 
-    def __init__(self) -> None:
-        super().__init__("QuantConnectBrokerage", "Paper Trading")
+    @classmethod
+    def get_id(cls) -> str:
+        return "QuantConnectBrokerage"
 
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
+    @classmethod
+    def get_name(cls) -> str:
+        return "Paper Trading"
+
+    @classmethod
+    def build(cls, logger: Logger) -> CloudBrokerage:
+        return PaperTradingBrokerage()
+
+    def _get_settings(self) -> Dict[str, str]:
         return {
             "environment": "paper"
         }

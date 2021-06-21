@@ -22,20 +22,36 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class CoinbaseProBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Coinbase Pro."""
 
-    def __init__(self) -> None:
-        super().__init__("GDAXBrokerage", "Coinbase Pro", """
+    def __init__(self, api_key: str, api_secret: str, passphrase: str) -> None:
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._passphrase = passphrase
+
+    @classmethod
+    def get_id(cls) -> str:
+        return "GDAXBrokerage"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "Coinbase Pro"
+
+    @classmethod
+    def build(cls, logger: Logger) -> CloudBrokerage:
+        logger.info("""
 You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api).
 When creating the key, make sure you authorize it for View and Trading access.
         """.strip())
 
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         api_key = click.prompt("API key")
         api_secret = logger.prompt_password("API secret")
         passphrase = logger.prompt_password("Passphrase")
 
+        return CoinbaseProBrokerage(api_key, api_secret, passphrase)
+
+    def _get_settings(self) -> Dict[str, str]:
         return {
-            "key": api_key,
-            "secret": api_secret,
-            "passphrase": passphrase,
+            "key": self._api_key,
+            "secret": self._api_secret,
+            "passphrase": self._passphrase,
             "environment": "live"
         }

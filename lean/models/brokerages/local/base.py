@@ -49,6 +49,7 @@ class LeanConfigConfigurer(abc.ABC):
 
         :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
+        :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
         """
         raise NotImplementedError()
 

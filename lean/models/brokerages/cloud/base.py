@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import abc
-from typing import Dict, Optional
+from typing import Dict
 
 from lean.components.util.logger import Logger
 
@@ -20,39 +20,54 @@ from lean.components.util.logger import Logger
 class CloudBrokerage(abc.ABC):
     """The CloudBrokerage class is the base class extended for all brokerages supported in the cloud."""
 
-    def __init__(self, id: str, name: str, notes: Optional[str] = None) -> None:
-        """Creates a new BaseBrokerage instance.
+    @classmethod
+    @abc.abstractmethod
+    def get_id(cls) -> str:
+        """Returns the id of the brokerage.
 
-        :param id: the id of the brokerage
-        :param name: the display-friendly name of the brokerage
-        :param notes: notes which need to be shown before prompting for settings
+        :return: the id of this brokerage as it is expected by the live/create API endpoint
         """
-        self.id = id
-        self.name = name
-        self._notes = notes
+        raise NotImplementedError()
 
-    def get_settings(self, logger: Logger) -> Dict[str, str]:
-        """Returns all settings for this brokerage, prompting the user for input when necessary.
+    @classmethod
+    @abc.abstractmethod
+    def get_name(cls) -> str:
+        """Returns the display-friendly name of the brokerage.
 
-        :param logger: the logger to use for printing instructions
+        :return: the display-friendly name of this brokerage that may be shown to users
         """
-        if self._notes is not None:
-            logger.info(self._notes)
+        raise NotImplementedError()
 
-        settings = self._get_settings(logger)
-        settings["id"] = self.id
+    @classmethod
+    @abc.abstractmethod
+    def build(cls, logger: Logger) -> 'CloudBrokerage':
+        """Builds a new instance of this class, prompting the user for input when necessary.
 
+        :param logger: the logger to use
+        :return: a CloudBrokerage instance containing all credentials needed to construct a settings dict
+        """
+        raise NotImplementedError()
+
+    def get_settings(self) -> Dict[str, str]:
+        """Returns all settings for this brokerage.
+
+        :return: the settings to set in the "brokerage" property of the live/create API endpoint
+        """
+        settings = self._get_settings()
+        settings["id"] = self.get_id()
         return settings
 
-    def get_price_data_handler(self) -> str:
-        """Returns the price data feed handler to use."""
-        return "QuantConnectHandler"
-
     @abc.abstractmethod
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
-        """Returns the brokerage-specific settings, prompting the user for input when necessary.
+    def _get_settings(self) -> Dict[str, str]:
+        """Returns all settings for this brokerage, except for the id.
 
-        :param logger: the logger to use when prompting for passwords
-        :return: a dict containing the brokerage-specific settings (all settings except for "id")
+        :return: the settings of this brokerage excluding the id
         """
-        pass
+        raise NotImplementedError()
+
+    def get_price_data_handler(self) -> str:
+        """Returns the price data feed handler to use.
+
+        :return: the value to assign to the "dataHandler" property of the live/create API endpoint
+        """
+        return "QuantConnectHandler"

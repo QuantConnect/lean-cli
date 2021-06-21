@@ -19,10 +19,10 @@ from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.cloud.tradier import TradierBrokerage
 
 all_cloud_brokerages = [
-    PaperTradingBrokerage(),
-    InteractiveBrokersBrokerage(),
-    TradierBrokerage(),
-    OANDABrokerage(),
-    BitfinexBrokerage(),
-    CoinbaseProBrokerage()
+    PaperTradingBrokerage,
+    InteractiveBrokersBrokerage,
+    TradierBrokerage,
+    OANDABrokerage,
+    BitfinexBrokerage,
+    CoinbaseProBrokerage
 ]

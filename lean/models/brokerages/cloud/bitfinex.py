@@ -22,17 +22,32 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class BitfinexBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Bitfinex."""
 
-    def __init__(self) -> None:
-        super().__init__("BitfinexBrokerage", "Bitfinex (beta)", """
+    def __init__(self, api_key: str, secret_key: str) -> None:
+        self._api_key = api_key
+        self._secret_key = secret_key
+
+    @classmethod
+    def get_id(cls) -> str:
+        return "BitfinexBrokerage"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "Bitfinex"
+
+    @classmethod
+    def build(cls, logger: Logger) -> CloudBrokerage:
+        logger.info("""
 Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api).
         """.strip())
 
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")
 
+        return BitfinexBrokerage(api_key, secret_key)
+
+    def _get_settings(self) -> Dict[str, str]:
         return {
-            "key": api_key,
-            "secret": secret_key,
+            "key": self._api_key,
+            "secret": self._secret_key,
             "environment": "live"
         }

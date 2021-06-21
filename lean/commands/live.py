@@ -390,27 +390,27 @@ def live(ctx: click.Context,
         brokerage_configurer = None
         data_feed_configurer = None
 
-        if brokerage == "Paper Trading":
+        if brokerage == PaperTradingBrokerage.get_name():
             brokerage_configurer = PaperTradingBrokerage()
-        elif brokerage == "Interactive Brokers":
+        elif brokerage == InteractiveBrokersBrokerage.get_name():
             ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password"])
             brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
-        elif brokerage == "Tradier":
+        elif brokerage == TradierBrokerage.get_name():
             ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
-        elif brokerage == "OANDA":
+        elif brokerage == OANDABrokerage.get_name():
             ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
             brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
-        elif brokerage == "Bitfinex":
+        elif brokerage == BitfinexBrokerage.get_name():
             ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
-        elif brokerage == "Coinbase Pro":
+        elif brokerage == CoinbaseProBrokerage.get_name():
             ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
             brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
-        elif brokerage == "Binance":
+        elif brokerage == BinanceBrokerage.get_name():
             ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
             brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
-        elif brokerage == "Zerodha":
+        elif brokerage == ZerodhaBrokerage.get_name():
             ensure_parameters(ctx, ["zerodha_api_key",
                                     "zerodha_access_token",
                                     "zerodha_product_type",
@@ -420,34 +420,34 @@ def live(ctx: click.Context,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
 
-        if data_feed == "Interactive Brokers":
+        if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
             data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
                                                                                           ib_account,
                                                                                           ib_password),
                                                               ib_enable_delayed_streaming_data)
-        elif data_feed == "Tradier":
+        elif data_feed == TradierDataFeed.get_name():
             ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             data_feed_configurer = TradierDataFeed(TradierBrokerage(tradier_account_id,
                                                                     tradier_access_token,
                                                                     tradier_use_sandbox))
-        elif data_feed == "OANDA":
+        elif data_feed == OANDADataFeed.get_name():
             ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
             data_feed_configurer = OANDADataFeed(OANDABrokerage(oanda_account_id,
                                                                 oanda_access_token,
                                                                 oanda_environment))
-        elif data_feed == "Bitfinex":
+        elif data_feed == BitfinexDataFeed.get_name():
             ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
             data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
-        elif data_feed == "Coinbase Pro":
+        elif data_feed == CoinbaseProDataFeed.get_name():
             ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
             data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
                                                                             gdax_api_secret,
                                                                             gdax_passphrase))
-        elif data_feed == "Binance":
+        elif data_feed == BinanceDataFeed.get_name():
             ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
-        elif data_feed == "Zerodha":
+        elif data_feed == ZerodhaDataFeed.get_name():
             ensure_parameters(ctx, ["zerodha_api_key",
                                     "zerodha_access_token",
                                     "zerodha_product_type",
@@ -458,7 +458,7 @@ def live(ctx: click.Context,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
-        elif data_feed == "IQFeed":
+        elif data_feed == IQFeedDataFeed.get_name():
             ensure_parameters(ctx, ["iqfeed_iqconnect",
                                     "iqfeed_username",
                                     "iqfeed_password",

@@ -66,4 +66,5 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
 
 if platform.system() == "Windows" or os.environ.get("__README__", "false") == "true":
     all_local_data_feeds.append(IQFeedDataFeed)
-    local_brokerage_data_feeds[PaperTradingBrokerage].append(IQFeedDataFeed)
+    for key in local_brokerage_data_feeds.keys():
+        local_brokerage_data_feeds[key].append(IQFeedDataFeed)

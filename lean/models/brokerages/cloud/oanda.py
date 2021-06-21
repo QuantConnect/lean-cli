@@ -22,22 +22,37 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class OANDABrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for OANDA."""
 
-    def __init__(self) -> None:
-        super().__init__("OandaBrokerage", "OANDA", """
+    def __init__(self, account_id: str, access_token: str, environment: str) -> None:
+        self._account_id = account_id
+        self._access_token = access_token
+        self._environment = environment
+
+    @classmethod
+    def get_id(cls) -> str:
+        return "OandaBrokerage"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "OANDA"
+
+    @classmethod
+    def build(cls, logger: Logger) -> CloudBrokerage:
+        logger.info("""
 Your OANDA account number can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/).
 It follows the following format: ###-###-######-###.
 You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token).
 Your account details are not saved on QuantConnect.
         """.strip())
 
-    def _get_settings(self, logger: Logger) -> Dict[str, str]:
         account_id = click.prompt("Account id")
         access_token = logger.prompt_password("Access token")
-
         environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
 
+        return OANDABrokerage(account_id, access_token, environment)
+
+    def _get_settings(self) -> Dict[str, str]:
         return {
-            "account": account_id,
-            "key": access_token,
-            "environment": "live" if environment == "real" else "paper"
+            "account": self._account_id,
+            "key": self._access_token,
+            "environment": "live" if self._environment == "real" else "paper"
         }
