@@ -300,20 +300,20 @@ def live(ctx: click.Context,
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
 
-    if brokerage is None:
-        logger.info(f"Brokerage: {brokerage_instance.get_name()}")
-        logger.info(f"Project id: {cloud_project.projectId}")
-        logger.info(f"Environment: {brokerage_settings['environment'].title()}")
-        logger.info(f"Server name: {live_node.name}")
-        logger.info(f"Server type: {live_node.sku}")
-        logger.info(f"Data provider: {price_data_handler.replace('Handler', '')}")
-        logger.info(f"LEAN version: {cloud_project.leanVersionId}")
-        logger.info(f"Order event notifications: {'Yes' if notify_order_events else 'No'}")
-        logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")
-        if notify_order_events or notify_insights:
-            _log_notification_methods(notify_methods)
-        logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
+    logger.info(f"Brokerage: {brokerage_instance.get_name()}")
+    logger.info(f"Project id: {cloud_project.projectId}")
+    logger.info(f"Environment: {brokerage_settings['environment'].title()}")
+    logger.info(f"Server name: {live_node.name}")
+    logger.info(f"Server type: {live_node.sku}")
+    logger.info(f"Data provider: {price_data_handler.replace('Handler', '')}")
+    logger.info(f"LEAN version: {cloud_project.leanVersionId}")
+    logger.info(f"Order event notifications: {'Yes' if notify_order_events else 'No'}")
+    logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")
+    if notify_order_events or notify_insights:
+        _log_notification_methods(notify_methods)
+    logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
+    if brokerage is None:
         click.confirm(f"Are you sure you want to start live trading for project '{cloud_project.name}'?",
                       default=False,
                       abort=True)

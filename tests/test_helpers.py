@@ -24,15 +24,13 @@ def create_fake_lean_cli_directory() -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project."""
     (Path.cwd() / "data").mkdir()
 
-    with open(Path.cwd() / "lean.json", "w+") as config_file:
-        config_file.write("""
+    files = {
+        (Path.cwd() / "lean.json"): """
 {
     // data-folder documentation
     "data-folder": "data"
 }
-        """)
-
-    files = {
+        """,
         (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME$", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
         (Path.cwd() / "Python Project" / "config.json"): json.dumps({

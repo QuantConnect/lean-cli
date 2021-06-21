@@ -38,26 +38,25 @@ from lean.models.logger import Option
 # Brokerage -> required configuration properties
 _required_brokerage_properties = {
     "InteractiveBrokersBrokerage": ["ib-account", "ib-user-name", "ib-password",
-                                    "ib-agent-description", "ib-trading-mode", "ib-enable-delayed-streaming-data"],
+                                    "ib-agent-description", "ib-trading-mode"],
     "TradierBrokerage": ["tradier-use-sandbox", "tradier-account-id", "tradier-access-token"],
     "OandaBrokerage": ["oanda-environment", "oanda-access-token", "oanda-account-id"],
     "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
-    "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key",
-                         "zerodha-product-type", "zerodha-trading-segment", "zerodha-history-subscription"]
+    "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"]
 }
 
 # Data queue handler -> required configuration properties
 _required_data_queue_handler_properties = {
     "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage":
-        _required_brokerage_properties["InteractiveBrokersBrokerage"],
+        _required_brokerage_properties["InteractiveBrokersBrokerage"] + ["ib-enable-delayed-streaming-data"],
     "TradierBrokerage": _required_brokerage_properties["TradierBrokerage"],
     "OandaBrokerage": _required_brokerage_properties["OandaBrokerage"],
     "GDAXDataQueueHandler": _required_brokerage_properties["GDAXBrokerage"],
     "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
-    "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"],
+    "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"] + ["zerodha-history-subscription"],
     "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"]
 }
 
@@ -373,6 +372,10 @@ def live(ctx: click.Context,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    # Reset _get_default_value_lean_config so we reload the Lean config containing the defaults in between tests
+    global _get_default_value_lean_config
+    _get_default_value_lean_config = None
+
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 

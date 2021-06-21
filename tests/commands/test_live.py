@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
+import json
 from pathlib import Path
 from typing import Optional
 from unittest import mock
@@ -19,6 +21,7 @@ import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
+import lean.models.brokerages.local
 from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -222,6 +225,245 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
     assert result.exit_code != 0
 
     lean_runner.run_lean.assert_not_called()
+
+
+brokerage_required_options = {
+    "Paper Trading": {},
+    "Interactive Brokers": {
+        "ib-user-name": "trader777",
+        "ib-account": "DU1234567",
+        "ib-password": "hunter2"
+    },
+    "Tradier": {
+        "tradier-account-id": "123",
+        "tradier-access-token": "456",
+        "tradier-use-sandbox": "yes"
+    },
+    "OANDA": {
+        "oanda-account-id": "123",
+        "oanda-access-token": "456",
+        "oanda-environment": "Practice"
+    },
+    "Bitfinex": {
+        "bitfinex-api-key": "123",
+        "bitfinex-api-secret": "456",
+    },
+    "Coinbase Pro": {
+        "gdax-api-key": "123",
+        "gdax-api-secret": "456",
+        "gdax-passphrase": "789"
+    },
+    "Binance": {
+        "binance-api-key": "123",
+        "binance-api-secret": "456"
+    },
+    "Zerodha": {
+        "zerodha-api-key": "123",
+        "zerodha-access-token": "456",
+        "zerodha-product-type": "MIS",
+        "zerodha-trading-segment": "EQUITY"
+    }
+}
+
+data_feed_required_options = {
+    "Interactive Brokers": {
+        **brokerage_required_options["Interactive Brokers"],
+        "ib-enable-delayed-streaming-data": "yes"
+    },
+    "Tradier": brokerage_required_options["Tradier"],
+    "OANDA": brokerage_required_options["OANDA"],
+    "Bitfinex": brokerage_required_options["Bitfinex"],
+    "Coinbase Pro": brokerage_required_options["Coinbase Pro"],
+    "Binance": brokerage_required_options["Binance"],
+    "Zerodha": {
+        **brokerage_required_options["Zerodha"],
+        "zerodha-history-subscription": "yes"
+    }
+}
+
+
+@pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
+def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: str) -> None:
+    create_fake_lean_cli_directory()
+
+    required_options = brokerage_required_options[brokerage].items()
+    for length in range(len(required_options)):
+        for current_options in itertools.combinations(required_options, length):
+            docker_manager = mock.Mock()
+            container.docker_manager.override(providers.Object(docker_manager))
+
+            lean_runner = mock.Mock()
+            container.lean_runner.override(providers.Object(lean_runner))
+
+            options = []
+
+            for key, value in current_options:
+                options.extend([f"--{key}", value])
+
+            if brokerage == "Binance":
+                data_feed = "Bitfinex"
+                options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
+            else:
+                data_feed = "Binance"
+                options.extend(["--binance-api-key", "123", "--binance-api-secret", "456"])
+
+            result = CliRunner().invoke(lean, ["live", "Python Project",
+                                               "--brokerage", brokerage,
+                                               "--data-feed", data_feed,
+                                               *options])
+
+            assert result.exit_code != 0
+
+            lean_runner.run_lean.assert_not_called()
+
+
+@pytest.mark.parametrize("data_feed", data_feed_required_options.keys())
+def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: str) -> None:
+    create_fake_lean_cli_directory()
+
+    required_options = data_feed_required_options[data_feed].items()
+    for length in range(len(required_options)):
+        for current_options in itertools.combinations(required_options, length):
+            docker_manager = mock.Mock()
+            container.docker_manager.override(providers.Object(docker_manager))
+
+            lean_runner = mock.Mock()
+            container.lean_runner.override(providers.Object(lean_runner))
+
+            options = []
+
+            for key, value in current_options:
+                options.extend([f"--{key}", value])
+
+            result = CliRunner().invoke(lean, ["live", "Python Project",
+                                               "--brokerage", "Paper Trading",
+                                               "--data-feed", data_feed,
+                                               *options])
+
+            assert result.exit_code != 0
+
+            lean_runner.run_lean.assert_not_called()
+
+
+@pytest.mark.parametrize("brokerage,data_feed",
+                         itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
+def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    options = []
+
+    for key, value in brokerage_required_options[brokerage].items():
+        options.extend([f"--{key}", value])
+
+    for key, value in data_feed_required_options[data_feed].items():
+        options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["live", "Python Project",
+                                       "--brokerage", brokerage,
+                                       "--data-feed", data_feed,
+                                       *options])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "lean-cli",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None)
+
+
+@pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
+def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(brokerage: str) -> None:
+    create_fake_lean_cli_directory()
+
+    required_options = brokerage_required_options[brokerage].items()
+    for length in range(len(required_options)):
+        for current_options in itertools.combinations(required_options, length):
+            docker_manager = mock.Mock()
+            container.docker_manager.override(providers.Object(docker_manager))
+
+            lean_runner = mock.Mock()
+            container.lean_runner.override(providers.Object(lean_runner))
+
+            options = []
+
+            for key, value in current_options:
+                options.extend([f"--{key}", value])
+
+            missing_options_config = {key: value for key, value in set(required_options) - set(current_options)}
+            with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+                file.write(json.dumps({
+                    **missing_options_config,
+                    "data-folder": "data"
+                }))
+
+            if brokerage == "Binance":
+                data_feed = "Bitfinex"
+                options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
+            else:
+                data_feed = "Binance"
+                options.extend(["--binance-api-key", "123", "--binance-api-secret", "456"])
+
+            result = CliRunner().invoke(lean, ["live", "Python Project",
+                                               "--brokerage", brokerage,
+                                               "--data-feed", data_feed,
+                                               *options])
+
+            assert result.exit_code == 0
+
+            lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                         "lean-cli",
+                                                         Path("Python Project/main.py").resolve(),
+                                                         mock.ANY,
+                                                         ENGINE_IMAGE,
+                                                         None)
+
+
+@pytest.mark.parametrize("data_feed", data_feed_required_options.keys())
+def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(data_feed: str) -> None:
+    create_fake_lean_cli_directory()
+
+    required_options = data_feed_required_options[data_feed].items()
+    for length in range(len(required_options)):
+        for current_options in itertools.combinations(required_options, length):
+            docker_manager = mock.Mock()
+            container.docker_manager.override(providers.Object(docker_manager))
+
+            lean_runner = mock.Mock()
+            container.lean_runner.override(providers.Object(lean_runner))
+
+            options = []
+
+            for key, value in current_options:
+                options.extend([f"--{key}", value])
+
+            missing_options_config = {key: value for key, value in set(required_options) - set(current_options)}
+            with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+                file.write(json.dumps({
+                    **missing_options_config,
+                    "data-folder": "data"
+                }))
+
+            result = CliRunner().invoke(lean, ["live", "Python Project",
+                                               "--brokerage", "Paper Trading",
+                                               "--data-feed", data_feed,
+                                               *options])
+
+            assert result.exit_code == 0
+
+            lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                         "lean-cli",
+                                                         Path("Python Project/main.py").resolve(),
+                                                         mock.ANY,
+                                                         ENGINE_IMAGE,
+                                                         None)
 
 
 def test_live_forces_update_when_update_option_given() -> None:

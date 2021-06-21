@@ -220,7 +220,7 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
 
 @mock.patch("platform.system")
 @pytest.mark.parametrize("os,host_expected", [("Linux", True), ("Windows", False), ("Darwin", False)])
-def test_run_lean_adds_internal_host_when_running_linux(system, os: str, host_expected: bool) -> None:
+def test_run_lean_adds_internal_host_when_running_linux(system: mock.Mock, os: str, host_expected: bool) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
