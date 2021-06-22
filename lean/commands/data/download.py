@@ -273,7 +273,7 @@ def _ensure_option(name: str, value: T, allowed_values: List[T], to_string: Call
         if to_string(value).lower() == to_string(v).lower():
             return v
 
-    options = ", ".join(to_string(value).lower() for value in allowed_values)
+    options = ", ".join(to_string(value) for value in allowed_values)
     raise RuntimeError(f"The --{name.replace('_', '-')} option must be one of the following: {options}")
 
 
@@ -297,17 +297,17 @@ def _get_start_end(ctx: click.Context) -> Tuple[Optional[datetime], Optional[dat
               help="The product type to download")
 @click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
 @click.option("--data-type",
-              type=click.Choice([k.lower() for k in DataType.__members__.keys()], case_sensitive=False),
+              type=click.Choice(DataType.__members__.keys(), case_sensitive=False),
               callback=lambda ctx, value: DataType.by_name(value) if value is not None else None,
               help="The type of data that you want to download")
 @click.option("--market", type=str, help="The market of the data that you want to download")
 @click.option("--ticker", type=str, help="The ticker of the data that you want to download")
 @click.option("--resolution",
-              type=click.Choice([k.lower() for k in QCResolution.__members__.keys()], case_sensitive=False),
+              type=click.Choice(QCResolution.__members__.keys(), case_sensitive=False),
               callback=lambda ctx, value: QCResolution.by_name(value) if value is not None else None,
               help="The resolution of the data that you want to download")
 @click.option("--option-style",
-              type=click.Choice([k.lower() for k in OptionStyle.__members__.keys()], case_sensitive=False),
+              type=click.Choice(OptionStyle.__members__.keys(), case_sensitive=False),
               callback=lambda ctx, value: OptionStyle.by_name(value) if value is not None else None,
               help="The option style of the data that you want to download")
 @click.option("--start",

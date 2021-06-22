@@ -446,13 +446,13 @@ Options:
   --product [CFD|Crypto|Equity|Equity Option|Forex|Future|CBOE Volatility Index Pricing|Federal Reserve Economics Data|SEC Filings|US Treasury Yield Curve Rates|US Energy Information Administration Data]
                                   The product type to download
   --organization TEXT             The name or id of the organization to purchase and download data with
-  --data-type [trade|quote|openinterest|margins]
+  --data-type [Trade|Quote|OpenInterest|Margins]
                                   The type of data that you want to download
   --market TEXT                   The market of the data that you want to download
   --ticker TEXT                   The ticker of the data that you want to download
-  --resolution [tick|second|minute|hour|daily]
+  --resolution [Tick|Second|Minute|Hour|Daily]
                                   The resolution of the data that you want to download
-  --option-style [american|european]
+  --option-style [American|European]
                                   The option style of the data that you want to download
   --start [yyyyMMdd]              The start date of the data that you want to download (ignore for hourly and daily
                                   data)
