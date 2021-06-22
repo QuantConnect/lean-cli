@@ -182,27 +182,36 @@ class DateParameter(click.ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
-def ensure_parameters(ctx: click.Context, parameters: List[str]) -> None:
-    """Ensures certain parameters have values, raises an error if not.
+def ensure_options(ctx: click.Context, options: List[str]) -> None:
+    """Ensures certain options have values, raises an error if not.
 
     :param ctx: the click context of the invocation
-    :param parameters: the parameters that must have values
+    :param options: the Python names of the options that must have values
     """
-    missing_parameters = [param for param in ctx.params.keys() if ctx.params[param] is None and param in parameters]
-    if len(missing_parameters) == 0:
+    missing_options = []
+    for key, value in ctx.params.items():
+        has_value = value is not None
+
+        if isinstance(value, tuple) and len(value) == 0:
+            has_value = False
+
+        if not has_value and key in options:
+            missing_options.append(key)
+
+    if len(missing_options) == 0:
         return
 
-    missing_parameters = sorted(missing_parameters, key=lambda param: parameters.index(param))
+    missing_options = sorted(missing_options, key=lambda param: options.index(param))
     help_records = []
 
-    for name in missing_parameters:
-        parameter = next(param for param in ctx.command.params if param.name == name)
-        help_records.append(parameter.get_help_record(ctx))
+    for name in missing_options:
+        option = next(param for param in ctx.command.params if param.name == name)
+        help_records.append(option.get_help_record(ctx))
 
     help_formatter = click.HelpFormatter(max_width=120)
     help_formatter.write_dl(help_records)
 
     raise RuntimeError(f"""
-You are missing the following parameter{"s" if len(missing_parameters) > 1 else ""}:
+You are missing the following option{"s" if len(missing_options) > 1 else ""}:
 {''.join(help_formatter.buffer)}
     """.strip())

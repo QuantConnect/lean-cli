@@ -20,7 +20,7 @@ import click
 from rich import box
 from rich.table import Table
 
-from lean.click import LeanCommand, ensure_parameters, DateParameter
+from lean.click import LeanCommand, ensure_options, DateParameter
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCResolution
 from lean.models.logger import Option
@@ -287,7 +287,7 @@ def _get_start_end(ctx: click.Context) -> Tuple[Optional[datetime], Optional[dat
     if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
         return None, None
 
-    ensure_parameters(ctx, ["start", "end"])
+    ensure_options(ctx, ["start", "end"])
     return ctx.params["start"], ctx.params["end"]
 
 
@@ -350,7 +350,7 @@ def download(ctx: click.Context,
     is_interactive = product is None and organization is None
 
     if not is_interactive:
-        ensure_parameters(ctx, ["product", "organization"])
+        ensure_options(ctx, ["product", "organization"])
 
         api_client = container.api_client()
 
@@ -365,13 +365,13 @@ def download(ctx: click.Context,
         products = []
 
         if product == CFDProduct.get_name():
-            ensure_parameters(ctx, ["ticker", "resolution"])
+            ensure_options(ctx, ["ticker", "resolution"])
 
             start, end = _get_start_end(ctx)
 
             products.append(CFDProduct(DataType.Quote, "Oanda", ticker, resolution, start, end))
         elif product == CryptoProduct.get_name():
-            ensure_parameters(ctx, ["data_type", "market", "ticker", "resolution"])
+            ensure_options(ctx, ["data_type", "market", "ticker", "resolution"])
 
             data_type = _ensure_option("data_type", data_type, [DataType.Trade, DataType.Quote], lambda d: d.name)
             market = _ensure_option("market", market, ["GDAX", "Bitfinex"])
@@ -381,7 +381,7 @@ def download(ctx: click.Context,
         elif product == EquityProduct.get_name():
             EquityProduct.ensure_security_master_subscription(selected_organization)
 
-            ensure_parameters(ctx, ["data_type", "ticker", "resolution"])
+            ensure_options(ctx, ["data_type", "ticker", "resolution"])
 
             data_type = _ensure_option("data_type", data_type, [DataType.Trade, DataType.Quote], lambda d: d.name)
             if data_type == DataType.Quote:
@@ -395,7 +395,7 @@ def download(ctx: click.Context,
         elif product == EquityOptionProduct.get_name():
             EquityOptionProduct.ensure_security_master_subscription(selected_organization)
 
-            ensure_parameters(ctx, ["data_type", "option_style", "ticker"])
+            ensure_options(ctx, ["data_type", "option_style", "ticker"])
             data_type = _ensure_option("data_type",
                                        data_type,
                                        [DataType.Trade, DataType.Quote, DataType.OpenInterest],
@@ -405,30 +405,30 @@ def download(ctx: click.Context,
             products.append(
                 EquityOptionProduct(data_type, "USA", ticker, QCResolution.Minute, option_style, start, end))
         elif product == ForexProduct.get_name():
-            ensure_parameters(ctx, ["data_type", "ticker", "resolution"])
+            ensure_options(ctx, ["data_type", "ticker", "resolution"])
 
             start, end = _get_start_end(ctx)
 
             products.append(ForexProduct(DataType.Quote, "Oanda", ticker, resolution, start, end))
         elif product == FutureProduct.get_name():
-            ensure_parameters(ctx, ["market", "ticker"])
+            ensure_options(ctx, ["market", "ticker"])
 
             market = _ensure_option("market", market, ["CBOE", "CBOT", "CME", "COMEX", "HKFE", "ICE", "NYMEX", "SGX"])
 
             products.append(FutureProduct(DataType.Margins, market, ticker, QCResolution.Daily, None, None))
         elif product == CBOEProduct.get_name():
-            ensure_parameters(ctx, ["ticker"])
+            ensure_options(ctx, ["ticker"])
             products.append(CBOEProduct(ticker))
         elif product == FREDProduct.get_name():
-            ensure_parameters(ctx, ["ticker"])
+            ensure_options(ctx, ["ticker"])
             products.append(FREDProduct(FREDProduct.variables.get(ticker, ticker)))
         elif product == SECProduct.get_name():
-            ensure_parameters(ctx, ["report_type", "ticker", "start", "end"])
+            ensure_options(ctx, ["report_type", "ticker", "start", "end"])
             products.append(SECProduct(report_type, ticker, start, end))
         elif product == USTreasuryProduct.get_name():
             products.append(USTreasuryProduct())
         elif product == USEnergyProduct.get_name():
-            ensure_parameters(ctx, ["ticker"])
+            ensure_options(ctx, ["ticker"])
             products.append(USEnergyProduct(USEnergyProduct.variables.get(ticker, ticker)))
 
         container.logger().info("Data that will be purchased and downloaded:")

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import itertools
+import re
 from typing import List, Tuple
 
 import click
@@ -34,6 +35,33 @@ class NodeType(WrappedBaseModel):
     default_nodes: int
 
 
+# The nodes that are available in the cloud
+# Copied from ViewsOptimization.NodeTypes in js/views/ViewsOptimization.js
+available_nodes = [
+    NodeType(name="O2-8",
+             ram=8,
+             cores=2,
+             price=0.15,
+             min_nodes=1,
+             max_nodes=24,
+             default_nodes=12),
+    NodeType(name="O4-12",
+             ram=12,
+             cores=4,
+             price=0.3,
+             min_nodes=1,
+             max_nodes=12,
+             default_nodes=6),
+    NodeType(name="O8-16",
+             ram=16,
+             cores=8,
+             price=0.6,
+             min_nodes=1,
+             max_nodes=6,
+             default_nodes=3)
+]
+
+
 class OptimizerConfigManager:
     """The OptimizationConfigurer contains methods to interactively configure parts of the optimizer."""
 
@@ -50,32 +78,6 @@ class OptimizerConfigManager:
             ("TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn", "Compounding Annual Return"),
             ("TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio", "Probabilistic Sharpe Ratio"),
             ("TotalPerformance.PortfolioStatistics.Drawdown", "Drawdown")
-        ]
-
-        # The nodes that are available in the cloud
-        # Copied from ViewsOptimization.NodeTypes in js/views/ViewsOptimization.js
-        self._available_nodes = [
-            NodeType(name="O2-8",
-                     ram=8,
-                     cores=2,
-                     price=0.15,
-                     min_nodes=1,
-                     max_nodes=24,
-                     default_nodes=12),
-            NodeType(name="O4-12",
-                     ram=12,
-                     cores=4,
-                     price=0.3,
-                     min_nodes=1,
-                     max_nodes=12,
-                     default_nodes=6),
-            NodeType(name="O8-16",
-                     ram=16,
-                     cores=8,
-                     price=0.6,
-                     min_nodes=1,
-                     max_nodes=6,
-                     default_nodes=3)
         ]
 
     def configure_strategy(self, cloud: bool) -> str:
@@ -175,7 +177,7 @@ class OptimizerConfigManager:
         """
         node_options = [
             Option(id=node, label=f"{node.name} ({node.cores} cores, {node.ram} GB RAM) @ ${node.price:.2f} per hour")
-            for node in self._available_nodes
+            for node in available_nodes
         ]
 
         node = self._logger.prompt_list("Select the optimization node type", node_options)
@@ -184,3 +186,58 @@ class OptimizerConfigManager:
                                       default=node.default_nodes)
 
         return node, parallel_nodes
+
+    def parse_target(self, target: str) -> str:
+        """Parses a target given by the user.
+
+        Converts a target like "Sharpe Ratio" into "TotalPerformance.PortfolioStatistics.SharpeRatio".
+
+        :param target: the target given by the user
+        :return: the target in a way it can be passed to the optimizer
+        """
+        if "." in target:
+            return target
+
+        # Turn "SharpeRatio" into "Sharpe Ratio" so the title() call doesn't lowercase the R
+        target = re.sub(r"([A-Z])", r" \1", target)
+
+        return f"TotalPerformance.PortfolioStatistics.{target.title().replace(' ', '')}"
+
+    def parse_parameters(self, parameters: List[Tuple[str, float, float, float]]) -> List[OptimizationParameter]:
+        """Parses a list of parameters given by the user into a list of parameter objects.
+
+        :param parameters: the parameters given by the user
+        :return: the parameters the user gave as OptimizationParameter objects
+        """
+        parsed_parameters = []
+
+        for name, minimum, maximum, step in parameters:
+            parsed_parameters.append(OptimizationParameter(name=name, min=minimum, max=maximum, step=step))
+
+        return parsed_parameters
+
+    def parse_constraints(self, constraints: List[str]) -> List[OptimizationConstraint]:
+        """Parses a list of constraints given by the user into a list of constraint objects.
+
+        :param constraints: the constraints given by the user
+        :return: the constraints the user gave as OptimizationConstraint objects
+        """
+        parsed_constraints = []
+
+        for constraint in constraints:
+            parts = constraint.rsplit(" ", 2)
+
+            operator = {
+                ">": OptimizationConstraintOperator.Greater,
+                "<": OptimizationConstraintOperator.Less,
+                ">=": OptimizationConstraintOperator.GreaterOrEqual,
+                "<=": OptimizationConstraintOperator.LessOrEqual,
+                "==": OptimizationConstraintOperator.Equals,
+                "!=": OptimizationConstraintOperator.NotEqual
+            }[parts[1]]
+
+            parsed_constraints.append(OptimizationConstraint(**{"target": self.parse_target(parts[0]),
+                                                                "operator": operator,
+                                                                "target-value": float(parts[2])}))
+
+        return parsed_constraints

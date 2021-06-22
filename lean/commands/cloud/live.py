@@ -16,7 +16,7 @@ from typing import List, Tuple, Optional
 
 import click
 
-from lean.click import LeanCommand, ensure_parameters
+from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.container import container
@@ -245,26 +245,26 @@ def live(ctx: click.Context,
     finished_compile = cloud_runner.compile_project(cloud_project)
 
     if brokerage is not None:
-        ensure_parameters(ctx, ["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
+        ensure_options(ctx, ["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = None
 
         if brokerage == PaperTradingBrokerage.get_name():
             brokerage_instance = PaperTradingBrokerage()
         elif brokerage == InteractiveBrokersBrokerage.get_name():
-            ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_data_feed"])
+            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_data_feed"])
             brokerage_instance = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password, ib_data_feed)
         elif brokerage == TradierBrokerage.get_name():
-            ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_environment"])
+            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_environment"])
             brokerage_instance = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_environment)
         elif brokerage == OANDABrokerage.get_name():
-            ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
             brokerage_instance = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
         elif brokerage == BitfinexBrokerage.get_name():
-            ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_instance = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
             brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)

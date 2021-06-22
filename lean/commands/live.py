@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 
 import click
 
-from lean.click import LeanCommand, PathParameter, ensure_parameters
+from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
@@ -389,7 +389,7 @@ def live(ctx: click.Context,
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
     elif brokerage is not None or data_feed is not None:
-        ensure_parameters(ctx, ["brokerage", "data_feed"])
+        ensure_options(ctx, ["brokerage", "data_feed"])
 
         brokerage_configurer = None
         data_feed_configurer = None
@@ -397,77 +397,77 @@ def live(ctx: click.Context,
         if brokerage == PaperTradingBrokerage.get_name():
             brokerage_configurer = PaperTradingBrokerage()
         elif brokerage == InteractiveBrokersBrokerage.get_name():
-            ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password"])
+            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password"])
             brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
         elif brokerage == TradierBrokerage.get_name():
-            ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
         elif brokerage == OANDABrokerage.get_name():
-            ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
             brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
         elif brokerage == BitfinexBrokerage.get_name():
-            ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
             brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
         elif brokerage == BinanceBrokerage.get_name():
-            ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
+            ensure_options(ctx, ["binance_api_key", "binance_api_secret"])
             brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
         elif brokerage == ZerodhaBrokerage.get_name():
-            ensure_parameters(ctx, ["zerodha_api_key",
-                                    "zerodha_access_token",
-                                    "zerodha_product_type",
-                                    "zerodha_trading_segment"])
+            ensure_options(ctx, ["zerodha_api_key",
+                                 "zerodha_access_token",
+                                 "zerodha_product_type",
+                                 "zerodha_trading_segment"])
             brokerage_configurer = ZerodhaBrokerage(zerodha_api_key,
                                                     zerodha_access_token,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
-            ensure_parameters(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
+            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
             data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
                                                                                           ib_account,
                                                                                           ib_password),
                                                               ib_enable_delayed_streaming_data)
         elif data_feed == TradierDataFeed.get_name():
-            ensure_parameters(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             data_feed_configurer = TradierDataFeed(TradierBrokerage(tradier_account_id,
                                                                     tradier_access_token,
                                                                     tradier_use_sandbox))
         elif data_feed == OANDADataFeed.get_name():
-            ensure_parameters(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
             data_feed_configurer = OANDADataFeed(OANDABrokerage(oanda_account_id,
                                                                 oanda_access_token,
                                                                 oanda_environment))
         elif data_feed == BitfinexDataFeed.get_name():
-            ensure_parameters(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
             data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
         elif data_feed == CoinbaseProDataFeed.get_name():
-            ensure_parameters(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
             data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
                                                                             gdax_api_secret,
                                                                             gdax_passphrase))
         elif data_feed == BinanceDataFeed.get_name():
-            ensure_parameters(ctx, ["binance_api_key", "binance_api_secret"])
+            ensure_options(ctx, ["binance_api_key", "binance_api_secret"])
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
         elif data_feed == ZerodhaDataFeed.get_name():
-            ensure_parameters(ctx, ["zerodha_api_key",
-                                    "zerodha_access_token",
-                                    "zerodha_product_type",
-                                    "zerodha_trading_segment",
-                                    "zerodha_history_subscription"])
+            ensure_options(ctx, ["zerodha_api_key",
+                                 "zerodha_access_token",
+                                 "zerodha_product_type",
+                                 "zerodha_trading_segment",
+                                 "zerodha_history_subscription"])
             data_feed_configurer = ZerodhaDataFeed(ZerodhaBrokerage(zerodha_api_key,
                                                                     zerodha_access_token,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
         elif data_feed == IQFeedDataFeed.get_name():
-            ensure_parameters(ctx, ["iqfeed_iqconnect",
-                                    "iqfeed_username",
-                                    "iqfeed_password",
-                                    "iqfeed_product_name",
-                                    "iqfeed_version"])
+            ensure_options(ctx, ["iqfeed_iqconnect",
+                                 "iqfeed_username",
+                                 "iqfeed_password",
+                                 "iqfeed_product_name",
+                                 "iqfeed_version"])
             data_feed_configurer = IQFeedDataFeed(iqfeed_iqconnect,
                                                   iqfeed_username,
                                                   iqfeed_password,

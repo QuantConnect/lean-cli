@@ -235,18 +235,35 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
 
   Optimize a project in the cloud.
 
-  An interactive prompt will be shown to configure the optimizer.
-
   PROJECT must be the name or id of the project to optimize.
+
+  An interactive prompt will be shown to configure the optimizer. If --target is given the command runs in non-
+  interactive mode. In this mode the CLI does not prompt for input and the following options become required:
+  --target, --target-direction, --parameter, --node and --parallel-nodes.
+
+  In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
+  - --parameter <name> <min value> <max value> <step size>
+  - --parameter my-first-parameter 1 10 0.5 --parameter my-second-parameter 20 30 5
+
+  In non-interactive mode the --constraint option can be provided multiple times to configure multiple constraints:
+  - --constraint "<statistic> <operator> <value>"
+  - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
   If the project that has to be optimized has been pulled to the local drive with `lean cloud pull` it is possible to
   use the --push option to push local modifications to the cloud before running the optimization.
 
 Options:
-  --name TEXT  The name of the optimization (a random one is generated if not specified)
-  --push       Push local modifications to the cloud before starting the optimization
-  --verbose    Enable debug logging
-  --help       Show this message and exit.
+  --target TEXT                   The target statistic of the optimization
+  --target-direction [min|max]    Whether the target must be minimized or maximized
+  --parameter <TEXT FLOAT FLOAT FLOAT>...
+                                  The 'parameter min max step' pairs configuring the parameters to optimize
+  --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
+  --node [O2-8|O4-12|O8-16]       The node type to run the optimization on
+  --parallel-nodes INTEGER        The number of nodes that may be run in parallel
+  --name TEXT                     The name of the optimization (a random one is generated if not specified)
+  --push                          Push local modifications to the cloud before starting the optimization
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/optimize.py](lean/commands/cloud/optimize.py)_
@@ -722,23 +739,42 @@ Usage: lean optimize [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
+  By default an interactive wizard is shown letting you configure the optimizer. If --optimizer-config or --strategy
+  is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input.
+
   The --optimizer-config option can be used to specify the configuration to run the optimizer with.
   When using the option it should point to a file like this (the algorithm-* properties should be omitted):
   https://github.com/QuantConnect/Lean/blob/master/Optimizer.Launcher/config.json
 
-  When --optimizer-config is not set, an interactive prompt will be shown to configure the optimizer.
+  If --strategy is given the optimizer configuration is read from the given options. In this case --strategy,
+  --target, --target-direction and --parameter become required.
+
+  In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
+  - --parameter <name> <min value> <max value> <step size>
+  - --parameter my-first-parameter 1 10 0.5 --parameter my-second-parameter 20 30 5
+
+  In non-interactive mode the --constraint option can be provided multiple times to configure multiple constraints:
+  - --constraint "<statistic> <operator> <value>"
+  - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --output DIRECTORY       Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
-  --optimizer-config FILE  The optimizer configuration file that should be used
-  --image TEXT             The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update                 Pull the LEAN engine image before running the optimizer
-  --lean-config FILE       The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                Enable debug logging
-  --help                   Show this message and exit.
+  --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
+  --optimizer-config FILE         The optimizer configuration file that should be used
+  --strategy [Grid Search|Euler Search]
+                                  The optimization strategy to use
+  --target TEXT                   The target statistic of the optimization
+  --target-direction [min|max]    Whether the target must be minimized or maximized
+  --parameter <TEXT FLOAT FLOAT FLOAT>...
+                                  The 'parameter min max step' pairs configuring the parameters to optimize
+  --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                        Pull the LEAN engine image before running the optimizer
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
