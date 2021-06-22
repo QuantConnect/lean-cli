@@ -32,7 +32,7 @@ class ForexProduct(SecurityProduct):
         super().__init__(SecurityType.Forex, data_type, market, ticker, resolution, start_date, end_date)
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return SecurityType.Forex.value
 
     @classmethod

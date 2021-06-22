@@ -230,8 +230,9 @@ def live(ctx: click.Context,
     PROJECT must be the name or the id of the project to start live trading for.
 
     By default an interactive wizard is shown letting you configure the deployment.
-    If --brokerage is given the command runs in non-interactive mode and the CLI won't prompt for input.
-    In this mode the brokerage-specific options are required,
+    If --brokerage is given the command runs in non-interactive mode.
+    In this mode the CLI does not prompt for input or confirmation.
+    In non-interactive mode the options specific to the given brokerage are required,
     as well as --node, --auto-restart, --notify-order-events and --notify-insights.
     """
     logger = container.logger()

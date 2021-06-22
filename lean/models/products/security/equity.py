@@ -32,12 +32,12 @@ class EquityProduct(SecurityMasterSecurityProduct):
         super().__init__(SecurityType.Equity, data_type, market, ticker, resolution, start_date, end_date)
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return SecurityType.Equity.value
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        cls._ensure_security_master_subscription(organization)
+        cls.ensure_security_master_subscription(organization)
 
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote])
         market = "USA"

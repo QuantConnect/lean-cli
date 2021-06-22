@@ -46,8 +46,8 @@ class Product(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_product_name(cls) -> str:
-        """Returns the name of this product.
+    def get_name(cls) -> str:
+        """Returns the display-friendly name of this product.
 
         :return: the name of the product that can be displayed to the user
         """

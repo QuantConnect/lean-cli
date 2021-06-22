@@ -29,7 +29,7 @@ class CBOEProduct(Product):
         self._ticker = ticker
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return "CBOE Volatility Index Pricing"
 
     @classmethod
@@ -46,7 +46,7 @@ class CBOEProduct(Product):
             logger.info(f"Error: we have no volatility index pricing for {ticker.upper()}")
 
     def get_details(self) -> ProductDetails:
-        return ProductDetails(data_type=self.get_product_name(),
+        return ProductDetails(data_type=self.get_name(),
                               ticker=self._ticker.upper(),
                               market="-",
                               resolution="Daily",

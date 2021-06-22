@@ -26,6 +26,18 @@ class OptionStyle(str, Enum):
     American = "American"
     European = "European"
 
+    @classmethod
+    def by_name(cls, name: str) -> 'OptionStyle':
+        """Returns the enum member with the same name as the given one, case insensitively.
+
+        :param name: the name of the enum member (case insensitive)
+        :return: the matching enum member
+        """
+        for k, v in cls.__members__.items():
+            if k.lower() == name.lower():
+                return v
+        raise ValueError(f"OptionStyle has no member named '{name}'")
+
 
 class EquityOptionProduct(SecurityMasterSecurityProduct):
     """The EquityOptionProduct class supports downloading equity option data with the `lean data download` command."""
@@ -43,12 +55,12 @@ class EquityOptionProduct(SecurityMasterSecurityProduct):
         self._option_style = option_style
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return SecurityType.EquityOption.value
 
     @classmethod
     def build(cls, organization: QCFullOrganization) -> List[Product]:
-        cls._ensure_security_master_subscription(organization)
+        cls.ensure_security_master_subscription(organization)
 
         data_type = cls._ask_data_type([DataType.Trade, DataType.Quote, DataType.OpenInterest])
         market = "USA"

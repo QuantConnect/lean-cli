@@ -183,8 +183,9 @@ Usage: lean cloud live [OPTIONS] PROJECT
   PROJECT must be the name or the id of the project to start live trading for.
 
   By default an interactive wizard is shown letting you configure the deployment. If --brokerage is given the command
-  runs in non-interactive mode and the CLI won't prompt for input. In this mode the brokerage-specific options are
-  required, as well as --node, --auto-restart, --notify-order-events and --notify-insights.
+  runs in non-interactive mode. In this mode the CLI does not prompt for input or confirmation. In non-interactive
+  mode the options specific to the given brokerage are required, as well as --node, --auto-restart, --notify-order-
+  events and --notify-insights.
 
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro]
@@ -417,14 +418,34 @@ Usage: lean data download [OPTIONS]
   An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
   Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
 
+  If --product is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input or
+  confirmation but only halts when an agreement must be accepted. In non-interactive mode all options specific to the
+  selected product as well as --organization are required.
+
   See the following url for the data that can be purchased and downloaded with this command:
   https://www.lean.io/docs/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
 
 Options:
-  --overwrite         Overwrite existing local data
-  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose           Enable debug logging
-  --help              Show this message and exit.
+  --product [CFD|Crypto|Equity|Equity Option|Forex|Future|CBOE Volatility Index Pricing|Federal Reserve Economics Data|SEC Filings|US Treasury Yield Curve Rates|US Energy Information Administration Data]
+                                  The product type to download
+  --organization TEXT             The name or id of the organization to purchase and download data with
+  --data-type [trade|quote|openinterest|margins]
+                                  The type of data that you want to download
+  --market TEXT                   The market of the data that you want to download
+  --ticker TEXT                   The ticker of the data that you want to download
+  --resolution [tick|second|minute|hour|daily]
+                                  The resolution of the data that you want to download
+  --option-style [american|european]
+                                  The option style of the data that you want to download
+  --start [yyyyMMdd]              The start date of the data that you want to download (ignore for hourly and daily
+                                  data)
+
+  --end [yyyyMMdd]                The end date of the data that you want to download (ignore for hourly and daily data)
+  --report-type [10K|10Q|8K]      The type of SEC reports that you want to download
+  --overwrite                     Overwrite existing local data
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/data/download.py](lean/commands/data/download.py)_
@@ -585,13 +606,14 @@ Usage: lean live [OPTIONS] PROJECT
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
   By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If
-  --environment, --brokerage or --data-feed are given the command runs in non-interactive mode.
+  --environment, --brokerage or --data-feed are given the command runs in non-interactive mode. In this mode the CLI
+  does not prompt for input.
 
   If --environment is given it must be the name of a live environment in the Lean configuration.
 
-  If --brokerage and --data-feed are given, the brokerage/data feed-specific options must also be given. The Lean
-  config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required option is
-  not given and cannot be found in the Lean config the command aborts.
+  If --brokerage and --data-feed are given, the options specific to the given brokerage/data feed must also be given.
+  The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required
+  option is not given and cannot be found in the Lean config the command aborts.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.

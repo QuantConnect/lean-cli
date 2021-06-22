@@ -40,14 +40,22 @@ class DataDownloader:
         self._force_overwrite = None
         self._map_files_cache = None
 
-    def download_files(self, data_files: List[Any], overwrite_flag: bool, organization_id: str) -> None:
+    def download_files(self,
+                       data_files: List[Any],
+                       overwrite_flag: bool,
+                       is_interactive: bool,
+                       organization_id: str) -> None:
         """Downloads files from the QuantConnect Data Library to the local data directory.
 
         :param data_files: the list of data files to download
         :param overwrite_flag: whether the user has given permission to overwrite existing files
+        :param is_interactive: whether the CLI is allowed to prompt for input
         :param organization_id: the id of the organization that should be billed
         """
         data_dir = self._lean_config_manager.get_data_directory()
+
+        if not is_interactive:
+            self._force_overwrite = overwrite_flag
 
         for index, data_file in enumerate(data_files):
             self._logger.info(

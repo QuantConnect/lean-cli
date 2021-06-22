@@ -361,10 +361,11 @@ def live(ctx: click.Context,
 
     By default an interactive wizard is shown letting you configure the brokerage and data feed to use.
     If --environment, --brokerage or --data-feed are given the command runs in non-interactive mode.
+    In this mode the CLI does not prompt for input.
 
     If --environment is given it must be the name of a live environment in the Lean configuration.
 
-    If --brokerage and --data-feed are given, the brokerage/data feed-specific options must also be given.
+    If --brokerage and --data-feed are given, the options specific to the given brokerage/data feed must also be given.
     The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in.
     If a required option is not given and cannot be found in the Lean config the command aborts.
 

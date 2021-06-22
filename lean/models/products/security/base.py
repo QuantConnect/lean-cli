@@ -60,6 +60,18 @@ class DataType(str, Enum):
     OpenInterest = "Open interest data"
     Margins = "Margins data"
 
+    @classmethod
+    def by_name(cls, name: str) -> 'DataType':
+        """Returns the enum member with the same name as the given one, case insensitively.
+
+        :param name: the name of the enum member (case insensitive)
+        :return: the matching enum member
+        """
+        for k, v in cls.__members__.items():
+            if k.lower() == name.lower():
+                return v
+        raise ValueError(f"DataType has no member named '{name}'")
+
 
 class SecurityProduct(Product, abc.ABC):
     """The SecurityProduct class provides a common base for all security data Product implementations."""
@@ -83,7 +95,7 @@ class SecurityProduct(Product, abc.ABC):
         self._end_date = end_date
 
     def get_details(self) -> ProductDetails:
-        data_type = f"{self.get_product_name()} {self._data_type.value.lower()}"
+        data_type = f"{self.get_name()} {self._data_type.value.lower()}"
         ticker = self._ticker.upper()
         market = self._market
         resolution = self._resolution
@@ -168,7 +180,7 @@ class SecurityMasterSecurityProduct(SecurityProduct, abc.ABC):
     """The SecurityMasterSecurityProduct class provides utilities for products that require a Security Master subscription."""
 
     @classmethod
-    def _ensure_security_master_subscription(cls, organization: QCFullOrganization) -> None:
+    def ensure_security_master_subscription(cls, organization: QCFullOrganization) -> None:
         """Checks whether the organization has a Security Master subscription, raises an error if not.
 
         This method should be called at the start of build().
@@ -179,7 +191,7 @@ class SecurityMasterSecurityProduct(SecurityProduct, abc.ABC):
             return
 
         raise RuntimeError("\n".join([
-            f"Your organization needs to have an active Security Master subscription to download {cls.get_product_name()} data",
+            f"Your organization needs to have an active Security Master subscription to download {cls.get_name()} data",
             f"You can add the subscription at https://www.quantconnect.com/pricing?organization={organization.id}"
         ]))
 

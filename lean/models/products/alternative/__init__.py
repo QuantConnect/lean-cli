@@ -10,3 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from lean.models.products.alternative.cboe import CBOEProduct
+from lean.models.products.alternative.fred import FREDProduct
+from lean.models.products.alternative.sec import SECProduct
+from lean.models.products.alternative.usenergy import USEnergyProduct
+from lean.models.products.alternative.ustreasury import USTreasuryProduct
+
+alternative_products = [
+    CBOEProduct,
+    FREDProduct,
+    SECProduct,
+    USTreasuryProduct,
+    USEnergyProduct
+]

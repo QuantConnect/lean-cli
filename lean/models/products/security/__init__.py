@@ -10,3 +10,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from lean.models.products.security.cfd import CFDProduct
+from lean.models.products.security.crypto import CryptoProduct
+from lean.models.products.security.equity import EquityProduct
+from lean.models.products.security.equity_option import EquityOptionProduct
+from lean.models.products.security.forex import ForexProduct
+from lean.models.products.security.future import FutureProduct
+
+security_products = [
+    CFDProduct,
+    CryptoProduct,
+    EquityProduct,
+    EquityOptionProduct,
+    ForexProduct,
+    FutureProduct
+]

@@ -34,7 +34,7 @@ class SECProduct(Product):
         self._end_date = end_date
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return "SEC Filings"
 
     @classmethod

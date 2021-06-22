@@ -21,7 +21,7 @@ class USTreasuryProduct(Product):
     """The USTreasuryProduct class supports downloading US Treasury data with the `lean data download` command."""
 
     @classmethod
-    def get_product_name(cls) -> str:
+    def get_name(cls) -> str:
         return "US Treasury Yield Curve Rates"
 
     @classmethod
@@ -29,7 +29,7 @@ class USTreasuryProduct(Product):
         return [USTreasuryProduct()]
 
     def get_details(self) -> ProductDetails:
-        return ProductDetails(data_type=self.get_product_name(),
+        return ProductDetails(data_type=self.get_name(),
                               ticker="-",
                               market="-",
                               resolution="Daily",

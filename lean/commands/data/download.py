@@ -13,30 +13,34 @@
 
 import itertools
 import webbrowser
-from typing import Iterable, List, Optional
+from datetime import datetime
+from typing import Iterable, List, Optional, Callable, TypeVar, Tuple
 
 import click
 from rich import box
 from rich.table import Table
 
-from lean.click import LeanCommand
+from lean.click import LeanCommand, ensure_parameters, DateParameter
 from lean.container import container
-from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
+from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCResolution
 from lean.models.logger import Option
+from lean.models.products.alternative import alternative_products
 from lean.models.products.alternative.cboe import CBOEProduct
 from lean.models.products.alternative.fred import FREDProduct
 from lean.models.products.alternative.sec import SECProduct
 from lean.models.products.alternative.usenergy import USEnergyProduct
 from lean.models.products.alternative.ustreasury import USTreasuryProduct
 from lean.models.products.base import DataFile, Product
+from lean.models.products.security import security_products
+from lean.models.products.security.base import DataType
 from lean.models.products.security.cfd import CFDProduct
 from lean.models.products.security.crypto import CryptoProduct
 from lean.models.products.security.equity import EquityProduct
-from lean.models.products.security.equity_option import EquityOptionProduct
+from lean.models.products.security.equity_option import EquityOptionProduct, OptionStyle
 from lean.models.products.security.forex import ForexProduct
 from lean.models.products.security.future import FutureProduct
 
-data_information: Optional[QCDataInformation] = None
+_data_information: Optional[QCDataInformation] = None
 
 
 def _map_files_to_vendors(organization: QCFullOrganization, data_files: Iterable[str]) -> List[DataFile]:
@@ -49,9 +53,9 @@ def _map_files_to_vendors(organization: QCFullOrganization, data_files: Iterable
     :param data_files: the data files to map to the available vendors
     :return: the list of data files containing the file and vendor for each file
     """
-    global data_information
-    if data_information is None:
-        data_information = container.api_client().data.get_info(organization.id)
+    global _data_information
+    if _data_information is None:
+        _data_information = container.api_client().data.get_info(organization.id)
 
     last_vendor: Optional[QCDataVendor] = None
     mapped_files = []
@@ -63,7 +67,7 @@ def _map_files_to_vendors(organization: QCFullOrganization, data_files: Iterable
 
         last_vendor = None
 
-        for vendor in data_information.prices:
+        for vendor in _data_information.prices:
             if vendor.price is None:
                 continue
 
@@ -156,23 +160,6 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
 
     logger = container.logger()
 
-    security_product_classes = [
-        CFDProduct,
-        CryptoProduct,
-        EquityProduct,
-        EquityOptionProduct,
-        ForexProduct,
-        FutureProduct
-    ]
-
-    alternative_product_classes = [
-        CBOEProduct,
-        FREDProduct,
-        SECProduct,
-        USTreasuryProduct,
-        USEnergyProduct
-    ]
-
     while True:
         initial_type = logger.prompt_list("Select whether you want to download security data or alternative data", [
             Option(id="security", label="Security data"),
@@ -180,14 +167,14 @@ def _select_products(organization: QCFullOrganization) -> List[Product]:
         ])
 
         if initial_type == "security":
-            product_classes = security_product_classes
+            product_classes = security_products
             product_name_question = "Select the security type"
         else:
-            product_classes = alternative_product_classes
+            product_classes = alternative_products
             product_name_question = "Select the data type"
 
         product_class = logger.prompt_list(product_name_question,
-                                           [Option(id=c, label=c.get_product_name()) for c in product_classes])
+                                           [Option(id=c, label=c.get_name()) for c in product_classes])
 
         new_products = product_class.build(organization)
         current_files = [data_file.file for data_file in _get_data_files(organization, products)]
@@ -225,17 +212,19 @@ def _confirm_organization_balance(organization: QCFullOrganization, products: Li
         ]))
 
 
-def _accept_agreement(organization: QCFullOrganization) -> None:
+def _accept_agreement(organization: QCFullOrganization, open_browser: bool) -> None:
     """Asks the user to accept the CLI API Access and Data Agreement.
 
     :param organization: the organization that the user selected
+    :param open_browser: whether the CLI should automatically open the agreement in the browser
     """
     logger = container.logger()
     api_client = container.api_client()
 
     info = api_client.data.get_info(organization.id)
 
-    webbrowser.open(info.agreement)
+    if open_browser:
+        webbrowser.open(info.agreement)
 
     logger.info(f"Go to the following url to accept the CLI API Access and Data Agreement:")
     logger.info(info.agreement)
@@ -268,26 +257,191 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
     click.confirm("Continue?", abort=True)
 
 
+T = TypeVar("T")
+
+
+def _ensure_option(name: str, value: T, allowed_values: List[T], to_string: Callable[[T], str] = lambda v: v) -> T:
+    """Ensures an option's value is valid, raising an error if that's not the case.
+
+    :param name: the name of the option
+    :param value: the value of the option
+    :param allowed_values: the list of allowed values for the option
+    :param to_string: the lambda that converts the possible values to strings that the user can provide to the option
+    :return: the item from allowed_values matching the user's choice
+    """
+    for v in allowed_values:
+        if to_string(value).lower() == to_string(v).lower():
+            return v
+
+    options = ", ".join(to_string(value).lower() for value in allowed_values)
+    raise RuntimeError(f"The --{name.replace('_', '-')} option must be one of the following: {options}")
+
+
+def _get_start_end(ctx: click.Context) -> Tuple[Optional[datetime], Optional[datetime]]:
+    """Retrieves the start and end date of the data from the invocation context.
+
+    :param ctx: the context of the current command invocation
+    :return: a tuple containing the start and the end date of the data, or None if the resolution is hourly or daily
+    """
+    resolution = ctx.params["resolution"]
+    if resolution == QCResolution.Hour or resolution == QCResolution.Daily:
+        return None, None
+
+    ensure_parameters(ctx, ["start", "end"])
+    return ctx.params["start"], ctx.params["end"]
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True)
+@click.option("--product",
+              type=click.Choice([p.get_name() for p in security_products + alternative_products], case_sensitive=False),
+              help="The product type to download")
+@click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
+@click.option("--data-type",
+              type=click.Choice([k.lower() for k in DataType.__members__.keys()], case_sensitive=False),
+              callback=lambda ctx, value: DataType.by_name(value) if value is not None else None,
+              help="The type of data that you want to download")
+@click.option("--market", type=str, help="The market of the data that you want to download")
+@click.option("--ticker", type=str, help="The ticker of the data that you want to download")
+@click.option("--resolution",
+              type=click.Choice([k.lower() for k in QCResolution.__members__.keys()], case_sensitive=False),
+              callback=lambda ctx, value: QCResolution.by_name(value) if value is not None else None,
+              help="The resolution of the data that you want to download")
+@click.option("--option-style",
+              type=click.Choice([k.lower() for k in OptionStyle.__members__.keys()], case_sensitive=False),
+              callback=lambda ctx, value: OptionStyle.by_name(value) if value is not None else None,
+              help="The option style of the data that you want to download")
+@click.option("--start",
+              type=DateParameter(),
+              help="The start date of the data that you want to download (ignore for hourly and daily data)")
+@click.option("--end",
+              type=DateParameter(),
+              help="The end date of the data that you want to download (ignore for hourly and daily data)")
+@click.option("--report-type",
+              type=click.Choice(["10K", "10Q", "8K"], case_sensitive=False),
+              help="The type of SEC reports that you want to download")
 @click.option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
-def download(overwrite: bool) -> None:
+@click.pass_context
+def download(ctx: click.Context,
+             product: Optional[str],
+             organization: Optional[str],
+             data_type: Optional[DataType],
+             market: Optional[str],
+             ticker: Optional[str],
+             resolution: Optional[QCResolution],
+             option_style: Optional[OptionStyle],
+             start: Optional[datetime],
+             end: Optional[datetime],
+             report_type: Optional[str],
+             overwrite: bool) -> None:
     """Purchase and download data from QuantConnect's Data Library.
 
     An interactive wizard will show to walk you through the process of selecting data,
     accepting the CLI API Access and Data Agreement and payment.
     After this wizard the selected data will be downloaded automatically.
 
+    If --product is given the command runs in non-interactive mode.
+    In this mode the CLI does not prompt for input or confirmation but only halts when an agreement must be accepted.
+    In non-interactive mode all options specific to the selected product as well as --organization are required.
+
     \b
     See the following url for the data that can be purchased and downloaded with this command:
     https://www.lean.io/docs/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
     """
-    organization = _select_organization()
+    is_interactive = product is None and organization is None
 
-    products = _select_products(organization)
-    _confirm_organization_balance(organization, products)
+    if not is_interactive:
+        ensure_parameters(ctx, ["product", "organization"])
 
-    _accept_agreement(organization)
-    _confirm_payment(organization, products)
+        api_client = container.api_client()
 
-    all_data_files = _get_data_files(organization, products)
-    container.data_downloader().download_files(all_data_files, overwrite, organization.id)
+        all_organizations = api_client.organizations.get_all()
+        selected_organization = next((o for o in all_organizations if o.id == organization or o.name == organization),
+                                     None)
+
+        if selected_organization is None:
+            raise RuntimeError(f"You are not a member of an organization with name or id '{organization}'")
+
+        selected_organization = api_client.organizations.get(selected_organization.id)
+        products = []
+
+        if product == CFDProduct.get_name():
+            ensure_parameters(ctx, ["ticker", "resolution"])
+
+            start, end = _get_start_end(ctx)
+
+            products.append(CFDProduct(DataType.Quote, "Oanda", ticker, resolution, start, end))
+        elif product == CryptoProduct.get_name():
+            ensure_parameters(ctx, ["data_type", "market", "ticker", "resolution"])
+
+            data_type = _ensure_option("data_type", data_type, [DataType.Trade, DataType.Quote], lambda d: d.name)
+            market = _ensure_option("market", market, ["GDAX", "Bitfinex"])
+            start, end = _get_start_end(ctx)
+
+            products.append(CryptoProduct(data_type, market, ticker, resolution, start, end))
+        elif product == EquityProduct.get_name():
+            EquityProduct.ensure_security_master_subscription(selected_organization)
+
+            ensure_parameters(ctx, ["data_type", "ticker", "resolution"])
+
+            data_type = _ensure_option("data_type", data_type, [DataType.Trade, DataType.Quote], lambda d: d.name)
+            if data_type == DataType.Quote:
+                resolution = _ensure_option("resolution",
+                                            resolution,
+                                            [QCResolution.Tick, QCResolution.Second, QCResolution.Minute],
+                                            lambda r: r.value)
+            start, end = _get_start_end(ctx)
+
+            products.append(EquityProduct(data_type, "USA", ticker, resolution, start, end))
+        elif product == EquityOptionProduct.get_name():
+            EquityOptionProduct.ensure_security_master_subscription(selected_organization)
+
+            ensure_parameters(ctx, ["data_type", "option_style", "ticker"])
+            data_type = _ensure_option("data_type",
+                                       data_type,
+                                       [DataType.Trade, DataType.Quote, DataType.OpenInterest],
+                                       lambda d: d.name)
+            start, end = _get_start_end(ctx)
+
+            products.append(
+                EquityOptionProduct(data_type, "USA", ticker, QCResolution.Minute, option_style, start, end))
+        elif product == ForexProduct.get_name():
+            ensure_parameters(ctx, ["data_type", "ticker", "resolution"])
+
+            start, end = _get_start_end(ctx)
+
+            products.append(ForexProduct(DataType.Quote, "Oanda", ticker, resolution, start, end))
+        elif product == FutureProduct.get_name():
+            ensure_parameters(ctx, ["market", "ticker"])
+
+            market = _ensure_option("market", market, ["CBOE", "CBOT", "CME", "COMEX", "HKFE", "ICE", "NYMEX", "SGX"])
+
+            products.append(FutureProduct(DataType.Margins, market, ticker, QCResolution.Daily, None, None))
+        elif product == CBOEProduct.get_name():
+            ensure_parameters(ctx, ["ticker"])
+            products.append(CBOEProduct(ticker))
+        elif product == FREDProduct.get_name():
+            ensure_parameters(ctx, ["ticker"])
+            products.append(FREDProduct(FREDProduct.variables.get(ticker, ticker)))
+        elif product == SECProduct.get_name():
+            ensure_parameters(ctx, ["report_type", "ticker", "start", "end"])
+            products.append(SECProduct(report_type, ticker, start, end))
+        elif product == USTreasuryProduct.get_name():
+            products.append(USTreasuryProduct())
+        elif product == USEnergyProduct.get_name():
+            ensure_parameters(ctx, ["ticker"])
+            products.append(USEnergyProduct(USEnergyProduct.variables.get(ticker, ticker)))
+
+        container.logger().info("Data that will be purchased and downloaded:")
+        _display_products(selected_organization, products)
+    else:
+        selected_organization = _select_organization()
+        products = _select_products(selected_organization)
+
+    _confirm_organization_balance(selected_organization, products)
+    _accept_agreement(selected_organization, product is None)
+
+    if is_interactive:
+        _confirm_payment(selected_organization, products)
+
+    all_data_files = _get_data_files(selected_organization, products)
+    container.data_downloader().download_files(all_data_files, overwrite, is_interactive, selected_organization.id)
