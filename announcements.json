@@ -1,16 +1,16 @@
 {
     "announcements": [
         {
-            "date": "2021-06-04",
-            "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/user-guides/local-data"
+            "date": "2021-06-21",
+            "message": "We've just released a new opening video of the CLI:\nhttps://youtube.com/watch?v=QJibe1XpP-U"
         },
         {
-            "date": "2021-06-01",
-            "message": "Check out our write-up on Idea Streams #12:\nhttps://www.quantconnect.com/blog/idea-streams-12-yield-rates/"
+            "date": "2021-06-21",
+            "message": "Building an Algo on Privacy Keywords using TiingoNews:\nhttps://quantconnect.com/blog/building-an-algo-on-privacy-keywords-using-tiingonews/"
         },
         {
-            "date": "2021-06-01",
-            "message": "Check out our write-up on Idea Streams #11:\nhttps://www.quantconnect.com/blog/idea-streams-11-replicating-a-goldman-sachs-index-using-quant-strategies/"
+            "date": "2021-06-11",
+            "message": "Check out our mini video series on how to use the CLI:\nhttps://youtube.com/playlist?list=PLD7-B3LE6mz61Hojce6gKshv5-7Qo4y0r"
         }
     ]
 }
