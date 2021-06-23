@@ -374,7 +374,7 @@ def download(ctx: click.Context,
             ensure_options(ctx, ["data_type", "market", "ticker", "resolution"])
 
             data_type = _ensure_option("data_type", data_type, [DataType.Trade, DataType.Quote], lambda d: d.name)
-            market = _ensure_option("market", market, ["GDAX", "Bitfinex"])
+            market = _ensure_option("market", market, ["Bitfinex", "GDAX"])
             start, end = _get_start_end(ctx)
 
             products.append(CryptoProduct(data_type, market, ticker, resolution, start, end))
@@ -405,7 +405,7 @@ def download(ctx: click.Context,
             products.append(
                 EquityOptionProduct(data_type, "USA", ticker, QCResolution.Minute, option_style, start, end))
         elif product == ForexProduct.get_name():
-            ensure_options(ctx, ["data_type", "ticker", "resolution"])
+            ensure_options(ctx, ["ticker", "resolution"])
 
             start, end = _get_start_end(ctx)
 
