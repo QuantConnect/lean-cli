@@ -13,7 +13,6 @@
 
 import json
 import platform
-import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -246,57 +245,13 @@ class LeanRunner:
     def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to C# projects.
 
-        :param project_dir: the path to the file containing the algorithm
+        :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
         """
-        # Create a temporary directory used for compiling the C# files
-        compile_dir = self._temp_manager.create_temporary_directory()
+        compile_root = self._get_csharp_compile_root(project_dir)
 
-        # Copy all the C# files in the project to compile_dir
-        for source_path in project_dir.rglob("*.cs"):
-            posix_path = source_path.relative_to(project_dir).as_posix()
-            if "bin/" in posix_path or "obj/" in posix_path or ".ipynb_checkpoints/" in posix_path:
-                continue
-
-            new_path = compile_dir / source_path.relative_to(project_dir)
-            new_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source_path, new_path)
-
-        # Create a .csproj file to compile with
-        with (compile_dir / f"{project_dir.name}.csproj").open("w+", encoding="utf-8") as file:
-            libraries = self._project_config_manager.get_csharp_libraries(project_dir)
-            libraries = [library for library in libraries if not library.name.startswith("QuantConnect.")]
-            package_references = "\n".join(
-                f'<PackageReference Include="{library.name}" Version="{library.version}" />' for library in libraries)
-
-            file.write(f"""
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net5.0</TargetFramework>
-        <LangVersion>9</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <OutputPath>/LeanCLI/bin/Debug</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <PathMap>/LeanCLI={str(project_dir)}</PathMap>
-        <NoWarn>CS0618</NoWarn>
-    </PropertyGroup>
-    <ItemGroup>
-        <Reference Include="/Lean/Launcher/bin/Debug/*.dll">
-            <Private>False</Private>
-        </Reference>
-        {package_references}
-    </ItemGroup>
-</Project>
-            """.strip())
-
-        # Mount the compile directory
-        run_options["volumes"][str(compile_dir)] = {
+        # Mount the compile root
+        run_options["volumes"][str(compile_root)] = {
             "bind": "/LeanCLI",
             "mode": "rw"
         }
@@ -312,12 +267,48 @@ class LeanRunner:
         run_options["environment"]["DOTNET_NOLOGO"] = "true"
         run_options["environment"]["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
+        # Set up the MSBuild properties
+        msbuild_properties = {
+            "Configuration": "Debug",
+            "Platform": "AnyCPU",
+            "TargetFramework": "net5.0",
+            "LangVersion": "9",
+            "GenerateAssemblyInfo": "false",
+            "OutputPath": "/LeanCLIOutput",
+            "AppendTargetFrameworkToOutputPath": "false",
+            "AutoGenerateBindingRedirects": "true",
+            "GenerateBindingRedirectsOutputType": "true",
+            "AutomaticallyUseReferenceAssemblyPackages": "false",
+            "CopyLocalLockFileAssemblies": "true",
+            "PathMap": f"/LeanCLI={str(compile_root)}"
+        }
+
         # Build the project before running LEAN
-        run_options["commands"].append(f'dotnet build "/LeanCLI/{project_dir.name}.csproj"')
+        relative_project_dir = str(project_dir.relative_to(compile_root)).replace("\\", "/")
+        msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
+        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_dir}" "-p:{msbuild_properties}"')
 
         # Copy over the algorithm DLL
         run_options["commands"].append(
-            f'cp "/LeanCLI/bin/Debug/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
+            f'cp "/LeanCLIOutput/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        run_options["commands"].append(f"cp -R -n /LeanCLI/bin/Debug/. /Lean/Launcher/bin/Debug/")
+        run_options["commands"].append(f"cp -R -n /LeanCLIOutput/. /Lean/Launcher/bin/Debug/")
+
+    def _get_csharp_compile_root(self, project_dir: Path) -> Path:
+        """Returns the path to the directory that should be mounted to compile the project directory.
+
+        If the project is part of a solution this is the solution root.
+        If the project is not part of a solution this is the project directory itself.
+
+        :param project_dir: the path to the project directory
+        :return: the path that should be mounted in the Docker container when compiling the C# project
+        """
+        current_dir = project_dir
+        while current_dir.parent != current_dir:
+            if next(current_dir.glob("*.sln"), None) is not None:
+                return current_dir
+
+            current_dir = current_dir.parent
+
+        return project_dir
