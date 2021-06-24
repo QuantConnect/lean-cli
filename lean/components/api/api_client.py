@@ -28,6 +28,7 @@ from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.optimization_client import OptimizationClient
 from lean.components.api.organization_client import OrganizationClient
+from lean.components.api.plugin_client import PluginClient
 from lean.components.api.project_client import ProjectClient
 from lean.components.util.logger import Logger
 from lean.constants import API_BASE_URL
@@ -58,6 +59,7 @@ class APIClient:
         self.nodes = NodeClient(self)
         self.optimizations = OptimizationClient(self)
         self.organizations = OrganizationClient(self)
+        self.plugins = PluginClient(self)
         self.projects = ProjectClient(self)
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:

@@ -25,6 +25,7 @@ from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
+from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
 from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
@@ -44,7 +45,9 @@ _required_brokerage_properties = {
     "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
-    "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"]
+    "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
+    "BloombergBrokerage": ["bloomberg-organization-id", "bloomberg-api-type", "bloomberg-environment",
+                           "bloomberg-server-host", "bloomberg-server-port", "bloomberg-symbol-map-file"]
 }
 
 # Data queue handler -> required configuration properties
@@ -57,6 +60,7 @@ _required_data_queue_handler_properties = {
     "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
     "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"] + ["zerodha-history-subscription"],
+    "BloombergBrokerage": _required_brokerage_properties["BloombergBrokerage"],
     "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"]
 }
 
@@ -162,7 +166,30 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
 
-_get_default_value_lean_config = None
+_cached_organizations = None
+
+
+def _get_organization_id(given_input: str) -> str:
+    """Converts the organization name or id given by the user to an organization id.
+
+    Raises an error if the user is not a member of an organization with the given name or id.
+
+    :param given_input: the input given by the user
+    :return: the id of the organization given by the user
+    """
+    global _cached_organizations
+    if _cached_organizations is None:
+        api_client = container.api_client()
+        _cached_organizations = api_client.organizations.get_all()
+
+    organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
+    if organization is None:
+        raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+
+    return organization.id
+
+
+_cached_lean_config = None
 
 
 def _get_default_value(key: str) -> Optional[Any]:
@@ -171,14 +198,14 @@ def _get_default_value(key: str) -> Optional[Any]:
     :param key: the name of the property in the Lean config that supplies the default value of an option
     :return: the value of the property in the Lean config, or None if there is none
     """
-    global _get_default_value_lean_config
-    if _get_default_value_lean_config is None:
-        _get_default_value_lean_config = container.lean_config_manager().get_lean_config()
+    global _cached_lean_config
+    if _cached_lean_config is None:
+        _cached_lean_config = container.lean_config_manager().get_lean_config()
 
-    if key not in _get_default_value_lean_config:
+    if key not in _cached_lean_config:
         return None
 
-    value = _get_default_value_lean_config[key]
+    value = _cached_lean_config[key]
     if value == "":
         return None
 
@@ -310,6 +337,30 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("iqfeed-version"),
               help="The product version of your IQFeed developer account")
+@click.option("--bloomberg-organization",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-organization-id"),
+              help="The name or id of the organization with the Bloomberg plugin subscription")
+@click.option("--bloomberg-api-type",
+              type=click.Choice(["Desktop", "Server", "Bpipe"], case_sensitive=False),
+              default=lambda: _get_default_value("bloomberg-api-type"),
+              help="The API type to use")
+@click.option("--bloomberg-environment",
+              type=click.Choice(["Production", "Beta"], case_sensitive=False),
+              default=lambda: _get_default_value("bloomberg-environment"),
+              help="The environment to run in")
+@click.option("--bloomberg-server-host",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-server-host"),
+              help="The host of the Bloomberg server")
+@click.option("--bloomberg-server-port",
+              type=int,
+              default=lambda: _get_default_value("bloomberg-server-port"),
+              help="The port of the Bloomberg server")
+@click.option("--bloomberg-symbol-map-file",
+              type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+              default=lambda: _get_default_value("bloomberg-symbol-map-file"),
+              help="The path to the Bloomberg symbol map file")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -351,6 +402,12 @@ def live(ctx: click.Context,
          iqfeed_password: Optional[str],
          iqfeed_product_name: Optional[str],
          iqfeed_version: Optional[str],
+         bloomberg_organization: Optional[str],
+         bloomberg_api_type: Optional[str],
+         bloomberg_environment: Optional[str],
+         bloomberg_server_host: Optional[str],
+         bloomberg_server_port: Optional[int],
+         bloomberg_symbol_map_file: Optional[Path],
          image: Optional[str],
          update: bool) -> None:
     """Start live trading a project locally using Docker.
@@ -373,9 +430,11 @@ def live(ctx: click.Context,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    # Reset _get_default_value_lean_config so we reload the Lean config containing the defaults in between tests
-    global _get_default_value_lean_config
-    _get_default_value_lean_config = None
+    # Reset globals so we reload everything in between tests
+    global _cached_organizations
+    _cached_organizations = None
+    global _cached_lean_config
+    _cached_lean_config = None
 
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -423,6 +482,19 @@ def live(ctx: click.Context,
                                                     zerodha_access_token,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
+        elif brokerage == BloombergBrokerage.get_name():
+            ensure_options(ctx, ["bloomberg_organization",
+                                 "bloomberg_api_type",
+                                 "bloomberg_environment",
+                                 "bloomberg_server_host",
+                                 "bloomberg_server_port",
+                                 "bloomberg_symbol_map_file"])
+            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
+                                                      bloomberg_api_type,
+                                                      bloomberg_environment,
+                                                      bloomberg_server_host,
+                                                      bloomberg_server_port,
+                                                      bloomberg_symbol_map_file)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
@@ -462,6 +534,19 @@ def live(ctx: click.Context,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
+        elif data_feed == BloombergDataFeed.get_name():
+            ensure_options(ctx, ["bloomberg_organization",
+                                 "bloomberg_api_type",
+                                 "bloomberg_environment",
+                                 "bloomberg_server_host",
+                                 "bloomberg_server_port",
+                                 "bloomberg_symbol_map_file"])
+            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
+                                                                        bloomberg_api_type,
+                                                                        bloomberg_environment,
+                                                                        bloomberg_server_host,
+                                                                        bloomberg_server_port,
+                                                                        bloomberg_symbol_map_file))
         elif data_feed == IQFeedDataFeed.get_name():
             ensure_options(ctx, ["iqfeed_iqconnect",
                                  "iqfeed_username",

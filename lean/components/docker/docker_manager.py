@@ -25,6 +25,7 @@ import docker
 from dateutil.parser import isoparse
 from docker.errors import APIError
 from docker.types import Mount
+from getmac import get_mac_address
 from pkg_resources import Requirement
 
 from lean.components.util.logger import Logger
@@ -92,7 +93,10 @@ class DockerManager:
             if "mounts" not in kwargs:
                 kwargs["mounts"] = []
 
-            kwargs["mounts"].append(Mount(target="/lean-cli-start.sh", source=str(shell_script_path), type="bind"))
+            kwargs["mounts"].append(Mount(target="/lean-cli-start.sh",
+                                          source=str(shell_script_path),
+                                          type="bind",
+                                          read_only=True))
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
         # Docker Toolbox requires paths to be like /c/Path instead of C:/Path
@@ -112,9 +116,17 @@ class DockerManager:
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
+        kwargs["mac_address"] = get_mac_address()
         kwargs["tty"] = is_tty
         kwargs["stdin_open"] = is_tty
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
+
+        # Make sure host.docker.internal resolves on Linux
+        # See https://github.com/QuantConnect/Lean/pull/5092
+        if platform.system() == "Linux":
+            if "extra_hosts" not in kwargs:
+                kwargs["extra_hosts"] = {}
+            kwargs["extra_hosts"]["host.docker.internal"] = "127.17.0.1"
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)

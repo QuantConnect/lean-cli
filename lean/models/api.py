@@ -500,3 +500,8 @@ class QCDataVendor(WrappedBaseModel):
 class QCDataInformation(WrappedBaseModel):
     prices: List[QCDataVendor]
     agreement: str
+
+
+class QCPluginDetails(WrappedBaseModel):
+    url: str
+    updated: str

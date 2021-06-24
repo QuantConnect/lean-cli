@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import platform
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -24,6 +23,7 @@ from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
+from lean.constants import PLUGINS_DIRECTORY
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 
@@ -146,22 +146,13 @@ class LeanRunner:
         lean_config["results-destination-folder"] = "/Results"
         lean_config["object-store-root"] = "/Storage"
 
-        config_path = self._temp_manager.create_temporary_directory() / "config.json"
-        with config_path.open("w+", encoding="utf-8") as file:
-            file.write(json.dumps(lean_config, indent=4))
-
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options: Dict[str, Any] = {
             "commands": [],
             "environment": {},
             "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
-            "mounts": [
-                Mount(target="/Lean/Launcher/bin/Debug/config.json",
-                      source=str(config_path),
-                      type="bind",
-                      read_only=True)
-            ],
+            "mounts": [],
             "volumes": {},
             "ports": {}
         }
@@ -185,18 +176,59 @@ class LeanRunner:
             "mode": "rw"
         }
 
-        # Make sure host.docker.internal resolves on Linux
-        # See https://github.com/QuantConnect/Lean/pull/5092
-        if platform.system() == "Linux":
-            run_options["extra_hosts"] = {
-                "host.docker.internal": "172.17.0.1"
+        # Mount all local files referenced in the Lean config
+        for key in ["transaction-log", "bloomberg-symbol-map-file"]:
+            if key not in lean_config or lean_config[key] == "":
+                continue
+
+            local_path = Path(lean_config[key])
+            if not local_path.exists():
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                local_path.touch()
+
+            run_options["mounts"].append(Mount(target=f"/Files/{key}",
+                                               source=str(local_path),
+                                               type="bind",
+                                               read_only=False))
+
+            lean_config[key] = f"/Files/{key}"
+
+        # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
+        for key in ["bloomberg-server-host"]:
+            if key not in lean_config:
+                continue
+
+            if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
+                lean_config[key] = "host.docker.internal"
+
+        # Set up plugins
+        plugins_directory = Path(PLUGINS_DIRECTORY)
+        if plugins_directory.exists():
+            # Mount the plugins directory
+            run_options["volumes"][str(plugins_directory)] = {
+                "bind": "/Plugins",
+                "mode": "ro"
             }
+
+            # Copy all plugin files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
+            run_options["commands"].append("cp -R -n /Plugins/*/. /Lean/Launcher/bin/Debug/")
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
             self.set_up_python_options(project_dir, "/LeanCLI", run_options)
         else:
             self.set_up_csharp_options(project_dir, run_options)
+
+        # Save the final Lean config to a temporary file so we can mount it into the container
+        config_path = self._temp_manager.create_temporary_directory() / "config.json"
+        with config_path.open("w+", encoding="utf-8") as file:
+            file.write(json.dumps(lean_config, indent=4))
+
+        # Mount the Lean config
+        run_options["mounts"].append(Mount(target="/Lean/Launcher/bin/Debug/config.json",
+                                           source=str(config_path),
+                                           type="bind",
+                                           read_only=True))
 
         return run_options
 

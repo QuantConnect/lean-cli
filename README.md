@@ -646,9 +646,9 @@ Usage: lean live [OPTIONS] PROJECT
 Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|IQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -688,6 +688,16 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-product-name TEXT      The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --bloomberg-organization TEXT   The name or id of the organization with the Bloomberg plugin subscription
+  --bloomberg-api-type [Desktop|Server|Bpipe]
+                                  The API type to use
+  --bloomberg-environment [Production|Beta]
+                                  The environment to run in
+  --bloomberg-server-host TEXT    The host of the Bloomberg server
+  --bloomberg-server-port INTEGER
+                                  The port of the Bloomberg server
+  --bloomberg-symbol-map-file FILE
+                                  The path to the Bloomberg symbol map file
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)

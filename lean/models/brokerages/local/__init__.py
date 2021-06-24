@@ -18,6 +18,7 @@ from typing import Dict, Type, List
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
+from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
 from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
@@ -35,7 +36,8 @@ all_local_brokerages = [
     BitfinexBrokerage,
     CoinbaseProBrokerage,
     BinanceBrokerage,
-    ZerodhaBrokerage
+    ZerodhaBrokerage,
+    BloombergBrokerage
 ]
 
 all_local_data_feeds = [
@@ -45,7 +47,8 @@ all_local_data_feeds = [
     BitfinexDataFeed,
     CoinbaseProDataFeed,
     BinanceDataFeed,
-    ZerodhaDataFeed
+    ZerodhaDataFeed,
+    BloombergDataFeed
 ]
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
@@ -55,14 +58,16 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
                             BitfinexDataFeed,
                             CoinbaseProDataFeed,
                             BinanceDataFeed,
-                            ZerodhaDataFeed],
+                            ZerodhaDataFeed,
+                            BloombergDataFeed],
     InteractiveBrokersBrokerage: [InteractiveBrokersDataFeed],
     TradierBrokerage: [TradierDataFeed],
     OANDABrokerage: [OANDADataFeed],
     BitfinexBrokerage: [BitfinexDataFeed],
     CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BinanceBrokerage: [BinanceDataFeed],
-    ZerodhaBrokerage: [ZerodhaDataFeed]
+    ZerodhaBrokerage: [ZerodhaDataFeed],
+    BloombergBrokerage: [BloombergDataFeed]
 }
 
 if platform.system() == "Windows" or os.environ.get("__README__", "false") == "true":

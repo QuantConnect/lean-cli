@@ -76,7 +76,7 @@ class LeanConfigConfigurer(abc.ABC):
         from lean.container import container
         lean_config_manager = container.lean_config_manager()
 
-        for prop in properties:
+        for prop in reversed(properties):
             lean_config_manager.set_property(prop, lean_config[prop])
 
 

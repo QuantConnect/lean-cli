@@ -25,6 +25,9 @@ CREDENTIALS_CONFIG_PATH = str(Path("~/.lean/credentials").expanduser())
 # The file in which we store when we last checked for updates
 CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
+# The directory in which plugins are stored
+PLUGINS_DIRECTORY = str(Path("~/.lean/plugins").expanduser())
+
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
 
