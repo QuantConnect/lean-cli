@@ -79,14 +79,14 @@ class BloombergBrokerage(LocalBrokerage):
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        lean_config["bloomberg-organization-id"] = self._organization_id
+        lean_config["job-organization-id"] = self._organization_id
         lean_config["bloomberg-api-type"] = self._api_type
         lean_config["bloomberg-environment"] = self._environment
         lean_config["bloomberg-server-host"] = self._server_host
         lean_config["bloomberg-server-port"] = self._server_port
         lean_config["bloomberg-symbol-map-file"] = str(self._symbol_map_file).replace("\\", "/")
 
-        self._save_properties(lean_config, ["bloomberg-organization-id",
+        self._save_properties(lean_config, ["job-organization-id",
                                             "bloomberg-api-type",
                                             "bloomberg-environment",
                                             "bloomberg-server-host",

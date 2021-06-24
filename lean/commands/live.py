@@ -46,7 +46,7 @@ _required_brokerage_properties = {
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
-    "BloombergBrokerage": ["bloomberg-organization-id", "bloomberg-api-type", "bloomberg-environment",
+    "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
                            "bloomberg-server-host", "bloomberg-server-port", "bloomberg-symbol-map-file"]
 }
 
@@ -339,7 +339,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="The product version of your IQFeed developer account")
 @click.option("--bloomberg-organization",
               type=str,
-              default=lambda: _get_default_value("bloomberg-organization-id"),
+              default=lambda: _get_default_value("job-organization-id"),
               help="The name or id of the organization with the Bloomberg plugin subscription")
 @click.option("--bloomberg-api-type",
               type=click.Choice(["Desktop", "Server", "Bpipe"], case_sensitive=False),
