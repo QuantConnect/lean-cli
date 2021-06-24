@@ -273,8 +273,9 @@ class LeanRunner:
             "Platform": "AnyCPU",
             "TargetFramework": "net5.0",
             "LangVersion": "9",
+            "OutputPath": "/Compile/bin",
             "GenerateAssemblyInfo": "false",
-            "OutputPath": "/LeanCLIOutput",
+            "GenerateTargetFrameworkAttribute": "false",
             "AppendTargetFrameworkToOutputPath": "false",
             "AutoGenerateBindingRedirects": "true",
             "GenerateBindingRedirectsOutputType": "true",
@@ -283,6 +284,22 @@ class LeanRunner:
             "PathMap": f"/LeanCLI={str(compile_root)}"
         }
 
+        build_props_file = self._temp_manager.create_temporary_directory() / "Directory.Build.props"
+        with build_props_file.open("w+", encoding="utf-8") as file:
+            file.write("""
+<Project>
+    <PropertyGroup>
+        <BaseIntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+        <IntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</IntermediateOutputPath>
+    </PropertyGroup>
+</Project>
+            """.strip())
+
+        run_options["mounts"].append(Mount(target="/Directory.Build.props",
+                                           source=str(build_props_file),
+                                           type="bind",
+                                           read_only=False))
+
         # Build the project before running LEAN
         relative_project_dir = str(project_dir.relative_to(compile_root)).replace("\\", "/")
         msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
@@ -290,10 +307,10 @@ class LeanRunner:
 
         # Copy over the algorithm DLL
         run_options["commands"].append(
-            f'cp "/LeanCLIOutput/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
+            f'cp "/Compile/bin/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        run_options["commands"].append(f"cp -R -n /LeanCLIOutput/. /Lean/Launcher/bin/Debug/")
+        run_options["commands"].append(f"cp -R -n /Compile/bin/. /Lean/Launcher/bin/Debug/")
 
     def _get_csharp_compile_root(self, project_dir: Path) -> Path:
         """Returns the path to the directory that should be mounted to compile the project directory.
