@@ -105,7 +105,7 @@ Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Local|QuantConnect]
+  --data-provider [Local|QuantConnect|Bloomberg]
                                   Update the data provider in the Lean configuration file to retrieve data from the
                                   given provider
 
@@ -850,7 +850,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Local|QuantConnect]
+  --data-provider [Local|QuantConnect|Bloomberg]
                                   Update the data provider in the Lean configuration file to retrieve data from the
                                   given provider
 
