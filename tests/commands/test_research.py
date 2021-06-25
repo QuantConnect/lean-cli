@@ -53,7 +53,7 @@ def test_research_runs_research_container() -> None:
     assert args[0] == RESEARCH_IMAGE
 
 
-def test_research_mounts_config_file() -> None:
+def test_research_mounts_lean_config_to_notebooks_directory_as_well() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -66,29 +66,9 @@ def test_research_mounts_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any([mount["Target"] == "/Lean/Launcher/bin/Debug/Notebooks/config.json" for mount in kwargs["mounts"]])
-
-
-def test_research_adds_required_keys_to_project_config() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    result = CliRunner().invoke(lean, ["research", "Python Project"])
-
-    assert result.exit_code == 0
-
-    docker_manager.run_image.assert_called_once()
-    args, kwargs = docker_manager.run_image.call_args
-
-    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Launcher/bin/Debug/Notebooks/config.json"][0]
-
-    with open(mount["Source"]) as file:
-        config = json.load(file)
-
-    for key in ["composer-dll-directory", "messaging-handler", "job-queue-handler", "api-handler"]:
-        assert key in config
+    lean_config = next(m["Source"] for m in kwargs["mounts"] if m["Target"] == "/Lean/Launcher/bin/Debug/config.json")
+    assert any(m["Source"] == lean_config and m["Target"] == "/Lean/Launcher/bin/Debug/Notebooks/config.json" for m in
+               kwargs["mounts"])
 
 
 def test_research_adds_credentials_to_project_config() -> None:

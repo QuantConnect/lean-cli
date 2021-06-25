@@ -13,7 +13,7 @@
 
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import click
 from docker.errors import APIError
@@ -53,55 +53,41 @@ def research(project: Path, port: int, image: Optional[str], update: bool) -> No
     You can override this using the --image option.
     Alternatively you can set the default research image using `lean config set research-image <image>`.
     """
-    cli_config_manager = container.cli_config_manager()
-
-    project_config_manager = container.project_config_manager()
-    project_config = project_config_manager.get_project_config(project)
-
-    # Copy the config to a temporary config file before we add some research-specific configuration to it
-    config_path = container.temp_manager().create_temporary_directory() / "config.json"
-    project_config.file = config_path
-
-    project_config.set("composer-dll-directory", "/Lean/Launcher/bin/Debug")
-    project_config.set("messaging-handler", "QuantConnect.Messaging.Messaging")
-    project_config.set("job-queue-handler", "QuantConnect.Queues.JobQueue")
-    project_config.set("api-handler", "QuantConnect.Api.Api")
-    project_config.set("job-user-id", cli_config_manager.user_id.get_value("1"))
-    project_config.set("api-access-token", cli_config_manager.api_token.get_value("default"))
+    project_manager = container.project_manager()
+    algorithm_file = project_manager.find_algorithm_file(project)
 
     lean_config_manager = container.lean_config_manager()
-    data_dir = lean_config_manager.get_data_directory()
-
-    run_options: Dict[str, Any] = {
-        "commands": [],
-        "environment": {},
-        "mounts": [
-            Mount(target="/Lean/Launcher/bin/Debug/Notebooks/config.json",
-                  source=str(config_path),
-                  type="bind",
-                  read_only=True)
-        ],
-        "volumes": {
-            str(data_dir): {
-                "bind": "/Lean/Launcher/Data",
-                "mode": "rw"
-            }
-        },
-        "ports": {
-            "8888": str(port)
-        },
-        "on_output": lambda chunk: _check_docker_output(chunk, port)
-    }
+    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None, None)
+    lean_config["composer-dll-directory"] = "/Lean/Launcher/bin/Debug"
 
     lean_runner = container.lean_runner()
-    if project_config.get("algorithm-language", "Python") == "Python":
-        lean_runner.set_up_python_options(project, "/Lean/Launcher/bin/Debug/Notebooks", run_options)
-    else:
-        lean_runner.set_up_csharp_options(project, run_options)
-        run_options["volumes"][str(project)] = {
-            "bind": "/Lean/Launcher/bin/Debug/Notebooks",
-            "mode": "rw"
-        }
+    temp_manager = container.temp_manager()
+    run_options = lean_runner.get_basic_docker_config(lean_config,
+                                                      algorithm_file,
+                                                      temp_manager.create_temporary_directory(),
+                                                      None)
+
+    # Mount the config in the notebooks directory as well
+    local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))
+    run_options["mounts"].append(Mount(target="/Lean/Launcher/bin/Debug/Notebooks/config.json",
+                                       source=str(local_config_path),
+                                       type="bind",
+                                       read_only=True))
+
+    # Jupyter Lab runs on port 8888, we expose it to the local port specified by the user
+    run_options["ports"]["8888"] = str(port)
+
+    # Open the browser as soon as Jupyter Lab has started
+    run_options["on_output"] = lambda chunk: _check_docker_output(chunk, port)
+
+    # Make Ctrl+C stop Jupyter Lab immediately
+    run_options["stop_signal"] = "SIGKILL"
+
+    # Mount the project to the notebooks directory
+    run_options["volumes"][str(project)] = {
+        "bind": "/Lean/Launcher/bin/Debug/Notebooks",
+        "mode": "rw"
+    }
 
     # Add references to all DLLs in QuantConnect.csx so custom C# libraries can be imported with using statements
     run_options["commands"].append(" && ".join([
