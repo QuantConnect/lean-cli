@@ -210,8 +210,9 @@ class LeanRunner:
                 "mode": "ro"
             }
 
-            # Copy all plugin files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
-            run_options["commands"].append("cp -R -n /Plugins/*/. /Lean/Launcher/bin/Debug/")
+            # Copy all plugin DLLs to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
+            run_options["commands"].append("shopt -s globstar")
+            run_options["commands"].append("cp -R -n /Plugins/*/**/*.dll /Lean/Launcher/bin/Debug/")
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
