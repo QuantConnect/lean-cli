@@ -19,6 +19,7 @@ import json5
 
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.logger import Logger
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.models.config import DebuggingMethod
 from lean.models.errors import MoreInfoError
@@ -27,12 +28,17 @@ from lean.models.errors import MoreInfoError
 class LeanConfigManager:
     """The LeanConfigManager class contains utilities to work with files containing LEAN engine configuration."""
 
-    def __init__(self, cli_config_manager: CLIConfigManager, project_config_manager: ProjectConfigManager) -> None:
+    def __init__(self,
+                 logger: Logger,
+                 cli_config_manager: CLIConfigManager,
+                 project_config_manager: ProjectConfigManager) -> None:
         """Creates a new LeanConfigManager instance.
 
+        :param logger: the logger to log messages with
         :param cli_config_manager: the CLIConfigManager instance to use when retrieving credentials
         :param project_config_manager: the ProjectConfigManager instance to use when retrieving project parameters
         """
+        self._logger = logger
         self._cli_config_manager = cli_config_manager
         self._project_config_manager = project_config_manager
         self._default_path = None
@@ -165,8 +171,7 @@ class LeanConfigManager:
     def get_complete_lean_config(self,
                                  environment: str,
                                  algorithm_file: Path,
-                                 debugging_method: Optional[DebuggingMethod],
-                                 data_purchase_limit: Optional[int]) -> Dict[str, Any]:
+                                 debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
         """Returns a complete Lean config object containing all properties needed for the engine to run.
 
         This retrieves the path of the config, parses the file and adds all properties removed in clean_lean_config().
@@ -174,7 +179,6 @@ class LeanConfigManager:
         :param environment: the environment to set
         :param algorithm_file: the path to the algorithm that will be ran
         :param debugging_method: the debugging method to use, or None to disable debugging
-        :param data_purchase_limit: the data purchase limit in QCC
         """
         config = self.get_lean_config()
 
@@ -189,9 +193,6 @@ class LeanConfigManager:
         else:
             config["debugging"] = False
             config["debugging-method"] = "LocalCmdline"
-
-        if data_purchase_limit is not None:
-            config["data-purchase-limit"] = data_purchase_limit
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
@@ -217,6 +218,24 @@ class LeanConfigManager:
         config["parameters"] = project_config.get("parameters", {})
 
         return config
+
+    def configure_data_purchase_limit(self, lean_config: Dict[str, Any], data_purchase_limit: Optional[int]) -> None:
+        """Updates the data purchase limit in the Lean config.
+
+        Logs a warning if the data provider is not configured to download from QuantConnect.
+
+        :param lean_config: the Lean config dict to update
+        :param data_purchase_limit: the data purchase limit provided by the user, or None if no such limit was provided
+        """
+        if data_purchase_limit is None:
+            return
+
+        if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
+            self._logger.warn(
+                "--data-purchase-limit is ignored because the data provider is not set to download from the QuantConnect API, use --download-data to set that up")
+            return
+
+        lean_config["data-purchase-limit"] = data_purchase_limit
 
     def get_lean_config(self) -> Dict[str, Any]:
         """Reads the Lean config into a dict.

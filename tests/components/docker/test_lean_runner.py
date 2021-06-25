@@ -38,7 +38,7 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
 
     return LeanRunner(mock.Mock(),
                       project_config_manager,
-                      LeanConfigManager(cli_config_manager, project_config_manager),
+                      LeanConfigManager(mock.Mock(), cli_config_manager, project_config_manager),
                       docker_manager,
                       TempManager())
 

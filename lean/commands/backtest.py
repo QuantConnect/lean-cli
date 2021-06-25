@@ -23,6 +23,8 @@ from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
 from lean.models.config import DebuggingMethod
+from lean.models.data_providers import all_data_providers
+from lean.models.data_providers.quantconnect import QuantConnectDataProvider
 from lean.models.logger import Option
 
 
@@ -164,13 +166,16 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
+@click.option("--data-provider",
+              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              help="Update the data provider in the Lean configuration file to retrieve data from the given provider")
 @click.option("--download-data",
               is_flag=True,
               default=False,
-              help="Update the Lean configuration file to download data from the QuantConnect API")
+              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
 @click.option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during this backtest")
+              help="The maximum amount of QCC to spend on downloading data during this backtest when using QuantConnect as data provider")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -181,6 +186,7 @@ def _select_organization() -> QCMinimalOrganization:
 def backtest(project: Path,
              output: Optional[Path],
              debug: Optional[str],
+             data_provider: Optional[str],
              download_data: bool,
              data_purchase_limit: Optional[int],
              image: Optional[str],
@@ -220,20 +226,16 @@ def backtest(project: Path,
         debugging_method = DebuggingMethod.Rider
         _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
 
-    if download_data:
-        organization = _select_organization()
-        lean_config_manager.set_property("job-organization-id", organization.id)
-        lean_config_manager.set_property("data-provider", "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider")
-        lean_config_manager.set_property("map-file-provider", "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
-        lean_config_manager.set_property("factor-file-provider",
-                                         "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
+    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, debugging_method)
 
-    if data_purchase_limit is not None:
-        config = lean_config_manager.get_lean_config()
-        if config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
-            container.logger().warn(
-                "--data-purchase-limit is ignored because the data provider is not set to download from the API, use --download-data to set that up")
-            data_purchase_limit = None
+    if download_data:
+        data_provider = QuantConnectDataProvider.get_name()
+
+    if data_provider is not None:
+        data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
+        data_provider.build(lean_config, container.logger()).configure(lean_config, "backtesting")
+
+    lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     cli_config_manager = container.cli_config_manager()
     engine_image = cli_config_manager.get_engine_image(image)
@@ -242,11 +244,6 @@ def backtest(project: Path,
 
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
-
-    lean_config = lean_config_manager.get_complete_lean_config("backtesting",
-                                                               algorithm_file,
-                                                               debugging_method,
-                                                               data_purchase_limit)
 
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, "backtesting", algorithm_file, output, engine_image, debugging_method)

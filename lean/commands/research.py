@@ -22,6 +22,8 @@ from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE
 from lean.container import container
+from lean.models.data_providers import all_data_providers
+from lean.models.data_providers.quantconnect import QuantConnectDataProvider
 
 
 def _check_docker_output(chunk: str, port: int) -> None:
@@ -39,6 +41,16 @@ def _check_docker_output(chunk: str, port: int) -> None:
                 type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.option("--port", type=int, default=8888,
               help="The port to run Jupyter Lab on (defaults to 8888)")
+@click.option("--data-provider",
+              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              help="Update the data provider in the Lean configuration file to retrieve data from the given provider")
+@click.option("--download-data",
+              is_flag=True,
+              default=False,
+              help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
+@click.option("--data-purchase-limit",
+              type=int,
+              help="The maximum amount of QCC to spend on downloading data during this backtest when using QuantConnect as data provider")
 @click.option("--image",
               type=str,
               help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
@@ -46,7 +58,13 @@ def _check_docker_output(chunk: str, port: int) -> None:
               is_flag=True,
               default=False,
               help="Pull the LEAN research image before starting the research environment")
-def research(project: Path, port: int, image: Optional[str], update: bool) -> None:
+def research(project: Path,
+             port: int,
+             data_provider: Optional[str],
+             download_data: bool,
+             data_purchase_limit: Optional[int],
+             image: Optional[str],
+             update: bool) -> None:
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
@@ -57,8 +75,17 @@ def research(project: Path, port: int, image: Optional[str], update: bool) -> No
     algorithm_file = project_manager.find_algorithm_file(project)
 
     lean_config_manager = container.lean_config_manager()
-    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None, None)
+    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
     lean_config["composer-dll-directory"] = "/Lean/Launcher/bin/Debug"
+
+    if download_data:
+        data_provider = QuantConnectDataProvider.get_name()
+
+    if data_provider is not None:
+        data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
+        data_provider.build(lean_config, container.logger()).configure(lean_config, "backtesting")
+
+    lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     lean_runner = container.lean_runner()
     temp_manager = container.temp_manager()

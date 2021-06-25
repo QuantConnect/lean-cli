@@ -387,7 +387,7 @@ def live(ctx: click.Context,
 
     if environment is not None:
         environment_name = environment
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
+        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
     elif brokerage is not None or data_feed is not None:
         ensure_options(ctx, ["brokerage", "data_feed"])
 
@@ -475,7 +475,7 @@ def live(ctx: click.Context,
                                                   iqfeed_version)
 
         environment_name = "lean-cli"
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
+        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
         lean_config["environments"] = {
             environment_name: _environment_skeleton
@@ -485,7 +485,7 @@ def live(ctx: click.Context,
         data_feed_configurer.configure(lean_config, environment_name)
     else:
         environment_name = "lean-cli"
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None, None)
+        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:

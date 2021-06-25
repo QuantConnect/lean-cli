@@ -18,7 +18,7 @@ import click
 
 from lean.click import PathParameter
 from lean.components.util.logger import Logger
-from lean.models.brokerages.local.base import LeanConfigConfigurer
+from lean.models.config import LeanConfigConfigurer
 
 
 class IQFeedDataFeed(LeanConfigConfigurer):

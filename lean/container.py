@@ -54,7 +54,7 @@ class Container(DeclarativeContainer):
 
     project_config_manager = Singleton(ProjectConfigManager, xml_manager)
     cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
-    lean_config_manager = Singleton(LeanConfigManager, cli_config_manager, project_config_manager)
+    lean_config_manager = Singleton(LeanConfigManager, logger, cli_config_manager, project_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
     project_manager = Singleton(ProjectManager, project_config_manager, xml_manager)

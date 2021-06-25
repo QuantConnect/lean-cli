@@ -16,7 +16,8 @@ from typing import Any, Dict
 import click
 
 from lean.components.util.logger import Logger
-from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokerage
+from lean.models.brokerages.local.base import LocalBrokerage
+from lean.models.config import LeanConfigConfigurer
 from lean.models.errors import MoreInfoError
 
 

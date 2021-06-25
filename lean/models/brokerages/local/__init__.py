@@ -15,7 +15,7 @@ import os
 import platform
 from typing import Dict, Type, List
 
-from lean.models.brokerages.local.base import LocalBrokerage, LeanConfigConfigurer
+from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
@@ -25,6 +25,7 @@ from lean.models.brokerages.local.oanda import OANDABrokerage, OANDADataFeed
 from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
+from lean.models.config import LeanConfigConfigurer
 
 all_local_brokerages = [
     PaperTradingBrokerage,
