@@ -36,10 +36,16 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
 
     project_config_manager = ProjectConfigManager(XMLManager())
 
+    plugin_manager = mock.Mock()
+    plugin_manager.get_installed_plugins.return_value = {
+        "QuantConnect.Brokerages": "1.0.0"
+    }
+
     return LeanRunner(mock.Mock(),
                       project_config_manager,
                       LeanConfigManager(mock.Mock(), cli_config_manager, project_config_manager),
                       docker_manager,
+                      plugin_manager,
                       TempManager(),
                       XMLManager())
 

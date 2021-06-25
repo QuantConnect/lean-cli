@@ -84,6 +84,7 @@ class Container(DeclarativeContainer):
                             project_config_manager,
                             lean_config_manager,
                             docker_manager,
+                            plugin_manager,
                             temp_manager,
                             xml_manager)
 

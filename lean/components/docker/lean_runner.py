@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 
 from docker.types import Mount
 
+from lean.components.cloud.plugin_manager import PluginManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
@@ -36,6 +37,7 @@ class LeanRunner:
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
                  docker_manager: DockerManager,
+                 plugin_manager: PluginManager,
                  temp_manager: TempManager,
                  xml_manager: XMLManager) -> None:
         """Creates a new LeanRunner instance.
@@ -44,6 +46,7 @@ class LeanRunner:
         :param project_config_manager: the ProjectConfigManager instance to retrieve project configuration from
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
+        :param plugin_manager: the PluginManager instance to retrieve the installed plugins from
         :param temp_manager: the TempManager instance to use for creating temporary directories
         :param xml_manager: the XMLManager instance to use for reading/writing XML files
         """
@@ -51,6 +54,7 @@ class LeanRunner:
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
+        self._plugin_manager = plugin_manager
         self._temp_manager = temp_manager
         self._xml_manager = xml_manager
 
@@ -133,6 +137,11 @@ class LeanRunner:
         """
         project_dir = algorithm_file.parent
 
+        # Install the required plugins when needed
+        # TODO: Update to correct value
+        if lean_config.get("data-provider", None) == "BloombergDataProvider":
+            self._plugin_manager.install_plugin("bloomberg", lean_config["job-organization-id"])
+
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
@@ -201,23 +210,44 @@ class LeanRunner:
             if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
                 lean_config[key] = "host.docker.internal"
 
+        set_up_csharp_common_called = False
+
         # Set up plugins
-        plugins_directory = Path(PLUGINS_DIRECTORY)
-        if plugins_directory.exists():
+        installed_plugins = self._plugin_manager.get_installed_plugins()
+        if len(installed_plugins) > 0:
+            self._set_up_csharp_common(run_options)
+            set_up_csharp_common_called = True
+
             # Mount the plugins directory
-            run_options["volumes"][str(plugins_directory)] = {
+            run_options["volumes"][PLUGINS_DIRECTORY] = {
                 "bind": "/Plugins",
                 "mode": "ro"
             }
 
+            # Add the plugins directory as a NuGet source root
+            run_options["commands"].append("dotnet nuget add source /Plugins")
+
+            # Create a C# project used to resolve the dependencies of the plugins
+            run_options["commands"].append("mkdir /PluginsProject")
+            run_options["commands"].append("dotnet new sln -o /PluginsProject")
+            run_options["commands"].append("dotnet new classlib -o /PluginsProject -f net5.0 --no-restore")
+            run_options["commands"].append("rm /PluginsProject/Class1.cs")
+
+            # Add all plugins to the project, automatically resolving all dependencies
+            for plugin_name, plugin_version in installed_plugins.items():
+                run_options["commands"].append(
+                    f"dotnet add /PluginsProject package {plugin_name} --version {plugin_version}")
+
             # Copy all plugin DLLs to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
-            run_options["commands"].append("shopt -s globstar")
-            run_options["commands"].append("cp -R -n /Plugins/*/**/*.dll /Lean/Launcher/bin/Debug/")
+            run_options["commands"].append(
+                "python /copy_csharp_dependencies.py /PluginsProject/obj/project.assets.json")
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
             self.set_up_python_options(project_dir, "/LeanCLI", run_options)
         else:
+            if not set_up_csharp_common_called:
+                self._set_up_csharp_common(run_options)
             self.set_up_csharp_options(project_dir, run_options)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
@@ -293,21 +323,10 @@ class LeanRunner:
             "mode": "ro"
         }
 
-        # Mount a volume to NuGet's cache directory so we only download packages once
-        self._docker_manager.create_volume("lean_cli_nuget")
-        run_options["volumes"]["lean_cli_nuget"] = {
-            "bind": "/root/.nuget/packages",
-            "mode": "rw"
-        }
-
         # Ensure all .csproj files refer to the version of LEAN in the Docker container
         csproj_temp_dir = self._temp_manager.create_temporary_directory()
         for path in compile_root.rglob("*.csproj"):
             self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
-
-        # Reduce the dotnet output
-        run_options["environment"]["DOTNET_NOLOGO"] = "true"
-        run_options["environment"]["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
         # Set up the MSBuild properties
         msbuild_properties = {
@@ -326,9 +345,7 @@ class LeanRunner:
             "PathMap": f"/LeanCLI={str(compile_root)}"
         }
 
-        tmp_directory = self._temp_manager.create_temporary_directory()
-
-        directory_build_props = tmp_directory / "Directory.Build.props"
+        directory_build_props = self._temp_manager.create_temporary_directory() / "Directory.Build.props"
         with directory_build_props.open("w+", encoding="utf-8") as file:
             file.write("""
 <Project>
@@ -339,7 +356,50 @@ class LeanRunner:
 </Project>
             """.strip())
 
-        copy_csharp_dependencies = tmp_directory / "copy_csharp_dependencies.py"
+        run_options["mounts"].append(Mount(target="/Directory.Build.props",
+                                           source=str(directory_build_props),
+                                           type="bind",
+                                           read_only=False))
+
+        # Find the .csproj file to compile
+        project_file = next(project_dir.glob("*.csproj"))
+
+        # Build the project before running LEAN
+        relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
+        msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
+        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
+
+        # Copy over the algorithm DLL
+        run_options["commands"].append(
+            f'cp "/Compile/bin/{project_file.stem}.dll" "/Lean/Launcher/bin/Debug/{project_file.stem}.dll"')
+
+        # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
+        # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
+        # We therefore use a custom Python script that does take the OS into account when deciding what to copy
+        run_options["commands"].append(
+            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
+
+    def _set_up_csharp_common(self, run_options: Dict[str, Any]) -> None:
+        """Sets up common Docker run options that is needed for all C# work.
+
+        This method is only called if the user has plugins and/or if the project to run is written in C#.
+
+        :param run_options: the dictionary to append run options to
+        """
+        # Mount a volume to NuGet's cache directory so we only download packages once
+        self._docker_manager.create_volume("lean_cli_nuget")
+        run_options["volumes"]["lean_cli_nuget"] = {
+            "bind": "/root/.nuget/packages",
+            "mode": "rw"
+        }
+
+        # Reduce the dotnet output
+        run_options["environment"]["DOTNET_NOLOGO"] = "true"
+        run_options["environment"]["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
+
+        # Create a Python script that can be used to copy the right C# dependencies to /Lean/Launcher/bin/Debug
+        # This script copies the correct DLLs even if a project has OS-specific DLLs
+        copy_csharp_dependencies = self._temp_manager.create_temporary_directory() / "copy_csharp_dependencies.py"
         with copy_csharp_dependencies.open("w+", encoding="utf-8") as file:
             file.write("""
 import json
@@ -360,7 +420,13 @@ if platform.machine() in ["arm64", "aarch64"]:
 else:
     accepted_runtime_identifiers.extend(["unix-x64", "linux-x64", "debian-x64", "ubuntu-x64", f"ubuntu.{ubuntu_version}-x64"])
 
-def copy_file(library_id, partial_path):
+def copy_file(library_id, partial_path, file_data):
+    if "rid" in file_data and file_data["rid"] not in accepted_runtime_identifiers:
+        return
+
+    if not file_data.get("copyToOutput", True):
+        return
+
     for folder in package_folders:
         full_path = folder / library_id.lower() / partial_path
         if full_path.exists():
@@ -368,51 +434,28 @@ def copy_file(library_id, partial_path):
     else:
         return
 
-    target_path = Path("/Lean/Launcher/bin/Debug") / full_path.name
+    output_name = file_data.get("outputPath", full_path.name)
+
+    target_path = Path("/Lean/Launcher/bin/Debug") / output_name
     if not target_path.exists():
         shutil.copy(full_path, target_path)
 
 project_target = list(project_assets["targets"].keys())[0]
 for library_id, library_data in project_assets["targets"][project_target].items():
     for key, value in library_data.get("runtimeTargets", {}).items():
-        if "rid" not in value or value["rid"] in accepted_runtime_identifiers:
-            copy_file(library_id, key)
+        copy_file(library_id, key, value)
 
     for key, value in library_data.get("runtime", {}).items():
-        if "rid" not in value or value["rid"] in accepted_runtime_identifiers:
-            copy_file(library_id, key)
+        copy_file(library_id, key, value)
+
+    for key, value in library_data.get("contentFiles", {}).items():
+        copy_file(library_id, key, value)
             """.strip())
 
-        run_options["mounts"].extend([Mount(target="/Directory.Build.props",
-                                            source=str(directory_build_props),
-                                            type="bind",
-                                            read_only=False),
-                                      Mount(target="/copy_csharp_dependencies.py",
-                                            source=str(copy_csharp_dependencies),
-                                            type="bind",
-                                            read_only=False)])
-
-        # Find the .csproj file to compile
-        project_file = next(project_dir.glob("*.csproj"))
-
-        # Build the project before running LEAN
-        relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
-        msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
-        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
-
-        # Copy over the algorithm DLL
-        run_options["commands"].append(
-            f'cp "/Compile/bin/{project_file.stem}.dll" "/Lean/Launcher/bin/Debug/{project_file.stem}.dll"')
-
-        # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
-        # We therefore use a custom Python script that does take the OS into account when deciding what to copy
-        run_options["commands"].append(
-            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
-
-        # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        # The call above does not copy over DLLs of project references, so we still need this
-        run_options["commands"].append(f"cp -R -n /Compile/bin/. /Lean/Launcher/bin/Debug/")
+        run_options["mounts"].append(Mount(target="/copy_csharp_dependencies.py",
+                                           source=str(copy_csharp_dependencies),
+                                           type="bind",
+                                           read_only=False))
 
     def _get_csharp_compile_root(self, project_dir: Path) -> Path:
         """Returns the path to the directory that should be mounted to compile the project directory.

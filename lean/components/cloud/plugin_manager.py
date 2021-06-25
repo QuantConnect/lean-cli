@@ -11,10 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil
-import zipfile
-from io import BytesIO
+import os
+import re
 from pathlib import Path
+from typing import Dict
+from urllib.parse import urlparse
 
 import requests
 
@@ -37,6 +38,8 @@ class PluginManager:
         self._logger = logger
         self._api_client = api_client
         self._cache_storage = cache_storage
+        self._installed_plugin_ids = set()
+        self._installed_plugins = {}
 
     def install_plugin(self, plugin_id: str, organization_id: str) -> None:
         """Installs a plugin into the global plugins directory.
@@ -47,23 +50,39 @@ class PluginManager:
         :param plugin_id: the id of the plugin to download
         :param organization_id: the id of the organization to download the plugin from
         """
+        if plugin_id in self._installed_plugin_ids:
+            return
+
+        self._installed_plugin_ids.add(plugin_id)
+
         plugin_info = self._api_client.plugins.get(plugin_id, organization_id)
 
+        file_name = os.path.basename(urlparse(plugin_info.url).path)
+        plugin_file = Path(PLUGINS_DIRECTORY) / file_name
+
+        nupkg_name = re.search(r"([^\d]+)\.\d", file_name).group(1)
+        nupkg_version = file_name.replace(f"{nupkg_name}.", "").replace(".nupkg", "")
+
         cache_key = f"last-plugin-update-{plugin_id}"
-        if self._cache_storage.get(cache_key, None) == plugin_info.updated:
+        if plugin_file.is_file() and self._cache_storage.get(cache_key, None) == plugin_info.updated:
+            self._installed_plugins[nupkg_name] = nupkg_version
             return
 
         self._logger.info(f"Downloading latest version of the '{plugin_id}' plugin")
 
-        plugin_directory = Path(PLUGINS_DIRECTORY) / plugin_id
-        if plugin_directory.exists():
-            shutil.rmtree(plugin_directory, ignore_errors=True)
-        plugin_directory.mkdir(parents=True, exist_ok=True)
-
         response = requests.get(plugin_info.url)
         response.raise_for_status()
 
-        with zipfile.ZipFile(BytesIO(response.content)) as zip_file:
-            zip_file.extractall(plugin_directory)
+        plugin_file.parent.mkdir(parents=True, exist_ok=True)
+        with plugin_file.open("wb+") as file:
+            file.write(response.content)
 
+        self._installed_plugins[nupkg_name] = nupkg_version
         self._cache_storage.set(cache_key, plugin_info.updated)
+
+    def get_installed_plugins(self) -> Dict[str, str]:
+        """Returns a dict containing name -> version pairs of all plugins that install_plugin() was called for.
+
+        :return: a dict containing name -> version pairs of the plugins that were installed before running this method
+        """
+        return dict(self._installed_plugins)
