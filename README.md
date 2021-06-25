@@ -847,8 +847,8 @@ Options:
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
 
-  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during this backtest when using
-                                  QuantConnect as data provider
+  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during this research session
+                                  when using QuantConnect as data provider
 
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment

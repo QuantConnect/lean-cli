@@ -50,7 +50,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
               help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
 @click.option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during this backtest when using QuantConnect as data provider")
+              help="The maximum amount of QCC to spend on downloading data during this research session when using QuantConnect as data provider")
 @click.option("--image",
               type=str,
               help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
