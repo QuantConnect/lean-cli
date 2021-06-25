@@ -284,8 +284,10 @@ class LeanRunner:
             "PathMap": f"/LeanCLI={str(compile_root)}"
         }
 
-        build_props_file = self._temp_manager.create_temporary_directory() / "Directory.Build.props"
-        with build_props_file.open("w+", encoding="utf-8") as file:
+        tmp_directory = self._temp_manager.create_temporary_directory()
+
+        directory_build_props = tmp_directory / "Directory.Build.props"
+        with directory_build_props.open("w+", encoding="utf-8") as file:
             file.write("""
 <Project>
     <PropertyGroup>
@@ -295,10 +297,58 @@ class LeanRunner:
 </Project>
             """.strip())
 
-        run_options["mounts"].append(Mount(target="/Directory.Build.props",
-                                           source=str(build_props_file),
-                                           type="bind",
-                                           read_only=False))
+        copy_csharp_dependencies = tmp_directory / "copy_csharp_dependencies.py"
+        with copy_csharp_dependencies.open("w+", encoding="utf-8") as file:
+            file.write("""
+import json
+import os
+import platform
+import shutil
+import sys
+from pathlib import Path
+
+project_assets = json.loads(Path(sys.argv[-1]).read_text(encoding="utf-8"))
+package_folders = [Path(folder) for folder in project_assets["packageFolders"].keys()]
+
+ubuntu_version = os.popen("lsb_release -rs").read().strip()
+accepted_runtime_identifiers = ["base", "unix", "linux", "debian", "ubuntu", f"ubuntu.{ubuntu_version}"]
+
+if platform.machine() in ["arm64", "aarch64"]:
+    accepted_runtime_identifiers.extend(["unix-arm", "linux-arm", "debian-arm", "ubuntu-arm", f"ubuntu.{ubuntu_version}-arm"])
+else:
+    accepted_runtime_identifiers.extend(["unix-x64", "linux-x64", "debian-x64", "ubuntu-x64", f"ubuntu.{ubuntu_version}-x64"])
+
+def copy_file(library_id, partial_path):
+    for folder in package_folders:
+        full_path = folder / library_id.lower() / partial_path
+        if full_path.exists():
+            break
+    else:
+        return
+
+    target_path = Path("/Lean/Launcher/bin/Debug") / full_path.name
+    if not target_path.exists():
+        shutil.copy(full_path, target_path)
+
+project_target = list(project_assets["targets"].keys())[0]
+for library_id, library_data in project_assets["targets"][project_target].items():
+    for key, value in library_data.get("runtimeTargets", {}).items():
+        if "rid" not in value or value["rid"] in accepted_runtime_identifiers:
+            copy_file(library_id, key)
+
+    for key, value in library_data.get("runtime", {}).items():
+        if "rid" not in value or value["rid"] in accepted_runtime_identifiers:
+            copy_file(library_id, key)
+            """.strip())
+
+        run_options["mounts"].extend([Mount(target="/Directory.Build.props",
+                                            source=str(directory_build_props),
+                                            type="bind",
+                                            read_only=False),
+                                      Mount(target="/copy_csharp_dependencies.py",
+                                            source=str(copy_csharp_dependencies),
+                                            type="bind",
+                                            read_only=False)])
 
         # Build the project before running LEAN
         relative_project_dir = str(project_dir.relative_to(compile_root)).replace("\\", "/")
@@ -310,6 +360,13 @@ class LeanRunner:
             f'cp "/Compile/bin/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
+        # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
+        # We therefore use a custom Python script that does take the OS into account when deciding what to copy
+        run_options["commands"].append(
+            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_dir.name}/project.assets.json"')
+
+        # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
+        # The call above does not copy over DLLs of project references, so we still need this
         run_options["commands"].append(f"cp -R -n /Compile/bin/. /Lean/Launcher/bin/Debug/")
 
     def _get_csharp_compile_root(self, project_dir: Path) -> Path:
