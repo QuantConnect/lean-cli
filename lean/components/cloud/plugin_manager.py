@@ -58,10 +58,10 @@ class PluginManager:
         plugin_info = self._api_client.plugins.get(plugin_id, organization_id)
 
         file_name = os.path.basename(urlparse(plugin_info.url).path)
-        plugin_file = Path(PLUGINS_DIRECTORY) / file_name
-
         nupkg_name = re.search(r"([^\d]+)\.\d", file_name).group(1)
         nupkg_version = file_name.replace(f"{nupkg_name}.", "").replace(".nupkg", "")
+
+        plugin_file = Path(PLUGINS_DIRECTORY) / file_name
 
         cache_key = f"last-plugin-update-{plugin_id}"
         if plugin_file.is_file() and self._cache_storage.get(cache_key, None) == plugin_info.updated:
@@ -70,12 +70,14 @@ class PluginManager:
 
         self._logger.info(f"Downloading latest version of the '{plugin_id}' plugin")
 
-        response = requests.get(plugin_info.url)
-        response.raise_for_status()
-
         plugin_file.parent.mkdir(parents=True, exist_ok=True)
-        with plugin_file.open("wb+") as file:
-            file.write(response.content)
+
+        with requests.get(plugin_info.url, stream=True) as response:
+            response.raise_for_status()
+
+            with plugin_file.open("wb+") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
 
         self._installed_plugins[nupkg_name] = nupkg_version
         self._cache_storage.set(cache_key, plugin_info.updated)
