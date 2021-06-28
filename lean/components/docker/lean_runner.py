@@ -350,20 +350,23 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                                             type="bind",
                                             read_only=False)])
 
+        # Find the .csproj file to compile
+        project_file = next(project_dir.glob("*.csproj"))
+
         # Build the project before running LEAN
-        relative_project_dir = str(project_dir.relative_to(compile_root)).replace("\\", "/")
+        relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
         msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
-        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_dir}" "-p:{msbuild_properties}"')
+        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
 
         # Copy over the algorithm DLL
         run_options["commands"].append(
-            f'cp "/Compile/bin/{project_dir.name}.dll" "/Lean/Launcher/bin/Debug/{project_dir.name}.dll"')
+            f'cp "/Compile/bin/{project_file.stem}.dll" "/Lean/Launcher/bin/Debug/{project_file.stem}.dll"')
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
         # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
         # We therefore use a custom Python script that does take the OS into account when deciding what to copy
         run_options["commands"].append(
-            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_dir.name}/project.assets.json"')
+            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
 
         # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
         # The call above does not copy over DLLs of project references, so we still need this
@@ -378,7 +381,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         :param project_dir: the path to the project directory
         :return: the path that should be mounted in the Docker container when compiling the C# project
         """
-        current_dir = project_dir
+        current_dir = project_dir.parent
         while current_dir.parent != current_dir:
             if next(current_dir.glob("*.sln"), None) is not None:
                 return current_dir
