@@ -40,7 +40,8 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
                       project_config_manager,
                       LeanConfigManager(mock.Mock(), cli_config_manager, project_config_manager),
                       docker_manager,
-                      TempManager())
+                      TempManager(),
+                      XMLManager())
 
 
 def test_run_lean_compiles_csharp_project() -> None:

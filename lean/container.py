@@ -82,7 +82,8 @@ class Container(DeclarativeContainer):
                             project_config_manager,
                             lean_config_manager,
                             docker_manager,
-                            temp_manager)
+                            temp_manager,
+                            xml_manager)
 
     update_manager = Singleton(UpdateManager, logger, cache_storage, docker_manager)
 

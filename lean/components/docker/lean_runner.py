@@ -23,6 +23,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
+from lean.components.util.xml_manager import XMLManager
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 
@@ -35,20 +36,23 @@ class LeanRunner:
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
                  docker_manager: DockerManager,
-                 temp_manager: TempManager) -> None:
+                 temp_manager: TempManager,
+                 xml_manager: XMLManager) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
         :param project_config_manager: the ProjectConfigManager instance to retrieve project configuration from
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
-        :param temp_manager: the TempManager instance to use when creating temporary directories
+        :param temp_manager: the TempManager instance to use for creating temporary directories
+        :param xml_manager: the XMLManager instance to use for reading/writing XML files
         """
         self._logger = logger
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
         self._temp_manager = temp_manager
+        self._xml_manager = xml_manager
 
     def run_lean(self,
                  lean_config: Dict[str, Any],
@@ -253,7 +257,7 @@ class LeanRunner:
         # Mount the compile root
         run_options["volumes"][str(compile_root)] = {
             "bind": "/LeanCLI",
-            "mode": "rw"
+            "mode": "ro"
         }
 
         # Mount a volume to NuGet's cache directory so we only download packages once
@@ -262,6 +266,11 @@ class LeanRunner:
             "bind": "/root/.nuget/packages",
             "mode": "rw"
         }
+
+        # Ensure all .csproj files refer to the version of LEAN in the Docker container
+        csproj_temp_dir = self._temp_manager.create_temporary_directory()
+        for path in compile_root.rglob("*.csproj"):
+            self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
 
         # Reduce the dotnet output
         run_options["environment"]["DOTNET_NOLOGO"] = "true"
@@ -389,3 +398,51 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             current_dir = current_dir.parent
 
         return project_dir
+
+    def _ensure_csproj_uses_correct_lean(self,
+                                         compile_root: Path,
+                                         csproj_path: Path,
+                                         temp_dir: Path,
+                                         run_options: Dict[str, Any]) -> None:
+        """Ensures a C# project is compiled using the version of LEAN in the Docker container.
+
+        When a .csproj file refers to the NuGet version of LEAN,
+        we mount a temporary file on top of it which refers to the version of LEAN in the Docker container.
+        In the case there is a breaking change between the two,
+        this causes compiling to fail with readable error messages instead of ugly messages at runtime.
+
+        :param compile_root: the path that is mounted in the Docker container
+        :param csproj_path: the path to the .csproj file
+        :param temp_dir: the temporary directory in which temporary .csproj files should be placed
+        :param run_options: the dictionary to append run options to
+        """
+        csproj = self._xml_manager.parse(csproj_path.read_text(encoding="utf-8"))
+        include_added = False
+
+        for package_reference in csproj.iter("PackageReference"):
+            if not package_reference.get("Include", "").lower().startswith("quantconnect."):
+                continue
+
+            if include_added:
+                package_reference.getparent().remove(package_reference)
+
+            package_reference.clear()
+
+            package_reference.tag = "Reference"
+            package_reference.set("Include", "/Lean/Launcher/bin/Debug/*.dll")
+            package_reference.append(self._xml_manager.parse("<Private>False</Private>"))
+
+            include_added = True
+
+        if not include_added:
+            return
+
+        new_csproj_file = temp_dir / csproj_path.relative_to(compile_root)
+        new_csproj_file.parent.mkdir(parents=True, exist_ok=True)
+        with new_csproj_file.open("w+", encoding="utf-8") as file:
+            file.write(self._xml_manager.to_string(csproj))
+
+        run_options["mounts"].append(Mount(target=f"/LeanCLI/{csproj_path.relative_to(compile_root)}",
+                                           source=str(new_csproj_file),
+                                           type="bind",
+                                           read_only=True))
