@@ -688,7 +688,7 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-product-name TEXT      The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --bloomberg-organization TEXT   The name or id of the organization with the Bloomberg plugin subscription
+  --bloomberg-organization TEXT   The name or id of the organization with the Bloomberg module subscription
   --bloomberg-api-type [Desktop|Server|Bpipe]
                                   The API type to use
   --bloomberg-environment [Production|Beta]

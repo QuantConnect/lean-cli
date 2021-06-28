@@ -17,14 +17,14 @@ from typing import Any, Dict, Optional
 
 from docker.types import Mount
 
-from lean.components.cloud.plugin_manager import PluginManager
+from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import PLUGINS_DIRECTORY
+from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 
@@ -37,7 +37,7 @@ class LeanRunner:
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
                  docker_manager: DockerManager,
-                 plugin_manager: PluginManager,
+                 module_manager: ModuleManager,
                  temp_manager: TempManager,
                  xml_manager: XMLManager) -> None:
         """Creates a new LeanRunner instance.
@@ -46,7 +46,7 @@ class LeanRunner:
         :param project_config_manager: the ProjectConfigManager instance to retrieve project configuration from
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
-        :param plugin_manager: the PluginManager instance to retrieve the installed plugins from
+        :param module_manager: the ModuleManager instance to retrieve the installed modules from
         :param temp_manager: the TempManager instance to use for creating temporary directories
         :param xml_manager: the XMLManager instance to use for reading/writing XML files
         """
@@ -54,7 +54,7 @@ class LeanRunner:
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._docker_manager = docker_manager
-        self._plugin_manager = plugin_manager
+        self._module_manager = module_manager
         self._temp_manager = temp_manager
         self._xml_manager = xml_manager
 
@@ -137,10 +137,10 @@ class LeanRunner:
         """
         project_dir = algorithm_file.parent
 
-        # Install the required plugins when needed
+        # Install the required modules when they're needed
         # TODO: Update to correct value
         if lean_config.get("data-provider", None) == "BloombergDataProvider":
-            self._plugin_manager.install_plugin("bloomberg", lean_config["job-organization-id"])
+            self._module_manager.install_module(BLOOMBERG_PRODUCT_ID, lean_config["job-organization-id"])
 
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():
@@ -212,35 +212,35 @@ class LeanRunner:
 
         set_up_csharp_common_called = False
 
-        # Set up plugins
-        installed_plugins = self._plugin_manager.get_installed_plugins()
-        if len(installed_plugins) > 0:
+        # Set up modules
+        installed_modules = self._module_manager.get_installed_modules()
+        if len(installed_modules) > 0:
             self._set_up_csharp_common(run_options)
             set_up_csharp_common_called = True
 
-            # Mount the plugins directory
-            run_options["volumes"][PLUGINS_DIRECTORY] = {
-                "bind": "/Plugins",
+            # Mount the modules directory
+            run_options["volumes"][MODULES_DIRECTORY] = {
+                "bind": "/Modules",
                 "mode": "ro"
             }
 
-            # Add the plugins directory as a NuGet source root
-            run_options["commands"].append("dotnet nuget add source /Plugins")
+            # Add the modules directory as a NuGet source root
+            run_options["commands"].append("dotnet nuget add source /Modules")
 
-            # Create a C# project used to resolve the dependencies of the plugins
-            run_options["commands"].append("mkdir /PluginsProject")
-            run_options["commands"].append("dotnet new sln -o /PluginsProject")
-            run_options["commands"].append("dotnet new classlib -o /PluginsProject -f net5.0 --no-restore")
-            run_options["commands"].append("rm /PluginsProject/Class1.cs")
+            # Create a C# project used to resolve the dependencies of the modules
+            run_options["commands"].append("mkdir /ModulesProject")
+            run_options["commands"].append("dotnet new sln -o /ModulesProject")
+            run_options["commands"].append("dotnet new classlib -o /ModulesProject -f net5.0 --no-restore")
+            run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
-            # Add all plugins to the project, automatically resolving all dependencies
-            for plugin_name, plugin_version in installed_plugins.items():
+            # Add all modules to the project, automatically resolving all dependencies
+            for package_name, package_version in installed_modules.items():
                 run_options["commands"].append(
-                    f"dotnet add /PluginsProject package {plugin_name} --version {plugin_version}")
+                    f"dotnet add /ModulesProject package {package_name} --version {package_version}")
 
-            # Copy all plugin DLLs to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
+            # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
             run_options["commands"].append(
-                "python /copy_csharp_dependencies.py /PluginsProject/obj/project.assets.json")
+                "python /copy_csharp_dependencies.py /ModulesProject/obj/project.assets.json")
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
@@ -382,7 +382,7 @@ class LeanRunner:
     def _set_up_csharp_common(self, run_options: Dict[str, Any]) -> None:
         """Sets up common Docker run options that is needed for all C# work.
 
-        This method is only called if the user has plugins and/or if the project to run is written in C#.
+        This method is only called if the user has installed modules and/or if the project to run is written in C#.
 
         :param run_options: the dictionary to append run options to
         """

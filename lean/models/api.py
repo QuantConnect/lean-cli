@@ -21,6 +21,7 @@ from rich import box
 from rich.table import Table
 from rich.text import Text
 
+from lean.constants import SECURITY_MASTER_PRODUCT_ID
 from lean.models.pydantic import WrappedBaseModel
 
 
@@ -394,7 +395,7 @@ class QCFullOrganization(WrappedBaseModel):
         if data_products_product is None:
             return False
 
-        return any(x.productId == 37 for x in data_products_product.items)
+        return any(x.productId == SECURITY_MASTER_PRODUCT_ID for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):
@@ -500,8 +501,3 @@ class QCDataVendor(WrappedBaseModel):
 class QCDataInformation(WrappedBaseModel):
     prices: List[QCDataVendor]
     agreement: str
-
-
-class QCPluginDetails(WrappedBaseModel):
-    url: str
-    updated: str

@@ -25,8 +25,8 @@ CREDENTIALS_CONFIG_PATH = str(Path("~/.lean/credentials").expanduser())
 # The file in which we store when we last checked for updates
 CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
-# The directory in which plugins are stored
-PLUGINS_DIRECTORY = str(Path("~/.lean/plugins").expanduser())
+# The directory in which modules are stored
+MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
 
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
@@ -64,3 +64,9 @@ UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14
 
 # The interval in hours at which the CLI checks for new announcements
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
+
+# The product id of the Bloomberg module
+BLOOMBERG_PRODUCT_ID = 32
+
+# The product id of the Security Master subscription
+SECURITY_MASTER_PRODUCT_ID = 37

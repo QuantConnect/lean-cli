@@ -340,7 +340,7 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--bloomberg-organization",
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
-              help="The name or id of the organization with the Bloomberg plugin subscription")
+              help="The name or id of the organization with the Bloomberg module subscription")
 @click.option("--bloomberg-api-type",
               type=click.Choice(["Desktop", "Server", "Bpipe"], case_sensitive=False),
               default=lambda: _get_default_value("bloomberg-api-type"),

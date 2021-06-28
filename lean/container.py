@@ -18,7 +18,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
 from lean.components.cloud.data_downloader import DataDownloader
-from lean.components.cloud.plugin_manager import PluginManager
+from lean.components.cloud.module_manager import ModuleManager
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
 from lean.components.config.cli_config_manager import CLIConfigManager
@@ -75,7 +75,7 @@ class Container(DeclarativeContainer):
                                       pull_manager,
                                       push_manager,
                                       path_manager)
-    plugin_manager = Singleton(PluginManager, logger, api_client, cache_storage)
+    module_manager = Singleton(ModuleManager, logger, api_client)
 
     docker_manager = Singleton(DockerManager, logger, temp_manager)
 
@@ -84,7 +84,7 @@ class Container(DeclarativeContainer):
                             project_config_manager,
                             lean_config_manager,
                             docker_manager,
-                            plugin_manager,
+                            module_manager,
                             temp_manager,
                             xml_manager)
 
