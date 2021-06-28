@@ -54,7 +54,8 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-API_BASE_URL = "https://www.quantconnect.com/api/v2/"
+# TODO: Revert to production API when endpoints land there
+API_BASE_URL = "https://beta.quantconnect.com/api/v2/"
 
 # The interval in hours at which the CLI checks for updates to itself
 UPDATE_CHECK_INTERVAL_CLI = 24
@@ -65,8 +66,8 @@ UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14
 # The interval in hours at which the CLI checks for new announcements
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 
-# The product id of the Bloomberg module
-BLOOMBERG_PRODUCT_ID = 44
-
 # The product id of the Security Master subscription
 SECURITY_MASTER_PRODUCT_ID = 37
+
+# The product id of the Bloomberg module
+BLOOMBERG_PRODUCT_ID = 44

@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
-from typing import Dict
+from typing import Set, List, Dict
 
 import requests
 
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.constants import MODULES_DIRECTORY
+from lean.models.modules import NuGetPackage
 
 
 class ModuleManager:
@@ -33,8 +33,8 @@ class ModuleManager:
         """
         self._logger = logger
         self._api_client = api_client
-        self._installed_product_ids = set()
-        self._installed_modules = {}
+        self._installed_product_ids: Set[int] = set()
+        self._installed_packages: List[NuGetPackage] = []
 
     def install_module(self, product_id: int, organization_id: str) -> None:
         """Installs a module into the global modules directory.
@@ -49,42 +49,53 @@ class ModuleManager:
             return
 
         module_files = self._api_client.modules.list_files(product_id, organization_id)
-        if len(module_files) == 0:
-            raise RuntimeError(f"The module with product id '{product_id}' does not have any files")
+        packages_to_download: Dict[str, NuGetPackage] = {}
 
-        file_name = sorted(module_files)[-1]
-        nupkg_name = re.search(r"([^\d]+)\.\d", file_name).group(1)
-        nupkg_version = file_name.replace(f"{nupkg_name}.", "").replace(".nupkg", "")
+        for file_name in module_files:
+            package = NuGetPackage.parse(file_name)
 
-        module_file = Path(MODULES_DIRECTORY) / file_name
+            if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
+                packages_to_download[package.name] = package
 
-        if module_file.is_file():
-            self._installed_product_ids.add(product_id)
-            self._installed_modules[nupkg_name] = nupkg_version
+        for package in packages_to_download.values():
+            self._download_file(product_id, organization_id, package)
+
+        self._installed_product_ids.add(product_id)
+
+    def get_installed_packages(self) -> List[NuGetPackage]:
+        """Returns a list of NuGet packages that were installed by install_module() calls.
+
+        :return: a list of NuGet packages in the modules directory that should be made available when running LEAN
+        """
+        return list(self._installed_packages)
+
+    def _download_file(self, product_id: int, organization_id: str, package: NuGetPackage) -> None:
+        """Downloads a file if it doesn't already exist locally.
+
+        :param product_id: the product id of the module to download
+        :param organization_id: the id of the organization that has a license for the module
+        :param package: the NuGet package to download
+        """
+        package_file = Path(MODULES_DIRECTORY) / package.get_file_name()
+
+        if package_file.is_file():
+            self._installed_packages.append(package)
             return
 
-        self._logger.info(f"Downloading '{file_name}'")
+        self._logger.info(f"Downloading '{package_file.name}'")
 
-        module_file.parent.mkdir(parents=True, exist_ok=True)
+        package_file.parent.mkdir(parents=True, exist_ok=True)
 
-        link = self._api_client.modules.get_link(product_id, organization_id, file_name)
+        link = self._api_client.modules.get_link(product_id, organization_id, package_file.name)
         try:
             with requests.get(link, stream=True) as response:
                 response.raise_for_status()
 
-                with module_file.open("wb+") as file:
+                with package_file.open("wb+") as file:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)
         except Exception as exception:
-            module_file.unlink(missing_ok=True)
+            package_file.unlink(missing_ok=True)
             raise exception
 
-        self._installed_product_ids.add(product_id)
-        self._installed_modules[nupkg_name] = nupkg_version
-
-    def get_installed_modules(self) -> Dict[str, str]:
-        """Returns a dict containing name -> version pairs of all modules that install_module() was called for.
-
-        :return: a dict containing name -> version pairs for which there are .nupkg files in the modules directory
-        """
-        return dict(self._installed_modules)
+        self._installed_packages.append(package)

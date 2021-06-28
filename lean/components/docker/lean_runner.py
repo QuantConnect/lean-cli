@@ -213,8 +213,8 @@ class LeanRunner:
         set_up_csharp_common_called = False
 
         # Set up modules
-        installed_modules = self._module_manager.get_installed_modules()
-        if len(installed_modules) > 0:
+        installed_packages = self._module_manager.get_installed_packages()
+        if len(installed_packages) > 0:
             self._set_up_csharp_common(run_options)
             set_up_csharp_common_called = True
 
@@ -234,9 +234,9 @@ class LeanRunner:
             run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
             # Add all modules to the project, automatically resolving all dependencies
-            for package_name, package_version in installed_modules.items():
+            for package in installed_packages:
                 run_options["commands"].append(
-                    f"dotnet add /ModulesProject package {package_name} --version {package_version}")
+                    f"dotnet add /ModulesProject package {package.name} --version {package.version}")
 
             # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
             run_options["commands"].append(

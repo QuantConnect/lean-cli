@@ -24,6 +24,7 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
+from lean.models.modules import NuGetPackage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
@@ -37,9 +38,7 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     project_config_manager = ProjectConfigManager(XMLManager())
 
     module_manager = mock.Mock()
-    module_manager.get_installed_modules.return_value = {
-        "QuantConnect.Brokerages": "1.0.0"
-    }
+    module_manager.get_installed_packages.return_value = [NuGetPackage(name="QuantConnect.Brokerages", version="1.0.0")]
 
     return LeanRunner(mock.Mock(),
                       project_config_manager,
