@@ -42,7 +42,23 @@ def create_fake_lean_cli_directory() -> None:
         (Path.cwd() / "CSharp Project" / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
             "parameters": {}
-        })
+        }),
+        (Path.cwd() / "CSharp Project" / "CSharp Project.csproj"): """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net5.0</TargetFramework>
+        <LangVersion>9</LangVersion>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.11940" />
+    </ItemGroup>
+</Project>
+        """
     }
 
     for path, content in files.items():
