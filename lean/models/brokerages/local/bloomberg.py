@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import click
 
@@ -35,13 +35,29 @@ class BloombergBrokerage(LocalBrokerage):
                  environment: str,
                  server_host: str,
                  server_port: int,
-                 symbol_map_file: Path) -> None:
+                 symbol_map_file: Path,
+                 emsx_broker: str,
+                 emsx_user_time_zone: Optional[str],
+                 emsx_account: Optional[str],
+                 emsx_strategy: Optional[str],
+                 emsx_notes: Optional[str],
+                 emsx_handling: Optional[str],
+                 execution: Optional[bool],
+                 allow_modification: Optional[bool]) -> None:
         self._organization_id = organization_id
         self._api_type = api_type
         self._environment = environment
         self._server_host = server_host
         self._server_port = server_port
         self._symbol_map_file = symbol_map_file
+        self._emsx_broker = emsx_broker
+        self._emsx_user_time_zone = emsx_user_time_zone
+        self._emsx_account = emsx_account
+        self._emsx_strategy = emsx_strategy
+        self._emsx_notes = emsx_notes
+        self._emsx_handling = emsx_handling
+        self._execution = execution
+        self._allow_modification = allow_modification
 
     @classmethod
     def get_name(cls) -> str:
@@ -66,11 +82,38 @@ class BloombergBrokerage(LocalBrokerage):
 
         server_host = click.prompt("Server host", cls._get_default(lean_config, "bloomberg-server-host"))
         server_port = click.prompt("Server port", cls._get_default(lean_config, "bloomberg-server-port"), type=int)
+
         symbol_map_file = click.prompt("Path to symbol map file",
                                        cls._get_default(lean_config, "bloomberg-symbol-map-file"),
                                        type=PathParameter(exists=True, file_okay=True, dir_okay=False))
 
-        return BloombergBrokerage(organization_id, api_type, environment, server_host, server_port, symbol_map_file)
+        emsx_broker = click.prompt("EMSX broker", cls._get_default(lean_config, "bloomberg-emsx-broker"))
+        emsx_user_time_zone = click.prompt("EMSX user timezone",
+                                           cls._get_default(lean_config, "bloomberg-emsx-user-time-zone") or "UTC")
+        emsx_account = click.prompt("EMSX account", cls._get_default(lean_config, "bloomberg-emsx-account") or "")
+        emsx_strategy = click.prompt("EMSX strategy", cls._get_default(lean_config, "bloomberg-emsx-strategy") or "")
+        emsx_notes = click.prompt("EMSX notes", cls._get_default(lean_config, "bloomberg-emsx-notes") or "")
+        emsx_handling = click.prompt("EMSX handling", cls._get_default(lean_config, "bloomberg-emsx-handling") or "")
+
+        execution = click.prompt("Execution", cls._get_default(lean_config, "bloomberg-execution") or "", type=bool)
+        allow_modification = click.prompt("Allow modification",
+                                          cls._get_default(lean_config, "bloomberg-allow-modification") or "",
+                                          type=bool)
+
+        return BloombergBrokerage(organization_id,
+                                  api_type,
+                                  environment,
+                                  server_host,
+                                  server_port,
+                                  symbol_map_file,
+                                  emsx_broker,
+                                  emsx_user_time_zone,
+                                  emsx_account,
+                                  emsx_strategy,
+                                  emsx_notes,
+                                  emsx_handling,
+                                  execution,
+                                  allow_modification)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
@@ -86,13 +129,29 @@ class BloombergBrokerage(LocalBrokerage):
         lean_config["bloomberg-server-host"] = self._server_host
         lean_config["bloomberg-server-port"] = self._server_port
         lean_config["bloomberg-symbol-map-file"] = str(self._symbol_map_file).replace("\\", "/")
+        lean_config["bloomberg-emsx-broker"] = self._emsx_broker
+        lean_config["bloomberg-emsx-user-time-zone"] = self._emsx_user_time_zone or ""
+        lean_config["bloomberg-emsx-account"] = self._emsx_account or ""
+        lean_config["bloomberg-emsx-strategy"] = self._emsx_strategy or ""
+        lean_config["bloomberg-emsx-notes"] = self._emsx_notes or ""
+        lean_config["bloomberg-emsx-handling"] = self._emsx_handling or ""
+        lean_config["bloomberg-execution"] = self._execution or ""
+        lean_config["bloomberg-allow-modification"] = self._allow_modification or ""
 
         self._save_properties(lean_config, ["job-organization-id",
                                             "bloomberg-api-type",
                                             "bloomberg-environment",
                                             "bloomberg-server-host",
                                             "bloomberg-server-port",
-                                            "bloomberg-symbol-map-file"])
+                                            "bloomberg-symbol-map-file",
+                                            "bloomberg-emsx-broker",
+                                            "bloomberg-emsx-user-time-zone",
+                                            "bloomberg-emsx-account",
+                                            "bloomberg-emsx-strategy",
+                                            "bloomberg-emsx-notes",
+                                            "bloomberg-emsx-handling",
+                                            "bloomberg-execution",
+                                            "bloomberg-allow-modification"])
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:

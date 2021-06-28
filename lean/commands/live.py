@@ -361,6 +361,38 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               default=lambda: _get_default_value("bloomberg-symbol-map-file"),
               help="The path to the Bloomberg symbol map file")
+@click.option("--bloomberg-emsx-broker",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-broker"),
+              help="The EMSX broker to use")
+@click.option("--bloomberg-emsx-user-time-zone",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-user-time-zone"),
+              help="The EMSX user timezone to use")
+@click.option("--bloomberg-emsx-account",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-account"),
+              help="The EMSX account to use")
+@click.option("--bloomberg-emsx-strategy",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-strategy"),
+              help="The EMSX strategy to use")
+@click.option("--bloomberg-emsx-notes",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-notes"),
+              help="The EMSX notes to use")
+@click.option("--bloomberg-emsx-handling",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-emsx-handling"),
+              help="The EMSX handling to use")
+@click.option("--bloomberg-execution",
+              type=str,
+              default=lambda: _get_default_value("bloomberg-execution"),
+              help="Bloomberg execution")
+@click.option("--bloomberg-allow-modification",
+              type=bool,
+              default=lambda: _get_default_value("bloomberg-allow-modification"),
+              help="Whether modification is allowed")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -408,6 +440,14 @@ def live(ctx: click.Context,
          bloomberg_server_host: Optional[str],
          bloomberg_server_port: Optional[int],
          bloomberg_symbol_map_file: Optional[Path],
+         bloomberg_emsx_broker: Optional[str],
+         bloomberg_emsx_user_time_zone: Optional[str],
+         bloomberg_emsx_account: Optional[str],
+         bloomberg_emsx_strategy: Optional[str],
+         bloomberg_emsx_notes: Optional[str],
+         bloomberg_emsx_handling: Optional[str],
+         bloomberg_execution: Optional[bool],
+         bloomberg_allow_modification: Optional[bool],
          image: Optional[str],
          update: bool) -> None:
     """Start live trading a project locally using Docker.
@@ -488,13 +528,22 @@ def live(ctx: click.Context,
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
-                                 "bloomberg_symbol_map_file"])
+                                 "bloomberg_symbol_map_file",
+                                 "bloomberg_emsx_broker"])
             brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                       bloomberg_api_type,
                                                       bloomberg_environment,
                                                       bloomberg_server_host,
                                                       bloomberg_server_port,
-                                                      bloomberg_symbol_map_file)
+                                                      bloomberg_symbol_map_file,
+                                                      bloomberg_emsx_broker,
+                                                      bloomberg_emsx_user_time_zone,
+                                                      bloomberg_emsx_account,
+                                                      bloomberg_emsx_strategy,
+                                                      bloomberg_emsx_notes,
+                                                      bloomberg_emsx_handling,
+                                                      bloomberg_execution,
+                                                      bloomberg_allow_modification)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
@@ -540,13 +589,22 @@ def live(ctx: click.Context,
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
-                                 "bloomberg_symbol_map_file"])
+                                 "bloomberg_symbol_map_file",
+                                 "bloomberg_emsx_broker"])
             data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                                         bloomberg_api_type,
                                                                         bloomberg_environment,
                                                                         bloomberg_server_host,
                                                                         bloomberg_server_port,
-                                                                        bloomberg_symbol_map_file))
+                                                                        bloomberg_symbol_map_file,
+                                                                        bloomberg_emsx_broker,
+                                                                        bloomberg_emsx_user_time_zone,
+                                                                        bloomberg_emsx_account,
+                                                                        bloomberg_emsx_strategy,
+                                                                        bloomberg_emsx_notes,
+                                                                        bloomberg_emsx_handling,
+                                                                        bloomberg_execution,
+                                                                        bloomberg_allow_modification))
         elif data_feed == IQFeedDataFeed.get_name():
             ensure_options(ctx, ["iqfeed_iqconnect",
                                  "iqfeed_username",

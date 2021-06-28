@@ -66,7 +66,7 @@ UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 
 # The product id of the Bloomberg module
-BLOOMBERG_PRODUCT_ID = 32
+BLOOMBERG_PRODUCT_ID = 44
 
 # The product id of the Security Master subscription
 SECURITY_MASTER_PRODUCT_ID = 37
