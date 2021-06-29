@@ -84,11 +84,14 @@ class ProjectClient:
             request_parameters["description"] = description
 
         if parameters is not None:
-            index = 0
-            for key, value in parameters.items():
-                request_parameters[f"parameters[{index}][key]"] = key
-                request_parameters[f"parameters[{index}][value]"] = value
-                index += 1
+            if len(parameters) > 0:
+                index = 0
+                for key, value in parameters.items():
+                    request_parameters[f"parameters[{index}][key]"] = key
+                    request_parameters[f"parameters[{index}][value]"] = value
+                    index += 1
+            else:
+                request_parameters["parameters"] = ""
 
         self._api.post("projects/update", request_parameters, data_as_json=False)
 

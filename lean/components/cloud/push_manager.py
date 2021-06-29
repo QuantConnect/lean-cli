@@ -153,7 +153,7 @@ class PushManager:
         if local_description != cloud_description:
             update_args["description"] = local_description
 
-        if local_parameters != cloud_parameters and local_parameters != {}:
+        if local_parameters != cloud_parameters:
             update_args["parameters"] = local_parameters
 
         if update_args != {}:
