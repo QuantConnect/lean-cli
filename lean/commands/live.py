@@ -523,7 +523,9 @@ def live(ctx: click.Context,
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_symbol_map_file",
-                                 "bloomberg_emsx_broker"])
+                                 "bloomberg_emsx_broker",
+                                 "bloomberg_execution",
+                                 "bloomberg_allow_modification"])
             brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                       bloomberg_environment,
                                                       bloomberg_server_host,
@@ -582,7 +584,9 @@ def live(ctx: click.Context,
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_symbol_map_file",
-                                 "bloomberg_emsx_broker"])
+                                 "bloomberg_emsx_broker",
+                                 "bloomberg_execution",
+                                 "bloomberg_allow_modification"])
             data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                                         bloomberg_environment,
                                                                         bloomberg_server_host,

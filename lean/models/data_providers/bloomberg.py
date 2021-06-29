@@ -34,7 +34,7 @@ class BloombergDataProvider(LeanConfigConfigurer):
         self._brokerage.configure_credentials(lean_config)
 
         lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
-        lean_config["data-downloader"] = "BloombergBrokerage"
+        lean_config["data-downloader"] = "BloombergDataDownloader"
         lean_config["map-file-provider"] = "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider"
         lean_config["factor-file-provider"] = "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider"
 

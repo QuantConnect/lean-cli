@@ -41,8 +41,8 @@ class BloombergBrokerage(LocalBrokerage):
                  emsx_strategy: Optional[str],
                  emsx_notes: Optional[str],
                  emsx_handling: Optional[str],
-                 execution: Optional[bool],
-                 allow_modification: Optional[bool]) -> None:
+                 execution: bool,
+                 allow_modification: bool) -> None:
         self._organization_id = organization_id
         self._environment = environment
         self._server_host = server_host
@@ -89,11 +89,9 @@ class BloombergBrokerage(LocalBrokerage):
         emsx_notes = click.prompt("EMSX notes", cls._get_default(lean_config, "bloomberg-emsx-notes") or "")
         emsx_handling = click.prompt("EMSX handling", cls._get_default(lean_config, "bloomberg-emsx-handling") or "")
 
-        execution = click.prompt("Execution (yes/no)",
-                                 cls._get_default(lean_config, "bloomberg-execution") or "",
-                                 type=bool)
+        execution = click.prompt("Execution (yes/no)", cls._get_default(lean_config, "bloomberg-execution"), type=bool)
         allow_modification = click.prompt("Allow modification (yes/no)",
-                                          cls._get_default(lean_config, "bloomberg-allow-modification") or "",
+                                          cls._get_default(lean_config, "bloomberg-allow-modification"),
                                           type=bool)
 
         return BloombergBrokerage(organization_id,
@@ -130,8 +128,8 @@ class BloombergBrokerage(LocalBrokerage):
         lean_config["bloomberg-emsx-strategy"] = self._emsx_strategy or ""
         lean_config["bloomberg-emsx-notes"] = self._emsx_notes or ""
         lean_config["bloomberg-emsx-handling"] = self._emsx_handling or ""
-        lean_config["bloomberg-execution"] = self._execution or ""
-        lean_config["bloomberg-allow-modification"] = self._allow_modification or ""
+        lean_config["bloomberg-execution"] = self._execution
+        lean_config["bloomberg-allow-modification"] = self._allow_modification
 
         self._save_properties(lean_config, ["job-organization-id",
                                             "bloomberg-api-type",

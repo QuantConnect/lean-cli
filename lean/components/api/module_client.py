@@ -34,14 +34,13 @@ class ModuleClient:
         :param file_name: the name of the module's file to download
         :return: the download link to the file
         """
-        # TODO: Ensure this is correct
         data = self._api.post("modules/read", {
             "productId": product_id,
             "organizationId": organization_id,
             "fileName": file_name
         })
 
-        return data["link"]
+        return data["url"]
 
     def list_files(self, product_id: int, organization_id: str) -> List[str]:
         """Lists the most recent files of a module.
@@ -50,10 +49,9 @@ class ModuleClient:
         :param organization_id: the id of the organization holding a license for the module
         :return: a list of file names of recent files belonging to the given module
         """
-        # TODO: Ensure this is correct
         data = self._api.post("modules/list", {
             "productId": product_id,
             "organizationId": organization_id
         })
 
-        return data["objects"]
+        return data["files"]
