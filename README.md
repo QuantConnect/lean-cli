@@ -689,8 +689,6 @@ Options:
   --iqfeed-product-name TEXT      The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --bloomberg-organization TEXT   The name or id of the organization with the Bloomberg module subscription
-  --bloomberg-api-type [Desktop|Server|Bpipe]
-                                  The API type to use
   --bloomberg-environment [Production|Beta]
                                   The environment to run in
   --bloomberg-server-host TEXT    The host of the Bloomberg server
@@ -698,6 +696,16 @@ Options:
                                   The port of the Bloomberg server
   --bloomberg-symbol-map-file FILE
                                   The path to the Bloomberg symbol map file
+  --bloomberg-emsx-broker TEXT    The EMSX broker to use
+  --bloomberg-emsx-user-time-zone TEXT
+                                  The EMSX user timezone to use
+  --bloomberg-emsx-account TEXT   The EMSX account to use
+  --bloomberg-emsx-strategy TEXT  The EMSX strategy to use
+  --bloomberg-emsx-notes TEXT     The EMSX notes to use
+  --bloomberg-emsx-handling TEXT  The EMSX handling to use
+  --bloomberg-execution TEXT      Bloomberg execution
+  --bloomberg-allow-modification BOOLEAN
+                                  Whether modification is allowed
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
