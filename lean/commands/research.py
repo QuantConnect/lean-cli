@@ -41,14 +41,14 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
 @click.option("--data-provider",
               type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
-              help="Update the data provider in the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given provider")
 @click.option("--download-data",
               is_flag=True,
               default=False,
               help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
 @click.option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during this research session when using QuantConnect as data provider")
+              help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
 @click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
 @click.option("--update",
               is_flag=True,

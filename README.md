@@ -106,13 +106,11 @@ Options:
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
   --data-provider [Local|QuantConnect|Bloomberg]
-                                  Update the data provider in the Lean configuration file to retrieve data from the
-                                  given provider
-
+                                  Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
 
-  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during this backtest when using
+  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
                                   QuantConnect as data provider
 
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
@@ -859,13 +857,11 @@ Usage: lean research [OPTIONS] PROJECT
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
   --data-provider [Local|QuantConnect|Bloomberg]
-                                  Update the data provider in the Lean configuration file to retrieve data from the
-                                  given provider
-
+                                  Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
 
-  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during this research session
+  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
                                   when using QuantConnect as data provider
 
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)

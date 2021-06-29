@@ -168,14 +168,14 @@ def _select_organization() -> QCMinimalOrganization:
               help="Enable a certain debugging method (see --help for more information)")
 @click.option("--data-provider",
               type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
-              help="Update the data provider in the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given provider")
 @click.option("--download-data",
               is_flag=True,
               default=False,
               help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
 @click.option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during this backtest when using QuantConnect as data provider")
+              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
