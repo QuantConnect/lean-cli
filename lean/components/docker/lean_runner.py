@@ -138,8 +138,8 @@ class LeanRunner:
         project_dir = algorithm_file.parent
 
         # Install the required modules when they're needed
-        # TODO: Update to correct value
-        if lean_config.get("data-provider", None) == "BloombergDataProvider":
+        if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
+            and lean_config.get("data-downloader", None) == "BloombergBrokerage":
             self._module_manager.install_module(BLOOMBERG_PRODUCT_ID, lean_config["job-organization-id"])
 
         # Create the output directory if it doesn't exist yet

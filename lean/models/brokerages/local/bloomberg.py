@@ -31,7 +31,6 @@ class BloombergBrokerage(LocalBrokerage):
 
     def __init__(self,
                  organization_id: str,
-                 api_type: str,
                  environment: str,
                  server_host: str,
                  server_port: int,
@@ -45,7 +44,6 @@ class BloombergBrokerage(LocalBrokerage):
                  execution: Optional[bool],
                  allow_modification: Optional[bool]) -> None:
         self._organization_id = organization_id
-        self._api_type = api_type
         self._environment = environment
         self._server_host = server_host
         self._server_port = server_port
@@ -72,10 +70,6 @@ class BloombergBrokerage(LocalBrokerage):
 
         organization_id = logger.prompt_list("Select the organization with the Bloomberg module subscription", options)
 
-        api_type = click.prompt("API type",
-                                cls._get_default(lean_config, "bloomberg-api-type"),
-                                type=click.Choice(["Desktop", "Server", "Bpipe"], case_sensitive=False))
-
         environment = click.prompt("Environment",
                                    cls._get_default(lean_config, "bloomberg-environment"),
                                    type=click.Choice(["Production", "Beta"], case_sensitive=False))
@@ -95,13 +89,14 @@ class BloombergBrokerage(LocalBrokerage):
         emsx_notes = click.prompt("EMSX notes", cls._get_default(lean_config, "bloomberg-emsx-notes") or "")
         emsx_handling = click.prompt("EMSX handling", cls._get_default(lean_config, "bloomberg-emsx-handling") or "")
 
-        execution = click.prompt("Execution", cls._get_default(lean_config, "bloomberg-execution") or "", type=bool)
-        allow_modification = click.prompt("Allow modification",
+        execution = click.prompt("Execution (yes/no)",
+                                 cls._get_default(lean_config, "bloomberg-execution") or "",
+                                 type=bool)
+        allow_modification = click.prompt("Allow modification (yes/no)",
                                           cls._get_default(lean_config, "bloomberg-allow-modification") or "",
                                           type=bool)
 
         return BloombergBrokerage(organization_id,
-                                  api_type,
                                   environment,
                                   server_host,
                                   server_port,
@@ -124,7 +119,7 @@ class BloombergBrokerage(LocalBrokerage):
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         lean_config["job-organization-id"] = self._organization_id
-        lean_config["bloomberg-api-type"] = self._api_type
+        lean_config["bloomberg-api-type"] = "Desktop"
         lean_config["bloomberg-environment"] = self._environment
         lean_config["bloomberg-server-host"] = self._server_host
         lean_config["bloomberg-server-port"] = self._server_port

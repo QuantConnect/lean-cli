@@ -121,12 +121,14 @@ class DataDownloader:
             f.write(file_content)
 
         if relative_file.startswith("equity/usa/map_files/map_files_") and relative_file.endswith(".zip"):
-            self._lean_config_manager.set_property("map-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider")
+            self._lean_config_manager.set_properties({
+                "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+            })
 
         if relative_file.startswith("equity/usa/factor_files/factor_files_") and relative_file.endswith(".zip"):
-            self._lean_config_manager.set_property("factor-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider")
+            self._lean_config_manager.set_properties({
+                "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
+            })
 
     def _should_overwrite(self, overwrite_flag: bool, path: Path) -> bool:
         """Returns whether we should overwrite existing files.

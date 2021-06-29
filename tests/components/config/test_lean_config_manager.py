@@ -85,7 +85,7 @@ def test_get_data_directory_returns_path_to_data_directory_when_config_contains_
     assert manager.get_data_directory() == Path.cwd() / "sub1" / "sub2" / "sub3" / "data"
 
 
-def test_set_property_adds_property_when_not_part_of_config_yet() -> None:
+def test_set_properties_adds_property_when_not_part_of_config_yet() -> None:
     with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
@@ -95,7 +95,7 @@ def test_set_property_adds_property_when_not_part_of_config_yet() -> None:
         """)
 
     manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()))
-    manager.set_property("my-property", "my-value")
+    manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
 
@@ -103,7 +103,7 @@ def test_set_property_adds_property_when_not_part_of_config_yet() -> None:
     assert config.count("my-property") == 1
 
 
-def test_set_property_updates_property_when_part_of_config_already() -> None:
+def test_set_properties_updates_property_when_part_of_config_already() -> None:
     with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
@@ -114,7 +114,7 @@ def test_set_property_updates_property_when_part_of_config_already() -> None:
         """)
 
     manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()))
-    manager.set_property("my-property", "my-value")
+    manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
 
@@ -122,7 +122,7 @@ def test_set_property_updates_property_when_part_of_config_already() -> None:
     assert config.count("my-property") == 1
 
 
-def test_set_property_preserves_comments() -> None:
+def test_set_properties_preserves_comments() -> None:
     with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
@@ -132,7 +132,7 @@ def test_set_property_preserves_comments() -> None:
         """)
 
     manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()))
-    manager.set_property("my-property", "my-value")
+    manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
 

@@ -45,6 +45,9 @@ class ModuleManager:
         :param product_id: the product id of the module to download
         :param organization_id: the id of the organization that has a license for the module
         """
+        # TODO: Remove this when the modules/* endpoints are in production!!!
+        return
+
         if product_id in self._installed_product_ids:
             return
 
@@ -67,6 +70,18 @@ class ModuleManager:
 
         :return: a list of NuGet packages in the modules directory that should be made available when running LEAN
         """
+        # TODO: Remove this when the modules/* endpoints are in production!!!
+        if not Path(MODULES_DIRECTORY).exists():
+            return []
+
+        packages: Dict[str, NuGetPackage] = {}
+        for file in Path(MODULES_DIRECTORY).iterdir():
+            package = NuGetPackage.parse(file.name)
+            if package.name not in packages or package.version > packages[package.name].version:
+                packages[package.name] = package
+
+        return list(packages.values())
+
         return list(self._installed_packages)
 
     def _download_file(self, product_id: int, organization_id: str, package: NuGetPackage) -> None:

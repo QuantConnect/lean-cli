@@ -341,10 +341,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
               help="The name or id of the organization with the Bloomberg module subscription")
-@click.option("--bloomberg-api-type",
-              type=click.Choice(["Desktop", "Server", "Bpipe"], case_sensitive=False),
-              default=lambda: _get_default_value("bloomberg-api-type"),
-              help="The API type to use")
 @click.option("--bloomberg-environment",
               type=click.Choice(["Production", "Beta"], case_sensitive=False),
               default=lambda: _get_default_value("bloomberg-environment"),
@@ -435,7 +431,6 @@ def live(ctx: click.Context,
          iqfeed_product_name: Optional[str],
          iqfeed_version: Optional[str],
          bloomberg_organization: Optional[str],
-         bloomberg_api_type: Optional[str],
          bloomberg_environment: Optional[str],
          bloomberg_server_host: Optional[str],
          bloomberg_server_port: Optional[int],
@@ -524,14 +519,12 @@ def live(ctx: click.Context,
                                                     zerodha_trading_segment)
         elif brokerage == BloombergBrokerage.get_name():
             ensure_options(ctx, ["bloomberg_organization",
-                                 "bloomberg_api_type",
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_symbol_map_file",
                                  "bloomberg_emsx_broker"])
             brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
-                                                      bloomberg_api_type,
                                                       bloomberg_environment,
                                                       bloomberg_server_host,
                                                       bloomberg_server_port,
@@ -585,14 +578,12 @@ def live(ctx: click.Context,
                                                    zerodha_history_subscription)
         elif data_feed == BloombergDataFeed.get_name():
             ensure_options(ctx, ["bloomberg_organization",
-                                 "bloomberg_api_type",
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_symbol_map_file",
                                  "bloomberg_emsx_broker"])
             data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
-                                                                        bloomberg_api_type,
                                                                         bloomberg_environment,
                                                                         bloomberg_server_host,
                                                                         bloomberg_server_port,

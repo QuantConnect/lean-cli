@@ -74,10 +74,7 @@ class LeanConfigConfigurer(abc.ABC):
         :param properties: the names of the properties to save persistently
         """
         from lean.container import container
-        lean_config_manager = container.lean_config_manager()
-
-        for prop in reversed(properties):
-            lean_config_manager.set_property(prop, lean_config[prop])
+        container.lean_config_manager().set_properties({key: lean_config[key] for key in properties})
 
 
 class DebuggingMethod(Enum):
