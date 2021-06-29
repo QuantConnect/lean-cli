@@ -58,7 +58,7 @@ class Container(DeclarativeContainer):
     lean_config_manager = Singleton(LeanConfigManager, logger, cli_config_manager, project_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
-    project_manager = Singleton(ProjectManager, project_config_manager, xml_manager)
+    project_manager = Singleton(ProjectManager, project_config_manager, lean_config_manager, xml_manager)
 
     api_client = Factory(APIClient,
                          logger,

@@ -20,6 +20,7 @@ from unittest import mock
 import pytest
 from lxml import etree
 
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.project_manager import ProjectManager
@@ -28,10 +29,19 @@ from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
+def _create_project_manager() -> ProjectManager:
+    xml_manager = XMLManager()
+    project_config_manager = ProjectConfigManager(xml_manager)
+
+    return ProjectManager(project_config_manager,
+                          LeanConfigManager(mock.Mock(), mock.Mock(), project_config_manager),
+                          xml_manager)
+
+
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
     create_fake_lean_cli_directory()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     result = project_manager.find_algorithm_file(Path.cwd() / "Python Project" / "main.py")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -40,7 +50,7 @@ def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
 def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     result = project_manager.find_algorithm_file(Path.cwd() / "Python Project")
 
     assert result == Path.cwd() / "Python Project" / "main.py"
@@ -49,7 +59,7 @@ def test_find_algorithm_file_returns_main_py_when_input_directory_contains_it() 
 def test_find_algorithm_file_returns_main_cs_when_input_directory_contains_it() -> None:
     create_fake_lean_cli_directory()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     result = project_manager.find_algorithm_file(Path.cwd() / "CSharp Project")
 
     assert result == Path.cwd() / "CSharp Project" / "Main.cs"
@@ -60,7 +70,7 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
 
     (Path.cwd() / "Empty Project").mkdir()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
 
     with pytest.raises(Exception):
         project_manager.find_algorithm_file(Path.cwd() / "Empty Project")
@@ -77,7 +87,7 @@ def test_get_files_to_sync_returns_all_source_files() -> None:
         file.mkdir(parents=True, exist_ok=True)
         file.touch()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     files_to_sync = project_manager.get_files_to_sync(project_path)
 
     assert sorted(files_to_sync) == sorted(files)
@@ -93,7 +103,7 @@ def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> Non
         file.mkdir(parents=True, exist_ok=True)
         file.touch()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     files_to_sync = project_manager.get_files_to_sync(project_path)
 
     assert files_to_sync == [files[0]]
@@ -105,7 +115,7 @@ def test_update_last_modified_time_updates_file_properties() -> None:
 
     new_timestamp = datetime(2020, 1, 1, 1, 1, 1)
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.update_last_modified_time(local_file, new_timestamp)
 
     timestamp = local_file.stat().st_mtime_ns / 1e9
@@ -116,7 +126,7 @@ def test_update_last_modified_time_updates_file_properties() -> None:
 def test_create_new_project_creates_project_directory() -> None:
     project_path = Path.cwd() / "Python Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, QCLanguage.Python)
 
     assert project_path.is_dir()
@@ -126,7 +136,7 @@ def test_create_new_project_creates_project_directory() -> None:
 def test_create_new_project_sets_language_in_project_config(language: QCLanguage) -> None:
     project_path = Path.cwd() / f"{language.name} Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, language)
 
     config = Storage(str(project_path / "config.json"))
@@ -137,7 +147,7 @@ def test_create_new_project_sets_language_in_project_config(language: QCLanguage
 def test_create_new_project_sets_parameters_in_project_config() -> None:
     project_path = Path.cwd() / "Python Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, QCLanguage.Python)
 
     config = Storage(str(project_path / "config.json"))
@@ -148,7 +158,7 @@ def test_create_new_project_sets_parameters_in_project_config() -> None:
 def test_create_new_project_sets_description_in_project_config() -> None:
     project_path = Path.cwd() / "Python Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, QCLanguage.Python)
 
     config = Storage(str(project_path / "config.json"))
@@ -181,7 +191,7 @@ def validate_xml(text: str) -> bool:
 def test_create_new_project_creates_valid_python_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
     project_path = Path.cwd() / "Python Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, QCLanguage.Python)
 
     assert (project_path / file).is_file()
@@ -195,7 +205,7 @@ def test_create_new_project_creates_valid_python_editor_configs(file: str, valid
 def test_create_new_project_creates_valid_csharp_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
     project_path = Path.cwd() / "CSharp Project"
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(project_path, QCLanguage.CSharp)
 
     assert (project_path / file).is_file()
@@ -227,7 +237,7 @@ def test_create_new_project_creates_pycharm_jdk_entry_when_not_set_yet(system: m
 </application>
         """)
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
 
     jdk_table = etree.fromstring(jdk_table_file.read_text(encoding="utf-8"))
@@ -247,7 +257,7 @@ def test_create_new_project_creates_pycharm_jdk_entry_when_pycharm_not_installed
                                                                                      path: str) -> None:
     system.return_value = os
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
 
     jdk_table_file = Path(path).expanduser() / editor / "options" / "jdk.table.xml"
@@ -285,14 +295,14 @@ def test_create_new_project_does_not_update_pycharm_jdk_table_when_jdk_entry_alr
     with jdk_table_file.open("w+", encoding="utf-8") as file:
         file.write(jdk_table)
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "Python Project", QCLanguage.Python)
 
     assert jdk_table_file.read_text(encoding="utf-8") == jdk_table
 
 
 def test_create_new_project_copies_ssh_keys_to_global_config_dir() -> None:
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     for name in ["key", "key.pub", "README.md"]:
@@ -332,7 +342,7 @@ def test_create_new_project_creates_rider_debugger_entry_when_not_set_yet(system
 </application>
         """)
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     debugger_root = XMLManager().parse(debugger_file.read_text(encoding="utf-8"))
@@ -351,7 +361,7 @@ def test_create_new_project_creates_rider_debugger_config_when_rider_not_install
 
     key_path = Path("~/.lean/ssh/key").expanduser()
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     debugger_file = Path(path).expanduser() / "Rider" / "options" / "debugger.xml"
@@ -401,7 +411,7 @@ def test_create_new_project_does_not_update_rider_debugger_config_when_entry_alr
     with debugger_file.open("w+", encoding="utf-8") as file:
         file.write(debugger_content)
 
-    project_manager = ProjectManager(ProjectConfigManager(XMLManager()), XMLManager())
+    project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     assert debugger_file.read_text(encoding="utf-8") == debugger_content

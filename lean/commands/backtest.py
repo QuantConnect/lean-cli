@@ -28,50 +28,104 @@ from lean.models.data_providers.quantconnect import QuantConnectDataProvider
 from lean.models.logger import Option
 
 
-# The _migrate_dotnet_5_* methods automatically update launch configurations for a given debugging method.
+# The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
-# In the update to .NET 5, debugging changed considerably.
-# This lead to some required changes in the launch configurations users use to start debugging.
-# Projects which are created after the update to .NET 5 have the correct configuration already,
-# but projects created before that need changes to their launch configurations.
+# Occasionally we make changes which require updated launch configurations.
+# Projects which are created after these update have the correct configuration already,
+# but projects created before that need changes.
 #
-# These methods checks if the project have outdated configurations, and if so, update them to keep it working.
-# These methods will only be useful for the first few weeks after the update to .NET 5 and will be removed afterwards.
+# These methods checks if the project has outdated configurations, and if so, update them to keep it working.
 
-def _migrate_dotnet_5_python_pycharm(project_dir: Path) -> None:
+def _migrate_python_pycharm(project_dir: Path) -> None:
     workspace_xml_path = project_dir / ".idea" / "workspace.xml"
     if not workspace_xml_path.is_file():
         return
 
-    current_content = workspace_xml_path.read_text(encoding="utf-8")
-    if 'remote-root="/Lean/Launcher/bin/Debug"' not in current_content:
+    xml_manager = container.xml_manager()
+    current_content = xml_manager.parse(workspace_xml_path.read_text(encoding="utf-8"))
+
+    config = current_content.find('.//configuration[@name="Debug with Lean CLI"]')
+    if config is None:
         return
 
-    new_content = current_content.replace('remote-root="/Lean/Launcher/bin/Debug"', 'remote-root="/LeanCLI"')
-    workspace_xml_path.write_text(new_content, encoding="utf-8")
+    path_mappings = config.find('.//PathMappingSettings/option[@name="pathMappings"]/list')
+    if path_mappings is None:
+        return
 
-    logger = container.logger()
-    logger.warn("Your run configuration has been updated to work with the latest version of LEAN")
-    logger.warn("Please restart the debugger in PyCharm and run this command again")
+    made_changes = False
+    has_library_mapping = False
 
-    raise click.Abort()
+    library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+    if not library_dir.is_dir():
+        library_dir = None
+
+    for mapping in path_mappings.findall(".//mapping"):
+        if mapping.get("local-root") == "$PROJECT_DIR$" and mapping.get("remote-root") == "/Lean/Launcher/bin/Debug":
+            mapping.set("remote-root", "/LeanCLI")
+            made_changes = True
+
+        if library_dir is not None \
+            and mapping.get("local-root") == str(library_dir) \
+            and mapping.get("remote-root") == "/Library":
+            has_library_mapping = True
+
+    if library_dir is not None and not has_library_mapping:
+        library_mapping = xml_manager.parse("<mapping/>")
+        library_mapping.set("local-root", str(library_dir))
+        library_mapping.set("remote-root", "/Library")
+        path_mappings.append(library_mapping)
+        made_changes = True
+
+    if made_changes:
+        workspace_xml_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
+
+        logger = container.logger()
+        logger.warn("Your run configuration has been updated to work with the latest version of LEAN")
+        logger.warn("Please restart the debugger in PyCharm and run this command again")
+
+        raise click.Abort()
 
 
-def _migrate_dotnet_5_python_vscode(project_dir: Path) -> None:
+def _migrate_python_vscode(project_dir: Path) -> None:
     launch_json_path = project_dir / ".vscode" / "launch.json"
     if not launch_json_path.is_file():
         return
 
-    current_content = launch_json_path.read_text(encoding="utf-8")
-    if '"remoteRoot": "/Lean/Launcher/bin/Debug"' not in current_content:
+    current_content = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    if "configurations" not in current_content or not isinstance(current_content["configurations"], list):
         return
 
-    new_content = current_content.replace('"remoteRoot": "/Lean/Launcher/bin/Debug"',
-                                          '"remoteRoot": "/LeanCLI"')
-    launch_json_path.write_text(new_content, encoding="utf-8")
+    config = next((c for c in current_content["configurations"] if c["name"] == "Debug with Lean CLI"), None)
+    if config is None:
+        return
+
+    made_changes = False
+    has_library_mapping = False
+
+    library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+    if not library_dir.is_dir():
+        library_dir = None
+
+    for mapping in config["pathMappings"]:
+        if mapping["localRoot"] == "${workspaceFolder}" and mapping["remoteRoot"] == "/Lean/Launcher/bin/Debug":
+            mapping["remoteRoot"] = "/LeanCLI"
+            made_changes = True
+
+        if library_dir is not None and mapping["localRoot"] == str(library_dir) and mapping["remoteRoot"] == "/Library":
+            has_library_mapping = True
+
+    if library_dir is not None and not has_library_mapping:
+        config["pathMappings"].append({
+            "localRoot": str(library_dir),
+            "remoteRoot": "/Library"
+        })
+        made_changes = True
+
+    if made_changes:
+        launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
-def _migrate_dotnet_5_csharp_rider(project_dir: Path) -> None:
+def _migrate_csharp_rider(project_dir: Path) -> None:
     made_changes = False
     xml_manager = container.xml_manager()
 
@@ -107,7 +161,7 @@ def _migrate_dotnet_5_csharp_rider(project_dir: Path) -> None:
         raise click.Abort()
 
 
-def _migrate_dotnet_5_csharp_vscode(project_dir: Path) -> None:
+def _migrate_csharp_vscode(project_dir: Path) -> None:
     launch_json_path = project_dir / ".vscode" / "launch.json"
     if not launch_json_path.is_file():
         return
@@ -215,16 +269,16 @@ def backtest(project: Path,
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
-        _migrate_dotnet_5_python_pycharm(algorithm_file.parent)
+        _migrate_python_pycharm(algorithm_file.parent)
     elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
-        _migrate_dotnet_5_python_vscode(algorithm_file.parent)
+        _migrate_python_vscode(algorithm_file.parent)
     elif debug == "vsdbg":
         debugging_method = DebuggingMethod.VSDBG
-        _migrate_dotnet_5_csharp_vscode(algorithm_file.parent)
+        _migrate_csharp_vscode(algorithm_file.parent)
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
-        _migrate_dotnet_5_csharp_rider(algorithm_file.parent)
+        _migrate_csharp_rider(algorithm_file.parent)
 
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, debugging_method)
 

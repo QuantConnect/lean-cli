@@ -14,6 +14,7 @@
 import json
 import os
 import platform
+import site
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,7 @@ from typing import List
 
 import pkg_resources
 
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.xml_manager import XMLManager
 from lean.models.api import QCLanguage, QCProject
@@ -29,13 +31,18 @@ from lean.models.api import QCLanguage, QCProject
 class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
 
-    def __init__(self, project_config_manager: ProjectConfigManager, xml_manager: XMLManager) -> None:
+    def __init__(self,
+                 project_config_manager: ProjectConfigManager,
+                 lean_config_manager: LeanConfigManager,
+                 xml_manager: XMLManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
+        :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
         :param xml_manager: the XMLManager to use when working with XML
         """
         self._project_config_manager = project_config_manager
+        self._lean_config_manager = lean_config_manager
         self._xml_manager = xml_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
@@ -128,12 +135,31 @@ class ProjectManager:
         project_config.set("description", "")
 
         if language == QCLanguage.Python:
+            self._generate_python_library_projects_config()
             self._generate_vscode_python_config(project_dir)
             self._generate_pycharm_config(project_dir)
         else:
             self._generate_vscode_csharp_config(project_dir)
             self._generate_csproj(project_dir)
             self.generate_rider_config()
+
+    def _generate_python_library_projects_config(self) -> None:
+        """Generates the required configuration to enable autocomplete on Python library projects."""
+        try:
+            cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        except:
+            return
+
+        library_dir = cli_root_dir / "Library"
+        if not library_dir.is_dir():
+            return
+
+        if site.ENABLE_USER_SITE:
+            site_packages_dir = site.getusersitepackages()
+        else:
+            site_packages_dir = site.getsitepackages()[0]
+
+        self._generate_file(Path(site_packages_dir) / "lean-cli.pth", str(library_dir))
 
     def _generate_vscode_python_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for VS Code.
@@ -145,28 +171,37 @@ class ProjectManager:
             "python.languageServer": "Pylance"
         }, indent=4))
 
-        self._generate_file(project_dir / ".vscode" / "launch.json", """
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debug with Lean CLI",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
+        launch_config = {
+            "version": "0.2.0",
+            "configurations": [
                 {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/LeanCLI"
+                    "name": "Debug with Lean CLI",
+                    "type": "python",
+                    "request": "attach",
+                    "connect": {
+                        "host": "localhost",
+                        "port": 5678
+                    },
+                    "pathMappings": [
+                        {
+                            "localRoot": "${workspaceFolder}",
+                            "remoteRoot": "/LeanCLI"
+                        }
+                    ]
                 }
             ]
         }
-    ]
-}
-        """)
+
+        try:
+            library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+            launch_config["configurations"][0]["pathMappings"].append({
+                "localRoot": str(library_dir),
+                "remoteRoot": "/Library"
+            })
+        except:
+            pass
+
+        self._generate_file(project_dir / ".vscode" / "launch.json", json.dumps(launch_config, indent=4))
 
     def _generate_pycharm_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for PyCharm.
@@ -207,7 +242,14 @@ class ProjectManager:
 </project>
         """)
 
-        self._generate_file(project_dir / ".idea" / "workspace.xml", """
+        try:
+            library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+            library_dir = str(library_dir).replace("\\", "/")
+            library_mapping = f'<mapping local-root="{library_dir}" remote-root="/Library" />'
+        except:
+            library_mapping = ""
+
+        self._generate_file(project_dir / ".idea" / "workspace.xml", f"""
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RunManager" selected="Python Debug Server.Debug with Lean CLI">
@@ -219,6 +261,7 @@ class ProjectManager:
         <option name="pathMappings">
           <list>
             <mapping local-root="$PROJECT_DIR$" remote-root="/LeanCLI" />
+            {library_mapping}
           </list>
         </option>
       </PathMappingSettings>

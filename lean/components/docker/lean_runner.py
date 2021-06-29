@@ -14,9 +14,10 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from docker.types import Mount
+from pkg_resources import Requirement
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -211,13 +212,13 @@ class LeanRunner:
             if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
                 lean_config[key] = "host.docker.internal"
 
-        set_up_csharp_common_called = False
+        set_up_common_csharp_options_called = False
 
         # Set up modules
         installed_packages = self._module_manager.get_installed_packages()
         if len(installed_packages) > 0:
-            self._set_up_csharp_common(run_options)
-            set_up_csharp_common_called = True
+            self._set_up_common_csharp_options(run_options)
+            set_up_common_csharp_options_called = True
 
             # Mount the modules directory
             run_options["volumes"][MODULES_DIRECTORY] = {
@@ -245,11 +246,11 @@ class LeanRunner:
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self.set_up_python_options(project_dir, "/LeanCLI", run_options)
+            self._set_up_python_options(project_dir, run_options)
         else:
-            if not set_up_csharp_common_called:
-                self._set_up_csharp_common(run_options)
-            self.set_up_csharp_options(project_dir, run_options)
+            if not set_up_common_csharp_options_called:
+                self._set_up_common_csharp_options(run_options)
+            self._set_up_csharp_options(project_dir, run_options)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -264,24 +265,50 @@ class LeanRunner:
 
         return run_options
 
-    def set_up_python_options(self, project_dir: Path, remote_directory: str, run_options: Dict[str, Any]) -> None:
+    def _set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
-        :param remote_directory: the path to mount the project directory to, ending without a forward slash
         :param run_options: the dictionary to append run options to
         """
         # Mount the project directory
         run_options["volumes"][str(project_dir)] = {
-            "bind": remote_directory,
+            "bind": "/LeanCLI",
             "mode": "rw"
         }
 
+        # Check if the user has library projects
+        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+        if library_dir.is_dir():
+            # Mount the library projects
+            run_options["volumes"][str(library_dir)] = {
+                "bind": "/Library",
+                "mode": "rw"
+            }
+
+            # Ensure library projects are used when resolving Python imports
+            run_options["commands"].append("mkdir -p $(python -m site --user-site)")
+            run_options["commands"].append("echo /Library > $(python -m site --user-site)/lean-cli.pth")
+
+        # Combine the requirements from all library projects and the current project
+        requirements_files = list(library_dir.rglob("requirements.txt")) + [project_dir / "requirements.txt"]
+        requirements_files = [file for file in requirements_files if file.is_file()]
+        requirements = self._concat_python_requirements(requirements_files)
+
         # Check if we have any dependencies to install, so we don't mount volumes needlessly
-        if not (project_dir / "requirements.txt").is_file():
+        if requirements == "":
             return
-        if len((project_dir / "requirements.txt").read_text(encoding="utf-8").strip()) == 0:
-            return
+
+        # Create a requirements.txt file for the combined requirements
+        requirements_txt = self._temp_manager.create_temporary_directory() / "requirements.txt"
+        with requirements_txt.open("w+", encoding="utf-8") as file:
+            file.write(requirements)
+
+        # Mount the requirements.txt file
+        run_options["mounts"].append(Mount(target="/requirements.txt",
+                                           source=str(requirements_txt),
+                                           type="bind",
+                                           read_only=True))
 
         # Mount a volume to pip's cache directory so we only download packages once
         self._docker_manager.create_volume("lean_cli_pip")
@@ -291,13 +318,13 @@ class LeanRunner:
         }
 
         # Mount a volume to the user packages directory so we don't install packages every time
-        site_packages_volume = self._docker_manager.create_site_packages_volume(project_dir / "requirements.txt")
+        site_packages_volume = self._docker_manager.create_site_packages_volume(requirements_txt)
         run_options["volumes"][site_packages_volume] = {
             "bind": "/root/.local/lib/python3.6/site-packages",
             "mode": "rw"
         }
 
-        # Update PATH in the Docker container to prevent pip install warnings
+        # Update PATH in the Docker container to prevent pip install warnings about its executables not being on PATH
         run_options["commands"].append('export PATH="$PATH:/root/.local/bin"')
 
         # Install custom libraries to the cached user packages directory
@@ -306,11 +333,32 @@ class LeanRunner:
         # If this file already exists we can skip pip install completely
         marker_file = "/root/.local/lib/python3.6/site-packages/pip-install-done"
         run_options["commands"].extend([
-            f"! test -f {marker_file} && pip install --user -r {remote_directory}/requirements.txt",
+            f"! test -f {marker_file} && pip install --user -r /requirements.txt",
             f"touch {marker_file}"
         ])
 
-    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def _concat_python_requirements(self, requirements_files: List[Path]) -> str:
+        """Combines the requirements from multiple requirements.txt files.
+
+        Ensures there are no duplicate requirements and that all output lines are valid.
+        Requirements are sorted alphabetically to ensure consistent output.
+
+        :param requirements_files: the paths to the requirements.txt files
+        :return: the normalized requirements from all given requirements.txt files
+        """
+        requirements = []
+        for file in requirements_files:
+            for line in file.read_text(encoding="utf-8").splitlines():
+                try:
+                    requirements.append(Requirement.parse(line))
+                except ValueError:
+                    pass
+
+        requirements = [str(requirement) for requirement in requirements]
+        requirements = sorted(set(requirements))
+        return "\n".join(requirements)
+
+    def _set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
@@ -377,7 +425,7 @@ class LeanRunner:
         run_options["commands"].append(
             f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
 
-    def _set_up_csharp_common(self, run_options: Dict[str, Any]) -> None:
+    def _set_up_common_csharp_options(self, run_options: Dict[str, Any]) -> None:
         """Sets up common Docker run options that is needed for all C# work.
 
         This method is only called if the user has installed modules and/or if the project to run is written in C#.

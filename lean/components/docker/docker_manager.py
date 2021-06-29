@@ -26,7 +26,6 @@ from dateutil.parser import isoparse
 from docker.errors import APIError
 from docker.types import Mount
 from getmac import get_mac_address
-from pkg_resources import Requirement
 
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
@@ -286,32 +285,21 @@ class DockerManager:
         :param requirements_file: the path to the requirements file that will be pip installed in the container
         :return: the name of the Docker volume to use
         """
-        requirements = []
-        for line in requirements_file.read_text(encoding="utf-8").splitlines():
-            try:
-                requirements.append(Requirement.parse(line))
-            except ValueError:
-                pass
-
-        requirements = [str(requirement) for requirement in requirements]
-        requirements = sorted(set(requirements))
-        requirements = "\n".join(requirements)
-
-        requirements_hash = hashlib.md5(requirements.encode("utf-8")).hexdigest()
-        required_volume = f"lean_cli_python_{requirements_hash}"
+        requirements_hash = hashlib.md5(requirements_file.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        volume_name = f"lean_cli_python_{requirements_hash}"
 
         docker_client = self._get_docker_client()
         existing_volumes = [v for v in docker_client.volumes.list() if v.name.startswith("lean_cli_python_")]
 
-        if any(v.name == required_volume for v in existing_volumes):
-            return required_volume
+        if any(v.name == volume_name for v in existing_volumes):
+            return volume_name
 
         volumes_by_age = sorted(existing_volumes, key=lambda v: isoparse(v.attrs["CreatedAt"]))
         for i in range((len(volumes_by_age) - SITE_PACKAGES_VOLUME_LIMIT) + 1):
             volumes_by_age[i].remove()
 
-        docker_client.volumes.create(required_volume)
-        return required_volume
+        docker_client.volumes.create(volume_name)
+        return volume_name
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.
