@@ -25,7 +25,7 @@ DEFAULT_PYTHON_MAIN = '''
 from AlgorithmImports import *
 
 
-class $NAME$(QCAlgorithm):
+class $CLASS_NAME$(QCAlgorithm):
     def Initialize(self):
         self.SetStartDate(2013, 10, 7)  # Set Start Date
         self.SetEndDate(2013, 10, 11)  # Set End Date
@@ -40,6 +40,27 @@ class $NAME$(QCAlgorithm):
         if not self.Portfolio.Invested:
             self.SetHoldings("SPY", 1)
             self.Debug("Purchased Stock")
+'''.strip() + "\n"
+
+LIBRARY_PYTHON_MAIN = '''
+from AlgorithmImports import *
+
+
+class $CLASS_NAME$:
+    """
+    To use this library place this at the top:
+    from $PROJECT_NAME$.main import $CLASS_NAME$
+
+    Then instantiate the class:
+    x = $CLASS_NAME$()
+    x.Add(1, 2)
+    """
+
+    def Add(self, a, b):
+        return a + b
+
+    def Subtract(self, a, b):
+        return a - b
 '''.strip() + "\n"
 
 DEFAULT_PYTHON_NOTEBOOK = """
@@ -107,7 +128,7 @@ using QuantConnect.Data;
 
 namespace QuantConnect.Algorithm.CSharp
 {
-    public class $NAME$ : QCAlgorithm
+    public class $CLASS_NAME$ : QCAlgorithm
     {
         public override void Initialize()
         {
@@ -126,6 +147,36 @@ namespace QuantConnect.Algorithm.CSharp
                 SetHoldings("SPY", 1);
                 Debug("Purchased Stock");
             }
+        }
+    }
+}
+""".strip() + "\n"
+
+LIBRARY_CSHARP_MAIN = """
+namespace QuantConnect
+{
+    public class $CLASS_NAME$
+    {
+        /*
+         * To use this library, first add it to a solution and create a project reference in your algorithm project:
+         * https://www.lean.io/docs/lean-cli/tutorials/code-sharing#02-C-code-sharing
+         *
+         * Then add its namespace at the top of the page:
+         * using QuantConnect;
+         *
+         * Then instantiate the class:
+         * var x = new $CLASS_NAME$();
+         * x.Add(1, 2);
+         */
+
+        public int Add(int a, int b)
+        {
+            return a + b;
+        }
+
+        public int Subtract(int a, int b)
+        {
+            return a - b;
         }
     }
 }
@@ -248,6 +299,18 @@ def create_project(name: str, language: str) -> None:
         raise MoreInfoError(f"'{name}' is not a valid path",
                             "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
+    is_library_project = False
+    try:
+        library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+        is_library_project = library_dir in full_path.parents
+    except:
+        # get_cli_root_directory() raises an error if there is no such directory
+        pass
+
+    if is_library_project and language == "python" and not full_path.name.isidentifier():
+        raise RuntimeError(
+            f"'{full_path.name}' is not a valid Python identifier, which is required for Python library projects to be importable")
+
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")
     else:
@@ -255,14 +318,17 @@ def create_project(name: str, language: str) -> None:
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
     # Convert the project name into a valid class name by removing all non-alphanumeric characters
-    class_name = re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, name.split(" "))))
+    class_name = re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, full_path.name.split(" "))))
 
     if language == "python":
-        with (full_path / "main.py").open("w+", encoding="utf-8") as file:
-            file.write(DEFAULT_PYTHON_MAIN.replace("$NAME$", class_name))
+        main_name = "main.py"
+        main_content = DEFAULT_PYTHON_MAIN if not is_library_project else LIBRARY_PYTHON_MAIN
     else:
-        with (full_path / "Main.cs").open("w+", encoding="utf-8") as file:
-            file.write(DEFAULT_CSHARP_MAIN.replace("$NAME$", class_name))
+        main_name = "Main.cs"
+        main_content = DEFAULT_CSHARP_MAIN if not is_library_project else LIBRARY_CSHARP_MAIN
+
+    with (full_path / main_name).open("w+", encoding="utf-8") as file:
+        file.write(main_content.replace("$CLASS_NAME$", class_name).replace("$PROJECT_NAME$", full_path.name))
 
     with (full_path / "research.ipynb").open("w+", encoding="utf-8") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)

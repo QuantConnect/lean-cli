@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 from dependency_injector.providers import Object
 
@@ -23,15 +24,18 @@ from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
-def assert_python_project_exists() -> None:
-    project_dir = (Path.cwd() / "My First Project")
+def assert_python_project_exists(path: str) -> None:
+    project_dir = (Path.cwd() / path)
 
     assert project_dir.exists()
     assert (project_dir / "main.py").exists()
     assert (project_dir / "research.ipynb").exists()
 
     with open(project_dir / "main.py") as file:
-        assert "class MyFirstProject(QCAlgorithm)" in file.read()
+        if path.startswith("Library/"):
+            assert "class MyFirstLibrary" in file.read()
+        else:
+            assert "class MyFirstProject(QCAlgorithm)" in file.read()
 
     with open(project_dir / "research.ipynb") as file:
         assert json.load(file)["metadata"]["kernelspec"]["language"] == "python"
@@ -40,8 +44,8 @@ def assert_python_project_exists() -> None:
         assert json.load(file)["algorithm-language"] == "Python"
 
 
-def assert_csharp_project_exists() -> None:
-    project_dir = (Path.cwd() / "My First Project")
+def assert_csharp_project_exists(path: str) -> None:
+    project_dir = (Path.cwd() / path)
 
     assert project_dir.exists()
     assert (project_dir / "Main.cs").exists()
@@ -49,7 +53,10 @@ def assert_csharp_project_exists() -> None:
     assert (project_dir / "config.json").exists()
 
     with open(project_dir / "Main.cs") as file:
-        assert "class MyFirstProject : QCAlgorithm" in file.read()
+        if path.startswith("Library/"):
+            assert "class MyFirstLibrary" in file.read()
+        else:
+            assert "class MyFirstProject : QCAlgorithm" in file.read()
 
     with open(project_dir / "research.ipynb") as file:
         assert json.load(file)["metadata"]["kernelspec"]["language"] == "C#"
@@ -58,24 +65,26 @@ def assert_csharp_project_exists() -> None:
         assert json.load(file)["algorithm-language"] == "CSharp"
 
 
-def test_create_project_creates_python_project_when_language_python() -> None:
+@pytest.mark.parametrize("path", ["My First Project", "Library/MyFirstLibrary"])
+def test_create_project_creates_python_project_when_language_python(path: str) -> None:
     create_fake_lean_cli_directory()
 
-    result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", path])
 
     assert result.exit_code == 0
 
-    assert_python_project_exists()
+    assert_python_project_exists(path)
 
 
-def test_create_project_creates_csharp_project_when_language_csharp() -> None:
+@pytest.mark.parametrize("path", ["My First Project", "Library/My First Library"])
+def test_create_project_creates_csharp_project_when_language_csharp(path: str) -> None:
     create_fake_lean_cli_directory()
 
-    result = CliRunner().invoke(lean, ["create-project", "--language", "csharp", "My First Project"])
+    result = CliRunner().invoke(lean, ["create-project", "--language", "csharp", path])
 
     assert result.exit_code == 0
 
-    assert_csharp_project_exists()
+    assert_csharp_project_exists(path)
 
 
 def test_create_project_creates_python_project_when_default_language_set_to_python() -> None:
@@ -87,7 +96,7 @@ def test_create_project_creates_python_project_when_default_language_set_to_pyth
 
     assert result.exit_code == 0
 
-    assert_python_project_exists()
+    assert_python_project_exists("My First Project")
 
 
 def test_create_project_aborts_when_default_language_not_set_and_language_not_given() -> None:
@@ -148,5 +157,13 @@ def test_create_project_aborts_when_path_invalid() -> None:
     container.path_manager.override(Object(path_manager))
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
+
+    assert result.exit_code != 0
+
+
+def test_create_project_aborts_creating_python_library_project_when_name_not_identifier() -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", "Library/My First Project"])
 
     assert result.exit_code != 0
