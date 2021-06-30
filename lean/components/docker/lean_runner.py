@@ -153,6 +153,7 @@ class LeanRunner:
         if not storage_dir.exists():
             storage_dir.mkdir(parents=True)
 
+        lean_config["debug-mode"] = self._logger.debug_logging_enabled
         lean_config["data-folder"] = "/Lean/Data"
         lean_config["results-destination-folder"] = "/Results"
         lean_config["object-store-root"] = "/Storage"

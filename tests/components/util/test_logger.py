@@ -28,7 +28,7 @@ def assert_stdout_stderr(capsys: CaptureFixture, stdout: str, stderr: str) -> No
 def test_debug_does_not_log_until_debug_logging_is_enabled(capsys: CaptureFixture) -> None:
     logger = Logger()
     logger.debug("Message 1")
-    logger.enable_debug_logging()
+    logger.debug_logging_enabled = True
     logger.debug("Message 2")
 
     assert_stdout_stderr(capsys, "Message 2\n", "")
@@ -36,7 +36,7 @@ def test_debug_does_not_log_until_debug_logging_is_enabled(capsys: CaptureFixtur
 
 def test_debug_logs_message(capsys: CaptureFixture) -> None:
     logger = Logger()
-    logger.enable_debug_logging()
+    logger.debug_logging_enabled = True
     logger.debug("Message")
 
     assert_stdout_stderr(capsys, "Message\n", "")

@@ -28,18 +28,14 @@ class Logger:
     def __init__(self) -> None:
         """Creates a new Logger instance."""
         self._console = Console(markup=False, highlight=False, emoji=False)
-        self._debug_logging_enabled = False
-
-    def enable_debug_logging(self) -> None:
-        """Enables debug messages to be printed."""
-        self._debug_logging_enabled = True
+        self.debug_logging_enabled = False
 
     def debug(self, message: Any) -> None:
         """Logs a debug message if debug logging is enabled.
 
         :param message: the message to log
         """
-        if self._debug_logging_enabled:
+        if self.debug_logging_enabled:
             self._console.print(message, style="grey50")
 
     def info(self, message: Any) -> None:

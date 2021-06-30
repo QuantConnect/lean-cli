@@ -119,7 +119,7 @@ class LeanCommand(click.Command):
         """Parses the --verbose option."""
         if value:
             logger = container.logger()
-            logger.enable_debug_logging()
+            logger.debug_logging_enabled = True
 
 
 class PathParameter(click.ParamType):

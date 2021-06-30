@@ -39,7 +39,7 @@ def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> Non
 
     assert result.exit_code == 0
 
-    logger.enable_debug_logging.assert_called_once()
+    assert logger.debug_logging_enabled
 
 
 def test_lean_command_sets_default_lean_config_path_when_lean_config_option_given() -> None:

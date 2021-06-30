@@ -31,6 +31,9 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
 def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
+    logger = mock.Mock()
+    logger.debug_logging_enabled = False
+
     cli_config_manager = mock.Mock()
     cli_config_manager.user_id.get_value.return_value = "123"
     cli_config_manager.api_token.get_value.return_value = "456"
@@ -40,9 +43,9 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     module_manager = mock.Mock()
     module_manager.get_installed_packages.return_value = [NuGetPackage(name="QuantConnect.Brokerages", version="1.0.0")]
 
-    return LeanRunner(mock.Mock(),
+    return LeanRunner(logger,
                       project_config_manager,
-                      LeanConfigManager(mock.Mock(), cli_config_manager, project_config_manager),
+                      LeanConfigManager(logger, cli_config_manager, project_config_manager),
                       docker_manager,
                       module_manager,
                       TempManager(),
