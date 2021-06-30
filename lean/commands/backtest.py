@@ -58,7 +58,7 @@ def _migrate_python_pycharm(project_dir: Path) -> None:
 
     library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
     if library_dir.is_dir():
-        library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}"
+        library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}".replace("\\", "/")
     else:
         library_dir = None
 

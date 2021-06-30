@@ -244,7 +244,7 @@ class ProjectManager:
 
         try:
             library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
-            library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}"
+            library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}".replace("\\", "/")
             library_mapping = f'<mapping local-root="{library_dir}" remote-root="/Library" />'
         except:
             library_mapping = ""
