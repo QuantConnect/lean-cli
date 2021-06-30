@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -240,7 +241,7 @@ class LeanRunner:
 
             # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
             run_options["commands"].append(
-                "python /copy_csharp_dependencies.py /ModulesProject/obj/project.assets.json")
+                "python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
@@ -342,31 +343,28 @@ class LeanRunner:
             "GenerateBindingRedirectsOutputType": "true",
             "AutomaticallyUseReferenceAssemblyPackages": "false",
             "CopyLocalLockFileAssemblies": "true",
-            "PathMap": f"/LeanCLI={str(compile_root)}"
+            "PathMap": f"/LeanCLI={str(compile_root)}",
+            "NoWarn": ["MSB3277"]
         }
-
-        directory_build_props = self._temp_manager.create_temporary_directory() / "Directory.Build.props"
-        with directory_build_props.open("w+", encoding="utf-8") as file:
-            file.write("""
-<Project>
-    <PropertyGroup>
-        <BaseIntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
-        <IntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</IntermediateOutputPath>
-    </PropertyGroup>
-</Project>
-            """.strip())
-
-        run_options["mounts"].append(Mount(target="/Directory.Build.props",
-                                           source=str(directory_build_props),
-                                           type="bind",
-                                           read_only=False))
 
         # Find the .csproj file to compile
         project_file = next(project_dir.glob("*.csproj"))
 
+        # Inherit NoWarn from the user's .csproj
+        csproj = self._xml_manager.parse(project_file.read_text(encoding="utf-8"))
+        existing_no_warn = csproj.find(".//NoWarn")
+        if existing_no_warn is not None:
+            codes = [c for c in re.split(r"[^a-zA-Z0-9]", existing_no_warn.text) if c != ""]
+            msbuild_properties["NoWarn"] += codes
+
+        # Turn the NoWarn property into a string
+        # %3B is the encoded version of ";", because a raw ";" is seen as a separator between properties
+        msbuild_properties["NoWarn"] = "%3B".join(msbuild_properties["NoWarn"])
+
         # Build the project before running LEAN
         relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
         msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
+        print(msbuild_properties)
         run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
 
         # Copy over the algorithm DLL
@@ -397,9 +395,26 @@ class LeanRunner:
         run_options["environment"]["DOTNET_NOLOGO"] = "true"
         run_options["environment"]["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
+        temp_files_directory = self._temp_manager.create_temporary_directory()
+
+        # Create a Directory.Build.props file to ensure /Compile/obj is used instead of <project>/obj
+        # This is necessary because the files in obj/ will contain absolute paths, which are valid only in the container
+        # Rider is okay with this, but Visual Studio throws a lot of errors if this happens
+        directory_build_props = temp_files_directory / "Directory.Build.props"
+        with directory_build_props.open("w+", encoding="utf-8") as file:
+            file.write("""
+<Project>
+    <PropertyGroup>
+        <BaseIntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+        <IntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</IntermediateOutputPath>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+</Project>
+            """.strip())
+
         # Create a Python script that can be used to copy the right C# dependencies to /Lean/Launcher/bin/Debug
         # This script copies the correct DLLs even if a project has OS-specific DLLs
-        copy_csharp_dependencies = self._temp_manager.create_temporary_directory() / "copy_csharp_dependencies.py"
+        copy_csharp_dependencies = temp_files_directory / "copy_csharp_dependencies.py"
         with copy_csharp_dependencies.open("w+", encoding="utf-8") as file:
             file.write("""
 import json
@@ -452,10 +467,14 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         copy_file(library_id, key, value)
             """.strip())
 
-        run_options["mounts"].append(Mount(target="/copy_csharp_dependencies.py",
-                                           source=str(copy_csharp_dependencies),
-                                           type="bind",
-                                           read_only=False))
+        run_options["mounts"].extend([Mount(target="/Directory.Build.props",
+                                            source=str(directory_build_props),
+                                            type="bind",
+                                            read_only=False),
+                                      Mount(target="/copy_csharp_dependencies.py",
+                                            source=str(copy_csharp_dependencies),
+                                            type="bind",
+                                            read_only=False)])
 
     def _get_csharp_compile_root(self, project_dir: Path) -> Path:
         """Returns the path to the directory that should be mounted to compile the project directory.
