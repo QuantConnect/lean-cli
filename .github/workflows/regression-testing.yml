@@ -23,6 +23,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Set up build cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}/lib/python${{ matrix.python-version }}/site-packages
+          key: ${{ runner.os }}-site-packages-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-site-packages-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-
+            ${{ runner.os }}-site-packages-${{ matrix.python-version }}-
+            ${{ runner.os }}-site-packages-
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
