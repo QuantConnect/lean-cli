@@ -34,7 +34,7 @@ class BloombergBrokerage(LocalBrokerage):
                  environment: str,
                  server_host: str,
                  server_port: int,
-                 symbol_map_file: Path,
+                 symbol_map_file: Optional[Path],
                  emsx_broker: str,
                  emsx_user_time_zone: Optional[str],
                  emsx_account: Optional[str],
@@ -78,7 +78,7 @@ class BloombergBrokerage(LocalBrokerage):
         server_port = click.prompt("Server port", cls._get_default(lean_config, "bloomberg-server-port"), type=int)
 
         symbol_map_file = click.prompt("Path to symbol map file",
-                                       cls._get_default(lean_config, "bloomberg-symbol-map-file"),
+                                       cls._get_default(lean_config, "bloomberg-symbol-map-file") or "",
                                        type=PathParameter(exists=True, file_okay=True, dir_okay=False))
 
         emsx_broker = click.prompt("EMSX broker", cls._get_default(lean_config, "bloomberg-emsx-broker"))
@@ -121,7 +121,12 @@ class BloombergBrokerage(LocalBrokerage):
         lean_config["bloomberg-environment"] = self._environment
         lean_config["bloomberg-server-host"] = self._server_host
         lean_config["bloomberg-server-port"] = self._server_port
-        lean_config["bloomberg-symbol-map-file"] = str(self._symbol_map_file).replace("\\", "/")
+
+        if self._symbol_map_file is not None:
+            lean_config["bloomberg-symbol-map-file"] = str(self._symbol_map_file).replace("\\", "/")
+        else:
+            lean_config["bloomberg-symbol-map-file"] = ""
+
         lean_config["bloomberg-emsx-broker"] = self._emsx_broker
         lean_config["bloomberg-emsx-user-time-zone"] = self._emsx_user_time_zone or ""
         lean_config["bloomberg-emsx-account"] = self._emsx_account or ""

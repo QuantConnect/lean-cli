@@ -47,7 +47,7 @@ _required_brokerage_properties = {
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
     "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
-                           "bloomberg-server-host", "bloomberg-server-port", "bloomberg-symbol-map-file"]
+                           "bloomberg-server-host", "bloomberg-server-port", "bloomberg-emsx-broker"]
 }
 
 # Data queue handler -> required configuration properties
@@ -522,7 +522,6 @@ def live(ctx: click.Context,
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
-                                 "bloomberg_symbol_map_file",
                                  "bloomberg_emsx_broker",
                                  "bloomberg_execution",
                                  "bloomberg_allow_modification"])
@@ -583,7 +582,6 @@ def live(ctx: click.Context,
                                  "bloomberg_environment",
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
-                                 "bloomberg_symbol_map_file",
                                  "bloomberg_emsx_broker",
                                  "bloomberg_execution",
                                  "bloomberg_allow_modification"])
