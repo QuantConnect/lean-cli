@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -56,7 +57,9 @@ def _migrate_python_pycharm(project_dir: Path) -> None:
     has_library_mapping = False
 
     library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
-    if not library_dir.is_dir():
+    if library_dir.is_dir():
+        library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}"
+    else:
         library_dir = None
 
     for mapping in path_mappings.findall(".//mapping"):
@@ -65,13 +68,13 @@ def _migrate_python_pycharm(project_dir: Path) -> None:
             made_changes = True
 
         if library_dir is not None \
-            and mapping.get("local-root") == str(library_dir) \
+            and mapping.get("local-root") == library_dir \
             and mapping.get("remote-root") == "/Library":
             has_library_mapping = True
 
     if library_dir is not None and not has_library_mapping:
         library_mapping = xml_manager.parse("<mapping/>")
-        library_mapping.set("local-root", str(library_dir))
+        library_mapping.set("local-root", library_dir)
         library_mapping.set("remote-root", "/Library")
         path_mappings.append(library_mapping)
         made_changes = True
