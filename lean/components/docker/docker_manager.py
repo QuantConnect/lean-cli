@@ -126,7 +126,7 @@ class DockerManager:
         if platform.system() == "Linux":
             if "extra_hosts" not in kwargs:
                 kwargs["extra_hosts"] = {}
-            kwargs["extra_hosts"]["host.docker.internal"] = "127.17.0.1"
+            kwargs["extra_hosts"]["host.docker.internal"] = "172.17.0.1"
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
