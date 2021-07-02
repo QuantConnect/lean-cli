@@ -79,6 +79,7 @@ class Logger:
         :return: the chosen option's id
         """
         if len(options) == 1:
+            self.info(f"{text}: {options[0].label}")
             return options[0].id
 
         self.info(f"{text}:")

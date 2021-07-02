@@ -102,7 +102,7 @@ def test_prompt_list_displays_all_options(prompt: mock.Mock, capsys: CaptureFixt
     assert "Option 3" in stdout
 
 
-def test_prompt_returns_single_option_without_prompting(capsys: CaptureFixture) -> None:
+def test_prompt_returns_single_option_without_prompting_with_display_of_value(capsys: CaptureFixture) -> None:
     logger = Logger()
     options = [Option(id=1, label="Option 1")]
 
@@ -111,4 +111,4 @@ def test_prompt_returns_single_option_without_prompting(capsys: CaptureFixture) 
     assert selected_option == 1
 
     stdout, stderr = capsys.readouterr()
-    assert "Option 1" not in stdout
+    assert "Select an option: Option 1" in stdout
