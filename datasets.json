@@ -1151,5 +1151,153 @@
                 }
             }
         ]
+    },
+    {
+        "name": "US Congress Trading",
+        "vendor": "Quiver Quantitative",
+        "categories": ["Financial Market Data", "Political Data"],
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": ["alternative/quiver/congresstrading/{ticker}.csv"]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Wikipedia Page Views",
+        "vendor": "Quiver Quantitative",
+        "categories": ["Web Data"],
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": ["alternative/quiver/wikipedia/{ticker}.csv"]
+                }
+            }
+        ]
+    },
+    {
+        "name": "WallStreetBets",
+        "vendor": "Quiver Quantitative",
+        "categories": ["Web Data"],
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": ["alternative/quiver/wallstreetbets/{ticker}.csv"]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Corporate Buybacks",
+        "vendor": "Smart Insider",
+        "categories": ["Commerce Data", "B2B Data"],
+        "options": [
+            {
+                "type": "select",
+                "id": "data-type",
+                "label": "Data type",
+                "description": "The type of data that you want to download",
+                "choices": {
+                    "Intentions": "intentions",
+                    "Transactions": "transactions"
+                }
+            },
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": ["alternative/smartinsider/{data-type}/{ticker}.tsv"]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Tiingo News Feed",
+        "vendor": "Tiingo",
+        "categories": ["Web Data", "News and Events"],
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            },
+            {
+                "type": "start-end"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": [
+                        "alternative/tiingo/content/{date}.zip",
+                        "alternative/tiingo/{ticker}/{date}.csv"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Benzinga News Feed",
+        "vendor": "Benzinga",
+        "categories": ["News and Events"],
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            },
+            {
+                "type": "start-end"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": [
+                        "alternative/benzinga/content/{date}.zip",
+                        "alternative/benzinga/{ticker}/{date}.csv"
+                    ]
+                }
+            }
+        ]
     }
 ]

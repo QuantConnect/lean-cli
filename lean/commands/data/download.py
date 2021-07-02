@@ -162,7 +162,7 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
             dataset_count = len(list(dataset for dataset in datasets if category in dataset.categories))
             category_options[category] = Option(
                 id=category,
-                label=f"{category} ({dataset_count} available dataset{'s' if dataset_count > 1 else ''})"
+                label=f"{category} ({dataset_count} dataset{'s' if dataset_count > 1 else ''})"
             )
 
     category_options = sorted(category_options.values(), key=lambda opt: opt.label)
