@@ -127,7 +127,7 @@ class DatasetTextOption(DatasetOption):
         return "value"
 
 
-class DatasetChoiceOption(DatasetOption):
+class DatasetSelectOption(DatasetOption):
     choices: Dict[str, str]
 
     def configure_interactive(self) -> OptionResult:
@@ -224,7 +224,7 @@ class Dataset(WrappedBaseModel):
     def parse_options(cls, values: List[Any]) -> List[Any]:
         option_types = {
             "text": DatasetTextOption,
-            "choice": DatasetChoiceOption,
+            "select": DatasetSelectOption,
             "date": DatasetDateOption
         }
 

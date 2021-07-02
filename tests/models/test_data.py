@@ -16,7 +16,7 @@ from typing import List, Dict, Optional
 import pytest
 
 from lean.models.data import DatasetOneOfCondition, OptionResult, DatasetTextOption, DatasetTextOptionTransform, \
-    DatasetChoiceOption, DatasetDateOption
+    DatasetSelectOption, DatasetDateOption
 
 
 @pytest.mark.parametrize("option,values,results,expected", [
@@ -89,11 +89,11 @@ def test_dataset_text_option_get_placeholder_works_correctly() -> None:
     ("choice1", {"Choice1": "Internal1"}, "Internal1", "Choice1"),
     ("Choice2", {"Choice1": "Internal1"}, None, None)
 ])
-def test_dataset_choice_option_configure_non_interactive_works_correctly(value: str,
+def test_dataset_select_option_configure_non_interactive_works_correctly(value: str,
                                                                          choices: Dict[str, str],
                                                                          expected_value: Optional[str],
                                                                          expected_label: Optional[str]) -> None:
-    option = DatasetChoiceOption(id="id", label="label", description="description", choices=choices)
+    option = DatasetSelectOption(id="id", label="label", description="description", choices=choices)
 
     if expected_value is None and expected_label is None:
         with pytest.raises(ValueError):
@@ -136,8 +136,8 @@ def test_dataset_choice_option_configure_non_interactive_works_correctly(value: 
          "Choice6": "Internal6"
      }, "value (example: Choice2)")
 ])
-def test_dataset_choice_option_get_placeholder_works_correctly(choices: Dict[str, str], placeholder: str) -> None:
-    option = DatasetChoiceOption(id="id", label="label", description="description", choices=choices)
+def test_dataset_select_option_get_placeholder_works_correctly(choices: Dict[str, str], placeholder: str) -> None:
+    option = DatasetSelectOption(id="id", label="label", description="description", choices=choices)
 
     assert option.get_placeholder() == placeholder
 

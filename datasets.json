@@ -4,20 +4,7 @@
         "vendor": "QuantConnect",
         "categories": ["Financial Market Data"],
         "requiresSecurityMaster": true,
-        "options": [
-            {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download"
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download"
-            }
-        ],
+        "options": [],
         "paths": [
             {
                 "templates": [
@@ -34,7 +21,7 @@
         "requiresSecurityMaster": true,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "data-type",
                 "label": "Data type",
                 "description": "The type of data that you want to download",
@@ -51,7 +38,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "resolution",
                 "label": "Resolution",
                 "description": "The resolution of the data that you want to download",
@@ -107,7 +94,7 @@
         "requiresSecurityMaster": true,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "data-type",
                 "label": "Data type",
                 "description": "The type of data that you want to download",
@@ -118,7 +105,7 @@
                 }
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "option-type",
                 "label": "Option type",
                 "description": "The option type of the data that you want to download",
@@ -160,7 +147,7 @@
         "requiresSecurityMaster": false,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "report-type",
                 "label": "Report type",
                 "description": "The type of report that you want to download",
@@ -203,7 +190,7 @@
         "requiresSecurityMaster": false,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "variable",
                 "label": "Variable",
                 "description": "The name of the variable that you want to download the data of",
@@ -753,7 +740,7 @@
         "requiresSecurityMaster": false,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "variable",
                 "label": "Variable",
                 "description": "The name of the variable that you want to download the data of",
@@ -996,7 +983,7 @@
         "requiresSecurityMaster": false,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "ticker",
                 "label": "Ticker",
                 "description": "The ticker of the index that you want to download the data of",
@@ -1032,7 +1019,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "resolution",
                 "label": "Resolution",
                 "description": "The resolution of the data that you want to download",
@@ -1095,7 +1082,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "resolution",
                 "label": "Resolution",
                 "description": "The resolution of the data that you want to download",
@@ -1151,7 +1138,7 @@
         "requiresSecurityMaster": false,
         "options": [
             {
-                "type": "choice",
+                "type": "select",
                 "id": "data-type",
                 "label": "Data type",
                 "description": "The type of data that you want to download",
@@ -1161,7 +1148,7 @@
                 }
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "market",
                 "label": "Market",
                 "description": "The market of the data that you want to download",
@@ -1178,7 +1165,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "choice",
+                "type": "select",
                 "id": "resolution",
                 "label": "Resolution",
                 "description": "The resolution of the data that you want to download",
