@@ -4,7 +4,11 @@
         "vendor": "QuantConnect",
         "categories": ["Financial Market Data"],
         "requiresSecurityMaster": true,
-        "options": [],
+        "options": [
+            {
+                "type": "start-end"
+            }
+        ],
         "paths": [
             {
                 "templates": [
@@ -51,26 +55,7 @@
                 }
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
+                "type": "start-end"
             }
         ],
         "paths": [
@@ -122,16 +107,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download"
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download"
+                "type": "start-end"
             }
         ],
         "paths": [
@@ -165,16 +141,7 @@
                 "transform": "lowercase"
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download"
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download"
+                "type": "start-end"
             }
         ],
         "paths": [
@@ -1032,26 +999,7 @@
                 }
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
+                "type": "start-end"
             }
         ],
         "paths": [
@@ -1095,26 +1043,7 @@
                 }
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
+                "type": "start-end"
             }
         ],
         "paths": [
@@ -1178,26 +1107,7 @@
                 }
             },
             {
-                "type": "date",
-                "id": "start",
-                "label": "Start date",
-                "description": "The inclusive start date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
-            },
-            {
-                "type": "date",
-                "id": "end",
-                "label": "End date",
-                "description": "The inclusive end date of the data that you want to download (tick, second and minute resolutions only)",
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["tick", "second", "minute"]
-                }
+                "type": "start-end"
             }
         ],
         "paths": [

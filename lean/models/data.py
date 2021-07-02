@@ -178,6 +178,8 @@ class DatasetSelectOption(DatasetOption):
 
 
 class DatasetDateOption(DatasetOption):
+    start_end: bool = False
+
     def configure_interactive(self) -> OptionResult:
         date = click.prompt(f"{self.label} (yyyyMMdd)", type=DateParameter())
         return OptionResult(value=date, label=date.strftime("%Y-%m-%d"))
@@ -232,6 +234,28 @@ class Dataset(WrappedBaseModel):
         for option in values:
             if isinstance(option, DatasetOption):
                 options.append(option)
+            elif option["type"] == "start-end":
+                description_suffix = ""
+
+                resolution = next((o for o in options if o.id == "resolution"), None)
+                if resolution is not None and isinstance(resolution, DatasetSelectOption):
+                    if "hour" in resolution.choices.values() or "daily" in resolution.choices.values():
+                        description_suffix = " (tick, second and minute resolutions only)"
+
+                options.extend([
+                    DatasetDateOption(
+                        id="start",
+                        label="Start date",
+                        description="The inclusive end date of the data that you want to download" + description_suffix,
+                        start_end=True
+                    ),
+                    DatasetDateOption(
+                        id="end",
+                        label="End date",
+                        description="The inclusive end date of the data that you want to download" + description_suffix,
+                        start_end=True
+                    )
+                ])
             else:
                 options.append(option_types[option["type"]](**option))
 
@@ -266,10 +290,11 @@ class Product(WrappedBaseModel):
         for template in templates:
             variables = {option_id: result.value for option_id, result in self.option_results.items()}
 
+            has_start_end = any(isinstance(o, DatasetDateOption) and o.start_end for o in self.dataset.options)
             start = self.option_results.get("start", None)
             end = self.option_results.get("end", None)
 
-            if start is not None and end is not None:
+            if has_start_end and start is not None and end is not None:
                 for date in rrule(DAILY, dtstart=start.value, until=end.value):
                     variables["date"] = date.strftime("%Y%m%d")
                     files.add(self._render_template(template, variables))
