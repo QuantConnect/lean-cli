@@ -15,7 +15,6 @@ import abc
 import re
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
 from typing import List, Any, Optional, Dict
 
 import click
@@ -140,7 +139,7 @@ class DatasetSelectOption(DatasetOption):
             key = logger.prompt_list(self.label, [Option(id=key, label=key) for key in keys])
         else:
             while True:
-                user_input = click.prompt(f"{self.label} (example: {self._get_shortest_value(keys)})")
+                user_input = click.prompt(f"{self.label} (example: {min(keys, key=len)})")
 
                 key = next((key for key in keys if key.lower() == user_input.lower()), None)
                 if key is not None:
@@ -160,7 +159,7 @@ class DatasetSelectOption(DatasetOption):
             if len(keys) <= 5:
                 error += f", please choose one of the following: {', '.join(keys)}"
             else:
-                error += f", please specify a value like '{self._get_shortest_value(keys)}'"
+                error += f", please specify a value like '{min(keys, key=len)}'"
 
             raise ValueError(error)
 
@@ -172,10 +171,7 @@ class DatasetSelectOption(DatasetOption):
         if len(keys) <= 5:
             return "|".join(keys)
         else:
-            return f"value (example: {self._get_shortest_value(keys)})"
-
-    def _get_shortest_value(self, values: List[str]) -> str:
-        return sorted(values, key=lambda value: len(value))[0]
+            return f"value (example: {min(keys, key=len)})"
 
 
 class DatasetDateOption(DatasetOption):
@@ -293,8 +289,7 @@ class Product(WrappedBaseModel):
         else:
             raise RuntimeError(f"No eligible path templates found")
 
-        files = set()
-
+        data_files = set()
         variables = {option_id: result.value for option_id, result in self.option_results.items()}
 
         for template in path_to_use.templates.all:
@@ -302,33 +297,30 @@ class Product(WrappedBaseModel):
             start = self.option_results.get("start", None)
             end = self.option_results.get("end", None)
 
+            template_files = set()
+
             if has_start_end and start is not None and end is not None:
                 variables_to_use = {**variables}
                 for date in rrule(DAILY, dtstart=start.value, until=end.value):
-                    variables_to_use["date"] = date.strftime("%Y%m%d")
-                    files.add(self._render_template(template, variables_to_use))
+                    variables_to_use["date"] = date
+                    template_files.add(self._render_template(template, variables_to_use))
             else:
-                files.add(self._render_template(template, variables))
+                template_files.add(self._render_template(template, variables))
 
-        available_files_by_parent = {}
-        for parent in set(Path(file).parent.as_posix() for file in files):
+            parent = self._get_common_prefix(list(template_files))
+
             if len(parent.split("/")) < 3:
                 # Cannot get cloud directory listing less than 3 levels deep
-                continue
-
-            available_files_by_parent[parent] = api_client.data.list_files(parent + "/")
-
-        data_files = set()
-        for file in files:
-            parent = Path(file).parent.as_posix()
-            if parent not in available_files_by_parent or file in available_files_by_parent[parent]:
-                data_files.add(file)
+                data_files.update(template_files)
+            else:
+                available_files = api_client.data.list_files(parent)
+                data_files.update(template_files.intersection(set(available_files)))
 
         for regex_template in path_to_use.templates.latest:
             rendered_regex = self._render_template(regex_template, variables)
 
-            parent = Path(rendered_regex).parent.as_posix()
-            available_files = api_client.data.list_files(parent + "/")
+            parent = re.split(r"[\\[\]()]", rendered_regex)[0]
+            available_files = api_client.data.list_files(parent)
 
             compiled_regex = re.compile(rendered_regex)
             matching_files = [file for file in available_files if compiled_regex.match(file) is not None]
@@ -337,6 +329,21 @@ class Product(WrappedBaseModel):
                 data_files.add(sorted(matching_files)[-1])
 
         return sorted(list(data_files))
+
+    def _get_common_prefix(self, values: List[str]) -> str:
+        """Finds the common prefix in a list of strings.
+
+        :param values: the strings to find the common prefix of
+        :return: the common prefix of the given strings
+        """
+        shortest_value = min(values, key=len)
+
+        for index, character in enumerate(shortest_value):
+            for value in values:
+                if value[index] != character:
+                    return shortest_value[:index]
+
+        return shortest_value
 
     def _render_template(self, template: str, variables: Dict[str, str]) -> str:
         """Renders a template string with variables.
