@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import abc
+import re
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -198,9 +199,14 @@ class DatasetDateOption(DatasetOption):
         return "yyyyMMdd"
 
 
+class DatasetPathTemplates(WrappedBaseModel):
+    all: List[str] = []
+    latest: List[str] = []
+
+
 class DatasetPath(WrappedBaseModel):
     condition: Optional[DatasetCondition] = None
-    templates: List[str]
+    templates: DatasetPathTemplates
 
     @validator("condition", pre=True)
     def parse_condition(cls, value: Optional[Any]) -> Any:
@@ -218,7 +224,6 @@ class Dataset(WrappedBaseModel):
     name: str
     vendor: str
     categories: List[str]
-    requiresSecurityMaster: bool
     options: List[DatasetOption]
     paths: List[DatasetPath]
 
@@ -236,10 +241,11 @@ class Dataset(WrappedBaseModel):
                 options.append(option)
             elif option["type"] == "start-end":
                 description_suffix = ""
+                required_resolutions = ["tick", "second", "minute"]
 
                 resolution = next((o for o in options if o.id == "resolution"), None)
                 if resolution is not None and isinstance(resolution, DatasetSelectOption):
-                    if "hour" in resolution.choices.values() or "daily" in resolution.choices.values():
+                    if len(set(resolution.choices.values()) - set(required_resolutions)) > 0:
                         description_suffix = " (tick, second and minute resolutions only)"
 
                 options.extend([
@@ -247,12 +253,14 @@ class Dataset(WrappedBaseModel):
                         id="start",
                         label="Start date",
                         description="The inclusive end date of the data that you want to download" + description_suffix,
+                        condition=DatasetOneOfCondition(option="resolution", values=required_resolutions),
                         start_end=True
                     ),
                     DatasetDateOption(
                         id="end",
                         label="End date",
                         description="The inclusive end date of the data that you want to download" + description_suffix,
+                        condition=DatasetOneOfCondition(option="resolution", values=required_resolutions),
                         start_end=True
                     )
                 ])
@@ -280,24 +288,25 @@ class Product(WrappedBaseModel):
 
         for path in self.dataset.paths:
             if path.condition is None or path.condition.check(self.option_results):
-                templates = path.templates
+                path_to_use = path
                 break
         else:
             raise RuntimeError(f"No eligible path templates found")
 
         files = set()
 
-        for template in templates:
-            variables = {option_id: result.value for option_id, result in self.option_results.items()}
+        variables = {option_id: result.value for option_id, result in self.option_results.items()}
 
+        for template in path_to_use.templates.all:
             has_start_end = any(isinstance(o, DatasetDateOption) and o.start_end for o in self.dataset.options)
             start = self.option_results.get("start", None)
             end = self.option_results.get("end", None)
 
             if has_start_end and start is not None and end is not None:
+                variables_to_use = {**variables}
                 for date in rrule(DAILY, dtstart=start.value, until=end.value):
-                    variables["date"] = date.strftime("%Y%m%d")
-                    files.add(self._render_template(template, variables))
+                    variables_to_use["date"] = date.strftime("%Y%m%d")
+                    files.add(self._render_template(template, variables_to_use))
             else:
                 files.add(self._render_template(template, variables))
 
@@ -314,6 +323,18 @@ class Product(WrappedBaseModel):
             parent = Path(file).parent.as_posix()
             if parent not in available_files_by_parent or file in available_files_by_parent[parent]:
                 data_files.add(file)
+
+        for regex_template in path_to_use.templates.latest:
+            rendered_regex = self._render_template(regex_template, variables)
+
+            parent = Path(rendered_regex).parent.as_posix()
+            available_files = api_client.data.list_files(parent + "/")
+
+            compiled_regex = re.compile(rendered_regex)
+            matching_files = [file for file in available_files if compiled_regex.match(file) is not None]
+
+            if len(matching_files) > 0:
+                data_files.add(sorted(matching_files)[-1])
 
         return sorted(list(data_files))
 

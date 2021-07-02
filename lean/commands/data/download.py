@@ -15,7 +15,6 @@ import itertools
 import json
 import webbrowser
 from collections import OrderedDict
-from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -26,8 +25,7 @@ from rich.table import Table
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
-from lean.models.data import Dataset, DataFile, Product, OptionResult
-from lean.models.errors import MoreInfoError
+from lean.models.data import Dataset, DataFile, Product
 from lean.models.logger import Option
 
 _data_information: Optional[QCDataInformation] = None
@@ -129,63 +127,6 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     logger.info(f"Organization balance: {organization.credit.balance:,.0f} QCC")
 
 
-def _ensure_security_master(organization: QCFullOrganization,
-                            dataset: Dataset,
-                            products: List[Product],
-                            datasets: List[Dataset]) -> None:
-    """Ensures the latest Security Master data is downloaded if the dataset requires it.
-
-    Raises an error if the dataset requires Security Master data and the user doesn't have a subscription for it.
-
-    :param organization: the organization that the user selected
-    :param dataset: the dataset the user wants to download data from
-    :param products: the list of products to add the Security Master to if the user needs it
-    :param datasets: all available datasets
-    """
-    if not dataset.requiresSecurityMaster:
-        return
-
-    if not organization.has_security_master_subscription():
-        raise MoreInfoError(
-            f"An active Security Master subscription is required to download data from the {dataset.name} dataset",
-            "https://www.quantconnect.com/datasets/quantconnect-security-master"
-        )
-
-    security_master_dataset = next(d for d in datasets if d.name == "Security Master")
-
-    if dataset == security_master_dataset:
-        return
-
-    api_client = container.api_client()
-    data_directory = container.lean_config_manager().get_data_directory()
-
-    required_date = None
-    for meta_type in ["map", "factor"]:
-        zip_path = api_client.data.list_files(f"equity/usa/{meta_type}_files/{meta_type}_files_")[-1]
-        if not (data_directory / zip_path).is_file():
-            timestamp = zip_path.split("_")[-1].replace(".zip", "")
-            required_date = datetime.strptime(timestamp, "%Y%m%d")
-            break
-
-    if required_date is None:
-        return
-
-    for existing_product in products:
-        if existing_product.dataset != security_master_dataset:
-            continue
-
-        start_date = existing_product.option_results["start"].value
-        end_date = existing_product.option_results["end"].value
-
-        if start_date <= required_date <= end_date:
-            return
-
-    products.append(Product(dataset=dataset, option_results={
-        "start": OptionResult(value=required_date.strftime("%Y%m%d"), label=required_date.strftime("%Y-%m-%d")),
-        "end": OptionResult(value=required_date.strftime("%Y%m%d"), label=required_date.strftime("%Y-%m-%d"))
-    }))
-
-
 def _select_organization() -> QCFullOrganization:
     """Asks the user for the organization that should be used.
 
@@ -232,8 +173,6 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         available_datasets = sorted((d for d in datasets if category in d.categories), key=lambda d: d.name)
         dataset: Dataset = logger.prompt_list("Select a dataset",
                                               [Option(id=d, label=d.name) for d in available_datasets])
-
-        _ensure_security_master(organization, dataset, products, datasets)
 
         option_results = OrderedDict()
         for option in dataset.options:
@@ -348,9 +287,6 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     if dataset is None:
         raise RuntimeError(f"There is no dataset named '{ctx.params['dataset']}'")
 
-    products = []
-    _ensure_security_master(organization, dataset, products, datasets)
-
     option_results = OrderedDict()
     invalid_options = []
     missing_options = []
@@ -379,7 +315,7 @@ def _select_products_non_interactive(organization: QCFullOrganization,
 
         raise RuntimeError("\n\n".join(blocks))
 
-    products.append(Product(dataset=dataset, option_results=option_results))
+    products = [Product(dataset=dataset, option_results=option_results)]
 
     container.logger().info("Data that will be purchased and downloaded:")
     _display_products(organization, products)

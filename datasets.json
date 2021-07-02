@@ -3,18 +3,15 @@
         "name": "Security Master",
         "vendor": "QuantConnect",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": true,
-        "options": [
-            {
-                "type": "start-end"
-            }
-        ],
+        "options": [],
         "paths": [
             {
-                "templates": [
-                    "equity/usa/map_files/map_files_{date}.zip",
-                    "equity/usa/factor_files/factor_files_{date}.zip"
-                ]
+                "templates": {
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
             }
         ]
     },
@@ -22,7 +19,6 @@
         "name": "US Equities",
         "vendor": "AlgoSeek",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": true,
         "options": [
             {
                 "type": "select",
@@ -65,10 +61,22 @@
                     "option": "resolution",
                     "values": ["hour", "daily"]
                 },
-                "templates": ["equity/usa/{resolution}/{ticker}.zip"]
+                "templates": {
+                    "all": ["equity/usa/{resolution}/{ticker}.zip"],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
             },
             {
-                "templates": ["equity/usa/{resolution}/{ticker}/{date}_{data-type}.zip"]
+                "templates": {
+                    "all": ["equity/usa/{resolution}/{ticker}/{date}_{data-type}.zip"],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
             }
         ]
     },
@@ -76,7 +84,6 @@
         "name": "US Equity Options",
         "vendor": "AlgoSeek",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": true,
         "options": [
             {
                 "type": "select",
@@ -91,9 +98,9 @@
             },
             {
                 "type": "select",
-                "id": "option-type",
-                "label": "Option type",
-                "description": "The option type of the data that you want to download",
+                "id": "option-style",
+                "label": "Option style",
+                "description": "The option style of the data that you want to download",
                 "choices": {
                     "American": "american",
                     "European": "european"
@@ -112,7 +119,13 @@
         ],
         "paths": [
             {
-                "templates": ["option/usa/minute/{ticker}/{date}_{data-type}_{option-style}.zip"]
+                "templates": {
+                    "all": ["option/usa/minute/{ticker}/{date}_{data-type}_{option-style}.zip"],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
             }
         ]
     },
@@ -120,7 +133,6 @@
         "name": "US SEC Filings",
         "vendor": "QuantConnect",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "select",
@@ -146,7 +158,9 @@
         ],
         "paths": [
             {
-                "templates": ["alternative/sec/{ticker}/{date}_{report-type}.zip"]
+                "templates": {
+                    "all": ["alternative/sec/{ticker}/{date}_{report-type}.zip"]
+                }
             }
         ]
     },
@@ -154,7 +168,6 @@
         "name": "US Federal Reserve (FRED)",
         "vendor": "FRED",
         "categories": ["Financial Market Data", "Transport and Logistics Data", "Industry Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "select",
@@ -696,7 +709,9 @@
         ],
         "paths": [
             {
-                "templates": ["alternative/fred/{variable}.csv"]
+                "templates": {
+                    "all": ["alternative/fred/{variable}.csv"]
+                }
             }
         ]
     },
@@ -704,7 +719,6 @@
         "name": "US Energy Information Administration (EIA)",
         "vendor": "Energy Information Administration",
         "categories": ["Energy Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "select",
@@ -915,7 +929,9 @@
         ],
         "paths": [
             {
-                "templates": ["alternative/usenergy/{variable}.csv"]
+                "templates": {
+                    "all": ["alternative/usenergy/{variable}.csv"]
+                }
             }
         ]
     },
@@ -923,11 +939,12 @@
         "name": "US Treasury Yield Curve",
         "vendor": "Treasury Department",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [],
         "paths": [
             {
-                "templates": ["alternative/ustreasury/yieldcurverates.csv"]
+                "templates": {
+                    "all": ["alternative/ustreasury/yieldcurverates.csv"]
+                }
             }
         ]
     },
@@ -935,11 +952,12 @@
         "name": "VIX Central Contango",
         "vendor": "VIX Central",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [],
         "paths": [
             {
-                "templates": ["alternative/vixcentral/vix_contango.csv"]
+                "templates": {
+                    "all": ["alternative/vixcentral/vix_contango.csv"]
+                }
             }
         ]
     },
@@ -947,7 +965,6 @@
         "name": "VIX Daily Price",
         "vendor": "CBOE",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "select",
@@ -968,7 +985,9 @@
         ],
         "paths": [
             {
-                "templates": ["alternative/cboe/{ticker}.csv"]
+                "templates": {
+                    "all": ["alternative/cboe/{ticker}.csv"]
+                }
             }
         ]
     },
@@ -976,7 +995,6 @@
         "name": "FOREX Data",
         "vendor": "OANDA",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "text",
@@ -1009,10 +1027,14 @@
                     "option": "resolution",
                     "values": ["hour", "daily"]
                 },
-                "templates": ["forex/oanda/{resolution}/{ticker}.zip"]
+                "templates": {
+                    "all": ["forex/oanda/{resolution}/{ticker}.zip"]
+                }
             },
             {
-                "templates": ["forex/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                "templates": {
+                    "all": ["forex/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                }
             }
         ]
     },
@@ -1020,7 +1042,6 @@
         "name": "CFD Data",
         "vendor": "OANDA",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "text",
@@ -1053,10 +1074,14 @@
                     "option": "resolution",
                     "values": ["hour", "daily"]
                 },
-                "templates": ["cfd/oanda/{resolution}/{ticker}.zip"]
+                "templates": {
+                    "all": ["cfd/oanda/{resolution}/{ticker}.zip"]
+                }
             },
             {
-                "templates": ["cfd/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                "templates": {
+                    "all": ["cfd/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                }
             }
         ]
     },
@@ -1064,7 +1089,6 @@
         "name": "Crypto Price Data",
         "vendor": "CoinAPI",
         "categories": ["Financial Market Data"],
-        "requiresSecurityMaster": false,
         "options": [
             {
                 "type": "select",
@@ -1117,10 +1141,14 @@
                     "option": "resolution",
                     "values": ["hour", "daily"]
                 },
-                "templates": ["crypto/{market}/{resolution}/{ticker}_{data-type}.zip"]
+                "templates": {
+                    "all": ["crypto/{market}/{resolution}/{ticker}_{data-type}.zip"]
+                }
             },
             {
-                "templates": ["crypto/{market}/{resolution}/{ticker}/{date}_{data-type}.zip"]
+                "templates": {
+                    "all": ["crypto/{market}/{resolution}/{ticker}/{date}_{data-type}.zip"]
+                }
             }
         ]
     }
