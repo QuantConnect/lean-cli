@@ -41,7 +41,6 @@ class BloombergBrokerage(LocalBrokerage):
                  emsx_strategy: Optional[str],
                  emsx_notes: Optional[str],
                  emsx_handling: Optional[str],
-                 execution: bool,
                  allow_modification: bool) -> None:
         self._organization_id = organization_id
         self._environment = environment
@@ -54,7 +53,6 @@ class BloombergBrokerage(LocalBrokerage):
         self._emsx_strategy = emsx_strategy
         self._emsx_notes = emsx_notes
         self._emsx_handling = emsx_handling
-        self._execution = execution
         self._allow_modification = allow_modification
 
     @classmethod
@@ -89,7 +87,6 @@ class BloombergBrokerage(LocalBrokerage):
         emsx_notes = click.prompt("EMSX notes", cls._get_default(lean_config, "bloomberg-emsx-notes") or "")
         emsx_handling = click.prompt("EMSX handling", cls._get_default(lean_config, "bloomberg-emsx-handling") or "")
 
-        execution = click.prompt("Execution (yes/no)", cls._get_default(lean_config, "bloomberg-execution"), type=bool)
         allow_modification = click.prompt("Allow modification (yes/no)",
                                           cls._get_default(lean_config, "bloomberg-allow-modification"),
                                           type=bool)
@@ -105,7 +102,6 @@ class BloombergBrokerage(LocalBrokerage):
                                   emsx_strategy,
                                   emsx_notes,
                                   emsx_handling,
-                                  execution,
                                   allow_modification)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
@@ -133,7 +129,6 @@ class BloombergBrokerage(LocalBrokerage):
         lean_config["bloomberg-emsx-strategy"] = self._emsx_strategy or ""
         lean_config["bloomberg-emsx-notes"] = self._emsx_notes or ""
         lean_config["bloomberg-emsx-handling"] = self._emsx_handling or ""
-        lean_config["bloomberg-execution"] = self._execution
         lean_config["bloomberg-allow-modification"] = self._allow_modification
 
         self._save_properties(lean_config, ["job-organization-id",
@@ -148,7 +143,6 @@ class BloombergBrokerage(LocalBrokerage):
                                             "bloomberg-emsx-strategy",
                                             "bloomberg-emsx-notes",
                                             "bloomberg-emsx-handling",
-                                            "bloomberg-execution",
                                             "bloomberg-allow-modification"])
 
     def ensure_module_installed(self) -> None:

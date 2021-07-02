@@ -381,10 +381,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("bloomberg-emsx-handling"),
               help="The EMSX handling to use")
-@click.option("--bloomberg-execution",
-              type=str,
-              default=lambda: _get_default_value("bloomberg-execution"),
-              help="Bloomberg execution")
 @click.option("--bloomberg-allow-modification",
               type=bool,
               default=lambda: _get_default_value("bloomberg-allow-modification"),
@@ -441,7 +437,6 @@ def live(ctx: click.Context,
          bloomberg_emsx_strategy: Optional[str],
          bloomberg_emsx_notes: Optional[str],
          bloomberg_emsx_handling: Optional[str],
-         bloomberg_execution: Optional[bool],
          bloomberg_allow_modification: Optional[bool],
          image: Optional[str],
          update: bool) -> None:
@@ -523,7 +518,6 @@ def live(ctx: click.Context,
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_emsx_broker",
-                                 "bloomberg_execution",
                                  "bloomberg_allow_modification"])
             brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                       bloomberg_environment,
@@ -536,7 +530,6 @@ def live(ctx: click.Context,
                                                       bloomberg_emsx_strategy,
                                                       bloomberg_emsx_notes,
                                                       bloomberg_emsx_handling,
-                                                      bloomberg_execution,
                                                       bloomberg_allow_modification)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
@@ -583,7 +576,6 @@ def live(ctx: click.Context,
                                  "bloomberg_server_host",
                                  "bloomberg_server_port",
                                  "bloomberg_emsx_broker",
-                                 "bloomberg_execution",
                                  "bloomberg_allow_modification"])
             data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
                                                                         bloomberg_environment,
@@ -596,7 +588,6 @@ def live(ctx: click.Context,
                                                                         bloomberg_emsx_strategy,
                                                                         bloomberg_emsx_notes,
                                                                         bloomberg_emsx_handling,
-                                                                        bloomberg_execution,
                                                                         bloomberg_allow_modification))
         elif data_feed == IQFeedDataFeed.get_name():
             ensure_options(ctx, ["iqfeed_iqconnect",

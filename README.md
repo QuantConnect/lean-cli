@@ -701,7 +701,6 @@ Options:
   --bloomberg-emsx-strategy TEXT  The EMSX strategy to use
   --bloomberg-emsx-notes TEXT     The EMSX notes to use
   --bloomberg-emsx-handling TEXT  The EMSX handling to use
-  --bloomberg-execution TEXT      Bloomberg execution
   --bloomberg-allow-modification BOOLEAN
                                   Whether modification is allowed
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
