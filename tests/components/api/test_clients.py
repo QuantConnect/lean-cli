@@ -200,10 +200,10 @@ def test_backtest_crud() -> None:
                 break
             sleep(1)
 
-        # Stop all running backtest nodes to ensure we have a node to run on
-        for node in node_client.get_all(project.organizationId).backtest:
-            if node.busy:
-                node_client.stop(project.organizationId, node.id)
+        # Ensure we have a backtest node to run on
+        backtest_nodes = node_client.get_all(project.organizationId).backtest
+        if all(node.busy for node in backtest_nodes):
+            node_client.stop(project.organizationId, backtest_nodes[0].id)
 
         # Test a backtest can be started
         backtest_name = f"Test Backtest {datetime.now()}"
