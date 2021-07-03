@@ -187,6 +187,7 @@ def test_backtest_crud() -> None:
     api_client = create_api_client()
     compile_client = CompileClient(api_client)
     backtest_client = BacktestClient(api_client)
+    node_client = NodeClient(api_client)
 
     with create_project(api_client, "Test Project") as project:
         # Compile the project
@@ -198,6 +199,11 @@ def test_backtest_crud() -> None:
                                                                                           QCCompileState.BuildError]:
                 break
             sleep(1)
+
+        # Stop all running backtest nodes to ensure we have a node to run on
+        for node in node_client.get_all(project.organizationId).backtest:
+            if node.busy:
+                node_client.stop(project.organizationId, node.id)
 
         # Test a backtest can be started
         backtest_name = f"Test Backtest {datetime.now()}"
