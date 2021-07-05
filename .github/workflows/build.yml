@@ -19,8 +19,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.pythonLocation }}/lib/python${{ matrix.python-version }}/site-packages
-          key: ${{ runner.os }}-site-packages-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
-
+          key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
