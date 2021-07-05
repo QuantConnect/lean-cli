@@ -109,7 +109,7 @@ class Logger:
             text = f"{text} [{'*' * len(default)}]"
 
         # Masking does not work when the input is not coming from a keyboard
-        if not sys.stdout.isatty():
+        if not sys.stdin.isatty():
             return click.prompt(text, default=default, show_default=False)
 
         while True:
