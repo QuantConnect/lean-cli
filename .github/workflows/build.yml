@@ -20,10 +20,6 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}/lib/python${{ matrix.python-version }}/site-packages
           key: ${{ runner.os }}-site-packages-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
-          restore-keys: |
-            ${{ runner.os }}-site-packages-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}-
-            ${{ runner.os }}-site-packages-${{ matrix.python-version }}-
-            ${{ runner.os }}-site-packages-
 
       - name: Set up Python
         uses: actions/setup-python@v2
