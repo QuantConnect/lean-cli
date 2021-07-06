@@ -40,9 +40,7 @@ class HTTPClient:
         raise_for_status = kwargs.pop("raise_for_status", True)
         response = requests.get(url, **kwargs)
 
-        if raise_for_status:
-            self._check_response(response)
-
+        self._check_response(response, raise_for_status)
         return response
 
     def post(self, url: str, **kwargs) -> requests.Response:
@@ -59,9 +57,7 @@ class HTTPClient:
         raise_for_status = kwargs.pop("raise_for_status", True)
         response = requests.post(url, **kwargs)
 
-        if raise_for_status:
-            self._check_response(response)
-
+        self._check_response(response, raise_for_status)
         return response
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
@@ -79,9 +75,7 @@ class HTTPClient:
         raise_for_status = kwargs.pop("raise_for_status", True)
         response = requests.request(method, url, **kwargs)
 
-        if raise_for_status:
-            self._check_response(response)
-
+        self._check_response(response, raise_for_status)
         return response
 
     def log_unsuccessful_response(self, response: requests.Response) -> None:
@@ -107,12 +101,14 @@ class HTTPClient:
 
         self._logger.debug(message)
 
-    def _check_response(self, response: requests.Response) -> None:
-        """Checks whether a response was successful, raising an error with extra debug logging if not.
+    def _check_response(self, response: requests.Response, raise_for_status: bool) -> None:
+        """Checks a response, logging a debug message if it wasn't successful.
 
         :param response: the response to check
+        :param raise_for_status: True if an error needs to be raised if the request wasn't successful, False if not
         """
         if response.status_code < 200 or response.status_code >= 300:
             self.log_unsuccessful_response(response)
 
-        response.raise_for_status()
+        if raise_for_status:
+            response.raise_for_status()
