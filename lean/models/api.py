@@ -489,3 +489,15 @@ class QCDataVendor(WrappedBaseModel):
 class QCDataInformation(WrappedBaseModel):
     prices: List[QCDataVendor]
     agreement: str
+
+
+class QCDatasetTag(WrappedBaseModel):
+    name: str
+
+
+class QCDataset(WrappedBaseModel):
+    id: int
+    name: str
+    delivery: str
+    vendorName: str
+    tags: List[QCDatasetTag]

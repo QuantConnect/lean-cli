@@ -1,8 +1,5 @@
-[
-    {
-        "name": "Security Master",
-        "vendor": "QuantConnect",
-        "categories": ["Financial Market Data"],
+{
+    "4": {
         "options": [],
         "paths": [
             {
@@ -15,124 +12,67 @@
             }
         ]
     },
-    {
-        "name": "US Equities",
-        "vendor": "AlgoSeek",
-        "categories": ["Financial Market Data"],
+    "5": {
         "options": [
-            {
-                "type": "select",
-                "id": "data-type",
-                "label": "Data type",
-                "description": "The type of data that you want to download",
-                "choices": {
-                    "Trade": "trade",
-                    "Quote": "quote"
-                }
-            },
             {
                 "type": "text",
                 "id": "ticker",
                 "label": "Ticker",
                 "description": "The ticker of the data that you want to download",
                 "transform": "lowercase"
-            },
-            {
-                "type": "select",
-                "id": "resolution",
-                "label": "Resolution",
-                "description": "The resolution of the data that you want to download",
-                "choices": {
-                    "Tick": "tick",
-                    "Second": "second",
-                    "Minute": "minute",
-                    "Hour": "hour",
-                    "Daily": "daily"
-                }
-            },
-            {
-                "type": "start-end"
             }
         ],
         "paths": [
             {
-                "condition": {
-                    "type": "oneOf",
-                    "option": "resolution",
-                    "values": ["hour", "daily"]
-                },
                 "templates": {
-                    "all": ["equity/usa/{resolution}/{ticker}.zip"],
-                    "latest": [
-                        "equity/usa/map_files/map_files_\\d+.zip",
-                        "equity/usa/factor_files/factor_files_\\d+.zip"
-                    ]
-                }
-            },
-            {
-                "templates": {
-                    "all": ["equity/usa/{resolution}/{ticker}/{date}_{data-type}.zip"],
-                    "latest": [
-                        "equity/usa/map_files/map_files_\\d+.zip",
-                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    "all": [
+                        "alternative/quiver/congresstrading/{ticker}.csv"
                     ]
                 }
             }
         ]
     },
-    {
-        "name": "US Equity Options",
-        "vendor": "AlgoSeek",
-        "categories": ["Financial Market Data"],
+    "7": {
         "options": [
-            {
-                "type": "select",
-                "id": "data-type",
-                "label": "Data type",
-                "description": "The type of data that you want to download",
-                "choices": {
-                    "Trade": "trade",
-                    "Quote": "quote",
-                    "Open Interest": "openinterest"
-                }
-            },
-            {
-                "type": "select",
-                "id": "option-style",
-                "label": "Option style",
-                "description": "The option style of the data that you want to download",
-                "choices": {
-                    "American": "american",
-                    "European": "european"
-                }
-            },
             {
                 "type": "text",
                 "id": "ticker",
                 "label": "Ticker",
                 "description": "The ticker of the data that you want to download",
                 "transform": "lowercase"
-            },
-            {
-                "type": "start-end"
             }
         ],
         "paths": [
             {
                 "templates": {
-                    "all": ["option/usa/minute/{ticker}/{date}_{data-type}_{option-style}.zip"],
-                    "latest": [
-                        "equity/usa/map_files/map_files_\\d+.zip",
-                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    "all": [
+                        "alternative/quiver/wikipedia/{ticker}.csv"
                     ]
                 }
             }
         ]
     },
-    {
-        "name": "US SEC Filings",
-        "vendor": "QuantConnect",
-        "categories": ["Financial Market Data"],
+    "8": {
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": [
+                        "alternative/quiver/wallstreetbets/{ticker}.csv"
+                    ]
+                }
+            }
+        ]
+    },
+    "9": {
         "options": [
             {
                 "type": "select",
@@ -159,15 +99,14 @@
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/sec/{ticker}/{date}_{report-type}.zip"]
+                    "all": [
+                        "alternative/sec/{ticker}/{date}_{report-type}.zip"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "US Federal Reserve (FRED)",
-        "vendor": "FRED",
-        "categories": ["Financial Market Data", "Transport and Logistics Data", "Industry Data"],
+    "10": {
         "options": [
             {
                 "type": "select",
@@ -710,15 +649,14 @@
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/fred/{variable}.csv"]
+                    "all": [
+                        "alternative/fred/{variable}.csv"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "US Energy Information Administration (EIA)",
-        "vendor": "Energy Information Administration",
-        "categories": ["Energy Data"],
+    "11": {
         "options": [
             {
                 "type": "select",
@@ -930,41 +868,38 @@
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/usenergy/{variable}.csv"]
+                    "all": [
+                        "alternative/usenergy/{variable}.csv"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "US Treasury Yield Curve",
-        "vendor": "Treasury Department",
-        "categories": ["Financial Market Data"],
+    "12": {
         "options": [],
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/ustreasury/yieldcurverates.csv"]
+                    "all": [
+                        "alternative/ustreasury/yieldcurverates.csv"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "VIX Central Contango",
-        "vendor": "VIX Central",
-        "categories": ["Financial Market Data"],
+    "13": {
         "options": [],
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/vixcentral/vix_contango.csv"]
+                    "all": [
+                        "alternative/vixcentral/vix_contango.csv"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "VIX Daily Price",
-        "vendor": "CBOE",
-        "categories": ["Financial Market Data"],
+    "14": {
         "options": [
             {
                 "type": "select",
@@ -986,15 +921,137 @@
         "paths": [
             {
                 "templates": {
-                    "all": ["alternative/cboe/{ticker}.csv"]
+                    "all": [
+                        "alternative/cboe/{ticker}.csv"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "FOREX Data",
-        "vendor": "OANDA",
-        "categories": ["Financial Market Data"],
+    "17": {
+        "options": [
+            {
+                "type": "select",
+                "id": "data-type",
+                "label": "Data type",
+                "description": "The type of data that you want to download",
+                "choices": {
+                    "Trade": "trade",
+                    "Quote": "quote"
+                }
+            },
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            },
+            {
+                "type": "select",
+                "id": "resolution",
+                "label": "Resolution",
+                "description": "The resolution of the data that you want to download",
+                "choices": {
+                    "Tick": "tick",
+                    "Second": "second",
+                    "Minute": "minute",
+                    "Hour": "hour",
+                    "Daily": "daily"
+                }
+            },
+            {
+                "type": "start-end"
+            }
+        ],
+        "paths": [
+            {
+                "condition": {
+                    "type": "oneOf",
+                    "option": "resolution",
+                    "values": [
+                        "hour",
+                        "daily"
+                    ]
+                },
+                "templates": {
+                    "all": [
+                        "equity/usa/{resolution}/{ticker}.zip"
+                    ],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
+            },
+            {
+                "templates": {
+                    "all": [
+                        "equity/usa/{resolution}/{ticker}/{date}_{data-type}.zip"
+                    ],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
+                    ]
+                }
+            }
+        ]
+    },
+    "22": {
+        "options": [
+            {
+                "type": "select",
+                "id": "data-type",
+                "label": "Data type",
+                "description": "The type of data that you want to download",
+                "choices": {
+                    "Intentions": "intentions",
+                    "Transactions": "transactions"
+                }
+            },
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": [
+                        "alternative/smartinsider/{data-type}/{ticker}.tsv"
+                    ]
+                }
+            }
+        ]
+    },
+    "24": {
+        "options": [
+            {
+                "type": "text",
+                "id": "ticker",
+                "label": "Ticker",
+                "description": "The ticker of the data that you want to download",
+                "transform": "lowercase"
+            },
+            {
+                "type": "start-end"
+            }
+        ],
+        "paths": [
+            {
+                "templates": {
+                    "all": [
+                        "alternative/tiingo/content/{date}.zip",
+                        "alternative/tiingo/{ticker}/{date}.csv"
+                    ]
+                }
+            }
+        ]
+    },
+    "25": {
         "options": [
             {
                 "type": "text",
@@ -1025,23 +1082,27 @@
                 "condition": {
                     "type": "oneOf",
                     "option": "resolution",
-                    "values": ["hour", "daily"]
+                    "values": [
+                        "hour",
+                        "daily"
+                    ]
                 },
                 "templates": {
-                    "all": ["forex/oanda/{resolution}/{ticker}.zip"]
+                    "all": [
+                        "forex/oanda/{resolution}/{ticker}.zip"
+                    ]
                 }
             },
             {
                 "templates": {
-                    "all": ["forex/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                    "all": [
+                        "forex/oanda/{resolution}/{ticker}/{date}_quote.zip"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "CFD Data",
-        "vendor": "OANDA",
-        "categories": ["Financial Market Data"],
+    "26": {
         "options": [
             {
                 "type": "text",
@@ -1072,23 +1133,27 @@
                 "condition": {
                     "type": "oneOf",
                     "option": "resolution",
-                    "values": ["hour", "daily"]
+                    "values": [
+                        "hour",
+                        "daily"
+                    ]
                 },
                 "templates": {
-                    "all": ["cfd/oanda/{resolution}/{ticker}.zip"]
+                    "all": [
+                        "cfd/oanda/{resolution}/{ticker}.zip"
+                    ]
                 }
             },
             {
                 "templates": {
-                    "all": ["cfd/oanda/{resolution}/{ticker}/{date}_quote.zip"]
+                    "all": [
+                        "cfd/oanda/{resolution}/{ticker}/{date}_quote.zip"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "Crypto Price Data",
-        "vendor": "CoinAPI",
-        "categories": ["Financial Market Data"],
+    "27": {
         "options": [
             {
                 "type": "select",
@@ -1139,86 +1204,27 @@
                 "condition": {
                     "type": "oneOf",
                     "option": "resolution",
-                    "values": ["hour", "daily"]
+                    "values": [
+                        "hour",
+                        "daily"
+                    ]
                 },
                 "templates": {
-                    "all": ["crypto/{market}/{resolution}/{ticker}_{data-type}.zip"]
+                    "all": [
+                        "crypto/{market}/{resolution}/{ticker}_{data-type}.zip"
+                    ]
                 }
             },
             {
                 "templates": {
-                    "all": ["crypto/{market}/{resolution}/{ticker}/{date}_{data-type}.zip"]
+                    "all": [
+                        "crypto/{market}/{resolution}/{ticker}/{date}_{data-type}.zip"
+                    ]
                 }
             }
         ]
     },
-    {
-        "name": "US Congress Trading",
-        "vendor": "Quiver Quantitative",
-        "categories": ["Financial Market Data", "Political Data"],
-        "options": [
-            {
-                "type": "text",
-                "id": "ticker",
-                "label": "Ticker",
-                "description": "The ticker of the data that you want to download",
-                "transform": "lowercase"
-            }
-        ],
-        "paths": [
-            {
-                "templates": {
-                    "all": ["alternative/quiver/congresstrading/{ticker}.csv"]
-                }
-            }
-        ]
-    },
-    {
-        "name": "Wikipedia Page Views",
-        "vendor": "Quiver Quantitative",
-        "categories": ["Web Data"],
-        "options": [
-            {
-                "type": "text",
-                "id": "ticker",
-                "label": "Ticker",
-                "description": "The ticker of the data that you want to download",
-                "transform": "lowercase"
-            }
-        ],
-        "paths": [
-            {
-                "templates": {
-                    "all": ["alternative/quiver/wikipedia/{ticker}.csv"]
-                }
-            }
-        ]
-    },
-    {
-        "name": "WallStreetBets",
-        "vendor": "Quiver Quantitative",
-        "categories": ["Web Data"],
-        "options": [
-            {
-                "type": "text",
-                "id": "ticker",
-                "label": "Ticker",
-                "description": "The ticker of the data that you want to download",
-                "transform": "lowercase"
-            }
-        ],
-        "paths": [
-            {
-                "templates": {
-                    "all": ["alternative/quiver/wallstreetbets/{ticker}.csv"]
-                }
-            }
-        ]
-    },
-    {
-        "name": "Corporate Buybacks",
-        "vendor": "Smart Insider",
-        "categories": ["Commerce Data", "B2B Data"],
+    "29": {
         "options": [
             {
                 "type": "select",
@@ -1226,31 +1232,21 @@
                 "label": "Data type",
                 "description": "The type of data that you want to download",
                 "choices": {
-                    "Intentions": "intentions",
-                    "Transactions": "transactions"
+                    "Trade": "trade",
+                    "Quote": "quote",
+                    "Open Interest": "openinterest"
                 }
             },
             {
-                "type": "text",
-                "id": "ticker",
-                "label": "Ticker",
-                "description": "The ticker of the data that you want to download",
-                "transform": "lowercase"
-            }
-        ],
-        "paths": [
-            {
-                "templates": {
-                    "all": ["alternative/smartinsider/{data-type}/{ticker}.tsv"]
+                "type": "select",
+                "id": "option-style",
+                "label": "Option style",
+                "description": "The option style of the data that you want to download",
+                "choices": {
+                    "American": "american",
+                    "European": "european"
                 }
-            }
-        ]
-    },
-    {
-        "name": "Tiingo News Feed",
-        "vendor": "Tiingo",
-        "categories": ["Web Data", "News and Events"],
-        "options": [
+            },
             {
                 "type": "text",
                 "id": "ticker",
@@ -1266,17 +1262,17 @@
             {
                 "templates": {
                     "all": [
-                        "alternative/tiingo/content/{date}.zip",
-                        "alternative/tiingo/{ticker}/{date}.csv"
+                        "option/usa/minute/{ticker}/{date}_{data-type}_{option-style}.zip"
+                    ],
+                    "latest": [
+                        "equity/usa/map_files/map_files_\\d+.zip",
+                        "equity/usa/factor_files/factor_files_\\d+.zip"
                     ]
                 }
             }
         ]
     },
-    {
-        "name": "Benzinga News Feed",
-        "vendor": "Benzinga",
-        "categories": ["News and Events"],
+    "32": {
         "options": [
             {
                 "type": "text",
@@ -1300,4 +1296,4 @@
             }
         ]
     }
-]
+}

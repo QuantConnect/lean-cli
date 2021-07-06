@@ -23,7 +23,7 @@ class DataClient:
     _list_files_cache: Dict[str, List[str]] = {}
 
     def __init__(self, api_client: 'APIClient', http_client: 'HTTPClient') -> None:
-        """Creates a new AccountClient instance.
+        """Creates a new DataClient instance.
 
         :param api_client: the APIClient instance to use when making requests
         :param http_client: the HTTPClient instance to use when downloading files

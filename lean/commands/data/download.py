@@ -323,6 +323,47 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     return products
 
 
+def _get_available_datasets() -> List[Dataset]:
+    """Retrieves the available datasets.
+
+    :return: the datasets which data can be downloaded from
+    """
+    logger = container.logger()
+    api_client = container.api_client()
+    http_client = container.http_client()
+
+    cloud_datasets = api_client.market.list_datasets()
+
+    cli_datasets_path = Path(__file__).parent.parent.parent.parent / "datasets.json"
+    cli_datasets = json.loads(cli_datasets_path.read_text(encoding="utf-8"))
+
+    # TODO: Retrieve datasets.json from GitHub when the new `lean data download` command goes live
+    # cli_datasets_url = "https://raw.githubusercontent.com/QuantConnect/lean-cli/data-downloader/datasets.json"
+    # cli_datasets = http_client.get(cli_datasets_url).json()
+
+    available_datasets = []
+
+    for cloud_dataset in cloud_datasets:
+        if cloud_dataset.delivery == "cloud only":
+            continue
+
+        cli_dataset = cli_datasets.get(str(cloud_dataset.id), None)
+        if cli_dataset is None:
+            if cloud_dataset.name != "Template Data Source Product":
+                name = cloud_dataset.name.strip()
+                vendor = cloud_dataset.vendorName.strip()
+                logger.debug(f"There is no entry for {name} by {vendor} (id: {cloud_dataset.id}) in datasets.json")
+            continue
+
+        available_datasets.append(Dataset(name=cloud_dataset.name.strip(),
+                                          vendor=cloud_dataset.vendorName.strip(),
+                                          categories=[tag.name for tag in cloud_dataset.tags],
+                                          options=cli_dataset["options"],
+                                          paths=cli_dataset["paths"]))
+
+    return available_datasets
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @click.option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
@@ -347,9 +388,7 @@ def download(ctx: click.Context,
     See the following url for the data that can be purchased and downloaded with this command:
     https://www.quantconnect.com/datasets
     """
-    datasets_path = Path(__file__).parent.parent.parent.parent / "datasets.json"
-    datasets = json.loads(datasets_path.read_text(encoding="utf-8"))
-    datasets = [Dataset(**dataset) for dataset in datasets]
+    datasets = _get_available_datasets()
 
     is_interactive = dataset is None and organization is None
 
