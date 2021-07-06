@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
 import sys
 from typing import Any, List, Optional
 
@@ -108,8 +109,8 @@ class Logger:
         if default is not None:
             text = f"{text} [{'*' * len(default)}]"
 
-        # Masking does not work when the input is not coming from a keyboard
-        if not sys.stdin.isatty():
+        # Masking does not work properly in WSL2 and when the input is not coming from a keyboard
+        if "microsoft" in platform.uname().release.lower() or not sys.stdin.isatty():
             return click.prompt(text, default=default, show_default=False)
 
         while True:
