@@ -52,7 +52,7 @@ install_requires = [
     "pydantic~=1.7.3",
     "python-dateutil~=2.8.1",
     "lxml~=4.6.3",
-    "maskpass~=0.3.5",
+    "maskpass==0.3.5",
     "getmac~=0.8.2",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
