@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import traceback
 from hashlib import sha256
 from time import time
 from typing import Any, Dict
@@ -95,6 +96,7 @@ class APIClient:
             self.get("projects/read")
             return True
         except (RequestFailedError, AuthenticationError):
+            self._logger.debug(traceback.format_exc().strip())
             return False
 
     def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}, retry_http_5xx: bool = True) -> Any:
@@ -121,12 +123,15 @@ class APIClient:
                                     **options)
 
         if 500 <= response.status_code < 600 and retry_http_5xx:
+            self._log_unsuccessful_request(response)
             return self._request(method, endpoint, options, False)
 
         if response.status_code == 500:
+            self._log_unsuccessful_request(response)
             raise AuthenticationError()
 
         if response.status_code < 200 or response.status_code >= 300:
+            self._log_unsuccessful_request(response)
             raise RequestFailedError(response)
 
         return self._parse_response(response)
@@ -144,6 +149,8 @@ class APIClient:
         if data["success"]:
             return data
 
+        self._log_unsuccessful_request(response)
+
         if "errors" in data and len(data["errors"]) > 0:
             if data["errors"][0].startswith("Hash doesn't match."):
                 raise AuthenticationError()
@@ -157,3 +164,11 @@ class APIClient:
             raise RequestFailedError(response, data["Message"])
 
         raise RequestFailedError(response)
+
+    def _log_unsuccessful_request(self, response: requests.Response) -> None:
+        """Logs some debug messages for unsuccessful requests.
+
+        :param response: the response of the unsuccessful request
+        """
+        body = f"body:\n{response.text}" if response.text != "" else "empty body"
+        self._logger.debug(f"Request was not successful, status code {response.status_code}, {body}")
