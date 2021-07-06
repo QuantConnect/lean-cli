@@ -352,12 +352,12 @@ def _get_available_datasets() -> List[Dataset]:
             if cloud_dataset.name != "Template Data Source Product":
                 name = cloud_dataset.name.strip()
                 vendor = cloud_dataset.vendorName.strip()
-                logger.debug(f"There is no entry for {name} by {vendor} (id: {cloud_dataset.id}) in datasets.json")
+                logger.debug(f"There is no entry for {name} by {vendor} (id {cloud_dataset.id}) in datasets.json")
             continue
 
         available_datasets.append(Dataset(name=cloud_dataset.name.strip(),
                                           vendor=cloud_dataset.vendorName.strip(),
-                                          categories=[tag.name for tag in cloud_dataset.tags],
+                                          categories=[tag.name.strip() for tag in cloud_dataset.tags],
                                           options=cli_dataset["options"],
                                           paths=cli_dataset["paths"]))
 
