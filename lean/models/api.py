@@ -219,10 +219,10 @@ class QCBacktest(WrappedBaseModel):
             stats.extend(["", ""])
 
         table = Table(box=box.SQUARE)
-        table.add_column("Statistic")
-        table.add_column("Value")
-        table.add_column("Statistic")
-        table.add_column("Value")
+        table.add_column("Statistic", overflow="fold")
+        table.add_column("Value", overflow="fold")
+        table.add_column("Statistic", overflow="fold")
+        table.add_column("Value", overflow="fold")
 
         for i in range(int(len(stats) / 4)):
             start = i * 4

@@ -103,7 +103,7 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     table = Table(box=box.SQUARE)
 
     for column in ["Data type", "Ticker", "Market", "Resolution", "Date range", "Vendor", "Price"]:
-        table.add_column(column)
+        table.add_column(column, overflow="fold")
 
     summed_price = 0
 

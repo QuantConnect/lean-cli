@@ -139,8 +139,8 @@ class UpdateManager:
             return
 
         table = Table.grid(padding=(0, 1))
-        table.add_column()
-        table.add_column(ratio=1)
+        table.add_column(overflow="fold")
+        table.add_column(overflow="fold", ratio=1)
 
         for announcement in announcements:
             table.add_row(announcement["date"] + ":", announcement["message"])

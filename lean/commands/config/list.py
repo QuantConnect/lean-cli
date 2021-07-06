@@ -23,10 +23,10 @@ from lean.container import container
 def list() -> None:
     """List the configurable options and their current values."""
     table = Table(box=box.SQUARE)
-    table.add_column("Key")
-    table.add_column("Value")
-    table.add_column("Location")
-    table.add_column("Description")
+    table.add_column("Key", overflow="fold")
+    table.add_column("Value", overflow="fold")
+    table.add_column("Location", overflow="fold")
+    table.add_column("Description", overflow="fold")
 
     for option in container.cli_config_manager().all_options:
         value = option.get_value(default="<not set>")
