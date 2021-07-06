@@ -115,10 +115,13 @@ class DockerManager:
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
-        kwargs["mac_address"] = get_mac_address()
         kwargs["tty"] = is_tty
         kwargs["stdin_open"] = is_tty
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
+
+        mac_address = get_mac_address()
+        if mac_address is not None and mac_address != "00:00:00:00:00:00":
+            kwargs["mac_address"] = mac_address
 
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
