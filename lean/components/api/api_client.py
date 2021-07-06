@@ -31,6 +31,7 @@ from lean.components.api.node_client import NodeClient
 from lean.components.api.optimization_client import OptimizationClient
 from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
@@ -39,14 +40,16 @@ from lean.models.errors import AuthenticationError, RequestFailedError
 class APIClient:
     """The APIClient class manages communication with the QuantConnect API."""
 
-    def __init__(self, logger: Logger, user_id: str, api_token: str) -> None:
+    def __init__(self, logger: Logger, http_client: HTTPClient, user_id: str, api_token: str) -> None:
         """Creates a new APIClient instance.
 
         :param logger: the logger to use to print debug messages to
+        :param http_client: the HTTP client to make HTTP requests with
         :param user_id: the QuantConnect user id to use when sending authenticated requests
         :param api_token: the QuantConnect API token to use when sending authenticated requests
         """
         self._logger = logger
+        self._http_client = http_client
         self._user_id = user_id
         self._api_token = api_token
 
@@ -54,7 +57,7 @@ class APIClient:
         self.accounts = AccountClient(self)
         self.backtests = BacktestClient(self)
         self.compiles = CompileClient(self)
-        self.data = DataClient(self)
+        self.data = DataClient(self, http_client)
         self.files = FileClient(self)
         self.live = LiveClient(self)
         self.modules = ModuleClient(self)
@@ -114,24 +117,26 @@ class APIClient:
         timestamp = str(int(time()))
         password = sha256(f"{self._api_token}:{timestamp}".encode("utf-8")).hexdigest()
 
-        self._logger.debug(f"{method.upper()} {full_url} with data {list(options.values())[0]}")
-
-        response = requests.request(method,
-                                    full_url,
-                                    headers={"Timestamp": timestamp, "User-Agent": f"Lean CLI {lean.__version__}"},
-                                    auth=(self._user_id, password),
-                                    **options)
+        response = self._http_client.request(method,
+                                             full_url,
+                                             headers={
+                                                 "Timestamp": timestamp,
+                                                 "User-Agent": f"Lean CLI {lean.__version__}"
+                                             },
+                                             auth=(self._user_id, password),
+                                             raise_for_status=False,
+                                             **options)
 
         if 500 <= response.status_code < 600 and retry_http_5xx:
-            self._log_unsuccessful_request(response)
+            self._http_client.log_unsuccessful_response(response)
             return self._request(method, endpoint, options, False)
 
         if response.status_code == 500:
-            self._log_unsuccessful_request(response)
+            self._http_client.log_unsuccessful_response(response)
             raise AuthenticationError()
 
         if response.status_code < 200 or response.status_code >= 300:
-            self._log_unsuccessful_request(response)
+            self._http_client.log_unsuccessful_response(response)
             raise RequestFailedError(response)
 
         return self._parse_response(response)
@@ -149,7 +154,7 @@ class APIClient:
         if data["success"]:
             return data
 
-        self._log_unsuccessful_request(response)
+        self._http_client.log_unsuccessful_response(response)
 
         if "errors" in data and len(data["errors"]) > 0:
             if data["errors"][0].startswith("Hash doesn't match."):
@@ -164,11 +169,3 @@ class APIClient:
             raise RequestFailedError(response, data["Message"])
 
         raise RequestFailedError(response)
-
-    def _log_unsuccessful_request(self, response: requests.Response) -> None:
-        """Logs some debug messages for unsuccessful requests.
-
-        :param response: the response of the unsuccessful request
-        """
-        body = f"body:\n{response.text}" if response.text != "" else "empty body"
-        self._logger.debug(f"Request was not successful, status code {response.status_code}, {body}")

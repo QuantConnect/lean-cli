@@ -24,6 +24,7 @@ from responses import RequestsMock
 
 import lean
 from lean.components.config.storage import Storage
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.update_manager import UpdateManager
 from lean.models.docker import DockerImage
 
@@ -33,7 +34,7 @@ def create_objects() -> Tuple[mock.Mock, Storage, mock.Mock, UpdateManager]:
     storage = Storage(str(Path("~/.lean/cache").expanduser()))
     docker_manager = mock.Mock()
 
-    update_manager = UpdateManager(logger, storage, docker_manager)
+    update_manager = UpdateManager(logger, HTTPClient(logger), storage, docker_manager)
 
     return logger, storage, docker_manager, update_manager
 

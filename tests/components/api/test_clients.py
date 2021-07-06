@@ -31,6 +31,7 @@ from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
+from lean.components.util.http_client import HTTPClient
 from lean.constants import API_BASE_URL
 from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
 
@@ -53,7 +54,7 @@ def create_api_client() -> APIClient:
     if user_id == "" or api_token == "":
         pytest.skip("API credentials not specified")
 
-    return APIClient(mock.Mock(), user_id, api_token)
+    return APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id, api_token)
 
 
 @contextlib.contextmanager
@@ -296,7 +297,7 @@ def test_organization_client_get_details() -> None:
 
 def test_data_client_list_files() -> None:
     api_client = create_api_client()
-    data_client = DataClient(api_client)
+    data_client = DataClient(api_client, HTTPClient(mock.Mock()))
 
     # Test files can be listed
     files = data_client.list_files("crypto/gdax/daily/")
@@ -309,7 +310,7 @@ def test_data_client_list_files() -> None:
 def test_data_client_get_info() -> None:
     api_client = create_api_client()
     account_client = AccountClient(api_client)
-    data_client = DataClient(api_client)
+    data_client = DataClient(api_client, HTTPClient(mock.Mock()))
 
     # Test data information can be parsed
     preferred_organization = account_client.get_organization()

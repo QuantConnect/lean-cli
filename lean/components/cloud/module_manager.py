@@ -14,9 +14,8 @@
 from pathlib import Path
 from typing import Set, List, Dict
 
-import requests
-
 from lean.components.api.api_client import APIClient
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.constants import MODULES_DIRECTORY
 from lean.models.modules import NuGetPackage
@@ -25,14 +24,16 @@ from lean.models.modules import NuGetPackage
 class ModuleManager:
     """The ModuleManager class is responsible for downloading and updating modules."""
 
-    def __init__(self, logger: Logger, api_client: APIClient) -> None:
+    def __init__(self, logger: Logger, api_client: APIClient, http_client: HTTPClient) -> None:
         """Creates a new ModuleManager instance.
 
         :param logger: the logger to use
         :param api_client: the APIClient instance to use when communicating with the cloud
+        :param http_client: the HTTPClient instance to use when downloading modules
         """
         self._logger = logger
         self._api_client = api_client
+        self._http_client = http_client
         self._installed_product_ids: Set[int] = set()
         self._installed_packages: List[NuGetPackage] = []
 
@@ -88,9 +89,7 @@ class ModuleManager:
 
         link = self._api_client.modules.get_link(product_id, organization_id, package_file.name)
         try:
-            with requests.get(link, stream=True) as response:
-                response.raise_for_status()
-
+            with self._http_client.get(link, stream=True) as response:
                 with package_file.open("wb+") as file:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)

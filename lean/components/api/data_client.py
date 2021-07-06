@@ -22,12 +22,14 @@ class DataClient:
 
     _list_files_cache: Dict[str, List[str]] = {}
 
-    def __init__(self, api_client: 'APIClient') -> None:
+    def __init__(self, api_client: 'APIClient', http_client: 'HTTPClient') -> None:
         """Creates a new AccountClient instance.
 
         :param api_client: the APIClient instance to use when making requests
+        :param http_client: the HTTPClient instance to use when downloading files
         """
         self._api = api_client
+        self._http_client = http_client
 
     def download_file(self, file_path: str, organization_id: str) -> bytes:
         """Downloads the content of a downloadable data file.
@@ -42,11 +44,7 @@ class DataClient:
             "organizationId": organization_id
         })
 
-        response = requests.get(data["link"])
-        if not response.ok:
-            raise RequestFailedError(response)
-
-        return response.content
+        return self._http_client.get(data["link"]).content
 
     def list_files(self, prefix: str) -> List[str]:
         """Lists all remote files with a given prefix.

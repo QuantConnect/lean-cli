@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import click
-import requests
 from dateutil.parser import isoparse
 from lxml import etree
 from pkg_resources import Requirement
@@ -36,9 +35,10 @@ def _get_nuget_package(name: str) -> Tuple[str, str]:
     :param name: the name of the package, case in-sensitive
     :return: a tuple containing the proper name and latest version of the package, excluding pre-release versions
     """
+    http_client = container.http_client()
     generic_error = RuntimeError(f"The NuGet API is not responding")
 
-    service_index_response = requests.get("https://api.nuget.org/v3/index.json")
+    service_index_response = http_client.get("https://api.nuget.org/v3/index.json", raise_for_status=False)
     if not service_index_response.ok:
         raise generic_error
 
@@ -47,7 +47,7 @@ def _get_nuget_package(name: str) -> Tuple[str, str]:
     if query_url is None:
         raise generic_error
 
-    query_response = requests.get(f"{query_url}?q={name}&prerelease=false")
+    query_response = http_client.get(f"{query_url}?q={name}&prerelease=false", raise_for_status=False)
     if not query_response.ok:
         raise generic_error
 
@@ -146,7 +146,7 @@ def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
     :param version: the version of the package
     :return: a tuple containing the proper name and latest compatible version of the package
     """
-    response = requests.get(f"https://pypi.org/pypi/{name}/json")
+    response = container.http_client().get(f"https://pypi.org/pypi/{name}/json", raise_for_status=False)
 
     if response.status_code == 404:
         raise RuntimeError(f"PyPI does not have a package named {name}")

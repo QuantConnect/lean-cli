@@ -25,6 +25,7 @@ from typing import List, Optional
 import pytest
 
 from lean.components.api.api_client import APIClient
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 
 # These tests require a QuantConnect user id and API token
@@ -288,7 +289,7 @@ def test_cli() -> None:
     shutil.rmtree(test_dir, ignore_errors=True)
 
     # Delete the cloud projects that we used
-    api_client = APIClient(Logger(), user_id, api_token)
+    api_client = APIClient(Logger(), HTTPClient(Logger()), user_id, api_token)
     cloud_projects = api_client.projects.get_all()
     api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == python_project_name))
     api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == csharp_project_name))

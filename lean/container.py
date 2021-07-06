@@ -28,6 +28,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
@@ -48,6 +49,7 @@ class Container(DeclarativeContainer):
     path_manager = Singleton(PathManager)
     temp_manager = Singleton(TempManager)
     xml_manager = Singleton(XMLManager)
+    http_client = Singleton(HTTPClient, logger)
 
     general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
@@ -62,6 +64,7 @@ class Container(DeclarativeContainer):
 
     api_client = Factory(APIClient,
                          logger,
+                         http_client,
                          user_id=cli_config_manager.provided.user_id.get_value()(),
                          api_token=cli_config_manager.provided.api_token.get_value()())
 
@@ -75,7 +78,7 @@ class Container(DeclarativeContainer):
                                       pull_manager,
                                       push_manager,
                                       path_manager)
-    module_manager = Singleton(ModuleManager, logger, api_client)
+    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
 
     docker_manager = Singleton(DockerManager, logger, temp_manager)
 
@@ -88,7 +91,7 @@ class Container(DeclarativeContainer):
                             temp_manager,
                             xml_manager)
 
-    update_manager = Singleton(UpdateManager, logger, cache_storage, docker_manager)
+    update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
 
 
 container = Container()

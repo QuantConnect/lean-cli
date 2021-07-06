@@ -24,6 +24,7 @@ from rich.table import Table
 import lean
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
+from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.constants import (UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS, UPDATE_CHECK_INTERVAL_CLI,
                             UPDATE_CHECK_INTERVAL_DOCKER_IMAGE)
@@ -33,14 +34,20 @@ from lean.models.docker import DockerImage
 class UpdateManager:
     """The UpdateManager class contains methods to check for and warn the user about available updates."""
 
-    def __init__(self, logger: Logger, cache_storage: Storage, docker_manager: DockerManager) -> None:
+    def __init__(self,
+                 logger: Logger,
+                 http_client: HTTPClient,
+                 cache_storage: Storage,
+                 docker_manager: DockerManager) -> None:
         """Creates a new UpdateManager instance.
 
         :param logger: the logger to use when warning the user when something is outdated
+        :param http_client: the HTTPClient instance to use for HTTP requests
         :param cache_storage: the Storage instance to use for getting/setting the last time a certain update check was performed
         :param docker_manager: the DockerManager instance to use to check for Docker updates
         """
         self._logger = logger
+        self._http_client = http_client
         self._cache_storage = cache_storage
         self._docker_manager = docker_manager
 
@@ -59,7 +66,7 @@ class UpdateManager:
             return
 
         try:
-            response = requests.get("https://pypi.org/pypi/lean/json")
+            response = self._http_client.get("https://pypi.org/pypi/lean/json", raise_for_status=False)
         except requests.exceptions.ConnectionError:
             # The user may be offline, do nothing
             return
@@ -106,7 +113,10 @@ class UpdateManager:
             return
 
         try:
-            response = requests.get("https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json")
+            response = self._http_client.get(
+                "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
+                raise_for_status=False
+            )
         except requests.exceptions.ConnectionError:
             # The user may be offline, do nothing
             return

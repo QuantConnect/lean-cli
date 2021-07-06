@@ -1,0 +1,118 @@
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# Lean CLI v1.0. Copyright 2021 QuantConnect Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import requests
+
+from lean.components.util.logger import Logger
+
+
+class HTTPClient:
+    """The HTTPClient class is a lightweight wrapper around the requests library with additional logging."""
+
+    def __init__(self, logger: Logger) -> None:
+        """Creates a new HTTPClient instance.
+
+        :param logger: the logger to log debug messages with
+        """
+        self._logger = logger
+
+    def get(self, url: str, **kwargs) -> requests.Response:
+        """A wrapper around requests.get().
+
+        An error is raised if the response is unsuccessful unless kwargs["raise_for_status"] == False.
+
+        :param url: the request url
+        :param kwargs: any kwargs to pass on to requests.get()
+        :return: the response of the request
+        """
+        self._log_request("GET", url, **kwargs)
+
+        raise_for_status = kwargs.pop("raise_for_status", True)
+        response = requests.get(url, **kwargs)
+
+        if raise_for_status:
+            self._check_response(response)
+
+        return response
+
+    def post(self, url: str, **kwargs) -> requests.Response:
+        """A wrapper around requests.post().
+
+        An error is raised if the response is unsuccessful unless kwargs["raise_for_status"] == False.
+
+        :param url: the request url
+        :param kwargs: any kwargs to pass on to requests.post()
+        :return: the response of the request
+        """
+        self._log_request("POST", url, **kwargs)
+
+        raise_for_status = kwargs.pop("raise_for_status", True)
+        response = requests.post(url, **kwargs)
+
+        if raise_for_status:
+            self._check_response(response)
+
+        return response
+
+    def request(self, method: str, url: str, **kwargs) -> requests.Response:
+        """A wrapper around requests.request().
+
+        An error is raised if the response is unsuccessful unless kwargs["raise_for_status"] == False.
+
+        :param method: the request method
+        :param url: the request url
+        :param kwargs: any kwargs to pass on to requests.request()
+        :return: the response of the request
+        """
+        self._log_request(method, url, **kwargs)
+
+        raise_for_status = kwargs.pop("raise_for_status", True)
+        response = requests.request(method, url, **kwargs)
+
+        if raise_for_status:
+            self._check_response(response)
+
+        return response
+
+    def log_unsuccessful_response(self, response: requests.Response) -> None:
+        """Logs an unsuccessful response's status code and body.
+
+        :param response: the response to log
+        """
+        body = f"body:\n{response.text}" if response.text != "" else "empty body"
+        self._logger.debug(f"Request was not successful, status code {response.status_code}, {body}")
+
+    def _log_request(self, method: str, url: str, **kwargs) -> None:
+        """Logs a request.
+
+        :param method: the request method
+        :param url: the request url
+        :param kwargs: any kwargs passed to a request.* method
+        """
+        message = f"{method.upper()} {url}"
+
+        data = next((kwargs.get(key) for key in ["json", "data", "params"] if key in kwargs), None)
+        if data is not None:
+            message += f" with data {data}"
+
+        self._logger.debug(message)
+
+    def _check_response(self, response: requests.Response) -> None:
+        """Checks whether a response was successful, raising an error with extra debug logging if not.
+
+        :param response: the response to check
+        """
+        if response.status_code < 200 or response.status_code >= 300:
+            self.log_unsuccessful_response(response)
+
+        response.raise_for_status()
