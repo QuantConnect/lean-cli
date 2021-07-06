@@ -491,6 +491,12 @@ class QCDataInformation(WrappedBaseModel):
     agreement: str
 
 
+class QCDatasetDelivery(str, Enum):
+    CloudOnly = "cloud only"
+    DownloadOnly = "download only"
+    CloudAndDownload = "cloud & download"
+
+
 class QCDatasetTag(WrappedBaseModel):
     name: str
 
@@ -498,6 +504,6 @@ class QCDatasetTag(WrappedBaseModel):
 class QCDataset(WrappedBaseModel):
     id: int
     name: str
-    delivery: str
+    delivery: QCDatasetDelivery
     vendorName: str
     tags: List[QCDatasetTag]

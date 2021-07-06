@@ -24,7 +24,7 @@ from rich.table import Table
 
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
-from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization
+from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
 from lean.models.data import Dataset, DataFile, Product
 from lean.models.logger import Option
 
@@ -344,7 +344,7 @@ def _get_available_datasets() -> List[Dataset]:
     available_datasets = []
 
     for cloud_dataset in cloud_datasets:
-        if cloud_dataset.delivery == "cloud only":
+        if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly:
             continue
 
         cli_dataset = cli_datasets.get(str(cloud_dataset.id), None)
