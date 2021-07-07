@@ -15,6 +15,7 @@ import os
 import platform
 from typing import Dict, Type, List
 
+from lean.models.brokerages.local.atreyu import AtreyuBrokerage, AtreyuDataFeed
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
@@ -25,6 +26,7 @@ from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
 from lean.models.brokerages.local.oanda import OANDABrokerage, OANDADataFeed
 from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
+from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
 from lean.models.config import LeanConfigConfigurer
 
@@ -37,7 +39,9 @@ all_local_brokerages = [
     CoinbaseProBrokerage,
     BinanceBrokerage,
     ZerodhaBrokerage,
-    BloombergBrokerage
+    BloombergBrokerage,
+    AtreyuBrokerage,
+    TradingTechnologiesBrokerage
 ]
 
 all_local_data_feeds = [
@@ -48,7 +52,9 @@ all_local_data_feeds = [
     CoinbaseProDataFeed,
     BinanceDataFeed,
     ZerodhaDataFeed,
-    BloombergDataFeed
+    BloombergDataFeed,
+    AtreyuDataFeed,
+    TradingTechnologiesDataFeed
 ]
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
@@ -59,7 +65,9 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
                             CoinbaseProDataFeed,
                             BinanceDataFeed,
                             ZerodhaDataFeed,
-                            BloombergDataFeed],
+                            BloombergDataFeed,
+                            AtreyuDataFeed,
+                            TradingTechnologiesDataFeed],
     InteractiveBrokersBrokerage: [InteractiveBrokersDataFeed],
     TradierBrokerage: [TradierDataFeed],
     OANDABrokerage: [OANDADataFeed],
@@ -67,7 +75,9 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed],
-    BloombergBrokerage: [BloombergDataFeed]
+    BloombergBrokerage: [BloombergDataFeed],
+    AtreyuBrokerage: [AtreyuDataFeed],
+    TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed]
 }
 
 if platform.system() == "Windows" or os.environ.get("__README__", "false") == "true":

@@ -23,6 +23,7 @@ from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
+from lean.models.brokerages.local.atreyu import AtreyuBrokerage, AtreyuDataFeed
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
 from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
@@ -32,6 +33,7 @@ from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
 from lean.models.brokerages.local.oanda import OANDABrokerage, OANDADataFeed
 from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
+from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
@@ -385,6 +387,106 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=bool,
               default=lambda: _get_default_value("bloomberg-allow-modification"),
               help="Whether modification is allowed")
+@click.option("--atreyu-organization",
+              type=str,
+              default=lambda: _get_default_value("atreyu-organization"),
+              help="The name or id of the organization with the Atreyu module subscription")
+@click.option("--atreyu-host",
+              type=str,
+              default=lambda: _get_default_value("atreyu-host"),
+              help="The host of the Atreyu server")
+@click.option("--atreyu-req-port",
+              type=int,
+              default=lambda: _get_default_value("atreyu-req-port"),
+              help="The Atreyu req port")
+@click.option("--atreyu-sub-port",
+              type=int,
+              default=lambda: _get_default_value("atreyu-sub-port"),
+              help="The Atreyu sub port")
+@click.option("--atreyu-username",
+              type=str,
+              default=lambda: _get_default_value("atreyu-username"),
+              help="Your Atreyu username")
+@click.option("--atreyu-password",
+              type=str,
+              default=lambda: _get_default_value("atreyu-password"),
+              help="Your Atreyu password")
+@click.option("--atreyu-client-id",
+              type=str,
+              default=lambda: _get_default_value("atreyu-client-id"),
+              help="Your Atreyu client id")
+@click.option("--atreyu-broker-mpid",
+              type=str,
+              default=lambda: _get_default_value("atreyu-broker-mpid"),
+              help="The broker mpid to use")
+@click.option("--atreyu-locate-rqd",
+              type=str,
+              default=lambda: _get_default_value("atreyu-locate-rqd"),
+              help="The locate rqd to use")
+@click.option("--tt-organization",
+              type=str,
+              default=lambda: _get_default_value("tt-organization"),
+              help="The name or id of the organization with the Trading Technologies module subscription")
+@click.option("--tt-user-name",
+              type=str,
+              default=lambda: _get_default_value("tt-user-name"),
+              help="Your Trading Technologies username")
+@click.option("--tt-session-password",
+              type=str,
+              default=lambda: _get_default_value("tt-session-password"),
+              help="Your Trading Technologies session password")
+@click.option("--tt-account-name",
+              type=str,
+              default=lambda: _get_default_value("tt-account-name"),
+              help="Your Trading Technologies account name")
+@click.option("--tt-rest-app-key",
+              type=str,
+              default=lambda: _get_default_value("tt-rest-app-key"),
+              help="Your Trading Technologies REST app key")
+@click.option("--tt-rest-app-secret",
+              type=str,
+              default=lambda: _get_default_value("tt-rest-app-secret"),
+              help="Your Trading Technologies REST app secret")
+@click.option("--tt-rest-environment",
+              type=str,
+              default=lambda: _get_default_value("tt-rest-environment"),
+              help="The REST environment to run in")
+@click.option("--tt-market-data-sender-comp-id",
+              type=str,
+              default=lambda: _get_default_value("tt-market-data-sender-comp-id"),
+              help="The market data sender comp id to use")
+@click.option("--tt-market-data-target-comp-id",
+              type=str,
+              default=lambda: _get_default_value("tt-market-data-target-comp-id"),
+              help="The market data target comp id to use")
+@click.option("--tt-market-data-host",
+              type=str,
+              default=lambda: _get_default_value("tt-market-data-host"),
+              help="The host of the market data server")
+@click.option("--tt-market-data-port",
+              type=int,
+              default=lambda: _get_default_value("tt-market-data-port"),
+              help="The port of the market data server")
+@click.option("--tt-order-routing-sender-comp-id",
+              type=str,
+              default=lambda: _get_default_value("tt-order-routing-sender-comp-id"),
+              help="The order routing sender comp id to use")
+@click.option("--tt-order-routing-target-comp-id",
+              type=str,
+              default=lambda: _get_default_value("tt-order-routing-target-comp-id"),
+              help="The order routing target comp id to use")
+@click.option("--tt-order-routing-host",
+              type=str,
+              default=lambda: _get_default_value("tt-order-routing-host"),
+              help="The host of the order routing server")
+@click.option("--tt-order-routing-port",
+              type=int,
+              default=lambda: _get_default_value("tt-order-routing-port"),
+              help="The port of the order routing server")
+@click.option("--tt-log-fix-messages",
+              type=bool,
+              default=lambda: _get_default_value("tt-log-fix-messages"),
+              help="Whether FIX messages should be logged")
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -442,6 +544,31 @@ def live(ctx: click.Context,
          bloomberg_emsx_notes: Optional[str],
          bloomberg_emsx_handling: Optional[str],
          bloomberg_allow_modification: Optional[bool],
+         atreyu_organization: Optional[str],
+         atreyu_host: Optional[str],
+         atreyu_req_port: Optional[int],
+         atreyu_sub_port: Optional[int],
+         atreyu_username: Optional[str],
+         atreyu_password: Optional[str],
+         atreyu_client_id: Optional[str],
+         atreyu_broker_mpid: Optional[str],
+         atreyu_locate_rqd: Optional[str],
+         tt_organization: Optional[str],
+         tt_user_name: Optional[str],
+         tt_session_password: Optional[str],
+         tt_account_name: Optional[str],
+         tt_rest_app_key: Optional[str],
+         tt_rest_app_secret: Optional[str],
+         tt_rest_environment: Optional[str],
+         tt_market_data_sender_comp_id: Optional[str],
+         tt_market_data_target_comp_id: Optional[str],
+         tt_market_data_host: Optional[str],
+         tt_market_data_port: Optional[int],
+         tt_order_routing_sender_comp_id: Optional[str],
+         tt_order_routing_target_comp_id: Optional[str],
+         tt_order_routing_host: Optional[str],
+         tt_order_routing_port: Optional[int],
+         tt_log_fix_messages: Optional[bool],
          release: bool,
          image: Optional[str],
          update: bool) -> None:
@@ -538,6 +665,58 @@ def live(ctx: click.Context,
                                                       bloomberg_emsx_notes,
                                                       bloomberg_emsx_handling,
                                                       bloomberg_allow_modification)
+        elif brokerage == AtreyuBrokerage.get_name():
+            ensure_options(ctx, ["atreyu_organization",
+                                 "atreyu_host",
+                                 "atreyu_req_port",
+                                 "atreyu_sub_port",
+                                 "atreyu_username",
+                                 "atreyu_password",
+                                 "atreyu_client_id",
+                                 "atreyu_broker_mpid",
+                                 "atreyu_locate_rqd"])
+            brokerage_configurer = AtreyuBrokerage(_get_organization_id(atreyu_organization),
+                                                   atreyu_host,
+                                                   atreyu_req_port,
+                                                   atreyu_sub_port,
+                                                   atreyu_username,
+                                                   atreyu_password,
+                                                   atreyu_client_id,
+                                                   atreyu_broker_mpid,
+                                                   atreyu_locate_rqd)
+        elif brokerage == TradingTechnologiesBrokerage.get_name():
+            ensure_options(ctx, ["tt_organization",
+                                 "tt_user_name",
+                                 "tt_session_password",
+                                 "tt_account_name",
+                                 "tt_rest_app_key",
+                                 "tt_rest_app_secret",
+                                 "tt_rest_environment",
+                                 "tt_market_data_sender_comp_id",
+                                 "tt_market_data_target_comp_id",
+                                 "tt_market_data_host",
+                                 "tt_market_data_port",
+                                 "tt_order_routing_sender_comp_id",
+                                 "tt_order_routing_target_comp_id",
+                                 "tt_order_routing_host",
+                                 "tt_order_routing_port",
+                                 "tt_log_fix_messages"])
+            brokerage_configurer = TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+                                                                tt_user_name,
+                                                                tt_session_password,
+                                                                tt_account_name,
+                                                                tt_rest_app_key,
+                                                                tt_rest_app_secret,
+                                                                tt_rest_environment,
+                                                                tt_market_data_sender_comp_id,
+                                                                tt_market_data_target_comp_id,
+                                                                tt_market_data_host,
+                                                                tt_market_data_port,
+                                                                tt_order_routing_sender_comp_id,
+                                                                tt_order_routing_target_comp_id,
+                                                                tt_order_routing_host,
+                                                                tt_order_routing_port,
+                                                                tt_log_fix_messages)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
@@ -596,6 +775,59 @@ def live(ctx: click.Context,
                                                                         bloomberg_emsx_notes,
                                                                         bloomberg_emsx_handling,
                                                                         bloomberg_allow_modification))
+        elif data_feed == AtreyuDataFeed.get_name():
+            ensure_options(ctx, ["atreyu_organization",
+                                 "atreyu_host",
+                                 "atreyu_req_port",
+                                 "atreyu_sub_port",
+                                 "atreyu_username",
+                                 "atreyu_password",
+                                 "atreyu_client_id",
+                                 "atreyu_broker_mpid",
+                                 "atreyu_locate_rqd"])
+            data_feed_configurer = AtreyuDataFeed(AtreyuBrokerage(_get_organization_id(atreyu_organization),
+                                                                  atreyu_host,
+                                                                  atreyu_req_port,
+                                                                  atreyu_sub_port,
+                                                                  atreyu_username,
+                                                                  atreyu_password,
+                                                                  atreyu_client_id,
+                                                                  atreyu_broker_mpid,
+                                                                  atreyu_locate_rqd))
+        elif data_feed == TradingTechnologiesDataFeed.get_name():
+            ensure_options(ctx, ["tt_organization",
+                                 "tt_user_name",
+                                 "tt_session_password",
+                                 "tt_account_name",
+                                 "tt_rest_app_key",
+                                 "tt_rest_app_secret",
+                                 "tt_rest_environment",
+                                 "tt_market_data_sender_comp_id",
+                                 "tt_market_data_target_comp_id",
+                                 "tt_market_data_host",
+                                 "tt_market_data_port",
+                                 "tt_order_routing_sender_comp_id",
+                                 "tt_order_routing_target_comp_id",
+                                 "tt_order_routing_host",
+                                 "tt_order_routing_port",
+                                 "tt_log_fix_messages"])
+            data_feed_configurer = TradingTechnologiesDataFeed(
+                TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+                                             tt_user_name,
+                                             tt_session_password,
+                                             tt_account_name,
+                                             tt_rest_app_key,
+                                             tt_rest_app_secret,
+                                             tt_rest_environment,
+                                             tt_market_data_sender_comp_id,
+                                             tt_market_data_target_comp_id,
+                                             tt_market_data_host,
+                                             tt_market_data_port,
+                                             tt_order_routing_sender_comp_id,
+                                             tt_order_routing_target_comp_id,
+                                             tt_order_routing_host,
+                                             tt_order_routing_port,
+                                             tt_log_fix_messages))
         elif data_feed == IQFeedDataFeed.get_name():
             ensure_options(ctx, ["iqfeed_iqconnect",
                                  "iqfeed_username",

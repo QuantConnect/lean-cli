@@ -11,12 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from lean.models.data_providers.atreyu import AtreyuDataProvider
 from lean.models.data_providers.bloomberg import BloombergDataProvider
 from lean.models.data_providers.local import LocalDataProvider
 from lean.models.data_providers.quantconnect import QuantConnectDataProvider
+from lean.models.data_providers.trading_technologies import TradingTechnologiesDataProvider
 
 all_data_providers = [
     LocalDataProvider,
     QuantConnectDataProvider,
-    BloombergDataProvider
+    BloombergDataProvider,
+    AtreyuDataProvider,
+    TradingTechnologiesDataProvider
 ]

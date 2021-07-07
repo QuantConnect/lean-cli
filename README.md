@@ -105,7 +105,7 @@ Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Local|QuantConnect|Bloomberg]
+  --data-provider [Local|QuantConnect|Bloomberg|Atreyu|Trading Technologies]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
@@ -645,9 +645,9 @@ Usage: lean live [OPTIONS] PROJECT
 Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies|IQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -704,6 +704,36 @@ Options:
   --bloomberg-emsx-handling TEXT  The EMSX handling to use
   --bloomberg-allow-modification BOOLEAN
                                   Whether modification is allowed
+  --atreyu-organization TEXT      The name or id of the organization with the Atreyu module subscription
+  --atreyu-host TEXT              The host of the Atreyu server
+  --atreyu-req-port INTEGER       The Atreyu req port
+  --atreyu-sub-port INTEGER       The Atreyu sub port
+  --atreyu-username TEXT          Your Atreyu username
+  --atreyu-password TEXT          Your Atreyu password
+  --atreyu-client-id TEXT         Your Atreyu client id
+  --atreyu-broker-mpid TEXT       The broker mpid to use
+  --atreyu-locate-rqd TEXT        The locate rqd to use
+  --tt-organization TEXT          The name or id of the organization with the Trading Technologies module subscription
+  --tt-user-name TEXT             Your Trading Technologies username
+  --tt-session-password TEXT      Your Trading Technologies session password
+  --tt-account-name TEXT          Your Trading Technologies account name
+  --tt-rest-app-key TEXT          Your Trading Technologies REST app key
+  --tt-rest-app-secret TEXT       Your Trading Technologies REST app secret
+  --tt-rest-environment TEXT      The REST environment to run in
+  --tt-market-data-sender-comp-id TEXT
+                                  The market data sender comp id to use
+  --tt-market-data-target-comp-id TEXT
+                                  The market data target comp id to use
+  --tt-market-data-host TEXT      The host of the market data server
+  --tt-market-data-port INTEGER   The port of the market data server
+  --tt-order-routing-sender-comp-id TEXT
+                                  The order routing sender comp id to use
+  --tt-order-routing-target-comp-id TEXT
+                                  The order routing target comp id to use
+  --tt-order-routing-host TEXT    The host of the order routing server
+  --tt-order-routing-port INTEGER
+                                  The port of the order routing server
+  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
@@ -858,7 +888,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Local|QuantConnect|Bloomberg]
+  --data-provider [Local|QuantConnect|Bloomberg|Atreyu|Trading Technologies]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
