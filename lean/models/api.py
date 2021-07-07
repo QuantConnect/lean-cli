@@ -487,6 +487,7 @@ class QCDataVendor(WrappedBaseModel):
 
 
 class QCDataInformation(WrappedBaseModel):
+    datasources: Dict[str, Any]
     prices: List[QCDataVendor]
     agreement: str
 

@@ -12,10 +12,8 @@
 # limitations under the License.
 
 import itertools
-import json
 import webbrowser
 from collections import OrderedDict
-from pathlib import Path
 from typing import Iterable, List, Optional
 
 import click
@@ -31,6 +29,20 @@ from lean.models.logger import Option
 _data_information: Optional[QCDataInformation] = None
 
 
+def _get_data_information(organization: QCFullOrganization) -> QCDataInformation:
+    """Retrieves the datasources and prices information.
+
+    :param organization: the organization to get the information for
+    :return: the datasources and prices information
+    """
+    global _data_information
+
+    if _data_information is None:
+        _data_information = container.api_client().data.get_info(organization.id)
+
+    return _data_information
+
+
 def _map_data_files_to_vendors(organization: QCFullOrganization, data_files: Iterable[str]) -> List[DataFile]:
     """Maps a list of data files to the available data vendors.
 
@@ -41,9 +53,7 @@ def _map_data_files_to_vendors(organization: QCFullOrganization, data_files: Ite
     :param data_files: the data files to map to the available vendors
     :return: the list of data files containing the file and vendor for each file
     """
-    global _data_information
-    if _data_information is None:
-        _data_information = container.api_client().data.get_info(organization.id)
+    data_information = _get_data_information(organization)
 
     last_vendor: Optional[QCDataVendor] = None
     mapped_files = []
@@ -55,7 +65,7 @@ def _map_data_files_to_vendors(organization: QCFullOrganization, data_files: Ite
 
         last_vendor = None
 
-        for vendor in _data_information.prices:
+        for vendor in data_information.prices:
             if vendor.price is None:
                 continue
 
@@ -323,43 +333,34 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     return products
 
 
-def _get_available_datasets() -> List[Dataset]:
+def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     """Retrieves the available datasets.
 
+    :param organization: the organization that will be charged
     :return: the datasets which data can be downloaded from
     """
-    logger = container.logger()
-    api_client = container.api_client()
-    http_client = container.http_client()
-
-    cloud_datasets = api_client.market.list_datasets()
-
-    cli_datasets_path = Path(__file__).parent.parent.parent.parent / "datasets.json"
-    cli_datasets = json.loads(cli_datasets_path.read_text(encoding="utf-8"))
-
-    # TODO: Retrieve datasets.json from GitHub when the new `lean data download` command goes live
-    # cli_datasets_url = "https://raw.githubusercontent.com/QuantConnect/lean-cli/data-downloader/datasets.json"
-    # cli_datasets = http_client.get(cli_datasets_url).json()
+    cloud_datasets = container.api_client().market.list_datasets()
+    data_information = _get_data_information(organization)
 
     available_datasets = []
-
     for cloud_dataset in cloud_datasets:
         if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly:
             continue
 
-        cli_dataset = cli_datasets.get(str(cloud_dataset.id), None)
-        if cli_dataset is None:
+        datasource = data_information.datasources.get(str(cloud_dataset.id), None)
+        if datasource is None or isinstance(datasource, list):
             if cloud_dataset.name != "Template Data Source Product":
                 name = cloud_dataset.name.strip()
                 vendor = cloud_dataset.vendorName.strip()
-                logger.debug(f"There is no entry for {name} by {vendor} (id {cloud_dataset.id}) in datasets.json")
+                container.logger().debug(
+                    f"There is no datasources entry for {name} by {vendor} (id {cloud_dataset.id})")
             continue
 
         available_datasets.append(Dataset(name=cloud_dataset.name.strip(),
                                           vendor=cloud_dataset.vendorName.strip(),
                                           categories=[tag.name.strip() for tag in cloud_dataset.tags],
-                                          options=cli_dataset["options"],
-                                          paths=cli_dataset["paths"]))
+                                          options=datasource["options"],
+                                          paths=datasource["paths"]))
 
     return available_datasets
 
@@ -388,16 +389,16 @@ def download(ctx: click.Context,
     See the following url for the data that can be purchased and downloaded with this command:
     https://www.quantconnect.com/datasets
     """
-    datasets = _get_available_datasets()
-
     is_interactive = dataset is None and organization is None
 
     if not is_interactive:
         ensure_options(ctx, ["dataset", "organization"])
         selected_organization = _get_organization_by_name_or_id(organization)
+        datasets = _get_available_datasets(selected_organization)
         products = _select_products_non_interactive(selected_organization, datasets, ctx)
     else:
         selected_organization = _select_organization()
+        datasets = _get_available_datasets(selected_organization)
         products = _select_products_interactive(selected_organization, datasets)
 
     _confirm_organization_balance(selected_organization, products)
