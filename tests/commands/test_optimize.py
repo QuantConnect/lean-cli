@@ -206,6 +206,27 @@ def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
     assert (Path.cwd() / "output").is_dir()
 
 
+def test_optimize_copies_code_to_output_directory() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    project_manager = mock.Mock()
+    project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
+    container.project_manager.override(providers.Object(project_manager))
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", "Python Project", "--output", "output"])
+
+    assert result.exit_code == 0
+
+    project_manager.copy_code.assert_called_once_with(Path.cwd() / "Python Project",
+                                                      Path.cwd() / "output" / "code")
+
+
 def test_optimize_creates_correct_config_from_optimizer_config_manager_output() -> None:
     create_fake_lean_cli_directory()
 

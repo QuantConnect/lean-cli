@@ -106,11 +106,33 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 Path.cwd() / "Python Project" / "custom",
+                                                 ENGINE_IMAGE,
+                                                 None)
 
-    # This will raise an error if the output directory is not relative to Python Project/custom-backtests
-    args[3].relative_to(Path("Python Project/custom").resolve())
+
+def test_backtest_copies_code_to_output_directory() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    project_manager = mock.Mock()
+    project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
+    container.project_manager.override(providers.Object(project_manager))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom"])
+
+    assert result.exit_code == 0
+
+    project_manager.copy_code.assert_called_once_with(Path.cwd() / "Python Project",
+                                                      Path.cwd() / "Python Project" / "custom" / "code")
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:

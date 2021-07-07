@@ -269,6 +269,8 @@ def backtest(project: Path,
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+    project_manager.copy_code(algorithm_file.parent, output / "code")
+
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm

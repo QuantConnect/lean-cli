@@ -14,6 +14,7 @@
 import json
 import os
 import platform
+import shutil
 import site
 import sys
 from datetime import datetime, timezone
@@ -74,7 +75,8 @@ class ProjectManager:
 
         for local_file in local_files:
             posix_path = local_file.as_posix()
-            if "bin/" in posix_path or "obj/" in posix_path or ".ipynb_checkpoints/" in posix_path:
+            if any(f"{part}/" in posix_path for part in
+                   ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]):
                 continue
 
             files_to_sync.append(local_file)
@@ -120,6 +122,19 @@ class ProjectManager:
         time = cloud_timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None)
         time = round(time.timestamp() * 1e9)
         os.utime(local_file_path, ns=(time, time))
+
+    def copy_code(self, project_dir: Path, output_dir: Path) -> None:
+        """Copies the source code of a project to another directory.
+
+        :param project_dir: the directory of the project
+        :param output_dir: the directory to copy the code to
+        """
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        for source_file in self.get_files_to_sync(project_dir):
+            target_file = output_dir / source_file.relative_to(project_dir)
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source_file, target_file)
 
     def create_new_project(self, project_dir: Path, language: QCLanguage) -> None:
         """Creates a new project directory and fills it with some useful files.

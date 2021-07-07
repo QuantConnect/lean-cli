@@ -111,8 +111,9 @@ def optimize(ctx: click.Context,
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    optimizer_config_manager = container.optimizer_config_manager()
+    project_manager.copy_code(algorithm_file.parent, output / "code")
 
+    optimizer_config_manager = container.optimizer_config_manager()
     config = None
 
     if optimizer_config is not None:

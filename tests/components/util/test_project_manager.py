@@ -84,7 +84,7 @@ def test_get_files_to_sync_returns_all_source_files() -> None:
     files = [project_path / file for file in files]
 
     for file in files:
-        file.mkdir(parents=True, exist_ok=True)
+        file.parent.mkdir(parents=True, exist_ok=True)
         file.touch()
 
     project_manager = _create_project_manager()
@@ -93,14 +93,14 @@ def test_get_files_to_sync_returns_all_source_files() -> None:
     assert sorted(files_to_sync) == sorted(files)
 
 
-@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints"])
+@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"])
 def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
     files = [project_path / "main.py", project_path / directory / "main.py"]
     for file in files:
-        file.mkdir(parents=True, exist_ok=True)
+        file.parent.mkdir(parents=True, exist_ok=True)
         file.touch()
 
     project_manager = _create_project_manager()
@@ -121,6 +121,50 @@ def test_update_last_modified_time_updates_file_properties() -> None:
     timestamp = local_file.stat().st_mtime_ns / 1e9
     timestamp = datetime.fromtimestamp(timestamp)
     assert timestamp.astimezone(tz=timezone.utc).replace(tzinfo=None) == new_timestamp
+
+
+def test_copy_code_copies_source_files_to_output_directory() -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.py"]
+    files = [project_path / file for file in files]
+
+    output_dir = Path.cwd() / "code"
+
+    for file in files:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.touch()
+        file.write_text(file.name, encoding="utf-8")
+
+    project_manager = _create_project_manager()
+    project_manager.copy_code(project_path, output_dir)
+
+    for file in files:
+        assert (output_dir / file).is_file()
+        assert (output_dir / file).read_text(encoding="utf-8") == file.name
+
+
+@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"])
+def test_copy_code_ignores_generated_source_files(directory: str) -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = [project_path / "main.py", project_path / directory / "main.py"]
+    for file in files:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.touch()
+        file.write_text(file.name, encoding="utf-8")
+
+    output_dir = Path.cwd() / "code"
+
+    project_manager = _create_project_manager()
+    project_manager.copy_code(project_path, output_dir)
+
+    assert (output_dir / "main.py").is_file()
+    assert (output_dir / "main.py").read_text(encoding="utf-8") == "main.py"
+
+    assert not (output_dir / directory / "main.py").is_file()
 
 
 def test_create_new_project_creates_project_directory() -> None:
