@@ -510,6 +510,41 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
 
 
+def test_backtest_auto_updates_outdated_csharp_csproj() -> None:
+    create_fake_lean_cli_directory()
+
+    csproj_path = Path.cwd() / "CSharp Project" / "CSharp Project.csproj"
+    _generate_file(csproj_path, """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net5.0</TargetFramework>
+        <LangVersion>9</LangVersion>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.11940"/>
+    </ItemGroup>
+</Project>
+    """)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "CSharp Project"])
+
+    assert result.exit_code == 0
+
+    csproj = XMLManager().parse(csproj_path.read_text(encoding="utf-8"))
+    assert csproj.find(".//PropertyGroup/DefaultItemExcludes") is not None
+
+
 def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
     create_fake_lean_cli_directory()
 

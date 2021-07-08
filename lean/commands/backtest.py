@@ -201,6 +201,29 @@ def _migrate_csharp_vscode(project_dir: Path) -> None:
     launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
+def _migrate_csharp_csproj(project_dir: Path) -> None:
+    csproj_path = next((f for f in project_dir.rglob("*.csproj")), None)
+    if csproj_path is None:
+        return
+
+    xml_manager = container.xml_manager()
+
+    current_content = xml_manager.parse(csproj_path.read_text(encoding="utf-8"))
+    if current_content.find(".//PropertyGroup/DefaultItemExcludes") is not None:
+        return
+
+    property_group = current_content.find(".//PropertyGroup")
+    if property_group is None:
+        property_group = xml_manager.parse("<PropertyGroup/>")
+        current_content.append(property_group)
+
+    default_item_excludes = xml_manager.parse(
+        "<DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>")
+    property_group.append(default_item_excludes)
+
+    csproj_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
+
+
 def _select_organization() -> QCMinimalOrganization:
     """Asks the user for the organization that should be charged when downloading data.
 
@@ -284,6 +307,9 @@ def backtest(project: Path,
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
         _migrate_csharp_rider(algorithm_file.parent)
+
+    if algorithm_file.name.endswith(".cs"):
+        _migrate_csharp_csproj(algorithm_file.parent)
 
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, debugging_method)
 
