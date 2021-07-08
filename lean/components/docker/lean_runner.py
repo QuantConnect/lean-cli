@@ -456,6 +456,7 @@ class LeanRunner:
     <PropertyGroup>
         <BaseIntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
         <IntermediateOutputPath>/Compile/obj/$(MSBuildProjectName)/</IntermediateOutputPath>
+        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
         <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
 </Project>

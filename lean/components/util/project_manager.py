@@ -394,6 +394,7 @@ class ProjectManager:
         <LangVersion>9</LangVersion>
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
         <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
