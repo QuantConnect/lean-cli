@@ -88,7 +88,8 @@ def research(project: Path,
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
-                                                      None)
+                                                      None,
+                                                      False)
 
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))

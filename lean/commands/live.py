@@ -385,6 +385,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=bool,
               default=lambda: _get_default_value("bloomberg-allow-modification"),
               help="Whether modification is allowed")
+@click.option("--release",
+              is_flag=True,
+              default=False,
+              help="Compile C# projects in release configuration (defaults to debug)")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -438,6 +442,7 @@ def live(ctx: click.Context,
          bloomberg_emsx_notes: Optional[str],
          bloomberg_emsx_handling: Optional[str],
          bloomberg_allow_modification: Optional[bool],
+         release: bool,
          image: Optional[str],
          update: bool) -> None:
     """Start live trading a project locally using Docker.
@@ -639,7 +644,7 @@ def live(ctx: click.Context,
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None)
+    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

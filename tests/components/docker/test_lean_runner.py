@@ -52,7 +52,8 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
                       XMLManager())
 
 
-def test_run_lean_compiles_csharp_project() -> None:
+@pytest.mark.parametrize("release", [False, True])
+def test_run_lean_compiles_csharp_project_in_correct_configuration(release: bool) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -65,12 +66,16 @@ def test_run_lean_compiles_csharp_project() -> None:
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         release)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any(cmd for cmd in kwargs["commands"] if cmd.startswith("dotnet build"))
+    build_command = next((cmd for cmd in kwargs["commands"] if cmd.startswith("dotnet build")), None)
+    assert build_command is not None
+
+    assert f"Configuration={'Release' if release else 'Debug'}" in build_command
 
 
 def test_run_lean_runs_lean_container() -> None:
@@ -86,7 +91,8 @@ def test_run_lean_runs_lean_container() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -108,7 +114,8 @@ def test_run_lean_mounts_config_file() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -129,7 +136,8 @@ def test_run_lean_mounts_data_directory() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -153,7 +161,8 @@ def test_run_lean_mounts_output_directory() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -177,7 +186,8 @@ def test_run_lean_mounts_storage_directory() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -201,7 +211,8 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     assert (Path.cwd() / "output").is_dir()
 
@@ -219,7 +230,8 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         None)
+                         None,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -240,7 +252,8 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.PTVSD)
+                         DebuggingMethod.PTVSD,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -261,7 +274,8 @@ def test_run_lean_sets_image_name_when_debugging_with_vsdbg() -> None:
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.VSDBG)
+                         DebuggingMethod.VSDBG,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -282,7 +296,8 @@ def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
                          Path.cwd() / "CSharp Project" / "Main.cs",
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
-                         DebuggingMethod.Rider)
+                         DebuggingMethod.Rider,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -304,6 +319,7 @@ def test_run_lean_raises_when_run_image_fails() -> None:
                              Path.cwd() / "Python Project" / "main.py",
                              Path.cwd() / "output",
                              ENGINE_IMAGE,
-                             DebuggingMethod.PTVSD)
+                             DebuggingMethod.PTVSD,
+                             False)
 
     docker_manager.run_image.assert_called_once()

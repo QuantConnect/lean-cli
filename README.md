@@ -113,6 +113,7 @@ Options:
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
                                   QuantConnect as data provider
 
+  --release                       Compile C# projects in release configuration (defaults to debug)
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the backtest
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -703,6 +704,7 @@ Options:
   --bloomberg-emsx-handling TEXT  The EMSX handling to use
   --bloomberg-allow-modification BOOLEAN
                                   Whether modification is allowed
+  --release                       Compile C# projects in release configuration (defaults to debug)
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -793,6 +795,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
+  --release                       Compile C# projects in release configuration (defaults to debug)
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)

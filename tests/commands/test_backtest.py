@@ -70,7 +70,8 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None)
+                                                 None,
+                                                 False)
 
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
@@ -111,7 +112,8 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  Path.cwd() / "Python Project" / "custom",
                                                  ENGINE_IMAGE,
-                                                 None)
+                                                 None,
+                                                 False)
 
 
 def test_backtest_copies_code_to_output_directory() -> None:
@@ -133,6 +135,28 @@ def test_backtest_copies_code_to_output_directory() -> None:
 
     project_manager.copy_code.assert_called_once_with(Path.cwd() / "Python Project",
                                                       Path.cwd() / "Python Project" / "custom" / "code")
+
+
+def test_backtest_calls_lean_runner_with_release_mode() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--release"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
+                                                 Path("CSharp Project/Main.cs").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 True)
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
@@ -186,7 +210,8 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 None)
+                                                 None,
+                                                 False)
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
@@ -209,7 +234,8 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
-                                                 None)
+                                                 None,
+                                                 False)
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
@@ -232,7 +258,8 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
-                                                 None)
+                                                 None,
+                                                 False)
 
 
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
@@ -261,7 +288,8 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
-                                                 debugging_method)
+                                                 debugging_method,
+                                                 False)
 
 
 @pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),

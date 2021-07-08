@@ -66,7 +66,8 @@ class LeanRunner:
                  algorithm_file: Path,
                  output_dir: Path,
                  image: DockerImage,
-                 debugging_method: Optional[DebuggingMethod]) -> None:
+                 debugging_method: Optional[DebuggingMethod],
+                 release: bool) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -77,12 +78,13 @@ class LeanRunner:
         :param output_dir: the directory to save output data to
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
+        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(lean_config, algorithm_file, output_dir, debugging_method)
+        run_options = self.get_basic_docker_config(lean_config, algorithm_file, output_dir, debugging_method, release)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -126,7 +128,8 @@ class LeanRunner:
                                 lean_config: Dict[str, Any],
                                 algorithm_file: Path,
                                 output_dir: Path,
-                                debugging_method: Optional[DebuggingMethod]) -> Dict[str, Any]:
+                                debugging_method: Optional[DebuggingMethod],
+                                release: bool) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -135,6 +138,7 @@ class LeanRunner:
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
+        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
         :return: the Docker configuration containing basic configuration to run Lean
         """
         project_dir = algorithm_file.parent
@@ -251,7 +255,7 @@ class LeanRunner:
         else:
             if not set_up_common_csharp_options_called:
                 self._set_up_common_csharp_options(run_options)
-            self._set_up_csharp_options(project_dir, run_options)
+            self._set_up_csharp_options(project_dir, run_options, release)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -359,11 +363,12 @@ class LeanRunner:
         requirements = sorted(set(requirements))
         return "\n".join(requirements)
 
-    def _set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def _set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
+        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
         """
         compile_root = self._get_csharp_compile_root(project_dir)
 
@@ -380,7 +385,7 @@ class LeanRunner:
 
         # Set up the MSBuild properties
         msbuild_properties = {
-            "Configuration": "Debug",
+            "Configuration": "Release" if release else "Debug",
             "Platform": "AnyCPU",
             "TargetFramework": "net5.0",
             "LangVersion": "9",
@@ -413,7 +418,6 @@ class LeanRunner:
         # Build the project before running LEAN
         relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
         msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
-        print(msbuild_properties)
         run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
 
         # Copy over the algorithm DLL

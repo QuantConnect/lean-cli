@@ -256,6 +256,10 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider")
+@click.option("--release",
+              is_flag=True,
+              default=False,
+              help="Compile C# projects in release configuration (defaults to debug)")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -269,6 +273,7 @@ def backtest(project: Path,
              data_provider: Optional[str],
              download_data: bool,
              data_purchase_limit: Optional[int],
+             release: bool,
              image: Optional[str],
              update: bool) -> None:
     """Backtest a project locally using Docker.
@@ -331,7 +336,7 @@ def backtest(project: Path,
         docker_manager.pull_image(engine_image)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(lean_config, "backtesting", algorithm_file, output, engine_image, debugging_method)
+    lean_runner.run_lean(lean_config, "backtesting", algorithm_file, output, engine_image, debugging_method, release)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

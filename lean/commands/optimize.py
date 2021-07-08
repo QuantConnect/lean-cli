@@ -54,6 +54,10 @@ from lean.models.optimizer import OptimizationTarget
               type=str,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
+@click.option("--release",
+              is_flag=True,
+              default=False,
+              help="Compile C# projects in release configuration (defaults to debug)")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -71,6 +75,7 @@ def optimize(ctx: click.Context,
              target_direction: Optional[str],
              parameter: List[Tuple[str, float, float, float]],
              constraint: List[str],
+             release: bool,
              image: Optional[str],
              update: bool) -> None:
     """Optimize a project's parameters locally using Docker.
@@ -175,7 +180,7 @@ def optimize(ctx: click.Context,
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None)
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")
