@@ -23,7 +23,7 @@ from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
-from lean.models.brokerages.local.atreyu import AtreyuBrokerage, AtreyuDataFeed
+from lean.models.brokerages.local.atreyu import AtreyuBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
 from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
@@ -49,12 +49,22 @@ _required_brokerage_properties = {
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
     "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
-                           "bloomberg-server-host", "bloomberg-server-port", "bloomberg-emsx-broker"]
+                           "bloomberg-server-host", "bloomberg-server-port", "bloomberg-emsx-broker"],
+    "AtreyuBrokerage": ["job-organization-id", "atreyu-host", "atreyu-req-port", "atreyu-sub-port",
+                        "atreyu-username", "atreyu-password",
+                        "atreyu-client-id", "atreyu-broker-mpid", "atreyu-locate-rqd"],
+    "TradingTechnologiesBrokerage": ["job-organization-id", "tt-user-name", "tt-session-password", "tt-account-name",
+                                     "tt-rest-app-key", "tt-rest-app-secret", "tt-rest-environment",
+                                     "tt-market-data-sender-comp-id", "tt-market-data-target-comp-id",
+                                     "tt-market-data-host", "tt-market-data-port",
+                                     "tt-order-routing-sender-comp-id", "tt-order-routing-target-comp-id",
+                                     "tt-order-routing-host", "tt-order-routing-port",
+                                     "tt-log-fix-messages"]
 }
 
 # Data queue handler -> required configuration properties
 _required_data_queue_handler_properties = {
-    "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage":
+    "InteractiveBrokersBrokerage":
         _required_brokerage_properties["InteractiveBrokersBrokerage"] + ["ib-enable-delayed-streaming-data"],
     "TradierBrokerage": _required_brokerage_properties["TradierBrokerage"],
     "OandaBrokerage": _required_brokerage_properties["OandaBrokerage"],
@@ -63,6 +73,7 @@ _required_data_queue_handler_properties = {
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
     "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"] + ["zerodha-history-subscription"],
     "BloombergBrokerage": _required_brokerage_properties["BloombergBrokerage"],
+    "TradingTechnologiesBrokerage": _required_brokerage_properties["TradingTechnologiesBrokerage"],
     "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"]
 }
 
@@ -389,7 +400,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="Whether modification is allowed")
 @click.option("--atreyu-organization",
               type=str,
-              default=lambda: _get_default_value("atreyu-organization"),
+              default=lambda: _get_default_value("job-organization-id"),
               help="The name or id of the organization with the Atreyu module subscription")
 @click.option("--atreyu-host",
               type=str,
@@ -398,11 +409,11 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--atreyu-req-port",
               type=int,
               default=lambda: _get_default_value("atreyu-req-port"),
-              help="The Atreyu req port")
+              help="The Atreyu request port")
 @click.option("--atreyu-sub-port",
               type=int,
               default=lambda: _get_default_value("atreyu-sub-port"),
-              help="The Atreyu sub port")
+              help="The Atreyu subscribe port")
 @click.option("--atreyu-username",
               type=str,
               default=lambda: _get_default_value("atreyu-username"),
@@ -418,14 +429,14 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--atreyu-broker-mpid",
               type=str,
               default=lambda: _get_default_value("atreyu-broker-mpid"),
-              help="The broker mpid to use")
+              help="The broker MPID to use")
 @click.option("--atreyu-locate-rqd",
               type=str,
               default=lambda: _get_default_value("atreyu-locate-rqd"),
               help="The locate rqd to use")
 @click.option("--tt-organization",
               type=str,
-              default=lambda: _get_default_value("tt-organization"),
+              default=lambda: _get_default_value("job-organization-id"),
               help="The name or id of the organization with the Trading Technologies module subscription")
 @click.option("--tt-user-name",
               type=str,
@@ -464,7 +475,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=lambda: _get_default_value("tt-market-data-host"),
               help="The host of the market data server")
 @click.option("--tt-market-data-port",
-              type=int,
+              type=str,
               default=lambda: _get_default_value("tt-market-data-port"),
               help="The port of the market data server")
 @click.option("--tt-order-routing-sender-comp-id",
@@ -480,7 +491,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=lambda: _get_default_value("tt-order-routing-host"),
               help="The host of the order routing server")
 @click.option("--tt-order-routing-port",
-              type=int,
+              type=str,
               default=lambda: _get_default_value("tt-order-routing-port"),
               help="The port of the order routing server")
 @click.option("--tt-log-fix-messages",
@@ -563,11 +574,11 @@ def live(ctx: click.Context,
          tt_market_data_sender_comp_id: Optional[str],
          tt_market_data_target_comp_id: Optional[str],
          tt_market_data_host: Optional[str],
-         tt_market_data_port: Optional[int],
+         tt_market_data_port: Optional[str],
          tt_order_routing_sender_comp_id: Optional[str],
          tt_order_routing_target_comp_id: Optional[str],
          tt_order_routing_host: Optional[str],
-         tt_order_routing_port: Optional[int],
+         tt_order_routing_port: Optional[str],
          tt_log_fix_messages: Optional[bool],
          release: bool,
          image: Optional[str],
@@ -607,6 +618,9 @@ def live(ctx: click.Context,
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
     lean_config_manager = container.lean_config_manager()
+
+    if environment is not None and (brokerage is not None or data_feed is not None):
+        raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
 
     if environment is not None:
         environment_name = environment
@@ -775,25 +789,6 @@ def live(ctx: click.Context,
                                                                         bloomberg_emsx_notes,
                                                                         bloomberg_emsx_handling,
                                                                         bloomberg_allow_modification))
-        elif data_feed == AtreyuDataFeed.get_name():
-            ensure_options(ctx, ["atreyu_organization",
-                                 "atreyu_host",
-                                 "atreyu_req_port",
-                                 "atreyu_sub_port",
-                                 "atreyu_username",
-                                 "atreyu_password",
-                                 "atreyu_client_id",
-                                 "atreyu_broker_mpid",
-                                 "atreyu_locate_rqd"])
-            data_feed_configurer = AtreyuDataFeed(AtreyuBrokerage(_get_organization_id(atreyu_organization),
-                                                                  atreyu_host,
-                                                                  atreyu_req_port,
-                                                                  atreyu_sub_port,
-                                                                  atreyu_username,
-                                                                  atreyu_password,
-                                                                  atreyu_client_id,
-                                                                  atreyu_broker_mpid,
-                                                                  atreyu_locate_rqd))
         elif data_feed == TradingTechnologiesDataFeed.get_name():
             ensure_options(ctx, ["tt_organization",
                                  "tt_user_name",

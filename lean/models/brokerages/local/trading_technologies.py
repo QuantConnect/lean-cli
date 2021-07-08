@@ -38,11 +38,11 @@ class TradingTechnologiesBrokerage(LocalBrokerage):
                  market_data_sender_comp_id: str,
                  market_data_target_comp_id: str,
                  market_data_host: str,
-                 market_data_port: int,
+                 market_data_port: str,
                  order_routing_sender_comp_id: str,
                  order_routing_target_comp_id: str,
                  order_routing_host: str,
-                 order_routing_port: int,
+                 order_routing_port: str,
                  log_fix_messages: bool) -> None:
         self._organization_id = organization_id
         self._user_name = user_name
@@ -91,20 +91,16 @@ class TradingTechnologiesBrokerage(LocalBrokerage):
         market_data_target_comp_id = click.prompt("Market data target comp id",
                                                   cls._get_default(lean_config, "tt-market-data-target-comp-id"))
         market_data_host = click.prompt("Market data host", cls._get_default(lean_config, "tt-market-data-host"))
-        market_data_port = click.prompt("Market data port",
-                                        cls._get_default(lean_config, "tt-market-data-port"),
-                                        type=int)
+        market_data_port = click.prompt("Market data port", cls._get_default(lean_config, "tt-market-data-port"))
 
         order_routing_sender_comp_id = click.prompt("Order routing sender comp id",
                                                     cls._get_default(lean_config, "tt-order-routing-sender-comp-id"))
         order_routing_target_comp_id = click.prompt("Order routing target comp id",
                                                     cls._get_default(lean_config, "tt-order-routing-target-comp-id"))
         order_routing_host = click.prompt("Order routing host", cls._get_default(lean_config, "tt-order-routing-host"))
-        order_routing_port = click.prompt("Order routing port",
-                                          cls._get_default(lean_config, "tt-order-routing-port"),
-                                          type=int)
+        order_routing_port = click.prompt("Order routing port", cls._get_default(lean_config, "tt-order-routing-port"))
 
-        log_fix_messages = click.prompt("Log FIX messages",
+        log_fix_messages = click.prompt("Log FIX messages (yes/no)",
                                         cls._get_default(lean_config, "tt-log-fix-messages"),
                                         type=bool)
 

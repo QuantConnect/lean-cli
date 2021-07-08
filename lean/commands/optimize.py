@@ -121,13 +121,16 @@ def optimize(ctx: click.Context,
     optimizer_config_manager = container.optimizer_config_manager()
     config = None
 
+    if optimizer_config is not None and strategy is not None:
+        raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
+
     if optimizer_config is not None:
         config = json5.loads(optimizer_config.read_text(encoding="utf-8"))
 
         # Remove keys which are configured in the Lean config
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
             config.pop(key, None)
-    elif strategy is not None or target is not None or target_direction is not None or len(parameter) > 0:
+    elif strategy is not None:
         ensure_options(ctx, ["strategy", "target", "target_direction", "parameter"])
 
         optimization_strategy = f"QuantConnect.Optimizer.Strategies.{strategy.replace(' ', '')}OptimizationStrategy"

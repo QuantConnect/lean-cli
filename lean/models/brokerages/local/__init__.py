@@ -15,7 +15,7 @@ import os
 import platform
 from typing import Dict, Type, List
 
-from lean.models.brokerages.local.atreyu import AtreyuBrokerage, AtreyuDataFeed
+from lean.models.brokerages.local.atreyu import AtreyuBrokerage
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
@@ -53,21 +53,11 @@ all_local_data_feeds = [
     BinanceDataFeed,
     ZerodhaDataFeed,
     BloombergDataFeed,
-    AtreyuDataFeed,
     TradingTechnologiesDataFeed
 ]
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
-    PaperTradingBrokerage: [InteractiveBrokersDataFeed,
-                            TradierDataFeed,
-                            OANDADataFeed,
-                            BitfinexDataFeed,
-                            CoinbaseProDataFeed,
-                            BinanceDataFeed,
-                            ZerodhaDataFeed,
-                            BloombergDataFeed,
-                            AtreyuDataFeed,
-                            TradingTechnologiesDataFeed],
+    PaperTradingBrokerage: all_local_data_feeds.copy(),
     InteractiveBrokersBrokerage: [InteractiveBrokersDataFeed],
     TradierBrokerage: [TradierDataFeed],
     OANDABrokerage: [OANDADataFeed],
@@ -76,7 +66,7 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed],
     BloombergBrokerage: [BloombergDataFeed],
-    AtreyuBrokerage: [AtreyuDataFeed],
+    AtreyuBrokerage: all_local_data_feeds.copy(),
     TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed]
 }
 

@@ -18,7 +18,7 @@ import click
 from lean.components.util.logger import Logger
 from lean.constants import ATREYU_PRODUCT_ID
 from lean.container import container
-from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokerage
+from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.logger import Option
 
 
@@ -61,13 +61,13 @@ class AtreyuBrokerage(LocalBrokerage):
         organization_id = logger.prompt_list("Select the organization with the Atreyu module subscription", options)
 
         host = click.prompt("Host", cls._get_default(lean_config, "atreyu-host"))
-        req_port = click.prompt("Req port", cls._get_default(lean_config, "atreyu-req-port"), type=int)
-        sub_port = click.prompt("Sub port", cls._get_default(lean_config, "atreyu-sub-port"), type=int)
+        req_port = click.prompt("Request port", cls._get_default(lean_config, "atreyu-req-port"), type=int)
+        sub_port = click.prompt("Subscribe port", cls._get_default(lean_config, "atreyu-sub-port"), type=int)
 
         username = click.prompt("Username", cls._get_default(lean_config, "atreyu-username"))
         password = logger.prompt_password("Password", cls._get_default(lean_config, "atreyu-password"))
         client_id = click.prompt("Client id", cls._get_default(lean_config, "atreyu-client-id"))
-        broker_mpid = click.prompt("Broker mpid", cls._get_default(lean_config, "atreyu-broker-mpid"))
+        broker_mpid = click.prompt("Broker MPID", cls._get_default(lean_config, "atreyu-broker-mpid"))
         locate_rqd = click.prompt("Locate rqd", cls._get_default(lean_config, "atreyu-locate-rqd"))
 
         return AtreyuBrokerage(organization_id,
@@ -83,8 +83,7 @@ class AtreyuBrokerage(LocalBrokerage):
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = \
-            "QuantConnect.Brokerages.Atreyu.AtreyuBrokerage"
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = "AtreyuBrokerage"
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
@@ -113,27 +112,3 @@ class AtreyuBrokerage(LocalBrokerage):
         if not self._is_module_installed:
             container.module_manager().install_module(ATREYU_PRODUCT_ID, self._organization_id)
             self._is_module_installed = True
-
-
-class AtreyuDataFeed(LeanConfigConfigurer):
-    """A LeanConfigConfigurer implementation for the Atreyu data feed."""
-
-    def __init__(self, brokerage: AtreyuBrokerage) -> None:
-        self._brokerage = brokerage
-
-    @classmethod
-    def get_name(cls) -> str:
-        return AtreyuBrokerage.get_name()
-
-    @classmethod
-    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
-        return AtreyuDataFeed(AtreyuBrokerage.build(lean_config, logger))
-
-    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        self._brokerage.ensure_module_installed()
-
-        lean_config["environments"][environment_name]["data-queue-handler"] = \
-            "QuantConnect.Brokerages.Atreyu.AtreyuBrokerage"
-        lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
-
-        self._brokerage.configure_credentials(lean_config)

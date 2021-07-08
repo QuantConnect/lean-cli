@@ -26,7 +26,7 @@ from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID, ATREYU_PRODUCT_ID, TRADING_TECHNOLOGIES_PRODUCT_ID
+from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 
@@ -147,14 +147,6 @@ class LeanRunner:
         if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
             and lean_config.get("data-downloader", None) == "BloombergDataDownloader":
             self._module_manager.install_module(BLOOMBERG_PRODUCT_ID, lean_config["job-organization-id"])
-
-        if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
-            and lean_config.get("data-downloader", None) == "AtreyuDataDownloader":
-            self._module_manager.install_module(ATREYU_PRODUCT_ID, lean_config["job-organization-id"])
-
-        if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
-            and lean_config.get("data-downloader", None) == "TradingTechnologiesDataDownloader":
-            self._module_manager.install_module(TRADING_TECHNOLOGIES_PRODUCT_ID, lean_config["job-organization-id"])
 
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():
@@ -515,6 +507,7 @@ def copy_file(library_id, partial_path, file_data):
 
     target_path = Path("/Lean/Launcher/bin/Debug") / output_name
     if not target_path.exists():
+        target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(full_path, target_path)
 
 project_target = list(project_assets["targets"].keys())[0]
