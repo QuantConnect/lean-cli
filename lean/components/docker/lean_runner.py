@@ -78,7 +78,7 @@ class LeanRunner:
         :param output_dir: the directory to save output data to
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
-        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
+        :param release: whether C# projects should be compiled in release configuration instead of debug
         """
         project_dir = algorithm_file.parent
 
@@ -138,7 +138,7 @@ class LeanRunner:
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
-        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
+        :param release: whether C# projects should be compiled in release configuration instead of debug
         :return: the Docker configuration containing basic configuration to run Lean
         """
         project_dir = algorithm_file.parent
@@ -368,7 +368,7 @@ class LeanRunner:
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
-        :param release: whether C# projects should be compiled in release configuration (defaults to debug)
+        :param release: whether C# projects should be compiled in release configuration instead of debug
         """
         compile_root = self._get_csharp_compile_root(project_dir)
 

@@ -259,7 +259,7 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--release",
               is_flag=True,
               default=False,
-              help="Compile C# projects in release configuration (defaults to debug)")
+              help="Compile C# projects in release configuration instead of debug")
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
