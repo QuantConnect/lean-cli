@@ -72,6 +72,27 @@ def test_lean_command_fails_when_lean_config_not_available() -> None:
     assert result.exit_code != 0
 
 
+def test_lean_command_parses_unknown_options() -> None:
+    given_ctx: Optional[click.Context] = None
+
+    @click.command(cls=LeanCommand, allow_unknown_options=True)
+    @click.pass_context
+    def command(ctx: click.Context, **kwargs) -> None:
+        nonlocal given_ctx
+        given_ctx = ctx
+
+    result = CliRunner().invoke(command, ["--key1", "value1", "abc", "--key2=value2", "def", "--key3", "", "ghi"])
+
+    assert result.exit_code == 0
+
+    assert given_ctx is not None
+    assert given_ctx.params == {
+        "key1": "value1",
+        "key2": "value2",
+        "key3": ""
+    }
+
+
 def test_lean_command_checks_for_cli_updates() -> None:
     @click.command(cls=LeanCommand)
     def command() -> None:

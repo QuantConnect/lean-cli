@@ -26,6 +26,7 @@ from lean.components.api.compile_client import CompileClient
 from lean.components.api.data_client import DataClient
 from lean.components.api.file_client import FileClient
 from lean.components.api.live_client import LiveClient
+from lean.components.api.market_client import MarketClient
 from lean.components.api.module_client import ModuleClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.optimization_client import OptimizationClient
@@ -60,6 +61,7 @@ class APIClient:
         self.data = DataClient(self, http_client)
         self.files = FileClient(self)
         self.live = LiveClient(self)
+        self.market = MarketClient(self)
         self.modules = ModuleClient(self)
         self.nodes = NodeClient(self)
         self.optimizations = OptimizationClient(self)

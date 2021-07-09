@@ -28,7 +28,5 @@ class LocalDataProvider(LeanConfigConfigurer):
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider"
-        lean_config["map-file-provider"] = "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider"
-        lean_config["factor-file-provider"] = "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider"
 
-        self._save_properties(lean_config, ["data-provider", "map-file-provider", "factor-file-provider"])
+        self._save_properties(lean_config, ["data-provider"])

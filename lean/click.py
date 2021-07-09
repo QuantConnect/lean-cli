@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import os
 import platform
 import shutil
@@ -29,16 +30,23 @@ from lean.models.errors import MoreInfoError
 class LeanCommand(click.Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
-    def __init__(self, requires_lean_config: bool = False, requires_docker: bool = False, *args, **kwargs):
+    def __init__(self,
+                 requires_lean_config: bool = False,
+                 requires_docker: bool = False,
+                 allow_unknown_options: bool = False,
+                 *args,
+                 **kwargs):
         """Creates a new LeanCommand instance.
 
         :param requires_lean_config: True if this command requires a Lean config, False if not
         :param requires_docker: True if this command uses Docker, False if not
+        :param allow_unknown_options: True if unknown options are allowed, False if not
         :param args: the args that are passed on to the click.Command constructor
         :param kwargs: the kwargs that are passed on to the click.Command constructor
         """
         self._requires_lean_config = requires_lean_config
         self._requires_docker = requires_docker
+        self._allow_unknown_options = allow_unknown_options
 
         super().__init__(*args, **kwargs)
 
@@ -46,7 +54,11 @@ class LeanCommand(click.Command):
         # max_content_width defaults to 80, which we increase to 120 to improve readability on wide terminals
         self.context_settings["max_content_width"] = 120
 
-    def invoke(self, ctx):
+        # Don't fail if unknown options are passed in when they're allowed
+        self.context_settings["ignore_unknown_options"] = allow_unknown_options
+        self.context_settings["allow_extra_args"] = allow_unknown_options
+
+    def invoke(self, ctx: click.Context):
         if self._requires_lean_config:
             try:
                 # This method will throw if the directory cannot be found
@@ -77,6 +89,24 @@ class LeanCommand(click.Command):
                 args = ["sudo", "--preserve-env=HOME", sys.executable, *sys.argv]
                 os.execlp(args[0], *args)
 
+        if self._allow_unknown_options:
+            # Unknown options are passed to ctx.args and need to be parsed manually
+            # We parse them to ctx.params so they're available like normal options
+            # Because of this all commands with allow_unknown_options=True must have a **kwargs argument
+            arguments = list(itertools.chain(*[arg.split("=") for arg in ctx.args]))
+
+            skip_next = False
+            for index in range(len(arguments) - 1):
+                if skip_next:
+                    skip_next = False
+                    continue
+
+                if arguments[index].startswith("--"):
+                    option = arguments[index].replace("--", "")
+                    value = arguments[index + 1]
+                    ctx.params[option] = value
+                    skip_next = True
+
         update_manager = container.update_manager()
         update_manager.show_announcements()
 
@@ -86,7 +116,7 @@ class LeanCommand(click.Command):
 
         return result
 
-    def get_params(self, ctx):
+    def get_params(self, ctx: click.Context):
         params = super().get_params(ctx)
 
         # Add --lean-config option if the command requires a Lean config

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import zipfile
 from pathlib import Path
 from typing import Any, List
 
@@ -21,7 +20,6 @@ from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 from lean.models.errors import RequestFailedError
-from lean.models.map_file import MapFile
 
 
 class DataDownloader:
@@ -61,33 +59,6 @@ class DataDownloader:
             self._logger.info(
                 f"[{index + 1}/{len(data_files)}] Downloading {data_file.file} ({data_file.vendor.price:,.0f} QCC)")
             self._download_file(data_file.file, overwrite_flag, data_dir, organization_id)
-
-    def download_map_files(self, organization_id: str) -> List[MapFile]:
-        """Downloads and parses all available map files.
-
-        :param organization_id: the id of the organization that should be used for downloads
-        :return: the list of available map files
-        """
-        if self._map_files_cache is not None:
-            return self._map_files_cache
-
-        map_files_zip = self._api_client.data.list_files("equity/usa/map_files/map_files_")[-1]
-
-        data_directory = self._lean_config_manager.get_data_directory()
-        map_files_zip_path = data_directory / map_files_zip
-
-        if not map_files_zip_path.is_file():
-            self._logger.info("Downloading the latest map files (free)")
-            self._download_file(map_files_zip, True, data_directory, organization_id)
-
-        map_files = []
-        with zipfile.ZipFile(map_files_zip_path) as zip_file:
-            for file_info in zip_file.filelist:
-                map_files.append(MapFile.parse(zip_file.read(file_info.filename).decode("utf-8")))
-
-        self._map_files_cache = map_files
-
-        return map_files
 
     def _download_file(self,
                        relative_file: str,

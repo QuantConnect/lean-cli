@@ -432,44 +432,30 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean data download`
 
-Purchase and download data from QuantConnect's Data Library.
+Purchase and download data from datasets in QuantConnect's Data Market.
 
 ```
 Usage: lean data download [OPTIONS]
 
-  Purchase and download data from QuantConnect's Data Library.
+  Purchase and download data from datasets in QuantConnect's Data Market.
 
   An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
   Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
 
-  If --product is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input or
-  confirmation but only halts when an agreement must be accepted. In non-interactive mode all options specific to the
-  selected product as well as --organization are required.
+  If --dataset is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input or
+  confirmation but only halts when the agreement must be accepted. In non-interactive mode all options specific to the
+  selected dataset as well as --organization are required.
 
   See the following url for the data that can be purchased and downloaded with this command:
-  https://www.lean.io/docs/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
+  https://www.quantconnect.com/datasets
 
 Options:
-  --product [CFD|Crypto|Equity|Equity Option|Forex|Future|CBOE Volatility Index Pricing|Federal Reserve Economics Data|SEC Filings|US Treasury Yield Curve Rates|US Energy Information Administration Data]
-                                  The product type to download
-  --organization TEXT             The name or id of the organization to purchase and download data with
-  --data-type [Trade|Quote|OpenInterest|Margins]
-                                  The type of data that you want to download
-  --market TEXT                   The market of the data that you want to download
-  --ticker TEXT                   The ticker of the data that you want to download
-  --resolution [Tick|Second|Minute|Hour|Daily]
-                                  The resolution of the data that you want to download
-  --option-style [American|European]
-                                  The option style of the data that you want to download
-  --start [yyyyMMdd]              The start date of the data that you want to download (ignore for hourly and daily
-                                  data)
-
-  --end [yyyyMMdd]                The end date of the data that you want to download (ignore for hourly and daily data)
-  --report-type [10K|10Q|8K]      The type of SEC reports that you want to download
-  --overwrite                     Overwrite existing local data
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --dataset TEXT       The name of the dataset to download non-interactively
+  --organization TEXT  The name or id of the organization to purchase and download data with
+  --overwrite          Overwrite existing local data
+  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose            Enable debug logging
+  --help               Show this message and exit.
 ```
 
 _See code: [lean/commands/data/download.py](lean/commands/data/download.py)_
