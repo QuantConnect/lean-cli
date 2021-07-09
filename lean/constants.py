@@ -54,8 +54,7 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-# TODO: Revert to production API once Atreyu and Trading Technologies modules are downloadable there
-API_BASE_URL = "https://beta.quantconnect.com/api/v2/"
+API_BASE_URL = "https://www.quantconnect.com/api/v2/"
 
 # The interval in hours at which the CLI checks for updates to itself
 UPDATE_CHECK_INTERVAL_CLI = 24
