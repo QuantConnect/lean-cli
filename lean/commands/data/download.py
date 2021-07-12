@@ -375,7 +375,7 @@ def download(ctx: click.Context,
              organization: Optional[str],
              overwrite: bool,
              **kwargs) -> None:
-    """Purchase and download data from datasets in QuantConnect's Data Market.
+    """Purchase and download data from QuantConnect Datasets.
 
     An interactive wizard will show to walk you through the process of selecting data,
     accepting the CLI API Access and Data Agreement and payment.

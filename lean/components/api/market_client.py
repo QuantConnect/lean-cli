@@ -30,7 +30,7 @@ class MarketClient:
     def list_datasets(self) -> List[QCDataset]:
         """Get all available datasets.
 
-        :return: all datasets on the data market
+        :return: all datasets on QuantConnect Datasets
         """
         data = self._api.post("market/data/list")
 

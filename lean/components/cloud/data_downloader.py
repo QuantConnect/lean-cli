@@ -23,7 +23,7 @@ from lean.models.errors import RequestFailedError
 
 
 class DataDownloader:
-    """The DataDownloader is responsible for downloading data from the QuantConnect Data Library."""
+    """The DataDownloader is responsible for downloading data from QuantConnect Datasets."""
 
     def __init__(self, logger: Logger, api_client: APIClient, lean_config_manager: LeanConfigManager):
         """Creates a new CloudBacktestRunner instance.
@@ -43,7 +43,7 @@ class DataDownloader:
                        overwrite_flag: bool,
                        is_interactive: bool,
                        organization_id: str) -> None:
-        """Downloads files from the QuantConnect Data Library to the local data directory.
+        """Downloads files from QuantConnect Datasets to the local data directory.
 
         :param data_files: the list of data files to download
         :param overwrite_flag: whether the user has given permission to overwrite existing files
@@ -65,7 +65,7 @@ class DataDownloader:
                        overwrite_flag: bool,
                        data_directory: Path,
                        organization_id: str) -> None:
-        """Downloads a single file from the QuantConnect Data Library to the local data directory.
+        """Downloads a single file from QuantConnect Datasets to the local data directory.
 
         If this method downloads a map or factor files zip file,
         it also updates the Lean config file to ensure LEAN uses those files instead of the csv files.

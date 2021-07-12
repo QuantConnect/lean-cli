@@ -432,12 +432,12 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean data download`
 
-Purchase and download data from datasets in QuantConnect's Data Market.
+Purchase and download data from QuantConnect Datasets.
 
 ```
 Usage: lean data download [OPTIONS]
 
-  Purchase and download data from datasets in QuantConnect's Data Market.
+  Purchase and download data from QuantConnect Datasets.
 
   An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
   Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
