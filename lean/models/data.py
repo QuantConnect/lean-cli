@@ -303,6 +303,9 @@ class Product(WrappedBaseModel):
                 variables_to_use = {**variables}
                 for date in rrule(DAILY, dtstart=start.value, until=end.value):
                     variables_to_use["date"] = date
+                    variables_to_use["year"] = date.strftime("%Y")
+                    variables_to_use["month"] = date.strftime("%m")
+                    variables_to_use["day"] = date.strftime("%d")
                     template_files.add(self._render_template(template, variables_to_use))
             else:
                 template_files.add(self._render_template(template, variables))
