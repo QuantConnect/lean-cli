@@ -60,12 +60,14 @@ class Logger:
         """
         self._console.print(message, style="red")
 
-    def progress(self) -> Progress:
+    def progress(self, prefix: str = "", suffix: str = "{task.percentage:0.0f}%") -> Progress:
         """Creates a Progress instance.
 
+        :param prefix: the text to show before the bar (defaults to a blank string)
+        :param suffix: the text to show after the bar (defaults to the task's percentage)
         :return: a Progress instance which can be used to display progress bars
         """
-        progress = Progress(TextColumn(""), BarColumn(), TextColumn("{task.percentage:0.0f}%"), console=self._console)
+        progress = Progress(TextColumn(prefix), BarColumn(), TextColumn(suffix), console=self._console)
         progress.start()
         return progress
 

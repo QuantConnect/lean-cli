@@ -408,4 +408,4 @@ def download(ctx: click.Context,
         _confirm_payment(selected_organization, products)
 
     all_data_files = _get_data_files(selected_organization, products)
-    container.data_downloader().download_files(all_data_files, overwrite, is_interactive, selected_organization.id)
+    container.data_downloader().download_files(all_data_files, overwrite, selected_organization.id)

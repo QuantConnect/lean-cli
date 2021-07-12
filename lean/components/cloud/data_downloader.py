@@ -11,10 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import multiprocessing
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Callable
 
-import click
+from joblib import delayed, Parallel
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -35,56 +36,62 @@ class DataDownloader:
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
-        self._force_overwrite = None
-        self._map_files_cache = None
 
-    def download_files(self,
-                       data_files: List[Any],
-                       overwrite_flag: bool,
-                       is_interactive: bool,
-                       organization_id: str) -> None:
+    def download_files(self, data_files: List[Any], overwrite: bool, organization_id: str) -> None:
         """Downloads files from QuantConnect Datasets to the local data directory.
 
         :param data_files: the list of data files to download
-        :param overwrite_flag: whether the user has given permission to overwrite existing files
-        :param is_interactive: whether the CLI is allowed to prompt for input
+        :param overwrite: whether existing files may be overwritten
         :param organization_id: the id of the organization that should be billed
         """
-        data_dir = self._lean_config_manager.get_data_directory()
+        progress = self._logger.progress(suffix="{task.percentage:0.0f}% ({task.completed:,.0f}/{task.total:,.0f})")
+        progress_task = progress.add_task("", total=len(data_files))
 
-        if not is_interactive:
-            self._force_overwrite = overwrite_flag
+        try:
+            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), backend="threading")
 
-        for index, data_file in enumerate(data_files):
-            self._logger.info(
-                f"[{index + 1}/{len(data_files)}] Downloading {data_file.file} ({data_file.vendor.price:,.0f} QCC)")
-            self._download_file(data_file.file, overwrite_flag, data_dir, organization_id)
+            data_dir = self._lean_config_manager.get_data_directory()
+            parallel(delayed(self._download_file)(data_file.file, overwrite, data_dir, organization_id,
+                                                  lambda: progress.update(progress_task, advance=1))
+                     for data_file in data_files)
+
+            progress.stop()
+        except KeyboardInterrupt as e:
+            progress.stop()
+            raise e
 
     def _download_file(self,
                        relative_file: str,
-                       overwrite_flag: bool,
+                       overwrite: bool,
                        data_directory: Path,
-                       organization_id: str) -> None:
+                       organization_id: str,
+                       callback: Callable[[], None]) -> None:
         """Downloads a single file from QuantConnect Datasets to the local data directory.
 
         If this method downloads a map or factor files zip file,
         it also updates the Lean config file to ensure LEAN uses those files instead of the csv files.
 
         :param relative_file: the relative path to the file in the data directory
-        :param overwrite_flag: whether the user has given permission to overwrite existing files
+        :param overwrite: whether existing files may be overwritten
         :param data_directory: the path to the local data directory
         :param organization_id: the id of the organization that should be billed
+        :param callback: the lambda that is called just before the method returns
         """
         local_path = data_directory / relative_file
 
-        if local_path.exists() and not self._should_overwrite(overwrite_flag, local_path):
+        if local_path.exists() and not overwrite:
+            self._logger.warn("\n".join([
+                f"{local_path} already exists, use --overwrite to overwrite it",
+                "You have not been charged for this file"
+            ]))
+            callback()
             return
 
         try:
             file_content = self._api_client.data.download_file(relative_file, organization_id)
         except RequestFailedError as error:
-            self._logger.warn(str(error))
-            self._logger.warn("You have not been charged for this file")
+            self._logger.warn(f"{error}\nYou have not been charged for this file")
+            callback()
             return
 
         local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -101,24 +108,4 @@ class DataDownloader:
                 "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
             })
 
-    def _should_overwrite(self, overwrite_flag: bool, path: Path) -> bool:
-        """Returns whether we should overwrite existing files.
-
-        :param overwrite_flag: whether the user has given permission to overwrite existing files
-        :param path: the path to the file that already exists
-        :return: True if existing files may be overwritten, False if not
-        """
-        if overwrite_flag or self._force_overwrite:
-            return True
-
-        self._logger.warn(f"{path} already exists, use --overwrite to overwrite it")
-
-        if self._force_overwrite is None:
-            self._force_overwrite = click.confirm(
-                "Do you want to temporarily enable overwriting for the previously selected items?",
-                default=False)
-
-        if not self._force_overwrite:
-            self._logger.warn("You have not been charged for this file")
-
-        return self._force_overwrite
+        callback()
