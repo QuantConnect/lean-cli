@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import itertools
+import re
 import webbrowser
 from collections import OrderedDict
 from typing import Iterable, List, Optional
@@ -281,6 +282,12 @@ def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
     :return: the first organization with the given name or id
     """
     api_client = container.api_client()
+
+    if re.match("^[a-f0-9]{32}$", user_input) is not None:
+        try:
+            return api_client.organizations.get(user_input)
+        except:
+            pass
 
     all_organizations = api_client.organizations.get_all()
     selected_organization = next((o for o in all_organizations if o.id == user_input or o.name == user_input), None)
