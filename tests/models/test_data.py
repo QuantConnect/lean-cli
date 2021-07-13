@@ -10,14 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import re
 from datetime import datetime
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Set, Pattern
 
 import pytest
 
 from lean.models.data import DatasetOneOfCondition, OptionResult, DatasetTextOption, DatasetTextOptionTransform, \
-    DatasetSelectOption, DatasetDateOption
+    DatasetSelectOption, DatasetDateOption, DataFileAllGroup, DataFileLatestGroup
 
 
 @pytest.mark.parametrize("option,values,results,expected", [
@@ -187,3 +187,37 @@ def test_dataset_date_option_get_placeholder_works_correctly() -> None:
     option = DatasetDateOption(id="id", label="label", description="description")
 
     assert option.get_placeholder() == "yyyyMMdd"
+
+
+@pytest.mark.parametrize("prefix,possible_files,files_with_prefix,expected_result", [
+    ("/data", {"/data/a.csv", "/data/b.csv"}, ["/data/a.csv"], {"/data/a.csv"}),
+    ("/data", {"/data/a.csv", "/data/b.csv"}, ["/data/c.csv"], set()),
+    ("/data", {"/data/a.csv", "/data/b.csv"}, [], set()),
+    ("/data", {"/data/a.csv", "/data/b.csv"}, None, {"/data/a.csv", "/data/b.csv"})
+])
+def test_data_file_all_group_get_valid_files_works_correctly(prefix: str,
+                                                             possible_files: Set[str],
+                                                             files_with_prefix: Optional[List[str]],
+                                                             expected_result: Set[str]) -> None:
+    group = DataFileAllGroup(prefix=prefix, possible_files=possible_files)
+
+    assert group.get_valid_files(files_with_prefix) == expected_result
+
+
+@pytest.mark.parametrize("prefix,regex,files_with_prefix,expected_result", [
+    (
+        "/data",
+        re.compile(r"/data/\d+.csv"),
+        ["/data/x999999.csv", "/data/20200101.csv", "/data/20210101.csv"],
+        {"/data/20210101.csv"}
+    ),
+    ("/data", re.compile(r"/data/\d+.csv"), ["/data/aapl.csv", "/data/msft.csv"], set()),
+    ("/data", re.compile(r"/data/\d+.csv"), None, set())
+])
+def test_data_file_latest_group_get_valid_files_works_correctly(prefix: str,
+                                                                regex: Pattern,
+                                                                files_with_prefix: Optional[List[str]],
+                                                                expected_result: Set[str]) -> None:
+    group = DataFileLatestGroup(prefix=prefix, regex=regex)
+
+    assert group.get_valid_files(files_with_prefix) == expected_result

@@ -12,13 +12,15 @@
 # limitations under the License.
 
 import abc
+import multiprocessing
 import re
 from datetime import datetime
 from enum import Enum
-from typing import List, Any, Optional, Dict, Set
+from typing import List, Any, Optional, Dict, Set, Tuple, Pattern
 
 import click
 from dateutil.rrule import rrule, DAILY
+from joblib import Parallel, delayed
 from pydantic import validator
 
 from lean.click import DateParameter
@@ -287,6 +289,35 @@ class DataFile(WrappedBaseModel):
     vendor: QCDataVendor
 
 
+class DataFileGroup(WrappedBaseModel, abc.ABC):
+    prefix: str
+
+    def get_valid_files(self, files_with_prefix: Optional[List[str]]) -> Set[str]:
+        raise NotImplementedError()
+
+
+class DataFileAllGroup(DataFileGroup):
+    possible_files: Set[str]
+
+    def get_valid_files(self, files_with_prefix: Optional[List[str]]) -> Set[str]:
+        if files_with_prefix is not None:
+            return self.possible_files.intersection(files_with_prefix)
+
+        return self.possible_files
+
+
+class DataFileLatestGroup(DataFileGroup):
+    regex: Pattern
+
+    def get_valid_files(self, files_with_prefix: Optional[List[str]]) -> Set[str]:
+        if files_with_prefix is not None:
+            matching_files = [file for file in files_with_prefix if self.regex.match(file) is not None]
+            if len(matching_files) > 0:
+                return {sorted(matching_files)[-1]}
+
+        return set()
+
+
 class Product(WrappedBaseModel):
     dataset: Dataset
     option_results: Dict[str, OptionResult]
@@ -296,7 +327,7 @@ class Product(WrappedBaseModel):
 
         :return: the list of files that need to be downloaded for this product
         """
-        data_files = set()
+        groups = []
         variables = {option_id: result.value for option_id, result in self.option_results.items()}
 
         multiple_option = next((o for o in self.dataset.options if isinstance(o, DatasetTextOption) and o.multiple),
@@ -305,15 +336,28 @@ class Product(WrappedBaseModel):
             result = self.option_results[multiple_option.id]
 
             for index in range(len(result.value)):
-                data_files.update(self._get_data_files({**variables, multiple_option.id: result.value[index]}))
+                groups.extend(self._get_data_file_groups({
+                    **variables,
+                    multiple_option.id: result.value[index]
+                }))
         else:
-            data_files.update(self._get_data_files(variables))
+            groups.extend(self._get_data_file_groups(variables))
+
+        prefixes = set(group.prefix for group in groups)
+        prefixes_to_files = {}
+
+        parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), backend="threading")
+        for prefix, files_with_prefix in parallel(delayed(self._list_files)(prefix) for prefix in prefixes):
+            prefixes_to_files[prefix] = files_with_prefix
+
+        data_files = set()
+        for group in groups:
+            data_files.update(group.get_valid_files(prefixes_to_files[group.prefix]))
 
         return sorted(list(data_files))
 
-    def _get_data_files(self, variables: Dict[str, Any]) -> Set[str]:
-        api_client = container.api_client()
-        data_files = set()
+    def _get_data_file_groups(self, variables: Dict[str, Any]) -> List[DataFileGroup]:
+        groups = []
 
         for path in self.dataset.paths:
             if path.condition is None or path.condition.check(self.option_results):
@@ -327,7 +371,7 @@ class Product(WrappedBaseModel):
             start = variables.get("start", None)
             end = variables.get("end", None)
 
-            template_files = set()
+            possible_files = set()
 
             if has_start_end and start is not None and end is not None:
                 variables_to_use = {**variables}
@@ -336,32 +380,30 @@ class Product(WrappedBaseModel):
                     variables_to_use["year"] = date.strftime("%Y")
                     variables_to_use["month"] = date.strftime("%m")
                     variables_to_use["day"] = date.strftime("%d")
-                    template_files.add(self._render_template(template, variables_to_use))
+                    possible_files.add(self._render_template(template, variables_to_use))
             else:
-                template_files.add(self._render_template(template, variables))
+                possible_files.add(self._render_template(template, variables))
 
-            parent = self._get_common_prefix(list(template_files))
+            prefix = self._get_common_prefix(list(possible_files))
 
-            if len(parent.split("/")) < 3:
-                # Cannot get cloud directory listing less than 3 levels deep
-                data_files.update(template_files)
-            else:
-                available_files = api_client.data.list_files(parent)
-                data_files.update(template_files.intersection(set(available_files)))
+            groups.append(DataFileAllGroup(prefix=prefix, possible_files=possible_files))
 
         for regex_template in path_to_use.templates.latest:
             rendered_regex = self._render_template(regex_template, variables)
 
-            parent = re.split(r"[\\[\]()]", rendered_regex)[0]
-            available_files = api_client.data.list_files(parent)
-
+            prefix = re.split(r"[\\[\]()]", rendered_regex)[0]
             compiled_regex = re.compile(rendered_regex)
-            matching_files = [file for file in available_files if compiled_regex.match(file) is not None]
 
-            if len(matching_files) > 0:
-                data_files.add(sorted(matching_files)[-1])
+            groups.append(DataFileLatestGroup(prefix=prefix, regex=compiled_regex))
 
-        return data_files
+        return groups
+
+    def _list_files(self, prefix: str) -> Tuple[str, Optional[List[str]]]:
+        if len(prefix.split("/")) < 3:
+            # Cannot get cloud directory listing less than 3 levels deep
+            return prefix, None
+        else:
+            return prefix, container.api_client().data.list_files(prefix)
 
     def _get_common_prefix(self, values: List[str]) -> str:
         """Finds the common prefix in a list of strings.
