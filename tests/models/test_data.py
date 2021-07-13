@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 import pytest
 
@@ -57,13 +58,29 @@ def test_dataset_text_option_transform_apply_works_correctly(transform: DatasetT
     ("INPUT", DatasetTextOptionTransform.Uppercase, "INPUT", "INPUT"),
     ("Input", DatasetTextOptionTransform.Uppercase, "INPUT", "Input"),
     ("", DatasetTextOptionTransform.Uppercase, None, None),
-    (" ", DatasetTextOptionTransform.Uppercase, None, None)
+    (" ", DatasetTextOptionTransform.Uppercase, None, None),
+    ("input1,input2", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "input1, input2"),
+    ("input1, input2", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "input1, input2"),
+    ("input1,,input2,", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "input1, input2"),
+    ("Input1,Input2", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "Input1, Input2"),
+    ("Input1, Input2", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "Input1, Input2"),
+    ("Input1,,Input2,", DatasetTextOptionTransform.Lowercase, ["input1", "input2"], "Input1, Input2"),
+    ("INPUT1,INPUT2", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "INPUT1, INPUT2"),
+    ("INPUT1, INPUT2", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "INPUT1, INPUT2"),
+    ("INPUT1,,INPUT2,", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "INPUT1, INPUT2"),
+    ("Input1,Input2", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "Input1, Input2"),
+    ("Input1, Input2", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "Input1, Input2"),
+    ("Input1,,Input2,", DatasetTextOptionTransform.Uppercase, ["INPUT1", "INPUT2"], "Input1, Input2")
 ])
 def test_dataset_text_option_configure_non_interactive_works_correctly(value: str,
                                                                        transform: DatasetTextOptionTransform,
-                                                                       expected_value: Optional[str],
+                                                                       expected_value: Optional[Union[str, List[str]]],
                                                                        expected_label: Optional[str]) -> None:
-    option = DatasetTextOption(id="id", label="label", description="description", transform=transform)
+    option = DatasetTextOption(id="id",
+                               label="label",
+                               description="description",
+                               transform=transform,
+                               multiple=isinstance(expected_value, list))
 
     if expected_value is None and expected_label is None:
         with pytest.raises(ValueError):
@@ -75,13 +92,15 @@ def test_dataset_text_option_configure_non_interactive_works_correctly(value: st
         assert result.label == expected_label
 
 
-def test_dataset_text_option_get_placeholder_works_correctly() -> None:
+@pytest.mark.parametrize("multiple,expected_placeholder", [(False, "value"), (True, "values")])
+def test_dataset_text_option_get_placeholder_works_correctly(multiple: bool, expected_placeholder: str) -> None:
     option = DatasetTextOption(id="id",
                                label="label",
                                description="description",
-                               transform=DatasetTextOptionTransform.Lowercase)
+                               transform=DatasetTextOptionTransform.Lowercase,
+                               multiple=multiple)
 
-    assert option.get_placeholder() == "value"
+    assert option.get_placeholder() == expected_placeholder
 
 
 @pytest.mark.parametrize("value,choices,expected_value,expected_label", [

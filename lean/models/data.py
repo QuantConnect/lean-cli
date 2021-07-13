@@ -15,7 +15,7 @@ import abc
 import re
 from datetime import datetime
 from enum import Enum
-from typing import List, Any, Optional, Dict
+from typing import List, Any, Optional, Dict, Set
 
 import click
 from dateutil.rrule import rrule, DAILY
@@ -112,19 +112,35 @@ class DatasetTextOptionTransform(str, Enum):
 
 class DatasetTextOption(DatasetOption):
     transform: DatasetTextOptionTransform
+    multiple: bool = False
 
     def configure_interactive(self) -> OptionResult:
-        user_input = click.prompt(self.label)
+        prompt = self.label
+        if self.multiple:
+            prompt += " (comma-separated)"
+
+        user_input = click.prompt(prompt)
         return self.configure_non_interactive(user_input)
 
     def configure_non_interactive(self, user_input: str) -> OptionResult:
         if len(user_input.strip()) == 0:
             raise ValueError("Value cannot be a blank string")
 
-        return OptionResult(value=self.transform.apply(user_input), label=user_input)
+        if self.multiple:
+            parts = [v.strip() for v in user_input.split(",") if v.strip() != ""]
+            value = [self.transform.apply(p) for p in parts]
+            label = ", ".join(parts)
+        else:
+            value = self.transform.apply(user_input)
+            label = user_input
+
+        return OptionResult(value=value, label=label)
 
     def get_placeholder(self) -> str:
-        return "value"
+        if self.multiple:
+            return "values"
+        else:
+            return "value"
 
 
 class DatasetSelectOption(DatasetOption):
@@ -280,7 +296,24 @@ class Product(WrappedBaseModel):
 
         :return: the list of files that need to be downloaded for this product
         """
+        data_files = set()
+        variables = {option_id: result.value for option_id, result in self.option_results.items()}
+
+        multiple_option = next((o for o in self.dataset.options if isinstance(o, DatasetTextOption) and o.multiple),
+                               None)
+        if multiple_option is not None:
+            result = self.option_results[multiple_option.id]
+
+            for index in range(len(result.value)):
+                data_files.update(self._get_data_files({**variables, multiple_option.id: result.value[index]}))
+        else:
+            data_files.update(self._get_data_files(variables))
+
+        return sorted(list(data_files))
+
+    def _get_data_files(self, variables: Dict[str, Any]) -> Set[str]:
         api_client = container.api_client()
+        data_files = set()
 
         for path in self.dataset.paths:
             if path.condition is None or path.condition.check(self.option_results):
@@ -289,19 +322,16 @@ class Product(WrappedBaseModel):
         else:
             raise RuntimeError(f"No eligible path templates found")
 
-        data_files = set()
-        variables = {option_id: result.value for option_id, result in self.option_results.items()}
-
         for template in path_to_use.templates.all:
             has_start_end = any(isinstance(o, DatasetDateOption) and o.start_end for o in self.dataset.options)
-            start = self.option_results.get("start", None)
-            end = self.option_results.get("end", None)
+            start = variables.get("start", None)
+            end = variables.get("end", None)
 
             template_files = set()
 
             if has_start_end and start is not None and end is not None:
                 variables_to_use = {**variables}
-                for date in rrule(DAILY, dtstart=start.value, until=end.value):
+                for date in rrule(DAILY, dtstart=start, until=end):
                     variables_to_use["date"] = date
                     variables_to_use["year"] = date.strftime("%Y")
                     variables_to_use["month"] = date.strftime("%m")
@@ -331,7 +361,7 @@ class Product(WrappedBaseModel):
             if len(matching_files) > 0:
                 data_files.add(sorted(matching_files)[-1])
 
-        return sorted(list(data_files))
+        return data_files
 
     def _get_common_prefix(self, values: List[str]) -> str:
         """Finds the common prefix in a list of strings.

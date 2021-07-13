@@ -110,7 +110,15 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
         for option_id, result in product.option_results.items():
             option = next(o for o in product.dataset.options if o.id == option_id)
             if result is not None:
-                details.append(f"{option.label}: {result.label}")
+                label = option.label
+
+                if isinstance(result.value, list):
+                    if len(result.value) > 1:
+                        label = label.replace("(s)", "s")
+                    else:
+                        label = label.replace("(s)", "")
+
+                details.append(f"{label}: {result.label}")
 
         if len(details) == 0:
             details.append("-")
