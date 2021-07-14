@@ -90,7 +90,7 @@ class DataDownloader:
         try:
             file_content = self._api_client.data.download_file(relative_file, organization_id)
         except RequestFailedError as error:
-            self._logger.warn(f"{error}\nYou have not been charged for this file")
+            self._logger.warn(f"{local_path}: {error}\nYou have not been charged for this file")
             callback()
             return
 
