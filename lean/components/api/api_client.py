@@ -98,7 +98,7 @@ class APIClient:
         :return: True if the current credentials are valid, False if not
         """
         try:
-            self.get("projects/read")
+            self.get("authenticate")
             return True
         except (RequestFailedError, AuthenticationError):
             self._logger.debug(traceback.format_exc().strip())

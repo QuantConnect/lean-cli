@@ -72,16 +72,15 @@ class Container(DeclarativeContainer):
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager)
     push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
     data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
+    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
     cloud_project_manager = Singleton(CloudProjectManager,
                                       api_client,
                                       project_config_manager,
                                       pull_manager,
                                       push_manager,
                                       path_manager)
-    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
 
     docker_manager = Singleton(DockerManager, logger, temp_manager)
-
     lean_runner = Singleton(LeanRunner,
                             logger,
                             project_config_manager,

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -54,7 +55,13 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-API_BASE_URL = "https://www.quantconnect.com/api/v2/"
+_qc_api = os.getenv("QC_API", "")
+if _qc_api == "local":
+    API_BASE_URL = "http://localhost:5612/api/v2/"
+elif _qc_api == "beta":
+    API_BASE_URL = "https://beta.quantconnect.com/api/v2/"
+else:
+    API_BASE_URL = "https://www.quantconnect.com/api/v2/"
 
 # The interval in hours at which the CLI checks for updates to itself
 UPDATE_CHECK_INTERVAL_CLI = 24

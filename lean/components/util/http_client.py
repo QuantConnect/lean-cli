@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 import requests
 
 from lean.components.util.logger import Logger
@@ -96,8 +98,8 @@ class HTTPClient:
         message = f"{method.upper()} {url}"
 
         data = next((kwargs.get(key) for key in ["json", "data", "params"] if key in kwargs), None)
-        if data is not None:
-            message += f" with data {data}"
+        if data is not None and data != {}:
+            message += f" with data:\n{json.dumps(data, indent=4)}"
 
         self._logger.debug(message)
 

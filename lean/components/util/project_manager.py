@@ -80,24 +80,27 @@ class ProjectManager:
 
         raise RuntimeError(f"Project with local id '{local_id}' does not exist")
 
-    def get_source_files(self, project: Path) -> List[Path]:
-        """Returns the paths of all the local files that need to be synchronized with the cloud.
+    def get_source_files(self, directory: Path) -> List[Path]:
+        """Returns the paths of all the source files in a directory.
 
-        :param project: the path to a local project directory
-        :return: the list of files in the given project directory that need to be synchronized with the cloud
+        :param directory: the path to the directory to get the source files of
+        :return: the list of source files in the given project directory
         """
-        local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
-        files_to_sync = []
+        source_files = []
 
-        for local_file in local_files:
-            posix_path = local_file.as_posix()
-            if any(f"{part}/" in posix_path for part in
-                   ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]):
+        for obj in directory.iterdir():
+            if obj.is_dir():
+                if obj.name in ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]:
+                    continue
+
+                source_files.extend(self.get_source_files(obj))
+
+            if obj.suffix not in [".py", ".cs", ".ipynb"]:
                 continue
 
-            files_to_sync.append(local_file)
+            source_files.append(obj)
 
-        return files_to_sync
+        return source_files
 
     def should_sync_files(self, local_project: Path, cloud_project: QCProject) -> bool:
         """Returns whether there are files to synchronize based on last modified times.
