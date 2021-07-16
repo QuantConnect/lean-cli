@@ -26,6 +26,7 @@ import pkg_resources
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.xml_manager import XMLManager
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject
 
 
@@ -64,7 +65,22 @@ class ProjectManager:
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
 
-    def get_files_to_sync(self, project: Path) -> List[Path]:
+    def get_project_by_id(self, local_id: int) -> Path:
+        """Finds a project by its local id.
+
+        Raises an error if a project with the given local id cannot be found.
+
+        :param local_id: the local id of the project
+        :return: the path to the directory containing the project with the given local id
+        """
+        cli_root = self._lean_config_manager.get_cli_root_directory()
+        for project_dir in [p.parent for p in cli_root.rglob(PROJECT_CONFIG_FILE_NAME)]:
+            if self._project_config_manager.get_local_id(project_dir) == local_id:
+                return project_dir
+
+        raise RuntimeError(f"Project with local id '{local_id}' does not exist")
+
+    def get_source_files(self, project: Path) -> List[Path]:
         """Returns the paths of all the local files that need to be synchronized with the cloud.
 
         :param project: the path to a local project directory
@@ -103,7 +119,7 @@ class ProjectManager:
         :param cloud_project: the cloud counterpart of the local project
         :return: True if there may be updates to synchronize, False if not
         """
-        paths_to_check = [local_project] + self.get_files_to_sync(local_project)
+        paths_to_check = [local_project] + self.get_source_files(local_project)
 
         last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in paths_to_check)
         last_modified_time = datetime.fromtimestamp(last_modified_time).astimezone(tz=timezone.utc)
@@ -131,7 +147,7 @@ class ProjectManager:
         """
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        for source_file in self.get_files_to_sync(project_dir):
+        for source_file in self.get_source_files(project_dir):
             target_file = output_dir / source_file.relative_to(project_dir)
             target_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source_file, target_file)

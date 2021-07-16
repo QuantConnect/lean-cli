@@ -338,7 +338,7 @@ class LeanRunner:
         # If this file already exists we can skip pip install completely
         marker_file = "/root/.local/lib/python3.6/site-packages/pip-install-done"
         run_options["commands"].extend([
-            f"! test -f {marker_file} && pip install --user -r /requirements.txt",
+            f"! test -f {marker_file} && pip install --user --progress-bar off -r /requirements.txt",
             f"touch {marker_file}"
         ])
 

@@ -75,8 +75,32 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
     with pytest.raises(Exception):
         project_manager.find_algorithm_file(Path.cwd() / "Empty Project")
 
+def test_get_project_by_id_returns_path_to_project() -> None:
+    create_fake_lean_cli_directory()
 
-def test_get_files_to_sync_returns_all_source_files() -> None:
+    project_dir = Path.cwd() / "Python Project"
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+    project_id = project_config_manager.get_local_id(project_dir)
+
+    project_manager = _create_project_manager()
+
+    assert project_manager.get_project_by_id(project_id) == project_dir
+
+
+def test_get_project_by_id_raises_error_when_no_project_with_given_id_exists() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+    python_project_id = project_config_manager.get_local_id(Path.cwd() / "Python Project")
+    csharp_project_id = project_config_manager.get_local_id(Path.cwd() / "CSharp Project")
+
+    project_manager = _create_project_manager()
+
+    with pytest.raises(Exception):
+        project_manager.get_project_by_id(max(python_project_id, csharp_project_id) + 1)
+
+def test_get_source_files_returns_all_source_files() -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
@@ -88,13 +112,13 @@ def test_get_files_to_sync_returns_all_source_files() -> None:
         file.touch()
 
     project_manager = _create_project_manager()
-    files_to_sync = project_manager.get_files_to_sync(project_path)
+    files_to_sync = project_manager.get_source_files(project_path)
 
     assert sorted(files_to_sync) == sorted(files)
 
 
 @pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"])
-def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> None:
+def test_get_source_files_ignores_generated_source_files(directory: str) -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
@@ -104,7 +128,7 @@ def test_get_files_to_sync_ignores_generated_source_files(directory: str) -> Non
         file.touch()
 
     project_manager = _create_project_manager()
-    files_to_sync = project_manager.get_files_to_sync(project_path)
+    files_to_sync = project_manager.get_source_files(project_path)
 
     assert files_to_sync == [files[0]]
 

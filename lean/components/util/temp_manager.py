@@ -22,6 +22,7 @@ class TempManager:
     def __init__(self) -> None:
         """Creates a new TempManager instance."""
         self._temporary_directories = []
+        self.delete_temporary_directories_when_done = True
 
     def create_temporary_directory(self) -> Path:
         """Returns the path to an empty temporary directory.

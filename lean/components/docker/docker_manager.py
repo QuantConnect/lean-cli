@@ -20,10 +20,12 @@ import sys
 import threading
 import types
 from pathlib import Path
+from typing import Optional
 
 import docker
 from dateutil.parser import isoparse
 from docker.errors import APIError
+from docker.models.containers import Container
 from docker.types import Mount
 from getmac import get_mac_address
 
@@ -74,6 +76,9 @@ class DockerManager:
         and the Docker container is configured to run the given commands.
         This property causes the "entrypoint" property to be overwritten if it exists.
 
+        If kwargs sets "detach" to True, the method returns as soon as the container starts.
+        If this is not the case, the method is blocking and runs until the container exits.
+
         :param image: the image to run
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
@@ -85,9 +90,14 @@ class DockerManager:
         commands = kwargs.pop("commands", None)
 
         if commands is not None:
+            shell_script_commands = ["#!/usr/bin/env bash", "set -e"]
+            if self._logger.debug_logging_enabled:
+                shell_script_commands.append("set -x")
+            shell_script_commands += commands
+
             shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
             with shell_script_path.open("w+", encoding="utf-8", newline="\n") as file:
-                file.write("\n".join(["#!/usr/bin/env bash", "set -e"] + commands) + "\n")
+                file.write("\n".join(shell_script_commands) + "\n")
 
             if "mounts" not in kwargs:
                 kwargs["mounts"] = []
@@ -111,7 +121,9 @@ class DockerManager:
                     new_key = self._format_path_docker_toolbox(key)
                     kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
-        is_tty = sys.stdout.isatty()
+        blocking = kwargs.pop("detach", False)
+
+        is_tty = sys.stdout.isatty() and not blocking
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
@@ -135,6 +147,9 @@ class DockerManager:
 
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
+
+        if not blocking:
+            return True
 
         force_kill_next = False
         killed = False
@@ -303,6 +318,30 @@ class DockerManager:
 
         docker_client.volumes.create(volume_name)
         return volume_name
+
+    def get_container_by_name(self, container_name: str) -> Optional[Container]:
+        """Finds a container with a given name.
+
+        :param container_name: the name of the container to find
+        :return: the container with the given name, or None if it does not exist
+        """
+        for container in self._get_docker_client().containers.list(all=True):
+            if container.name.lstrip("/") == container_name:
+                return container
+
+        return None
+
+    def show_logs(self, container_name: str) -> None:
+        """Shows the logs in the terminal, streaming them live if the container is still running.
+
+        :param container_name: the name of the container to show the logs of
+        """
+        if self.get_container_by_name(container_name) is None:
+            return
+
+        # We cannot use the Docker Python SDK to get live logs consistently
+        # Since the logs command is the same on Windows, macOS and Linux we can safely use a system call
+        subprocess.run(["docker", "logs", "-f", container_name])
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.

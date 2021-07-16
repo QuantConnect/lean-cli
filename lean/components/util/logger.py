@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import platform
 import sys
 from typing import Any, List, Optional
@@ -28,7 +29,13 @@ class Logger:
 
     def __init__(self) -> None:
         """Creates a new Logger instance."""
-        self._console = Console(markup=False, highlight=False, emoji=False)
+        # In Docker the terminal size is unknown, so we disable rich's text wrapping by setting width to a high value
+        if os.getenv("RUNNING_IN_DOCKER", "false") == "true":
+            width = 999999
+        else:
+            width = None
+
+        self._console = Console(markup=False, highlight=False, emoji=False, width=width)
         self.debug_logging_enabled = False
 
     def debug(self, message: Any) -> None:

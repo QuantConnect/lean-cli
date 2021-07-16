@@ -73,3 +73,6 @@ TRADING_TECHNOLOGIES_PRODUCT_ID = 64
 
 # The product id of the Atreyu module
 ATREYU_PRODUCT_ID = 65
+
+# The name of the Docker container running the local GUI
+LOCAL_GUI_CONTAINER_NAME = "lean_cli_gui"
