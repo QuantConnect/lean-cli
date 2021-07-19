@@ -121,14 +121,13 @@ class DockerManager:
                     new_key = self._format_path_docker_toolbox(key)
                     kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
-        blocking = kwargs.pop("detach", False)
-
-        is_tty = sys.stdout.isatty() and not blocking
+        detach = kwargs.pop("detach", False)
+        is_tty = sys.stdout.isatty()
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
-        kwargs["tty"] = is_tty
-        kwargs["stdin_open"] = is_tty
+        kwargs["tty"] = is_tty and not detach
+        kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
 
         mac_address = get_mac_address()
@@ -148,7 +147,7 @@ class DockerManager:
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
 
-        if not blocking:
+        if detach:
             return True
 
         force_kill_next = False

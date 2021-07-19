@@ -562,7 +562,7 @@ Usage: lean gui start [OPTIONS]
   Start the local GUI.
 
 Options:
-  --port INTEGER      The port to run the local GUI on (defaults to 8080)
+  --port INTEGER      The port to run the local GUI on (defaults to 5612)
   --no-open           Skip opening the local GUI in the browser after starting it
   --gui PATH          The path to the checked out GUI repository or packaged .whl file  [required]
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)

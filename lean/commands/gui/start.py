@@ -29,7 +29,7 @@ from lean.models.docker import DockerImage
 
 
 @click.command(cls=LeanCommand, requires_docker=True, requires_lean_config=True)
-@click.option("--port", type=int, default=8080, help="The port to run the local GUI on (defaults to 8080)")
+@click.option("--port", type=int, default=5612, help="The port to run the local GUI on (defaults to 5612)")
 @click.option("--no-open",
               is_flag=True,
               default=False,
@@ -56,6 +56,7 @@ def start(port: int, no_open: bool, gui: Path) -> None:
     # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
     run_options: Dict[str, Any] = {
         "name": LOCAL_GUI_CONTAINER_NAME,
+        "detach": True,
         "commands": [],
         "environment": {
             "PYTHONUNBUFFERED": "1",
@@ -64,7 +65,7 @@ def start(port: int, no_open: bool, gui: Path) -> None:
         "mounts": [],
         "volumes": {},
         "ports": {
-            "8080": str(port)
+            "5612": str(port)
         }
     }
 

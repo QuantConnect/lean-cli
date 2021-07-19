@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import List
 
 import pkg_resources
-
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.xml_manager import XMLManager
@@ -73,10 +72,16 @@ class ProjectManager:
         :param local_id: the local id of the project
         :return: the path to the directory containing the project with the given local id
         """
-        cli_root = self._lean_config_manager.get_cli_root_directory()
-        for project_dir in [p.parent for p in cli_root.rglob(PROJECT_CONFIG_FILE_NAME)]:
-            if self._project_config_manager.get_local_id(project_dir) == local_id:
-                return project_dir
+        directories = [self._lean_config_manager.get_cli_root_directory()]
+        while len(directories) > 0:
+            directory = directories.pop(0)
+
+            config_file = directory / PROJECT_CONFIG_FILE_NAME
+            if config_file.is_file():
+                if self._project_config_manager.get_local_id(directory) == local_id:
+                    return directory
+            else:
+                directories.extend(d for d in directory.iterdir() if d.is_dir())
 
         raise RuntimeError(f"Project with local id '{local_id}' does not exist")
 
