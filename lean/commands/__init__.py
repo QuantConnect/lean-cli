@@ -29,6 +29,7 @@ from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
 from lean.commands.whoami import whoami
+from lean.commands.logs import logs
 
 
 @click.group()
@@ -56,3 +57,4 @@ lean.add_command(research)
 lean.add_command(report)
 lean.add_command(live)
 lean.add_command(build)
+lean.add_command(logs)
