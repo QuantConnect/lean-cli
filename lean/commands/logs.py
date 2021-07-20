@@ -14,29 +14,37 @@
 import click
 from pathlib import Path
 from lean.click import LeanCommand,PathParameter
-from lean.models.errors import MoreInfoError
+from lean.container import container
+
+logger = container.logger()
+
 
 @click.command(cls=LeanCommand)
-@click.option("--live",'mode',flag_value="live",help="Ouputs Live Logs")
-@click.option("--backtest",'mode',flag_value="backtests",help="Ouputs Backtests Logs")
-@click.option("--optimization",'mode',flag_value="optimizations",help="Ouputs Backtests Logs")
-@click.option("--project_path",type=PathParameter(exists=True,dir_okay=True,file_okay=False),help="Path to Project")
-def logs(mode:str,project_path:Path):
+@click.option("--live",'mode',flag_value="live",help="get latest live log")
+@click.option("--backtest",'mode',flag_value="backtests",help="get latest backtests log")
+@click.option("--optimization",'mode',flag_value="optimizations",help="get latest optimization log")
+@click.option("--project_path",type=PathParameter(exists=True,dir_okay=True,file_okay=False),
+help="get log from project path Ex: <Project>/<mode>/<datetime> :: 'Python Project/live/2020-01-01_00-00-00'")
+@click.option("--project",type=str,help="get latest log from Project Name")
+def logs(mode:str,project_path:Path,project:str,print_n_lines=5):
     """Logs command that ouputs log based on the type such as Live / Backtesting / Optimizations
 
     Args:
         mode (str): [description]
         project_path (PathParameter): [description]
     """
-    if mode is None:
-        raise ValueError("Mode is not given. either one of the flags. --live, --backtest, --optimization")
+    if mode is None and project_path is None:
+        logger.info("--live or --backtest or --optimization flags are not provided. Defaulting to backtest.")
+        mode="backtests"
     if project_path is None:
-        mode_log_files = list(Path.cwd().rglob(f"{mode}/*/log.txt"))
+        if project is None:
+            mode_log_files = list(Path.cwd().rglob(f"{mode}/*/log.txt"))
+        else:
+            mode_log_files = list(Path.cwd().rglob(f"{project}/{mode}/*/log.txt"))
         if len(mode_log_files) == 0:
-            raise MoreInfoError(
-                f"Could not find a recent {mode} log file, see if you have run any project in {mode} mode",
-                "https://www.lean.io/docs/lean-cli/tutorials/generating-reports"
-            )
+                raise ValueError(
+                    f"Could not find a recent {mode} log file, see if you have project in {mode} mode"
+                )
         mode_log_file = sorted(mode_log_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
         project_path = mode_log_file.parent
     else:
@@ -44,9 +52,16 @@ def logs(mode:str,project_path:Path):
     if not mode_log_file.exists():
         raise FileNotFoundError(f"Cannot find log file for {project_path}. Please rerun the project with {mode} mode.")
     with open(mode_log_file) as file:
+        buffer = []
         for line in file.readlines():
-            print(line)
-            input("Press Enter to print next line")
+            buffer.append(line)
+            if len(buffer)>=print_n_lines:
+                print("".join(buffer))
+                buffer.clear()
+                input("Press Enter to print next set of lines")
+        print("".join(buffer))
+        logger.info("End of the Log!")
+
             
     
     
