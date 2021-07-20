@@ -59,7 +59,7 @@ def test_logs_no_mode() -> None:
     result = CliRunner().invoke(lean, ["logs"])
 
     assert result.exit_code == 0
-    assert "Defaulting to backtest." in result.output
+    assert "Defaulting to" in result.output
 
 def test_logs_mode_not_present() -> None:
     result = CliRunner().invoke(lean, ["logs","--optimization"])
@@ -85,11 +85,14 @@ def test_logs_path()->None:
     assert LIVE_SAMPLE_LOG in result.output
 
 def test_logs_unknown_mode() -> None:
-    result = CliRunner().invoke(lean,["--wrongmode"])
+    result = CliRunner().invoke(lean,["logs","--wrongmode"])
     assert result.exit_code==2
     assert UNKNOWN_MODE_ERROR in result.output
 
-
+def test_logs_project_not_exist() -> None:
+    result = CliRunner().invoke(lean,["logs","--project","notExist"])
+    assert result.exit_code == 1
+    assert type(result.exception) == NotADirectoryError
 
 
 

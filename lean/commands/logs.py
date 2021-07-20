@@ -40,10 +40,13 @@ def logs(mode:str,project_path:Path,project:str,print_n_lines=5):
         if project is None:
             mode_log_files = list(Path.cwd().rglob(f"{mode}/*/log.txt"))
         else:
-            mode_log_files = list(Path.cwd().rglob(f"{project}/{mode}/*/log.txt"))
+            if Path(project).exists():
+                mode_log_files = list(Path.cwd().rglob(f"{project}/{mode}/*/log.txt"))
+            else:
+                raise NotADirectoryError(f"{project} Project not created. Please create using lean create-project {project}.")
         if len(mode_log_files) == 0:
                 raise ValueError(
-                    f"Could not find a recent {mode} log file, see if you have project in {mode} mode"
+                    f"Could not find a recent {mode} log file, see if you have run project in {mode} mode"
                 )
         mode_log_file = sorted(mode_log_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
         project_path = mode_log_file.parent
@@ -53,12 +56,19 @@ def logs(mode:str,project_path:Path,project:str,print_n_lines=5):
         raise FileNotFoundError(f"Cannot find log file for {project_path}. Please rerun the project with {mode} mode.")
     with open(mode_log_file) as file:
         buffer = []
+        full_flag=False
         for line in file.readlines():
-            buffer.append(line)
-            if len(buffer)>=print_n_lines:
-                print("".join(buffer))
-                buffer.clear()
-                input("Press Enter to print next set of lines")
+            if full_flag!=True:
+                buffer.append(line)
+                if len(buffer)>=print_n_lines:
+                    print("".join(buffer),end="")
+                    buffer.clear()
+                    input_char = input("Press Enter to print next set of lines or Press a and Enter for printing full log file.")
+                    if input_char=="a":
+                        full_flag=True
+            else:
+                print(line,end="")
+
         print("".join(buffer))
         logger.info("End of the Log!")
 
