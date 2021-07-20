@@ -46,11 +46,11 @@ def _create_add_text(file_data):
 def setup_log_results() -> None:
     """A pytest fixture which creates a backtest results file before every test."""
     create_fake_lean_cli_directory()
-    logs_backtest_1_path_data_old = [Path.cwd() / "Python Project 1" / "backtests" / "2020-01-01_00-00-00" /"log.txt", BACKTEST_SAMPLE_OLD_LOG]
-    logs_backtest_1_path_data_new = [Path.cwd() / "Python Project 1" / "backtests" / "2020-01-02_00-00-00" / "log.txt",BACKTEST_SAMPLE_NEW_LOG]
-    logs_backtest_path_data_old = [Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" /"log.txt", BACKTEST_SAMPLE_OLD_LOG]
-    logs_backtest_path_data_new = [Path.cwd() / "Python Project" / "backtests" / "2020-01-02_00-00-00" / "log.txt",BACKTEST_SAMPLE_NEW_LOG]
-    logs_live_path_data = [Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "log.txt",LIVE_SAMPLE_LOG]
+    logs_backtest_1_path_data_old = [Path.cwd() / "Python Project 1" / "backtests" / "2020-01-01_00-00-00" /"log.txt", "Python Project 1"+BACKTEST_SAMPLE_OLD_LOG]
+    logs_backtest_1_path_data_new = [Path.cwd() / "Python Project 1" / "backtests" / "2020-01-02_00-00-00" / "log.txt","Python Project 1"+BACKTEST_SAMPLE_NEW_LOG]
+    logs_backtest_path_data_old = [Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" /"log.txt", "Python Project"+BACKTEST_SAMPLE_OLD_LOG]
+    logs_backtest_path_data_new = [Path.cwd() / "Python Project" / "backtests" / "2020-01-02_00-00-00" / "log.txt","Python Project"+BACKTEST_SAMPLE_NEW_LOG]
+    logs_live_path_data = [Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "log.txt","Python Project"+LIVE_SAMPLE_LOG]
     list(map(_create_add_text,[logs_backtest_1_path_data_old,logs_backtest_1_path_data_new,logs_backtest_path_data_old,logs_backtest_path_data_new,logs_live_path_data]))
     return True
     
@@ -77,7 +77,7 @@ def test_logs_project_latest() -> None:
     result = CliRunner().invoke(lean,["logs","--backtest","--project",'Python Project 1'],input="\n")
 
     assert result.exit_code == 0
-    assert BACKTEST_SAMPLE_NEW_LOG in result.output
+    assert "Python Project 1"+BACKTEST_SAMPLE_NEW_LOG in result.output
 
 def test_logs_path()->None:
     result = CliRunner().invoke(lean,["logs","--project_path",'Python Project/live/2020-01-01_00-00-00'],input="\n")
@@ -94,5 +94,8 @@ def test_logs_project_not_exist() -> None:
     assert result.exit_code == 1
     assert type(result.exception) == NotADirectoryError
 
-
+def test_logs_mode_project()->None:
+    result = CliRunner().invoke(lean,["logs","--live","--project","Python Project",])
+    assert result.exit_code == 0
+    assert "Python Project"+LIVE_SAMPLE_LOG in result.output
 
