@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import hashlib
+import json
 import os
 import platform
 import signal
@@ -20,7 +21,7 @@ import sys
 import threading
 import types
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import docker
 from dateutil.parser import isoparse
@@ -30,6 +31,7 @@ from docker.types import Mount
 from getmac import get_mac_address
 
 from lean.components.util.logger import Logger
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
 from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT
 from lean.models.docker import DockerImage
@@ -39,14 +41,16 @@ from lean.models.errors import MoreInfoError
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
 
-    def __init__(self, logger: Logger, temp_manager: TempManager) -> None:
+    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager) -> None:
         """Creates a new DockerManager instance.
 
         :param logger: the logger to use when printing messages
         :param temp_manager: the TempManager instance used when creating temporary directories
+        :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
         self._logger = logger
         self._temp_manager = temp_manager
+        self._platform_manager = platform_manager
 
     def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
@@ -108,18 +112,15 @@ class DockerManager:
                                           read_only=True))
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
-        # Docker Toolbox requires paths to be like /c/Path instead of C:/Path
-        is_windows = platform.system() == "Windows"
-        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
-        if is_windows and is_docker_toolbox:
-            if "mounts" in kwargs:
-                for mount in kwargs["mounts"]:
-                    mount["Source"] = self._format_path_docker_toolbox(mount["Source"])
+        # Format all source paths
+        if "mounts" in kwargs:
+            for mount in kwargs["mounts"]:
+                mount["Source"] = self._format_source_path(mount["Source"])
 
-            if "volumes" in kwargs:
-                for key in list(kwargs["volumes"].keys()):
-                    new_key = self._format_path_docker_toolbox(key)
-                    kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
+        if "volumes" in kwargs:
+            for key in list(kwargs["volumes"].keys()):
+                new_key = self._format_source_path(key)
+                kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
         detach = kwargs.pop("detach", False)
         is_tty = sys.stdout.isatty()
@@ -136,10 +137,16 @@ class DockerManager:
 
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
-        if platform.system() == "Linux":
+        if self._platform_manager.is_host_linux():
             if "extra_hosts" not in kwargs:
                 kwargs["extra_hosts"] = {}
             kwargs["extra_hosts"]["host.docker.internal"] = "172.17.0.1"
+
+        # Remove existing image with the same name if it exists and is not running
+        if "name" in kwargs:
+            existing_container = self.get_container_by_name(kwargs["name"])
+            if existing_container is not None and existing_container.status != "running":
+                existing_container.remove()
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
@@ -318,13 +325,20 @@ class DockerManager:
         docker_client.volumes.create(volume_name)
         return volume_name
 
+    def get_containers(self) -> List[Container]:
+        """Returns all containers.
+
+        :return: all Docker containers, both running and stopped ones
+        """
+        return self._get_docker_client().containers.list(all=True)
+
     def get_container_by_name(self, container_name: str) -> Optional[Container]:
         """Finds a container with a given name.
 
         :param container_name: the name of the container to find
         :return: the container with the given name, or None if it does not exist
         """
-        for container in self._get_docker_client().containers.list(all=True):
+        for container in self.get_containers():
             if container.name.lstrip("/") == container_name:
                 return container
 
@@ -392,14 +406,31 @@ class DockerManager:
 
         return docker_client
 
-    def _format_path_docker_toolbox(self, path: str) -> str:
-        """Formats a Windows path to make it compatible with Docker Toolbox.
+    def _format_source_path(self, path: str) -> str:
+        """Formats a source path so Docker knows what it refers to.
+
+        This method does two things:
+        1. If Docker Toolbox is in use, it converts paths like C:/Path to /c/Path.
+        2. If Docker is running in Docker, it converts paths to the corresponding paths on the host system.
 
         :param path: the original path
-        :return: the original path formatted in such a way that it works with Docker Toolbox
+        :return: the original path formatted in such a way that Docker can understand it
         """
-        # Backward slashes to forward slashes
-        path = path.replace('\\', '/')
+        # Docker Toolbox modifications
+        is_windows = self._platform_manager.is_system_windows()
+        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
+        if is_windows and is_docker_toolbox:
+            # Backward slashes to forward slashes
+            path = path.replace('\\', '/')
 
-        # C:/Path to /c/Path
-        return f"/{path[0].lower()}/{path[3:]}"
+            # C:/Path to /c/Path
+            path = f"/{path[0].lower()}/{path[3:]}"
+
+        # Docker in Docker modifications
+        path_mappings = json.loads(os.environ.get("DOCKER_PATH_MAPPINGS", "{}"))
+        for container_path, host_path in path_mappings.items():
+            if path.startswith(container_path):
+                path = host_path + path[len(container_path):]
+                break
+
+        return path

@@ -13,6 +13,7 @@
 
 import json
 import re
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -21,6 +22,7 @@ from pkg_resources import Requirement
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
@@ -38,6 +40,7 @@ class LeanRunner:
                  logger: Logger,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
+                 output_config_manager: OutputConfigManager,
                  docker_manager: DockerManager,
                  module_manager: ModuleManager,
                  temp_manager: TempManager,
@@ -47,6 +50,7 @@ class LeanRunner:
         :param logger: the logger that is used to print messages
         :param project_config_manager: the ProjectConfigManager instance to retrieve project configuration from
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
+        :param output_config_manager: the OutputConfigManager instance to retrieve backtest/live configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param module_manager: the ModuleManager instance to retrieve the installed modules from
         :param temp_manager: the TempManager instance to use for creating temporary directories
@@ -55,6 +59,7 @@ class LeanRunner:
         self._logger = logger
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
+        self._output_config_manager = output_config_manager
         self._docker_manager = docker_manager
         self._module_manager = module_manager
         self._temp_manager = temp_manager
@@ -67,7 +72,8 @@ class LeanRunner:
                  output_dir: Path,
                  image: DockerImage,
                  debugging_method: Optional[DebuggingMethod],
-                 release: bool) -> None:
+                 release: bool,
+                 detach: bool) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -79,12 +85,18 @@ class LeanRunner:
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
+        :param detach: whether LEAN should run in a detached container
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(lean_config, algorithm_file, output_dir, debugging_method, release)
+        run_options = self.get_basic_docker_config(lean_config,
+                                                   algorithm_file,
+                                                   output_dir,
+                                                   debugging_method,
+                                                   release,
+                                                   detach)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -93,6 +105,10 @@ class LeanRunner:
         # Set up VSDBG debugging
         if debugging_method == DebuggingMethod.VSDBG:
             run_options["name"] = "lean_cli_vsdbg"
+
+            # lean_cli_vsdbg is not unique, so we don't store the container name in the output directory's config
+            output_config = self._output_config_manager.get_output_config(output_dir)
+            output_config.delete("container")
 
         # Set up Rider debugging
         if debugging_method == DebuggingMethod.Rider:
@@ -117,7 +133,12 @@ class LeanRunner:
         relative_project_dir = project_dir.relative_to(cli_root_dir)
         relative_output_dir = output_dir.relative_to(cli_root_dir)
 
-        if success:
+        if detach:
+            self._logger.info(
+                f"Successfully started '{relative_project_dir}' in the '{environment}' environment in the '{run_options['name']}' container")
+            self._logger.info(f"The output will be stored in '{relative_output_dir}'")
+            self._logger.info("You can use Docker's own commands to manage the detached container")
+        elif success:
             self._logger.info(
                 f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
         else:
@@ -129,7 +150,8 @@ class LeanRunner:
                                 algorithm_file: Path,
                                 output_dir: Path,
                                 debugging_method: Optional[DebuggingMethod],
-                                release: bool) -> Dict[str, Any]:
+                                release: bool,
+                                detach: bool) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -139,6 +161,7 @@ class LeanRunner:
         :param output_dir: the directory to save output data to
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
+        :param detach: whether LEAN should run in a detached container
         :return: the Docker configuration containing basic configuration to run Lean
         """
         project_dir = algorithm_file.parent
@@ -165,6 +188,7 @@ class LeanRunner:
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options: Dict[str, Any] = {
+            "detach": detach,
             "commands": [],
             "environment": {},
             "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
@@ -267,6 +291,11 @@ class LeanRunner:
                                            source=str(config_path),
                                            type="bind",
                                            read_only=True))
+
+        # Assign the container a name and store it in the output directory's configuration
+        run_options["name"] = f"lean_cli_{str(uuid.uuid4()).replace('-', '')}"
+        output_config = self._output_config_manager.get_output_config(output_dir)
+        output_config.set("container", run_options["name"])
 
         return run_options
 

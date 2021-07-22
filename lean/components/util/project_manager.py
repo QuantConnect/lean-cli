@@ -13,7 +13,6 @@
 
 import json
 import os
-import platform
 import shutil
 import site
 import sys
@@ -22,8 +21,10 @@ from pathlib import Path
 from typing import List
 
 import pkg_resources
+
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject
@@ -35,16 +36,19 @@ class ProjectManager:
     def __init__(self,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
-                 xml_manager: XMLManager) -> None:
+                 xml_manager: XMLManager,
+                 platform_manager: PlatformManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
         :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
         :param xml_manager: the XMLManager to use when working with XML
+        :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._xml_manager = xml_manager
+        self._platform_manager = platform_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -512,9 +516,9 @@ class ProjectManager:
         """
         # Find JetBrains' root directory containing the global configuration directories for all installed IDEs
         # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
-        if platform.system() == "Windows":
+        if self._platform_manager.is_host_windows():
             root_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
-        elif platform.system() == "Darwin":
+        elif self._platform_manager.is_host_macos():
             root_dir = Path("~/Library/Application Support/JetBrains").expanduser()
         else:
             root_dir = Path("~/.config/JetBrains").expanduser()

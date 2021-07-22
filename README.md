@@ -107,6 +107,7 @@ Usage: lean backtest [OPTIONS] PROJECT
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
+  --detach                        Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
   --data-provider [Local|QuantConnect|Bloomberg]
@@ -704,6 +705,7 @@ Usage: lean live [OPTIONS] PROJECT
 Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
+  --detach                        Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Trading Technologies|IQFeed]
@@ -875,6 +877,7 @@ Usage: lean optimize [OPTIONS] PROJECT
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
+  --detach                        Run the optimization in a detached Docker container and return immediately
   --optimizer-config FILE         The optimizer configuration file that should be used
   --strategy [Grid Search|Euler Search]
                                   The optimization strategy to use

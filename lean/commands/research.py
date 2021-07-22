@@ -89,6 +89,7 @@ def research(project: Path,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
                                                       None,
+                                                      False,
                                                       False)
 
     # Mount the config in the notebooks directory as well

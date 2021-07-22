@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import platform
 import time
 import webbrowser
 from pathlib import Path
@@ -43,6 +45,7 @@ def start(port: int, no_open: bool, gui: Path) -> None:
     """Start the local GUI."""
     logger = container.logger()
     docker_manager = container.docker_manager()
+    temp_manager = container.temp_manager()
 
     gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
     if gui_container is not None:
@@ -60,7 +63,9 @@ def start(port: int, no_open: bool, gui: Path) -> None:
         "commands": [],
         "environment": {
             "PYTHONUNBUFFERED": "1",
-            "RUNNING_IN_DOCKER": "true"
+            "RUNNING_IN_DOCKER": "true",
+            "DOCKER_HOST_SYSTEM": platform.system(),
+            "DOCKER_HOST_MACHINE": platform.machine()
         },
         "mounts": [],
         "volumes": {},
@@ -69,7 +74,7 @@ def start(port: int, no_open: bool, gui: Path) -> None:
         }
     }
 
-    # Cache the site-packages so we don't reinstall everything when the container is restarted
+    # Cache the site-packages so we don't re-install everything when the container is restarted
     docker_manager.create_volume("lean_cli_gui_python")
     run_options["volumes"]["lean_cli_gui_python"] = {
         "bind": "/usr/local/lib/python3.9/site-packages",
@@ -116,12 +121,32 @@ def start(port: int, no_open: bool, gui: Path) -> None:
         "mode": "rw"
     }
 
+    # Mount a directory to the tmp directory in the GUI container
+    gui_tmp_directory = temp_manager.create_temporary_directory()
+    run_options["volumes"][str(gui_tmp_directory)] = {
+        "bind": "/tmp",
+        "mode": "rw"
+    }
+
+    # Set up the path mappings between paths in the host system and paths in the GUI container
+    run_options["environment"]["DOCKER_PATH_MAPPINGS"] = json.dumps({
+        "/LeanCLI": cli_root_dir.as_posix(),
+        "/root/.lean": Path("~/.lean").expanduser().as_posix(),
+        "/tmp": gui_tmp_directory.as_posix()
+    })
+
+    # Mount the Docker socket in the GUI container
+    run_options["mounts"].append(Mount(target="/var/run/docker.sock",
+                                       source="/var/run/docker.sock",
+                                       type="bind",
+                                       read_only=False))
+
     # Run the GUI in the GUI container
     run_options["commands"].append("cd /LeanCLI")
     run_options["commands"].append(f"leangui {port}")
 
     # Don't delete temporary directories when the command exits, the container will still need them
-    container.temp_manager().delete_temporary_directories_when_done = False
+    temp_manager.delete_temporary_directories_when_done = False
 
     logger.info("Starting the local GUI, this may take some time...")
 

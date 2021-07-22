@@ -23,6 +23,7 @@ from lxml import etree
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
 from lean.models.api import QCLanguage
@@ -35,7 +36,8 @@ def _create_project_manager() -> ProjectManager:
 
     return ProjectManager(project_config_manager,
                           LeanConfigManager(mock.Mock(), mock.Mock(), project_config_manager),
-                          xml_manager)
+                          xml_manager,
+                          PlatformManager())
 
 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
@@ -75,6 +77,7 @@ def test_find_algorithm_file_raises_error_when_no_algorithm_file_exists() -> Non
     with pytest.raises(Exception):
         project_manager.find_algorithm_file(Path.cwd() / "Empty Project")
 
+
 def test_get_project_by_id_returns_path_to_project() -> None:
     create_fake_lean_cli_directory()
 
@@ -99,6 +102,7 @@ def test_get_project_by_id_raises_error_when_no_project_with_given_id_exists() -
 
     with pytest.raises(Exception):
         project_manager.get_project_by_id(max(python_project_id, csharp_project_id) + 1)
+
 
 def test_get_source_files_returns_all_source_files() -> None:
     project_path = Path.cwd() / "My Project"

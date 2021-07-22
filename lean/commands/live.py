@@ -236,6 +236,10 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the live deployment in a detached Docker container and return immediately")
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
@@ -514,6 +518,7 @@ def live(ctx: click.Context,
          project: Path,
          environment: Optional[str],
          output: Optional[Path],
+         detach: bool,
          brokerage: Optional[str],
          data_feed: Optional[str],
          ib_user_name: Optional[str],
@@ -871,7 +876,7 @@ def live(ctx: click.Context,
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release)
+    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

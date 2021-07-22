@@ -34,6 +34,10 @@ from lean.models.optimizer import OptimizationTarget
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the optimization in a detached Docker container and return immediately")
 @click.option("--optimizer-config",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help=f"The optimizer configuration file that should be used")
@@ -69,6 +73,7 @@ from lean.models.optimizer import OptimizationTarget
 def optimize(ctx: click.Context,
              project: Path,
              output: Optional[Path],
+             detach: bool,
              optimizer_config: Optional[Path],
              strategy: Optional[str],
              target: Optional[str],
@@ -183,7 +188,7 @@ def optimize(ctx: click.Context,
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release)
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")
@@ -201,13 +206,17 @@ def optimize(ctx: click.Context,
 
     success = docker_manager.run_image(engine_image, **run_options)
 
+    logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
 
-    if success:
-        logger = container.logger()
-
+    if detach:
+        logger.info(
+            f"Successfully started optimization for '{relative_project_dir}' in the '{run_options['name']}' container")
+        logger.info(f"The output will be stored in '{relative_output_dir}'")
+        logger.info("You can use Docker's own commands to manage the detached container")
+    elif success:
         optimizer_logs = (output / "log.txt").read_text(encoding="utf-8")
         groups = re.findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 

@@ -91,6 +91,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -217,6 +218,31 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 True,
+                                                 False)
+
+
+def test_live_calls_lean_runner_with_detach() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--detach"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 False,
                                                  True)
 
 
@@ -426,6 +452,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -474,6 +501,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                                                          mock.ANY,
                                                          ENGINE_IMAGE,
                                                          None,
+                                                         False,
                                                          False)
 
 
@@ -515,6 +543,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                                                          mock.ANY,
                                                          ENGINE_IMAGE,
                                                          None,
+                                                         False,
                                                          False)
 
 
@@ -539,6 +568,7 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -564,6 +594,7 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -590,6 +621,7 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
                                                  None,
+                                                 False,
                                                  False)
 
 

@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.temp_manager import TempManager
@@ -40,12 +41,16 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
 
     project_config_manager = ProjectConfigManager(XMLManager())
 
+    lean_config_manager = LeanConfigManager(logger, cli_config_manager, project_config_manager)
+    output_config_manager = OutputConfigManager(lean_config_manager)
+
     module_manager = mock.Mock()
     module_manager.get_installed_packages.return_value = [NuGetPackage(name="QuantConnect.Brokerages", version="1.0.0")]
 
     return LeanRunner(logger,
                       project_config_manager,
-                      LeanConfigManager(logger, cli_config_manager, project_config_manager),
+                      lean_config_manager,
+                      output_config_manager,
                       docker_manager,
                       module_manager,
                       TempManager(),
@@ -67,7 +72,8 @@ def test_run_lean_compiles_csharp_project_in_correct_configuration(release: bool
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
-                         release)
+                         release,
+                         False)
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
@@ -76,6 +82,29 @@ def test_run_lean_compiles_csharp_project_in_correct_configuration(release: bool
     assert build_command is not None
 
     assert f"Configuration={'Release' if release else 'Debug'}" in build_command
+
+
+def test_run_lean_runs_lean_container_detached() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         Path.cwd() / "CSharp Project" / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         True)
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert kwargs.get("detach", False)
 
 
 def test_run_lean_runs_lean_container() -> None:
@@ -92,6 +121,7 @@ def test_run_lean_runs_lean_container() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -115,6 +145,7 @@ def test_run_lean_mounts_config_file() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -137,6 +168,7 @@ def test_run_lean_mounts_data_directory() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -162,6 +194,7 @@ def test_run_lean_mounts_output_directory() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -187,6 +220,7 @@ def test_run_lean_mounts_storage_directory() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -212,6 +246,7 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     assert (Path.cwd() / "output").is_dir()
@@ -231,6 +266,7 @@ def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> No
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          None,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -253,6 +289,7 @@ def test_run_lean_exposes_5678_when_debugging_with_ptvsd() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          DebuggingMethod.PTVSD,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -275,6 +312,7 @@ def test_run_lean_sets_image_name_when_debugging_with_vsdbg() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          DebuggingMethod.VSDBG,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -297,6 +335,7 @@ def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
                          Path.cwd() / "output",
                          ENGINE_IMAGE,
                          DebuggingMethod.Rider,
+                         False,
                          False)
 
     docker_manager.run_image.assert_called_once()
@@ -320,6 +359,7 @@ def test_run_lean_raises_when_run_image_fails() -> None:
                              Path.cwd() / "output",
                              ENGINE_IMAGE,
                              DebuggingMethod.PTVSD,
+                             False,
                              False)
 
     docker_manager.run_image.assert_called_once()
