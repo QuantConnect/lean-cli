@@ -407,7 +407,7 @@ def download(ctx: click.Context,
     is_interactive = dataset is None and organization is None
 
     if not is_interactive:
-        ensure_options(ctx, ["dataset", "organization"])
+        ensure_options(["dataset", "organization"])
         selected_organization = _get_organization_by_name_or_id(organization)
         datasets = _get_available_datasets(selected_organization)
         products = _select_products_non_interactive(selected_organization, datasets, ctx)

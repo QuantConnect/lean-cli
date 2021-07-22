@@ -69,9 +69,7 @@ from lean.models.optimizer import OptimizationTarget
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the optimizer")
-@click.pass_context
-def optimize(ctx: click.Context,
-             project: Path,
+def optimize(project: Path,
              output: Optional[Path],
              detach: bool,
              optimizer_config: Optional[Path],
@@ -136,7 +134,7 @@ def optimize(ctx: click.Context,
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
             config.pop(key, None)
     elif strategy is not None:
-        ensure_options(ctx, ["strategy", "target", "target_direction", "parameter"])
+        ensure_options(["strategy", "target", "target_direction", "parameter"])
 
         optimization_strategy = f"QuantConnect.Optimizer.Strategies.{strategy.replace(' ', '')}OptimizationStrategy"
         optimization_target = OptimizationTarget(target=optimizer_config_manager.parse_target(target),

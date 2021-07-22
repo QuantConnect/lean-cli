@@ -213,12 +213,13 @@ class DateParameter(click.ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
-def ensure_options(ctx: click.Context, options: List[str]) -> None:
+def ensure_options(options: List[str]) -> None:
     """Ensures certain options have values, raises an error if not.
 
-    :param ctx: the click context of the invocation
     :param options: the Python names of the options that must have values
     """
+    ctx = click.get_current_context()
+
     missing_options = []
     for key, value in ctx.params.items():
         has_value = value is not None
