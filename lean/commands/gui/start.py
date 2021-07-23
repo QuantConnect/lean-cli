@@ -19,17 +19,39 @@ from pathlib import Path
 from typing import Dict, Any
 
 import click
-import lean
 import requests
 from docker.errors import APIError
 from docker.types import Mount
+
+import lean
 from lean.click import LeanCommand, PathParameter
-from lean.constants import LOCAL_GUI_CONTAINER_NAME
+from lean.constants import LOCAL_GUI_CONTAINER_NAME, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.docker import DockerImage
 
 
+def _get_organization_id(given_input: str) -> str:
+    """Converts the organization name or id given by the user to an organization id.
+
+    Raises an error if the user is not a member of an organization with the given name or id.
+
+    :param given_input: the input given by the user
+    :return: the id of the organization given by the user
+    """
+    all_organizations = container.api_client().organizations.get_all()
+
+    organization = next((o for o in all_organizations if o.id == given_input or o.name == given_input), None)
+    if organization is None:
+        raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+
+    return organization.id
+
+
 @click.command(cls=LeanCommand, requires_docker=True, requires_lean_config=True)
+@click.option("--organization",
+              type=str,
+              required=True,
+              help="The name or id of the organization with the local GUI module subscription")
 @click.option("--port", type=int, default=5612, help="The port to run the local GUI on (defaults to 5612)")
 @click.option("--no-open",
               is_flag=True,
@@ -40,11 +62,12 @@ from lean.models.docker import DockerImage
               type=PathParameter(exists=True, file_okay=True, dir_okay=True),
               required=True,
               help="The path to the checked out GUI repository or packaged .whl file")
-def start(port: int, no_open: bool, gui: Path) -> None:
+def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
     """Start the local GUI."""
     logger = container.logger()
     docker_manager = container.docker_manager()
     temp_manager = container.temp_manager()
+    module_manager = container.module_manager()
 
     gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
     if gui_container is not None:
@@ -53,6 +76,9 @@ def start(port: int, no_open: bool, gui: Path) -> None:
                 "The local GUI is already running, run `lean gui restart` to restart it or `lean gui stop` to stop it")
 
         gui_container.remove()
+
+    organization_id = _get_organization_id(organization)
+    module_manager.install_module(GUI_PRODUCT_ID, organization_id)
 
     # The dict containing all options passed to `docker run`
     # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
@@ -64,7 +90,8 @@ def start(port: int, no_open: bool, gui: Path) -> None:
             "PYTHONUNBUFFERED": "1",
             "RUNNING_IN_DOCKER": "true",
             "DOCKER_HOST_SYSTEM": platform.system(),
-            "DOCKER_HOST_MACHINE": platform.machine()
+            "DOCKER_HOST_MACHINE": platform.machine(),
+            "QC_ORGANIZATION_ID": organization_id
         },
         "mounts": [],
         "volumes": {},
