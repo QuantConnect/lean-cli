@@ -53,7 +53,7 @@ def run_image(image: DockerImage, **kwargs) -> bool:
     config_mount = [mount for mount in kwargs["mounts"] if mount["Target"] == "/Lean/Report/bin/Debug/config.json"][0]
     config = json.loads(Path(config_mount["Source"]).read_text(encoding="utf-8"))
 
-    results_path = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Results")
+    results_path = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Output")
 
     output_file = Path(results_path) / Path(config["report-destination"]).name
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -95,8 +95,46 @@ def test_report_runs_report_creator() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert kwargs["working_dir"] == "/Lean/Report/bin/Debug"
-    assert kwargs["entrypoint"][0] == "dotnet"
-    assert kwargs["entrypoint"][1] == "QuantConnect.Report.dll"
+    assert "dotnet QuantConnect.Report.dll" in kwargs["commands"]
+
+
+def test_report_sets_container_name() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    output_config_manager = mock.Mock()
+    output_config_manager.get_backtest_id.return_value = 123
+    container.output_config_manager.override(providers.Object(output_config_manager))
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert kwargs["name"] == "lean_cli_report_123"
+
+
+def test_report_runs_detached_container() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
+                                       "--detach"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert kwargs["detach"]
 
 
 def test_report_mounts_report_config() -> None:
@@ -150,7 +188,7 @@ def test_report_mounts_output_directory() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any([volume["bind"] == "/Results" for volume in kwargs["volumes"].values()])
+    assert any([volume["bind"] == "/Output" for volume in kwargs["volumes"].values()])
 
 
 def test_report_mounts_given_backtest_data_source_file() -> None:

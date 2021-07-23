@@ -45,14 +45,14 @@ class OutputConfigManager:
         """
         return self._get_id(backtest_directory, 1)
 
-    def get_backtest_directory(self, backtest_id: int, root_directory: Optional[Path] = None) -> Path:
-        """Returns the directory of a backtest by its id.
+    def get_backtest_by_id(self, backtest_id: int, root_directory: Optional[Path] = None) -> Path:
+        """Finds the directory of a backtest by its id.
 
         :param backtest_id: the id of the backtest to get the directory of
         :param root_directory: the directory to search from, defaults to the `lean init` directory
         :return: the output directory of the backtest with the given id
         """
-        return self._get_directory("Backtest", backtest_id, ["backtests/*", "optimizations/*/*"], root_directory)
+        return self._get_by_id("Backtest", backtest_id, ["backtests/*", "optimizations/*/*"], root_directory)
 
     def get_optimization_id(self, optimization_directory: Path) -> int:
         """Returns the id of an optimization.
@@ -62,14 +62,14 @@ class OutputConfigManager:
         """
         return self._get_id(optimization_directory, 2)
 
-    def get_optimization_directory(self, optimization_id: int, root_directory: Optional[Path] = None) -> Path:
-        """Returns the directory of an optimization by its id.
+    def get_optimization_by_id(self, optimization_id: int, root_directory: Optional[Path] = None) -> Path:
+        """Finds the directory of an optimization by its id.
 
         :param optimization_id: the id of the optimization to get the directory of
         :param root_directory: the directory to search from, defaults to the `lean init` directory
         :return: the output directory of the optimization with the given id
         """
-        return self._get_directory("Optimization", optimization_id, ["optimizations/*"], root_directory)
+        return self._get_by_id("Optimization", optimization_id, ["optimizations/*"], root_directory)
 
     def get_live_deployment_id(self, live_deployment_directory: Path) -> int:
         """Returns the id of a live deployment.
@@ -79,14 +79,14 @@ class OutputConfigManager:
         """
         return self._get_id(live_deployment_directory, 3)
 
-    def get_live_deployment_directory(self, live_deployment_id: int, root_directory: Optional[Path] = None) -> Path:
-        """Returns the directory of a live deployment by its id.
+    def get_live_deployment_by_id(self, live_deployment_id: int, root_directory: Optional[Path] = None) -> Path:
+        """Finds the directory of a live deployment by its id.
 
         :param live_deployment_id: the id of the live deployment to get the directory of
         :param root_directory: the directory to search from, defaults to the `lean init` directory
         :return: the output directory of the live deployment with the given id
         """
-        return self._get_directory("Live deployment", live_deployment_id, ["live/*"], root_directory)
+        return self._get_by_id("Live deployment", live_deployment_id, ["live/*"], root_directory)
 
     def _get_id(self, output_directory: Path, prefix: int) -> int:
         config = self.get_output_config(output_directory)
@@ -99,11 +99,7 @@ class OutputConfigManager:
 
         return new_id
 
-    def _get_directory(self,
-                       object_label: str,
-                       object_id: int,
-                       patterns: List[str],
-                       root_directory: Optional[Path]) -> Path:
+    def _get_by_id(self, label: str, object_id: int, patterns: List[str], root_directory: Optional[Path]) -> Path:
         if root_directory is None:
             root_directory = self._lean_config_manager.get_cli_root_directory()
 
@@ -116,4 +112,4 @@ class OutputConfigManager:
                 if config.get("id", None) == object_id:
                     return directory
 
-        raise ValueError(f"{object_label} with id '{object_id}' does not exist")
+        raise ValueError(f"{label} with id '{object_id}' does not exist")

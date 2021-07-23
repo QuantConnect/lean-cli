@@ -17,7 +17,7 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dependency_injector.providers import Object
+from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
@@ -154,7 +154,7 @@ def test_create_project_aborts_when_path_invalid() -> None:
 
     path_manager = mock.Mock()
     path_manager.is_path_valid.return_value = False
-    container.path_manager.override(Object(path_manager))
+    container.path_manager.override(providers.Object(path_manager))
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
 

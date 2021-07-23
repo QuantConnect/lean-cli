@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -54,6 +53,10 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the report creator in a detached Docker container and return immediately")
 @click.option("--strategy-name",
               type=str,
               help="Name of the strategy, will appear at the top-right corner of each page")
@@ -77,6 +80,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
+           detach: bool,
            strategy_name: Optional[str],
            strategy_version: Optional[str],
            strategy_description: Optional[str],
@@ -142,7 +146,7 @@ def report(backtest_results: Optional[Path],
         "strategy-description": strategy_description or "",
         "live-data-source-file": "live-data-source-file.json" if live_results is not None else "",
         "backtest-data-source-file": "backtest-data-source-file.json",
-        "report-destination": "/Results/report.html",
+        "report-destination": "/tmp/report.html",
 
         "environment": "report",
 
@@ -170,18 +174,22 @@ def report(backtest_results: Optional[Path],
         }
     }
 
-    output_dir = container.temp_manager().create_temporary_directory()
-
-    config_path = output_dir / "config.json"
+    config_path = container.temp_manager().create_temporary_directory() / "config.json"
     with config_path.open("w+", encoding="utf-8") as file:
         json.dump(report_config, file)
+
+    backtest_id = container.output_config_manager().get_backtest_id(backtest_results.parent)
 
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
 
+    report_destination.parent.mkdir(parents=True, exist_ok=True)
+
     run_options: Dict[str, Any] = {
+        "detach": detach,
+        "name": f"lean_cli_report_{backtest_id}",
         "working_dir": "/Lean/Report/bin/Debug",
-        "entrypoint": ["dotnet", "QuantConnect.Report.dll"],
+        "commands": ["dotnet QuantConnect.Report.dll", f'cp /tmp/report.html "/Output/{report_destination.name}"'],
         "mounts": [
             Mount(target="/Lean/Report/bin/Debug/config.json",
                   source=str(config_path),
@@ -197,8 +205,8 @@ def report(backtest_results: Optional[Path],
                 "bind": "/Lean/Data",
                 "mode": "rw"
             },
-            str(output_dir): {
-                "bind": "/Results",
+            str(report_destination.parent): {
+                "bind": "/Output",
                 "mode": "rw"
             }
         }
@@ -223,8 +231,11 @@ def report(backtest_results: Optional[Path],
         raise RuntimeError(
             "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
 
-    report_destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(output_dir / "report.html", report_destination)
+    if detach:
+        logger.info(f"Successfully started the report creator in the '{run_options['name']}' container")
+        logger.info(f"The report will be generated to '{report_destination}'")
+        logger.info("You can use Docker's own commands to manage the detached container")
+        return
 
     logger.info(f"Successfully generated report to '{report_destination}'")
 

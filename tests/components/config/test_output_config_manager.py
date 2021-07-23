@@ -66,7 +66,7 @@ def test_get_backtest_id_returns_same_id_for_same_directory() -> None:
 
 
 @pytest.mark.parametrize("path", ["backtests/2021-01-01_00-00-00", "optimizations/2021-01-01_00-00-00/backtest"])
-def test_get_backtest_directory_finds_backtest_with_given_id(path: str) -> None:
+def test_get_backtest_by_id_finds_backtest_with_given_id(path: str) -> None:
     create_fake_lean_cli_directory()
 
     directory = _create_directory(Path.cwd() / "Python Project" / path)
@@ -74,16 +74,16 @@ def test_get_backtest_directory_finds_backtest_with_given_id(path: str) -> None:
     manager = _create_output_config_manager()
 
     backtest_id = manager.get_backtest_id(directory)
-    assert manager.get_backtest_directory(backtest_id) == directory
+    assert manager.get_backtest_by_id(backtest_id) == directory
 
 
-def test_get_backtest_directory_raises_when_backtest_with_given_id_does_not_exist() -> None:
+def test_get_backtest_by_id_raises_when_backtest_with_given_id_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
     manager = _create_output_config_manager()
 
     with pytest.raises(Exception):
-        manager.get_backtest_directory(123)
+        manager.get_backtest_by_id(123)
 
 
 def test_get_optimization_id_returns_id_prefixed_by_2() -> None:
@@ -119,7 +119,7 @@ def test_get_optimization_id_returns_same_id_for_same_directory() -> None:
     assert manager.get_optimization_id(directory) == manager.get_optimization_id(directory)
 
 
-def test_get_optimization_directory_finds_optimization_with_given_id() -> None:
+def test_get_optimization_by_id_finds_optimization_with_given_id() -> None:
     create_fake_lean_cli_directory()
 
     directory = _create_directory(Path.cwd() / "Python Project" / "optimizations" / "2021-01-01_00-00-00")
@@ -127,16 +127,16 @@ def test_get_optimization_directory_finds_optimization_with_given_id() -> None:
     manager = _create_output_config_manager()
 
     optimization_id = manager.get_optimization_id(directory)
-    assert manager.get_optimization_directory(optimization_id) == directory
+    assert manager.get_optimization_by_id(optimization_id) == directory
 
 
-def test_get_optimization_directory_raises_when_optimization_with_given_id_does_not_exist() -> None:
+def test_get_optimization_by_id_raises_when_optimization_with_given_id_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
     manager = _create_output_config_manager()
 
     with pytest.raises(Exception):
-        manager.get_optimization_directory(123)
+        manager.get_optimization_by_id(123)
 
 
 def test_get_live_deployment_id_returns_id_prefixed_by_3() -> None:
@@ -172,7 +172,7 @@ def test_get_live_deployment_id_returns_same_id_for_same_directory() -> None:
     assert manager.get_live_deployment_id(directory) == manager.get_live_deployment_id(directory)
 
 
-def test_get_live_deployment_directory_finds_live_deployment_with_given_id() -> None:
+def test_get_live_deployment_by_id_finds_live_deployment_with_given_id() -> None:
     create_fake_lean_cli_directory()
 
     directory = _create_directory(Path.cwd() / "Python Project" / "live" / "2021-01-01_00-00-00")
@@ -180,13 +180,13 @@ def test_get_live_deployment_directory_finds_live_deployment_with_given_id() -> 
     manager = _create_output_config_manager()
 
     live_deployment_id = manager.get_live_deployment_id(directory)
-    assert manager.get_live_deployment_directory(live_deployment_id) == directory
+    assert manager.get_live_deployment_by_id(live_deployment_id) == directory
 
 
-def test_get_live_deployment_directory_raises_when_live_deployment_with_given_id_does_not_exist() -> None:
+def test_get_live_deployment_by_id_raises_when_live_deployment_with_given_id_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
     manager = _create_output_config_manager()
 
     with pytest.raises(Exception):
-        manager.get_live_deployment_directory(123)
+        manager.get_live_deployment_by_id(123)

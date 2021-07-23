@@ -21,7 +21,6 @@ import click
 import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
-from dependency_injector.providers import Object
 
 from lean.click import DateParameter, LeanCommand, PathParameter
 from lean.container import container
@@ -131,7 +130,7 @@ def test_path_parameter_fails_when_input_not_valid_path() -> None:
 
     path_manager = mock.Mock()
     path_manager.is_path_valid.return_value = False
-    container.path_manager.override(Object(path_manager))
+    container.path_manager.override(providers.Object(path_manager))
 
     result = CliRunner().invoke(command, ["invalid-path.txt"])
 
