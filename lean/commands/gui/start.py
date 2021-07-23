@@ -19,11 +19,10 @@ from pathlib import Path
 from typing import Dict, Any
 
 import click
+import lean
 import requests
 from docker.errors import APIError
 from docker.types import Mount
-
-import lean
 from lean.click import LeanCommand, PathParameter
 from lean.constants import LOCAL_GUI_CONTAINER_NAME
 from lean.container import container
@@ -126,6 +125,15 @@ def start(port: int, no_open: bool, gui: Path) -> None:
     run_options["volumes"][str(gui_tmp_directory)] = {
         "bind": "/tmp",
         "mode": "rw"
+    }
+
+    # TODO: Extract static files from nupkg to /terminal
+    terminal_directory = temp_manager.create_temporary_directory()
+    with (terminal_directory / "index.html").open("w+", encoding="utf-8") as file:
+        file.write("<html><body>🚀</body></html>")
+    run_options["volumes"][str(terminal_directory)] = {
+        "bind": "/terminal",
+        "mode": "ro"
     }
 
     # Set up the path mappings between paths in the host system and paths in the GUI container
