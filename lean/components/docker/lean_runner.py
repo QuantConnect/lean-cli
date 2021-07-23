@@ -26,6 +26,7 @@ from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
+from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
@@ -43,6 +44,7 @@ class LeanRunner:
                  output_config_manager: OutputConfigManager,
                  docker_manager: DockerManager,
                  module_manager: ModuleManager,
+                 project_manager: ProjectManager,
                  temp_manager: TempManager,
                  xml_manager: XMLManager) -> None:
         """Creates a new LeanRunner instance.
@@ -53,6 +55,7 @@ class LeanRunner:
         :param output_config_manager: the OutputConfigManager instance to retrieve backtest/live configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param module_manager: the ModuleManager instance to retrieve the installed modules from
+        :param project_manager: the ProjectManager instance to use for copying source code to output directories
         :param temp_manager: the TempManager instance to use for creating temporary directories
         :param xml_manager: the XMLManager instance to use for reading/writing XML files
         """
@@ -62,6 +65,7 @@ class LeanRunner:
         self._output_config_manager = output_config_manager
         self._docker_manager = docker_manager
         self._module_manager = module_manager
+        self._project_manager = project_manager
         self._temp_manager = temp_manager
         self._xml_manager = xml_manager
 
@@ -128,6 +132,9 @@ class LeanRunner:
 
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
+
+        # Copy the project's code to the output directory
+        self._project_manager.copy_code(algorithm_file.parent, output_dir / "code")
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)

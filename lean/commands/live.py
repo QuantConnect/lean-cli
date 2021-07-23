@@ -618,8 +618,6 @@ def live(project: Path,
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    project_manager.copy_code(algorithm_file.parent, output / "code")
-
     lean_config_manager = container.lean_config_manager()
 
     if environment is not None and (brokerage is not None or data_feed is not None):

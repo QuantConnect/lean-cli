@@ -119,8 +119,6 @@ def optimize(project: Path,
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    project_manager.copy_code(algorithm_file.parent, output / "code")
-
     optimizer_config_manager = container.optimizer_config_manager()
     config = None
 
@@ -203,6 +201,8 @@ def optimize(project: Path,
         docker_manager.pull_image(engine_image)
 
     success = docker_manager.run_image(engine_image, **run_options)
+
+    project_manager.copy_code(algorithm_file.parent, output / "code")
 
     logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()

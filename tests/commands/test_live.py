@@ -173,31 +173,6 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     args[3].relative_to(Path("Python Project/custom").resolve())
 
 
-def test_live_copies_code_to_output_directory() -> None:
-    create_fake_lean_cli_directory()
-    create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    project_manager = mock.Mock()
-    project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
-    container.project_manager.override(providers.Object(project_manager))
-
-    result = CliRunner().invoke(lean, ["live",
-                                       "Python Project",
-                                       "--environment", "live-paper",
-                                       "--output", "Python Project/custom"])
-
-    assert result.exit_code == 0
-
-    project_manager.copy_code.assert_called_once_with(Path.cwd() / "Python Project",
-                                                      Path.cwd() / "Python Project" / "custom" / "code")
-
-
 def test_live_calls_lean_runner_with_release_mode() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)

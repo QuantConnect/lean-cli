@@ -20,6 +20,8 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.lean_runner import LeanRunner
+from lean.components.util.platform_manager import PlatformManager
+from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -47,14 +49,18 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     module_manager = mock.Mock()
     module_manager.get_installed_packages.return_value = [NuGetPackage(name="QuantConnect.Brokerages", version="1.0.0")]
 
+    xml_manager = XMLManager()
+    project_manager = ProjectManager(project_config_manager, lean_config_manager, xml_manager, PlatformManager())
+
     return LeanRunner(logger,
                       project_config_manager,
                       lean_config_manager,
                       output_config_manager,
                       docker_manager,
                       module_manager,
+                      project_manager,
                       TempManager(),
-                      XMLManager())
+                      xml_manager)
 
 
 @pytest.mark.parametrize("release", [False, True])
@@ -250,6 +256,28 @@ def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:
                          False)
 
     assert (Path.cwd() / "output").is_dir()
+
+
+def test_lean_runner_copies_code_to_output_directory() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    source_content = (Path.cwd() / "Python Project" / "main.py").read_text(encoding="utf-8")
+    copied_content = (Path.cwd() / "output" / "code" / "main.py").read_text(encoding="utf-8")
+    assert source_content == copied_content
 
 
 def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:

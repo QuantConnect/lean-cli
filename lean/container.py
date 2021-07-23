@@ -96,6 +96,7 @@ class Container(DeclarativeContainer):
                             output_config_manager,
                             docker_manager,
                             module_manager,
+                            project_manager,
                             temp_manager,
                             xml_manager)
 
