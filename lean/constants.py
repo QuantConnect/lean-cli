@@ -55,7 +55,7 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-_qc_api = os.getenv("QC_API", "")
+_qc_api = os.environ.get("QC_API", "")
 if _qc_api == "local":
     API_BASE_URL = "http://localhost:5612/api/v2/"
 elif _qc_api == "beta":
@@ -84,6 +84,9 @@ ATREYU_PRODUCT_ID = 65
 # The product id of the GUI module
 # TODO: Update this to the actual id
 GUI_PRODUCT_ID = 44
+
+# The name of the Docker network which all Lean CLI containers are ran on
+DOCKER_NETWORK = "lean_cli"
 
 # The name of the Docker container running the local GUI
 LOCAL_GUI_CONTAINER_NAME = "lean_cli_gui"

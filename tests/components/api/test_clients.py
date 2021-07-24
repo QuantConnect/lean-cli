@@ -48,12 +48,12 @@ def allow_http_requests(requests_mock: RequestsMock) -> None:
 
 
 def create_api_client() -> APIClient:
-    if os.getenv("QC_API", "") == "local":
+    if os.environ.get("QC_API", "") == "local":
         user_id = "123"
         api_token = "abc"
     else:
-        user_id = USER_ID or os.getenv("QC_USER_ID", "")
-        api_token = API_TOKEN or os.getenv("QC_API_TOKEN", "")
+        user_id = USER_ID or os.environ.get("QC_USER_ID", "")
+        api_token = API_TOKEN or os.environ.get("QC_API_TOKEN", "")
 
     if user_id == "" or api_token == "":
         pytest.skip("API credentials not specified")

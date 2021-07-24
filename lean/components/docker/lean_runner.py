@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import os
 import re
 import uuid
 from pathlib import Path
@@ -187,7 +188,8 @@ class LeanRunner:
         if not storage_dir.exists():
             storage_dir.mkdir(parents=True)
 
-        lean_config["debug-mode"] = self._logger.debug_logging_enabled
+        lean_config["debug-mode"] = self._logger.debug_logging_enabled \
+                                    and os.environ.get("QC_LOCAL_GUI", "false") != "true"
         lean_config["data-folder"] = "/Lean/Data"
         lean_config["results-destination-folder"] = "/Results"
         lean_config["object-store-root"] = "/Storage"
@@ -273,6 +275,7 @@ class LeanRunner:
 
             # Add all modules to the project, automatically resolving all dependencies
             for package in installed_packages:
+                run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
                 run_options["commands"].append(
                     f"dotnet add /ModulesProject package {package.name} --version {package.version}")
 

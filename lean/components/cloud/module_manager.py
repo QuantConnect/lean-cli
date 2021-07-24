@@ -17,7 +17,7 @@ from typing import Set, List, Dict
 from lean.components.api.api_client import APIClient
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
-from lean.constants import MODULES_DIRECTORY
+from lean.constants import MODULES_DIRECTORY, GUI_PRODUCT_ID
 from lean.models.modules import NuGetPackage
 
 
@@ -49,7 +49,11 @@ class ModuleManager:
         if product_id in self._installed_product_ids:
             return
 
-        module_files = self._api_client.modules.list_files(product_id, organization_id)
+        # TODO: Revert this when the GUI product goes live, it's just for testing the packaging right now
+        if product_id == GUI_PRODUCT_ID:
+            module_files = ["QuantConnect.GUI.1.0.0.nupkg"]
+        else:
+            module_files = self._api_client.modules.list_files(product_id, organization_id)
         packages_to_download: Dict[str, NuGetPackage] = {}
 
         for file_name in module_files:

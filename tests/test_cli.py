@@ -96,8 +96,8 @@ def test_cli() -> None:
     Unlike "normal" tests, this file only contains a single test method which steps through all commands.
     This is done on purpose to make the test as close to what real users do as possible.
     """
-    user_id = USER_ID or os.getenv("QC_USER_ID", "")
-    api_token = API_TOKEN or os.getenv("QC_API_TOKEN", "")
+    user_id = USER_ID or os.environ.get("QC_USER_ID", "")
+    api_token = API_TOKEN or os.environ.get("QC_API_TOKEN", "")
 
     if user_id == "" or api_token == "":
         pytest.skip("API credentials not specified")

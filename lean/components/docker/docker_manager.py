@@ -28,12 +28,12 @@ from dateutil.parser import isoparse
 from docker.errors import APIError
 from docker.models.containers import Container
 from docker.types import Mount
-from getmac import get_mac_address
 
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT
+from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT, \
+    DOCKER_NETWORK
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 
@@ -131,16 +131,17 @@ class DockerManager:
         kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
 
-        mac_address = get_mac_address()
-        if mac_address is not None and mac_address != "00:00:00:00:00:00":
-            kwargs["mac_address"] = mac_address
-
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
         if self._platform_manager.is_host_linux():
             if "extra_hosts" not in kwargs:
                 kwargs["extra_hosts"] = {}
             kwargs["extra_hosts"]["host.docker.internal"] = "172.17.0.1"
+
+        # Run all containers on a custom bridge network
+        # This makes it possible for containers to connect to each other by name
+        self.create_network(DOCKER_NETWORK)
+        kwargs["network"] = DOCKER_NETWORK
 
         # Remove existing image with the same name if it exists and is not running
         if "name" in kwargs:
@@ -290,6 +291,15 @@ class DockerManager:
         """
         img = self._get_docker_client().images.get_registry_data(str(image))
         return img.attrs["Descriptor"]["digest"]
+
+    def create_network(self, name: str) -> None:
+        """Creates a new bridge network, or does nothing if a network with the given name already exists.
+
+        :param name: the name of then network to create
+        """
+        docker_client = self._get_docker_client()
+        if not any(n.name == name for n in docker_client.networks.list()):
+            docker_client.networks.create(name, driver="bridge")
 
     def create_volume(self, name: str) -> None:
         """Creates a new volume, or does nothing if a volume with the given name already exists.

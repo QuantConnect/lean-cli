@@ -22,8 +22,8 @@ class PlatformManager:
         """Creates a new PlatformManager instance."""
         self._system = platform.system()
         self._machine = platform.machine()
-        self._host_system = os.environ.get("DOCKER_HOST_SYSTEM", None)
-        self._host_machine = os.environ.get("DOCKER_HOST_MACHINE", None)
+        self._host_system = os.environ.get("QC_DOCKER_HOST_SYSTEM", None)
+        self._host_machine = os.environ.get("QC_DOCKER_HOST_MACHINE", None)
 
     def is_system_windows(self) -> bool:
         """Returns whether the current system is running Windows.

@@ -88,9 +88,9 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
         "commands": [],
         "environment": {
             "PYTHONUNBUFFERED": "1",
-            "RUNNING_IN_DOCKER": "true",
-            "DOCKER_HOST_SYSTEM": platform.system(),
-            "DOCKER_HOST_MACHINE": platform.machine(),
+            "QC_LOCAL_GUI": "true",
+            "QC_DOCKER_HOST_SYSTEM": platform.system(),
+            "QC_DOCKER_HOST_MACHINE": platform.machine(),
             "QC_ORGANIZATION_ID": organization_id
         },
         "mounts": [],

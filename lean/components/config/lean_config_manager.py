@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -216,6 +217,9 @@ class LeanConfigManager:
 
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
+
+        if os.environ.get("QC_LOCAL_GUI", "false") == "true":
+            config["messaging-handler"] = "QuantConnect.GUI.LocalMessagingHandler"
 
         return config
 
