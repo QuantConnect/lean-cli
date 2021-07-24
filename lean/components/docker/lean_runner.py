@@ -592,7 +592,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         with new_csproj_file.open("w+", encoding="utf-8") as file:
             file.write(self._xml_manager.to_string(csproj))
 
-        run_options["mounts"].append(Mount(target=f"/LeanCLI/{csproj_path.relative_to(compile_root)}",
+        run_options["mounts"].append(Mount(target=f"/LeanCLI/{csproj_path.relative_to(compile_root).as_posix()}",
                                            source=str(new_csproj_file),
                                            type="bind",
                                            read_only=True))
