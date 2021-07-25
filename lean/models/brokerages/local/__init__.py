@@ -21,6 +21,7 @@ from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFe
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
 from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
+from lean.models.brokerages.local.custom_data_only import CustomDataOnlyDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
 from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
 from lean.models.brokerages.local.oanda import OANDABrokerage, OANDADataFeed
@@ -53,7 +54,8 @@ all_local_data_feeds = [
     BinanceDataFeed,
     ZerodhaDataFeed,
     BloombergDataFeed,
-    TradingTechnologiesDataFeed
+    TradingTechnologiesDataFeed,
+    CustomDataOnlyDataFeed
 ]
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
@@ -66,7 +68,7 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed],
     BloombergBrokerage: [BloombergDataFeed],
-    AtreyuBrokerage: all_local_data_feeds.copy(),
+    AtreyuBrokerage: [x for x in all_local_data_feeds if x != CustomDataOnlyDataFeed],
     TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed]
 }
 
