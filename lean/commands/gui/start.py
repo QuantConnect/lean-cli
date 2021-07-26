@@ -15,8 +15,9 @@ import json
 import platform
 import time
 import webbrowser
+import zipfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import click
 import requests
@@ -57,12 +58,11 @@ def _get_organization_id(given_input: str) -> str:
               is_flag=True,
               default=False,
               help="Skip opening the local GUI in the browser after starting it")
-# TODO: Make --gui optional and hidden when we start distributing the GUI wheel through the modules API
 @click.option("--gui",
               type=PathParameter(exists=True, file_okay=True, dir_okay=True),
-              required=True,
+              hidden=True,
               help="The path to the checked out GUI repository or packaged .whl file")
-def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
+def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> None:
     """Start the local GUI."""
     logger = container.logger()
     docker_manager = container.docker_manager()
@@ -103,9 +103,18 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
     # Cache the site-packages so we don't re-install everything when the container is restarted
     docker_manager.create_volume("lean_cli_gui_python")
     run_options["volumes"]["lean_cli_gui_python"] = {
-        "bind": "/usr/local/lib/python3.9/site-packages",
+        "bind": "/root/.local/lib/python3.9/site-packages",
         "mode": "rw"
     }
+
+    # Update PATH in the GUI container to add executables installed with pip
+    run_options["commands"].append('export PATH="$PATH:/root/.local/bin"')
+
+    package_file_name = module_manager.get_installed_packages_by_module(GUI_PRODUCT_ID)[0].get_file_name()
+    with zipfile.ZipFile(Path.home() / ".lean" / "modules" / package_file_name) as package_file:
+        content_file_names = [f.replace("content/", "") for f in package_file.namelist() if f.startswith("content/")]
+        wheel_file_name = next(f for f in content_file_names if f.endswith(".whl"))
+        terminal_file_name = next(f for f in content_file_names if f.endswith(".zip"))
 
     # Install the CLI in the GUI container
     if lean.__version__ == "dev":
@@ -116,15 +125,19 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
         }
 
         run_options["commands"].append("cd /lean-cli")
-        run_options["commands"].append("pip install --progress-bar off -r requirements.txt")
+        run_options["commands"].append("pip install --user --progress-bar off -r requirements.txt")
     else:
-        run_options["commands"].append("pip install --progress-bar off --upgrade lean")
+        run_options["commands"].append("pip install --user --progress-bar off --upgrade lean")
 
     # Install the GUI in the GUI container
-    if gui.is_file():
+    if gui is None:
+        run_options["commands"].append(
+            f"unzip -p /root/.lean/modules/{package_file_name} content/{wheel_file_name} > /{wheel_file_name}")
+        run_options["commands"].append(f"pip install --user --progress-bar off /{wheel_file_name}")
+    elif gui.is_file():
         run_options["mounts"].append(Mount(target=f"/{gui.name}", source=str(gui), type="bind", read_only=True))
         run_options["commands"].append("pip uninstall -y leangui")
-        run_options["commands"].append(f"pip install --progress-bar off /{gui.name}")
+        run_options["commands"].append(f"pip install --user --progress-bar off /{gui.name}")
     else:
         run_options["volumes"][str(gui)] = {
             "bind": "/lean-cli-gui",
@@ -132,7 +145,12 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
         }
 
         run_options["commands"].append("cd /lean-cli-gui")
-        run_options["commands"].append("pip install --progress-bar off -r requirements.txt")
+        run_options["commands"].append("pip install --user --progress-bar off -r requirements.txt")
+
+    # Extract the terminal in the GUI container
+    run_options["commands"].append(
+        f"unzip -p /root/.lean/modules/{package_file_name} content/{terminal_file_name} > /{terminal_file_name}")
+    run_options["commands"].append(f"unzip /{terminal_file_name} -d /terminal")
 
     # Mount the `lean init` directory in the GUI container
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
@@ -154,15 +172,6 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
         "mode": "rw"
     }
 
-    # TODO: Extract static files from nupkg to /terminal
-    terminal_directory = temp_manager.create_temporary_directory()
-    with (terminal_directory / "index.html").open("w+", encoding="utf-8") as file:
-        file.write("<html><body>🚀</body></html>")
-    run_options["volumes"][str(terminal_directory)] = {
-        "bind": "/terminal",
-        "mode": "ro"
-    }
-
     # Set up the path mappings between paths in the host system and paths in the GUI container
     run_options["environment"]["DOCKER_PATH_MAPPINGS"] = json.dumps({
         "/LeanCLI": cli_root_dir.as_posix(),
@@ -178,7 +187,7 @@ def start(organization: str, port: int, no_open: bool, gui: Path) -> None:
 
     # Run the GUI in the GUI container
     run_options["commands"].append("cd /LeanCLI")
-    run_options["commands"].append(f"leangui {port}")
+    run_options["commands"].append(f"leangui")
 
     # Don't delete temporary directories when the command exits, the container will still need them
     temp_manager.delete_temporary_directories_when_done = False
