@@ -193,6 +193,13 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         dataset: Dataset = logger.prompt_list("Select a dataset",
                                               [Option(id=d, label=d.name) for d in available_datasets])
 
+        if dataset.requires_security_master and not organization.has_security_master_subscription():
+            logger.warn("\n".join([
+                f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
+                f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+            ]))
+            continue
+
         option_results = OrderedDict()
         for option in dataset.options:
             if option.condition is None or option.condition.check(option_results):
@@ -312,6 +319,12 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     if dataset is None:
         raise RuntimeError(f"There is no dataset named '{ctx.params['dataset']}'")
 
+    if dataset.requires_security_master and not organization.has_security_master_subscription():
+        raise RuntimeError("\n".join([
+            f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
+            f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+        ]))
+
     option_results = OrderedDict()
     invalid_options = []
     missing_options = []
@@ -375,7 +388,8 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
                                           vendor=cloud_dataset.vendorName.strip(),
                                           categories=[tag.name.strip() for tag in cloud_dataset.tags],
                                           options=datasource["options"],
-                                          paths=datasource["paths"]))
+                                          paths=datasource["paths"],
+                                          requires_security_master=datasource["requiresSecurityMaster"]))
 
     return available_datasets
 

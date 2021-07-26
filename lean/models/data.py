@@ -240,6 +240,7 @@ class Dataset(WrappedBaseModel):
     categories: List[str]
     options: List[DatasetOption]
     paths: List[DatasetPath]
+    requires_security_master: bool
 
     @validator("options", pre=True)
     def parse_options(cls, values: List[Any]) -> List[Any]:

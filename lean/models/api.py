@@ -21,6 +21,7 @@ from rich import box
 from rich.table import Table
 from rich.text import Text
 
+from lean.constants import SECURITY_MASTER_PRODUCT_ID
 from lean.models.pydantic import WrappedBaseModel
 
 
@@ -384,6 +385,17 @@ class QCFullOrganization(WrappedBaseModel):
     products: List[QCOrganizationProduct]
     data: QCOrganizationData
     members: List[QCOrganizationMember]
+
+    def has_security_master_subscription(self) -> bool:
+        """Returns whether this organization has a Security Master subscription.
+
+        :return: True if the organization has a Security Master subscription, False if not
+        """
+        data_products_product = next((x for x in self.products if x.name == "Data"), None)
+        if data_products_product is None:
+            return False
+
+        return any(x.productId == SECURITY_MASTER_PRODUCT_ID for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):
