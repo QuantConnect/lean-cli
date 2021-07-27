@@ -150,7 +150,7 @@ def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> N
     # Extract the terminal in the GUI container
     run_options["commands"].append(
         f"unzip -p /root/.lean/modules/{package_file_name} content/{terminal_file_name} > /{terminal_file_name}")
-    run_options["commands"].append(f"unzip /{terminal_file_name} -d /terminal")
+    run_options["commands"].append(f"unzip -o /{terminal_file_name} -d /terminal")
 
     # Mount the `lean init` directory in the GUI container
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
