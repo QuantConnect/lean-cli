@@ -341,6 +341,12 @@ def backtest(project: Path,
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
+
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config,
                          "backtesting",

@@ -183,6 +183,12 @@ def optimize(project: Path,
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
+
     lean_runner = container.lean_runner()
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
 

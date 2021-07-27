@@ -197,6 +197,7 @@ class LeanConfigManager:
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
+        config["job-project-id"] = self._project_config_manager.get_local_id(algorithm_file.parent)
 
         config["ib-host"] = "127.0.0.1"
         config["ib-port"] = "4002"

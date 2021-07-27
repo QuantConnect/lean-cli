@@ -871,6 +871,12 @@ def live(project: Path,
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = str(output_config_manager.get_live_deployment_id(output))
+
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
 
