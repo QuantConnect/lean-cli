@@ -33,6 +33,9 @@ def get_version() -> str:
 
 
 def get_stubs_version_range() -> str:
+    if get_version() == "dev":
+        return ""
+
     try:
         response = urllib.request.urlopen("https://pypi.org/pypi/quantconnect-stubs/json").read()
         latest_version = json.loads(response)["info"]["version"]
