@@ -175,34 +175,46 @@ class DockerManager:
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
         def print_logs() -> None:
             chunk_buffer = bytes()
+            is_first_time = True
 
-            # Capture all logs and print it to stdout line by line
-            for chunk in container.logs(stream=True, follow=True):
-                chunk_buffer += chunk
-
-                if not chunk_buffer.endswith(b"\n"):
-                    continue
-
-                chunk = chunk_buffer.decode("utf-8")
-                chunk_buffer = bytes()
-
-                if on_output is not None:
-                    on_output(chunk)
-
-                self._logger.info(chunk.rstrip())
-
-                if not is_tty:
-                    continue
-
-                if "Press any key to exit..." in chunk or "QuantConnect.Report.Main(): Completed." in chunk:
-                    socket = docker_client.api.attach_socket(container.id, params={"stdin": 1, "stream": 1})
-
-                    if hasattr(socket, "_sock"):
-                        socket._sock.send(b"\n")
+            try:
+                while True:
+                    if is_first_time:
+                        tail = "all"
+                        is_first_time = False
                     else:
-                        socket.send(b"\n")
+                        tail = 0
 
-                    socket.close()
+                    # Capture all logs and print it to stdout line by line
+                    for chunk in container.logs(stream=True, follow=True, tail=tail):
+                        chunk_buffer += chunk
+
+                        if not chunk_buffer.endswith(b"\n"):
+                            continue
+
+                        chunk = chunk_buffer.decode("utf-8")
+                        chunk_buffer = bytes()
+
+                        if on_output is not None:
+                            on_output(chunk)
+
+                        self._logger.info(chunk.rstrip())
+
+                        if not is_tty:
+                            continue
+
+                        if "Press any key to exit..." in chunk or "QuantConnect.Report.Main(): Completed." in chunk:
+                            socket = docker_client.api.attach_socket(container.id, params={"stdin": 1, "stream": 1})
+
+                            if hasattr(socket, "_sock"):
+                                socket._sock.send(b"\n")
+                            else:
+                                socket.send(b"\n")
+
+                            socket.close()
+            except:
+                # This will crash when the container exits, ignore the exception
+                pass
 
         logs_thread = threading.Thread(target=print_logs)
         logs_thread.daemon = True
