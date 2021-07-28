@@ -58,6 +58,7 @@ install_requires = [
     "maskpass==0.3.5",
     "getmac~=0.8.2",
     "joblib~=1.0.1",
+    "python-certifi-win32~=1.6",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
 ]
