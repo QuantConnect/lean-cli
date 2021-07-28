@@ -188,6 +188,7 @@ def optimize(project: Path,
 
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
+    lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner()
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
