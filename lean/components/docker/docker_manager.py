@@ -179,6 +179,10 @@ class DockerManager:
 
             try:
                 while True:
+                    container.reload()
+                    if container.status != "running":
+                        return
+
                     if is_first_time:
                         tail = "all"
                         is_first_time = False
