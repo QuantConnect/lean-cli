@@ -20,11 +20,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install build dependencies
-        run: pip install wheel
-
-      - name: Install CLI dependencies
-        run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install wheel
+          pip install -r requirements.txt
 
       - name: Run tests
         run: pytest -s -rs
