@@ -217,6 +217,9 @@ def optimize(project: Path,
     relative_output_dir = output.relative_to(cli_root_dir)
 
     if detach:
+        temp_manager = container.temp_manager()
+        temp_manager.delete_temporary_directories_when_done = False
+
         logger.info(
             f"Successfully started optimization for '{relative_project_dir}' in the '{run_options['name']}' container")
         logger.info(f"The output will be stored in '{relative_output_dir}'")

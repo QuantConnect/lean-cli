@@ -232,6 +232,9 @@ def report(backtest_results: Optional[Path],
             "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
 
     if detach:
+        temp_manager = container.temp_manager()
+        temp_manager.delete_temporary_directories_when_done = False
+
         logger.info(f"Successfully started the report creator in the '{run_options['name']}' container")
         logger.info(f"The report will be generated to '{report_destination}'")
         logger.info("You can use Docker's own commands to manage the detached container")

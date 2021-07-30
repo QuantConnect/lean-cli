@@ -142,6 +142,8 @@ class LeanRunner:
         relative_output_dir = output_dir.relative_to(cli_root_dir)
 
         if detach:
+            self._temp_manager.delete_temporary_directories_when_done = False
+
             self._logger.info(
                 f"Successfully started '{relative_project_dir}' in the '{environment}' environment in the '{run_options['name']}' container")
             self._logger.info(f"The output will be stored in '{relative_output_dir}'")

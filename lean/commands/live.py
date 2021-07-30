@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import click
-
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_ID
 from lean.container import container
@@ -182,12 +181,15 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
 _cached_organizations = None
 
 
-def _get_organization_id(given_input: str) -> str:
+def _get_organization_id(given_input: Optional[str], label: str) -> str:
     """Converts the organization name or id given by the user to an organization id.
+
+    Shows an interactive wizard if no input is given.
 
     Raises an error if the user is not a member of an organization with the given name or id.
 
     :param given_input: the input given by the user
+    :param label: the name of the module the organization id is needed for
     :return: the id of the organization given by the user
     """
     global _cached_organizations
@@ -195,9 +197,14 @@ def _get_organization_id(given_input: str) -> str:
         api_client = container.api_client()
         _cached_organizations = api_client.organizations.get_all()
 
-    organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
-    if organization is None:
-        raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+    if given_input is not None:
+        organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
+        if organization is None:
+            raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+    else:
+        logger = container.logger()
+        options = [Option(id=organization, label=organization.name) for organization in _cached_organizations]
+        organization = logger.prompt_list(f"Select the organization with the {label} module subscription", options)
 
     return organization.id
 
@@ -243,7 +250,7 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--gui",
               is_flag=True,
               default=False,
-              help="Send live results to the GUI instead of stdout")
+              help="Enable monitoring and controlling the deployment via the GUI")
 @click.option("--gui-organization",
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
@@ -629,11 +636,8 @@ def live(project: Path,
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     if gui:
-        # TODO: Show interactive organization wizard
-        ensure_options(["gui_organization"])
-
         module_manager = container.module_manager()
-        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization))
+        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization, "GUI"))
 
         detach = True
 
@@ -681,13 +685,12 @@ def live(project: Path,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
         elif brokerage == BloombergBrokerage.get_name():
-            ensure_options(["bloomberg_organization",
-                            "bloomberg_environment",
+            ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
                             "bloomberg_server_port",
                             "bloomberg_emsx_broker",
                             "bloomberg_allow_modification"])
-            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
+            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization, "Bloomberg"),
                                                       bloomberg_environment,
                                                       bloomberg_server_host,
                                                       bloomberg_server_port,
@@ -700,8 +703,7 @@ def live(project: Path,
                                                       bloomberg_emsx_handling,
                                                       bloomberg_allow_modification)
         elif brokerage == AtreyuBrokerage.get_name():
-            ensure_options(["atreyu_organization",
-                            "atreyu_host",
+            ensure_options(["atreyu_host",
                             "atreyu_req_port",
                             "atreyu_sub_port",
                             "atreyu_username",
@@ -709,7 +711,7 @@ def live(project: Path,
                             "atreyu_client_id",
                             "atreyu_broker_mpid",
                             "atreyu_locate_rqd"])
-            brokerage_configurer = AtreyuBrokerage(_get_organization_id(atreyu_organization),
+            brokerage_configurer = AtreyuBrokerage(_get_organization_id(atreyu_organization, "Atreyu"),
                                                    atreyu_host,
                                                    atreyu_req_port,
                                                    atreyu_sub_port,
@@ -719,8 +721,7 @@ def live(project: Path,
                                                    atreyu_broker_mpid,
                                                    atreyu_locate_rqd)
         elif brokerage == TradingTechnologiesBrokerage.get_name():
-            ensure_options(["tt_organization",
-                            "tt_user_name",
+            ensure_options(["tt_user_name",
                             "tt_session_password",
                             "tt_account_name",
                             "tt_rest_app_key",
@@ -735,7 +736,8 @@ def live(project: Path,
                             "tt_order_routing_host",
                             "tt_order_routing_port",
                             "tt_log_fix_messages"])
-            brokerage_configurer = TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+            brokerage_configurer = TradingTechnologiesBrokerage(_get_organization_id(tt_organization,
+                                                                                     "Trading Technologies"),
                                                                 tt_user_name,
                                                                 tt_session_password,
                                                                 tt_account_name,
@@ -791,13 +793,13 @@ def live(project: Path,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
         elif data_feed == BloombergDataFeed.get_name():
-            ensure_options(["bloomberg_organization",
-                            "bloomberg_environment",
+            ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
                             "bloomberg_server_port",
                             "bloomberg_emsx_broker",
                             "bloomberg_allow_modification"])
-            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
+            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization,
+                                                                                             "Bloomberg"),
                                                                         bloomberg_environment,
                                                                         bloomberg_server_host,
                                                                         bloomberg_server_port,
@@ -810,8 +812,7 @@ def live(project: Path,
                                                                         bloomberg_emsx_handling,
                                                                         bloomberg_allow_modification))
         elif data_feed == TradingTechnologiesDataFeed.get_name():
-            ensure_options(["tt_organization",
-                            "tt_user_name",
+            ensure_options(["tt_user_name",
                             "tt_session_password",
                             "tt_account_name",
                             "tt_rest_app_key",
@@ -827,7 +828,7 @@ def live(project: Path,
                             "tt_order_routing_port",
                             "tt_log_fix_messages"])
             data_feed_configurer = TradingTechnologiesDataFeed(
-                TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+                TradingTechnologiesBrokerage(_get_organization_id(tt_organization, "Trading Technologies"),
                                              tt_user_name,
                                              tt_session_password,
                                              tt_account_name,
@@ -895,6 +896,9 @@ def live(project: Path,
 
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = str(output_config_manager.get_live_deployment_id(output))
+
+    if gui:
+        output_config_manager.get_output_config(output).set("gui", True)
 
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

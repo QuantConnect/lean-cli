@@ -20,15 +20,15 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 import click
+import lean
 import requests
 from docker.errors import APIError
 from docker.types import Mount
-
-import lean
 from lean.click import LeanCommand, PathParameter
 from lean.constants import LOCAL_GUI_CONTAINER_NAME, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.docker import DockerImage
+from lean.models.logger import Option
 
 
 def _get_organization_id(given_input: str) -> str:
@@ -51,7 +51,6 @@ def _get_organization_id(given_input: str) -> str:
 @click.command(cls=LeanCommand, requires_docker=True, requires_lean_config=True)
 @click.option("--organization",
               type=str,
-              required=True,
               help="The name or id of the organization with the local GUI module subscription")
 @click.option("--port", type=int, default=5612, help="The port to run the local GUI on (defaults to 5612)")
 @click.option("--no-open",
@@ -62,12 +61,13 @@ def _get_organization_id(given_input: str) -> str:
               type=PathParameter(exists=True, file_okay=True, dir_okay=True),
               hidden=True,
               help="The path to the checked out GUI repository or packaged .whl file")
-def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> None:
+def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[Path]) -> None:
     """Start the local GUI."""
     logger = container.logger()
     docker_manager = container.docker_manager()
     temp_manager = container.temp_manager()
     module_manager = container.module_manager()
+    api_client = container.api_client()
 
     gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
     if gui_container is not None:
@@ -77,8 +77,13 @@ def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> N
 
         gui_container.remove()
 
-    # TODO: Show interactive organization wizard
-    organization_id = _get_organization_id(organization)
+    if organization is not None:
+        organization_id = _get_organization_id(organization)
+    else:
+        organizations = api_client.organizations.get_all()
+        options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+        organization_id = logger.prompt_list("Select the organization with the GUI module subscription", options)
+
     module_manager.install_module(GUI_PRODUCT_ID, organization_id)
 
     # The dict containing all options passed to `docker run`
