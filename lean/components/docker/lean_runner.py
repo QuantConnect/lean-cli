@@ -307,9 +307,10 @@ class LeanRunner:
         output_config = self._output_config_manager.get_output_config(output_dir)
         output_config.set("container", run_options["name"])
 
-        environment = lean_config["environments"][lean_config["environment"]]
-        if "live-mode-brokerage" in environment:
-            output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
+        if "environment" in lean_config and "environments" in lean_config:
+            environment = lean_config["environments"][lean_config["environment"]]
+            if "live-mode-brokerage" in environment:
+                output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
 
         return run_options
 

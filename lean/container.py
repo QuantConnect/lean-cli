@@ -31,6 +31,7 @@ from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
@@ -105,6 +106,8 @@ class Container(DeclarativeContainer):
                             project_manager,
                             temp_manager,
                             xml_manager)
+
+    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
     update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
 

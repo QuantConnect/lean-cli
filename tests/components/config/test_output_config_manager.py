@@ -29,7 +29,10 @@ def _create_directory(path: Path) -> Path:
 
 
 def _create_output_config_manager() -> OutputConfigManager:
-    return OutputConfigManager(LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager())))
+    return OutputConfigManager(LeanConfigManager(mock.Mock(),
+                                                 mock.Mock(),
+                                                 ProjectConfigManager(XMLManager()),
+                                                 mock.Mock()))
 
 
 def test_get_backtest_id_returns_id_prefixed_by_1() -> None:

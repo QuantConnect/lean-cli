@@ -35,7 +35,7 @@ def _create_project_manager() -> ProjectManager:
     project_config_manager = ProjectConfigManager(xml_manager)
 
     return ProjectManager(project_config_manager,
-                          LeanConfigManager(mock.Mock(), mock.Mock(), project_config_manager),
+                          LeanConfigManager(mock.Mock(), mock.Mock(), project_config_manager, mock.Mock()),
                           xml_manager,
                           PlatformManager())
 
