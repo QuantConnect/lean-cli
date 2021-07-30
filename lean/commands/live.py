@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import click
 
 from lean.click import LeanCommand, PathParameter, ensure_options
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.brokerages.local.atreyu import AtreyuBrokerage
@@ -240,6 +240,14 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
+@click.option("--gui",
+              is_flag=True,
+              default=False,
+              help="Send live results to the GUI instead of stdout")
+@click.option("--gui-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the GUI module subscription")
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
@@ -517,6 +525,8 @@ def live(project: Path,
          environment: Optional[str],
          output: Optional[Path],
          detach: bool,
+         gui: bool,
+         gui_organization: Optional[str],
          brokerage: Optional[str],
          data_feed: Optional[str],
          ib_user_name: Optional[str],
@@ -617,6 +627,15 @@ def live(project: Path,
 
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    if gui:
+        # TODO: Show interactive organization wizard
+        ensure_options(["gui_organization"])
+
+        module_manager = container.module_manager()
+        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization))
+
+        detach = True
 
     lean_config_manager = container.lean_config_manager()
 
@@ -879,6 +898,10 @@ def live(project: Path,
 
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
+
+    if gui:
+        logger = container.logger()
+        logger.info(f"You can monitor the status of the live deployment in the GUI")
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

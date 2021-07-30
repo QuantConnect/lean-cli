@@ -58,9 +58,22 @@ class Container(DeclarativeContainer):
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
     cache_storage = Singleton(Storage, file=CACHE_PATH)
 
-    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
     cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
-    lean_config_manager = Singleton(LeanConfigManager, logger, cli_config_manager, project_config_manager)
+
+    api_client = Factory(APIClient,
+                         logger,
+                         http_client,
+                         user_id=cli_config_manager.provided.user_id.get_value()(),
+                         api_token=cli_config_manager.provided.api_token.get_value()())
+
+    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
+
+    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
+    lean_config_manager = Singleton(LeanConfigManager,
+                                    logger,
+                                    cli_config_manager,
+                                    project_config_manager,
+                                    module_manager)
     output_config_manager = Singleton(OutputConfigManager, lean_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
@@ -70,17 +83,10 @@ class Container(DeclarativeContainer):
                                 xml_manager,
                                 platform_manager)
 
-    api_client = Factory(APIClient,
-                         logger,
-                         http_client,
-                         user_id=cli_config_manager.provided.user_id.get_value()(),
-                         api_token=cli_config_manager.provided.api_token.get_value()())
-
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)
     push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
     data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
-    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
     cloud_project_manager = Singleton(CloudProjectManager,
                                       api_client,
                                       project_config_manager,

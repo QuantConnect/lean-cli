@@ -85,6 +85,14 @@ class ModuleManager:
         """
         return self._installed_packages.get(product_id, []).copy()
 
+    def is_module_installed(self, product_id: int) -> bool:
+        """Returns whether a module with a given producti d has been installed with install_module().
+
+        :param product_id: the product id to check the install status of
+        :return: True if the product id has been registered with install_module(), False if not
+        """
+        return product_id in self._installed_product_ids
+
     def _download_file(self, product_id: int, organization_id: str, package: NuGetPackage) -> None:
         """Downloads a file if it doesn't already exist locally.
 

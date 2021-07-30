@@ -207,9 +207,9 @@ def optimize(project: Path,
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
 
-    success = docker_manager.run_image(engine_image, **run_options)
-
     project_manager.copy_code(algorithm_file.parent, output / "code")
+
+    success = docker_manager.run_image(engine_image, **run_options)
 
     logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()

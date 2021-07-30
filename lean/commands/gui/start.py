@@ -77,6 +77,7 @@ def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> N
 
         gui_container.remove()
 
+    # TODO: Show interactive organization wizard
     organization_id = _get_organization_id(organization)
     module_manager.install_module(GUI_PRODUCT_ID, organization_id)
 

@@ -131,11 +131,11 @@ class LeanRunner:
 
         run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
 
-        # Run the engine and log the result
-        success = self._docker_manager.run_image(image, **run_options)
-
         # Copy the project's code to the output directory
         self._project_manager.copy_code(algorithm_file.parent, output_dir / "code")
+
+        # Run the engine and log the result
+        success = self._docker_manager.run_image(image, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
@@ -306,6 +306,10 @@ class LeanRunner:
         run_options["name"] = f"lean_cli_{str(uuid.uuid4()).replace('-', '')}"
         output_config = self._output_config_manager.get_output_config(output_dir)
         output_config.set("container", run_options["name"])
+
+        environment = lean_config["environments"][lean_config["environment"]]
+        if "live-mode-brokerage" in environment:
+            output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
 
         return run_options
 
