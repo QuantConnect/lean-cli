@@ -153,6 +153,9 @@ def start(organization: str, port: int, no_open: bool, gui: Optional[Path]) -> N
         f"unzip -p /root/.lean/modules/{package_file_name} content/{terminal_file_name} > /{terminal_file_name}")
     run_options["commands"].append(f"unzip -o /{terminal_file_name} -d /terminal")
 
+    # Write correct streaming url to /terminal/local.socket.host.conf
+    run_options["commands"].append(f'echo "ws://localhost:{port}/streaming" > /terminal/local.socket.host.conf')
+
     # Mount the `lean init` directory in the GUI container
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
     run_options["volumes"][str(cli_root_dir)] = {
