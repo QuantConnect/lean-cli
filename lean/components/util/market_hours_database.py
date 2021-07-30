@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.models.api import QCSecurityType
