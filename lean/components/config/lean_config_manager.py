@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import json5
+
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -222,7 +223,6 @@ class LeanConfigManager:
         config["parameters"] = project_config.get("parameters", {})
 
         if self._module_manager.is_module_installed(GUI_PRODUCT_ID):
-            config["lean-manager-type"] = "QuantConnect.GUI.GuiLeanManager"
             config["messaging-handler"] = "QuantConnect.GUI.LocalMessagingHandler"
 
         return config

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import click
+
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_ID
 from lean.container import container
@@ -898,6 +899,7 @@ def live(project: Path,
     lean_config["algorithm-id"] = str(output_config_manager.get_live_deployment_id(output))
 
     if gui:
+        lean_config["lean-manager-type"] = "QuantConnect.GUI.GuiLeanManager"
         output_config_manager.get_output_config(output).set("gui", True)
 
     lean_runner = container.lean_runner()
