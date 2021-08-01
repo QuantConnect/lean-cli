@@ -21,7 +21,7 @@ import sys
 import threading
 import types
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, Set
 
 import docker
 from dateutil.parser import isoparse
@@ -335,12 +335,13 @@ class DockerManager:
         docker_client.volumes.create(volume_name)
         return volume_name
 
-    def get_containers(self) -> List[Container]:
-        """Returns all containers.
+    def get_running_containers(self) -> Set[str]:
+        """Returns the names of all running containers.
 
-        :return: all Docker containers, both running and stopped ones
+        :return: a set containing the names of all running Docker containers
         """
-        return self._get_docker_client().containers.list(all=True)
+        containers = self._get_docker_client().containers.list()
+        return {c.name.lstrip("/") for c in containers if c.status == "running"}
 
     def get_container_by_name(self, container_name: str) -> Optional[Container]:
         """Finds a container with a given name.
@@ -348,7 +349,7 @@ class DockerManager:
         :param container_name: the name of the container to find
         :return: the container with the given name, or None if it does not exist
         """
-        for container in self.get_containers():
+        for container in self._get_docker_client().containers.list(all=True):
             if container.name.lstrip("/") == container_name:
                 return container
 

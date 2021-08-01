@@ -257,7 +257,7 @@ class LeanRunner:
         # Set up modules
         installed_packages = self._module_manager.get_installed_packages()
         if len(installed_packages) > 0:
-            self._set_up_common_csharp_options(run_options)
+            self.set_up_common_csharp_options(run_options)
             set_up_common_csharp_options_called = True
 
             # Mount the modules directory
@@ -287,11 +287,11 @@ class LeanRunner:
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self._set_up_python_options(project_dir, run_options)
+            self.set_up_python_options(project_dir, run_options)
         else:
             if not set_up_common_csharp_options_called:
-                self._set_up_common_csharp_options(run_options)
-            self._set_up_csharp_options(project_dir, run_options, release)
+                self.set_up_common_csharp_options(run_options)
+            self.set_up_csharp_options(project_dir, run_options, release)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -316,7 +316,7 @@ class LeanRunner:
 
         return run_options
 
-    def _set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
@@ -409,7 +409,7 @@ class LeanRunner:
         requirements = sorted(set(requirements))
         return "\n".join(requirements)
 
-    def _set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
+    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
@@ -476,7 +476,7 @@ class LeanRunner:
         run_options["commands"].append(
             f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
 
-    def _set_up_common_csharp_options(self, run_options: Dict[str, Any]) -> None:
+    def set_up_common_csharp_options(self, run_options: Dict[str, Any]) -> None:
         """Sets up common Docker run options that is needed for all C# work.
 
         This method is only called if the user has installed modules and/or if the project to run is written in C#.
