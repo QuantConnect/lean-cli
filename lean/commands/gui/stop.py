@@ -21,10 +21,16 @@ from lean.container import container
 @click.command(cls=LeanCommand, requires_docker=True)
 def stop() -> None:
     """Stop the local GUI."""
-    gui_container = container.docker_manager().get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
+    docker_manager = container.docker_manager()
+
+    gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
     if gui_container is None or gui_container.status != "running":
         raise RuntimeError("The local GUI is not running, you can start it using `lean gui start`")
 
     gui_container.stop()
+
+    for container_name in docker_manager.get_running_containers():
+        if container_name.startswith("lean_cli_gui_research_"):
+            docker_manager.get_container_by_name(container_name).stop()
 
     container.logger().info(f"Successfully stopped the local GUI")

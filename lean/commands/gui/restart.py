@@ -39,7 +39,7 @@ def restart(no_open: bool) -> None:
     logger.info("Restarting the local GUI's Docker container")
     gui_container.restart()
 
-    port = list(gui_container.ports.keys())[0].split("/")[0]
+    port = gui_container.ports["5612/tcp"][0]["HostPort"]
     url = f"http://localhost:{port}/"
 
     # Wait until the GUI is running again
