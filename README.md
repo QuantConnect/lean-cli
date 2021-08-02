@@ -221,6 +221,8 @@ Options:
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --gdax-environment [paper|live]
+                                  The environment to run in, paper for the sandbox, live for live trading
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -563,12 +565,12 @@ Usage: lean gui start [OPTIONS]
   Start the local GUI.
 
 Options:
-  --port INTEGER      The port to run the local GUI on (defaults to 5612)
-  --no-open           Skip opening the local GUI in the browser after starting it
-  --gui PATH          The path to the checked out GUI repository or packaged .whl file  [required]
-  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose           Enable debug logging
-  --help              Show this message and exit.
+  --organization TEXT  The name or id of the organization with the local GUI module subscription
+  --port INTEGER       The port to run the local GUI on (defaults to 5612)
+  --no-open            Skip opening the local GUI in the browser after starting it
+  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose            Enable debug logging
+  --help               Show this message and exit.
 ```
 
 _See code: [lean/commands/gui/start.py](lean/commands/gui/start.py)_
@@ -706,6 +708,8 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   --detach                        Run the live deployment in a detached Docker container and return immediately
+  --gui                           Enable monitoring and controlling the deployment via the GUI
+  --gui-organization TEXT         The name or id of the organization with the GUI module subscription
   --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Trading Technologies|IQFeed]
@@ -729,6 +733,7 @@ Options:
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --gdax-use-sandbox BOOLEAN      Whether the sandbox should be used
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --zerodha-api-key TEXT          Your Kite Connect API key

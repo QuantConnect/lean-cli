@@ -322,6 +322,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("gdax-passphrase"),
               help="Your Coinbase Pro API passphrase")
+@click.option("--gdax-use-sandbox",
+              type=bool,
+              default=lambda: _get_default_value("gdax-use-sandbox"),
+              help="Whether the sandbox should be used")
 @click.option("--binance-api-key",
               type=str,
               default=lambda: _get_default_value("binance-api-key"),
@@ -552,6 +556,7 @@ def live(project: Path,
          gdax_api_key: Optional[str],
          gdax_api_secret: Optional[str],
          gdax_passphrase: Optional[str],
+         gdax_use_sandbox: Optional[bool],
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
          zerodha_api_key: Optional[str],
@@ -671,8 +676,11 @@ def live(project: Path,
             ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
-            brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
+            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
+            brokerage_configurer = CoinbaseProBrokerage(gdax_api_key,
+                                                        gdax_api_secret,
+                                                        gdax_passphrase,
+                                                        gdax_use_sandbox)
         elif brokerage == BinanceBrokerage.get_name():
             ensure_options(["binance_api_key", "binance_api_secret"])
             brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
@@ -775,10 +783,11 @@ def live(project: Path,
             ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
             data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
         elif data_feed == CoinbaseProDataFeed.get_name():
-            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
             data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
                                                                             gdax_api_secret,
-                                                                            gdax_passphrase))
+                                                                            gdax_passphrase,
+                                                                            gdax_use_sandbox))
         elif data_feed == BinanceDataFeed.get_name():
             ensure_options(["binance_api_key", "binance_api_secret"])
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
@@ -896,7 +905,7 @@ def live(project: Path,
         output.mkdir(parents=True)
 
     output_config_manager = container.output_config_manager()
-    lean_config["algorithm-id"] = str(output_config_manager.get_live_deployment_id(output))
+    lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
     if gui:
         lean_config["lean-manager-type"] = "QuantConnect.GUI.GuiLeanManager"

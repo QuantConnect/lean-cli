@@ -22,10 +22,11 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class CoinbaseProBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Coinbase Pro."""
 
-    def __init__(self, api_key: str, api_secret: str, passphrase: str) -> None:
+    def __init__(self, api_key: str, api_secret: str, passphrase: str, environment: str) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
         self._passphrase = passphrase
+        self._environment = environment
 
     @classmethod
     def get_id(cls) -> str:
@@ -45,13 +46,14 @@ When creating the key, make sure you authorize it for View and Trading access.
         api_key = click.prompt("API key")
         api_secret = logger.prompt_password("API secret")
         passphrase = logger.prompt_password("Passphrase")
+        environment = "paper" if click.confirm("Use the sandbox?") else "live"
 
-        return CoinbaseProBrokerage(api_key, api_secret, passphrase)
+        return CoinbaseProBrokerage(api_key, api_secret, passphrase, environment)
 
     def _get_settings(self) -> Dict[str, str]:
         return {
             "key": self._api_key,
             "secret": self._api_secret,
             "passphrase": self._passphrase,
-            "environment": "live"
+            "environment": self._environment
         }

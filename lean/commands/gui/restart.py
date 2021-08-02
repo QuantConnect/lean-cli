@@ -44,8 +44,7 @@ def restart(no_open: bool) -> None:
 
     # Wait until the GUI is running again
     while True:
-        gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
-        if gui_container is None or gui_container.status != "running":
+        if LOCAL_GUI_CONTAINER_NAME not in docker_manager.get_running_containers():
             docker_manager.show_logs(LOCAL_GUI_CONTAINER_NAME)
             raise RuntimeError(
                 "Something went wrong while restarting the local GUI, see the logs above for more information")

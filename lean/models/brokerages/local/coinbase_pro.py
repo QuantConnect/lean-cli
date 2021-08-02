@@ -23,10 +23,11 @@ from lean.models.config import LeanConfigConfigurer
 class CoinbaseProBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Coinbase Pro brokerage."""
 
-    def __init__(self, api_key: str, api_secret: str, passphrase: str) -> None:
+    def __init__(self, api_key: str, api_secret: str, passphrase: str, sandbox: bool) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
         self._passphrase = passphrase
+        self._sandbox = sandbox
 
     @classmethod
     def get_name(cls) -> str:
@@ -42,8 +43,9 @@ When creating the key, make sure you authorize it for View and Trading access.
         api_key = click.prompt("API key", cls._get_default(lean_config, "gdax-api-key"))
         api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "gdax-api-secret"))
         passphrase = logger.prompt_password("Passphrase", cls._get_default(lean_config, "gdax-passphrase"))
+        sandbox = click.confirm("Use the sandbox?")
 
-        return CoinbaseProBrokerage(api_key, api_secret, passphrase)
+        return CoinbaseProBrokerage(api_key, api_secret, passphrase, sandbox)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["live-mode-brokerage"] = "GDAXBrokerage"
@@ -54,8 +56,16 @@ When creating the key, make sure you authorize it for View and Trading access.
         lean_config["gdax-api-key"] = self._api_key
         lean_config["gdax-api-secret"] = self._api_secret
         lean_config["gdax-passphrase"] = self._passphrase
+        lean_config["gdax-use-sandbox"] = self._sandbox
 
-        self._save_properties(lean_config, ["gdax-api-key", "gdax-api-secret", "gdax-passphrase"])
+        if self._sandbox:
+            lean_config["gdax-url"] = "wss://ws-feed-public.sandbox.pro.coinbase.com"
+            lean_config["gdax-rest-api"] = "https://api-public.sandbox.pro.coinbase.com"
+        else:
+            lean_config["gdax-url"] = "wss://ws-feed.pro.coinbase.com"
+            lean_config["gdax-rest-api"] = "https://api.pro.coinbase.com"
+
+        self._save_properties(lean_config, ["gdax-api-key", "gdax-api-secret", "gdax-passphrase", "gdax-use-sandbox"])
 
 
 class CoinbaseProDataFeed(LeanConfigConfigurer):
