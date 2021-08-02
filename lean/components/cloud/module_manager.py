@@ -49,11 +49,7 @@ class ModuleManager:
         if product_id in self._installed_product_ids:
             return
 
-        # TODO: Revert this when the GUI product goes live, it's just for testing the packaging right now
-        if product_id == GUI_PRODUCT_ID:
-            module_files = ["QuantConnect.GUI.1.0.0.nupkg"]
-        else:
-            module_files = self._api_client.modules.list_files(product_id, organization_id)
+        module_files = self._api_client.modules.list_files(product_id, organization_id)
         packages_to_download: Dict[str, NuGetPackage] = {}
 
         for file_name in module_files:

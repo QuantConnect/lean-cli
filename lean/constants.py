@@ -82,8 +82,7 @@ TRADING_TECHNOLOGIES_PRODUCT_ID = 64
 ATREYU_PRODUCT_ID = 65
 
 # The product id of the GUI module
-# TODO: Update this to the actual id
-GUI_PRODUCT_ID = 44
+GUI_PRODUCT_ID = 119
 
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"
