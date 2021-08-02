@@ -301,7 +301,8 @@ brokerage_required_options = {
     "Coinbase Pro": {
         "gdax-api-key": "123",
         "gdax-api-secret": "456",
-        "gdax-passphrase": "789"
+        "gdax-passphrase": "789",
+        "gdax-use-sandbox": "yes"
     },
     "Binance": {
         "binance-api-key": "123",
