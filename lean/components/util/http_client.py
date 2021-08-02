@@ -95,7 +95,7 @@ class HTTPClient:
         :param url: the request url
         :param kwargs: any kwargs passed to a request.* method
         """
-        message = f"{method.upper()} {url}"
+        message = f"--> {method.upper()} {url}"
 
         data = next((kwargs.get(key) for key in ["json", "data", "params"] if key in kwargs), None)
         if data is not None and data != {}:

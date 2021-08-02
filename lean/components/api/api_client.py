@@ -32,6 +32,8 @@ from lean.components.api.node_client import NodeClient
 from lean.components.api.optimization_client import OptimizationClient
 from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
+from lean.components.api.service_client import ServiceClient
+from lean.components.api.user_client import UserClient
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.constants import API_BASE_URL
@@ -67,6 +69,8 @@ class APIClient:
         self.optimizations = OptimizationClient(self)
         self.organizations = OrganizationClient(self)
         self.projects = ProjectClient(self)
+        self.services = ServiceClient(self)
+        self.users = UserClient(self)
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.

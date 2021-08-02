@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import os
 import platform
 import time
 import webbrowser
@@ -20,10 +21,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 import click
-import lean
 import requests
 from docker.errors import APIError
 from docker.types import Mount
+
+import lean
 from lean.click import LeanCommand, PathParameter
 from lean.constants import LOCAL_GUI_CONTAINER_NAME, GUI_PRODUCT_ID
 from lean.container import container
@@ -97,7 +99,8 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
             "QC_LOCAL_GUI": "true",
             "QC_DOCKER_HOST_SYSTEM": platform.system(),
             "QC_DOCKER_HOST_MACHINE": platform.machine(),
-            "QC_ORGANIZATION_ID": organization_id
+            "QC_ORGANIZATION_ID": organization_id,
+            "QC_API": os.environ.get("QC_API", "")
         },
         "mounts": [],
         "volumes": {},
