@@ -126,6 +126,7 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
         terminal_file_name = next(f for f in content_file_names if f.endswith(".zip"))
 
     # Install the CLI in the GUI container
+    run_options["commands"].append("pip uninstall -y lean")
     if lean.__version__ == "dev":
         lean_cli_dir = Path(__file__).absolute().parent.parent.parent.parent
         run_options["volumes"][str(lean_cli_dir)] = {
@@ -139,13 +140,13 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
         run_options["commands"].append("pip install --user --progress-bar off --upgrade lean")
 
     # Install the GUI in the GUI container
+    run_options["commands"].append("pip uninstall -y leangui")
     if gui is None:
         run_options["commands"].append(
             f"unzip -p /root/.lean/modules/{package_file_name} content/{wheel_file_name} > /{wheel_file_name}")
         run_options["commands"].append(f"pip install --user --progress-bar off /{wheel_file_name}")
     elif gui.is_file():
         run_options["mounts"].append(Mount(target=f"/{gui.name}", source=str(gui), type="bind", read_only=True))
-        run_options["commands"].append("pip uninstall -y leangui")
         run_options["commands"].append(f"pip install --user --progress-bar off /{gui.name}")
     else:
         run_options["volumes"][str(gui)] = {
