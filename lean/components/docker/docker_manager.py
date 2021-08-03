@@ -134,6 +134,9 @@ class DockerManager:
         kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
 
+        if detach and "remove" not in kwargs:
+            kwargs["remove"] = True
+
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
         if self._platform_manager.is_host_linux():
