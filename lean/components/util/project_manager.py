@@ -13,7 +13,6 @@
 
 import json
 import os
-import platform
 import shutil
 import site
 import sys
@@ -25,7 +24,9 @@ import pkg_resources
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject
 
 
@@ -35,16 +36,19 @@ class ProjectManager:
     def __init__(self,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
-                 xml_manager: XMLManager) -> None:
+                 xml_manager: XMLManager,
+                 platform_manager: PlatformManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
         :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
         :param xml_manager: the XMLManager to use when working with XML
+        :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._xml_manager = xml_manager
+        self._platform_manager = platform_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -64,24 +68,48 @@ class ProjectManager:
 
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
 
-    def get_files_to_sync(self, project: Path) -> List[Path]:
-        """Returns the paths of all the local files that need to be synchronized with the cloud.
+    def get_project_by_id(self, local_id: int) -> Path:
+        """Finds a project by its local id.
 
-        :param project: the path to a local project directory
-        :return: the list of files in the given project directory that need to be synchronized with the cloud
+        Raises an error if a project with the given local id cannot be found.
+
+        :param local_id: the local id of the project
+        :return: the path to the directory containing the project with the given local id
         """
-        local_files = list(project.rglob("*.py")) + list(project.rglob("*.cs")) + list(project.rglob("*.ipynb"))
-        files_to_sync = []
+        directories = [self._lean_config_manager.get_cli_root_directory()]
+        while len(directories) > 0:
+            directory = directories.pop(0)
 
-        for local_file in local_files:
-            posix_path = local_file.as_posix()
-            if any(f"{part}/" in posix_path for part in
-                   ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]):
+            config_file = directory / PROJECT_CONFIG_FILE_NAME
+            if config_file.is_file():
+                if self._project_config_manager.get_local_id(directory) == local_id:
+                    return directory
+            else:
+                directories.extend(d for d in directory.iterdir() if d.is_dir())
+
+        raise RuntimeError(f"Project with local id '{local_id}' does not exist")
+
+    def get_source_files(self, directory: Path) -> List[Path]:
+        """Returns the paths of all the source files in a directory.
+
+        :param directory: the path to the directory to get the source files of
+        :return: the list of source files in the given project directory
+        """
+        source_files = []
+
+        for obj in directory.iterdir():
+            if obj.is_dir():
+                if obj.name in ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]:
+                    continue
+
+                source_files.extend(self.get_source_files(obj))
+
+            if obj.suffix not in [".py", ".cs", ".ipynb"]:
                 continue
 
-            files_to_sync.append(local_file)
+            source_files.append(obj)
 
-        return files_to_sync
+        return source_files
 
     def should_sync_files(self, local_project: Path, cloud_project: QCProject) -> bool:
         """Returns whether there are files to synchronize based on last modified times.
@@ -103,7 +131,7 @@ class ProjectManager:
         :param cloud_project: the cloud counterpart of the local project
         :return: True if there may be updates to synchronize, False if not
         """
-        paths_to_check = [local_project] + self.get_files_to_sync(local_project)
+        paths_to_check = [local_project] + self.get_source_files(local_project)
 
         last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in paths_to_check)
         last_modified_time = datetime.fromtimestamp(last_modified_time).astimezone(tz=timezone.utc)
@@ -131,7 +159,7 @@ class ProjectManager:
         """
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        for source_file in self.get_files_to_sync(project_dir):
+        for source_file in self.get_source_files(project_dir):
             target_file = output_dir / source_file.relative_to(project_dir)
             target_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source_file, target_file)
@@ -488,9 +516,9 @@ class ProjectManager:
         """
         # Find JetBrains' root directory containing the global configuration directories for all installed IDEs
         # See https://www.jetbrains.com/help/pycharm/project-and-ide-settings.html#ide_settings
-        if platform.system() == "Windows":
+        if self._platform_manager.is_host_windows():
             root_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
-        elif platform.system() == "Darwin":
+        elif self._platform_manager.is_host_macos():
             root_dir = Path("~/Library/Application Support/JetBrains").expanduser()
         else:
             root_dir = Path("~/.config/JetBrains").expanduser()

@@ -17,7 +17,7 @@ from typing import Set, List, Dict
 from lean.components.api.api_client import APIClient
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
-from lean.constants import MODULES_DIRECTORY
+from lean.constants import MODULES_DIRECTORY, GUI_PRODUCT_ID
 from lean.models.modules import NuGetPackage
 
 
@@ -35,7 +35,7 @@ class ModuleManager:
         self._api_client = api_client
         self._http_client = http_client
         self._installed_product_ids: Set[int] = set()
-        self._installed_packages: List[NuGetPackage] = []
+        self._installed_packages: Dict[int, List[NuGetPackage]] = {}
 
     def install_module(self, product_id: int, organization_id: str) -> None:
         """Installs a module into the global modules directory.
@@ -68,7 +68,26 @@ class ModuleManager:
 
         :return: a list of NuGet packages in the modules directory that should be made available when running LEAN
         """
-        return list(self._installed_packages)
+        packages = []
+        for package_list in self._installed_packages.values():
+            packages.extend(package_list)
+        return packages
+
+    def get_installed_packages_by_module(self, product_id: int) -> List[NuGetPackage]:
+        """Returns a list of NuGet packages that were installed by install_module() for a given product id.
+
+        :param product_id: the product id to get the installed packages of
+        :return: a list of NuGet packages in are available for the given product id
+        """
+        return self._installed_packages.get(product_id, []).copy()
+
+    def is_module_installed(self, product_id: int) -> bool:
+        """Returns whether a module with a given producti d has been installed with install_module().
+
+        :param product_id: the product id to check the install status of
+        :return: True if the product id has been registered with install_module(), False if not
+        """
+        return product_id in self._installed_product_ids
 
     def _download_file(self, product_id: int, organization_id: str, package: NuGetPackage) -> None:
         """Downloads a file if it doesn't already exist locally.
@@ -80,7 +99,9 @@ class ModuleManager:
         package_file = Path(MODULES_DIRECTORY) / package.get_file_name()
 
         if package_file.is_file():
-            self._installed_packages.append(package)
+            if product_id not in self._installed_packages:
+                self._installed_packages[product_id] = []
+            self._installed_packages[product_id].append(package)
             return
 
         self._logger.info(f"Downloading '{package_file.name}'")
@@ -97,4 +118,6 @@ class ModuleManager:
             package_file.unlink(missing_ok=True)
             raise exception
 
-        self._installed_packages.append(package)
+        if product_id not in self._installed_packages:
+            self._installed_packages[product_id] = []
+        self._installed_packages[product_id].append(package)

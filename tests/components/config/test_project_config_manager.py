@@ -28,6 +28,29 @@ def test_get_project_config_returns_storage_instance_of_correct_file() -> None:
     assert project_config.file == Path.cwd() / "Python Project" / "config.json"
 
 
+def test_get_local_id_returns_unique_id_per_project() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+
+    python_id = project_config_manager.get_local_id(Path.cwd() / "Python Project")
+    csharp_id = project_config_manager.get_local_id(Path.cwd() / "CSharp Project")
+
+    assert python_id != csharp_id
+
+
+def test_get_local_id_returns_same_id_for_project_when_called_multiple_times() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+
+    ids = []
+    for _ in range(5):
+        ids.append(project_config_manager.get_local_id(Path.cwd() / "Python Project"))
+
+    assert len(set(ids)) == 1
+
+
 def test_get_csharp_libraries_returns_all_libraries_in_package_reference_tags_in_csproj() -> None:
     create_fake_lean_cli_directory()
 

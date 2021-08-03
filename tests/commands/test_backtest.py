@@ -71,6 +71,7 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -113,28 +114,8 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
                                                  Path.cwd() / "Python Project" / "custom",
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
-
-
-def test_backtest_copies_code_to_output_directory() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    project_manager = mock.Mock()
-    project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
-    container.project_manager.override(providers.Object(project_manager))
-
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom"])
-
-    assert result.exit_code == 0
-
-    project_manager.copy_code.assert_called_once_with(Path.cwd() / "Python Project",
-                                                      Path.cwd() / "Python Project" / "custom" / "code")
 
 
 def test_backtest_calls_lean_runner_with_release_mode() -> None:
@@ -156,6 +137,30 @@ def test_backtest_calls_lean_runner_with_release_mode() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 True,
+                                                 False)
+
+
+def test_backtest_calls_lean_runner_with_detach() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--detach"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 False,
                                                  True)
 
 
@@ -211,6 +216,7 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -235,6 +241,7 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -259,6 +266,7 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="456"),
                                                  None,
+                                                 False,
                                                  False)
 
 
@@ -289,6 +297,7 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
                                                  mock.ANY,
                                                  ENGINE_IMAGE,
                                                  debugging_method,
+                                                 False,
                                                  False)
 
 

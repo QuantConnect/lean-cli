@@ -17,10 +17,11 @@ from typing import Any, Dict, Optional
 
 import json5
 
+from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
-from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_ID
 from lean.models.config import DebuggingMethod
 from lean.models.errors import MoreInfoError
 
@@ -31,16 +32,19 @@ class LeanConfigManager:
     def __init__(self,
                  logger: Logger,
                  cli_config_manager: CLIConfigManager,
-                 project_config_manager: ProjectConfigManager) -> None:
+                 project_config_manager: ProjectConfigManager,
+                 module_manager: ModuleManager) -> None:
         """Creates a new LeanConfigManager instance.
 
         :param logger: the logger to log messages with
         :param cli_config_manager: the CLIConfigManager instance to use when retrieving credentials
         :param project_config_manager: the ProjectConfigManager instance to use when retrieving project parameters
+        :param module_manager: the ModuleManager to use
         """
         self._logger = logger
         self._cli_config_manager = cli_config_manager
         self._project_config_manager = project_config_manager
+        self._module_manager = module_manager
         self._default_path = None
 
     def get_lean_config_path(self) -> Path:
@@ -196,6 +200,7 @@ class LeanConfigManager:
 
         config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
         config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
+        config["job-project-id"] = self._project_config_manager.get_local_id(algorithm_file.parent)
 
         config["ib-host"] = "127.0.0.1"
         config["ib-port"] = "4002"
@@ -216,6 +221,9 @@ class LeanConfigManager:
 
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
+
+        if self._module_manager.is_module_installed(GUI_PRODUCT_ID):
+            config["messaging-handler"] = "QuantConnect.GUI.LocalMessagingHandler"
 
         return config
 

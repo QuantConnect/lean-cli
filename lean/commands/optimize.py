@@ -34,6 +34,10 @@ from lean.models.optimizer import OptimizationTarget
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the optimization in a detached Docker container and return immediately")
 @click.option("--optimizer-config",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help=f"The optimizer configuration file that should be used")
@@ -65,10 +69,9 @@ from lean.models.optimizer import OptimizationTarget
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the optimizer")
-@click.pass_context
-def optimize(ctx: click.Context,
-             project: Path,
+def optimize(project: Path,
              output: Optional[Path],
+             detach: bool,
              optimizer_config: Optional[Path],
              strategy: Optional[str],
              target: Optional[str],
@@ -116,8 +119,6 @@ def optimize(ctx: click.Context,
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    project_manager.copy_code(algorithm_file.parent, output / "code")
-
     optimizer_config_manager = container.optimizer_config_manager()
     config = None
 
@@ -131,7 +132,7 @@ def optimize(ctx: click.Context,
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
             config.pop(key, None)
     elif strategy is not None:
-        ensure_options(ctx, ["strategy", "target", "target_direction", "parameter"])
+        ensure_options(["strategy", "target", "target_direction", "parameter"])
 
         optimization_strategy = f"QuantConnect.Optimizer.Strategies.{strategy.replace(' ', '')}OptimizationStrategy"
         optimization_target = OptimizationTarget(target=optimizer_config_manager.parse_target(target),
@@ -182,8 +183,15 @@ def optimize(ctx: click.Context,
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
+    lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
+
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release)
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")
@@ -199,15 +207,24 @@ def optimize(ctx: click.Context,
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
 
+    project_manager.copy_code(algorithm_file.parent, output / "code")
+
     success = docker_manager.run_image(engine_image, **run_options)
 
+    logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
 
-    if success:
-        logger = container.logger()
+    if detach:
+        temp_manager = container.temp_manager()
+        temp_manager.delete_temporary_directories_when_done = False
 
+        logger.info(
+            f"Successfully started optimization for '{relative_project_dir}' in the '{run_options['name']}' container")
+        logger.info(f"The output will be stored in '{relative_output_dir}'")
+        logger.info("You can use Docker's own commands to manage the detached container")
+    elif success:
         optimizer_logs = (output / "log.txt").read_text(encoding="utf-8")
         groups = re.findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 

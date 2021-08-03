@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import click
 
 from lean.click import LeanCommand, PathParameter, ensure_options
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.brokerages.local.atreyu import AtreyuBrokerage
@@ -182,12 +182,15 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
 _cached_organizations = None
 
 
-def _get_organization_id(given_input: str) -> str:
+def _get_organization_id(given_input: Optional[str], label: str) -> str:
     """Converts the organization name or id given by the user to an organization id.
+
+    Shows an interactive wizard if no input is given.
 
     Raises an error if the user is not a member of an organization with the given name or id.
 
     :param given_input: the input given by the user
+    :param label: the name of the module the organization id is needed for
     :return: the id of the organization given by the user
     """
     global _cached_organizations
@@ -195,9 +198,14 @@ def _get_organization_id(given_input: str) -> str:
         api_client = container.api_client()
         _cached_organizations = api_client.organizations.get_all()
 
-    organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
-    if organization is None:
-        raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+    if given_input is not None:
+        organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
+        if organization is None:
+            raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+    else:
+        logger = container.logger()
+        options = [Option(id=organization, label=organization.name) for organization in _cached_organizations]
+        organization = logger.prompt_list(f"Select the organization with the {label} module subscription", options)
 
     return organization.id
 
@@ -236,6 +244,18 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the live deployment in a detached Docker container and return immediately")
+@click.option("--gui",
+              is_flag=True,
+              default=False,
+              help="Enable monitoring and controlling the deployment via the GUI")
+@click.option("--gui-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the GUI module subscription")
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
@@ -302,6 +322,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("gdax-passphrase"),
               help="Your Coinbase Pro API passphrase")
+@click.option("--gdax-use-sandbox",
+              type=bool,
+              default=lambda: _get_default_value("gdax-use-sandbox"),
+              help="Whether the sandbox should be used")
 @click.option("--binance-api-key",
               type=str,
               default=lambda: _get_default_value("binance-api-key"),
@@ -509,11 +533,12 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-@click.pass_context
-def live(ctx: click.Context,
-         project: Path,
+def live(project: Path,
          environment: Optional[str],
          output: Optional[Path],
+         detach: bool,
+         gui: bool,
+         gui_organization: Optional[str],
          brokerage: Optional[str],
          data_feed: Optional[str],
          ib_user_name: Optional[str],
@@ -531,6 +556,7 @@ def live(ctx: click.Context,
          gdax_api_key: Optional[str],
          gdax_api_secret: Optional[str],
          gdax_passphrase: Optional[str],
+         gdax_use_sandbox: Optional[bool],
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
          zerodha_api_key: Optional[str],
@@ -615,7 +641,11 @@ def live(ctx: click.Context,
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    project_manager.copy_code(algorithm_file.parent, output / "code")
+    if gui:
+        module_manager = container.module_manager()
+        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization, "GUI"))
+
+        detach = True
 
     lean_config_manager = container.lean_config_manager()
 
@@ -626,7 +656,7 @@ def live(ctx: click.Context,
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
     elif brokerage is not None or data_feed is not None:
-        ensure_options(ctx, ["brokerage", "data_feed"])
+        ensure_options(["brokerage", "data_feed"])
 
         brokerage_configurer = None
         data_feed_configurer = None
@@ -634,40 +664,42 @@ def live(ctx: click.Context,
         if brokerage == PaperTradingBrokerage.get_name():
             brokerage_configurer = PaperTradingBrokerage()
         elif brokerage == InteractiveBrokersBrokerage.get_name():
-            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password"])
+            ensure_options(["ib_user_name", "ib_account", "ib_password"])
             brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
         elif brokerage == TradierBrokerage.get_name():
-            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            ensure_options(["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
         elif brokerage == OANDABrokerage.get_name():
-            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(["oanda_account_id", "oanda_access_token", "oanda_environment"])
             brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
         elif brokerage == BitfinexBrokerage.get_name():
-            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
-            brokerage_configurer = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
+            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
+            brokerage_configurer = CoinbaseProBrokerage(gdax_api_key,
+                                                        gdax_api_secret,
+                                                        gdax_passphrase,
+                                                        gdax_use_sandbox)
         elif brokerage == BinanceBrokerage.get_name():
-            ensure_options(ctx, ["binance_api_key", "binance_api_secret"])
+            ensure_options(["binance_api_key", "binance_api_secret"])
             brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
         elif brokerage == ZerodhaBrokerage.get_name():
-            ensure_options(ctx, ["zerodha_api_key",
-                                 "zerodha_access_token",
-                                 "zerodha_product_type",
-                                 "zerodha_trading_segment"])
+            ensure_options(["zerodha_api_key",
+                            "zerodha_access_token",
+                            "zerodha_product_type",
+                            "zerodha_trading_segment"])
             brokerage_configurer = ZerodhaBrokerage(zerodha_api_key,
                                                     zerodha_access_token,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
         elif brokerage == BloombergBrokerage.get_name():
-            ensure_options(ctx, ["bloomberg_organization",
-                                 "bloomberg_environment",
-                                 "bloomberg_server_host",
-                                 "bloomberg_server_port",
-                                 "bloomberg_emsx_broker",
-                                 "bloomberg_allow_modification"])
-            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization),
+            ensure_options(["bloomberg_environment",
+                            "bloomberg_server_host",
+                            "bloomberg_server_port",
+                            "bloomberg_emsx_broker",
+                            "bloomberg_allow_modification"])
+            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization, "Bloomberg"),
                                                       bloomberg_environment,
                                                       bloomberg_server_host,
                                                       bloomberg_server_port,
@@ -680,16 +712,15 @@ def live(ctx: click.Context,
                                                       bloomberg_emsx_handling,
                                                       bloomberg_allow_modification)
         elif brokerage == AtreyuBrokerage.get_name():
-            ensure_options(ctx, ["atreyu_organization",
-                                 "atreyu_host",
-                                 "atreyu_req_port",
-                                 "atreyu_sub_port",
-                                 "atreyu_username",
-                                 "atreyu_password",
-                                 "atreyu_client_id",
-                                 "atreyu_broker_mpid",
-                                 "atreyu_locate_rqd"])
-            brokerage_configurer = AtreyuBrokerage(_get_organization_id(atreyu_organization),
+            ensure_options(["atreyu_host",
+                            "atreyu_req_port",
+                            "atreyu_sub_port",
+                            "atreyu_username",
+                            "atreyu_password",
+                            "atreyu_client_id",
+                            "atreyu_broker_mpid",
+                            "atreyu_locate_rqd"])
+            brokerage_configurer = AtreyuBrokerage(_get_organization_id(atreyu_organization, "Atreyu"),
                                                    atreyu_host,
                                                    atreyu_req_port,
                                                    atreyu_sub_port,
@@ -699,23 +730,23 @@ def live(ctx: click.Context,
                                                    atreyu_broker_mpid,
                                                    atreyu_locate_rqd)
         elif brokerage == TradingTechnologiesBrokerage.get_name():
-            ensure_options(ctx, ["tt_organization",
-                                 "tt_user_name",
-                                 "tt_session_password",
-                                 "tt_account_name",
-                                 "tt_rest_app_key",
-                                 "tt_rest_app_secret",
-                                 "tt_rest_environment",
-                                 "tt_market_data_sender_comp_id",
-                                 "tt_market_data_target_comp_id",
-                                 "tt_market_data_host",
-                                 "tt_market_data_port",
-                                 "tt_order_routing_sender_comp_id",
-                                 "tt_order_routing_target_comp_id",
-                                 "tt_order_routing_host",
-                                 "tt_order_routing_port",
-                                 "tt_log_fix_messages"])
-            brokerage_configurer = TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+            ensure_options(["tt_user_name",
+                            "tt_session_password",
+                            "tt_account_name",
+                            "tt_rest_app_key",
+                            "tt_rest_app_secret",
+                            "tt_rest_environment",
+                            "tt_market_data_sender_comp_id",
+                            "tt_market_data_target_comp_id",
+                            "tt_market_data_host",
+                            "tt_market_data_port",
+                            "tt_order_routing_sender_comp_id",
+                            "tt_order_routing_target_comp_id",
+                            "tt_order_routing_host",
+                            "tt_order_routing_port",
+                            "tt_log_fix_messages"])
+            brokerage_configurer = TradingTechnologiesBrokerage(_get_organization_id(tt_organization,
+                                                                                     "Trading Technologies"),
                                                                 tt_user_name,
                                                                 tt_session_password,
                                                                 tt_account_name,
@@ -733,51 +764,52 @@ def live(ctx: click.Context,
                                                                 tt_log_fix_messages)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
-            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
+            ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
             data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
                                                                                           ib_account,
                                                                                           ib_password),
                                                               ib_enable_delayed_streaming_data)
         elif data_feed == TradierDataFeed.get_name():
-            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
+            ensure_options(["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             data_feed_configurer = TradierDataFeed(TradierBrokerage(tradier_account_id,
                                                                     tradier_access_token,
                                                                     tradier_use_sandbox))
         elif data_feed == OANDADataFeed.get_name():
-            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(["oanda_account_id", "oanda_access_token", "oanda_environment"])
             data_feed_configurer = OANDADataFeed(OANDABrokerage(oanda_account_id,
                                                                 oanda_access_token,
                                                                 oanda_environment))
         elif data_feed == BitfinexDataFeed.get_name():
-            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
             data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
         elif data_feed == CoinbaseProDataFeed.get_name():
-            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
+            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
             data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,
                                                                             gdax_api_secret,
-                                                                            gdax_passphrase))
+                                                                            gdax_passphrase,
+                                                                            gdax_use_sandbox))
         elif data_feed == BinanceDataFeed.get_name():
-            ensure_options(ctx, ["binance_api_key", "binance_api_secret"])
+            ensure_options(["binance_api_key", "binance_api_secret"])
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
         elif data_feed == ZerodhaDataFeed.get_name():
-            ensure_options(ctx, ["zerodha_api_key",
-                                 "zerodha_access_token",
-                                 "zerodha_product_type",
-                                 "zerodha_trading_segment",
-                                 "zerodha_history_subscription"])
+            ensure_options(["zerodha_api_key",
+                            "zerodha_access_token",
+                            "zerodha_product_type",
+                            "zerodha_trading_segment",
+                            "zerodha_history_subscription"])
             data_feed_configurer = ZerodhaDataFeed(ZerodhaBrokerage(zerodha_api_key,
                                                                     zerodha_access_token,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
         elif data_feed == BloombergDataFeed.get_name():
-            ensure_options(ctx, ["bloomberg_organization",
-                                 "bloomberg_environment",
-                                 "bloomberg_server_host",
-                                 "bloomberg_server_port",
-                                 "bloomberg_emsx_broker",
-                                 "bloomberg_allow_modification"])
-            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization),
+            ensure_options(["bloomberg_environment",
+                            "bloomberg_server_host",
+                            "bloomberg_server_port",
+                            "bloomberg_emsx_broker",
+                            "bloomberg_allow_modification"])
+            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization,
+                                                                                             "Bloomberg"),
                                                                         bloomberg_environment,
                                                                         bloomberg_server_host,
                                                                         bloomberg_server_port,
@@ -790,24 +822,23 @@ def live(ctx: click.Context,
                                                                         bloomberg_emsx_handling,
                                                                         bloomberg_allow_modification))
         elif data_feed == TradingTechnologiesDataFeed.get_name():
-            ensure_options(ctx, ["tt_organization",
-                                 "tt_user_name",
-                                 "tt_session_password",
-                                 "tt_account_name",
-                                 "tt_rest_app_key",
-                                 "tt_rest_app_secret",
-                                 "tt_rest_environment",
-                                 "tt_market_data_sender_comp_id",
-                                 "tt_market_data_target_comp_id",
-                                 "tt_market_data_host",
-                                 "tt_market_data_port",
-                                 "tt_order_routing_sender_comp_id",
-                                 "tt_order_routing_target_comp_id",
-                                 "tt_order_routing_host",
-                                 "tt_order_routing_port",
-                                 "tt_log_fix_messages"])
+            ensure_options(["tt_user_name",
+                            "tt_session_password",
+                            "tt_account_name",
+                            "tt_rest_app_key",
+                            "tt_rest_app_secret",
+                            "tt_rest_environment",
+                            "tt_market_data_sender_comp_id",
+                            "tt_market_data_target_comp_id",
+                            "tt_market_data_host",
+                            "tt_market_data_port",
+                            "tt_order_routing_sender_comp_id",
+                            "tt_order_routing_target_comp_id",
+                            "tt_order_routing_host",
+                            "tt_order_routing_port",
+                            "tt_log_fix_messages"])
             data_feed_configurer = TradingTechnologiesDataFeed(
-                TradingTechnologiesBrokerage(_get_organization_id(tt_organization),
+                TradingTechnologiesBrokerage(_get_organization_id(tt_organization, "Trading Technologies"),
                                              tt_user_name,
                                              tt_session_password,
                                              tt_account_name,
@@ -824,11 +855,11 @@ def live(ctx: click.Context,
                                              tt_order_routing_port,
                                              tt_log_fix_messages))
         elif data_feed == IQFeedDataFeed.get_name():
-            ensure_options(ctx, ["iqfeed_iqconnect",
-                                 "iqfeed_username",
-                                 "iqfeed_password",
-                                 "iqfeed_product_name",
-                                 "iqfeed_version"])
+            ensure_options(["iqfeed_iqconnect",
+                            "iqfeed_username",
+                            "iqfeed_password",
+                            "iqfeed_product_name",
+                            "iqfeed_version"])
             data_feed_configurer = IQFeedDataFeed(iqfeed_iqconnect,
                                                   iqfeed_username,
                                                   iqfeed_password,
@@ -870,8 +901,22 @@ def live(ctx: click.Context,
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
+
+    if gui:
+        lean_config["lean-manager-type"] = "QuantConnect.GUI.GuiLeanManager"
+        output_config_manager.get_output_config(output).set("gui", True)
+
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release)
+    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
+
+    if gui:
+        logger = container.logger()
+        logger.info(f"You can monitor the status of the live deployment in the GUI")
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

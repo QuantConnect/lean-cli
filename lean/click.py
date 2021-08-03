@@ -13,7 +13,6 @@
 
 import itertools
 import os
-import platform
 import shutil
 import sys
 from datetime import datetime
@@ -70,10 +69,12 @@ class LeanCommand(click.Command):
                     "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
 
         if self._requires_docker and "pytest" not in sys.modules:
+            is_system_linux = container.platform_manager().is_system_linux()
+
             # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root
             # These files cannot be deleted by the CLI itself, so we rely on the OS to empty /tmp on reboot
             # The Snap version of Docker does not provide access to files outside $HOME, so we can't support it
-            if platform.system() == "Linux":
+            if is_system_linux:
                 docker_path = shutil.which("docker")
                 if docker_path is not None and docker_path.startswith("/snap"):
                     raise MoreInfoError(
@@ -82,7 +83,7 @@ class LeanCommand(click.Command):
 
             # A usual Docker installation on Linux requires the user to use sudo to run Docker
             # If we detect that this is the case and the CLI was started without sudo we elevate automatically
-            if platform.system() == "Linux" and os.getuid() != 0 and container.docker_manager().is_missing_permission():
+            if is_system_linux and os.getuid() != 0 and container.docker_manager().is_missing_permission():
                 container.logger().info(
                     "This command requires access to Docker, you may be asked to enter your password")
 
@@ -212,12 +213,13 @@ class DateParameter(click.ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
-def ensure_options(ctx: click.Context, options: List[str]) -> None:
+def ensure_options(options: List[str]) -> None:
     """Ensures certain options have values, raises an error if not.
 
-    :param ctx: the click context of the invocation
     :param options: the Python names of the options that must have values
     """
+    ctx = click.get_current_context()
+
     missing_options = []
     for key, value in ctx.params.items():
         has_value = value is not None

@@ -111,7 +111,7 @@ class PushManager:
 
         cloud_files = self._api_client.files.get_all(cloud_project.projectId)
 
-        for local_file in self._project_manager.get_files_to_sync(project):
+        for local_file in self._project_manager.get_source_files(project):
             file_name = local_file.relative_to(project).as_posix()
             self._last_file = local_file
 

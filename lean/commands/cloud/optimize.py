@@ -80,11 +80,11 @@ def _get_backtest_statistic(backtest: QCOptimizationBacktest, target: str) -> fl
     :return: the value of the target statistic on the backtest
     """
     if target == "TotalPerformance.PortfolioStatistics.SharpeRatio":
-        return backtest.statistics[14]
+        return backtest.statistics[15]
     elif target == "TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn":
         return backtest.statistics[6]
     elif target == "TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio":
-        return backtest.statistics[12]
+        return backtest.statistics[13]
     elif target == "TotalPerformance.PortfolioStatistics.Drawdown":
         return backtest.statistics[7]
     else:
@@ -175,9 +175,7 @@ def _display_estimate(cloud_project: QCProject,
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before starting the optimization")
-@click.pass_context
-def optimize(ctx: click.Context,
-             project: str,
+def optimize(project: str,
              target: Optional[str],
              target_direction: Optional[str],
              parameter: List[Tuple[str, float, float, float]],
@@ -225,7 +223,7 @@ def optimize(ctx: click.Context,
     organization = api_client.organizations.get(cloud_project.organizationId)
 
     if target is not None:
-        ensure_options(ctx, ["target", "target_direction", "parameter", "node", "parallel_nodes"])
+        ensure_options(["target", "target_direction", "parameter", "node", "parallel_nodes"])
 
         optimization_strategy = "QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy"
         optimization_target = OptimizationTarget(target=optimizer_config_manager.parse_target(target),

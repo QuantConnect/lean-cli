@@ -24,14 +24,17 @@ from lean.components.cloud.push_manager import PushManager
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.optimizer_config_manager import OptimizerConfigManager
+from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.temp_manager import TempManager
@@ -44,9 +47,10 @@ class Container(DeclarativeContainer):
     """The Container class wires all reusable components together."""
     logger = Singleton(Logger)
 
+    platform_manager = Singleton(PlatformManager)
     task_manager = Singleton(TaskManager, logger)
     name_generator = Singleton(NameGenerator)
-    path_manager = Singleton(PathManager)
+    path_manager = Singleton(PathManager, platform_manager)
     temp_manager = Singleton(TempManager)
     xml_manager = Singleton(XMLManager)
     http_client = Singleton(HTTPClient, logger)
@@ -55,12 +59,7 @@ class Container(DeclarativeContainer):
     credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
     cache_storage = Singleton(Storage, file=CACHE_PATH)
 
-    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
     cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
-    lean_config_manager = Singleton(LeanConfigManager, logger, cli_config_manager, project_config_manager)
-    optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
-
-    project_manager = Singleton(ProjectManager, project_config_manager, lean_config_manager, xml_manager)
 
     api_client = Factory(APIClient,
                          logger,
@@ -68,8 +67,25 @@ class Container(DeclarativeContainer):
                          user_id=cli_config_manager.provided.user_id.get_value()(),
                          api_token=cli_config_manager.provided.api_token.get_value()())
 
+    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
+
+    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
+    lean_config_manager = Singleton(LeanConfigManager,
+                                    logger,
+                                    cli_config_manager,
+                                    project_config_manager,
+                                    module_manager)
+    output_config_manager = Singleton(OutputConfigManager, lean_config_manager)
+    optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
+
+    project_manager = Singleton(ProjectManager,
+                                project_config_manager,
+                                lean_config_manager,
+                                xml_manager,
+                                platform_manager)
+
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
-    pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager)
+    pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)
     push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
     data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
     cloud_project_manager = Singleton(CloudProjectManager,
@@ -78,18 +94,20 @@ class Container(DeclarativeContainer):
                                       pull_manager,
                                       push_manager,
                                       path_manager)
-    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
 
-    docker_manager = Singleton(DockerManager, logger, temp_manager)
-
+    docker_manager = Singleton(DockerManager, logger, temp_manager, platform_manager)
     lean_runner = Singleton(LeanRunner,
                             logger,
                             project_config_manager,
                             lean_config_manager,
+                            output_config_manager,
                             docker_manager,
                             module_manager,
+                            project_manager,
                             temp_manager,
                             xml_manager)
+
+    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
     update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
 

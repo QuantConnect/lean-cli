@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import re
 from pathlib import Path
 from typing import Optional
@@ -39,8 +38,10 @@ def _compile_csharp(root: Path, csharp_dir: Path, docker_image: DockerImage) -> 
     docker_manager.create_volume("lean_cli_nuget")
     success = docker_manager.run_image(docker_image,
                                        entrypoint=["dotnet", "build", str(build_path)],
-                                       environment={"DOTNET_CLI_TELEMETRY_OPTOUT": "true",
-                                                    "DOTNET_NOLOGO": "true"},
+                                       environment={
+                                           "DOTNET_CLI_TELEMETRY_OPTOUT": "true",
+                                           "DOTNET_NOLOGO": "true"
+                                       },
                                        volumes={
                                            str(root): {
                                                "bind": "/LeanCLI",
@@ -119,7 +120,7 @@ def build(root: Path, tag: str) -> None:
 
     (root / "DataLibraries").mkdir(exist_ok=True)
 
-    if platform.machine() in ["arm64", "aarch64"]:
+    if container.platform_manager().is_host_arm():
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
     else:
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"

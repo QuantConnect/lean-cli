@@ -12,7 +12,9 @@
 # limitations under the License.
 
 import json
+import os
 import re
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -21,9 +23,11 @@ from pkg_resources import Requirement
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
+from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
@@ -38,8 +42,10 @@ class LeanRunner:
                  logger: Logger,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
+                 output_config_manager: OutputConfigManager,
                  docker_manager: DockerManager,
                  module_manager: ModuleManager,
+                 project_manager: ProjectManager,
                  temp_manager: TempManager,
                  xml_manager: XMLManager) -> None:
         """Creates a new LeanRunner instance.
@@ -47,16 +53,20 @@ class LeanRunner:
         :param logger: the logger that is used to print messages
         :param project_config_manager: the ProjectConfigManager instance to retrieve project configuration from
         :param lean_config_manager: the LeanConfigManager instance to retrieve Lean configuration from
+        :param output_config_manager: the OutputConfigManager instance to retrieve backtest/live configuration from
         :param docker_manager: the DockerManager instance which is used to interact with Docker
         :param module_manager: the ModuleManager instance to retrieve the installed modules from
+        :param project_manager: the ProjectManager instance to use for copying source code to output directories
         :param temp_manager: the TempManager instance to use for creating temporary directories
         :param xml_manager: the XMLManager instance to use for reading/writing XML files
         """
         self._logger = logger
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
+        self._output_config_manager = output_config_manager
         self._docker_manager = docker_manager
         self._module_manager = module_manager
+        self._project_manager = project_manager
         self._temp_manager = temp_manager
         self._xml_manager = xml_manager
 
@@ -67,7 +77,8 @@ class LeanRunner:
                  output_dir: Path,
                  image: DockerImage,
                  debugging_method: Optional[DebuggingMethod],
-                 release: bool) -> None:
+                 release: bool,
+                 detach: bool) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -79,12 +90,18 @@ class LeanRunner:
         :param image: the LEAN engine image to use
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
+        :param detach: whether LEAN should run in a detached container
         """
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options = self.get_basic_docker_config(lean_config, algorithm_file, output_dir, debugging_method, release)
+        run_options = self.get_basic_docker_config(lean_config,
+                                                   algorithm_file,
+                                                   output_dir,
+                                                   debugging_method,
+                                                   release,
+                                                   detach)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -93,6 +110,10 @@ class LeanRunner:
         # Set up VSDBG debugging
         if debugging_method == DebuggingMethod.VSDBG:
             run_options["name"] = "lean_cli_vsdbg"
+
+            # lean_cli_vsdbg is not unique, so we don't store the container name in the output directory's config
+            output_config = self._output_config_manager.get_output_config(output_dir)
+            output_config.delete("container")
 
         # Set up Rider debugging
         if debugging_method == DebuggingMethod.Rider:
@@ -110,6 +131,9 @@ class LeanRunner:
 
         run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
 
+        # Copy the project's code to the output directory
+        self._project_manager.copy_code(algorithm_file.parent, output_dir / "code")
+
         # Run the engine and log the result
         success = self._docker_manager.run_image(image, **run_options)
 
@@ -117,7 +141,14 @@ class LeanRunner:
         relative_project_dir = project_dir.relative_to(cli_root_dir)
         relative_output_dir = output_dir.relative_to(cli_root_dir)
 
-        if success:
+        if detach:
+            self._temp_manager.delete_temporary_directories_when_done = False
+
+            self._logger.info(
+                f"Successfully started '{relative_project_dir}' in the '{environment}' environment in the '{run_options['name']}' container")
+            self._logger.info(f"The output will be stored in '{relative_output_dir}'")
+            self._logger.info("You can use Docker's own commands to manage the detached container")
+        elif success:
             self._logger.info(
                 f"Successfully ran '{relative_project_dir}' in the '{environment}' environment and stored the output in '{relative_output_dir}'")
         else:
@@ -129,7 +160,8 @@ class LeanRunner:
                                 algorithm_file: Path,
                                 output_dir: Path,
                                 debugging_method: Optional[DebuggingMethod],
-                                release: bool) -> Dict[str, Any]:
+                                release: bool,
+                                detach: bool) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -139,6 +171,7 @@ class LeanRunner:
         :param output_dir: the directory to save output data to
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
+        :param detach: whether LEAN should run in a detached container
         :return: the Docker configuration containing basic configuration to run Lean
         """
         project_dir = algorithm_file.parent
@@ -157,7 +190,8 @@ class LeanRunner:
         if not storage_dir.exists():
             storage_dir.mkdir(parents=True)
 
-        lean_config["debug-mode"] = self._logger.debug_logging_enabled
+        lean_config["debug-mode"] = self._logger.debug_logging_enabled \
+                                    and os.environ.get("QC_LOCAL_GUI", "false") != "true"
         lean_config["data-folder"] = "/Lean/Data"
         lean_config["results-destination-folder"] = "/Results"
         lean_config["object-store-root"] = "/Storage"
@@ -165,6 +199,7 @@ class LeanRunner:
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options: Dict[str, Any] = {
+            "detach": detach,
             "commands": [],
             "environment": {},
             "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
@@ -222,7 +257,7 @@ class LeanRunner:
         # Set up modules
         installed_packages = self._module_manager.get_installed_packages()
         if len(installed_packages) > 0:
-            self._set_up_common_csharp_options(run_options)
+            self.set_up_common_csharp_options(run_options)
             set_up_common_csharp_options_called = True
 
             # Mount the modules directory
@@ -242,6 +277,7 @@ class LeanRunner:
 
             # Add all modules to the project, automatically resolving all dependencies
             for package in installed_packages:
+                run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
                 run_options["commands"].append(
                     f"dotnet add /ModulesProject package {package.name} --version {package.version}")
 
@@ -251,11 +287,11 @@ class LeanRunner:
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self._set_up_python_options(project_dir, run_options)
+            self.set_up_python_options(project_dir, run_options)
         else:
             if not set_up_common_csharp_options_called:
-                self._set_up_common_csharp_options(run_options)
-            self._set_up_csharp_options(project_dir, run_options, release)
+                self.set_up_common_csharp_options(run_options)
+            self.set_up_csharp_options(project_dir, run_options, release)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -268,9 +304,19 @@ class LeanRunner:
                                            type="bind",
                                            read_only=True))
 
+        # Assign the container a name and store it in the output directory's configuration
+        run_options["name"] = f"lean_cli_{str(uuid.uuid4()).replace('-', '')}"
+        output_config = self._output_config_manager.get_output_config(output_dir)
+        output_config.set("container", run_options["name"])
+
+        if "environment" in lean_config and "environments" in lean_config:
+            environment = lean_config["environments"][lean_config["environment"]]
+            if "live-mode-brokerage" in environment:
+                output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
+
         return run_options
 
-    def _set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
@@ -338,7 +384,7 @@ class LeanRunner:
         # If this file already exists we can skip pip install completely
         marker_file = "/root/.local/lib/python3.6/site-packages/pip-install-done"
         run_options["commands"].extend([
-            f"! test -f {marker_file} && pip install --user -r /requirements.txt",
+            f"! test -f {marker_file} && pip install --user --progress-bar off -r /requirements.txt",
             f"touch {marker_file}"
         ])
 
@@ -363,7 +409,7 @@ class LeanRunner:
         requirements = sorted(set(requirements))
         return "\n".join(requirements)
 
-    def _set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
+    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
@@ -430,7 +476,7 @@ class LeanRunner:
         run_options["commands"].append(
             f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
 
-    def _set_up_common_csharp_options(self, run_options: Dict[str, Any]) -> None:
+    def set_up_common_csharp_options(self, run_options: Dict[str, Any]) -> None:
         """Sets up common Docker run options that is needed for all C# work.
 
         This method is only called if the user has installed modules and/or if the project to run is written in C#.

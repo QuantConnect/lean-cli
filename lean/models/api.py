@@ -520,3 +520,23 @@ class QCDataset(WrappedBaseModel):
     delivery: QCDatasetDelivery
     vendorName: str
     tags: List[QCDatasetTag]
+
+
+class QCUser(WrappedBaseModel):
+    name: str
+    profile: str
+    badge: Optional[str]
+
+
+class QCTerminalNewsItem(WrappedBaseModel):
+    id: int
+    type: str
+    category: str
+    title: str
+    content: str
+    image: str
+    link: str
+    year_deleted: Optional[Any]
+    week_deleted: Optional[Any]
+    created: datetime
+    date: datetime

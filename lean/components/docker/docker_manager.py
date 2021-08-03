@@ -12,24 +12,29 @@
 # limitations under the License.
 
 import hashlib
+import json
 import os
 import platform
+import shutil
 import signal
 import subprocess
 import sys
 import threading
 import types
 from pathlib import Path
+from typing import Optional, Set
 
 import docker
 from dateutil.parser import isoparse
 from docker.errors import APIError
+from docker.models.containers import Container
 from docker.types import Mount
-from getmac import get_mac_address
 
 from lean.components.util.logger import Logger
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT
+from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT, \
+    DOCKER_NETWORK
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 
@@ -37,14 +42,16 @@ from lean.models.errors import MoreInfoError
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
 
-    def __init__(self, logger: Logger, temp_manager: TempManager) -> None:
+    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager) -> None:
         """Creates a new DockerManager instance.
 
         :param logger: the logger to use when printing messages
         :param temp_manager: the TempManager instance used when creating temporary directories
+        :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
         self._logger = logger
         self._temp_manager = temp_manager
+        self._platform_manager = platform_manager
 
     def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
@@ -56,11 +63,13 @@ class DockerManager:
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        process = subprocess.run(["docker", "image", "pull", str(image)])
-
-        if process.returncode != 0:
-            raise RuntimeError(
-                f"Something went wrong while pulling {image}, see the logs above for more information")
+        if shutil.which("docker") is not None:
+            process = subprocess.run(["docker", "image", "pull", str(image)])
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f"Something went wrong while pulling {image}, see the logs above for more information")
+        else:
+            self._get_docker_client().images.pull(image.name, image.tag)
 
     def run_image(self, image: DockerImage, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available locally it will be pulled first.
@@ -74,6 +83,9 @@ class DockerManager:
         and the Docker container is configured to run the given commands.
         This property causes the "entrypoint" property to be overwritten if it exists.
 
+        If kwargs sets "detach" to True, the method returns as soon as the container starts.
+        If this is not the case, the method is blocking and runs until the container exits.
+
         :param image: the image to run
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
@@ -85,9 +97,14 @@ class DockerManager:
         commands = kwargs.pop("commands", None)
 
         if commands is not None:
+            shell_script_commands = ["#!/usr/bin/env bash", "set -e"]
+            if self._logger.debug_logging_enabled:
+                shell_script_commands.append("set -x")
+            shell_script_commands += commands
+
             shell_script_path = self._temp_manager.create_temporary_directory() / "lean-cli-start.sh"
             with shell_script_path.open("w+", encoding="utf-8", newline="\n") as file:
-                file.write("\n".join(["#!/usr/bin/env bash", "set -e"] + commands) + "\n")
+                file.write("\n".join(shell_script_commands) + "\n")
 
             if "mounts" not in kwargs:
                 kwargs["mounts"] = []
@@ -98,43 +115,54 @@ class DockerManager:
                                           read_only=True))
             kwargs["entrypoint"] = ["bash", "/lean-cli-start.sh"]
 
-        # Docker Toolbox requires paths to be like /c/Path instead of C:/Path
-        is_windows = platform.system() == "Windows"
-        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
-        if is_windows and is_docker_toolbox:
-            if "mounts" in kwargs:
-                for mount in kwargs["mounts"]:
-                    mount["Source"] = self._format_path_docker_toolbox(mount["Source"])
+        # Format all source paths
+        if "mounts" in kwargs:
+            for mount in kwargs["mounts"]:
+                mount["Source"] = self._format_source_path(mount["Source"])
 
-            if "volumes" in kwargs:
-                for key in list(kwargs["volumes"].keys()):
-                    new_key = self._format_path_docker_toolbox(key)
-                    kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
+        if "volumes" in kwargs:
+            for key in list(kwargs["volumes"].keys()):
+                new_key = self._format_source_path(key)
+                kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
+        detach = kwargs.pop("detach", False)
         is_tty = sys.stdout.isatty()
 
         kwargs["detach"] = True
         kwargs["hostname"] = platform.node()
-        kwargs["tty"] = is_tty
-        kwargs["stdin_open"] = is_tty
+        kwargs["tty"] = is_tty and not detach
+        kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
 
-        mac_address = get_mac_address()
-        if mac_address is not None and mac_address != "00:00:00:00:00:00":
-            kwargs["mac_address"] = mac_address
+        if detach and "remove" not in kwargs:
+            kwargs["remove"] = True
 
         # Make sure host.docker.internal resolves on Linux
         # See https://github.com/QuantConnect/Lean/pull/5092
-        if platform.system() == "Linux":
+        if self._platform_manager.is_host_linux():
             if "extra_hosts" not in kwargs:
                 kwargs["extra_hosts"] = {}
             kwargs["extra_hosts"]["host.docker.internal"] = "172.17.0.1"
+
+        # Run all containers on a custom bridge network
+        # This makes it possible for containers to connect to each other by name
+        self.create_network(DOCKER_NETWORK)
+        kwargs["network"] = DOCKER_NETWORK
+
+        # Remove existing image with the same name if it exists and is not running
+        if "name" in kwargs:
+            existing_container = self.get_container_by_name(kwargs["name"])
+            if existing_container is not None and existing_container.status != "running":
+                existing_container.remove()
 
         self._logger.debug(f"Running '{image}' with the following configuration:")
         self._logger.debug(kwargs)
 
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
+
+        if detach:
+            return True
 
         force_kill_next = False
         killed = False
@@ -286,6 +314,15 @@ class DockerManager:
         img = self._get_docker_client().images.get_registry_data(str(image))
         return img.attrs["Descriptor"]["digest"]
 
+    def create_network(self, name: str) -> None:
+        """Creates a new bridge network, or does nothing if a network with the given name already exists.
+
+        :param name: the name of then network to create
+        """
+        docker_client = self._get_docker_client()
+        if not any(n.name == name for n in docker_client.networks.list()):
+            docker_client.networks.create(name, driver="bridge")
+
     def create_volume(self, name: str) -> None:
         """Creates a new volume, or does nothing if a volume with the given name already exists.
 
@@ -319,6 +356,38 @@ class DockerManager:
 
         docker_client.volumes.create(volume_name)
         return volume_name
+
+    def get_running_containers(self) -> Set[str]:
+        """Returns the names of all running containers.
+
+        :return: a set containing the names of all running Docker containers
+        """
+        containers = self._get_docker_client().containers.list()
+        return {c.name.lstrip("/") for c in containers if c.status == "running"}
+
+    def get_container_by_name(self, container_name: str) -> Optional[Container]:
+        """Finds a container with a given name.
+
+        :param container_name: the name of the container to find
+        :return: the container with the given name, or None if it does not exist
+        """
+        for container in self._get_docker_client().containers.list(all=True):
+            if container.name.lstrip("/") == container_name:
+                return container
+
+        return None
+
+    def show_logs(self, container_name: str) -> None:
+        """Shows the logs in the terminal, streaming them live if the container is still running.
+
+        :param container_name: the name of the container to show the logs of
+        """
+        if self.get_container_by_name(container_name) is None:
+            return
+
+        # We cannot use the Docker Python SDK to get live logs consistently
+        # Since the logs command is the same on Windows, macOS and Linux we can safely use a system call
+        subprocess.run(["docker", "logs", "-f", container_name])
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.
@@ -370,14 +439,31 @@ class DockerManager:
 
         return docker_client
 
-    def _format_path_docker_toolbox(self, path: str) -> str:
-        """Formats a Windows path to make it compatible with Docker Toolbox.
+    def _format_source_path(self, path: str) -> str:
+        """Formats a source path so Docker knows what it refers to.
+
+        This method does two things:
+        1. If Docker Toolbox is in use, it converts paths like C:/Path to /c/Path.
+        2. If Docker is running in Docker, it converts paths to the corresponding paths on the host system.
 
         :param path: the original path
-        :return: the original path formatted in such a way that it works with Docker Toolbox
+        :return: the original path formatted in such a way that Docker can understand it
         """
-        # Backward slashes to forward slashes
-        path = path.replace('\\', '/')
+        # Docker Toolbox modifications
+        is_windows = self._platform_manager.is_system_windows()
+        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
+        if is_windows and is_docker_toolbox:
+            # Backward slashes to forward slashes
+            path = path.replace('\\', '/')
 
-        # C:/Path to /c/Path
-        return f"/{path[0].lower()}/{path[3:]}"
+            # C:/Path to /c/Path
+            path = f"/{path[0].lower()}/{path[3:]}"
+
+        # Docker in Docker modifications
+        path_mappings = json.loads(os.environ.get("DOCKER_PATH_MAPPINGS", "{}"))
+        for container_path, host_path in path_mappings.items():
+            if path.startswith(container_path):
+                path = host_path + path[len(container_path):]
+                break
+
+        return path

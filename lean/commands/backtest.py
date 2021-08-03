@@ -243,6 +243,10 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run the backtest in a detached Docker container and return immediately")
 @click.option("--debug",
               type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
@@ -269,6 +273,7 @@ def _select_organization() -> QCMinimalOrganization:
               help="Pull the LEAN engine image before running the backtest")
 def backtest(project: Path,
              output: Optional[Path],
+             detach: bool,
              debug: Optional[str],
              data_provider: Optional[str],
              download_data: bool,
@@ -297,8 +302,6 @@ def backtest(project: Path,
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    project_manager.copy_code(algorithm_file.parent, output / "code")
-
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
@@ -312,6 +315,9 @@ def backtest(project: Path,
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
         _migrate_csharp_rider(algorithm_file.parent)
+
+    if debugging_method is not None and detach:
+        raise RuntimeError("Running a debugging session in a detached container is not supported")
 
     if algorithm_file.name.endswith(".cs"):
         _migrate_csharp_csproj(algorithm_file.parent)
@@ -335,8 +341,21 @@ def backtest(project: Path,
     if update or not docker_manager.supports_dotnet_5(engine_image):
         docker_manager.pull_image(engine_image)
 
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    output_config_manager = container.output_config_manager()
+    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
+
     lean_runner = container.lean_runner()
-    lean_runner.run_lean(lean_config, "backtesting", algorithm_file, output, engine_image, debugging_method, release)
+    lean_runner.run_lean(lean_config,
+                         "backtesting",
+                         algorithm_file,
+                         output,
+                         engine_image,
+                         debugging_method,
+                         release,
+                         detach)
 
     if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
         update_manager = container.update_manager()

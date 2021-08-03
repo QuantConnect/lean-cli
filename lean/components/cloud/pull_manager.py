@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import traceback
 from pathlib import Path
 from typing import List
@@ -19,6 +18,7 @@ from typing import List
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject
 
@@ -30,18 +30,21 @@ class PullManager:
                  logger: Logger,
                  api_client: APIClient,
                  project_manager: ProjectManager,
-                 project_config_manager: ProjectConfigManager) -> None:
+                 project_config_manager: ProjectConfigManager,
+                 platform_manager: PlatformManager) -> None:
         """Creates a new PullManager instance.
 
         :param logger: the logger to use when printing messages
         :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_manager: the ProjectManager instance to use when creating new projects
         :param project_config_manager: the ProjectConfigManager instance to use
+        :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
         self._logger = logger
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._platform_manager = platform_manager
         self._last_file = None
 
     def pull_projects(self, projects_to_pull: List[QCProject]) -> None:
@@ -151,11 +154,11 @@ class PullManager:
         :return: the converted cloud_path so that it is valid locally
         """
         # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
-        if platform.system() == "Windows":
+        if self._platform_manager.is_host_windows():
             # Windows, \":*?"<>| are forbidden
             # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
             forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
-        elif platform.system() == "Darwin":
+        elif self._platform_manager.is_host_macos():
             # macOS, : is a path separator, but : is not a path separator on QuantConnect
             forbidden_characters = [":"]
         else:
@@ -166,7 +169,7 @@ class PullManager:
             cloud_path = cloud_path.replace(forbidden_character, " ")
 
         # On Windows we need to ensure each path component is valid
-        if platform.system() == "Windows":
+        if self._platform_manager.is_host_windows():
             new_components = []
 
             for component in cloud_path.split("/"):

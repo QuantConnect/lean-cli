@@ -56,7 +56,6 @@ install_requires = [
     "python-dateutil~=2.8.1",
     "lxml~=4.6.3",
     "maskpass==0.3.5",
-    "getmac~=0.8.2",
     "joblib~=1.0.1",
     "python-certifi-win32~=1.6",
     "setuptools",

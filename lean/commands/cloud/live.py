@@ -178,6 +178,9 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--gdax-api-key", type=str, help="Your Coinbase Pro API key")
 @click.option("--gdax-api-secret", type=str, help="Your Coinbase Pro API secret")
 @click.option("--gdax-passphrase", type=str, help="Your Coinbase Pro API passphrase")
+@click.option("--gdax-environment",
+              type=click.Choice(["paper", "live"], case_sensitive=False),
+              help="The environment to run in, paper for the sandbox, live for live trading")
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -197,9 +200,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
-@click.pass_context
-def live(ctx: click.Context,
-         project: str,
+def live(project: str,
          brokerage: str,
          ib_user_name: Optional[str],
          ib_account: Optional[str],
@@ -216,6 +217,7 @@ def live(ctx: click.Context,
          gdax_api_key: Optional[str],
          gdax_api_secret: Optional[str],
          gdax_passphrase: Optional[str],
+         gdax_environment: Optional[str],
          node: str,
          auto_restart: bool,
          notify_order_events: Optional[bool],
@@ -245,27 +247,27 @@ def live(ctx: click.Context,
     finished_compile = cloud_runner.compile_project(cloud_project)
 
     if brokerage is not None:
-        ensure_options(ctx, ["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
+        ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = None
 
         if brokerage == PaperTradingBrokerage.get_name():
             brokerage_instance = PaperTradingBrokerage()
         elif brokerage == InteractiveBrokersBrokerage.get_name():
-            ensure_options(ctx, ["ib_user_name", "ib_account", "ib_password", "ib_data_feed"])
+            ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_data_feed"])
             brokerage_instance = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password, ib_data_feed)
         elif brokerage == TradierBrokerage.get_name():
-            ensure_options(ctx, ["tradier_account_id", "tradier_access_token", "tradier_environment"])
+            ensure_options(["tradier_account_id", "tradier_access_token", "tradier_environment"])
             brokerage_instance = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_environment)
         elif brokerage == OANDABrokerage.get_name():
-            ensure_options(ctx, ["oanda_account_id", "oanda_access_token", "oanda_environment"])
+            ensure_options(["oanda_account_id", "oanda_access_token", "oanda_environment"])
             brokerage_instance = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
         elif brokerage == BitfinexBrokerage.get_name():
-            ensure_options(ctx, ["bitfinex_api_key", "bitfinex_api_secret"])
+            ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
             brokerage_instance = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_options(ctx, ["gdax_api_key", "gdax_api_secret", "gdax_passphrase"])
-            brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase)
+            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_environment"])
+            brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase, gdax_environment)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)

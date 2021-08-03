@@ -20,7 +20,7 @@ from docker.errors import APIError
 from docker.types import Mount
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_RESEARCH_IMAGE
+from lean.constants import DEFAULT_RESEARCH_IMAGE, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.data_providers import all_data_providers
 from lean.models.data_providers.quantconnect import QuantConnectDataProvider
@@ -49,6 +49,14 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @click.option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
+@click.option("--detach",
+              is_flag=True,
+              default=False,
+              help="Run Jupyter Lab in a detached Docker container and return immediately")
+@click.option("--no-open",
+              is_flag=True,
+              default=False,
+              help="Don't open the Jupyter Lab environment in the browser after starting it")
 @click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
 @click.option("--update",
               is_flag=True,
@@ -59,6 +67,8 @@ def research(project: Path,
              data_provider: Optional[str],
              download_data: bool,
              data_purchase_limit: Optional[int],
+             detach: bool,
+             no_open: bool,
              image: Optional[str],
              update: bool) -> None:
     """Run a Jupyter Lab environment locally using Docker.
@@ -89,7 +99,8 @@ def research(project: Path,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
                                                       None,
-                                                      False)
+                                                      False,
+                                                      detach)
 
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))
@@ -102,7 +113,13 @@ def research(project: Path,
     run_options["ports"]["8888"] = str(port)
 
     # Open the browser as soon as Jupyter Lab has started
-    run_options["on_output"] = lambda chunk: _check_docker_output(chunk, port)
+    if detach or not no_open:
+        run_options["on_output"] = lambda chunk: _check_docker_output(chunk, port)
+
+    # Give container an identifiable name when running it from the GUI
+    if container.module_manager().is_module_installed(GUI_PRODUCT_ID):
+        project_id = container.project_config_manager().get_local_id(algorithm_file.parent)
+        run_options["name"] = f"lean_cli_gui_research_{project_id}"
 
     # Make Ctrl+C stop Jupyter Lab immediately
     run_options["stop_signal"] = "SIGKILL"
@@ -118,6 +135,16 @@ def research(project: Path,
         'find . -maxdepth 1 -iname "*.dll" | xargs -I _ echo \'#r "_"\' | cat - QuantConnect.csx > NewQuantConnect.csx',
         "mv NewQuantConnect.csx QuantConnect.csx"
     ]))
+
+    # Allow notebooks to be embedded in iframes
+    run_options["commands"].append("mkdir -p ~/.jupyter")
+    run_options["commands"].append(
+        'echo "c.NotebookApp.tornado_settings = {\'headers\': {\'Content-Security-Policy\': \'frame-ancestors self *\'}}" > ~/.jupyter/jupyter_notebook_config.py')
+
+    # Hide headers in notebooks
+    run_options["commands"].append("mkdir -p ~/.ipython/profile_default/static/custom")
+    run_options["commands"].append(
+        'echo "#header-container { display: none !important; }" > ~/.ipython/profile_default/static/custom/custom.css')
 
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
@@ -138,6 +165,16 @@ def research(project: Path,
         docker_manager.run_image(research_image, **run_options)
     except APIError as error:
         msg = error.explanation
-        if isinstance(msg, str) and "port is already allocated" in msg:
+        if isinstance(msg, str) and ("port is already allocated" in msg or "Ports are not available" in msg):
             raise RuntimeError(f"Port {port} is already in use, please specify a different port using --port <number>")
         raise error
+
+    if detach:
+        temp_manager.delete_temporary_directories_when_done = False
+
+        logger = container.logger()
+        relative_project_dir = algorithm_file.parent.relative_to(lean_config_manager.get_cli_root_directory())
+
+        logger.info(
+            f"Successfully started Jupyter Lab environment for '{relative_project_dir}' in the '{run_options['name']}' container")
+        logger.info("You can use Docker's own commands to manage the detached container")

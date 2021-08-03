@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -54,7 +55,13 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-API_BASE_URL = "https://www.quantconnect.com/api/v2/"
+_qc_api = os.environ.get("QC_API", "")
+if _qc_api == "local":
+    API_BASE_URL = "http://localhost:5612/api/v2/"
+elif _qc_api == "beta":
+    API_BASE_URL = "https://beta.quantconnect.com/api/v2/"
+else:
+    API_BASE_URL = "https://www.quantconnect.com/api/v2/"
 
 # The interval in hours at which the CLI checks for updates to itself
 UPDATE_CHECK_INTERVAL_CLI = 24
@@ -76,3 +83,12 @@ TRADING_TECHNOLOGIES_PRODUCT_ID = 64
 
 # The product id of the Atreyu module
 ATREYU_PRODUCT_ID = 65
+
+# The product id of the GUI module
+GUI_PRODUCT_ID = 119
+
+# The name of the Docker network which all Lean CLI containers are ran on
+DOCKER_NETWORK = "lean_cli"
+
+# The name of the Docker container running the local GUI
+LOCAL_GUI_CONTAINER_NAME = "lean_cli_gui"

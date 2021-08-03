@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 
 from lean.components.util.path_manager import PathManager
+from lean.components.util.platform_manager import PlatformManager
 
 
 @pytest.fixture(autouse=True)
@@ -26,7 +27,7 @@ def fake_filesystem() -> None:
 
 
 def test_get_relative_path_returns_relative_path_when_destination_is_relative_to_source() -> None:
-    path_manager = PathManager()
+    path_manager = PathManager(PlatformManager())
 
     source = Path.cwd()
     destination = Path.cwd() / "path" / "to" / "file.txt"
@@ -35,7 +36,7 @@ def test_get_relative_path_returns_relative_path_when_destination_is_relative_to
 
 
 def test_get_relative_path_returns_full_destination_path_when_destination_is_not_relative_to_source() -> None:
-    path_manager = PathManager()
+    path_manager = PathManager(PlatformManager())
 
     source = Path.cwd()
     destination = Path.cwd().parent
@@ -44,13 +45,13 @@ def test_get_relative_path_returns_full_destination_path_when_destination_is_not
 
 
 def test_get_relative_path_uses_cwd_as_source_when_not_given() -> None:
-    path_manager = PathManager()
+    path_manager = PathManager(PlatformManager())
 
     assert path_manager.get_relative_path(Path.cwd() / "path" / "to" / "file.txt") == Path("path/to/file.txt")
 
 
 def test_is_path_valid_returns_true_for_valid_path() -> None:
-    path_manager = PathManager()
+    path_manager = PathManager(PlatformManager())
 
     assert path_manager.is_path_valid(Path.cwd() / "My Path/file.txt")
 
@@ -94,6 +95,6 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
     if platform.system() != "Windows":
         pytest.skip("This test requires Windows")
 
-    path_manager = PathManager()
+    path_manager = PathManager(PlatformManager())
 
     assert path_manager.is_path_valid(Path.cwd() / path) == valid
