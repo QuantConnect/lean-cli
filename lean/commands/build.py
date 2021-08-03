@@ -91,7 +91,8 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
 @click.command(cls=LeanCommand, requires_docker=True)
 @click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
 @click.option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
-def build(root: Path, tag: str) -> None:
+@click.option("--no-foundation", is_flag=True, default=False, help="Don't build a custom foundation image")
+def build(root: Path, tag: str, no_foundation: bool) -> None:
     """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
     \b
@@ -109,6 +110,8 @@ def build(root: Path, tag: str) -> None:
     5. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
     6. The default engine image is set to lean-cli/engine:latest.
     7. The default research image is set to lean-cli/research:latest.
+
+    When --no-foundation is given, step 1 is skipped and quantconnect/lean:foundation is used instead of lean-cli/foundation:latest.
     """
     lean_dir = root / "Lean"
     if not lean_dir.is_dir():
@@ -120,19 +123,24 @@ def build(root: Path, tag: str) -> None:
 
     (root / "DataLibraries").mkdir(exist_ok=True)
 
-    if container.platform_manager().is_host_arm():
-        foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
+    if not no_foundation:
+        if container.platform_manager().is_host_arm():
+            foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
+        else:
+            foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
+
+        foundation_image = DockerImage(name="lean-cli/foundation", tag=tag)
+        _build_image(root, foundation_dockerfile, None, foundation_image)
     else:
-        foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
+        foundation_image = DockerImage(name="quantconnect/lean", tag="foundation")
 
-    custom_foundation_image = DockerImage(name="lean-cli/foundation", tag=tag)
+    _compile_csharp(root, lean_dir, foundation_image)
+    _compile_csharp(root, alpha_streams_dir, foundation_image)
+
     custom_engine_image = DockerImage(name="lean-cli/engine", tag=tag)
-    custom_research_image = DockerImage(name="lean-cli/research", tag=tag)
+    _build_image(root, lean_dir / "Dockerfile", foundation_image, custom_engine_image)
 
-    _build_image(root, foundation_dockerfile, None, custom_foundation_image)
-    _compile_csharp(root, lean_dir, custom_foundation_image)
-    _compile_csharp(root, alpha_streams_dir, custom_foundation_image)
-    _build_image(root, lean_dir / "Dockerfile", custom_foundation_image, custom_engine_image)
+    custom_research_image = DockerImage(name="lean-cli/research", tag=tag)
     _build_image(root, lean_dir / "DockerfileJupyter", custom_engine_image, custom_research_image)
 
     logger = container.logger()

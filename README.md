@@ -151,10 +151,14 @@ Usage: lean build [OPTIONS] [ROOT]
   6. The default engine image is set to lean-cli/engine:latest.
   7. The default research image is set to lean-cli/research:latest.
 
+  When --no-foundation is given, step 1 is skipped and quantconnect/lean:foundation is used instead of lean-
+  cli/foundation:latest.
+
 Options:
-  --tag TEXT  The tag to apply to custom images (defaults to latest)
-  --verbose   Enable debug logging
-  --help      Show this message and exit.
+  --tag TEXT       The tag to apply to custom images (defaults to latest)
+  --no-foundation  Don't build a custom foundation image
+  --verbose        Enable debug logging
+  --help           Show this message and exit.
 ```
 
 _See code: [lean/commands/build.py](lean/commands/build.py)_
