@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import platform
+import shutil
 import signal
 import subprocess
 import sys
@@ -62,11 +63,13 @@ class DockerManager:
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        process = subprocess.run(["docker", "image", "pull", str(image)])
-
-        if process.returncode != 0:
-            raise RuntimeError(
-                f"Something went wrong while pulling {image}, see the logs above for more information")
+        if shutil.which("docker") is not None:
+            process = subprocess.run(["docker", "image", "pull", str(image)])
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f"Something went wrong while pulling {image}, see the logs above for more information")
+        else:
+            self._get_docker_client().images.pull(image.name, image.tag)
 
     def run_image(self, image: DockerImage, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available locally it will be pulled first.
