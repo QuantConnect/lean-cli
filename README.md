@@ -963,6 +963,8 @@ Options:
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
                                   when using QuantConnect as data provider
 
+  --detach                        Run Jupyter Lab in a detached Docker container and return immediately
+  --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
