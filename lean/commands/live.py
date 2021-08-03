@@ -251,11 +251,11 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--gui",
               is_flag=True,
               default=False,
-              help="Enable monitoring and controlling the deployment via the GUI")
+              help="Enable monitoring and controlling of the deployment via the local GUI")
 @click.option("--gui-organization",
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
-              help="The name or id of the organization with the GUI module subscription")
+              help="The name or id of the organization with the local GUI module subscription")
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
@@ -643,7 +643,7 @@ def live(project: Path,
 
     if gui:
         module_manager = container.module_manager()
-        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization, "GUI"))
+        module_manager.install_module(GUI_PRODUCT_ID, _get_organization_id(gui_organization, "local GUI"))
 
         detach = True
 

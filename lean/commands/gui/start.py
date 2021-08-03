@@ -84,7 +84,7 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
     else:
         organizations = api_client.organizations.get_all()
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
-        organization_id = logger.prompt_list("Select the organization with the GUI module subscription", options)
+        organization_id = logger.prompt_list("Select the organization with the local GUI module subscription", options)
 
     module_manager.install_module(GUI_PRODUCT_ID, organization_id)
 

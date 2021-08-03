@@ -708,8 +708,8 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   --detach                        Run the live deployment in a detached Docker container and return immediately
-  --gui                           Enable monitoring and controlling the deployment via the GUI
-  --gui-organization TEXT         The name or id of the organization with the GUI module subscription
+  --gui                           Enable monitoring and controlling of the deployment via the local GUI
+  --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
   --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Trading Technologies|Custom data only|IQFeed]
