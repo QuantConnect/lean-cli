@@ -93,6 +93,7 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
     run_options: Dict[str, Any] = {
         "name": LOCAL_GUI_CONTAINER_NAME,
         "detach": True,
+        "remove": False,
         "commands": [],
         "environment": {
             "PYTHONUNBUFFERED": "1",
