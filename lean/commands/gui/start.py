@@ -211,7 +211,11 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
         docker_manager.run_image(DockerImage(name="python", tag="3.9.6-buster"), **run_options)
     except APIError as error:
         msg = error.explanation
-        if isinstance(msg, str) and ("port is already allocated" in msg or "Ports are not available" in msg):
+        if isinstance(msg, str) and any(m in msg.lower() for m in [
+            "port is already allocated",
+            "ports are not available"
+            "an attempt was made to access a socket in a way forbidden by its access permissions"
+        ]):
             raise RuntimeError(f"Port {port} is already in use, please specify a different port using --port <number>")
         raise error
 
