@@ -241,13 +241,18 @@ def test_cli() -> None:
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_return_code=1)
 
     # Generate reports
+    python_results_file = next(f for f in python_backtest_dirs[0].iterdir() if
+                               f.name.endswith(".json") and not f.name.endswith("-order-events.json"))
     run_command(["lean", "report",
-                 "--backtest-results", f"{python_project_name}/backtests/{python_backtest_dirs[0].name}/main.json",
+                 "--backtest-results", str(python_results_file),
                  "--report-destination", "python.html"], cwd=test_dir)
+
+    csharp_results_file = next(f for f in csharp_backtest_dirs[0].iterdir() if
+                               f.name.endswith(".json") and not f.name.endswith("-order-events.json"))
     run_command(["lean", "report",
-                 "--backtest-results",
-                 f"{csharp_project_name}/backtests/{csharp_backtest_dirs[0].name}/CSharpProject.json",
+                 "--backtest-results", str(csharp_results_file),
                  "--report-destination", "csharp.html"], cwd=test_dir)
+
     assert (test_dir / "python.html").is_file()
     assert (test_dir / "csharp.html").is_file()
 
