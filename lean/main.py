@@ -69,6 +69,13 @@ def _ensure_win32_available() -> None:
         if _is_win32_available():
             return
 
+    if any("AppData\\Local\\Packages\\PythonSoftwareFoundation.Python" in p for p in sys.path):
+        print("It looks like you're using the Python distribution from the Microsoft Store")
+        print("This distribution is not supported by the CLI, we recommend using the Anaconda distribution instead")
+        print(
+            "See https://www.lean.io/docs/lean-cli/tutorials/installation/installing-pip#02-Installation-on-Windows for more information")
+        sys.exit(1)
+
     print("pywin32 has not been installed completely, which may lead to errors")
     print("You can fix this issue by running pywin32's post-install script")
     print(f"Run the following command in an elevated terminal from your Python environment's Scripts directory:")
