@@ -15,6 +15,7 @@ import json
 import os
 import re
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -181,6 +182,20 @@ class LeanRunner:
             and lean_config.get("data-downloader", None) == "BloombergDataDownloader":
             self._module_manager.install_module(BLOOMBERG_PRODUCT_ID, lean_config["job-organization-id"])
 
+        # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
+        data_dir = self._lean_config_manager.get_data_directory()
+        if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
+            self._force_disk_provider_if_necessary(lean_config,
+                                                   "map-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
+                                                   "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
+                                                   data_dir / "equity" / "usa" / "map_files")
+            self._force_disk_provider_if_necessary(lean_config,
+                                                   "factor-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+                                                   "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
+                                                   data_dir / "equity" / "usa" / "factor_files")
+
         # Create the output directory if it doesn't exist yet
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
@@ -209,7 +224,6 @@ class LeanRunner:
         }
 
         # Mount the data directory
-        data_dir = self._lean_config_manager.get_data_directory()
         run_options["volumes"][str(data_dir)] = {
             "bind": "/Lean/Data",
             "mode": "rw"
@@ -642,3 +656,30 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                                            source=str(new_csproj_file),
                                            type="bind",
                                            read_only=True))
+
+    def _force_disk_provider_if_necessary(self,
+                                          lean_config: Dict[str, Any],
+                                          config_key: str,
+                                          zip_provider: str,
+                                          disk_provider: str,
+                                          zip_dir: Path) -> None:
+        """Updates the Lean config to use the disk provider instead of the zip one if there are no zips to use.
+
+        :param lean_config: the Lean config to update
+        :param config_key: the key of the configuration property
+        :param zip_provider: the fully classified name of the zip provider for this property
+        :param disk_provider: the fully classified name of the disk provider for this property
+        :param zip_dir: the directory where the zip provider looks for zip files
+        """
+        if lean_config.get(config_key, None) != zip_provider:
+            return
+
+        if not zip_dir.exists():
+            lean_config[config_key] = disk_provider
+            return
+
+        zip_names = sorted([f.name for f in zip_dir.iterdir() if f.name.endswith(".zip")], reverse=True)
+        zip_names = [re.sub(r"[^\d]", "", name) for name in zip_names]
+
+        if len(zip_names) == 0 or (datetime.now() - datetime.strptime(zip_names[0], "%Y%m%d")).days > 7:
+            lean_config[config_key] = disk_provider
