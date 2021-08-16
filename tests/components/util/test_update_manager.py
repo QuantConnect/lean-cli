@@ -79,6 +79,19 @@ def test_warn_if_cli_outdated_only_checks_once_every_day(requests_mock: Requests
 
 
 @mock.patch.object(lean, "__version__", "0.0.1")
+@pytest.mark.parametrize("hours", [23, 24])
+def test_warn_if_cli_outdated_always_checks_when_force_is_true(requests_mock: RequestsMock, hours: int) -> None:
+    requests_mock.add(requests_mock.GET, "https://pypi.org/pypi/lean/json", '{ "info": { "version": "0.0.2" } }')
+
+    logger, storage, docker_manager, update_manager = create_objects()
+    storage.set("last-update-check-cli", (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
+
+    update_manager.warn_if_cli_outdated(force=True)
+
+    logger.warn.assert_called()
+
+
+@mock.patch.object(lean, "__version__", "0.0.1")
 def test_warn_if_cli_outdated_does_nothing_when_running_latest_version(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET, "https://pypi.org/pypi/lean/json", '{ "info": { "version": "0.0.1" } }')
 

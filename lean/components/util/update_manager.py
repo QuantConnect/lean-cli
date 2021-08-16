@@ -51,10 +51,12 @@ class UpdateManager:
         self._cache_storage = cache_storage
         self._docker_manager = docker_manager
 
-    def warn_if_cli_outdated(self) -> None:
+    def warn_if_cli_outdated(self, force: bool = False) -> None:
         """Warns the user if the CLI is outdated.
 
-        An update check is performed once every UPDATE_CHECK_INTERVAL_CLI hours.
+        An update check is performed once every UPDATE_CHECK_INTERVAL_CLI hours, unless force is set to True.
+
+        :param force: whether the update check interval should be bypassed (defaults to False)
         """
         current_version = lean.__version__
 
@@ -62,7 +64,7 @@ class UpdateManager:
         if current_version == "dev":
             return
 
-        if not self._should_check_for_updates("cli", UPDATE_CHECK_INTERVAL_CLI):
+        if not force and not self._should_check_for_updates("cli", UPDATE_CHECK_INTERVAL_CLI):
             return
 
         try:

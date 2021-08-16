@@ -118,6 +118,8 @@ def main() -> None:
             exception_str = exception_str.replace("for help.",
                                                   "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/lean-cli/user-guides/troubleshooting")
 
+            container.update_manager().warn_if_cli_outdated(force=True)
+
             logger.info(exception_str)
         elif isinstance(exception, click.Abort):
             logger.info("Aborted!")
