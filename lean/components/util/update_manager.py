@@ -104,7 +104,7 @@ class UpdateManager:
 
         if local_digest != remote_digest:
             self._logger.warn(f"You are currently using an outdated version of the '{image}' Docker image")
-            self._logger.warn(f"Run this command with the --update flag to update it to the latest version")
+            self._logger.warn(f"Run `docker pull {image}` to update it to the latest version")
 
     def show_announcements(self) -> None:
         """Shows the announcements if they have been updated.
