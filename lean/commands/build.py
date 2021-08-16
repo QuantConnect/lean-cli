@@ -22,6 +22,34 @@ from lean.container import container
 from lean.models.docker import DockerImage
 
 
+def _normalize_newlines(text: str) -> str:
+    """Normalizes the newlines in a string to use \n (instead of \r or \r\n).
+
+    :param text: the text to normalize the newlines in
+    :return: the text with the newlines normalized
+    """
+    return "\n".join(text.splitlines())
+
+
+def _is_foundation_dockerfile_same_as_cloud(dockerfile: Path) -> bool:
+    """Checks whether a Dockerfile is the same as the Dockerfile used for the quantconnect/lean:foundation image.
+
+    :param dockerfile: the path to the local Dockerfile to check
+    :return: whether the local Dockerfile is the same as the one used for the quantconnect/lean:foundation image
+    """
+    local_dockerfile = dockerfile.read_text(encoding="utf-8").strip()
+
+    try:
+        cloud_url = f"https://raw.githubusercontent.com/QuantConnect/Lean/master/{dockerfile.name}"
+        cloud_dockerfile = container.http_client().get(cloud_url)
+        cloud_dockerfile = cloud_dockerfile.text.strip()
+    except:
+        # We build a new image if for whatever reason we can't check the Dockerfile used for the official image
+        return False
+
+    return _normalize_newlines(local_dockerfile) == _normalize_newlines(cloud_dockerfile)
+
+
 def _compile_csharp(root: Path, csharp_dir: Path, docker_image: DockerImage) -> None:
     """Compiles C# code.
 
@@ -91,8 +119,7 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
 @click.command(cls=LeanCommand, requires_docker=True)
 @click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
 @click.option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
-@click.option("--no-foundation", is_flag=True, default=False, help="Don't build a custom foundation image")
-def build(root: Path, tag: str, no_foundation: bool) -> None:
+def build(root: Path, tag: str) -> None:
     """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
     \b
@@ -111,7 +138,8 @@ def build(root: Path, tag: str, no_foundation: bool) -> None:
     6. The default engine image is set to lean-cli/engine:latest.
     7. The default research image is set to lean-cli/research:latest.
 
-    When --no-foundation is given, step 1 is skipped and quantconnect/lean:foundation is used instead of lean-cli/foundation:latest.
+    When the foundation Dockerfile is the same as the official foundation Dockerfile,
+    quantconnect/lean:foundation is used instead of building a custom foundation image.
     """
     lean_dir = root / "Lean"
     if not lean_dir.is_dir():
@@ -123,16 +151,17 @@ def build(root: Path, tag: str, no_foundation: bool) -> None:
 
     (root / "DataLibraries").mkdir(exist_ok=True)
 
-    if not no_foundation:
-        if container.platform_manager().is_host_arm():
-            foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
-        else:
-            foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
+    if container.platform_manager().is_host_arm():
+        foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
+    else:
+        foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
 
+    if _is_foundation_dockerfile_same_as_cloud(foundation_dockerfile):
+        foundation_image = DockerImage(name="quantconnect/lean", tag="foundation")
+        container.docker_manager().pull_image(foundation_image)
+    else:
         foundation_image = DockerImage(name="lean-cli/foundation", tag=tag)
         _build_image(root, foundation_dockerfile, None, foundation_image)
-    else:
-        foundation_image = DockerImage(name="quantconnect/lean", tag="foundation")
 
     _compile_csharp(root, lean_dir, foundation_image)
     _compile_csharp(root, alpha_streams_dir, foundation_image)
