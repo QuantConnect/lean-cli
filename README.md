@@ -107,7 +107,7 @@ Usage: lean backtest [OPTIONS] PROJECT
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
-  --detach                        Run the backtest in a detached Docker container and return immediately
+  -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
   --data-provider [Local|QuantConnect|Bloomberg]
@@ -536,8 +536,9 @@ Usage: lean gui logs [OPTIONS]
   See the logs of the local GUI.
 
 Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  -f, --follow  Update the logs in real-time while the GUI is running
+  --verbose     Enable debug logging
+  --help        Show this message and exit.
 ```
 
 _See code: [lean/commands/gui/logs.py](lean/commands/gui/logs.py)_
@@ -711,7 +712,7 @@ Usage: lean live [OPTIONS] PROJECT
 Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
-  --detach                        Run the live deployment in a detached Docker container and return immediately
+  -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
   --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
@@ -886,7 +887,7 @@ Usage: lean optimize [OPTIONS] PROJECT
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
-  --detach                        Run the optimization in a detached Docker container and return immediately
+  -d, --detach                    Run the optimization in a detached Docker container and return immediately
   --optimizer-config FILE         The optimizer configuration file that should be used
   --strategy [Grid Search|Euler Search]
                                   The optimization strategy to use
@@ -931,7 +932,7 @@ Options:
   --backtest-results FILE      Path to the JSON file containing the backtest results
   --live-results FILE          Path to the JSON file containing the live trading results
   --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
-  --detach                     Run the report creator in a detached Docker container and return immediately
+  -d, --detach                 Run the report creator in a detached Docker container and return immediately
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name
   --strategy-description TEXT  Description of the strategy, will appear under the 'Strategy Description' section
@@ -967,7 +968,7 @@ Options:
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
                                   when using QuantConnect as data provider
 
-  --detach                        Run Jupyter Lab in a detached Docker container and return immediately
+  -d, --detach                    Run Jupyter Lab in a detached Docker container and return immediately
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment
