@@ -49,7 +49,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @click.option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
-@click.option("--detach",
+@click.option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run Jupyter Lab in a detached Docker container and return immediately")

@@ -34,7 +34,7 @@ from lean.models.optimizer import OptimizationTarget
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)")
-@click.option("--detach",
+@click.option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the optimization in a detached Docker container and return immediately")

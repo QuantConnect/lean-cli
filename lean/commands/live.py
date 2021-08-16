@@ -244,7 +244,7 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
-@click.option("--detach",
+@click.option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")

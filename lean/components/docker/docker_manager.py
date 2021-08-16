@@ -377,17 +377,23 @@ class DockerManager:
 
         return None
 
-    def show_logs(self, container_name: str) -> None:
-        """Shows the logs in the terminal, streaming them live if the container is still running.
+    def show_logs(self, container_name: str, follow: bool = False) -> None:
+        """Shows the logs of a Docker container in the terminal.
 
         :param container_name: the name of the container to show the logs of
+        :param follow: whether the logs should be streamed in real-time if the container is running (defaults to False)
         """
         if self.get_container_by_name(container_name) is None:
             return
 
         # We cannot use the Docker Python SDK to get live logs consistently
         # Since the logs command is the same on Windows, macOS and Linux we can safely use a system call
-        subprocess.run(["docker", "logs", "-f", container_name])
+        command = ["docker", "logs"]
+        if follow:
+            command.append("-f")
+        command.append(container_name)
+
+        subprocess.run(command)
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.

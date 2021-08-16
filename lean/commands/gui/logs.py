@@ -19,11 +19,15 @@ from lean.container import container
 
 
 @click.command(cls=LeanCommand, requires_docker=True)
-def logs() -> None:
+@click.option("--follow", "-f",
+              is_flag=True,
+              default=False,
+              help="Update the logs in real-time while the GUI is running")
+def logs(follow: bool) -> None:
     """See the logs of the local GUI."""
     docker_manager = container.docker_manager()
 
     if LOCAL_GUI_CONTAINER_NAME not in docker_manager.get_running_containers():
         raise RuntimeError("The local GUI container does not exist, you can start it using `lean gui start`")
 
-    docker_manager.show_logs(LOCAL_GUI_CONTAINER_NAME)
+    docker_manager.show_logs(LOCAL_GUI_CONTAINER_NAME, follow)

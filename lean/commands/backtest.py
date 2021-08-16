@@ -243,7 +243,7 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
-@click.option("--detach",
+@click.option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")

@@ -53,7 +53,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
-@click.option("--detach",
+@click.option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the report creator in a detached Docker container and return immediately")
