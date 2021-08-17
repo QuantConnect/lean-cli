@@ -891,8 +891,11 @@ def live(project: Path,
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
+    project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
-    engine_image = cli_config_manager.get_engine_image(image)
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
 
     docker_manager = container.docker_manager()
 

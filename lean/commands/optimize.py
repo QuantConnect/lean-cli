@@ -177,8 +177,11 @@ def optimize(project: Path,
     with config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps(config, indent=4) + "\n")
 
+    project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
-    engine_image = cli_config_manager.get_engine_image(image)
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
 
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)

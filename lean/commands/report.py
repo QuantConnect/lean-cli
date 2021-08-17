@@ -218,8 +218,11 @@ def report(backtest_results: Optional[Path],
                                            type="bind",
                                            read_only=True))
 
+    project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
-    engine_image = cli_config_manager.get_engine_image(image)
+
+    project_config = project_config_manager.get_project_config(project_directory)
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
 
     docker_manager = container.docker_manager()
 
