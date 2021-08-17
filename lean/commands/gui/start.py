@@ -15,6 +15,8 @@ import json
 import os
 import platform
 import time
+import tkinter
+import tkinter.messagebox
 import webbrowser
 import zipfile
 from pathlib import Path
@@ -33,19 +35,38 @@ from lean.models.docker import DockerImage
 from lean.models.logger import Option
 
 
-def _get_organization_id(given_input: str) -> str:
+def _error(message: str, shortcut_launch: bool) -> None:
+    """Halts operation of the CLI in a way that is user-friendly to both CLI and desktop shortcut users.
+
+    :poram message: the error message
+    :param shortcut_launch: whether the command was invoked using the desktop shortcut
+    """
+    if shortcut_launch:
+        # By default tkinter.messagebox.showerror creates an empty root window and shows it
+        # By manually creating and hiding that root window we can show just the error box
+        root = tkinter.Tk()
+        root.overrideredirect(1)
+        root.withdraw()
+
+        tkinter.messagebox.showerror("Lean CLI", message)
+
+    raise RuntimeError(message)
+
+
+def _get_organization_id(given_input: str, shortcut_launch: bool) -> str:
     """Converts the organization name or id given by the user to an organization id.
 
     Raises an error if the user is not a member of an organization with the given name or id.
 
     :param given_input: the input given by the user
+    :param shortcut_launch: whether the command was invoked using the desktop shortcut
     :return: the id of the organization given by the user
     """
     all_organizations = container.api_client().organizations.get_all()
 
     organization = next((o for o in all_organizations if o.id == given_input or o.name == given_input), None)
     if organization is None:
-        raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
+        _error(f"You are not a member of an organization with name or id '{given_input}'", shortcut_launch)
 
     return organization.id
 
@@ -59,11 +80,25 @@ def _get_organization_id(given_input: str) -> str:
               is_flag=True,
               default=False,
               help="Skip opening the local GUI in the browser after starting it")
+@click.option("--shortcut",
+              is_flag=True,
+              default=False,
+              help="Create a desktop shortcut for launching the local GUI")
 @click.option("--gui",
               type=PathParameter(exists=True, file_okay=True, dir_okay=True),
               hidden=True,
               help="The path to the checked out GUI repository or packaged .whl file")
-def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[Path]) -> None:
+@click.option("--shortcut-launch",
+              is_flag=True,
+              default=False,
+              hidden=True,
+              help="Hidden flag which tells the CLI the command has been launched from the desktop shortcut")
+def start(organization: Optional[str],
+          port: int,
+          no_open: bool,
+          shortcut: bool,
+          gui: Optional[Path],
+          shortcut_launch: bool) -> None:
     """Start the local GUI."""
     logger = container.logger()
     docker_manager = container.docker_manager()
@@ -74,19 +109,33 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
     gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
     if gui_container is not None:
         if gui_container.status == "running":
-            raise RuntimeError(
-                "The local GUI is already running, run `lean gui restart` to restart it or `lean gui stop` to stop it")
+            if shortcut_launch:
+                port = gui_container.ports["5612/tcp"][0]["HostPort"]
+                url = f"http://localhost:{port}/"
+                webbrowser.open(url)
+                return
+            else:
+                _error(
+                    "The local GUI is already running, run `lean gui restart` to restart it or `lean gui stop` to stop it",
+                    shortcut_launch
+                )
 
         gui_container.remove()
 
     if organization is not None:
-        organization_id = _get_organization_id(organization)
+        organization_id = _get_organization_id(organization, shortcut_launch)
     else:
         organizations = api_client.organizations.get_all()
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
         organization_id = logger.prompt_list("Select the organization with the local GUI module subscription", options)
 
     module_manager.install_module(GUI_PRODUCT_ID, organization_id)
+
+    shortcut_manager = container.shortcut_manager()
+    if shortcut:
+        shortcut_manager.create_shortcut(organization_id)
+    else:
+        shortcut_manager.prompt_if_necessary(organization_id)
 
     # The dict containing all options passed to `docker run`
     # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
@@ -217,7 +266,7 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
             "ports are not available"
             "an attempt was made to access a socket in a way forbidden by its access permissions"
         ]):
-            raise RuntimeError(f"Port {port} is already in use, please specify a different port using --port <number>")
+            _error(f"Port {port} is already in use, please specify a different port using --port <number>", desktop)
         raise error
 
     url = f"http://localhost:{port}/"
@@ -227,8 +276,12 @@ def start(organization: Optional[str], port: int, no_open: bool, gui: Optional[P
         gui_container = docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME)
         if gui_container is None or gui_container.status != "running":
             docker_manager.show_logs(LOCAL_GUI_CONTAINER_NAME)
-            raise RuntimeError(
-                "Something went wrong while starting the local GUI, see the logs above for more information")
+            if shortcut_launch:
+                _error("Something went wrong while starting the local GUI, run `lean gui logs` for more information",
+                       shortcut_launch)
+            else:
+                _error("Something went wrong while starting the local GUI, see the logs above for more information",
+                       shortcut_launch)
 
         try:
             requests.get(url)

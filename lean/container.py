@@ -36,6 +36,7 @@ from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
+from lean.components.util.shortcut_manager import ShortcutManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.update_manager import UpdateManager
@@ -109,6 +110,7 @@ class Container(DeclarativeContainer):
 
     market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
+    shortcut_manager = Singleton(ShortcutManager, logger, lean_config_manager, platform_manager, cache_storage)
     update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
 
 

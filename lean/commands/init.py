@@ -18,7 +18,7 @@ from pathlib import Path
 import click
 
 from lean.click import LeanCommand
-from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
+from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_ID
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
@@ -128,3 +128,16 @@ Here are some commands to get you going:
 - Run `lean cloud pull` to download all your QuantConnect projects to your local drive
 - Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_DATA_DIRECTORY_NAME}/
 """.strip())
+
+    # Prompt to create a desktop shortcut for the local GUI if the user is in an organization with a subscription
+    api_client = container.api_client()
+    if api_client.is_authenticated():
+        for simple_organization in api_client.organizations.get_all():
+            organization = api_client.organizations.get(simple_organization.id)
+            modules_product = next((p for p in organization.products if p.name == "Modules"), None)
+            if modules_product is None:
+                continue
+
+            if any(i for i in modules_product.items if i.productId == GUI_PRODUCT_ID):
+                container.shortcut_manager().prompt_if_necessary(simple_organization.id)
+                break

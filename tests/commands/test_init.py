@@ -14,9 +14,11 @@
 import tempfile
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
+from dependency_injector.providers import Object
 from responses import RequestsMock
 
 from lean.commands import lean
@@ -48,6 +50,13 @@ def create_fake_archive(requests_mock: RequestsMock) -> None:
     with open(archive_path, "rb") as archive:
         requests_mock.assert_all_requests_are_fired = False
         requests_mock.add(requests_mock.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
+
+
+@pytest.fixture(autouse=True)
+def set_unauthenticated() -> None:
+    api_client = mock.Mock()
+    api_client.is_authenticated.return_value = False
+    container.api_client.override(Object(api_client))
 
 
 def test_init_aborts_when_config_file_already_exists() -> None:

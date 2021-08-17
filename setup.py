@@ -58,6 +58,7 @@ install_requires = [
     "maskpass==0.3.5",
     "joblib~=1.0.1",
     "python-certifi-win32~=1.6",
+    "pyshortcuts~=1.8.0",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
 ]
@@ -73,7 +74,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
-        "lean": ["ssh/*"]
+        "lean": ["icons/*", "ssh/*"]
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]

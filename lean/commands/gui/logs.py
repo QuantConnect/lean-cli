@@ -27,7 +27,7 @@ def logs(follow: bool) -> None:
     """See the logs of the local GUI."""
     docker_manager = container.docker_manager()
 
-    if LOCAL_GUI_CONTAINER_NAME not in docker_manager.get_running_containers():
+    if docker_manager.get_container_by_name(LOCAL_GUI_CONTAINER_NAME) is None:
         raise RuntimeError("The local GUI container does not exist, you can start it using `lean gui start`")
 
     docker_manager.show_logs(LOCAL_GUI_CONTAINER_NAME, follow)

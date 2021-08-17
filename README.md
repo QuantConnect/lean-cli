@@ -572,6 +572,7 @@ Options:
   --organization TEXT  The name or id of the organization with the local GUI module subscription
   --port INTEGER       The port to run the local GUI on (defaults to 5612)
   --no-open            Skip opening the local GUI in the browser after starting it
+  --shortcut           Create a desktop shortcut for launching the local GUI
   --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose            Enable debug logging
   --help               Show this message and exit.
