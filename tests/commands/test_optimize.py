@@ -13,7 +13,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -33,14 +32,6 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
 @pytest.fixture(autouse=True)
-def update_manager_mock() -> mock.Mock:
-    """A pytest fixture which mocks the update manager before every test."""
-    update_manager = mock.Mock()
-    container.update_manager.override(providers.Object(update_manager))
-    return update_manager
-
-
-@pytest.fixture(autouse=True)
 def optimizer_config_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the optimizer config manager before every test."""
     optimizer_config_manager = mock.Mock()
@@ -54,9 +45,11 @@ def optimizer_config_manager_mock() -> mock.Mock:
     ]
 
     optimizer_config_manager.configure_constraints.return_value = [
-        OptimizationConstraint(**{"target": "TotalPerformance.PortfolioStatistics.Drawdown",
-                                  "operator": "less",
-                                  "target-value": "0.25"})
+        OptimizationConstraint(**{
+            "target": "TotalPerformance.PortfolioStatistics.Drawdown",
+            "operator": "less",
+            "target-value": "0.25"
+        })
     ]
 
     container.optimizer_config_manager.override(providers.Object(optimizer_config_manager))
@@ -510,37 +503,3 @@ def test_optimize_runs_custom_image_when_given_as_option() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == DockerImage(name="custom/lean", tag="456")
-
-
-@pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
-                                                                            (None, False, True),
-                                                                            ("custom/lean:3", True, False),
-                                                                            ("custom/lean:3", False, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, True, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, False, True)])
-def test_optimize_checks_for_updates(update_manager_mock: mock.Mock,
-                                     image_option: Optional[str],
-                                     update_flag: bool,
-                                     update_check_expected: bool) -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
-
-    options = []
-    if image_option is not None:
-        options.extend(["--image", image_option])
-    if update_flag:
-        options.extend(["--update"])
-
-    result = CliRunner().invoke(lean, ["optimize", "Python Project", *options])
-
-    assert result.exit_code == 0
-
-    if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
-    else:
-        update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

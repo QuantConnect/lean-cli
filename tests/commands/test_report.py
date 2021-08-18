@@ -13,7 +13,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -28,14 +27,6 @@ from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
-
-
-@pytest.fixture(autouse=True)
-def update_manager_mock() -> mock.Mock:
-    """A pytest fixture which mocks the update manager before every test."""
-    update_manager = mock.Mock()
-    container.update_manager.override(providers.Object(update_manager))
-    return update_manager
 
 
 @pytest.fixture(autouse=True)
@@ -524,36 +515,3 @@ def test_report_runs_custom_image_when_given_as_option() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == DockerImage(name="custom/lean", tag="456")
-
-
-@pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
-                                                                            (None, False, True),
-                                                                            ("custom/lean:3", True, False),
-                                                                            ("custom/lean:3", False, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, True, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, False, True)])
-def test_report_checks_for_updates(update_manager_mock: mock.Mock,
-                                   image_option: Optional[str],
-                                   update_flag: bool,
-                                   update_check_expected: bool) -> None:
-    docker_manager = mock.Mock()
-    docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    options = []
-    if image_option is not None:
-        options.extend(["--image", image_option])
-    if update_flag:
-        options.extend(["--update"])
-
-    result = CliRunner().invoke(lean, ["report",
-                                       "--backtest-results",
-                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       *options])
-
-    assert result.exit_code == 0
-
-    if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
-    else:
-        update_manager_mock.warn_if_docker_image_outdated.assert_not_called()

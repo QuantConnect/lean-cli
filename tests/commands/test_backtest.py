@@ -13,7 +13,6 @@
 
 import json
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 
 import json5
@@ -31,14 +30,6 @@ from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
-
-
-@pytest.fixture(autouse=True)
-def update_manager_mock() -> mock.Mock:
-    """A pytest fixture which mocks the update manager before every test."""
-    update_manager = mock.Mock()
-    container.update_manager.override(providers.Object(update_manager))
-    return update_manager
 
 
 def _generate_file(file: Path, content: str) -> None:
@@ -299,40 +290,6 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
                                                  debugging_method,
                                                  False,
                                                  False)
-
-
-@pytest.mark.parametrize("image_option,update_flag,update_check_expected", [(None, True, False),
-                                                                            (None, False, True),
-                                                                            ("custom/lean:3", True, False),
-                                                                            ("custom/lean:3", False, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, True, False),
-                                                                            (DEFAULT_ENGINE_IMAGE, False, True)])
-def test_backtest_checks_for_updates(update_manager_mock: mock.Mock,
-                                     image_option: Optional[str],
-                                     update_flag: bool,
-                                     update_check_expected: bool) -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    options = []
-    if image_option is not None:
-        options.extend(["--image", image_option])
-    if update_flag:
-        options.extend(["--update"])
-
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", *options])
-
-    assert result.exit_code == 0
-
-    if update_check_expected:
-        update_manager_mock.warn_if_docker_image_outdated.assert_called_once_with(ENGINE_IMAGE)
-    else:
-        update_manager_mock.warn_if_docker_image_outdated.assert_not_called()
 
 
 def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:

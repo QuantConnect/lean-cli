@@ -155,17 +155,10 @@ def research(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     research_image = cli_config_manager.get_research_image(image or project_config.get("researchImage", None))
 
-    docker_manager = container.docker_manager()
-
-    if update or not docker_manager.supports_dotnet_5(research_image):
-        docker_manager.pull_image(research_image)
-
-    if str(research_image) == DEFAULT_RESEARCH_IMAGE and not update:
-        update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(research_image)
+    container.update_manager().pull_docker_image_if_necessary(research_image, update)
 
     try:
-        docker_manager.run_image(research_image, **run_options)
+        container.docker_manager().run_image(research_image, **run_options)
     except APIError as error:
         msg = error.explanation
         if isinstance(msg, str) and any(m in msg.lower() for m in [

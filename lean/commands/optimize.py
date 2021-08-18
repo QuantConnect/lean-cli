@@ -205,14 +205,11 @@ def optimize(project: Path,
               read_only=True)
     )
 
-    docker_manager = container.docker_manager()
-
-    if update or not docker_manager.supports_dotnet_5(engine_image):
-        docker_manager.pull_image(engine_image)
+    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
-    success = docker_manager.run_image(engine_image, **run_options)
+    success = container.docker_manager().run_image(engine_image, **run_options)
 
     logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
@@ -253,7 +250,3 @@ def optimize(project: Path,
     else:
         raise RuntimeError(
             f"Something went wrong while running the optimization, the output is stored in '{relative_output_dir}'")
-
-    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
-        update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(engine_image)

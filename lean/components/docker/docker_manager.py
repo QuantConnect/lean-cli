@@ -33,7 +33,7 @@ from docker.types import Mount
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, DOTNET_5_IMAGE_CREATED_TIMESTAMP, SITE_PACKAGES_VOLUME_LIMIT, \
+from lean.constants import SITE_PACKAGES_VOLUME_LIMIT, \
     DOCKER_NETWORK
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
@@ -406,20 +406,6 @@ class DockerManager:
             docker.from_env()
         except Exception as exception:
             return "Permission denied" in str(exception)
-        return False
-
-    def supports_dotnet_5(self, image: DockerImage) -> bool:
-        """Returns whether an image supports .NET 5 based on its creation date.
-
-        :return: True if we think the image supports .NET 5, False if not or if the tag is not installed
-        """
-        # We can't make guesses on non-default images
-        if str(image) != DEFAULT_ENGINE_IMAGE and str(image) != DEFAULT_ENGINE_IMAGE:
-            return True
-
-        for img in self._get_docker_client().images.list():
-            if str(image) in img.tags:
-                return isoparse(img.attrs["Created"]) >= DOTNET_5_IMAGE_CREATED_TIMESTAMP
         return False
 
     def _get_docker_client(self) -> docker.DockerClient:

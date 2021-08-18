@@ -13,6 +13,7 @@
 
 import hashlib
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Tuple
@@ -27,6 +28,8 @@ from lean.components.config.storage import Storage
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.update_manager import UpdateManager
 from lean.models.docker import DockerImage
+
+DOCKER_IMAGE = DockerImage(name="quantconnect/lean", tag="latest")
 
 
 def create_objects() -> Tuple[mock.Mock, Storage, mock.Mock, UpdateManager]:
@@ -113,63 +116,63 @@ def test_warn_if_cli_outdated_does_nothing_when_pypi_responds_with_error(request
     logger.warn.assert_not_called()
 
 
-def test_warn_if_docker_image_outdated_warns_when_docker_hub_has_newer_version() -> None:
+def test_pull_docker_image_if_necessary_pulls_when_docker_hub_has_newer_version() -> None:
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.image_installed.return_value = True
     docker_manager.get_local_digest.return_value = "abc"
     docker_manager.get_remote_digest.return_value = "def"
 
-    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
 
-    logger.warn.assert_called()
+    docker_manager.pull_image.assert_called_once_with(DOCKER_IMAGE)
 
 
-def test_warn_if_docker_image_outdated_does_nothing_when_latest_tag_not_installed() -> None:
+def test_pull_docker_image_if_necessary_pulls_when_image_is_not_installed() -> None:
     logger, storage, docker_manager, update_manager = create_objects()
 
     docker_manager.image_installed.return_value = False
     docker_manager.get_local_digest.return_value = "abc"
 
-    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
 
-    logger.warn.assert_not_called()
+    docker_manager.pull_image.assert_called_once_with(DOCKER_IMAGE)
 
 
-@pytest.mark.parametrize("hours,update_warning_expected", [(24 * 13, False), (24 * 14, True)])
-def test_warn_if_docker_image_outdated_only_checks_once_every_two_weeks(hours: int,
-                                                                        update_warning_expected: bool) -> None:
+@pytest.mark.parametrize("hours,update_warning_expected", [(24 * 6, False), (24 * 7, True)])
+def test_pull_docker_image_if_necessary_only_pulls_once_every_week(hours: int, update_warning_expected: bool) -> None:
     logger, storage, docker_manager, update_manager = create_objects()
-    storage.set("last-update-check-quantconnect/lean:latest",
+
+    storage.set(f"last-update-check-{DOCKER_IMAGE}",
                 (datetime.now(tz=timezone.utc) - timedelta(hours=hours)).timestamp())
 
     docker_manager.image_installed.return_value = True
     docker_manager.get_local_digest.return_value = "abc"
+    docker_manager.get_remote_digest.return_value = "def"
+
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
 
     if update_warning_expected:
-        docker_manager.get_remote_digest.return_value = "def"
-
-    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
-
-    if update_warning_expected:
-        logger.warn.assert_called()
+        docker_manager.pull_image.assert_called_once_with(DOCKER_IMAGE)
     else:
-        logger.warn.assert_not_called()
+        docker_manager.pull_image.assert_not_called()
 
 
-def test_warn_if_docker_image_outdated_does_nothing_when_not_outdated() -> None:
+def test_pull_docker_image_if_necessary_forces_pull_when_force_true() -> None:
     logger, storage, docker_manager, update_manager = create_objects()
+
+    storage.set(f"last-update-check-{DOCKER_IMAGE}", datetime.now(tz=timezone.utc).timestamp())
 
     docker_manager.image_installed.return_value = True
     docker_manager.get_local_digest.return_value = "abc"
-    docker_manager.get_remote_digest.return_value = "abc"
+    docker_manager.get_remote_digest.return_value = "def"
 
-    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, True)
 
-    logger.warn.assert_not_called()
+    docker_manager.pull_image.assert_called_once_with(DOCKER_IMAGE)
 
 
-def test_warn_if_docker_image_outdated_does_nothing_when_api_responds_with_error() -> None:
+def test_pull_docker_image_if_necessary_does_nothing_when_api_responds_with_error() -> None:
     logger, storage, docker_manager, update_manager = create_objects()
 
     def get_remote_digest(image: DockerImage) -> str:
@@ -179,9 +182,25 @@ def test_warn_if_docker_image_outdated_does_nothing_when_api_responds_with_error
     docker_manager.get_local_digest.return_value = "abc"
     docker_manager.get_remote_digest.side_effect = get_remote_digest
 
-    update_manager.warn_if_docker_image_outdated(DockerImage(name="quantconnect/lean", tag="latest"))
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
 
-    logger.warn.assert_not_called()
+    docker_manager.pull_image.assert_not_called()
+
+
+def test_pull_docker_image_if_necessary_does_not_update_existing_image_when_called_from_gui() -> None:
+    os.environ["QC_LOCAL_GUI"] = "true"
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    docker_manager.image_installed.return_value = True
+    docker_manager.get_local_digest.return_value = "abc"
+    docker_manager.get_remote_digest.return_value = "def"
+
+    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
+
+    docker_manager.pull_image.assert_not_called()
+
+    os.environ["QC_LOCAL_GUI"] = "false"
 
 
 def test_show_announcements_logs_when_announcements_have_never_been_shown(requests_mock: RequestsMock) -> None:

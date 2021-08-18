@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import hashlib
+import os
 from datetime import datetime, timedelta, timezone
 from distutils.version import StrictVersion
 
@@ -82,29 +83,35 @@ class UpdateManager:
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
             self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
-    def warn_if_docker_image_outdated(self, image: DockerImage) -> None:
-        """Warns the user if the latest installed version of a Docker image is outdated.
+    def pull_docker_image_if_necessary(self, image: DockerImage, force: bool) -> None:
+        """Pulls a Docker image if necessary.
 
-        An update check is performed once every UPDATE_CHECK_INTERVAL_DOCKER_IMAGE hours (the interval is per image).
+        Docker images are pulled when they are not installed yet,
+        and once every UPDATE_CHECK_INTERVAL_DOCKER_IMAGE hours (the interval is per image).
+
+        :param image: the image to pull
+        :param force: skip the interval check to force a pull
         """
-        # Don't consider checking for updates if the latest version of the image isn't installed yet
-        if not self._docker_manager.image_installed(image):
-            return
+        if not force and self._docker_manager.image_installed(image):
+            local_digest = self._docker_manager.get_local_digest(image)
+            try:
+                remote_digest = self._docker_manager.get_remote_digest(image)
+            except APIError:
+                # The user may be offline, do nothing
+                return
 
-        if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
-            return
+            # Do nothing if we're already using the latest image
+            if remote_digest == local_digest:
+                return
 
-        local_digest = self._docker_manager.get_local_digest(image)
+            # Don't update existing image when running from local GUI
+            if os.environ.get("QC_LOCAL_GUI", "false") == "true":
+                return
 
-        try:
-            remote_digest = self._docker_manager.get_remote_digest(image)
-        except APIError:
-            # The user may be offline, do nothing
-            return
+            if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
+                return
 
-        if local_digest != remote_digest:
-            self._logger.warn(f"You are currently using an outdated version of the '{image}' Docker image")
-            self._logger.warn(f"Run `docker pull {image}` to update it to the latest version")
+        self._docker_manager.pull_image(image)
 
     def show_announcements(self) -> None:
         """Shows the announcements if they have been updated.

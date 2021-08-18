@@ -257,6 +257,13 @@ def start(organization: Optional[str],
 
     logger.info("Starting the local GUI, this may take some time...")
 
+    # Pull the Docker images used by the local GUI
+    # If this is done while the local GUI is running there is a big delay between pressing Backtest and seeing it run
+    update_manager = container.update_manager()
+    cli_config_manager = container.cli_config_manager()
+    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_engine_image())
+    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_research_image())
+
     try:
         docker_manager.run_image(DockerImage(name="python", tag="3.9.6-buster"), **run_options)
     except APIError as error:

@@ -126,19 +126,11 @@ def generate(start: datetime,
         }
     }
 
-    cli_config_manager = container.cli_config_manager()
-    engine_image = cli_config_manager.get_engine_image(image)
+    engine_image = container.cli_config_manager().get_engine_image(image)
 
-    docker_manager = container.docker_manager()
+    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 
-    if update or not docker_manager.supports_dotnet_5(engine_image):
-        docker_manager.pull_image(engine_image)
-
-    success = docker_manager.run_image(engine_image, **run_options)
+    success = container.docker_manager().run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the random data generator, see the logs above for more information")
-
-    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
-        update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(engine_image)

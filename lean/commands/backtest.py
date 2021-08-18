@@ -339,10 +339,7 @@ def backtest(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
 
-    docker_manager = container.docker_manager()
-
-    if update or not docker_manager.supports_dotnet_5(engine_image):
-        docker_manager.pull_image(engine_image)
+    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 
     if not output.exists():
         output.mkdir(parents=True)
@@ -359,7 +356,3 @@ def backtest(project: Path,
                          debugging_method,
                          release,
                          detach)
-
-    if str(engine_image) == DEFAULT_ENGINE_IMAGE and not update:
-        update_manager = container.update_manager()
-        update_manager.warn_if_docker_image_outdated(engine_image)

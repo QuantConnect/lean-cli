@@ -44,9 +44,6 @@ DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 # The default Docker image used when running a Jupyter Lab environment locally
 DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 
-# The creation timestamp of the first image supporting .NET 5
-DOTNET_5_IMAGE_CREATED_TIMESTAMP = datetime(2021, 5, 6, 21, 32, 26, tzinfo=timezone.utc)
-
 # When we install custom Python libraries, we first mount a volume to the user site packages directory
 # This caches the installation and makes subsequent backtests much faster
 # Because the site packages are not versioned, we cannot reuse the volume between algorithms with different requirements
@@ -67,7 +64,7 @@ else:
 UPDATE_CHECK_INTERVAL_CLI = 24
 
 # The interval in hours at which the CLI checks for updates to Docker images that are being ran
-UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 14
+UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 7
 
 # The interval in hours at which the CLI checks for new announcements
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
