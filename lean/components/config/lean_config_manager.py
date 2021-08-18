@@ -205,7 +205,7 @@ class LeanConfigManager:
         config["ib-host"] = "127.0.0.1"
         config["ib-port"] = "4002"
         config["ib-tws-dir"] = "/usr/local/ibgateway"
-        config["ib-version"] = "984"
+        config["ib-version"] = "985"
 
         config["iqfeed-host"] = "host.docker.internal"
 
