@@ -181,7 +181,7 @@ def optimize(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)

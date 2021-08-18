@@ -337,7 +337,7 @@ def backtest(project: Path,
     project_config_manager = container.project_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engineImage", None))
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 

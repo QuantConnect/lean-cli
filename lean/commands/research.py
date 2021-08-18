@@ -153,7 +153,7 @@ def research(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(image or project_config.get("researchImage", None))
+    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
     container.update_manager().pull_docker_image_if_necessary(research_image, update)
 
