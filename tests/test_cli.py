@@ -50,6 +50,31 @@ def requests_mock() -> None:
     return
 
 
+@pytest.fixture(autouse=True)
+def clear_global_config() -> None:
+    """A pytest fixture which clears global configuration before running the tests and restores it afterwards."""
+    global_config_path = Path("~/.lean").expanduser()
+    global_config_files = [global_config_path / file for file in ["config", "credentials"]]
+
+    for global_config_file in global_config_files:
+        if global_config_file.is_file():
+            backup_file = global_config_file.parent / f"{global_config_file.name}.bak"
+            if backup_file.is_file():
+                backup_file.unlink()
+
+            global_config_file.rename(backup_file)
+
+    yield None
+
+    for global_config_file in global_config_files:
+        if global_config_file.is_file():
+            global_config_file.unlink()
+
+        backup_file = global_config_file.parent / f"{global_config_file.name}.bak"
+        if backup_file.is_file():
+            backup_file.rename(global_config_file)
+
+
 def run_command(args: List[str],
                 cwd: Optional[Path] = None,
                 input: List[str] = [],
@@ -102,8 +127,7 @@ def test_cli() -> None:
     if user_id == "" or api_token == "":
         pytest.skip("API credentials not specified")
 
-    global_config_path = Path("~/.lean").expanduser()
-    credentials_path = global_config_path / "credentials"
+    credentials_path = Path("~/.lean").expanduser() / "credentials"
 
     # Create an empty directory to perform tests in
     test_dir = Path(tempfile.mkdtemp())
@@ -112,12 +136,6 @@ def test_cli() -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     python_project_name = f"Python Project {timestamp}"
     csharp_project_name = f"CSharp Project {timestamp}"
-
-    # Unset all global configuration
-    for file in ["config", "credentials"]:
-        config_file = global_config_path / file
-        if config_file.is_file():
-            config_file.unlink()
 
     # Log in
     run_command(["lean", "login"], input=[user_id, api_token])
