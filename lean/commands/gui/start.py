@@ -261,8 +261,8 @@ def start(organization: Optional[str],
     # If this is done while the local GUI is running there is a big delay between pressing Backtest and seeing it run
     update_manager = container.update_manager()
     cli_config_manager = container.cli_config_manager()
-    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_engine_image())
-    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_research_image())
+    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_engine_image(), False)
+    update_manager.pull_docker_image_if_necessary(cli_config_manager.get_research_image(), False)
 
     try:
         docker_manager.run_image(DockerImage(name="python", tag="3.9.6-buster"), **run_options)
@@ -273,7 +273,8 @@ def start(organization: Optional[str],
             "ports are not available"
             "an attempt was made to access a socket in a way forbidden by its access permissions"
         ]):
-            _error(f"Port {port} is already in use, please specify a different port using --port <number>", desktop)
+            _error(f"Port {port} is already in use, please specify a different port using --port <number>",
+                   shortcut_launch)
         raise error
 
     url = f"http://localhost:{port}/"

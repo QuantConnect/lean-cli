@@ -93,6 +93,9 @@ class UpdateManager:
         :param force: skip the interval check to force a pull
         """
         if not force and self._docker_manager.image_installed(image):
+            if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
+                return
+
             local_digest = self._docker_manager.get_local_digest(image)
             try:
                 remote_digest = self._docker_manager.get_remote_digest(image)
@@ -106,9 +109,6 @@ class UpdateManager:
 
             # Don't update existing image when running from local GUI
             if os.environ.get("QC_LOCAL_GUI", "false") == "true":
-                return
-
-            if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
                 return
 
         self._docker_manager.pull_image(image)

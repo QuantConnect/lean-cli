@@ -114,7 +114,10 @@ def test_cli() -> None:
     csharp_project_name = f"CSharp Project {timestamp}"
 
     # Unset all global configuration
-    shutil.rmtree(global_config_path, ignore_errors=True)
+    for file in ["config", "credentials"]:
+        config_file = global_config_path / file
+        if config_file.is_file():
+            config_file.unlink()
 
     # Log in
     run_command(["lean", "login"], input=[user_id, api_token])
