@@ -21,6 +21,7 @@ import subprocess
 import sys
 import threading
 import types
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Set
 
@@ -318,6 +319,15 @@ class DockerManager:
         """
         img = self._get_docker_client().images.get_registry_data(str(image))
         return img.attrs["Descriptor"]["digest"]
+
+    def get_creation_timestamp(self, image: DockerImage) -> datetime:
+        """Returns the creation timestamp of a locally installed image.
+
+        :param image: the local image to get the creation timestamp of
+        :return: the creation timestamp of the local image
+        """
+        img = self._get_docker_client().images.get(str(image))
+        return isoparse(img.attrs["Created"])
 
     def create_network(self, name: str) -> None:
         """Creates a new bridge network, or does nothing if a network with the given name already exists.

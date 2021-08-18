@@ -904,7 +904,10 @@ def live(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    update_manager = container.update_manager()
+    image_pulled = update_manager.pull_docker_image_if_necessary(engine_image, update)
+    if algorithm_file.name.endswith(".py"):
+        update_manager.update_python_environment_if_necessary("default", engine_image, image_pulled)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 

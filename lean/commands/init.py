@@ -23,47 +23,6 @@ from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-def _download_repository(output_path: Path) -> None:
-    """Downloads the LEAN repository as a zip file.
-
-    :param output_path: the path to the zip file where the LEAN repository must be saved to
-    """
-    logger = container.logger()
-    logger.info("Downloading latest sample data from the Lean repository...")
-
-    # We download the entire Lean repository and extract the data and the launcher's config file
-    # GitHub doesn't allow downloading a specific directory
-    # Since we need ~80% of the total repository in terms of file size this shouldn't be too big of a problem
-    response = container.http_client().get("https://github.com/QuantConnect/Lean/archive/master.zip", stream=True)
-
-    total_size_bytes = int(response.headers.get("content-length", 0))
-
-    # Sometimes content length isn't set, don't show a progress bar in that case
-    if total_size_bytes > 0:
-        progress = logger.progress()
-        progress_task = progress.add_task("")
-    else:
-        progress = progress_task = None
-
-    try:
-        with output_path.open("wb") as file:
-            written_bytes = 0
-
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-
-                if progress is not None:
-                    written_bytes += len(chunk)
-                    progress.update(progress_task, completed=(written_bytes / total_size_bytes) * 100)
-    except KeyboardInterrupt as e:
-        if progress is not None:
-            progress.stop()
-        raise e
-
-    if progress is not None:
-        progress.stop()
-
-
 @click.command(cls=LeanCommand)
 def init() -> None:
     """Scaffold a Lean configuration file and data directory."""
@@ -86,8 +45,12 @@ def init() -> None:
         click.confirm("The current directory is not empty, continue?", default=False, abort=True)
 
     # Download the Lean repository
+    # GitHub doesn't allow downloading a specific directory
+    # Since we need ~80% of the total repository in terms of file size this shouldn't be too big of a problem
     tmp_directory = container.temp_manager().create_temporary_directory()
-    _download_repository(tmp_directory / "master.zip")
+    logger.info("Downloading latest sample data from the Lean repository...")
+    container.http_client().download_file("https://github.com/QuantConnect/Lean/archive/master.zip",
+                                          tmp_directory / "master.zip")
 
     # Extract the downloaded repository
     with zipfile.ZipFile(tmp_directory / "master.zip") as zip_file:

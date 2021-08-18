@@ -66,7 +66,8 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
                       module_manager,
                       project_manager,
                       TempManager(),
-                      xml_manager)
+                      xml_manager,
+                      mock.Mock())
 
 
 @pytest.mark.parametrize("release", [False, True])

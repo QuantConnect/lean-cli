@@ -36,6 +36,7 @@ from lean.components.util.name_generator import NameGenerator
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
+from lean.components.util.python_environment_manager import PythonEnvironmentManager
 from lean.components.util.shortcut_manager import ShortcutManager
 from lean.components.util.task_manager import TaskManager
 from lean.components.util.temp_manager import TempManager
@@ -98,6 +99,14 @@ class Container(DeclarativeContainer):
                                       path_manager)
 
     docker_manager = Singleton(DockerManager, logger, temp_manager, platform_manager)
+    python_environment_manager = Singleton(PythonEnvironmentManager,
+                                           logger,
+                                           api_client,
+                                           http_client,
+                                           docker_manager,
+                                           temp_manager,
+                                           platform_manager,
+                                           cache_storage)
     lean_runner = Singleton(LeanRunner,
                             logger,
                             project_config_manager,
@@ -107,12 +116,18 @@ class Container(DeclarativeContainer):
                             module_manager,
                             project_manager,
                             temp_manager,
-                            xml_manager)
+                            xml_manager,
+                            python_environment_manager)
 
     market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
 
     shortcut_manager = Singleton(ShortcutManager, logger, lean_config_manager, platform_manager, cache_storage)
-    update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
+    update_manager = Singleton(UpdateManager,
+                               logger,
+                               http_client,
+                               cache_storage,
+                               docker_manager,
+                               python_environment_manager)
 
 
 container = Container()

@@ -32,6 +32,22 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
 @pytest.fixture(autouse=True)
+def update_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the update manager before every test."""
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+    return update_manager
+
+
+@pytest.fixture(autouse=True)
+def python_environment_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the Python environment manager before every test."""
+    python_environment_manager = mock.Mock()
+    container.python_environment_manager.override(providers.Object(python_environment_manager))
+    return python_environment_manager
+
+
+@pytest.fixture(autouse=True)
 def optimizer_config_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the optimizer config manager before every test."""
     optimizer_config_manager = mock.Mock()
@@ -446,7 +462,7 @@ def test_optimize_aborts_when_run_image_fails() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_optimize_forces_update_when_update_option_given() -> None:
+def test_optimize_forces_update_when_update_option_given(update_manager_mock: mock.Mock) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -459,8 +475,32 @@ def test_optimize_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
+    update_manager_mock.pull_docker_image_if_necessary.assert_called_once_with(ENGINE_IMAGE, True)
     docker_manager.run_image.assert_called_once()
+
+
+@pytest.mark.parametrize("project,update_expected", [("Python Project", True), ("CSharp Project", False)])
+def test_optimize_updates_python_environment_when_running_python_algorithm(update_manager_mock: mock.Mock,
+                                                                           project: str,
+                                                                           update_expected: bool) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    Storage(str(Path.cwd() / project / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", project])
+
+    assert result.exit_code == 0
+
+    if update_expected:
+        update_manager_mock.update_python_environment_if_necessary.assert_called_once_with("default",
+                                                                                           ENGINE_IMAGE,
+                                                                                           mock.ANY)
+    else:
+        update_manager_mock.update_python_environment_if_necessary.assert_not_called()
 
 
 def test_optimize_runs_custom_image_when_set_in_config() -> None:

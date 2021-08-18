@@ -37,7 +37,7 @@ def create_objects() -> Tuple[mock.Mock, Storage, mock.Mock, UpdateManager]:
     storage = Storage(str(Path("~/.lean/cache").expanduser()))
     docker_manager = mock.Mock()
 
-    update_manager = UpdateManager(logger, HTTPClient(logger), storage, docker_manager)
+    update_manager = UpdateManager(logger, HTTPClient(logger), storage, docker_manager, mock.Mock())
 
     return logger, storage, docker_manager, update_manager
 

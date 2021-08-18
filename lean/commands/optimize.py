@@ -194,7 +194,13 @@ def optimize(project: Path,
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner()
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
+    run_options = lean_runner.get_basic_docker_config(lean_config,
+                                                      algorithm_file,
+                                                      output,
+                                                      engine_image,
+                                                      None,
+                                                      release,
+                                                      detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")
@@ -205,7 +211,10 @@ def optimize(project: Path,
               read_only=True)
     )
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    update_manager = container.update_manager()
+    image_pulled = update_manager.pull_docker_image_if_necessary(engine_image, update)
+    if algorithm_file.name.endswith(".py"):
+        update_manager.update_python_environment_if_necessary("default", engine_image, image_pulled)
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 

@@ -29,6 +29,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
+from lean.components.util.python_environment_manager import PythonEnvironmentManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
@@ -48,7 +49,8 @@ class LeanRunner:
                  module_manager: ModuleManager,
                  project_manager: ProjectManager,
                  temp_manager: TempManager,
-                 xml_manager: XMLManager) -> None:
+                 xml_manager: XMLManager,
+                 python_environment_manager: PythonEnvironmentManager) -> None:
         """Creates a new LeanRunner instance.
 
         :param logger: the logger that is used to print messages
@@ -60,6 +62,7 @@ class LeanRunner:
         :param project_manager: the ProjectManager instance to use for copying source code to output directories
         :param temp_manager: the TempManager instance to use for creating temporary directories
         :param xml_manager: the XMLManager instance to use for reading/writing XML files
+        :param python_environment_manager: the PythonEnvironmentManager instance to get Python environments from
         """
         self._logger = logger
         self._project_config_manager = project_config_manager
@@ -70,6 +73,7 @@ class LeanRunner:
         self._project_manager = project_manager
         self._temp_manager = temp_manager
         self._xml_manager = xml_manager
+        self._python_environment_manager = python_environment_manager
 
     def run_lean(self,
                  lean_config: Dict[str, Any],
@@ -100,6 +104,7 @@ class LeanRunner:
         run_options = self.get_basic_docker_config(lean_config,
                                                    algorithm_file,
                                                    output_dir,
+                                                   image,
                                                    debugging_method,
                                                    release,
                                                    detach)
@@ -160,6 +165,7 @@ class LeanRunner:
                                 lean_config: Dict[str, Any],
                                 algorithm_file: Path,
                                 output_dir: Path,
+                                image: DockerImage,
                                 debugging_method: Optional[DebuggingMethod],
                                 release: bool,
                                 detach: bool) -> Dict[str, Any]:
@@ -170,6 +176,7 @@ class LeanRunner:
         :param lean_config: the LEAN configuration to use
         :param algorithm_file: the path to the file containing the algorithm
         :param output_dir: the directory to save output data to
+        :param image: the Docker image that will be used to run LEAN
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
@@ -302,7 +309,8 @@ class LeanRunner:
 
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self.set_up_python_options(project_dir, run_options)
+            self.set_up_python_options(project_dir, run_options, image)
+            lean_config["python-venv"] = "/venv"
         else:
             if not set_up_common_csharp_options_called:
                 self.set_up_common_csharp_options(run_options)
@@ -331,15 +339,23 @@ class LeanRunner:
 
         return run_options
 
-    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any], image: DockerImage) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
+        :param image: the Docker image that will be used to run LEAN
         """
         # Mount the project directory
         run_options["volumes"][str(project_dir)] = {
             "bind": "/LeanCLI",
+            "mode": "rw"
+        }
+
+        # Mount the Python environment
+        env_dir = self._python_environment_manager.get_environment_directory("default", image)
+        run_options["volumes"][str(env_dir)] = {
+            "bind": "/venv",
             "mode": "rw"
         }
 

@@ -27,6 +27,7 @@ from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
+from lean.components.util.python_environment_manager import PythonEnvironmentManager
 from lean.constants import (UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS, UPDATE_CHECK_INTERVAL_CLI,
                             UPDATE_CHECK_INTERVAL_DOCKER_IMAGE)
 from lean.models.docker import DockerImage
@@ -39,18 +40,21 @@ class UpdateManager:
                  logger: Logger,
                  http_client: HTTPClient,
                  cache_storage: Storage,
-                 docker_manager: DockerManager) -> None:
+                 docker_manager: DockerManager,
+                 python_environment_manager: PythonEnvironmentManager) -> None:
         """Creates a new UpdateManager instance.
 
         :param logger: the logger to use when warning the user when something is outdated
         :param http_client: the HTTPClient instance to use for HTTP requests
         :param cache_storage: the Storage instance to use for getting/setting the last time a certain update check was performed
         :param docker_manager: the DockerManager instance to use to check for Docker updates
+        :param python_environment_manager: the PythonEnvironmentManager to use
         """
         self._logger = logger
         self._http_client = http_client
         self._cache_storage = cache_storage
         self._docker_manager = docker_manager
+        self._python_environment_manager = python_environment_manager
 
     def warn_if_cli_outdated(self, force: bool = False) -> None:
         """Warns the user if the CLI is outdated.
@@ -83,7 +87,7 @@ class UpdateManager:
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
             self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
-    def pull_docker_image_if_necessary(self, image: DockerImage, force: bool) -> None:
+    def pull_docker_image_if_necessary(self, image: DockerImage, force: bool) -> bool:
         """Pulls a Docker image if necessary.
 
         Docker images are pulled when they are not installed yet,
@@ -91,10 +95,11 @@ class UpdateManager:
 
         :param image: the image to pull
         :param force: skip the interval check to force a pull
+        :return: True if the image has been pulled, False if not
         """
         if not force and self._docker_manager.image_installed(image):
             if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
-                return
+                return False
 
             local_digest = self._docker_manager.get_local_digest(image)
 
@@ -106,17 +111,39 @@ class UpdateManager:
                 remote_digest = self._docker_manager.get_remote_digest(image)
             except APIError:
                 # The user may be offline, do nothing
-                return
+                return False
 
             # Do nothing if we're already using the latest image
             if remote_digest == local_digest:
-                return
+                return False
 
             # Don't update existing image when running from local GUI
             if os.environ.get("QC_LOCAL_GUI", "false") == "true":
-                return
+                return False
 
         self._docker_manager.pull_image(image)
+        return True
+
+    def update_python_environment_if_necessary(self, environment_id: str, image: DockerImage, force: bool) -> None:
+        """Updates a Python environment if necessary.
+
+        Python environments are downloaded when they are not stored locally yet,
+        and updated whenever this method is called with force = True.
+
+        :param environment_id: the id of the environment
+        :param image: the image the environment will be used with
+        :param force: whether the environment must be updated if it is already installed
+        """
+        if self._python_environment_manager.is_environment_installed(environment_id, image):
+            # Don't update existing environment when force is not True
+            if not force:
+                return
+
+            # Don't update existing environment when running from local GUI
+            if os.environ.get("QC_LOCAL_GUI", "false") == "true":
+                return
+
+        self._python_environment_manager.update_environment(environment_id, image)
 
     def show_announcements(self) -> None:
         """Shows the announcements if they have been updated.

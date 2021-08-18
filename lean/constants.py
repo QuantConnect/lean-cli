@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
@@ -28,6 +27,9 @@ CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
 # The directory in which modules are stored
 MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
+
+# The directory in which Python environments are stored
+ENVIRONMENTS_DIRECTORY = str(Path("~/.lean/python-environments").expanduser())
 
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
@@ -83,6 +85,10 @@ ATREYU_PRODUCT_ID = 65
 
 # The product id of the GUI module
 GUI_PRODUCT_ID = 119
+
+# The product id of the virtual environments module
+# TODO: Update this to the correct value
+PYTHON_ENVIRONMENTS_PRODUCT_ID = 44
 
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"

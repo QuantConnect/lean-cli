@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
@@ -25,6 +26,22 @@ from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 RESEARCH_IMAGE = DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
+
+
+@pytest.fixture(autouse=True)
+def update_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the update manager before every test."""
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+    return update_manager
+
+
+@pytest.fixture(autouse=True)
+def python_environment_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the Python environment manager before every test."""
+    python_environment_manager = mock.Mock()
+    container.python_environment_manager.override(providers.Object(python_environment_manager))
+    return python_environment_manager
 
 
 def test_research_runs_research_container() -> None:
@@ -181,7 +198,7 @@ def test_research_opens_browser_when_container_started(open) -> None:
     open.assert_called_once_with("http://localhost:8888/")
 
 
-def test_research_forces_update_when_update_option_given() -> None:
+def test_research_forces_update_when_update_option_given(update_manager_mock: mock.Mock) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
@@ -191,8 +208,29 @@ def test_research_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with(RESEARCH_IMAGE)
+    update_manager_mock.pull_docker_image_if_necessary.assert_called_once_with(RESEARCH_IMAGE, True)
     docker_manager.run_image.assert_called_once()
+
+
+@pytest.mark.parametrize("project,update_expected", [("Python Project", True), ("CSharp Project", False)])
+def test_research_updates_python_environment_when_running_python_algorithm(update_manager_mock: mock.Mock,
+                                                                           project: str,
+                                                                           update_expected: bool) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    result = CliRunner().invoke(lean, ["research", project])
+
+    assert result.exit_code == 0
+
+    if update_expected:
+        update_manager_mock.update_python_environment_if_necessary.assert_called_once_with("default",
+                                                                                           RESEARCH_IMAGE,
+                                                                                           mock.ANY)
+    else:
+        update_manager_mock.update_python_environment_if_necessary.assert_not_called()
 
 
 def test_research_runs_custom_image_when_set_in_config() -> None:

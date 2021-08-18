@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+from pathlib import Path
 
 import requests
 
@@ -79,6 +80,41 @@ class HTTPClient:
 
         self._check_response(response, raise_for_status)
         return response
+
+    def download_file(self, url: str, output_path: Path) -> None:
+        """Downloads a file and shows a progress bar when possible.
+
+        :param url: the url to the file to download
+        :param output_path: the path to save the file contents to
+        """
+        response = self.get(url, stream=True)
+
+        total_size_bytes = int(response.headers.get("content-length", 0))
+
+        # Sometimes content length isn't set, don't show a progress bar in that case
+        if total_size_bytes > 0:
+            progress = self._logger.progress()
+            progress_task = progress.add_task("")
+        else:
+            progress = progress_task = None
+
+        try:
+            with output_path.open("wb") as file:
+                written_bytes = 0
+
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+
+                    if progress is not None:
+                        written_bytes += len(chunk)
+                        progress.update(progress_task, completed=(written_bytes / total_size_bytes) * 100)
+        except KeyboardInterrupt as e:
+            if progress is not None:
+                progress.stop()
+            raise e
+
+        if progress is not None:
+            progress.stop()
 
     def log_unsuccessful_response(self, response: requests.Response) -> None:
         """Logs an unsuccessful response's status code and body.

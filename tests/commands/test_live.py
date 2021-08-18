@@ -30,6 +30,14 @@ from tests.test_helpers import create_fake_lean_cli_directory
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
+@pytest.fixture(autouse=True)
+def update_manager_mock() -> mock.Mock:
+    """A pytest fixture which mocks the update manager before every test."""
+    update_manager = mock.Mock()
+    container.update_manager.override(providers.Object(update_manager))
+    return update_manager
+
+
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
 
@@ -519,7 +527,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                                                          False)
 
 
-def test_live_forces_update_when_update_option_given() -> None:
+def test_live_forces_update_when_update_option_given(update_manager_mock: mock.Mock) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
 
@@ -533,7 +541,7 @@ def test_live_forces_update_when_update_option_given() -> None:
 
     assert result.exit_code == 0
 
-    docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
+    update_manager_mock.pull_docker_image_if_necessary.assert_called_once_with(ENGINE_IMAGE, True)
     lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "live-paper",
                                                  Path("Python Project/main.py").resolve(),
@@ -542,6 +550,31 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  None,
                                                  False,
                                                  False)
+
+
+@pytest.mark.parametrize("project,update_expected", [("Python Project", True), ("CSharp Project", False)])
+def test_live_updates_python_environment_when_running_python_algorithm(update_manager_mock: mock.Mock,
+                                                                       project: str,
+                                                                       update_expected: bool) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["live", project, "--environment", "live-paper"])
+
+    assert result.exit_code == 0
+
+    if update_expected:
+        update_manager_mock.update_python_environment_if_necessary.assert_called_once_with("default",
+                                                                                           ENGINE_IMAGE,
+                                                                                           mock.ANY)
+    else:
+        update_manager_mock.update_python_environment_if_necessary.assert_not_called()
 
 
 def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:

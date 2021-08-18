@@ -93,11 +93,18 @@ def research(project: Path,
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
+    project_config_manager = container.project_config_manager()
+    cli_config_manager = container.cli_config_manager()
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    research_image = cli_config_manager.get_research_image(image or project_config.get("researchImage", None))
+
     lean_runner = container.lean_runner()
     temp_manager = container.temp_manager()
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
+                                                      research_image,
                                                       None,
                                                       False,
                                                       detach)
@@ -155,7 +162,10 @@ def research(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
-    container.update_manager().pull_docker_image_if_necessary(research_image, update)
+    update_manager = container.update_manager()
+    image_pulled = update_manager.pull_docker_image_if_necessary(research_image, update)
+    if algorithm_file.name.endswith(".py"):
+        update_manager.update_python_environment_if_necessary("default", research_image, image_pulled)
 
     try:
         container.docker_manager().run_image(research_image, **run_options)
