@@ -336,7 +336,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="Your Binance API secret")
 @click.option("--binance-use-testnet",
               type=bool,
-              default=lambda: _get_default_value("gdax-use-testnet"),
+              default=lambda: _get_default_value("binance-use-testnet"),
               help="Whether the testnet should be used")
 @click.option("--zerodha-api-key",
               type=str,

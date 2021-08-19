@@ -297,7 +297,8 @@ brokerage_required_options = {
     },
     "Binance": {
         "binance-api-key": "123",
-        "binance-api-secret": "456"
+        "binance-api-secret": "456",
+        "binance-use-testnet": "yes"
     },
     "Zerodha": {
         "zerodha-api-key": "123",
@@ -347,7 +348,9 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
             else:
                 data_feed = "Binance"
-                options.extend(["--binance-api-key", "123", "--binance-api-secret", "456"])
+                options.extend(["--binance-api-key", "123",
+                                "--binance-api-secret", "456",
+                                "--binance-use-testnet", "no"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
@@ -453,7 +456,9 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
             else:
                 data_feed = "Binance"
-                options.extend(["--binance-api-key", "123", "--binance-api-secret", "456"])
+                options.extend(["--binance-api-key", "123",
+                                "--binance-api-secret", "456",
+                                "--binance-use-testnet", "no"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
