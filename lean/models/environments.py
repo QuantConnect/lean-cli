@@ -20,8 +20,8 @@ from lean.models.pydantic import WrappedBaseModel
 class PythonEnvironment(WrappedBaseModel):
     foundation_hash: str
     requirements_hash: str
-    environment_id: str
     lean_version: int
+    environment_id: str
 
     @classmethod
     def parse(cls, file: Union[Path, str]) -> 'PythonEnvironment':
@@ -36,18 +36,16 @@ class PythonEnvironment(WrappedBaseModel):
             file = file.split("/")[-1]
 
         file = file.replace(".zip", "")
-
-        # TODO: Update this when the actual file names are known
-        foundation_hash, requirements_hash, environment_id, lean_version = file.split("_")
+        foundation_hash, requirements_hash, lean_version, environment_id = file.split("_")
 
         return PythonEnvironment(foundation_hash=foundation_hash,
                                  requirements_hash=requirements_hash,
-                                 environment_id=environment_id,
-                                 lean_version=int(lean_version))
+                                 lean_version=int(lean_version),
+                                 environment_id=environment_id)
 
     def __str__(self) -> str:
         """Returns the full name of the virtual environment without extension.
 
         :return: the full name of the virtual environment without extension
         """
-        return f"{self.foundation_hash}_{self.requirements_hash}_{self.environment_id}_{self.lean_version}"
+        return f"{self.foundation_hash}_{self.requirements_hash}_{self.lean_version}_{self.environment_id}"

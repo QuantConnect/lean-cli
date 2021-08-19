@@ -17,14 +17,14 @@ import zipfile
 from base64 import b64decode
 from pathlib import Path
 
-from lean.components.api.api_client import APIClient
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
-from lean.constants import ENVIRONMENTS_DIRECTORY, PYTHON_ENVIRONMENTS_PRODUCT_ID
+from lean.components.util.xml_manager import XMLManager
+from lean.constants import PYTHON_ENVIRONMENTS_DIRECTORY
 from lean.models.docker import DockerImage
 from lean.models.environments import PythonEnvironment
 
@@ -34,31 +34,31 @@ class PythonEnvironmentManager:
 
     def __init__(self,
                  logger: Logger,
-                 api_client: APIClient,
                  http_client: HTTPClient,
                  docker_manager: DockerManager,
                  temp_manager: TempManager,
                  platform_manager: PlatformManager,
+                 xml_manager: XMLManager,
                  cache_storage: Storage) -> None:
         """Creates a new PythonEnvironmentManager instance.
 
         :param logger: the logger to use
-        :param api_client: the APIClient to use
         :param http_client: the HTTPClient to use
         :param docker_manager: the DockerManager to use
         :param temp_manager: the TempManager to use
         :param platform_manager: the PlatformManager to use
+        :param xml_manager: the XMLManager to use
         :param cache_storage: the Storage instance to store image digest -> foundation hash mappings in
         """
         self._logger = logger
-        self._api_client = api_client
         self._http_client = http_client
         self._docker_manager = docker_manager
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
+        self._xml_manager = xml_manager
         self._cache_storage = cache_storage
 
-        self._environments_dir = Path(ENVIRONMENTS_DIRECTORY)
+        self._environments_dir = Path(PYTHON_ENVIRONMENTS_DIRECTORY)
         self._cache_key = "docker-image-foundation-hashes"
 
         if not self._environments_dir.is_dir():
@@ -97,10 +97,12 @@ class PythonEnvironmentManager:
         :param environment_id: the id of the environment to download the latest version of
         :param image: the image with which the environment will be used
         """
-        organization_id = self._api_client.accounts.get_organization().organizationId
-        available_files = self._api_client.modules.list_files(PYTHON_ENVIRONMENTS_PRODUCT_ID, organization_id)
-
         foundation_hash = self._get_foundation_hash(image)
+
+        files_response = self._http_client.get(
+            f"http://datastore.quantconnect.com:9001/environments?prefix={foundation_hash}_")
+        files_xml = self._xml_manager.parse(files_response.text)
+        available_files = [x.text for x in files_xml.findall(".//Contents/Key")]
 
         latest_zip = None
         latest_zip_environment = None
@@ -126,7 +128,7 @@ class PythonEnvironmentManager:
         if final_environment_dir.is_dir():
             return
 
-        download_link = self._api_client.modules.get_link(PYTHON_ENVIRONMENTS_PRODUCT_ID, organization_id, latest_zip)
+        download_link = f"http://datastore.quantconnect.com:9001/environments/{latest_zip}"
 
         tmp_dir = self._temp_manager.create_temporary_directory()
         tmp_archive_file = tmp_dir / f"{latest_zip_environment}.zip"

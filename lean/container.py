@@ -101,11 +101,11 @@ class Container(DeclarativeContainer):
     docker_manager = Singleton(DockerManager, logger, temp_manager, platform_manager)
     python_environment_manager = Singleton(PythonEnvironmentManager,
                                            logger,
-                                           api_client,
                                            http_client,
                                            docker_manager,
                                            temp_manager,
                                            platform_manager,
+                                           xml_manager,
                                            cache_storage)
     lean_runner = Singleton(LeanRunner,
                             logger,
