@@ -334,6 +334,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("binance-api-secret"),
               help="Your Binance API secret")
+@click.option("--binance-use-testnet",
+              type=bool,
+              default=lambda: _get_default_value("gdax-use-testnet"),
+              help="Whether the testnet should be used")
 @click.option("--zerodha-api-key",
               type=str,
               default=lambda: _get_default_value("zerodha-api-key"),
@@ -559,6 +563,7 @@ def live(project: Path,
          gdax_use_sandbox: Optional[bool],
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
+         binance_use_testnet: Optional[bool],
          zerodha_api_key: Optional[str],
          zerodha_access_token: Optional[str],
          zerodha_product_type: Optional[str],
@@ -682,8 +687,8 @@ def live(project: Path,
                                                         gdax_passphrase,
                                                         gdax_use_sandbox)
         elif brokerage == BinanceBrokerage.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret"])
-            brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret)
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_use_testnet"])
+            brokerage_configurer = BinanceBrokerage(binance_api_key, binance_api_secret, binance_use_testnet)
         elif brokerage == ZerodhaBrokerage.get_name():
             ensure_options(["zerodha_api_key",
                             "zerodha_access_token",
@@ -789,8 +794,10 @@ def live(project: Path,
                                                                             gdax_passphrase,
                                                                             gdax_use_sandbox))
         elif data_feed == BinanceDataFeed.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret"])
-            data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key, binance_api_secret))
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_use_testnet"])
+            data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_api_key,
+                                                                    binance_api_secret,
+                                                                    binance_use_testnet))
         elif data_feed == ZerodhaDataFeed.get_name():
             ensure_options(["zerodha_api_key",
                             "zerodha_access_token",

@@ -741,6 +741,7 @@ Options:
   --gdax-use-sandbox BOOLEAN      Whether the sandbox should be used
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binance-use-testnet BOOLEAN   Whether the testnet should be used
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]

@@ -23,9 +23,10 @@ from lean.models.config import LeanConfigConfigurer
 class BinanceBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Binance brokerage."""
 
-    def __init__(self, api_key: str, api_secret: str) -> None:
+    def __init__(self, api_key: str, api_secret: str, testnet: bool) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
+        self._testnet = testnet
 
     @classmethod
     def get_name(cls) -> str:
@@ -39,8 +40,9 @@ Create an API key by logging in and accessing the Binance API Management page (h
 
         api_key = click.prompt("API key", cls._get_default(lean_config, "binance-api-key"))
         api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "binance-api-secret"))
+        testnet = click.confirm("Use the testnet?")
 
-        return BinanceBrokerage(api_key, api_secret)
+        return BinanceBrokerage(api_key, api_secret, testnet)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         lean_config["environments"][environment_name]["live-mode-brokerage"] = "BinanceBrokerage"
@@ -50,8 +52,16 @@ Create an API key by logging in and accessing the Binance API Management page (h
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         lean_config["binance-api-key"] = self._api_key
         lean_config["binance-api-secret"] = self._api_secret
+        lean_config["binance-use-testnet"] = self._testnet
 
-        self._save_properties(lean_config, ["binance-api-key", "binance-api-secret"])
+        if self._testnet:
+            lean_config["binance-api-url"] = "https://testnet.binance.vision"
+            lean_config["binance-websocket-url"] = "wss://testnet.binance.vision/ws"
+        else:
+            lean_config["binance-api-url"] = "https://api.binance.com"
+            lean_config["binance-websocket-url"] = "wss://stream.binance.com:9443/ws"
+
+        self._save_properties(lean_config, ["binance-api-key", "binance-api-secret", "binance-use-testnet"])
 
 
 class BinanceDataFeed(LeanConfigConfigurer):
