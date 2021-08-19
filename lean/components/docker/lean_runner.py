@@ -242,11 +242,12 @@ class LeanRunner:
         }
 
         # Mount all local files referenced in the Lean config
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         for key in ["transaction-log", "bloomberg-symbol-map-file"]:
             if key not in lean_config or lean_config[key] == "":
                 continue
 
-            local_path = Path(lean_config[key])
+            local_path = cli_root_dir / lean_config[key]
             if not local_path.exists():
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.touch()
