@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
 from typing import Optional
 
 from lean.components.config.storage import Storage
@@ -21,7 +20,6 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import PYTHON_ENVIRONMENTS_DIRECTORY
 from lean.models.docker import DockerImage
 from lean.models.environments import PythonEnvironment
 
@@ -55,11 +53,7 @@ class PythonEnvironmentManager:
         self._xml_manager = xml_manager
         self._cache_storage = cache_storage
 
-        self._environments_dir = Path(PYTHON_ENVIRONMENTS_DIRECTORY)
         self._cache_key = "docker-image-foundation-hashes"
-
-        if not self._environments_dir.is_dir():
-            self._environments_dir.mkdir(parents=True)
 
     def get_environment_volume(self, environment_id: str, image: DockerImage) -> Optional[str]:
         """Returns the path to an unpacked environment and downloads it if it doesn't exist yet.
@@ -149,10 +143,11 @@ class PythonEnvironmentManager:
             self._docker_manager.create_volume(environment_volume)
             success = self._docker_manager.run_image(image,
                                                      commands=[
-                                                         "cd /work",
-                                                         f"unzip -q /work/{tmp_archive_file.name}",
+                                                         f"mv /work/{tmp_archive_file.name} /tmp/{tmp_archive_file.name}",
+                                                         "cd /tmp",
+                                                         f"time unzip -q /tmp/{tmp_archive_file.name}",
                                                          "shopt -s dotglob",
-                                                         f"mv /work/{tmp_archive_dir.name}/* /output"
+                                                         f"mv /tmp/{tmp_archive_dir.name}/* /output"
                                                      ],
                                                      volumes={
                                                          str(tmp_dir): {

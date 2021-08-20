@@ -28,9 +28,6 @@ CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 # The directory in which modules are stored
 MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
 
-# The directory in which Python environments are stored
-PYTHON_ENVIRONMENTS_DIRECTORY = str(Path("~/.lean/python-environments").expanduser())
-
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
 

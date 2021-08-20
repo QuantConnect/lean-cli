@@ -203,6 +203,9 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
     "debugging": false,
     "debugging-method": "LocalCmdline",
 
+    // location of a python virtual env to use libraries from
+    //"python-venv": "/venv",
+
     // parameters to set in the algorithm (the below are just samples)
     "parameters": {
         // Intrinio account user and password
@@ -244,7 +247,7 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
 
     for key in ["environment",
                 "algorithm-type-name", "algorithm-language", "algorithm-location",
-                "composer-dll-directory",
+                "composer-dll-directory", "python-venv",
                 "debugging", "debugging-method",
                 "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow",
                 "ib-host", "ib-port", "ib-tws-dir", "ib-version",
@@ -290,6 +293,9 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     "debugging": false,
     "debugging-method": "LocalCmdline",
 
+    // location of a python virtual env to use libraries from
+    //"python-venv": "/venv",
+
     // parameters to set in the algorithm (the below are just samples)
     "parameters": {
         // Intrinio account user and password
@@ -334,6 +340,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     assert "//Physical DLL location" not in clean_config
     assert "//Research notebook" not in clean_config
     assert "// debugging configuration - options for debugging-method LocalCmdLine, VisualStudio, PTVSD, PyCharm" not in clean_config
+    assert " // location of a python virtual env to use libraries from" not in clean_config
     assert "// parameters to set in the algorithm (the below are just samples)" not in clean_config
     assert "// Intrinio account user and password" not in clean_config
 

@@ -179,7 +179,7 @@ class LeanConfigManager:
         :return: the same config as passed in with the config argument, but without the auto-configurable keys
         """
         # The keys that we can set automatically based on the command that is ran
-        keys_to_remove = ["environment"
+        keys_to_remove = ["environment",
                           "composer-dll-directory", "python-venv",
                           "debugging", "debugging-method",
                           "job-user-id", "api-access-token",
