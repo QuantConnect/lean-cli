@@ -33,4 +33,8 @@ class ServiceClient:
         :return: the terminal's news items
         """
         data = self._api.post("services/terminal-news")
+
+        if not data["news"]:
+            return []
+
         return [QCTerminalNewsItem(**item) for item in data["news"]]
