@@ -354,9 +354,10 @@ class LeanRunner:
         }
 
         # Mount the Python environment
-        env_dir = self._python_environment_manager.get_environment_directory("default", image)
-        if env_dir is not None:
-            run_options["volumes"][str(env_dir)] = {
+        # TODO: testEnv -> default before release
+        env_volume = self._python_environment_manager.get_environment_volume("testEnv", image)
+        if env_volume is not None:
+            run_options["volumes"][env_volume] = {
                 "bind": "/venv",
                 "mode": "rw"
             }

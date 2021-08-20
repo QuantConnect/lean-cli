@@ -23,7 +23,7 @@ import threading
 import types
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional, Set, List
 
 import docker
 from dateutil.parser import isoparse
@@ -297,6 +297,15 @@ class DockerManager:
         docker_client = self._get_docker_client()
         return any(str(image) in x.tags for x in docker_client.images.list())
 
+    def get_local_id(self, image: DockerImage) -> str:
+        """Returns the id of a locally installed image.
+
+        :param image: the local image to get the id of
+        :return: the id of the local image
+        """
+        img = self._get_docker_client().images.get(str(image))
+        return img.attrs["Id"].split(":")[1]
+
     def get_local_digest(self, image: DockerImage) -> Optional[str]:
         """Returns the digest of a locally installed image.
 
@@ -338,6 +347,13 @@ class DockerManager:
         if not any(n.name == name for n in docker_client.networks.list()):
             docker_client.networks.create(name, driver="bridge")
 
+    def get_volumes(self) -> List[str]:
+        """Returns the names of all volumes.
+
+        :return: the names of all volumes
+        """
+        return [v.name for v in self._get_docker_client().volumes.list()]
+
     def create_volume(self, name: str) -> None:
         """Creates a new volume, or does nothing if a volume with the given name already exists.
 
@@ -346,6 +362,16 @@ class DockerManager:
         docker_client = self._get_docker_client()
         if not any(v.name == name for v in docker_client.volumes.list()):
             docker_client.volumes.create(name)
+
+    def remove_volume(self, name: str) -> None:
+        """Removes a volume if it exists.
+
+        :param name: the name of the volume to remove
+        """
+        docker_client = self._get_docker_client()
+        for volume in docker_client.volumes.list():
+            if volume.name == name:
+                volume.remove()
 
     def create_site_packages_volume(self, requirements_file: Path) -> str:
         """Returns the name of the volume to mount to the user's site-packages directory.

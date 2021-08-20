@@ -105,7 +105,7 @@ class UpdateManager:
 
             # If the local digest does not exist the image was built locally so there is nothing to pull
             if local_digest is None:
-                return
+                return False
 
             try:
                 remote_digest = self._docker_manager.get_remote_digest(image)

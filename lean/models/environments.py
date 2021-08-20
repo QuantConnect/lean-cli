@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from lean.models.pydantic import WrappedBaseModel
 
@@ -24,11 +24,11 @@ class PythonEnvironment(WrappedBaseModel):
     environment_id: str
 
     @classmethod
-    def parse(cls, file: Union[Path, str]) -> 'PythonEnvironment':
+    def parse(cls, file: Union[Path, str]) -> Optional['PythonEnvironment']:
         """Parses the Python environment components from a file path.
 
         :param file: the path to extract the environment information from
-        :return: a PythonEnvironment object containing the information about the environment in the given path
+        :return: a PythonEnvironment object containing the information about the environment in the given path, or None if path is not a valid environment path
         """
         if isinstance(file, Path):
             file = file.name
@@ -36,7 +36,14 @@ class PythonEnvironment(WrappedBaseModel):
             file = file.split("/")[-1]
 
         file = file.replace(".zip", "")
+
+        if file.count("_") != 3:
+            return None
+
         foundation_hash, requirements_hash, lean_version, environment_id = file.split("_")
+
+        if not lean_version.isnumeric():
+            return None
 
         return PythonEnvironment(foundation_hash=foundation_hash,
                                  requirements_hash=requirements_hash,

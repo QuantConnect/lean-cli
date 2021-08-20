@@ -11,10 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
-import shutil
-import zipfile
-from base64 import b64decode
 from pathlib import Path
 from typing import Optional
 
@@ -65,12 +61,12 @@ class PythonEnvironmentManager:
         if not self._environments_dir.is_dir():
             self._environments_dir.mkdir(parents=True)
 
-    def get_environment_directory(self, environment_id: str, image: DockerImage) -> Optional[Path]:
+    def get_environment_volume(self, environment_id: str, image: DockerImage) -> Optional[str]:
         """Returns the path to an unpacked environment and downloads it if it doesn't exist yet.
 
         :param environment_id: the id of the environment to get the path of
         :param image: the image the environment will be used with
-        :return: the path to the local directory containing the environment, or None if there is no environment for the given environment id and image
+        :return: the path to the volume containing the environment, or None if there is no environment for the given environment id and image
         """
         if not self.is_environment_installed(environment_id, image):
             self.update_environment(environment_id, image)
@@ -79,23 +75,22 @@ class PythonEnvironmentManager:
         if foundation_hash is None:
             return None
 
-        latest_dir = None
-        latest_dir_environment = None
+        latest_volume = None
+        latest_volume_environment = None
 
-        for directory in self._environments_dir.iterdir():
-            environment = PythonEnvironment.parse(directory)
+        for volume in self._docker_manager.get_volumes():
+            environment = PythonEnvironment.parse(volume)
+            if environment is None:
+                continue
 
             if environment.foundation_hash != foundation_hash:
                 continue
 
-            if latest_dir is None or environment.lean_version > latest_dir_environment.lean_version:
-                latest_dir = latest_dir
-                latest_dir_environment = environment
+            if latest_volume is None or environment.lean_version > latest_volume_environment.lean_version:
+                latest_volume = volume
+                latest_volume_environment = environment
 
-        if latest_dir is None:
-            return None
-
-        return latest_dir
+        return latest_volume
 
     def update_environment(self, environment_id: str, image: DockerImage) -> None:
         """Downloads the latest version of a Python environment.
@@ -109,7 +104,8 @@ class PythonEnvironmentManager:
 
         files_response = self._http_client.get(
             f"http://datastore.quantconnect.com:9001/environments?prefix={foundation_hash}_")
-        files_xml = self._xml_manager.parse(files_response.text)
+        files_xml_text = files_response.text.replace('xmlns="http://s3.amazonaws.com/doc/2006-03-01/"', "")
+        files_xml = self._xml_manager.parse(files_xml_text)
         available_files = [x.text for x in files_xml.findall(".//Contents/Key")]
 
         latest_zip = None
@@ -121,7 +117,7 @@ class PythonEnvironmentManager:
 
             environment = PythonEnvironment.parse(file)
 
-            if environment.foundation_hash != foundation_hash:
+            if environment.foundation_hash != foundation_hash or environment.environment_id != environment_id:
                 continue
 
             if latest_zip_environment is None or environment.lean_version > latest_zip_environment.lean_version:
@@ -131,8 +127,8 @@ class PythonEnvironmentManager:
         if latest_zip is None:
             return
 
-        final_environment_dir = self._environments_dir / str(latest_zip_environment)
-        if final_environment_dir.is_dir():
+        environment_volume = str(latest_zip_environment)
+        if environment_volume in self._docker_manager.get_volumes():
             return
 
         download_link = f"http://datastore.quantconnect.com:9001/environments/{latest_zip}"
@@ -145,10 +141,35 @@ class PythonEnvironmentManager:
             f"Downloading Python environment named '{environment_id}' containing common packages, this may take a while...")
         self._http_client.download_file(download_link, tmp_archive_file)
 
-        with zipfile.ZipFile(tmp_archive_file) as zip_file:
-            zip_file.extractall(tmp_archive_dir)
+        self._logger.info(f"Unpacking Python environment named '{environment_id}'")
 
-        tmp_archive_dir.rename(final_environment_dir)
+        try:
+            # On Windows unzipping doesn't preserve permissions and symlinks
+            # We unzip in a Linux container to a volume to have consistent behavior between platforms
+            self._docker_manager.create_volume(environment_volume)
+            success = self._docker_manager.run_image(image,
+                                                     commands=[
+                                                         "cd /work",
+                                                         f"unzip -q /work/{tmp_archive_file.name}",
+                                                         "shopt -s dotglob",
+                                                         f"mv /work/{tmp_archive_dir.name}/* /output"
+                                                     ],
+                                                     volumes={
+                                                         str(tmp_dir): {
+                                                             "bind": "/work",
+                                                             "mode": "rw"
+                                                         },
+                                                         environment_volume: {
+                                                             "bind": "/output",
+                                                             "mode": "rw"
+                                                         }
+                                                     })
+
+            if not success:
+                self._docker_manager.remove_volume(environment_volume)
+        except (Exception, KeyboardInterrupt) as e:
+            self._docker_manager.remove_volume(environment_volume)
+            raise e
 
         self._prune_unused_environments()
 
@@ -165,12 +186,14 @@ class PythonEnvironmentManager:
         if foundation_hash is None:
             return False
 
-        installed_envs = [PythonEnvironment.parse(file) for file in self._environments_dir.iterdir()]
+        installed_envs = [PythonEnvironment.parse(file) for file in self._docker_manager.get_volumes()]
+        installed_envs = [env for env in installed_envs if env is not None]
         return any(
             env.foundation_hash == foundation_hash and env.environment_id == environment_id for env in installed_envs)
 
     def _prune_unused_environments(self) -> None:
-        installed_envs = [PythonEnvironment.parse(file) for file in self._environments_dir.iterdir()]
+        installed_envs = [PythonEnvironment.parse(file) for file in self._docker_manager.get_volumes()]
+        installed_envs = [env for env in installed_envs if env is not None]
         used_envs = []
 
         cached_mapping = self._cache_storage.get(self._cache_key, {})
@@ -185,37 +208,38 @@ class PythonEnvironmentManager:
 
         for env in installed_envs:
             if env not in used_envs:
-                shutil.rmtree(self._environments_dir / str(env), ignore_errors=True)
+                self._docker_manager.remove_volume(str(env))
 
     def _get_foundation_hash(self, image: DockerImage) -> Optional[str]:
-        image_digest = self._docker_manager.get_local_digest(image)
+        image_id = self._docker_manager.get_local_id(image)
 
         cached_mapping = self._cache_storage.get(self._cache_key, {})
-        if str(image) in cached_mapping and cached_mapping[str(image)]["image-digest"] == image_digest:
+        if str(image) in cached_mapping and cached_mapping[str(image)]["image-id"] == image_id:
             return cached_mapping[str(image)]["foundation-hash"]
 
-        creation_timestamp = self._docker_manager.get_creation_timestamp(image)
-        creation_timestamp = creation_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
-        commit_response = self._http_client.get(
-            f"https://api.github.com/repos/QuantConnect/Lean/commits?per_page=1&until={creation_timestamp}")
-        commit_sha = commit_response.json()[0]["sha"]
-
-        foundation_file_name = "DockerfileLeanFoundation"
-        if self._platform_manager.is_host_arm():
-            foundation_file_name += "ARM"
-
-        file_response = self._http_client.get(
-            f"https://api.github.com/repos/QuantConnect/Lean/contents/{foundation_file_name}?ref={commit_sha}")
-
-        # TODO: Update this with how the foundation file is hashed in the cloud
-        foundation_bytes = b64decode(file_response.json()["content"].encode("utf-8"))
-        foundation_hash = hashlib.md5(foundation_bytes).hexdigest()
+        # TODO: Update this with how the foundation hash is computed in the builder
+        # creation_timestamp = self._docker_manager.get_creation_timestamp(image)
+        # creation_timestamp = creation_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # commit_response = self._http_client.get(
+        #     f"https://api.github.com/repos/QuantConnect/Lean/commits?per_page=1&until={creation_timestamp}")
+        # commit_sha = commit_response.json()[0]["sha"]
+        #
+        # foundation_file_name = "DockerfileLeanFoundation"
+        # if self._platform_manager.is_host_arm():
+        #     foundation_file_name += "ARM"
+        #
+        # file_response = self._http_client.get(
+        #     f"https://api.github.com/repos/QuantConnect/Lean/contents/{foundation_file_name}?ref={commit_sha}")
+        #
+        # foundation_bytes = b64decode(file_response.json()["content"].encode("utf-8"))
+        # foundation_hash = hashlib.md5(foundation_bytes).hexdigest()
+        foundation_hash = "0d5df9fcde0a86081fa42206e83e2a19de276fbe8ea46bdb4ed1f321af3439ce"
 
         cached_mapping = self._cache_storage.get(self._cache_key, {})
         self._cache_storage.set(self._cache_key, {
             **cached_mapping,
             str(image): {
-                "image-digest": image_digest,
+                "image-id": image_id,
                 "foundation-hash": foundation_hash
             }
         })
