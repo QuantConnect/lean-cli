@@ -16,6 +16,7 @@ import shutil
 import zipfile
 from base64 import b64decode
 from pathlib import Path
+from typing import Optional
 
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
@@ -64,17 +65,19 @@ class PythonEnvironmentManager:
         if not self._environments_dir.is_dir():
             self._environments_dir.mkdir(parents=True)
 
-    def get_environment_directory(self, environment_id: str, image: DockerImage) -> Path:
+    def get_environment_directory(self, environment_id: str, image: DockerImage) -> Optional[Path]:
         """Returns the path to an unpacked environment and downloads it if it doesn't exist yet.
 
         :param environment_id: the id of the environment to get the path of
         :param image: the image the environment will be used with
-        :return: the path to the local directory containing the environment
+        :return: the path to the local directory containing the environment, or None if there is no environment for the given environment id and image
         """
         if not self.is_environment_installed(environment_id, image):
             self.update_environment(environment_id, image)
 
         foundation_hash = self._get_foundation_hash(image)
+        if foundation_hash is None:
+            return None
 
         latest_dir = None
         latest_dir_environment = None
@@ -89,6 +92,9 @@ class PythonEnvironmentManager:
                 latest_dir = latest_dir
                 latest_dir_environment = environment
 
+        if latest_dir is None:
+            return None
+
         return latest_dir
 
     def update_environment(self, environment_id: str, image: DockerImage) -> None:
@@ -98,6 +104,8 @@ class PythonEnvironmentManager:
         :param image: the image with which the environment will be used
         """
         foundation_hash = self._get_foundation_hash(image)
+        if foundation_hash is None:
+            return
 
         files_response = self._http_client.get(
             f"http://datastore.quantconnect.com:9001/environments?prefix={foundation_hash}_")
@@ -121,8 +129,7 @@ class PythonEnvironmentManager:
                 latest_zip_environment = environment
 
         if latest_zip is None:
-            raise RuntimeError(
-                f"Did not find eligible virtual environment for environment '{environment_id}' and foundation hash '{foundation_hash}'")
+            return
 
         final_environment_dir = self._environments_dir / str(latest_zip_environment)
         if final_environment_dir.is_dir():
@@ -155,6 +162,9 @@ class PythonEnvironmentManager:
         :return: whether a version of the environment is available locally
         """
         foundation_hash = self._get_foundation_hash(image)
+        if foundation_hash is None:
+            return False
+
         installed_envs = [PythonEnvironment.parse(file) for file in self._environments_dir.iterdir()]
         return any(
             env.foundation_hash == foundation_hash and env.environment_id == environment_id for env in installed_envs)
@@ -177,7 +187,7 @@ class PythonEnvironmentManager:
             if env not in used_envs:
                 shutil.rmtree(self._environments_dir / str(env), ignore_errors=True)
 
-    def _get_foundation_hash(self, image: DockerImage) -> str:
+    def _get_foundation_hash(self, image: DockerImage) -> Optional[str]:
         image_digest = self._docker_manager.get_local_digest(image)
 
         cached_mapping = self._cache_storage.get(self._cache_key, {})

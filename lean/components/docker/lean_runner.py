@@ -310,7 +310,8 @@ class LeanRunner:
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
             self.set_up_python_options(project_dir, run_options, image)
-            lean_config["python-venv"] = "/venv"
+            if any(volume["bind"] == "/venv" for volume in run_options["volumes"].values()):
+                lean_config["python-venv"] = "/venv"
         else:
             if not set_up_common_csharp_options_called:
                 self.set_up_common_csharp_options(run_options)
@@ -354,10 +355,11 @@ class LeanRunner:
 
         # Mount the Python environment
         env_dir = self._python_environment_manager.get_environment_directory("default", image)
-        run_options["volumes"][str(env_dir)] = {
-            "bind": "/venv",
-            "mode": "rw"
-        }
+        if env_dir is not None:
+            run_options["volumes"][str(env_dir)] = {
+                "bind": "/venv",
+                "mode": "rw"
+            }
 
         # Check if the user has library projects
         library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
