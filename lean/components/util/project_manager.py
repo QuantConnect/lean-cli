@@ -426,7 +426,7 @@ class ProjectManager:
         <NoWarn>CS0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="QuantConnect.Lean" Version="2.5.11940"/>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
     </ItemGroup>
 </Project>
         """)
