@@ -19,12 +19,21 @@ from unittest import mock
 import json5
 import pytest
 
+from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
 from lean.models.config import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
+
+
+def _create_lean_config_manager(cli_config_manager: Optional[CLIConfigManager] = None) -> LeanConfigManager:
+    return LeanConfigManager(mock.Mock(),
+                             cli_config_manager or mock.Mock(),
+                             ProjectConfigManager(XMLManager()),
+                             mock.Mock(),
+                             Storage(str(Path("~/.lean/cache").expanduser())))
 
 
 def test_get_lean_config_path_returns_closest_config_file() -> None:
@@ -35,29 +44,52 @@ def test_get_lean_config_path_returns_closest_config_file() -> None:
     cwd_path.mkdir(parents=True)
     os.chdir(cwd_path)
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
 
     assert manager.get_lean_config_path() == lean_config_path
 
 
 def test_get_lean_config_path_raises_error_when_no_config_file_exists() -> None:
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
 
     with pytest.raises(Exception):
         manager.get_lean_config_path()
 
 
 def test_get_lean_config_path_returns_default_path_when_set() -> None:
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
-    manager.set_default_lean_config_path(Path.cwd() / "custom-lean.json")
+    custom_config_path = Path.cwd() / "custom-lean.json"
+    custom_config_path.touch()
+    custom_config_path.write_text("{}", encoding="utf-8")
 
-    assert manager.get_lean_config_path() == Path.cwd() / "custom-lean.json"
+    manager = _create_lean_config_manager()
+    manager.set_default_lean_config_path(custom_config_path)
+
+    assert manager.get_lean_config_path() == custom_config_path
+
+
+def test_get_known_lean_config_path_returns_previously_used_lean_config_path() -> None:
+    create_fake_lean_cli_directory()
+
+    manager = _create_lean_config_manager()
+
+    assert manager.get_lean_config_path() == Path.cwd() / "lean.json"
+
+
+def test_get_known_lean_config_path_returns_previously_used_custom_default() -> None:
+    custom_config_path = Path.cwd() / "custom-lean.json"
+    custom_config_path.touch()
+    custom_config_path.write_text("{}", encoding="utf-8")
+
+    manager = _create_lean_config_manager()
+    manager.set_default_lean_config_path(custom_config_path)
+
+    assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
 
 def test_get_cli_root_directory_returns_path_to_directory_containing_config_file() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
 
     assert manager.get_cli_root_directory() == Path.cwd()
 
@@ -66,7 +98,7 @@ def test_get_data_directory_returns_path_to_data_directory_as_configured_in_conf
     with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write('{ "data-folder": "sub1/sub2/sub3/data" }')
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
 
     assert manager.get_data_directory() == Path.cwd() / "sub1" / "sub2" / "sub3" / "data"
 
@@ -80,7 +112,7 @@ def test_get_data_directory_returns_path_to_data_directory_when_config_contains_
 }
         """)
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
 
     assert manager.get_data_directory() == Path.cwd() / "sub1" / "sub2" / "sub3" / "data"
 
@@ -94,7 +126,7 @@ def test_set_properties_adds_property_when_not_part_of_config_yet() -> None:
 }
         """)
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
@@ -113,7 +145,7 @@ def test_set_properties_updates_property_when_part_of_config_already() -> None:
 }
         """)
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
@@ -131,7 +163,7 @@ def test_set_properties_preserves_comments() -> None:
 }
         """)
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     manager.set_properties({"my-property": "my-value"})
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
@@ -207,7 +239,7 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
 }
     """
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     clean_config = manager.clean_lean_config(original_config)
 
     for key in ["environment",
@@ -294,7 +326,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
 }
     """
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     clean_config = manager.clean_lean_config(original_config)
 
     assert "// algorithm class selector" not in clean_config
@@ -314,7 +346,7 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
 def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_lean_config() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("backtesting", Path.cwd() / "Python Project" / "main.py", None)
 
     for key in ["environment",
@@ -328,7 +360,7 @@ def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_le
 def test_get_complete_lean_config_sets_environment() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["environment"] == "my-environment"
@@ -337,7 +369,7 @@ def test_get_complete_lean_config_sets_environment() -> None:
 def test_get_complete_lean_config_sets_close_automatically() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["close-automatically"]
@@ -346,7 +378,7 @@ def test_get_complete_lean_config_sets_close_automatically() -> None:
 def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert not config["debugging"]
@@ -359,7 +391,7 @@ def test_get_complete_lean_config_disables_debugging_when_no_method_given() -> N
 def test_get_complete_lean_config_parses_debugging_method_correctly(method: DebuggingMethod, value: str) -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", method)
 
     assert config["debugging"]
@@ -373,7 +405,7 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
     cli_config_manager.user_id.get_value.return_value = "123"
     cli_config_manager.api_token.get_value.return_value = "456"
 
-    manager = LeanConfigManager(mock.Mock(), cli_config_manager, ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager(cli_config_manager=cli_config_manager)
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["job-user-id"] == "123"
@@ -383,7 +415,7 @@ def test_get_complete_lean_config_sets_credentials_from_cli_config_manager() -> 
 def test_get_complete_lean_config_sets_interactive_brokers_config() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["ib-host"] == "127.0.0.1"
@@ -395,7 +427,7 @@ def test_get_complete_lean_config_sets_interactive_brokers_config() -> None:
 def test_get_complete_lean_config_sets_iqfeed_host() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["iqfeed-host"] == "host.docker.internal"
@@ -404,7 +436,7 @@ def test_get_complete_lean_config_sets_iqfeed_host() -> None:
 def test_get_complete_lean_config_sets_python_algorithm_details() -> None:
     create_fake_lean_cli_directory()
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["algorithm-type-name"] == "main"
@@ -486,7 +518,7 @@ def test_get_complete_lean_config_sets_csharp_algorithm_details(csharp_code: str
     with csharp_path.open("w+", encoding="utf-8") as file:
         file.write(csharp_code.strip() + "\n")
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", csharp_path, None)
 
     assert config["algorithm-type-name"] == class_name
@@ -503,7 +535,7 @@ def test_get_complete_lean_config_sets_parameters() -> None:
         "key3": "value3"
     })
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
 
     assert config["parameters"] == {
@@ -526,7 +558,7 @@ def test_configure_data_purchase_limit_works_correctly(provider: str,
         "data-provider": provider
     }
 
-    manager = LeanConfigManager(mock.Mock(), mock.Mock(), ProjectConfigManager(XMLManager()), mock.Mock())
+    manager = _create_lean_config_manager()
     manager.configure_data_purchase_limit(lean_config, limit)
 
     if result is not None:

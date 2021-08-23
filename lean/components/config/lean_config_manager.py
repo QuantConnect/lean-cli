@@ -13,13 +13,14 @@
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import json5
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.config.storage import Storage
 from lean.components.util.logger import Logger
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_ID
 from lean.models.config import DebuggingMethod
@@ -33,19 +34,23 @@ class LeanConfigManager:
                  logger: Logger,
                  cli_config_manager: CLIConfigManager,
                  project_config_manager: ProjectConfigManager,
-                 module_manager: ModuleManager) -> None:
+                 module_manager: ModuleManager,
+                 cache_storage: Storage) -> None:
         """Creates a new LeanConfigManager instance.
 
         :param logger: the logger to log messages with
         :param cli_config_manager: the CLIConfigManager instance to use when retrieving credentials
         :param project_config_manager: the ProjectConfigManager instance to use when retrieving project parameters
         :param module_manager: the ModuleManager to use
+        :param cache_storage: the Storage instance to store known Lean config paths in
         """
         self._logger = logger
         self._cli_config_manager = cli_config_manager
         self._project_config_manager = project_config_manager
         self._module_manager = module_manager
+        self._cache_storage = cache_storage
         self._default_path = None
+        self._lean_config_path = None
 
     def get_lean_config_path(self) -> Path:
         """Returns the path to the closest Lean config file.
@@ -60,12 +65,17 @@ class LeanConfigManager:
         if self._default_path is not None:
             return self._default_path
 
+        if self._lean_config_path is not None:
+            return self._lean_config_path
+
         # Recurse upwards in the directory tree until we find a Lean config file
         current_dir = Path.cwd()
         while True:
             target_file = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
             if target_file.exists():
-                return target_file
+                self._lean_config_path = target_file
+                self._store_known_lean_config_path(self._lean_config_path)
+                return self._lean_config_path
 
             # If the parent directory is the same as the current directory we can't go up any more
             if current_dir.parent == current_dir:
@@ -79,7 +89,21 @@ class LeanConfigManager:
 
         :param path: the path to the Lean config file to return in future calls to get_lean_config_path()
         """
+        self._store_known_lean_config_path(path)
         self._default_path = path
+
+    def get_known_lean_config_paths(self) -> List[Path]:
+        """Returns the known Lean config file paths.
+
+        :return: a list of paths to Lean config files that were used in the past
+        """
+        lean_config_paths = self._cache_storage.get("known-lean-config-paths", [])
+        lean_config_paths = [Path(p) for p in lean_config_paths]
+        lean_config_paths = [p for p in lean_config_paths if p.is_file()]
+
+        self._cache_storage.set("known-lean-config-paths", [str(p) for p in lean_config_paths])
+
+        return lean_config_paths
 
     def get_cli_root_directory(self) -> Path:
         """Returns the path to the directory containing the Lean config file.
@@ -251,3 +275,8 @@ class LeanConfigManager:
         :return: a dict containing the contents of the Lean config file
         """
         return json5.loads(self.get_lean_config_path().read_text(encoding="utf-8"))
+
+    def _store_known_lean_config_path(self, path: Path) -> None:
+        lean_config_paths = set(self._cache_storage.get("known-lean-config-paths", []))
+        lean_config_paths.add(str(path))
+        self._cache_storage.set("known-lean-config-paths", list(lean_config_paths))

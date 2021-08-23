@@ -296,14 +296,19 @@ class DockerManager:
         docker_client = self._get_docker_client()
         return any(str(image) in x.tags for x in docker_client.images.list())
 
-    def get_local_digest(self, image: DockerImage) -> str:
+    def get_local_digest(self, image: DockerImage) -> Optional[str]:
         """Returns the digest of a locally installed image.
 
         :param image: the local image to get the digest of
-        :return: the digest of the local image
+        :return: the digest of the local image, or None if the digest does not exist
         """
         img = self._get_docker_client().images.get(str(image))
-        return img.attrs["RepoDigests"][0].split("@")[1]
+
+        repo_digests = img.attrs["RepoDigests"]
+        if len(repo_digests) == 0:
+            return None
+
+        return repo_digests[0].split("@")[1]
 
     def get_remote_digest(self, image: DockerImage) -> str:
         """Returns the digest of a remote image.

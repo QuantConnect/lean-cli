@@ -19,6 +19,7 @@ import pytest
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.config.storage import Storage
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
@@ -43,7 +44,12 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
 
     project_config_manager = ProjectConfigManager(XMLManager())
 
-    lean_config_manager = LeanConfigManager(logger, cli_config_manager, project_config_manager, mock.Mock())
+    cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
+    lean_config_manager = LeanConfigManager(logger,
+                                            cli_config_manager,
+                                            project_config_manager,
+                                            mock.Mock(),
+                                            cache_storage)
     output_config_manager = OutputConfigManager(lean_config_manager)
 
     module_manager = mock.Mock()

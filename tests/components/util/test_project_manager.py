@@ -33,9 +33,14 @@ from tests.test_helpers import create_fake_lean_cli_directory
 def _create_project_manager() -> ProjectManager:
     xml_manager = XMLManager()
     project_config_manager = ProjectConfigManager(xml_manager)
+    cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
 
     return ProjectManager(project_config_manager,
-                          LeanConfigManager(mock.Mock(), mock.Mock(), project_config_manager, mock.Mock()),
+                          LeanConfigManager(mock.Mock(),
+                                            mock.Mock(),
+                                            project_config_manager,
+                                            mock.Mock(),
+                                            cache_storage),
                           xml_manager,
                           PlatformManager())
 

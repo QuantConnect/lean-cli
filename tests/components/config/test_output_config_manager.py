@@ -19,6 +19,7 @@ import pytest
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -29,10 +30,12 @@ def _create_directory(path: Path) -> Path:
 
 
 def _create_output_config_manager() -> OutputConfigManager:
+    cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
     return OutputConfigManager(LeanConfigManager(mock.Mock(),
                                                  mock.Mock(),
                                                  ProjectConfigManager(XMLManager()),
-                                                 mock.Mock()))
+                                                 mock.Mock(),
+                                                 cache_storage))
 
 
 def test_get_backtest_id_returns_id_prefixed_by_1() -> None:

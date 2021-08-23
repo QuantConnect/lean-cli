@@ -75,7 +75,8 @@ class Container(DeclarativeContainer):
                                     logger,
                                     cli_config_manager,
                                     project_config_manager,
-                                    module_manager)
+                                    module_manager,
+                                    cache_storage)
     output_config_manager = Singleton(OutputConfigManager, lean_config_manager)
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 

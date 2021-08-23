@@ -24,6 +24,7 @@ import click
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
+from lean.models.logger import Option
 
 
 class LeanCommand(click.Command):
@@ -59,14 +60,24 @@ class LeanCommand(click.Command):
 
     def invoke(self, ctx: click.Context):
         if self._requires_lean_config:
+            lean_config_manager = container.lean_config_manager()
             try:
-                # This method will throw if the directory cannot be found
-                container.lean_config_manager().get_cli_root_directory()
+                # This method will raise an error if the directory cannot be found
+                lean_config_manager.get_cli_root_directory()
             except Exception:
-                # Abort with a display-friendly error message if the command requires a Lean config
-                raise MoreInfoError(
-                    "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
-                    "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
+                # Use one of the cached Lean config locations to avoid having to abort the command
+                lean_config_paths = lean_config_manager.get_known_lean_config_paths()
+                if len(lean_config_paths) > 0:
+                    lean_config_path = container.logger().prompt_list("Select the Lean configuration file to use", [
+                        Option(id=p, label=str(p)) for p in lean_config_paths
+                    ])
+                    lean_config_manager.set_default_lean_config_path(lean_config_path)
+                else:
+                    # Abort with a display-friendly error message if the command requires a Lean config and none found
+                    raise MoreInfoError(
+                        "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
+                        "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors"
+                    )
 
         if self._requires_docker and "pytest" not in sys.modules:
             is_system_linux = container.platform_manager().is_system_linux()

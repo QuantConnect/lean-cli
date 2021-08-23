@@ -97,6 +97,11 @@ class UpdateManager:
                 return
 
             local_digest = self._docker_manager.get_local_digest(image)
+
+            # If the local digest does not exist the image was built locally so there is nothing to pull
+            if local_digest is None:
+                return
+
             try:
                 remote_digest = self._docker_manager.get_remote_digest(image)
             except APIError:
