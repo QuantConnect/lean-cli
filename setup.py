@@ -59,6 +59,7 @@ install_requires = [
     "joblib~=1.0.1",
     "python-certifi-win32~=1.6",
     "pyshortcuts~=1.8.0",
+    "wrapt~=1.12.1",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
 ]

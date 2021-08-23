@@ -11,18 +11,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import click
 import pkg_resources
-import pyshortcuts
+import wrapt
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
+
+
+def _wrapped_shortcut(wrapped, instance, args, kwargs):
+    shortcut = wrapped(*args, **kwargs)
+
+    lean_executable = sys.argv[0]
+    if " " in lean_executable:
+        shortcut = shortcut._replace(script=lean_executable,
+                                     full_script=os.path.abspath(lean_executable),
+                                     arguments=args[0][len(lean_executable) + 1:])
+
+    return shortcut
+
+
+@wrapt.when_imported("pyshortcuts.shortcut")
+def _patch_pyshortcuts(pyshortcuts) -> None:
+    """pyshortcuts is a bit limited in customization of shortcuts, so we patch it to our needs."""
+    wrapt.wrap_function_wrapper(pyshortcuts, "shortcut", _wrapped_shortcut)
 
 
 class ShortcutManager:
@@ -65,6 +84,7 @@ class ShortcutManager:
             "--shortcut-launch"
         ])
 
+        import pyshortcuts
         pyshortcuts.make_shortcut(command,
                                   name="Lean CLI GUI",
                                   description="The local GUI for the Lean CLI",
