@@ -74,7 +74,7 @@ class LeanConfigManager:
             target_file = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
             if target_file.exists():
                 self._lean_config_path = target_file
-                self._store_known_lean_config_path(self._lean_config_path)
+                self.store_known_lean_config_path(self._lean_config_path)
                 return self._lean_config_path
 
             # If the parent directory is the same as the current directory we can't go up any more
@@ -89,7 +89,7 @@ class LeanConfigManager:
 
         :param path: the path to the Lean config file to return in future calls to get_lean_config_path()
         """
-        self._store_known_lean_config_path(path)
+        self.store_known_lean_config_path(path)
         self._default_path = path
 
     def get_known_lean_config_paths(self) -> List[Path]:
@@ -104,6 +104,15 @@ class LeanConfigManager:
         self._cache_storage.set("known-lean-config-paths", [str(p) for p in lean_config_paths])
 
         return lean_config_paths
+
+    def store_known_lean_config_path(self, path: Path) -> None:
+        """Caches a path as being a known Lean configuration file path.
+
+        :param path: the path to the Lean configuration file
+        """
+        lean_config_paths = set(self._cache_storage.get("known-lean-config-paths", []))
+        lean_config_paths.add(str(path))
+        self._cache_storage.set("known-lean-config-paths", list(lean_config_paths))
 
     def get_cli_root_directory(self) -> Path:
         """Returns the path to the directory containing the Lean config file.
@@ -275,8 +284,3 @@ class LeanConfigManager:
         :return: a dict containing the contents of the Lean config file
         """
         return json5.loads(self.get_lean_config_path().read_text(encoding="utf-8"))
-
-    def _store_known_lean_config_path(self, path: Path) -> None:
-        lean_config_paths = set(self._cache_storage.get("known-lean-config-paths", []))
-        lean_config_paths.add(str(path))
-        self._cache_storage.set("known-lean-config-paths", list(lean_config_paths))

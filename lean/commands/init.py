@@ -100,6 +100,7 @@ def init() -> None:
     lean_config_manager = container.lean_config_manager()
     config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")
     config = lean_config_manager.clean_lean_config(config)
+    lean_config_manager.store_known_lean_config_path(lean_config_path)
 
     # Update the data-folder configuration
     config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
