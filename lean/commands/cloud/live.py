@@ -185,7 +185,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--binance-api-secret", type=str, help="Your Binance API secret")
 @click.option("--binance-environment",
               type=click.Choice(["demo", "real"], case_sensitive=False),
-              help="The environment to run in, demo for testnet, real for live trading")
+              help="The environment to run in, demo for testnet, real for the production environment")
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")

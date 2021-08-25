@@ -203,7 +203,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
   events and --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -226,6 +226,10 @@ Options:
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
   --gdax-environment [paper|live]
                                   The environment to run in, paper for the sandbox, live for live trading
+  --binance-api-key TEXT          Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --binance-environment [demo|real]
+                                  The environment to run in, demo for testnet, real for the production environment
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
