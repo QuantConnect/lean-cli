@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from lean.models.brokerages.cloud.bitfinex import BitfinexBrokerage
+from lean.models.brokerages.cloud.binance import BinanceBrokerage
 from lean.models.brokerages.cloud.coinbase_pro import CoinbaseProBrokerage
 from lean.models.brokerages.cloud.interactive_brokers import InteractiveBrokersBrokerage
 from lean.models.brokerages.cloud.oanda import OANDABrokerage
@@ -24,5 +25,6 @@ all_cloud_brokerages = [
     TradierBrokerage,
     OANDABrokerage,
     BitfinexBrokerage,
-    CoinbaseProBrokerage
+    CoinbaseProBrokerage,
+    BinanceBrokerage
 ]

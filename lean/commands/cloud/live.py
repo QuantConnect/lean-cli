@@ -22,7 +22,7 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCProject)
-from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.models.brokerages.cloud import all_cloud_brokerages, BinanceBrokerage
 from lean.models.brokerages.cloud.base import CloudBrokerage
 from lean.models.brokerages.cloud.bitfinex import BitfinexBrokerage
 from lean.models.brokerages.cloud.coinbase_pro import CoinbaseProBrokerage
@@ -181,6 +181,11 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--gdax-environment",
               type=click.Choice(["paper", "live"], case_sensitive=False),
               help="The environment to run in, paper for the sandbox, live for live trading")
+@click.option("--binance-api-key", type=str, help="Your Binance API key")
+@click.option("--binance-api-secret", type=str, help="Your Binance API secret")
+@click.option("--binance-environment",
+              type=click.Choice(["demo", "real"], case_sensitive=False),
+              help="The environment to run in, demo for testnet, real for live trading")
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -218,6 +223,9 @@ def live(project: str,
          gdax_api_secret: Optional[str],
          gdax_passphrase: Optional[str],
          gdax_environment: Optional[str],
+         binance_api_key: Optional[str],
+         binance_api_secret: Optional[str],
+         binance_environment: Optional[str],
          node: str,
          auto_restart: bool,
          notify_order_events: Optional[bool],
@@ -268,6 +276,9 @@ def live(project: str,
         elif brokerage == CoinbaseProBrokerage.get_name():
             ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_environment"])
             brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase, gdax_environment)
+        elif brokerage == BinanceBrokerage.get_name():
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_environment"])
+            brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_environment)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)
