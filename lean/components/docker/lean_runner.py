@@ -354,8 +354,7 @@ class LeanRunner:
         }
 
         # Mount the Python environment
-        # TODO: testEnv -> default before release
-        env_volume = self._python_environment_manager.get_environment_volume("testEnv", image)
+        env_volume = self._python_environment_manager.get_environment_volume("default", image)
         if env_volume is not None:
             run_options["volumes"][env_volume] = {
                 "bind": "/venv",
