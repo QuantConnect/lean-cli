@@ -23,7 +23,7 @@ import threading
 import types
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Set, List
+from typing import Optional, Set, List, Dict
 
 import docker
 from dateutil.parser import isoparse
@@ -337,6 +337,22 @@ class DockerManager:
         """
         img = self._get_docker_client().images.get(str(image))
         return isoparse(img.attrs["Created"])
+
+    def get_environment_variables(self, image: DockerImage) -> Dict[str, str]:
+        """Returns the environment variables that are defined in an image.
+
+        :param image: the local image to get the environment variables of
+        :return: a dictionary containing environment variable name -> value pairs
+        """
+        img = self._get_docker_client().images.get(str(image))
+        variables = img.attrs.get("Config", {}).get("Env", [])
+
+        environment = {}
+        for variable in variables:
+            key, value = variable.split("=", 1)
+            environment[key] = value
+
+        return environment
 
     def create_network(self, name: str) -> None:
         """Creates a new bridge network, or does nothing if a network with the given name already exists.

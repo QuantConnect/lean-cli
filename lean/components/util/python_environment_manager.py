@@ -212,23 +212,8 @@ class PythonEnvironmentManager:
         if str(image) in cached_mapping and cached_mapping[str(image)]["image-id"] == image_id:
             return cached_mapping[str(image)]["foundation-hash"]
 
-        # TODO: Update this with how the foundation hash is computed in the builder
-        # creation_timestamp = self._docker_manager.get_creation_timestamp(image)
-        # creation_timestamp = creation_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
-        # commit_response = self._http_client.get(
-        #     f"https://api.github.com/repos/QuantConnect/Lean/commits?per_page=1&until={creation_timestamp}")
-        # commit_sha = commit_response.json()[0]["sha"]
-        #
-        # foundation_file_name = "DockerfileLeanFoundation"
-        # if self._platform_manager.is_host_arm():
-        #     foundation_file_name += "ARM"
-        #
-        # file_response = self._http_client.get(
-        #     f"https://api.github.com/repos/QuantConnect/Lean/contents/{foundation_file_name}?ref={commit_sha}")
-        #
-        # foundation_bytes = b64decode(file_response.json()["content"].encode("utf-8"))
-        # foundation_hash = hashlib.md5(foundation_bytes).hexdigest()
-        foundation_hash = "0d5df9fcde0a86081fa42206e83e2a19de276fbe8ea46bdb4ed1f321af3439ce"
+        environment_variables = self._docker_manager.get_environment_variables(image)
+        foundation_hash = environment_variables.get("LEAN_FOUNDATION_VERSION", None)
 
         cached_mapping = self._cache_storage.get(self._cache_key, {})
         self._cache_storage.set(self._cache_key, {
