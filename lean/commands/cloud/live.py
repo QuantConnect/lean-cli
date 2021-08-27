@@ -189,7 +189,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
-@click.option("--notify-insights", type=str, help="Whether notifications must be sent for emitted insights")
+@click.option("--notify-insights", type=bool, help="Whether notifications must be sent for emitted insights")
 @click.option("--notify-emails",
               type=str,
               help="A comma-separated list of 'email:subject' pairs configuring email-notifications")

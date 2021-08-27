@@ -234,7 +234,7 @@ Options:
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
-  --notify-insights TEXT          Whether notifications must be sent for emitted insights
+  --notify-insights BOOLEAN       Whether notifications must be sent for emitted insights
   --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications
   --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
                                   configuring webhook-notifications
