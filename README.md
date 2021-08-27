@@ -82,6 +82,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean live`](#lean-live)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
+- [`lean logs`](#lean-logs)
 - [`lean optimize`](#lean-optimize)
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
@@ -856,6 +857,27 @@ Options:
 ```
 
 _See code: [lean/commands/logout.py](lean/commands/logout.py)_
+
+### `lean logs`
+
+Display the most recent backtest/live/optimization logs.
+
+```
+Usage: lean logs [OPTIONS]
+
+  Display the most recent backtest/live/optimization logs.
+
+Options:
+  --backtest           Display the most recent backtest logs (default)
+  --live               Display the most recent live logs
+  --optimization       Display the most recent optimization logs
+  --project DIRECTORY  The project to get the most recent logs from
+  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose            Enable debug logging
+  --help               Show this message and exit.
+```
+
+_See code: [lean/commands/logs.py](lean/commands/logs.py)_
 
 ### `lean optimize`
 

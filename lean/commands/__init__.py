@@ -26,6 +26,7 @@ from lean.commands.library import library
 from lean.commands.live import live
 from lean.commands.login import login
 from lean.commands.logout import logout
+from lean.commands.logs import logs
 from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
@@ -58,3 +59,4 @@ lean.add_command(research)
 lean.add_command(report)
 lean.add_command(live)
 lean.add_command(build)
+lean.add_command(logs)
