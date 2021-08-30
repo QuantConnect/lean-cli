@@ -231,16 +231,23 @@ class LeanConfigManager:
             config["debugging"] = False
             config["debugging-method"] = "LocalCmdline"
 
-        config["job-user-id"] = self._cli_config_manager.user_id.get_value(default="0")
-        config["api-access-token"] = self._cli_config_manager.api_token.get_value(default="")
-        config["job-project-id"] = self._project_config_manager.get_local_id(algorithm_file.parent)
+        # The following key -> value pairs are added to the config unless they are already set by the user
+        config_defaults = {
+            "job-user-id": self._cli_config_manager.user_id.get_value(default="0"),
+            "api-access-token": self._cli_config_manager.api_token.get_value(default=""),
+            "job-project-id": self._project_config_manager.get_local_id(algorithm_file.parent),
 
-        config["ib-host"] = "127.0.0.1"
-        config["ib-port"] = "4002"
-        config["ib-tws-dir"] = "/usr/local/ibgateway"
-        config["ib-version"] = "985"
+            "ib-host": "127.0.0.1",
+            "ib-port": "4002",
+            "ib-tws-dir": "/root/ibgateway",
+            "ib-version": "985",
 
-        config["iqfeed-host"] = "host.docker.internal"
+            "iqfeed-host": "host.docker.internal"
+        }
+
+        for key, value in config_defaults.items():
+            if config.get(key, "") == "":
+                config[key] = value
 
         if algorithm_file.name.endswith(".py"):
             config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
