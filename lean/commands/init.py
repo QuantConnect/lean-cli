@@ -18,7 +18,7 @@ from pathlib import Path
 import click
 
 from lean.click import LeanCommand
-from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_ID
+from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_SUBSCRIPTION_IDS
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
@@ -139,6 +139,6 @@ Here are some commands to get you going:
             if modules_product is None:
                 continue
 
-            if any(i for i in modules_product.items if i.productId == GUI_PRODUCT_ID):
+            if any(i for i in modules_product.items if i.productId in GUI_PRODUCT_SUBSCRIPTION_IDS):
                 container.shortcut_manager().prompt_if_necessary(simple_organization.id)
                 break

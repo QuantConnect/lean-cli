@@ -29,7 +29,7 @@ from docker.types import Mount
 
 import lean
 from lean.click import LeanCommand, PathParameter
-from lean.constants import LOCAL_GUI_CONTAINER_NAME, GUI_PRODUCT_ID
+from lean.constants import LOCAL_GUI_CONTAINER_NAME, GUI_PRODUCT_INSTALL_ID
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.logger import Option
@@ -129,7 +129,7 @@ def start(organization: Optional[str],
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
         organization_id = logger.prompt_list("Select the organization with the local GUI module subscription", options)
 
-    module_manager.install_module(GUI_PRODUCT_ID, organization_id)
+    module_manager.install_module(GUI_PRODUCT_INSTALL_ID, organization_id)
 
     shortcut_manager = container.shortcut_manager()
     if shortcut:
@@ -169,7 +169,7 @@ def start(organization: Optional[str],
     # Update PATH in the GUI container to add executables installed with pip
     run_options["commands"].append('export PATH="$PATH:/root/.local/bin"')
 
-    package_file_name = module_manager.get_installed_packages_by_module(GUI_PRODUCT_ID)[0].get_file_name()
+    package_file_name = module_manager.get_installed_packages_by_module(GUI_PRODUCT_INSTALL_ID)[0].get_file_name()
     with zipfile.ZipFile(Path.home() / ".lean" / "modules" / package_file_name) as package_file:
         content_file_names = [f.replace("content/", "") for f in package_file.namelist() if f.startswith("content/")]
         wheel_file_name = next(f for f in content_file_names if f.endswith(".whl"))

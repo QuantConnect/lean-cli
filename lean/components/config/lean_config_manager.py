@@ -22,7 +22,7 @@ from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.logger import Logger
-from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_ID
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_INSTALL_ID
 from lean.models.config import DebuggingMethod
 from lean.models.errors import MoreInfoError
 
@@ -262,7 +262,7 @@ class LeanConfigManager:
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
 
-        if self._module_manager.is_module_installed(GUI_PRODUCT_ID):
+        if self._module_manager.is_module_installed(GUI_PRODUCT_INSTALL_ID):
             config["messaging-handler"] = "QuantConnect.GUI.LocalMessagingHandler"
 
         return config
