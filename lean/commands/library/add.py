@@ -131,7 +131,8 @@ def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version: Stri
         return False
 
     if file["requires_python"] is not None:
-        if str(required_python_version) not in Requirement.parse(f"python{file['requires_python']}").specifier:
+        requires_python = file["requires_python"].rstrip(",")
+        if str(required_python_version) not in Requirement.parse(f"python{requires_python}").specifier:
             return False
 
     return True
