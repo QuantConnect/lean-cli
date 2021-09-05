@@ -111,35 +111,6 @@ class ProjectManager:
 
         return source_files
 
-    def should_sync_files(self, local_project: Path, cloud_project: QCProject) -> bool:
-        """Returns whether there are files to synchronize based on last modified times.
-
-        Without the logic in this method the pull/push flow looks like this:
-        1. Retrieve all project information from projects/read endpoint
-        2. For each project, retrieve all remote files from files/read endpoint
-        3. For each file, check if the local content differs from the remote content
-
-        This method uses the last modified times of local files and the information retrieved in step 1 to
-        skip step 2 and 3 for projects of which we know there is nothing to pull/push. This lowers the
-        amount of API requests, speeds up pull/push (especially if the user has a lot of projects).
-
-        This method is not perfect as it may return True if there are no updates to pull/push.
-        This happens due to the limited amount of information that is available after step 1.
-        In that case the only way to know whether there is something to sync is by querying the files/read endpoint.
-
-        :param local_project: the path to the local project directory
-        :param cloud_project: the cloud counterpart of the local project
-        :return: True if there may be updates to synchronize, False if not
-        """
-        paths_to_check = [local_project] + self.get_source_files(local_project)
-
-        last_modified_time = max((file.stat().st_mtime_ns / 1e9) for file in paths_to_check)
-        last_modified_time = datetime.fromtimestamp(last_modified_time).astimezone(tz=timezone.utc)
-
-        # If the last modified time of the local files equal the last modified time of the project,
-        # we can safely assume there are no changes to pull/push.
-        return last_modified_time.replace(tzinfo=None, microsecond=0) != cloud_project.modified
-
     def update_last_modified_time(self, local_file_path: Path, cloud_timestamp: datetime) -> None:
         """Updates the last modified time of a local path to that of the cloud counterpart.
 
