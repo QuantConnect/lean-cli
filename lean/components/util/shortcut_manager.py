@@ -91,7 +91,7 @@ class ShortcutManager:
                                   icon=icons_path.as_posix())
 
         self._logger.info("Successfully created a desktop shortcut for launching the local GUI")
-        self._cache_storage.set("last-shortcut-prompt", datetime.now(tz=timezone.utc).timestamp())
+        self._mark_user_prompted()
 
     def prompt_if_necessary(self, organization_id: str) -> None:
         """Prompts the user to confirm the creation of a desktop shortcut if the user hasn't been prompted before.
@@ -106,3 +106,8 @@ class ShortcutManager:
         else:
             self._logger.info(
                 "You can use `lean gui start --shortcut` to create a desktop shortcut at a later time if you change your mind")
+
+        self._mark_user_prompted()
+
+    def _mark_user_prompted(self) -> None:
+        self._cache_storage.set("last-shortcut-prompt", datetime.now(tz=timezone.utc).timestamp())
