@@ -398,6 +398,7 @@ class ProjectManager:
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
+        <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
     </ItemGroup>
 </Project>
         """)
