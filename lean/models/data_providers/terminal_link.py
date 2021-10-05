@@ -14,21 +14,21 @@
 from typing import Dict, Any
 
 from lean.components.util.logger import Logger
-from lean.models.brokerages.local import BloombergBrokerage
+from lean.models.brokerages.local import TerminalLinkBrokerage
 from lean.models.config import LeanConfigConfigurer
 
 
-class BloombergDataProvider(LeanConfigConfigurer):
-    def __init__(self, brokerage: BloombergBrokerage) -> None:
+class TerminalLinkDataProvider(LeanConfigConfigurer):
+    def __init__(self, brokerage: TerminalLinkBrokerage) -> None:
         self._brokerage = brokerage
 
     @classmethod
     def get_name(cls) -> str:
-        return "Bloomberg"
+        return "Terminal Link"
 
     @classmethod
     def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
-        return BloombergDataProvider(BloombergBrokerage.build(lean_config, logger))
+        return TerminalLinkDataProvider(TerminalLinkBrokerage.build(lean_config, logger))
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._brokerage.configure_credentials(lean_config)

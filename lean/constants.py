@@ -72,8 +72,8 @@ UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 # The product id of the Security Master subscription
 SECURITY_MASTER_PRODUCT_ID = 37
 
-# The product id of the Bloomberg module
-BLOOMBERG_PRODUCT_ID = 44
+# The product id of the Terminal Link module
+TERMINAL_LINK_PRODUCT_ID = 44
 
 # The product id of the Trading Technologies module
 TRADING_TECHNOLOGIES_PRODUCT_ID = 64

@@ -19,7 +19,7 @@ from lean.models.brokerages.local.atreyu import AtreyuBrokerage
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
-from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
+from lean.models.brokerages.local.terminal_link import TerminalLinkBrokerage, TerminalLinkDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
 from lean.models.brokerages.local.custom_data_only import CustomDataOnlyDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
@@ -40,7 +40,7 @@ all_local_brokerages = [
     CoinbaseProBrokerage,
     BinanceBrokerage,
     ZerodhaBrokerage,
-    BloombergBrokerage,
+    TerminalLinkBrokerage,
     AtreyuBrokerage,
     TradingTechnologiesBrokerage
 ]
@@ -53,7 +53,7 @@ all_local_data_feeds = [
     CoinbaseProDataFeed,
     BinanceDataFeed,
     ZerodhaDataFeed,
-    BloombergDataFeed,
+    TerminalLinkDataFeed,
     TradingTechnologiesDataFeed,
     CustomDataOnlyDataFeed
 ]
@@ -67,7 +67,7 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed],
-    BloombergBrokerage: [BloombergDataFeed],
+    TerminalLinkBrokerage: [TerminalLinkDataFeed],
     AtreyuBrokerage: [x for x in all_local_data_feeds if x != CustomDataOnlyDataFeed],
     TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed]
 }
