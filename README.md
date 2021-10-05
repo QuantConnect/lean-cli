@@ -111,7 +111,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Local|QuantConnect|Bloomberg]
+  --data-provider [Local|QuantConnect|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
@@ -720,9 +720,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Atreyu|Trading Technologies]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Atreyu|Trading Technologies]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Bloomberg|Trading Technologies|Custom data only|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Trading Technologies|Custom data only|IQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -764,7 +764,7 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-product-name TEXT      The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --bloomberg-organization TEXT   The name or id of the organization with the Bloomberg module subscription
+  --terminal-link-organization TEXT   The name or id of the organization with the Terminal Link module subscription
   --bloomberg-environment [Production|Beta]
                                   The environment to run in
   --bloomberg-server-host TEXT    The host of the Bloomberg server
@@ -987,7 +987,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Local|QuantConnect|Bloomberg]
+  --data-provider [Local|QuantConnect|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect

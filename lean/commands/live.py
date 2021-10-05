@@ -26,7 +26,7 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.brokerages.local.atreyu import AtreyuBrokerage
 from lean.models.brokerages.local.binance import BinanceBrokerage, BinanceDataFeed
 from lean.models.brokerages.local.bitfinex import BitfinexBrokerage, BitfinexDataFeed
-from lean.models.brokerages.local.bloomberg import BloombergBrokerage, BloombergDataFeed
+from lean.models.brokerages.local.terminal_link import TerminalLinkBrokerage, TerminalLinkDataFeed
 from lean.models.brokerages.local.coinbase_pro import CoinbaseProBrokerage, CoinbaseProDataFeed
 from lean.models.brokerages.local.interactive_brokers import InteractiveBrokersBrokerage, InteractiveBrokersDataFeed
 from lean.models.brokerages.local.iqfeed import IQFeedDataFeed
@@ -378,10 +378,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("iqfeed-version"),
               help="The product version of your IQFeed developer account")
-@click.option("--bloomberg-organization",
+@click.option("--terminal-link-organization",
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
-              help="The name or id of the organization with the Bloomberg module subscription")
+              help="The name or id of the organization with the Terminal Link module subscription")
 @click.option("--bloomberg-environment",
               type=click.Choice(["Production", "Beta"], case_sensitive=False),
               default=lambda: _get_default_value("bloomberg-environment"),
@@ -574,7 +574,7 @@ def live(project: Path,
          iqfeed_password: Optional[str],
          iqfeed_product_name: Optional[str],
          iqfeed_version: Optional[str],
-         bloomberg_organization: Optional[str],
+         terminal_link_organization: Optional[str],
          bloomberg_environment: Optional[str],
          bloomberg_server_host: Optional[str],
          bloomberg_server_port: Optional[int],
@@ -698,24 +698,24 @@ def live(project: Path,
                                                     zerodha_access_token,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
-        elif brokerage == BloombergBrokerage.get_name():
+        elif brokerage == TerminalLinkBrokerage.get_name():
             ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
                             "bloomberg_server_port",
                             "bloomberg_emsx_broker",
                             "bloomberg_allow_modification"])
-            brokerage_configurer = BloombergBrokerage(_get_organization_id(bloomberg_organization, "Bloomberg"),
-                                                      bloomberg_environment,
-                                                      bloomberg_server_host,
-                                                      bloomberg_server_port,
-                                                      bloomberg_symbol_map_file,
-                                                      bloomberg_emsx_broker,
-                                                      bloomberg_emsx_user_time_zone,
-                                                      bloomberg_emsx_account,
-                                                      bloomberg_emsx_strategy,
-                                                      bloomberg_emsx_notes,
-                                                      bloomberg_emsx_handling,
-                                                      bloomberg_allow_modification)
+            brokerage_configurer = TerminalLinkBrokerage(_get_organization_id(terminal_link_organization, "Terminal Link"),
+                                                         bloomberg_environment,
+                                                         bloomberg_server_host,
+                                                         bloomberg_server_port,
+                                                         bloomberg_symbol_map_file,
+                                                         bloomberg_emsx_broker,
+                                                         bloomberg_emsx_user_time_zone,
+                                                         bloomberg_emsx_account,
+                                                         bloomberg_emsx_strategy,
+                                                         bloomberg_emsx_notes,
+                                                         bloomberg_emsx_handling,
+                                                         bloomberg_allow_modification)
         elif brokerage == AtreyuBrokerage.get_name():
             ensure_options(["atreyu_host",
                             "atreyu_req_port",
@@ -809,25 +809,25 @@ def live(project: Path,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
-        elif data_feed == BloombergDataFeed.get_name():
+        elif data_feed == TerminalLinkDataFeed.get_name():
             ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
                             "bloomberg_server_port",
                             "bloomberg_emsx_broker",
                             "bloomberg_allow_modification"])
-            data_feed_configurer = BloombergDataFeed(BloombergBrokerage(_get_organization_id(bloomberg_organization,
-                                                                                             "Bloomberg"),
-                                                                        bloomberg_environment,
-                                                                        bloomberg_server_host,
-                                                                        bloomberg_server_port,
-                                                                        bloomberg_symbol_map_file,
-                                                                        bloomberg_emsx_broker,
-                                                                        bloomberg_emsx_user_time_zone,
-                                                                        bloomberg_emsx_account,
-                                                                        bloomberg_emsx_strategy,
-                                                                        bloomberg_emsx_notes,
-                                                                        bloomberg_emsx_handling,
-                                                                        bloomberg_allow_modification))
+            data_feed_configurer = TerminalLinkDataFeed(TerminalLinkBrokerage(_get_organization_id(terminal_link_organization,
+                                                                                             "Terminal Link"),
+                                                                           bloomberg_environment,
+                                                                           bloomberg_server_host,
+                                                                           bloomberg_server_port,
+                                                                           bloomberg_symbol_map_file,
+                                                                           bloomberg_emsx_broker,
+                                                                           bloomberg_emsx_user_time_zone,
+                                                                           bloomberg_emsx_account,
+                                                                           bloomberg_emsx_strategy,
+                                                                           bloomberg_emsx_notes,
+                                                                           bloomberg_emsx_handling,
+                                                                           bloomberg_allow_modification))
         elif data_feed == TradingTechnologiesDataFeed.get_name():
             ensure_options(["tt_user_name",
                             "tt_session_password",

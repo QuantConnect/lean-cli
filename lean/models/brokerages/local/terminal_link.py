@@ -18,13 +18,13 @@ import click
 
 from lean.click import PathParameter
 from lean.components.util.logger import Logger
-from lean.constants import BLOOMBERG_PRODUCT_ID
+from lean.constants import TERMINAL_LINK_PRODUCT_ID
 from lean.container import container
 from lean.models.brokerages.local.base import LeanConfigConfigurer, LocalBrokerage
 from lean.models.logger import Option
 
 
-class BloombergBrokerage(LocalBrokerage):
+class TerminalLinkBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Bloomberg brokerage."""
 
     _is_module_installed = False
@@ -57,7 +57,7 @@ class BloombergBrokerage(LocalBrokerage):
 
     @classmethod
     def get_name(cls) -> str:
-        return "Bloomberg"
+        return "Terminal Link"
 
     @classmethod
     def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
@@ -66,7 +66,7 @@ class BloombergBrokerage(LocalBrokerage):
         organizations = api_client.organizations.get_all()
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
 
-        organization_id = logger.prompt_list("Select the organization with the Bloomberg module subscription", options)
+        organization_id = logger.prompt_list("Select the organization with the Terminal Link module subscription", options)
 
         environment = click.prompt("Environment",
                                    cls._get_default(lean_config, "bloomberg-environment"),
@@ -91,18 +91,18 @@ class BloombergBrokerage(LocalBrokerage):
                                           cls._get_default(lean_config, "bloomberg-allow-modification"),
                                           type=bool)
 
-        return BloombergBrokerage(organization_id,
-                                  environment,
-                                  server_host,
-                                  server_port,
-                                  symbol_map_file,
-                                  emsx_broker,
-                                  emsx_user_time_zone,
-                                  emsx_account,
-                                  emsx_strategy,
-                                  emsx_notes,
-                                  emsx_handling,
-                                  allow_modification)
+        return TerminalLinkBrokerage(organization_id,
+                                     environment,
+                                     server_host,
+                                     server_port,
+                                     symbol_map_file,
+                                     emsx_broker,
+                                     emsx_user_time_zone,
+                                     emsx_account,
+                                     emsx_strategy,
+                                     emsx_notes,
+                                     emsx_handling,
+                                     allow_modification)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
@@ -147,23 +147,23 @@ class BloombergBrokerage(LocalBrokerage):
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:
-            container.module_manager().install_module(BLOOMBERG_PRODUCT_ID, self._organization_id)
+            container.module_manager().install_module(TERMINAL_LINK_PRODUCT_ID, self._organization_id)
             self._is_module_installed = True
 
 
-class BloombergDataFeed(LeanConfigConfigurer):
-    """A LeanConfigConfigurer implementation for the Bloomberg data feed."""
+class TerminalLinkDataFeed(LeanConfigConfigurer):
+    """A LeanConfigConfigurer implementation for the Terminal Link data feed."""
 
-    def __init__(self, brokerage: BloombergBrokerage) -> None:
+    def __init__(self, brokerage: TerminalLinkBrokerage) -> None:
         self._brokerage = brokerage
 
     @classmethod
     def get_name(cls) -> str:
-        return BloombergBrokerage.get_name()
+        return TerminalLinkBrokerage.get_name()
 
     @classmethod
     def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
-        return BloombergDataFeed(BloombergBrokerage.build(lean_config, logger))
+        return TerminalLinkDataFeed(TerminalLinkBrokerage.build(lean_config, logger))
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._brokerage.ensure_module_installed()

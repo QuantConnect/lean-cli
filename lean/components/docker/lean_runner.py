@@ -31,7 +31,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, BLOOMBERG_PRODUCT_ID
+from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID
 from lean.models.config import DebuggingMethod
 from lean.models.docker import DockerImage
 
@@ -180,7 +180,7 @@ class LeanRunner:
         # Install the required modules when they're needed
         if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
             and lean_config.get("data-downloader", None) == "BloombergDataDownloader":
-            self._module_manager.install_module(BLOOMBERG_PRODUCT_ID, lean_config["job-organization-id"])
+            self._module_manager.install_module(TERMINAL_LINK_PRODUCT_ID, lean_config["job-organization-id"])
 
         # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
         data_dir = self._lean_config_manager.get_data_directory()
