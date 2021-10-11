@@ -157,6 +157,13 @@ def research(project: Path,
 
     container.update_manager().pull_docker_image_if_necessary(research_image, update)
 
+    # Allow the user to map docker ports
+    docker_ports = project_config.get('docker-ports') or {}
+    for outer, inner in docker_ports.items():
+        if outer in run_options["ports"]:
+            raise RuntimeError(f"Port {outer} is already in use, please specify a different host port under 'docker-ports' in your project's config.json")
+        run_options["ports"][outer] = inner
+    
     try:
         container.docker_manager().run_image(research_image, **run_options)
     except APIError as error:

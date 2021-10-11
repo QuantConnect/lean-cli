@@ -985,6 +985,15 @@ Usage: lean research [OPTIONS] PROJECT
   By default the official LEAN research image is used. You can override this using the --image option. Alternatively
   you can set the default research image using `lean config set research-image <image>`.
 
+  To expose additional ports to the docker container, update your project's config.json to include the "docker-ports" object.
+
+  For example if you want to expose Tensorboard (defaults to port 6006),
+
+  ...
+  "docker-ports": {
+    "6006": "6006"
+  }
+
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
   --data-provider [Local|QuantConnect|Terminal Link]
