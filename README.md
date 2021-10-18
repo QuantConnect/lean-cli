@@ -994,6 +994,13 @@ Usage: lean research [OPTIONS] PROJECT
     "6006": "6006"
   }
 
+  Likewise for environment variables:
+
+  ...
+  "docker-env": {
+    "PYTHONHASHSEED": "0"
+  }
+
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
   --data-provider [Local|QuantConnect|Terminal Link]

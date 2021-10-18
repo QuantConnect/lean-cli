@@ -164,6 +164,9 @@ def research(project: Path,
             raise RuntimeError(f"Port {outer} is already in use, please specify a different host port under 'docker-ports' in your project's config.json")
         run_options["ports"][outer] = inner
     
+    # Allow the user to set environment variables
+    run_options["environment"].update(project_config.get('docker-env') or {})
+
     try:
         container.docker_manager().run_image(research_image, **run_options)
     except APIError as error:
