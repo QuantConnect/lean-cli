@@ -55,6 +55,17 @@ class DataDownloader:
                                                   lambda: progress.update(progress_task, advance=1))
                      for data_file in data_files)
 
+            # update our config after we download all files, and not in parallel!
+            for relative_file in data_files:
+                if "/map_files/map_files_" in relative_file and relative_file.endswith(".zip"):
+                    self._lean_config_manager.set_properties({
+                        "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+                    })
+                if "/factor_files/factor_files_" in relative_file and relative_file.endswith(".zip"):
+                    self._lean_config_manager.set_properties({
+                        "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
+                    })
+
             progress.stop()
         except KeyboardInterrupt as e:
             progress.stop()
@@ -97,15 +108,5 @@ class DataDownloader:
         local_path.parent.mkdir(parents=True, exist_ok=True)
         with local_path.open("wb+") as f:
             f.write(file_content)
-
-        if relative_file.startswith("equity/usa/map_files/map_files_") and relative_file.endswith(".zip"):
-            self._lean_config_manager.set_properties({
-                "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
-            })
-
-        if relative_file.startswith("equity/usa/factor_files/factor_files_") and relative_file.endswith(".zip"):
-            self._lean_config_manager.set_properties({
-                "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
-            })
 
         callback()

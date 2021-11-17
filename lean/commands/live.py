@@ -35,6 +35,8 @@ from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
 from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
+from lean.models.brokerages.local.kraken import KrakenBrokerage, KrakenDataFeed
+from lean.models.brokerages.local.ftx import FTXBrokerage, FTXDataFeed
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 
@@ -59,7 +61,9 @@ _required_brokerage_properties = {
                                      "tt-market-data-host", "tt-market-data-port",
                                      "tt-order-routing-sender-comp-id", "tt-order-routing-target-comp-id",
                                      "tt-order-routing-host", "tt-order-routing-port",
-                                     "tt-log-fix-messages"]
+                                     "tt-log-fix-messages"],
+    "KrakenBrokerage": ["kraken-api-key", "kraken-api-secret", "kraken-verification-tier"],
+    "FTXBrokerage": ["ftx-api-key", "ftx-api-secret", "ftx-account-tier"]
 }
 
 # Data queue handler -> required configuration properties
@@ -74,7 +78,9 @@ _required_data_queue_handler_properties = {
     "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"] + ["zerodha-history-subscription"],
     "BloombergBrokerage": _required_brokerage_properties["BloombergBrokerage"],
     "TradingTechnologiesBrokerage": _required_brokerage_properties["TradingTechnologiesBrokerage"],
-    "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"]
+    "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"],
+    "KrakenBrokerage": _required_brokerage_properties["KrakenBrokerage"],
+    "FTXBrokerage": _required_brokerage_properties["FTXBrokerage"]
 }
 
 _environment_skeleton = {
@@ -526,6 +532,38 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=bool,
               default=lambda: _get_default_value("tt-log-fix-messages"),
               help="Whether FIX messages should be logged")
+@click.option("--kraken-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the kraken module subscription")
+@click.option("--kraken-api-key",
+              type=str,
+              default=lambda: _get_default_value("kraken-api-key"),
+              help="Your Kraken API key")
+@click.option("--kraken-api-secret",
+              type=str,
+              default=lambda: _get_default_value("kraken-api-secret"),
+              help="Your Kraken API secret")
+@click.option("--kraken-verification-tier",
+              type=str,
+              default=lambda: _get_default_value("kraken-verification-tier"),
+              help="Your Kraken Verification Tier")
+@click.option("--ftx-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the FTX module subscription")
+@click.option("--ftx-api-key",
+              type=str,
+              default=lambda: _get_default_value("ftx-api-key"),
+              help="Your FTX API key")
+@click.option("--ftx-api-secret",
+              type=str,
+              default=lambda: _get_default_value("ftx-api-secret"),
+              help="Your FTX API secret")
+@click.option("--ftx-account-tier",
+              type=str,
+              default=lambda: _get_default_value("ftx-account-tier"),
+              help="Your FTX Account Tier")
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -611,6 +649,14 @@ def live(project: Path,
          tt_order_routing_host: Optional[str],
          tt_order_routing_port: Optional[str],
          tt_log_fix_messages: Optional[bool],
+         kraken_organization: Optional[str],
+         kraken_api_key: Optional[str],
+         kraken_api_secret: Optional[str],
+         kraken_verification_tier: Optional[str],
+         ftx_organization: Optional[str],
+         ftx_api_key: Optional[str],
+         ftx_api_secret: Optional[str],
+         ftx_account_tier: Optional[str],
          release: bool,
          image: Optional[str],
          update: bool) -> None:
@@ -767,6 +813,18 @@ def live(project: Path,
                                                                 tt_order_routing_host,
                                                                 tt_order_routing_port,
                                                                 tt_log_fix_messages)
+        elif brokerage == KrakenBrokerage.get_name():
+            ensure_options(["kraken_api_key", "kraken_api_secret", "kraken_verification_tier"])
+            brokerage_configurer = KrakenBrokerage(_get_organization_id(kraken_organization, "Kraken"),
+                                                   kraken_api_key,
+                                                   kraken_api_secret,
+                                                   kraken_verification_tier)
+        elif brokerage == FTXBrokerage.get_name():
+            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier"])
+            brokerage_configurer = FTXBrokerage(_get_organization_id(ftx_organization, "FTX"),
+                                                ftx_api_key,
+                                                ftx_api_secret,
+                                                ftx_account_tier)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
@@ -872,6 +930,20 @@ def live(project: Path,
                                                   iqfeed_password,
                                                   iqfeed_product_name,
                                                   iqfeed_version)
+        elif data_feed == KrakenDataFeed.get_name():
+            ensure_options(["kraken_api_key", "kraken_api_secret", "kraken_verification_tier"])
+            data_feed_configurer = KrakenDataFeed(
+                KrakenBrokerage(_get_organization_id(kraken_organization, "Kraken"),
+                                kraken_api_key,
+                                kraken_api_secret,
+                                kraken_verification_tier))
+        elif data_feed == FTXDataFeed.get_name():
+            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier"])
+            data_feed_configurer = FTXDataFeed(
+                FTXBrokerage(_get_organization_id(ftx_organization, "FTX"),
+                             ftx_api_key,
+                             ftx_api_secret,
+                             ftx_account_tier))
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)

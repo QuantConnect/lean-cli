@@ -204,7 +204,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
   events and --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -720,9 +720,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Atreyu|Trading Technologies]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Trading Technologies|Custom data only|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -764,7 +764,8 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-product-name TEXT      The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --terminal-link-organization TEXT   The name or id of the organization with the Terminal Link module subscription
+  --terminal-link-organization TEXT
+                                  The name or id of the organization with the Terminal Link module subscription
   --bloomberg-environment [Production|Beta]
                                   The environment to run in
   --bloomberg-server-host TEXT    The host of the Bloomberg server
@@ -810,6 +811,15 @@ Options:
   --tt-order-routing-host TEXT    The host of the order routing server
   --tt-order-routing-port TEXT    The port of the order routing server
   --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
+  --kraken-organization TEXT      The name or id of the organization with the kraken module subscription
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier TEXT
+                                  Your Kraken Verification Tier
+  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
+  --ftx-api-key TEXT              Your FTX API key
+  --ftx-api-secret TEXT           Your FTX API secret
+  --ftx-account-tier TEXT         Your FTX Account Tier
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
@@ -1031,6 +1041,6 @@ If you need to add dependencies, first update `setup.py` (if it is a production 
 
 The automated tests can be ran by running `pytest`. The filesystem and HTTP requests are mocked when running tests to make sure they run in an isolated environment.
 
-To update the commands reference part of the readme run `python scripts/readme.py` from the root of the project.
+Can build the lean CLI by running `python setup.py sdist bdist_wheel` from the root of the project and to install it `pip install --force-reinstall dist/lean-dev-py3-none-any.whl`. To update the commands reference part of the readme run `python scripts/readme.py` from the root of the project, after installing the new version.
 
 Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `master` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".
