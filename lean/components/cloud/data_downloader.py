@@ -13,6 +13,7 @@
 
 import multiprocessing
 from pathlib import Path
+from datetime import *
 from typing import Any, List, Callable
 
 from joblib import delayed, Parallel
@@ -21,6 +22,12 @@ from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 from lean.models.errors import RequestFailedError
+
+
+def _store_local_file(file_content: bytes, file_path: Path):
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    with file_path.open("wb+") as f:
+        f.write(file_content)
 
 
 class DataDownloader:
@@ -36,6 +43,28 @@ class DataDownloader:
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
+
+    def update_database_files(self):
+        """Will update lean data folder database files if required
+
+        """
+        try:
+            now = datetime.now()
+            config = self._lean_config_manager.get_lean_config()
+            last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
+            if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > timedelta(days=1):
+                data_dir = self._lean_config_manager.get_data_directory()
+
+                _store_local_file(self._api_client.data.download_public_file(
+                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
+                    data_dir / "symbol-properties" / "symbol-properties-database.csv")
+                _store_local_file(self._api_client.data.download_public_file(
+                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json"),
+                    data_dir / "market-hours" / "market-hours-database.json")
+
+                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
+        except Exception as e:
+            self._logger.error(str(e))
 
     def download_files(self, data_files: List[Any], overwrite: bool, organization_id: str) -> None:
         """Downloads files from QuantConnect Datasets to the local data directory.
@@ -105,8 +134,5 @@ class DataDownloader:
             callback()
             return
 
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        with local_path.open("wb+") as f:
-            f.write(file_content)
-
+        _store_local_file(file_content, local_path)
         callback()
