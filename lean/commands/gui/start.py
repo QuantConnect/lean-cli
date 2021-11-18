@@ -178,7 +178,8 @@ def start(organization: Optional[str],
     # Install the CLI in the GUI container
     run_options["commands"].append("pip uninstall -y lean")
     if lean.__version__ == "dev":
-        lean_cli_dir = Path(__file__).absolute().parent.parent.parent.parent
+        lean_cli_dir = str(Path(__file__).absolute().parent.parent.parent.parent)
+        logger.info(f"Detected lean dev version. Will mount local folder '{lean_cli_dir}' as /lean-cli")
         run_options["volumes"][str(lean_cli_dir)] = {
             "bind": "/lean-cli",
             "mode": "rw"
