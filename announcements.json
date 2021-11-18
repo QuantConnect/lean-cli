@@ -1,6 +1,10 @@
 {
     "announcements": [
         {
+            "date": "2021-11-17",
+            "message": "We've added support for Kraken and FTX brokerages"
+        },
+        {
             "date": "2021-06-21",
             "message": "We've just released a new opening video of the CLI:\nhttps://youtube.com/watch?v=QJibe1XpP-U"
         },
