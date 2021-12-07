@@ -1044,3 +1044,15 @@ The automated tests can be ran by running `pytest`. The filesystem and HTTP requ
 Can build the lean CLI by running `python setup.py sdist bdist_wheel` from the root of the project and to install it `pip install --force-reinstall dist/lean-dev-py3-none-any.whl`. To update the commands reference part of the readme run `python scripts/readme.py` from the root of the project, after installing the new version.
 
 Maintainers can publish new releases by pushing a Git tag containing the new version to GitHub. This will trigger a GitHub Actions workflow which releases the current `master` branch to PyPI with the value of the tag as version. Make sure the version is not prefixed with "v".
+
+## Troubleshooting
+
+### Failing `lean init` on Mac with pyenv
+
+Error message:
+```
+'lean.json' not found
+<omitted>
+ModuleNotFoundError: No module named '_tkinter'
+```
+Here is step by step guide to make tkinter work if you use pyenv for Python environments management on macOS - https://stackoverflow.com/questions/60469202/unable-to-install-tkinter-with-pyenv-pythons-on-macos
