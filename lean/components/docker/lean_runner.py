@@ -176,6 +176,8 @@ class LeanRunner:
         :return: the Docker configuration containing basic configuration to run Lean
         """
         project_dir = algorithm_file.parent
+        project_config = self._project_config_manager.get_project_config(project_dir)
+        docker_project_config = project_config.get('docker', {})
 
         # Install the required modules when they're needed
         if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
@@ -216,11 +218,11 @@ class LeanRunner:
         run_options: Dict[str, Any] = {
             "detach": detach,
             "commands": [],
-            "environment": {},
+            "environment": docker_project_config.get("environment", {}),
             "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
             "mounts": [],
             "volumes": {},
-            "ports": {}
+            "ports": docker_project_config.get("ports", {})
         }
 
         # Mount the data directory
