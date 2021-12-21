@@ -315,6 +315,8 @@ def backtest(project: Path,
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
         _migrate_csharp_rider(algorithm_file.parent)
+    elif debug == "QC":
+        debugging_method = DebuggingMethod.QC # TODO: NEW Debugging method with QC Extension
 
     if debugging_method is not None and detach:
         raise RuntimeError("Running a debugging session in a detached container is not supported")

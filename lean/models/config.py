@@ -83,6 +83,7 @@ class DebuggingMethod(Enum):
     PTVSD = 2
     VSDBG = 3
     Rider = 4
+    QC = 5
 
     def get_internal_name(self) -> str:
         """Returns the LEAN debugging method that should be used for the current enum member.
@@ -91,7 +92,8 @@ class DebuggingMethod(Enum):
         """
         return {
             DebuggingMethod.PyCharm: "PyCharm",
-            DebuggingMethod.PTVSD: "PTVSD"
+            DebuggingMethod.PTVSD: "PTVSD",
+            DebuggingMethod.QC: "PTVSD" # QC -> PTVSD, If its Python it uses PTVSD, if its C# it is irrelevant
         }.get(self, "LocalCmdline")
 
 

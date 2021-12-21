@@ -130,7 +130,20 @@ class LeanRunner:
                 "mode": "rw"
             }
 
-        run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
+        # Setup debugging with QC Extension
+        if debugging_method == DebuggingMethod.QC:
+            run_options["ports"]["5678"] = "5678" #TODO: Should this be a static port externally?
+
+            if lean_config["algorithm-language"] == "CSharp":
+                # CSharp Debugging means starting with netcoredbg in server mode
+                # TODO: Need to delete other pdbs?
+                run_options["commands"].append("exec ../netcoredbg --server=5678 --interpreter=vscode -- /usr/bin/dotnet /Lean/Launcher/bin/Debug/QuantConnect.Lean.Launcher.dll") #TODO: Image has netcoredbg? 
+            else:
+                # Python debugging is handled internally by Lean, config is already set
+                run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
+
+        else:
+            run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
 
         # Copy the project's code to the output directory
         self._project_manager.copy_code(algorithm_file.parent, output_dir / "code")
