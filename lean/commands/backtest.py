@@ -248,7 +248,7 @@ def _select_organization() -> QCMinimalOrganization:
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
 @click.option("--debug",
-              type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
+              type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider", "QC"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @click.option("--data-provider",
               type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
@@ -316,9 +316,9 @@ def backtest(project: Path,
         debugging_method = DebuggingMethod.Rider
         _migrate_csharp_rider(algorithm_file.parent)
     elif debug == "QC":
-        debugging_method = DebuggingMethod.QC # TODO: NEW Debugging method with QC Extension
+        debugging_method = DebuggingMethod.QC
 
-    if debugging_method is not None and detach:
+    if debugging_method is not None and detach and debugging_method != DebuggingMethod.QC:
         raise RuntimeError("Running a debugging session in a detached container is not supported")
 
     if algorithm_file.name.endswith(".cs"):
