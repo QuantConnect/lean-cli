@@ -132,7 +132,7 @@ class LeanRunner:
 
         # Setup debugging with QC Extension
         if debugging_method == DebuggingMethod.QC:
-            run_options["ports"]["5678"] = "5678" #TODO: Should this be a static port externally?
+            run_options["ports"]["5678"] = "0" #Assign a random port
 
             if lean_config["algorithm-language"] == "CSharp":
                 # CSharp Debugging means starting with netcoredbg in server mode
@@ -154,6 +154,12 @@ class LeanRunner:
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
         relative_output_dir = output_dir.relative_to(cli_root_dir)
+
+        if debugging_method == DebuggingMethod.QC:
+            # Get the random port assigned to 5678 and set in the config for later retrieval
+            port = self._docker_manager.get_container_port(run_options["name"], "5678/tcp")
+            output_config = self._output_config_manager.get_output_config(output_dir)
+            output_config.set("debugport", port)
 
         if detach:
             self._temp_manager.delete_temporary_directories_when_done = False
