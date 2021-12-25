@@ -81,6 +81,12 @@ TRADING_TECHNOLOGIES_PRODUCT_ID = 64
 # The product id of the Atreyu module
 ATREYU_PRODUCT_ID = 65
 
+# The product id of the Kraken module
+KRAKEN_PRODUCT_ID = 130
+
+# The product id of the FTX module
+FTX_PRODUCT_ID = 138
+
 # The product ids for which a valid subscription is seen as a valid GUI module subscription
 GUI_PRODUCT_SUBSCRIPTION_IDS = [119, 120]
 

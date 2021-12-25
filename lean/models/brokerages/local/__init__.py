@@ -29,6 +29,8 @@ from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
 from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
+from lean.models.brokerages.local.kraken import KrakenBrokerage, KrakenDataFeed
+from lean.models.brokerages.local.ftx import FTXBrokerage, FTXDataFeed
 from lean.models.config import LeanConfigConfigurer
 
 all_local_brokerages = [
@@ -42,7 +44,9 @@ all_local_brokerages = [
     ZerodhaBrokerage,
     TerminalLinkBrokerage,
     AtreyuBrokerage,
-    TradingTechnologiesBrokerage
+    TradingTechnologiesBrokerage,
+    KrakenBrokerage,
+    FTXBrokerage
 ]
 
 all_local_data_feeds = [
@@ -55,7 +59,9 @@ all_local_data_feeds = [
     ZerodhaDataFeed,
     TerminalLinkDataFeed,
     TradingTechnologiesDataFeed,
-    CustomDataOnlyDataFeed
+    CustomDataOnlyDataFeed,
+    KrakenDataFeed,
+    FTXDataFeed
 ]
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
@@ -69,7 +75,9 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     ZerodhaBrokerage: [ZerodhaDataFeed],
     TerminalLinkBrokerage: [TerminalLinkDataFeed],
     AtreyuBrokerage: [x for x in all_local_data_feeds if x != CustomDataOnlyDataFeed],
-    TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed]
+    TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed],
+    KrakenBrokerage: [KrakenDataFeed],
+    FTXBrokerage: [FTXDataFeed]
 }
 
 if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":

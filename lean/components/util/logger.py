@@ -78,13 +78,14 @@ class Logger:
         progress.start()
         return progress
 
-    def prompt_list(self, text: str, options: List[Option]) -> Any:
+    def prompt_list(self, text: str, options: List[Option], default: Optional[str] = None) -> Any:
         """Asks the user to select an option from a list of possible options.
 
         The user will not be prompted for input if there is only a single option.
 
         :param text: the text to display before prompting
         :param options: the available options
+        :param default: the default value if no input is given
         :return: the chosen option's id
         """
         if len(options) == 1:
@@ -96,7 +97,7 @@ class Logger:
             self.info(f"{i + 1}) {option.label}")
 
         while True:
-            user_input = click.prompt("Enter an option", type=str)
+            user_input = click.prompt("Enter an option", type=str, default=default, show_default=True)
 
             try:
                 index = int(user_input)

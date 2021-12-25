@@ -116,3 +116,4 @@ class Container(DeclarativeContainer):
 
 
 container = Container()
+container.data_downloader().update_database_files()
