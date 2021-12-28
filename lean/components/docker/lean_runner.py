@@ -136,8 +136,7 @@ class LeanRunner:
 
             if lean_config["algorithm-language"] == "CSharp":
                 # CSharp Debugging means starting with netcoredbg in server mode
-                # TODO: Need to delete other pdbs?
-                run_options["commands"].append("exec ../netcoredbg --server=5678 --interpreter=vscode -- /usr/bin/dotnet /Lean/Launcher/bin/Debug/QuantConnect.Lean.Launcher.dll") #TODO: Image has netcoredbg? 
+                run_options["commands"].append("exec /netcoredbg/netcoredbg --server=5678 --interpreter=vscode -- /usr/bin/dotnet /Lean/Launcher/bin/Debug/QuantConnect.Lean.Launcher.dll")
             else:
                 # Python debugging is handled internally by Lean, config is already set
                 run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
