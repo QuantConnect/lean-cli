@@ -21,7 +21,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
-                             QCWebhookNotificationMethod, QCProject)
+                             QCWebhookNotificationMethod, QCProject, QCLiveAlgorithmStatus)
 from lean.models.brokerages.cloud import all_cloud_brokerages, BinanceBrokerage
 from lean.models.brokerages.cloud.base import CloudBrokerage
 from lean.models.brokerages.cloud.bitfinex import BitfinexBrokerage
@@ -94,6 +94,24 @@ def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
     return logger.prompt_list("Select a brokerage", brokerage_options).build(logger)
+
+
+def _check_if_running(logger: Logger, api_client: APIClient, cloud_project: QCProject, force: bool, interactive: bool) -> None:
+    """Interactively checks if the algorithm is already running and gives the user the option to stop the execution.
+
+    :param logger: the logger to use
+    :param api_client: the API client to make API requests with
+    :param cloud_project: the cloud project the user wants to start live trading for
+    """
+    live_algorithm = next((d for d in api_client.live.get_all() if d.projectId == cloud_project.projectId), None)
+    if live_algorithm is None or live_algorithm.status is not QCLiveAlgorithmStatus.Running:
+        logger.info("This project was not previously running in live.")
+        return
+    logger.info("This project was previously running in live.")
+    stop_execution = force or (interactive and click.confirm("Do you want to stop the previous live execution?", default=True))
+    if stop_execution:
+        logger.info("Stopping the project in live.")
+        api_client.live.stop(cloud_project.projectId)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -205,6 +223,10 @@ def _configure_auto_restart(logger: Logger) -> bool:
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
+@click.option("--force",
+              is_flag=True,
+              default=False,
+              help="Forces the project to redeploy by first stopping any of the project's previous live deployments.")
 def live(project: str,
          brokerage: str,
          ib_user_name: Optional[str],
@@ -234,7 +256,8 @@ def live(project: str,
          notify_webhooks: Optional[str],
          notify_sms: Optional[str],
          push: bool,
-         open_browser: bool) -> None:
+         open_browser: bool,
+         force: bool) -> None:
     """Start live trading for a project in the cloud.
 
     PROJECT must be the name or the id of the project to start live trading for.
@@ -280,6 +303,8 @@ def live(project: str,
             ensure_options(["binance_api_key", "binance_api_secret", "binance_environment"])
             brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_environment)
 
+        _check_if_running(logger, api_client, cloud_project, force, False)
+
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)
 
@@ -307,6 +332,7 @@ def live(project: str,
                 notify_methods.append(QCSMSNotificationMethod(phoneNumber=phoneNumber))
     else:
         brokerage_instance = _configure_brokerage(logger)
+        _check_if_running(logger, api_client, cloud_project, force, True)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
