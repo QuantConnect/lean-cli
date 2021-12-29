@@ -242,6 +242,9 @@ Options:
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
+  --force                         Forces the project to redeploy by first stopping any of the project's previous live
+                                  deployments.
+
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
 ```
