@@ -204,7 +204,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
   events and --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX|FTXUS]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -720,9 +720,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX|FTXUS]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|FTXUSIQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -832,6 +832,10 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
+  --ftxus-organization TEXT       The name or id of the organization with the FTX.US module subscription
+  --ftxus-api-key TEXT            Your FTX.US API key
+  --ftxus-api-secret TEXT         Your FTX.US API secret
+  --ftxus-account-tier TEXT       Your FTX.US Account Tier
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
