@@ -36,15 +36,23 @@ class FTXBrokerage(CloudBrokerage):
         return "FTX"
 
     @classmethod
+    def get_domain(cls) -> str:
+        return "ftx.com"
+
+    @classmethod
     def build(cls, logger: Logger) -> CloudBrokerage:
         logger.info("""
-Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile).
-        """.strip())
+Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
+        """.format(cls.get_name(), cls.get_domain()).strip())
 
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")
         account_tier = click.prompt("Account Tier")
 
+        return cls.create_brokerage(api_key, secret_key, account_tier)
+
+    @classmethod
+    def create_brokerage(api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
         return FTXBrokerage(api_key, secret_key, account_tier)
 
     def _get_settings(self) -> Dict[str, str]:

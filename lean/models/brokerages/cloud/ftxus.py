@@ -17,15 +17,14 @@ import click
 
 from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud.base import CloudBrokerage
+from lean.models.brokerages.cloud.ftx import FTXBrokerage
 
 
-class FTXUSBrokerage(CloudBrokerage):
+class FTXUSBrokerage(FTXBrokerage):
     """A CloudBrokerage implementation for FTX.US brokerage."""
 
     def __init__(self, api_key: str, secret_key: str, account_tier: str) -> None:
-        self._api_key = api_key
-        self._secret_key = secret_key
-        self._account_tier = account_tier
+        super().__init__(api_key, secret_key, account_tier)
 
     @classmethod
     def get_id(cls) -> str:
@@ -36,20 +35,9 @@ class FTXUSBrokerage(CloudBrokerage):
         return "FTX.US"
 
     @classmethod
-    def build(cls, logger: Logger) -> CloudBrokerage:
-        logger.info("""
-Create an API key by logging in and accessing the FTX.US Profile page (https://ftx.us/profile).
-        """.strip())
+    def get_domain(cls) -> str:
+        return "ftx.us"
 
-        api_key = click.prompt("API key")
-        secret_key = logger.prompt_password("Secret key")
-        account_tier = click.prompt("Account Tier")
-
+    @classmethod
+    def create_brokerage(api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
         return FTXUSBrokerage(api_key, secret_key, account_tier)
-
-    def _get_settings(self) -> Dict[str, str]:
-        return {
-            "key": self._api_key,
-            "secret": self._secret_key,
-            "accountTier": self._account_tier
-        }
