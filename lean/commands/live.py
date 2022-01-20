@@ -35,6 +35,7 @@ from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
 from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
+from lean.models.brokerages.local.samco import SamcoBrokerage, SamcoDataFeed
 from lean.models.brokerages.local.kraken import KrakenBrokerage, KrakenDataFeed
 from lean.models.brokerages.local.ftx import FTXBrokerage, FTXDataFeed
 from lean.models.errors import MoreInfoError
@@ -50,6 +51,7 @@ _required_brokerage_properties = {
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
     "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
+    "SamcoBrokerage": ["samco-client-id", "samco-client-password", "samco-year-of-birth", "samco-product-type", "samco-trading-segment"],
     "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
                            "bloomberg-server-host", "bloomberg-server-port", "bloomberg-emsx-broker"],
     "AtreyuBrokerage": ["job-organization-id", "atreyu-host", "atreyu-req-port", "atreyu-sub-port",
@@ -76,6 +78,7 @@ _required_data_queue_handler_properties = {
     "BitfinexBrokerage": _required_brokerage_properties["BitfinexBrokerage"],
     "BinanceBrokerage": _required_brokerage_properties["BinanceBrokerage"],
     "ZerodhaBrokerage": _required_brokerage_properties["ZerodhaBrokerage"] + ["zerodha-history-subscription"],
+    "SamcoBrokerage": _required_brokerage_properties["SamcoBrokerage"],
     "BloombergBrokerage": _required_brokerage_properties["BloombergBrokerage"],
     "TradingTechnologiesBrokerage": _required_brokerage_properties["TradingTechnologiesBrokerage"],
     "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler": ["iqfeed-iqconnect", "iqfeed-productName", "iqfeed-version"],
@@ -364,6 +367,26 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=bool,
               default=lambda: _get_default_value("zerodha-history-subscription"),
               help="Whether you have a history API subscription for Zerodha")
+@click.option("--samco-client-id",
+              type=str,
+              default=lambda: _get_default_value("samco-client-id"),
+              help="Your Samco account Client ID")
+@click.option("--samco-client-password",
+              type=str,
+              default=lambda: _get_default_value("samco-client-password"),
+              help="Your Samco account password")
+@click.option("--samco-year-of-birth",
+              type=str,
+              default=lambda: _get_default_value("samco-year-of-birth"),
+              help="Your year of birth (YYYY) registered with Samco")
+@click.option("--samco-product-type",
+              type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False),
+              default=lambda: _get_default_value("samco-product-type"),
+              help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")
+@click.option("--samco-trading-segment",
+              type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False),
+              default=lambda: _get_default_value("samco-trading-segment"),
+              help="EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX")
 @click.option("--iqfeed-iqconnect",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               default=lambda: _get_default_value("iqfeed-iqconnect"),
@@ -607,6 +630,11 @@ def live(project: Path,
          zerodha_product_type: Optional[str],
          zerodha_trading_segment: Optional[str],
          zerodha_history_subscription: Optional[bool],
+         samco_client_id: Optional[str],
+         samco_client_password: Optional[str],
+         samco_year_of_birth: Optional[str],
+         samco_product_type: Optional[str],
+         samco_trading_segment: Optional[str],
          iqfeed_iqconnect: Optional[Path],
          iqfeed_username: Optional[str],
          iqfeed_password: Optional[str],
@@ -744,6 +772,17 @@ def live(project: Path,
                                                     zerodha_access_token,
                                                     zerodha_product_type,
                                                     zerodha_trading_segment)
+        elif brokerage == SamcoBrokerage.get_name():
+            ensure_options(["samco_client_id",
+                            "samco_client_password",
+                            "samco_year_of_birth",
+                            "samco_product_type",
+                            "samco_trading_segment"])
+            brokerage_configurer = SamcoBrokerage(samco_client_id,
+                                                    samco_client_password,
+                                                    samco_year_of_birth,
+                                                    samco_product_type,
+                                                    samco_trading_segment)
         elif brokerage == TerminalLinkBrokerage.get_name():
             ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
@@ -867,6 +906,17 @@ def live(project: Path,
                                                                     zerodha_product_type,
                                                                     zerodha_trading_segment),
                                                    zerodha_history_subscription)
+        elif data_feed == SamcoDataFeed.get_name():
+            ensure_options(["samco_client_id",
+                            "samco_client_password",
+                            "samco_year_of_birth",
+                            "samco_product_type",
+                            "samco_trading_segment"])
+            data_feed_configurer = SamcoDataFeed(SamcoBrokerage(samco_client_id,
+                                                    samco_client_password,
+                                                    samco_year_of_birth,
+                                                    samco_product_type,
+                                                    samco_trading_segment))
         elif data_feed == TerminalLinkDataFeed.get_name():
             ensure_options(["bloomberg_environment",
                             "bloomberg_server_host",
