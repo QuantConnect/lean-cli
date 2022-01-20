@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import click
 
@@ -19,47 +19,41 @@ from lean.components.util.logger import Logger
 from lean.constants import FTXUS_PRODUCT_ID
 from lean.container import container
 from lean.models.brokerages.local.base import LocalBrokerage
+from lean.models.brokerages.local.ftx import FTXBrokerage
+from lean.models.brokerages.local.ftx import FTXDataFeed
 from lean.models.config import LeanConfigConfigurer
 from lean.models.logger import Option
 
 
-class FTXUSBrokerage(LocalBrokerage):
+class FTXUSBrokerage(FTXBrokerage):
     """A LocalBrokerage implementation for the FTX.US brokerage."""
 
-    _is_module_installed = False
-
     def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str) -> None:
-        self._api_key = api_key
-        self._api_secret = api_secret
-        self._account_tier = account_tier
-        self._organization_id = organization_id
+        super().__init__(organization_id, api_key, api_secret, account_tier)
 
     @classmethod
     def get_name(cls) -> str:
         return "FTX.US"
 
     @classmethod
-    def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
-        api_client = container.api_client()
+    def get_module_id(cls) -> int:
+        return FTXUS_PRODUCT_ID
 
-        organizations = api_client.organizations.get_all()
-        options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+    @classmethod
+    def get_domain(cls) -> str:
+        return "ftx.us"
 
-        organization_id = logger.prompt_list(
-            "Select the organization with the FTX.US module subscription",
-            options
-        )
+    @classmethod
+    def data_queue_handler_name(cls) -> str:
+        return "FTXUSBrokerage"
+    
+    @classmethod
+    def property_prefix(cls) -> str:
+        return "ftxus"
 
-        logger.info("""
-Create an API key by logging in and accessing the FTX.US Profile page (https://ftx.us/profile).
-        """.strip())
-
-        api_key = click.prompt("API key", cls._get_default(lean_config, "ftxus-api-key"))
-        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "ftxus-api-secret"))
-
-        account_tier = logger.prompt_list(
-            "Select the Account Tier",
-            [Option(id="Tier1", label="Tier1"),
+    @classmethod
+    def account_tier_options(cls) -> List[Option]:
+        return [Option(id="Tier1", label="Tier1"),
              Option(id="Tier2", label="Tier2"),
              Option(id="Tier3", label="Tier3"),
              Option(id="Tier4", label="Tier4"),
@@ -72,37 +66,17 @@ Create an API key by logging in and accessing the FTX.US Profile page (https://f
              Option(id="VIP2", label="VIP2"),
              Option(id="MM1", label="MM1"),
              Option(id="MM2", label="MM2"),
-             Option(id="MM3", label="MM3")],
-            cls._get_default(lean_config, "ftxus-account-tier")
-        )
+             Option(id="MM3", label="MM3")]
 
-        return FTXUSBrokerage(organization_id, api_key, api_secret, account_tier)
-
-    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        self.ensure_module_installed()
-
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "FTXUSBrokerage"
-        lean_config["environments"][environment_name]["transaction-handler"] = \
-            "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-
-    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        lean_config["ftxus-api-key"] = self._api_key
-        lean_config["ftxus-api-secret"] = self._api_secret
-        lean_config["ftxus-account-tier"] = self._account_tier
-        lean_config["job-organization-id"] = self._organization_id
-
-        self._save_properties(lean_config, ["job-organization-id", "ftxus-api-key", "ftxus-api-secret", "ftxus-account-tier"])
-
-    def ensure_module_installed(self) -> None:
-        if not self._is_module_installed:
-            container.module_manager().install_module(FTXUS_PRODUCT_ID, self._organization_id)
-            self._is_module_installed = True
-
-class FTXUSDataFeed(LeanConfigConfigurer):
+class FTXUSDataFeed(FTXDataFeed):
     """A LeanConfigConfigurer implementation for the FTX.US data feed."""
 
     def __init__(self, brokerage: FTXUSBrokerage) -> None:
-        self._brokerage = brokerage
+        super().__init__(brokerage)
+
+    @classmethod
+    def data_queue_handler_name(cls) -> str:
+        return "FTXUSBrokerage"
 
     @classmethod
     def get_name(cls) -> str:
@@ -111,11 +85,3 @@ class FTXUSDataFeed(LeanConfigConfigurer):
     @classmethod
     def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
         return FTXUSDataFeed(FTXUSBrokerage.build(lean_config, logger))
-
-    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        self._brokerage.ensure_module_installed()
-
-        lean_config["environments"][environment_name]["data-queue-handler"] = "FTXUSBrokerage"
-        lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
-
-        self._brokerage.configure_credentials(lean_config)
