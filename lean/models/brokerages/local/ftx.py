@@ -88,13 +88,13 @@ class FTXBrokerage(LocalBrokerage):
 Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
         """.format(cls.get_name(), cls.get_domain()).strip())
 
-        api_key = click.prompt("API key", cls._get_default(lean_config, "{prefix}-api-key"))
-        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "{prefix}-api-secret"))
+        api_key = click.prompt("API key", cls._get_default(lean_config, f'{prefix}-api-key'))
+        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, f'{prefix}-api-secret'))
 
         account_tier = logger.prompt_list(
             "Select the Account Tier",
             cls.account_tier_options(),
-            cls._get_default(lean_config, "{prefix}-account-tier")
+            cls._get_default(lean_config, f'{prefix}-account-tier')
         )
 
         return cls(organization_id, api_key, api_secret, account_tier)
@@ -109,12 +109,12 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         prefix = self.__class__.property_prefix()
 
-        lean_config["{prefix}-api-key"] = self._api_key
-        lean_config["{prefix}-api-secret"] = self._api_secret
-        lean_config["{prefix}-account-tier"] = self._account_tier
+        lean_config[f'{prefix}-api-key'] = self._api_key
+        lean_config[f'{prefix}-api-secret'] = self._api_secret
+        lean_config[f'{prefix}-account-tier'] = self._account_tier
         lean_config["job-organization-id"] = self._organization_id
 
-        self._save_properties(lean_config, ["job-organization-id", "{prefix}-api-key", "{prefix}-api-secret", "{prefix}-account-tier"])
+        self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', f'{prefix}-account-tier'])
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:
