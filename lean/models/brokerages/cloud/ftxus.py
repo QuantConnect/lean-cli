@@ -39,5 +39,5 @@ class FTXUSBrokerage(FTXBrokerage):
         return "ftx.us"
 
     @classmethod
-    def create_brokerage(api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
+    def create_brokerage(cls, api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
         return FTXUSBrokerage(api_key, secret_key, account_tier)

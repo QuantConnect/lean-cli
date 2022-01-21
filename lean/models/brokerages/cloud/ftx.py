@@ -52,7 +52,7 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
         return cls.create_brokerage(api_key, secret_key, account_tier)
 
     @classmethod
-    def create_brokerage(api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
+    def create_brokerage(cls, api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
         return FTXBrokerage(api_key, secret_key, account_tier)
 
     def _get_settings(self) -> Dict[str, str]:
