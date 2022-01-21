@@ -26,14 +26,14 @@ from lean.models.logger import Option
 
 
 class FTXUSBrokerage(FTXBrokerage):
-    """A LocalBrokerage implementation for the FTX.US brokerage."""
+    """A LocalBrokerage implementation for the FTXUS brokerage."""
 
     def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str) -> None:
         super().__init__(organization_id, api_key, api_secret, account_tier)
 
     @classmethod
     def get_name(cls) -> str:
-        return "FTX.US"
+        return "FTXUS"
 
     @classmethod
     def get_module_id(cls) -> int:
@@ -69,7 +69,7 @@ class FTXUSBrokerage(FTXBrokerage):
              Option(id="MM3", label="MM3")]
 
 class FTXUSDataFeed(FTXDataFeed):
-    """A LeanConfigConfigurer implementation for the FTX.US data feed."""
+    """A LeanConfigConfigurer implementation for the FTXUS data feed."""
 
     def __init__(self, brokerage: FTXUSBrokerage) -> None:
         super().__init__(brokerage)

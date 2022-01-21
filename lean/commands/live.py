@@ -597,19 +597,19 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--ftxus-organization",
               type=str,
               default=lambda: _get_default_value("job-organization-id"),
-              help="The name or id of the organization with the FTX.US module subscription")
+              help="The name or id of the organization with the FTXUS module subscription")
 @click.option("--ftxus-api-key",
               type=str,
               default=lambda: _get_default_value("ftxus-api-key"),
-              help="Your FTX.US API key")
+              help="Your FTXUS API key")
 @click.option("--ftxus-api-secret",
               type=str,
               default=lambda: _get_default_value("ftxus-api-secret"),
-              help="Your FTX.US API secret")
+              help="Your FTXUS API secret")
 @click.option("--ftxus-account-tier",
               type=str,
               default=lambda: _get_default_value("ftxus-account-tier"),
-              help="Your FTX.US Account Tier")
+              help="Your FTXUS Account Tier")
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -895,7 +895,7 @@ def live(project: Path,
                                                 ftx_account_tier)
         elif brokerage == FTXUSBrokerage.get_name():
             ensure_options(["ftxus_api_key", "ftxus_api_secret", "ftxus_account_tier"])
-            brokerage_configurer = FTXUSBrokerage(_get_organization_id(ftxus_organization, "FTX.US"),
+            brokerage_configurer = FTXUSBrokerage(_get_organization_id(ftxus_organization, "FTXUS"),
                                                 ftxus_api_key,
                                                 ftxus_api_secret,
                                                 ftxus_account_tier)
@@ -1033,7 +1033,7 @@ def live(project: Path,
         elif data_feed == FTXUSDataFeed.get_name():
             ensure_options(["ftxus_api_key", "ftxus_api_secret", "ftxus_account_tier"])
             data_feed_configurer = FTXUSDataFeed(
-                FTXUSBrokerage(_get_organization_id(ftx_organization, "FTX.US"),
+                FTXUSBrokerage(_get_organization_id(ftx_organization, "FTXUS"),
                              ftxus_api_key,
                              ftxus_api_secret,
                              ftxus_account_tier))

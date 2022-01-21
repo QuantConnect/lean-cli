@@ -832,10 +832,10 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftxus-organization TEXT       The name or id of the organization with the FTX.US module subscription
-  --ftxus-api-key TEXT            Your FTX.US API key
-  --ftxus-api-secret TEXT         Your FTX.US API secret
-  --ftxus-account-tier TEXT       Your FTX.US Account Tier
+  --ftxus-organization TEXT       The name or id of the organization with the FTXUS module subscription
+  --ftxus-api-key TEXT            Your FTXUS API key
+  --ftxus-api-secret TEXT         Your FTXUS API secret
+  --ftxus-account-tier TEXT       Your FTXUS Account Tier
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading

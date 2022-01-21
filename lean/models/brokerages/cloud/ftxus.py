@@ -21,7 +21,7 @@ from lean.models.brokerages.cloud.ftx import FTXBrokerage
 
 
 class FTXUSBrokerage(FTXBrokerage):
-    """A CloudBrokerage implementation for FTX.US brokerage."""
+    """A CloudBrokerage implementation for FTXUS brokerage."""
 
     def __init__(self, api_key: str, secret_key: str, account_tier: str) -> None:
         super().__init__(api_key, secret_key, account_tier)
@@ -32,7 +32,7 @@ class FTXUSBrokerage(FTXBrokerage):
 
     @classmethod
     def get_name(cls) -> str:
-        return "FTX.US"
+        return "FTXUS"
 
     @classmethod
     def get_domain(cls) -> str:
