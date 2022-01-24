@@ -16,14 +16,19 @@ from typing import Any, Dict
 import click
 
 from lean.components.util.logger import Logger
+from lean.container import container
+from lean.constants import SAMCO_PRODUCT_ID
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.config import LeanConfigConfigurer
-
+from lean.models.logger import Option
 
 class SamcoBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Samco brokerage."""
 
-    def __init__(self, client_id: str, client_password: str, year_of_birth: str, product_type: str, trading_segment: str) -> None:
+    _is_module_installed = False
+
+    def __init__(self, organization_id: str, client_id: str, client_password: str, year_of_birth: str, product_type: str, trading_segment: str) -> None:
+        self._organization_id = organization_id
         self._client_id = client_id
         self._client_password = client_password
         self._year_of_birth = year_of_birth
@@ -35,7 +40,22 @@ class SamcoBrokerage(LocalBrokerage):
         return "Samco"
 
     @classmethod
+    def get_module_id(cls) -> int:
+        return SAMCO_PRODUCT_ID
+
+    @classmethod
     def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
+
+        api_client = container.api_client()
+
+        organizations = api_client.organizations.get_all()
+        options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+
+        organization_id = logger.prompt_list(
+            "Select the organization with the Samco module subscription",
+            options
+        )
+
         logger.info("You need your Samco credentials to use the Samco brokerage.")
 
         client_id = click.prompt("Client ID", cls._get_default(lean_config, "samco-client-id"))
@@ -62,26 +82,34 @@ The trading segment must be set to EQUITY if you are trading equities on NSE or 
             type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False)
         )
 
-        return SamcoBrokerage(client_id, client_password, year_of_birth, product_type, trading_segment)
+        return SamcoBrokerage(organization_id, client_id, client_password, year_of_birth, product_type, trading_segment)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        self.ensure_module_installed()
+
         lean_config["environments"][environment_name]["live-mode-brokerage"] = "SamcoBrokerage"
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        lean_config["job-organization-id"] = self._organization_id
         lean_config["samco-client-id"] = self._client_id
         lean_config["samco-client-password"] = self._client_password
         lean_config["samco-year-of-birth"] = self._year_of_birth
         lean_config["samco-product-type"] = self._product_type
         lean_config["samco-trading-segment"] = self._trading_segment
-
-        self._save_properties(lean_config, ["samco-client-id",
+         
+        self._save_properties(lean_config, ["job-organization-id",
+                                            "samco-client-id",
                                             "samco-client-password",
                                             "samco-year-of-birth",
                                             "samco-product-type",
                                             "samco-trading-segment"])
 
+    def ensure_module_installed(self) -> None:
+        if not self._is_module_installed:
+            container.module_manager().install_module(self.__class__.get_module_id(), self._organization_id)
+            self._is_module_installed = True
 
 class SamcoDataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the Samco data feed."""
@@ -100,6 +128,7 @@ class SamcoDataFeed(LeanConfigConfigurer):
         return SamcoDataFeed(brokerage)
         
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        self._brokerage.ensure_module_installed()
         lean_config["environments"][environment_name]["data-queue-handler"] = "SamcoBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
