@@ -59,5 +59,6 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
         return {
             "key": self._api_key,
             "secret": self._secret_key,
-            "accountTier": self._account_tier
+            "tier": self._account_tier,
+            "environment": "live"
         }

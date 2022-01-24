@@ -231,6 +231,16 @@ Options:
   --binance-api-secret TEXT       Your Binance API secret
   --binance-environment [demo|real]
                                   The environment to run in, demo for testnet, real for the production environment
+  --ftx-api-key TEXT              Your FTX API key
+  --ftx-api-secret TEXT           Your FTX API secret
+  --ftx-account-tier TEXT         Your FTX Account Tier
+  --ftxus-api-key TEXT            Your FTXUS API key
+  --ftxus-api-secret TEXT         Your FTXUS API secret
+  --ftxus-account-tier TEXT       Your FTXUS Account Tier
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier TEXT
+                                  Your Kraken Verification Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
