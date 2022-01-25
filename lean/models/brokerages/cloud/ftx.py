@@ -22,10 +22,11 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class FTXBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for FTX."""
 
-    def __init__(self, api_key: str, secret_key: str, account_tier: str) -> None:
+    def __init__(self, api_key: str, secret_key: str, account_tier: str, exchange_name: str) -> None:
         self._api_key = api_key
         self._secret_key = secret_key
         self._account_tier = account_tier
+        self._exchange_name = exchange_name
 
     @classmethod
     def get_id(cls) -> str:
@@ -36,11 +37,8 @@ class FTXBrokerage(CloudBrokerage):
         return "FTX"
 
     @classmethod
-    def get_domain(cls) -> str:
-        return "ftx.com"
-
-    @classmethod
     def build(cls, logger: Logger) -> CloudBrokerage:
+        exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]")
         logger.info("""
 Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
         """.format(cls.get_name(), cls.get_domain()).strip())
@@ -49,16 +47,13 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
         secret_key = logger.prompt_password("Secret key")
         account_tier = click.prompt("Account Tier")
 
-        return cls.create_brokerage(api_key, secret_key, account_tier)
-
-    @classmethod
-    def create_brokerage(cls, api_key: str, secret_key: str, account_tier: str) -> CloudBrokerage:
-        return FTXBrokerage(api_key, secret_key, account_tier)
+        return FTXBrokerage(api_key, secret_key, account_tier, exchange_name)   
 
     def _get_settings(self) -> Dict[str, str]:
         return {
             "key": self._api_key,
             "secret": self._secret_key,
             "tier": self._account_tier,
+            "exchange": self._exchange_name,
             "environment": "live"
         }

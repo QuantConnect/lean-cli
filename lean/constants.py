@@ -87,9 +87,6 @@ KRAKEN_PRODUCT_ID = 130
 # The product id of the FTX module
 FTX_PRODUCT_ID = 138
 
-# The product id of the FTXUS module
-FTXUS_PRODUCT_ID = 138
-
 # The product id of the SAMCO module
 SAMCO_PRODUCT_ID = 173
 

@@ -20,8 +20,6 @@ from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.cloud.tradier import TradierBrokerage
 from lean.models.brokerages.cloud.kraken import KrakenBrokerage
 from lean.models.brokerages.cloud.ftx import FTXBrokerage
-from lean.models.brokerages.cloud.ftxus import FTXUSBrokerage
-
 all_cloud_brokerages = [
     PaperTradingBrokerage,
     InteractiveBrokersBrokerage,
@@ -31,6 +29,5 @@ all_cloud_brokerages = [
     CoinbaseProBrokerage,
     BinanceBrokerage,
     KrakenBrokerage,
-    FTXBrokerage,
-    FTXUSBrokerage
+    FTXBrokerage
 ]
