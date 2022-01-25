@@ -720,9 +720,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
                                   The data feed to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -759,6 +759,18 @@ Options:
 
   --zerodha-history-subscription BOOLEAN
                                   Whether you have a history API subscription for Zerodha
+  --samco-organization TEXT       The name or id of the organization with the samco module subscription
+  --samco-client-id TEXT          Your Samco account Client ID
+  --samco-client-password TEXT    Your Samco account password
+  --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
+  --samco-product-type [MIS|CNC|NRML]
+                                  MIS if you are targeting intraday products, CNC if you are targeting delivery
+                                  products, NRML if you are targeting carry forward products
+
+  --samco-trading-segment [EQUITY|COMMODITY]
+                                  EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
+                                  commodities on MCX
+
   --iqfeed-iqconnect FILE         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password

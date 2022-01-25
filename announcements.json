@@ -1,6 +1,10 @@
 {
     "announcements": [
         {
+            "date": "2022-01-25",
+            "message": "We've added support for Samco brokerage for India Market"
+        },
+        {
             "date": "2021-11-17",
             "message": "We've added support for Kraken and FTX brokerages"
         },

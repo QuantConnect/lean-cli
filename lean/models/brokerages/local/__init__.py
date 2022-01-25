@@ -29,6 +29,7 @@ from lean.models.brokerages.local.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.local.tradier import TradierBrokerage, TradierDataFeed
 from lean.models.brokerages.local.trading_technologies import TradingTechnologiesBrokerage, TradingTechnologiesDataFeed
 from lean.models.brokerages.local.zerodha import ZerodhaBrokerage, ZerodhaDataFeed
+from lean.models.brokerages.local.samco import SamcoBrokerage, SamcoDataFeed
 from lean.models.brokerages.local.kraken import KrakenBrokerage, KrakenDataFeed
 from lean.models.brokerages.local.ftx import FTXBrokerage, FTXDataFeed
 from lean.models.config import LeanConfigConfigurer
@@ -42,6 +43,7 @@ all_local_brokerages = [
     CoinbaseProBrokerage,
     BinanceBrokerage,
     ZerodhaBrokerage,
+    SamcoBrokerage,
     TerminalLinkBrokerage,
     AtreyuBrokerage,
     TradingTechnologiesBrokerage,
@@ -57,6 +59,7 @@ all_local_data_feeds = [
     CoinbaseProDataFeed,
     BinanceDataFeed,
     ZerodhaDataFeed,
+    SamcoDataFeed,
     TerminalLinkDataFeed,
     TradingTechnologiesDataFeed,
     CustomDataOnlyDataFeed,
@@ -73,6 +76,7 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     CoinbaseProBrokerage: [CoinbaseProDataFeed],
     BinanceBrokerage: [BinanceDataFeed],
     ZerodhaBrokerage: [ZerodhaDataFeed],
+    SamcoBrokerage: [SamcoDataFeed],
     TerminalLinkBrokerage: [TerminalLinkDataFeed],
     AtreyuBrokerage: [x for x in all_local_data_feeds if x != CustomDataOnlyDataFeed],
     TradingTechnologiesBrokerage: [TradingTechnologiesDataFeed],
