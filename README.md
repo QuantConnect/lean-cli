@@ -64,7 +64,6 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
-- [`lean cloud status`](#lean-cloud-status)
 - [`lean config get`](#lean-config-get)
 - [`lean config list`](#lean-config-list)
 - [`lean config set`](#lean-config-set)
@@ -72,21 +71,15 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean create-project`](#lean-create-project)
 - [`lean data download`](#lean-data-download)
 - [`lean data generate`](#lean-data-generate)
-- [`lean gui logs`](#lean-gui-logs)
-- [`lean gui restart`](#lean-gui-restart)
-- [`lean gui start`](#lean-gui-start)
-- [`lean gui stop`](#lean-gui-stop)
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
 - [`lean live`](#lean-live)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
-- [`lean logs`](#lean-logs)
 - [`lean optimize`](#lean-optimize)
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
-- [`lean whoami`](#lean-whoami)
 
 ### `lean backtest`
 
@@ -108,18 +101,10 @@ Usage: lean backtest [OPTIONS] PROJECT
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
-  -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Local|QuantConnect|Terminal Link]
-                                  Update the Lean configuration file to retrieve data from the given provider
-  --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
-                                  for --data-provider QuantConnect
-
-  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
-                                  QuantConnect as data provider
-
-  --release                       Compile C# projects in release configuration instead of debug
+  --download-data                 Update the Lean configuration file to download data from the QuantConnect API
+  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during this backtest
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the backtest
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -134,14 +119,12 @@ _See code: [lean/commands/backtest.py](lean/commands/backtest.py)_
 Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
 ```
-Usage: lean build [OPTIONS] [ROOT]
+Usage: lean build [OPTIONS] ROOT
 
   Build Docker images of your own version of LEAN and the Alpha Streams SDK.
 
   ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
   https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
-
-  When ROOT is not given, the current directory is used as root directory.
 
   This command performs the following actions:
   1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
@@ -152,13 +135,9 @@ Usage: lean build [OPTIONS] [ROOT]
   6. The default engine image is set to lean-cli/engine:latest.
   7. The default research image is set to lean-cli/research:latest.
 
-  When the foundation Dockerfile is the same as the official foundation Dockerfile, quantconnect/lean:foundation is
-  used instead of building a custom foundation image.
-
 Options:
-  --tag TEXT  The tag to apply to custom images (defaults to latest)
-  --verbose   Enable debug logging
-  --help      Show this message and exit.
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/build.py](lean/commands/build.py)_
@@ -196,54 +175,18 @@ Usage: lean cloud live [OPTIONS] PROJECT
 
   Start live trading for a project in the cloud.
 
+  An interactive prompt will be shown to configure the deployment.
+
   PROJECT must be the name or the id of the project to start live trading for.
 
-  By default an interactive wizard is shown letting you configure the deployment. If --brokerage is given the command
-  runs in non-interactive mode. In this mode the CLI does not prompt for input or confirmation. In non-interactive
-  mode the options specific to the given brokerage are required, as well as --node, --auto-restart, --notify-order-
-  events and --notify-insights.
+  If the project that has to be live traded has been pulled to the local drive with `lean cloud pull` it is possible
+  to use the --push option to push local modifications to the cloud before starting live trading.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX]
-                                  The brokerage to use
-  --ib-user-name TEXT             Your Interactive Brokers username
-  --ib-account TEXT               Your Interactive Brokers account id
-  --ib-password TEXT              Your Interactive Brokers password
-  --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
-                                  QuantConnect price data feed
-
-  --tradier-account-id TEXT       Your Tradier account id
-  --tradier-access-token TEXT     Your Tradier access token
-  --tradier-environment [demo|real]
-                                  The environment to run in, demo for the Developer Sandbox, real for live trading
-  --oanda-account-id TEXT         Your OANDA account id
-  --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [demo|real]
-                                  The environment to run in, demo for fxTrade Practice, real for fxTrade
-  --bitfinex-api-key TEXT         Your Bitfinex API key
-  --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-api-key TEXT             Your Coinbase Pro API key
-  --gdax-api-secret TEXT          Your Coinbase Pro API secret
-  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-environment [paper|live]
-                                  The environment to run in, paper for the sandbox, live for live trading
-  --binance-api-key TEXT          Your Binance API key
-  --binance-api-secret TEXT       Your Binance API secret
-  --binance-environment [demo|real]
-                                  The environment to run in, demo for testnet, real for the production environment
-  --node TEXT                     The name or id of the live node to run on
-  --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
-  --notify-order-events BOOLEAN   Whether notifications must be sent for order events
-  --notify-insights BOOLEAN       Whether notifications must be sent for emitted insights
-  --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications
-  --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
-                                  configuring webhook-notifications
-
-  --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
-  --push                          Push local modifications to the cloud before starting live trading
-  --open                          Automatically open the live results in the browser once the deployment starts
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --push     Push local modifications to the cloud before starting live trading
+  --open     Automatically open the live results in the browser once the deployment starts
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
@@ -257,35 +200,18 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
 
   Optimize a project in the cloud.
 
+  An interactive prompt will be shown to configure the optimizer.
+
   PROJECT must be the name or id of the project to optimize.
-
-  An interactive prompt will be shown to configure the optimizer. If --target is given the command runs in non-
-  interactive mode. In this mode the CLI does not prompt for input and the following options become required:
-  --target, --target-direction, --parameter, --node and --parallel-nodes.
-
-  In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
-  - --parameter <name> <min value> <max value> <step size>
-  - --parameter my-first-parameter 1 10 0.5 --parameter my-second-parameter 20 30 5
-
-  In non-interactive mode the --constraint option can be provided multiple times to configure multiple constraints:
-  - --constraint "<statistic> <operator> <value>"
-  - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
   If the project that has to be optimized has been pulled to the local drive with `lean cloud pull` it is possible to
   use the --push option to push local modifications to the cloud before running the optimization.
 
 Options:
-  --target TEXT                   The target statistic of the optimization
-  --target-direction [min|max]    Whether the target must be minimized or maximized
-  --parameter <TEXT FLOAT FLOAT FLOAT>...
-                                  The 'parameter min max step' pairs configuring the parameters to optimize
-  --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --node [O2-8|O4-12|O8-16]       The node type to run the optimization on
-  --parallel-nodes INTEGER        The number of nodes that may be run in parallel
-  --name TEXT                     The name of the optimization (a random one is generated if not specified)
-  --push                          Push local modifications to the cloud before starting the optimization
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --name TEXT  The name of the optimization (a random one is generated if not specified)
+  --push       Push local modifications to the cloud before starting the optimization
+  --verbose    Enable debug logging
+  --help       Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/optimize.py](lean/commands/cloud/optimize.py)_
@@ -332,24 +258,6 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
-
-### `lean cloud status`
-
-Show the live trading status of a project in the cloud.
-
-```
-Usage: lean cloud status [OPTIONS] PROJECT
-
-  Show the live trading status of a project in the cloud.
-
-  PROJECT must be the name or the id of the project to show the status for.
-
-Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/cloud/status.py](lean/commands/cloud/status.py)_
 
 ### `lean config get`
 
@@ -447,30 +355,24 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean data download`
 
-Purchase and download data from QuantConnect Datasets.
+Purchase and download data from QuantConnect's Data Library.
 
 ```
 Usage: lean data download [OPTIONS]
 
-  Purchase and download data from QuantConnect Datasets.
+  Purchase and download data from QuantConnect's Data Library.
 
   An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
   Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
 
-  If --dataset is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input or
-  confirmation but only halts when the agreement must be accepted. In non-interactive mode all options specific to the
-  selected dataset as well as --organization are required.
-
   See the following url for the data that can be purchased and downloaded with this command:
-  https://www.quantconnect.com/datasets
+  https://www.lean.io/docs/lean-cli/user-guides/local-data#03-QuantConnect-Data-Library
 
 Options:
-  --dataset TEXT       The name of the dataset to download non-interactively
-  --organization TEXT  The name or id of the organization to purchase and download data with
-  --overwrite          Overwrite existing local data
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
+  --overwrite         Overwrite existing local data
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
 _See code: [lean/commands/data/download.py](lean/commands/data/download.py)_
@@ -529,77 +431,6 @@ Options:
 ```
 
 _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
-
-### `lean gui logs`
-
-See the logs of the local GUI.
-
-```
-Usage: lean gui logs [OPTIONS]
-
-  See the logs of the local GUI.
-
-Options:
-  -f, --follow  Update the logs in real-time while the GUI is running
-  --verbose     Enable debug logging
-  --help        Show this message and exit.
-```
-
-_See code: [lean/commands/gui/logs.py](lean/commands/gui/logs.py)_
-
-### `lean gui restart`
-
-Restart the local GUI and open it in the browser.
-
-```
-Usage: lean gui restart [OPTIONS]
-
-  Restart the local GUI and open it in the browser.
-
-Options:
-  --no-open  Skip opening the local GUI in the browser after restarting it
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/gui/restart.py](lean/commands/gui/restart.py)_
-
-### `lean gui start`
-
-Start the local GUI.
-
-```
-Usage: lean gui start [OPTIONS]
-
-  Start the local GUI.
-
-Options:
-  --organization TEXT  The name or id of the organization with the local GUI module subscription
-  --port INTEGER       The port to run the local GUI on (defaults to 5612)
-  --no-open            Skip opening the local GUI in the browser after starting it
-  --shortcut           Create a desktop shortcut for launching the local GUI
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
-```
-
-_See code: [lean/commands/gui/start.py](lean/commands/gui/start.py)_
-
-### `lean gui stop`
-
-Stop the local GUI.
-
-```
-Usage: lean gui stop [OPTIONS]
-
-  Stop the local GUI.
-
-Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/gui/stop.py](lean/commands/gui/stop.py)_
 
 ### `lean init`
 
@@ -694,138 +525,25 @@ _See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_
 Start live trading a project locally using Docker.
 
 ```
-Usage: lean live [OPTIONS] PROJECT
+Usage: lean live [OPTIONS] PROJECT ENVIRONMENT
 
   Start live trading a project locally using Docker.
 
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If
-  --environment, --brokerage or --data-feed are given the command runs in non-interactive mode. In this mode the CLI
-  does not prompt for input.
-
-  If --environment is given it must be the name of a live environment in the Lean configuration.
-
-  If --brokerage and --data-feed are given, the options specific to the given brokerage/data feed must also be given.
-  The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required
-  option is not given and cannot be found in the Lean config the command aborts.
+  ENVIRONMENT must be the name of an environment in the Lean configuration file with live-mode set to true.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --environment TEXT              The environment to use
-  --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
-  -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --gui                           Enable monitoring and controlling of the deployment via the local GUI
-  --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
-                                  The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
-                                  The data feed to use
-  --ib-user-name TEXT             Your Interactive Brokers username
-  --ib-account TEXT               Your Interactive Brokers account id
-  --ib-password TEXT              Your Interactive Brokers password
-  --ib-enable-delayed-streaming-data BOOLEAN
-                                  Whether delayed data may be used when your algorithm subscribes to a security you
-                                  don't have a market data subscription for
-
-  --tradier-account-id TEXT       Your Tradier account id
-  --tradier-access-token TEXT     Your Tradier access token
-  --tradier-use-sandbox BOOLEAN   Whether the developer sandbox should be used
-  --oanda-account-id TEXT         Your OANDA account id
-  --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
-                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
-  --bitfinex-api-key TEXT         Your Bitfinex API key
-  --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-api-key TEXT             Your Coinbase Pro API key
-  --gdax-api-secret TEXT          Your Coinbase Pro API secret
-  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-use-sandbox BOOLEAN      Whether the sandbox should be used
-  --binance-api-key TEXT          Your Binance API key
-  --binance-api-secret TEXT       Your Binance API secret
-  --binance-use-testnet BOOLEAN   Whether the testnet should be used
-  --zerodha-api-key TEXT          Your Kite Connect API key
-  --zerodha-access-token TEXT     Your Kite Connect access token
-  --zerodha-product-type [MIS|CNC|NRML]
-                                  MIS if you are targeting intraday products, CNC if you are targeting delivery
-                                  products, NRML if you are targeting carry forward products
-
-  --zerodha-trading-segment [EQUITY|COMMODITY]
-                                  EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
-                                  commodities on MCX
-
-  --zerodha-history-subscription BOOLEAN
-                                  Whether you have a history API subscription for Zerodha
-  --iqfeed-iqconnect FILE         The path to the IQConnect binary
-  --iqfeed-username TEXT          Your IQFeed username
-  --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-product-name TEXT      The product name of your IQFeed developer account
-  --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --terminal-link-organization TEXT
-                                  The name or id of the organization with the Terminal Link module subscription
-  --bloomberg-environment [Production|Beta]
-                                  The environment to run in
-  --bloomberg-server-host TEXT    The host of the Bloomberg server
-  --bloomberg-server-port INTEGER
-                                  The port of the Bloomberg server
-  --bloomberg-symbol-map-file FILE
-                                  The path to the Bloomberg symbol map file
-  --bloomberg-emsx-broker TEXT    The EMSX broker to use
-  --bloomberg-emsx-user-time-zone TEXT
-                                  The EMSX user timezone to use
-  --bloomberg-emsx-account TEXT   The EMSX account to use
-  --bloomberg-emsx-strategy TEXT  The EMSX strategy to use
-  --bloomberg-emsx-notes TEXT     The EMSX notes to use
-  --bloomberg-emsx-handling TEXT  The EMSX handling to use
-  --bloomberg-allow-modification BOOLEAN
-                                  Whether modification is allowed
-  --atreyu-organization TEXT      The name or id of the organization with the Atreyu module subscription
-  --atreyu-host TEXT              The host of the Atreyu server
-  --atreyu-req-port INTEGER       The Atreyu request port
-  --atreyu-sub-port INTEGER       The Atreyu subscribe port
-  --atreyu-username TEXT          Your Atreyu username
-  --atreyu-password TEXT          Your Atreyu password
-  --atreyu-client-id TEXT         Your Atreyu client id
-  --atreyu-broker-mpid TEXT       The broker MPID to use
-  --atreyu-locate-rqd TEXT        The locate rqd to use
-  --tt-organization TEXT          The name or id of the organization with the Trading Technologies module subscription
-  --tt-user-name TEXT             Your Trading Technologies username
-  --tt-session-password TEXT      Your Trading Technologies session password
-  --tt-account-name TEXT          Your Trading Technologies account name
-  --tt-rest-app-key TEXT          Your Trading Technologies REST app key
-  --tt-rest-app-secret TEXT       Your Trading Technologies REST app secret
-  --tt-rest-environment TEXT      The REST environment to run in
-  --tt-market-data-sender-comp-id TEXT
-                                  The market data sender comp id to use
-  --tt-market-data-target-comp-id TEXT
-                                  The market data target comp id to use
-  --tt-market-data-host TEXT      The host of the market data server
-  --tt-market-data-port TEXT      The port of the market data server
-  --tt-order-routing-sender-comp-id TEXT
-                                  The order routing sender comp id to use
-  --tt-order-routing-target-comp-id TEXT
-                                  The order routing target comp id to use
-  --tt-order-routing-host TEXT    The host of the order routing server
-  --tt-order-routing-port TEXT    The port of the order routing server
-  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
-  --kraken-organization TEXT      The name or id of the organization with the kraken module subscription
-  --kraken-api-key TEXT           Your Kraken API key
-  --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier TEXT
-                                  Your Kraken Verification Tier
-  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
-  --ftx-api-key TEXT              Your FTX API key
-  --ftx-api-secret TEXT           Your FTX API secret
-  --ftx-account-tier TEXT         Your FTX Account Tier
-  --release                       Compile C# projects in release configuration instead of debug
-  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update                        Pull the LEAN engine image before starting live trading
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --output DIRECTORY  Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
+  --image TEXT        The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update            Pull the LEAN engine image before starting live trading
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
 _See code: [lean/commands/live.py](lean/commands/live.py)_
@@ -868,27 +586,6 @@ Options:
 
 _See code: [lean/commands/logout.py](lean/commands/logout.py)_
 
-### `lean logs`
-
-Display the most recent backtest/live/optimization logs.
-
-```
-Usage: lean logs [OPTIONS]
-
-  Display the most recent backtest/live/optimization logs.
-
-Options:
-  --backtest           Display the most recent backtest logs (default)
-  --live               Display the most recent live logs
-  --optimization       Display the most recent optimization logs
-  --project DIRECTORY  The project to get the most recent logs from
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
-```
-
-_See code: [lean/commands/logs.py](lean/commands/logs.py)_
-
 ### `lean optimize`
 
 Optimize a project's parameters locally using Docker.
@@ -901,44 +598,23 @@ Usage: lean optimize [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  By default an interactive wizard is shown letting you configure the optimizer. If --optimizer-config or --strategy
-  is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input.
-
   The --optimizer-config option can be used to specify the configuration to run the optimizer with.
   When using the option it should point to a file like this (the algorithm-* properties should be omitted):
   https://github.com/QuantConnect/Lean/blob/master/Optimizer.Launcher/config.json
 
-  If --strategy is given the optimizer configuration is read from the given options. In this case --strategy,
-  --target, --target-direction and --parameter become required.
-
-  In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
-  - --parameter <name> <min value> <max value> <step size>
-  - --parameter my-first-parameter 1 10 0.5 --parameter my-second-parameter 20 30 5
-
-  In non-interactive mode the --constraint option can be provided multiple times to configure multiple constraints:
-  - --constraint "<statistic> <operator> <value>"
-  - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
+  When --optimizer-config is not set, an interactive prompt will be shown to configure the optimizer.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
-  -d, --detach                    Run the optimization in a detached Docker container and return immediately
-  --optimizer-config FILE         The optimizer configuration file that should be used
-  --strategy [Grid Search|Euler Search]
-                                  The optimization strategy to use
-  --target TEXT                   The target statistic of the optimization
-  --target-direction [min|max]    Whether the target must be minimized or maximized
-  --parameter <TEXT FLOAT FLOAT FLOAT>...
-                                  The 'parameter min max step' pairs configuring the parameters to optimize
-  --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --release                       Compile C# projects in release configuration instead of debug
-  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update                        Pull the LEAN engine image before running the optimizer
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --output DIRECTORY       Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
+  --optimizer-config FILE  The optimizer configuration file that should be used
+  --image TEXT             The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                 Pull the LEAN engine image before running the optimizer
+  --lean-config FILE       The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                Enable debug logging
+  --help                   Show this message and exit.
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
@@ -954,8 +630,6 @@ Usage: lean report [OPTIONS]
 
   This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
 
-  If --backtest-results is not given, a report is generated for the most recent local backtest.
-
   The name, description, and version are optional and will be blank if not given.
 
   If the given backtest data source file is stored in a project directory (or one of its subdirectories, like the
@@ -966,19 +640,19 @@ Usage: lean report [OPTIONS]
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
-  --backtest-results FILE      Path to the JSON file containing the backtest results
-  --live-results FILE          Path to the JSON file containing the live trading results
-  --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
-  -d, --detach                 Run the report creator in a detached Docker container and return immediately
-  --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
-  --strategy-version TEXT      Version number of the strategy, will appear next to the project name
-  --strategy-description TEXT  Description of the strategy, will appear under the 'Strategy Description' section
-  --overwrite                  Overwrite --report-destination if it already contains a file
-  --image TEXT                 The LEAN engine image to use (defaults to quantconnect/lean:latest)
-  --update                     Pull the LEAN engine image before running the report creator
-  --lean-config FILE           The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                    Enable debug logging
-  --help                       Show this message and exit.
+  --backtest-data-source-file FILE
+                                  Path to the JSON file containing the backtest results  [required]
+  --live-data-source-file FILE    Path to the JSON file containing the live trading results
+  --report-destination FILE       Path where the generated report is stored as HTML (defaults to ./report.html)
+  --strategy-name TEXT            Name of the strategy, will appear at the top-right corner of each page
+  --strategy-version TEXT         Version number of the strategy, will appear next to the project name
+  --strategy-description TEXT     Description of the strategy, will appear under the 'Strategy Description' section
+  --overwrite                     Overwrite --report-destination if it already contains a file
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                        Pull the LEAN engine image before running the report creator
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/report.py](lean/commands/report.py)_
@@ -996,41 +670,15 @@ Usage: lean research [OPTIONS] PROJECT
   you can set the default research image using `lean config set research-image <image>`.
 
 Options:
-  --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Local|QuantConnect|Terminal Link]
-                                  Update the Lean configuration file to retrieve data from the given provider
-  --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
-                                  for --data-provider QuantConnect
-
-  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
-                                  when using QuantConnect as data provider
-
-  -d, --detach                    Run Jupyter Lab in a detached Docker container and return immediately
-  --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
-  --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
-  --update                        Pull the LEAN research image before starting the research environment
-  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                       Enable debug logging
-  --help                          Show this message and exit.
+  --port INTEGER      The port to run Jupyter Lab on (defaults to 8888)
+  --image TEXT        The LEAN research image to use (defaults to quantconnect/research:latest)
+  --update            Pull the LEAN research image before starting the research environment
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
-
-### `lean whoami`
-
-Display who is logged in.
-
-```
-Usage: lean whoami [OPTIONS]
-
-  Display who is logged in.
-
-Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/whoami.py](lean/commands/whoami.py)_
 <!-- commands end -->
 
 ## Development
