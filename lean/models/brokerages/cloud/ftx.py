@@ -39,9 +39,11 @@ class FTXBrokerage(CloudBrokerage):
     @classmethod
     def build(cls, logger: Logger) -> CloudBrokerage:
         exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]")
+        exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
+
         logger.info("""
 Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
-        """.format(cls.get_name(), cls.get_domain()).strip())
+        """.format(exchange.get_name(), exchange.get_domain()).strip())
 
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")
@@ -57,3 +59,21 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
             "exchange": self._exchange_name,
             "environment": "live"
         }
+
+class FTXExchange:
+    @classmethod
+    def get_name(cls) -> str:
+        return "FTX"
+
+    @classmethod
+    def get_domain(cls) -> str:
+        return "ftx.com"
+
+class FTXUSExchange(FTXExchange):
+    @classmethod
+    def get_name(cls) -> str:
+        return "FTXUS"
+
+    @classmethod
+    def get_domain(cls) -> str:
+        return "ftx.us"
