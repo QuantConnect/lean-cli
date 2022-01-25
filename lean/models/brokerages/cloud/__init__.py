@@ -20,6 +20,7 @@ from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.cloud.tradier import TradierBrokerage
 from lean.models.brokerages.cloud.kraken import KrakenBrokerage
 from lean.models.brokerages.cloud.ftx import FTXBrokerage
+
 all_cloud_brokerages = [
     PaperTradingBrokerage,
     InteractiveBrokersBrokerage,

@@ -61,19 +61,15 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
         }
 
 class FTXExchange:
-    @classmethod
-    def get_name(cls) -> str:
+    def get_name(self) -> str:
         return "FTX"
 
-    @classmethod
-    def get_domain(cls) -> str:
+    def get_domain(self) -> str:
         return "ftx.com"
 
 class FTXUSExchange(FTXExchange):
-    @classmethod
-    def get_name(cls) -> str:
+    def get_name(self) -> str:
         return "FTXUS"
 
-    @classmethod
-    def get_domain(cls) -> str:
+    def get_domain(self) -> str:
         return "ftx.us"
