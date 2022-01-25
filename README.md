@@ -12,19 +12,19 @@ Visit the [documentation website](https://www.lean.io/docs/lean-cli/getting-star
 
 ## Highlights
 
--   [Project scaffolding](https://www.lean.io/docs/lean-cli/tutorials/project-management)
--   [Local autocomplete](https://www.lean.io/docs/lean-cli/tutorials/local-autocomplete)
--   [Local data downloading](https://www.lean.io/docs/lean-cli/tutorials/local-data/downloading-from-quantconnect)
--   [Local backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
--   [Local debugging](https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging-local-backtests)
--   [Local research environment](https://www.lean.io/docs/lean-cli/tutorials/research)
--   [Local optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/local-optimizations)
--   [Local live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading)
--   [Local backtest report creation](https://www.lean.io/docs/lean-cli/tutorials/generating-reports)
--   [Cloud synchronization](https://www.lean.io/docs/lean-cli/tutorials/cloud-synchronization)
--   [Cloud backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
--   [Cloud optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/cloud-optimizations)
--   [Cloud live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/cloud-live-trading)
+- [Project scaffolding](https://www.lean.io/docs/lean-cli/tutorials/project-management)
+- [Local autocomplete](https://www.lean.io/docs/lean-cli/tutorials/local-autocomplete)
+- [Local data downloading](https://www.lean.io/docs/lean-cli/tutorials/local-data/downloading-from-quantconnect)
+- [Local backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
+- [Local debugging](https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging-local-backtests)
+- [Local research environment](https://www.lean.io/docs/lean-cli/tutorials/research)
+- [Local optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/local-optimizations)
+- [Local live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading)
+- [Local backtest report creation](https://www.lean.io/docs/lean-cli/tutorials/generating-reports)
+- [Cloud synchronization](https://www.lean.io/docs/lean-cli/tutorials/cloud-synchronization)
+- [Cloud backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
+- [Cloud optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/cloud-optimizations)
+- [Cloud live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/cloud-live-trading)
 
 ## Installation
 
@@ -39,7 +39,6 @@ After installing the CLI, open a terminal in an empty directory and run `lean in
 The Lean CLI supports multiple workflows. The examples below serve as a starting point, you're free to mix local and cloud features in any way you'd like.
 
 A cloud-focused workflow (local development, cloud execution) with the CLI may look like this:
-
 1. Open a terminal in the directory you ran `lean init` in.
 2. Run `lean cloud pull` to pull remotely changed files.
 3. Start programming locally and run backtests in the cloud with `lean cloud backtest "Project Name" --open --push` whenever there is something to backtest. The `--open` flag means that the backtest results will be opened in the browser when done, while the `--push` flag means that local changes are pushed to the cloud before running the backtest.
@@ -47,7 +46,6 @@ A cloud-focused workflow (local development, cloud execution) with the CLI may l
 5. When you're finished for the moment, run `lean cloud push` to push all locally changed files to the cloud.
 
 A locally-focused workflow (local development, local execution) with the CLI may look like this:
-
 1. Open a terminal in the directory you ran `lean init` in.
 2. Run `lean create-project "Project Name"` to create a new project with some basic code to get you started.
 3. Work on your strategy in `./Project Name`.
@@ -56,7 +54,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 
 ## Commands
 
-_Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/lean-cli/getting-started/lean-cli) for more comprehensive documentation._
+*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/lean-cli/getting-started/lean-cli) for more comprehensive documentation.*
 
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
