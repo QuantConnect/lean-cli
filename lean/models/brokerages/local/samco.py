@@ -56,8 +56,6 @@ class SamcoBrokerage(LocalBrokerage):
             options
         )
 
-        logger.info("You need your Samco credentials to use the Samco brokerage.")
-
         client_id = click.prompt("Client ID", cls._get_default(lean_config, "samco-client-id"))
         client_password = logger.prompt_password("Client Password", cls._get_default(lean_config, "samco-client-password"))
         year_of_birth = click.prompt("Year of Birth", cls._get_default(lean_config, "samco-year-of-birth"))

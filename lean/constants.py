@@ -87,7 +87,7 @@ KRAKEN_PRODUCT_ID = 130
 # The product id of the FTX module
 FTX_PRODUCT_ID = 138
 
-# The product id of the FTX module
+# The product id of the SAMCO module
 SAMCO_PRODUCT_ID = 173
 
 # The product ids for which a valid subscription is seen as a valid GUI module subscription
