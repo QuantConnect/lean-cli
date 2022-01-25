@@ -65,7 +65,7 @@ _required_brokerage_properties = {
                                      "tt-order-routing-host", "tt-order-routing-port",
                                      "tt-log-fix-messages"],
     "KrakenBrokerage": ["kraken-api-key", "kraken-api-secret", "kraken-verification-tier"],
-    "FTXBrokerage": ["ftx-api-key", "ftx-api-secret", "ftx-account-tier", "ftx-exchange-name"]
+    "FTXBrokerage": ["ftx-api-key", "ftx-api-secret", "ftx-account-tier"]
 }
 
 # Data queue handler -> required configuration properties
@@ -593,7 +593,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="Your FTX Account Tier")
 @click.option("--ftx-exchange-name",
               type=str,
-              default=lambda: _get_default_value("ftx-exchange-name"),
               help="FTX exchange name [FTX, FTXUS]")
 @click.option("--release",
               is_flag=True,
