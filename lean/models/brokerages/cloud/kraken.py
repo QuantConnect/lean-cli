@@ -51,5 +51,6 @@ Create an API key by logging in and accessing the Kraken API Management page (ht
         return {
             "key": self._api_key,
             "secret": self._secret_key,
-            "verificationTier": self._verification_tier
+            "verificationTier": self._verification_tier,
+            "environment": "live"
         }

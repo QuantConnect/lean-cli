@@ -591,6 +591,9 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("ftx-account-tier"),
               help="Your FTX Account Tier")
+@click.option("--ftx-exchange-name",
+              type=str,
+              help="FTX exchange name [FTX, FTXUS]")
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -690,6 +693,7 @@ def live(project: Path,
          ftx_api_key: Optional[str],
          ftx_api_secret: Optional[str],
          ftx_account_tier: Optional[str],
+         ftx_exchange_name: Optional[str],
          release: bool,
          image: Optional[str],
          update: bool) -> None:
@@ -865,11 +869,12 @@ def live(project: Path,
                                                    kraken_api_secret,
                                                    kraken_verification_tier)
         elif brokerage == FTXBrokerage.get_name():
-            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier"])
+            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier", "ftx_exchange_name"])
             brokerage_configurer = FTXBrokerage(_get_organization_id(ftx_organization, "FTX"),
                                                 ftx_api_key,
                                                 ftx_api_secret,
-                                                ftx_account_tier)
+                                                ftx_account_tier,
+                                                ftx_exchange_name)
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
@@ -995,12 +1000,13 @@ def live(project: Path,
                                 kraken_api_secret,
                                 kraken_verification_tier))
         elif data_feed == FTXDataFeed.get_name():
-            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier"])
+            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier", "ftx_echange_name"])
             data_feed_configurer = FTXDataFeed(
                 FTXBrokerage(_get_organization_id(ftx_organization, "FTX"),
                              ftx_api_key,
                              ftx_api_secret,
-                             ftx_account_tier))
+                             ftx_account_tier,
+                             ftx_exchange_name))
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)

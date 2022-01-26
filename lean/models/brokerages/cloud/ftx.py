@@ -22,10 +22,11 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class FTXBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for FTX."""
 
-    def __init__(self, api_key: str, secret_key: str, account_tier: str) -> None:
+    def __init__(self, api_key: str, secret_key: str, account_tier: str, exchange_name: str) -> None:
         self._api_key = api_key
         self._secret_key = secret_key
         self._account_tier = account_tier
+        self._exchange_name = exchange_name
 
     @classmethod
     def get_id(cls) -> str:
@@ -37,19 +38,38 @@ class FTXBrokerage(CloudBrokerage):
 
     @classmethod
     def build(cls, logger: Logger) -> CloudBrokerage:
+        exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]")
+        exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
+
         logger.info("""
-Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile).
-        """.strip())
+Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
+        """.format(exchange.get_name(), exchange.get_domain()).strip())
 
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")
         account_tier = click.prompt("Account Tier")
 
-        return FTXBrokerage(api_key, secret_key, account_tier)
+        return FTXBrokerage(api_key, secret_key, account_tier, exchange_name)   
 
     def _get_settings(self) -> Dict[str, str]:
         return {
             "key": self._api_key,
             "secret": self._secret_key,
-            "accountTier": self._account_tier
+            "tier": self._account_tier,
+            "exchange": self._exchange_name,
+            "environment": "live"
         }
+
+class FTXExchange:
+    def get_name(self) -> str:
+        return "FTX"
+
+    def get_domain(self) -> str:
+        return "ftx.com"
+
+class FTXUSExchange(FTXExchange):
+    def get_name(self) -> str:
+        return "FTXUS"
+
+    def get_domain(self) -> str:
+        return "ftx.us"

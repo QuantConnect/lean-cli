@@ -231,6 +231,14 @@ Options:
   --binance-api-secret TEXT       Your Binance API secret
   --binance-environment [demo|real]
                                   The environment to run in, demo for testnet, real for the production environment
+  --ftx-api-key TEXT              Your FTX API key
+  --ftx-api-secret TEXT           Your FTX API secret
+  --ftx-account-tier TEXT         Your FTX Account Tier
+  --ftx-exchange-name TEXT        Your FTX Exchange [FTX|FTX.US]
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier TEXT
+                                  Your Kraken Verification Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -832,6 +840,7 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
+  --ftx-exchange-name TEXT        Your FTX Exchange [FTX|FTX.US]
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading

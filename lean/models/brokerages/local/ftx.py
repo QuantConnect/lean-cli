@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import click
 
@@ -22,17 +22,79 @@ from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.config import LeanConfigConfigurer
 from lean.models.logger import Option
 
+class FTXExchange:
+    def get_name(self) -> str:
+        return "FTX"
+
+    def live_mode_brokerage(self) -> str:
+        return "FTXBrokerage"
+
+    def data_queue_handler_name(self) -> str:
+        return "FTXBrokerage"
+
+    def get_domain(self) -> str:
+        return "ftx.com"
+
+    def prefix(self) -> str:
+        return "ftx"
+
+    def account_tier_options(self) -> List[Option]:
+        return [Option(id="Tier1", label="Tier1"),
+             Option(id="Tier2", label="Tier2"),
+             Option(id="Tier3", label="Tier3"),
+             Option(id="Tier4", label="Tier4"),
+             Option(id="Tier5", label="Tier5"),
+             Option(id="Tier6", label="Tier6"),
+             Option(id="VIP1", label="VIP1"),
+             Option(id="VIP2", label="VIP2"),
+             Option(id="VIP3", label="VIP3"),
+             Option(id="MM1", label="MM1"),
+             Option(id="MM2", label="MM2"),
+             Option(id="MM3", label="MM3")]
+
+class FTXUSExchange(FTXExchange):
+    def get_name(self) -> str:
+        return "FTXUS"
+
+    def live_mode_brokerage(self) -> str:
+        return "FTXUSBrokerage"
+
+    def data_queue_handler_name(self) -> str:
+        return "FTXUSBrokerage"
+
+    def get_domain(self) -> str:
+        return "ftx.us"
+
+    def prefix(self) -> str:
+        return "ftxus"
+
+    def account_tier_options(self) -> List[Option]:
+        return [Option(id="Tier1", label="Tier1"),
+             Option(id="Tier2", label="Tier2"),
+             Option(id="Tier3", label="Tier3"),
+             Option(id="Tier4", label="Tier4"),
+             Option(id="Tier5", label="Tier5"),
+             Option(id="Tier6", label="Tier6"),
+             Option(id="Tier7", label="Tier7"),
+             Option(id="Tier8", label="Tier8"),
+             Option(id="Tier9", label="Tier9"),
+             Option(id="VIP1", label="VIP1"),
+             Option(id="VIP2", label="VIP2"),
+             Option(id="MM1", label="MM1"),
+             Option(id="MM2", label="MM2"),
+             Option(id="MM3", label="MM3")]
 
 class FTXBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the FTX brokerage."""
-
+    _exchange: FTXExchange
     _is_module_installed = False
 
-    def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str) -> None:
+    def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str, exchange: FTXExchange) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
         self._account_tier = account_tier
         self._organization_id = organization_id
+        self._exchange = exchange
 
     @classmethod
     def get_name(cls) -> str:
@@ -46,50 +108,45 @@ class FTXBrokerage(LocalBrokerage):
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
 
         organization_id = logger.prompt_list(
-            "Select the organization with the FTX module subscription",
+            "Select the organization with the {} module subscription".format(cls.get_name()),
             options
         )
 
-        logger.info("""
-Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile).
-        """.strip())
+        exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]", cls._get_default(lean_config, "ftx-exchange-name"))
+        exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
 
-        api_key = click.prompt("API key", cls._get_default(lean_config, "ftx-api-key"))
-        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "ftx-api-secret"))
+        logger.info("""
+Create an API key by logging in and accessing the {} Profile page (https://{}/profile).
+        """.format(exchange.get_name(), exchange.get_domain()).strip())
+
+        prefix = exchange.prefix()
+        api_key = click.prompt("API key", cls._get_default(lean_config, f'{prefix}-api-key'))
+        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, f'{prefix}-api-secret'))
 
         account_tier = logger.prompt_list(
             "Select the Account Tier",
-            [Option(id="Tier1", label="Tier1"),
-             Option(id="Tier2", label="Tier2"),
-             Option(id="Tier3", label="Tier3"),
-             Option(id="Tier4", label="Tier4"),
-             Option(id="Tier5", label="Tier5"),
-             Option(id="Tier6", label="Tier6"),
-             Option(id="VIP1", label="VIP1"),
-             Option(id="VIP2", label="VIP2"),
-             Option(id="VIP3", label="VIP3"),
-             Option(id="MM1", label="MM1"),
-             Option(id="MM2", label="MM2"),
-             Option(id="MM3", label="MM3")],
-            cls._get_default(lean_config, "ftx-account-tier")
+            exchange.account_tier_options(),
+            cls._get_default(lean_config, f'{prefix}-account-tier')
         )
 
-        return FTXBrokerage(organization_id, api_key, api_secret, account_tier)
+        return FTXBrokerage(organization_id, api_key, api_secret, account_tier, exchange)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "FTXBrokerage"
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = self._exchange.live_mode_brokerage()
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        lean_config["ftx-api-key"] = self._api_key
-        lean_config["ftx-api-secret"] = self._api_secret
-        lean_config["ftx-account-tier"] = self._account_tier
+        prefix = self._exchange.prefix()
+
+        lean_config[f'{prefix}-api-key'] = self._api_key
+        lean_config[f'{prefix}-api-secret'] = self._api_secret
+        lean_config[f'{prefix}-account-tier'] = self._account_tier
         lean_config["job-organization-id"] = self._organization_id
 
-        self._save_properties(lean_config, ["job-organization-id", "ftx-api-key", "ftx-api-secret", "ftx-account-tier"])
+        self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', f'{prefix}-account-tier'])
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:
@@ -98,6 +155,7 @@ Create an API key by logging in and accessing the FTX Profile page (https://ftx.
 
 class FTXDataFeed(LeanConfigConfigurer):
     """A LeanConfigConfigurer implementation for the FTX data feed."""
+    _brokerage: Any
 
     def __init__(self, brokerage: FTXBrokerage) -> None:
         self._brokerage = brokerage
@@ -113,7 +171,7 @@ class FTXDataFeed(LeanConfigConfigurer):
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._brokerage.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["data-queue-handler"] = "FTXBrokerage"
+        lean_config["environments"][environment_name]["data-queue-handler"] = self._brokerage._exchange.data_queue_handler_name()
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
         self._brokerage.configure_credentials(lean_config)
