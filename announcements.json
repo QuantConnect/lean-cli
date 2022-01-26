@@ -2,11 +2,7 @@
     "announcements": [
         {
             "date": "2022-01-26",
-            "message": "We've added support for FTX.US Exchange"
-        },
-        {
-            "date": "2022-01-25",
-            "message": "We've added support for Samco brokerage for India Market"
+            "message": "We've added support for Samco brokerage for India Market and FTX.US Exchange"
         },
         {
             "date": "2021-11-17",
