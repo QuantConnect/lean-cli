@@ -51,7 +51,7 @@ class ZerodhaBrokerage(LocalBrokerage):
         options = [Option(id=organization.id, label=organization.name) for organization in organizations]
 
         organization_id = logger.prompt_list(
-            "Select the organization with the Samco module subscription",
+            "Select the organization with the Zerodha module subscription",
             options
         )
 
