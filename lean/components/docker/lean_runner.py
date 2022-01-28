@@ -151,8 +151,8 @@ class LeanRunner:
         success = self._docker_manager.run_image(image, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        relative_project_dir = project_dir.relative_to(cli_root_dir)
-        relative_output_dir = output_dir.relative_to(cli_root_dir)
+        relative_project_dir = os.path.relpath(project_dir, cli_root_dir)
+        relative_output_dir = os.path.relpath(output_dir, cli_root_dir)
 
         if debugging_method == DebuggingMethod.QC:
             # Get the random port assigned to 5678 and set in the config for later retrieval
