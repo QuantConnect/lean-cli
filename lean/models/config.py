@@ -93,7 +93,7 @@ class DebuggingMethod(Enum):
         return {
             DebuggingMethod.PyCharm: "PyCharm",
             DebuggingMethod.PTVSD: "PTVSD",
-            DebuggingMethod.QC: "PTVSD" # QC -> PTVSD, If its Python it uses PTVSD, if its C# it is irrelevant
+            DebuggingMethod.QC: "DebugPy" # QC -> DebugPy, If its Python it uses DebugPy, if its C# it is irrelevant
         }.get(self, "LocalCmdline")
 
 
