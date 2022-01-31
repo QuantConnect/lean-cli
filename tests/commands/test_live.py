@@ -324,6 +324,13 @@ brokerage_required_options = {
         "atreyu-broker-mpid": "abc",
         "atreyu-locate-rqd": "abc",
     },
+    "Terminal Link": {
+        "bloomberg-environment": "Beta",
+        "bloomberg-server-host": "abc",
+        "bloomberg-server-port": "123",
+        "bloomberg-emsx-broker": "abc",
+        "bloomberg-allow-modification": "no",
+    },
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
@@ -353,6 +360,7 @@ data_feed_required_options = {
         "zerodha-history-subscription": "yes"
     },
     "Samco": brokerage_required_options["Samco"],
+    "Terminal Link": brokerage_required_options["Terminal Link"],
     "Kraken": brokerage_required_options["Kraken"],
     "FTX": brokerage_required_options["FTX"],
 }
