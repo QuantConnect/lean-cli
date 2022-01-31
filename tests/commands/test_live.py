@@ -333,6 +333,7 @@ brokerage_required_options = {
         "ftx-api-key": "abc",
         "ftx-api-secret": "abc",
         "ftx-account-tier": "abc",
+        "ftx-exchange-name": "FTX"
     },
     
 }
@@ -499,6 +500,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             if brokerage == "Binance":
                 data_feed = "Bitfinex"
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
+            elif brokerage == "FTX":
+                data_feed = "Binance"
+                options.extend(["--ftx-exchange-name", "abc",
+                                "--binance-api-key", "123",
+                                "--binance-api-secret", "456",
+                                "--binance-use-testnet", "no"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
@@ -553,6 +560,9 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                     "data-folder": "data"
                 }))
 
+            if data_feed == "FTX":
+                options.extend(["--ftx-exchange-name", "abc"])
+                
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,

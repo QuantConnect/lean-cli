@@ -89,12 +89,12 @@ class FTXBrokerage(LocalBrokerage):
     _exchange: FTXExchange
     _is_module_installed = False
 
-    def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str, exchange: FTXExchange) -> None:
+    def __init__(self, organization_id: str, api_key: str, api_secret: str, account_tier: str, exchange_name: str) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
         self._account_tier = account_tier
         self._organization_id = organization_id
-        self._exchange = exchange
+        self._exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
 
     @classmethod
     def get_name(cls) -> str:
@@ -129,7 +129,7 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
             cls._get_default(lean_config, f'{prefix}-account-tier')
         )
 
-        return FTXBrokerage(organization_id, api_key, api_secret, account_tier, exchange)
+        return FTXBrokerage(organization_id, api_key, api_secret, account_tier, exchange_name)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
