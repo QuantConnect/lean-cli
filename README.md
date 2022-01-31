@@ -755,6 +755,7 @@ Options:
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --binance-use-testnet BOOLEAN   Whether the testnet should be used
+  --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]
