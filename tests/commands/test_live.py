@@ -306,7 +306,35 @@ brokerage_required_options = {
         "zerodha-access-token": "456",
         "zerodha-product-type": "MIS",
         "zerodha-trading-segment": "EQUITY"
-    }
+    },
+    "Samco": {
+        "samco-client-id": "123",
+        "samco-client-password": "456",
+        "samco-year-of-birth": "2000",
+        "samco-product-type": "MIS",
+        "samco-trading-segment": "EQUITY"
+    },
+    "Atreyu": {
+        "atreyu-host": "abc",
+        "atreyu-req-port": "123",
+        "atreyu-sub-port": "456",
+        "atreyu-username": "abc",
+        "atreyu-password": "abc",
+        "atreyu-client-id": "abc",
+        "atreyu-broker-mpid": "abc",
+        "atreyu-locate-rqd": "abc",
+    },
+    "Kraken": {
+        "kraken-api-key": "abc",
+        "kraken-api-secret": "abc",
+        "kraken-verification-tier": "abc",
+    },
+    "FTX": {
+        "ftx-api-key": "abc",
+        "ftx-api-secret": "abc",
+        "ftx-account-tier": "abc",
+    },
+    
 }
 
 data_feed_required_options = {
@@ -322,7 +350,10 @@ data_feed_required_options = {
     "Zerodha": {
         **brokerage_required_options["Zerodha"],
         "zerodha-history-subscription": "yes"
-    }
+    },
+    "Samco": brokerage_required_options["Samco"],
+    "Kraken": brokerage_required_options["Kraken"],
+    "FTX": brokerage_required_options["FTX"],
 }
 
 
