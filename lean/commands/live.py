@@ -65,7 +65,7 @@ _required_brokerage_properties = {
                                      "tt-order-routing-host", "tt-order-routing-port",
                                      "tt-log-fix-messages"],
     "KrakenBrokerage": ["kraken-api-key", "kraken-api-secret", "kraken-verification-tier"],
-    "FTXBrokerage": ["ftx-api-key", "ftx-api-secret", "ftx-account-tier"]
+    "FTXBrokerage": ["ftx-api-key", "ftx-api-secret", "ftx-account-tier", "ftx-exchange-name"]
 }
 
 # Data queue handler -> required configuration properties

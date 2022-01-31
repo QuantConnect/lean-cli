@@ -94,6 +94,7 @@ class FTXBrokerage(LocalBrokerage):
         self._api_secret = api_secret
         self._account_tier = account_tier
         self._organization_id = organization_id
+        self._exchange_name = exchange_name
         self._exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
 
     @classmethod
@@ -144,6 +145,7 @@ Create an API key by logging in and accessing the {} Profile page (https://{}/pr
         lean_config[f'{prefix}-api-key'] = self._api_key
         lean_config[f'{prefix}-api-secret'] = self._api_secret
         lean_config[f'{prefix}-account-tier'] = self._account_tier
+        lean_config["ftx-exchange-name"] = self._exchange_name
         lean_config["job-organization-id"] = self._organization_id
 
         self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', f'{prefix}-account-tier'])
