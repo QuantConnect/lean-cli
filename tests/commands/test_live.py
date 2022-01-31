@@ -25,6 +25,7 @@ from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
+from lean.models.api import QCMinimalOrganization
 from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
@@ -390,6 +391,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             lean_runner.run_lean.assert_not_called()
 
 
+
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
@@ -400,6 +402,12 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     options = []
 
@@ -438,6 +446,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
 
             lean_runner = mock.Mock()
             container.lean_runner.override(providers.Object(lean_runner))
+
+            api_client = mock.MagicMock()
+            api_client.organizations.get_all.return_value = [
+                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+            ]
+            container.api_client.override(providers.Object(api_client))
 
             options = []
 
@@ -489,6 +503,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
 
             lean_runner = mock.Mock()
             container.lean_runner.override(providers.Object(lean_runner))
+
+            api_client = mock.MagicMock()
+            api_client.organizations.get_all.return_value = [
+                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+            ]
+            container.api_client.override(providers.Object(api_client))
 
             options = []
 
