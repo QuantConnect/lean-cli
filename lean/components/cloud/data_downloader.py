@@ -21,7 +21,7 @@ from joblib import delayed, Parallel
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
-from lean.models.errors import RequestFailedError
+from lean.models.errors import MoreInfoError, RequestFailedError
 
 
 def _store_local_file(file_content: bytes, file_path: Path):
@@ -63,6 +63,11 @@ class DataDownloader:
                     data_dir / "market-hours" / "market-hours-database.json")
 
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
+        except MoreInfoError as e:
+            if "not found" in str(e):
+                pass
+            else:
+                self._logger.error(str(e)) 
         except Exception as e:
             self._logger.error(str(e))
 
