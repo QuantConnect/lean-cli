@@ -1,6 +1,10 @@
 {
     "announcements": [
         {
+            "date": "2022-02-02",
+            "message": "We've added cloud live support for Samco and Zerodha brokerages for India Market"
+        },
+        {
             "date": "2022-01-26",
             "message": "We've added support for Samco brokerage for India Market and FTX.US Exchange"
         },
