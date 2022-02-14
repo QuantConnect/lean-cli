@@ -90,7 +90,7 @@ FTX_PRODUCT_ID = 138
 # The product id of the ZERODHA module
 ZERODHA_PRODUCT_ID = 174
 
-# The product id of the FTX module
+# The product id of the Binance module
 BINANCE_PRODUCT_ID = 176
 
 # The product id of the SAMCO module
