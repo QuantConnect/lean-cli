@@ -20,10 +20,12 @@ from lean.constants import BINANCE_PRODUCT_ID
 from lean.container import container
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.config import LeanConfigConfigurer
+from lean.models.logger import Option
 
 
 class BinanceBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Binance brokerage."""
+    _is_module_installed = False
 
     def __init__(self, organization_id: str, api_key: str, api_secret: str, testnet: bool) -> None:
         self._organization_id = organization_id
@@ -37,6 +39,16 @@ class BinanceBrokerage(LocalBrokerage):
 
     @classmethod
     def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
+        api_client = container.api_client()
+
+        organizations = api_client.organizations.get_all()
+        options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+
+        organization_id = logger.prompt_list(
+            "Select the organization with the {} module subscription".format(cls.get_name()),
+            options
+        )
+
         logger.info("""
 Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management).
         """.strip())
@@ -45,7 +57,7 @@ Create an API key by logging in and accessing the Binance API Management page (h
         api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "binance-api-secret"))
         testnet = click.confirm("Use the testnet?")
 
-        return BinanceBrokerage(api_key, api_secret, testnet)
+        return BinanceBrokerage(organization_id, api_key, api_secret, testnet)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
