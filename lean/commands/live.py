@@ -781,7 +781,10 @@ def live(project: Path,
                                                         gdax_use_sandbox)
         elif brokerage == BinanceBrokerage.get_name():
             ensure_options(["binance_api_key", "binance_api_secret", "binance_use_testnet"])
-            brokerage_configurer = BinanceBrokerage(binance_organization, binance_api_key, binance_api_secret, binance_use_testnet)
+            brokerage_configurer = BinanceBrokerage(_get_organization_id(binance_organization, "Binance"), 
+                                                    binance_api_key, 
+                                                    binance_api_secret, 
+                                                    binance_use_testnet)
         elif brokerage == ZerodhaBrokerage.get_name():
             ensure_options(["zerodha_api_key",
                             "zerodha_access_token",
@@ -914,7 +917,7 @@ def live(project: Path,
                                                                             gdax_use_sandbox))
         elif data_feed == BinanceDataFeed.get_name():
             ensure_options(["binance_api_key", "binance_api_secret", "binance_use_testnet"])
-            data_feed_configurer = BinanceDataFeed(BinanceBrokerage(binance_organization,
+            data_feed_configurer = BinanceDataFeed(BinanceBrokerage(_get_organization_id(binance_organization, "Binance"),
                                                                     binance_api_key,
                                                                     binance_api_secret,
                                                                     binance_use_testnet))
