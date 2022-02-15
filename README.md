@@ -773,6 +773,7 @@ Options:
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
   --gdax-use-sandbox BOOLEAN      Whether the sandbox should be used
+  --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --binance-use-testnet BOOLEAN   Whether the testnet should be used
