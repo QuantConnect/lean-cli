@@ -30,6 +30,10 @@ from lean.models.brokerages.cloud.interactive_brokers import InteractiveBrokersB
 from lean.models.brokerages.cloud.oanda import OANDABrokerage
 from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
 from lean.models.brokerages.cloud.tradier import TradierBrokerage
+from lean.models.brokerages.cloud.zerodha import ZerodhaBrokerage
+from lean.models.brokerages.cloud.samco import SamcoBrokerage
+from lean.models.brokerages.cloud.kraken import KrakenBrokerage
+from lean.models.brokerages.cloud.ftx import FTXBrokerage
 from lean.models.logger import Option
 
 
@@ -186,6 +190,22 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--binance-environment",
               type=click.Choice(["demo", "real"], case_sensitive=False),
               help="The environment to run in, demo for testnet, real for the production environment")
+@click.option("--kraken-api-key", type=str, help="Your Kraken API key")
+@click.option("--kraken-api-secret", type=str, help="Your Kraken API secret")
+@click.option("--kraken-verification-tier", type=str, help="Your Kraken Verification Tier")
+@click.option("--ftx-api-key", type=str, help="Your FTX API key")
+@click.option("--ftx-api-secret", type=str, help="Your FTX API secret")
+@click.option("--ftx-account-tier", type=str, help="Your FTX Account Tier")
+@click.option("--ftx-exchange-name", type=str, help="FTX exchange name [FTX, FTXUS]")
+@click.option("--zerodha-api-key", type=str, help="Your Kite Connect API key")
+@click.option("--zerodha-access-token", type=str, help="Your Kite Connect access token")
+@click.option("--zerodha-product-type", type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False), help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")
+@click.option("--zerodha-trading-segment", type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False), help="EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX")
+@click.option("--samco-client-id", type=str, help="Your Samco account Client ID")
+@click.option("--samco-client-password", type=str, help="Your Samco account password")
+@click.option("--samco-year-of-birth", type=str, help="Your year of birth (YYYY) registered with Samco")
+@click.option("--samco-product-type", type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False), help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")
+@click.option("--samco-trading-segment", type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False), help="EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX")
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -226,6 +246,22 @@ def live(project: str,
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
          binance_environment: Optional[str],
+         kraken_api_key: Optional[str],
+         kraken_api_secret: Optional[str],
+         kraken_verification_tier: Optional[str],
+         ftx_api_key: Optional[str],
+         ftx_api_secret: Optional[str],
+         ftx_account_tier: Optional[str],
+         ftx_exchange_name: Optional[str],
+         zerodha_api_key: Optional[str],
+         zerodha_access_token: Optional[str],
+         zerodha_product_type: Optional[str],
+         zerodha_trading_segment: Optional[str],
+         samco_client_id: Optional[str],
+         samco_client_password: Optional[str],
+         samco_year_of_birth: Optional[str],
+         samco_product_type: Optional[str],
+         samco_trading_segment: Optional[str],
          node: str,
          auto_restart: bool,
          notify_order_events: Optional[bool],
@@ -279,6 +315,37 @@ def live(project: str,
         elif brokerage == BinanceBrokerage.get_name():
             ensure_options(["binance_api_key", "binance_api_secret", "binance_environment"])
             brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_environment)
+        elif brokerage == KrakenBrokerage.get_name():
+            ensure_options(["kraken_api_key", "kraken_api_secret", "kraken_verification_tier"])
+            brokerage_instance = KrakenBrokerage(kraken_api_key,
+                                                   kraken_api_secret,
+                                                   kraken_verification_tier)
+        elif brokerage == FTXBrokerage.get_name():
+            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier", "ftx_exchange_name"])
+            brokerage_instance = FTXBrokerage(ftx_api_key,
+                                                ftx_api_secret,
+                                                ftx_account_tier,
+                                                ftx_exchange_name)
+        elif brokerage == ZerodhaBrokerage.get_name():
+            ensure_options(["zerodha_api_key",
+                            "zerodha_access_token",
+                            "zerodha_product_type",
+                            "zerodha_trading_segment"])
+            brokerage_instance = ZerodhaBrokerage(zerodha_api_key,
+                                                    zerodha_access_token,
+                                                    zerodha_product_type,
+                                                    zerodha_trading_segment)
+        elif brokerage == SamcoBrokerage.get_name():
+            ensure_options(["samco_client_id",
+                            "samco_client_password",
+                            "samco_year_of_birth",
+                            "samco_product_type",
+                            "samco_trading_segment"])
+            brokerage_instance = SamcoBrokerage(samco_client_id,
+                                                samco_client_password,
+                                                samco_year_of_birth,
+                                                samco_product_type,
+                                                samco_trading_segment)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)

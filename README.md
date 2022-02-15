@@ -204,7 +204,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
   events and --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX|Zerodha|Samco]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -231,14 +231,35 @@ Options:
   --binance-api-secret TEXT       Your Binance API secret
   --binance-environment [demo|real]
                                   The environment to run in, demo for testnet, real for the production environment
-  --ftx-api-key TEXT              Your FTX API key
-  --ftx-api-secret TEXT           Your FTX API secret
-  --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        Your FTX Exchange [FTX|FTX.US]
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier TEXT
                                   Your Kraken Verification Tier
+  --ftx-api-key TEXT              Your FTX API key
+  --ftx-api-secret TEXT           Your FTX API secret
+  --ftx-account-tier TEXT         Your FTX Account Tier
+  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
+  --zerodha-api-key TEXT          Your Kite Connect API key
+  --zerodha-access-token TEXT     Your Kite Connect access token
+  --zerodha-product-type [MIS|CNC|NRML]
+                                  MIS if you are targeting intraday products, CNC if you are targeting delivery
+                                  products, NRML if you are targeting carry forward products
+
+  --zerodha-trading-segment [EQUITY|COMMODITY]
+                                  EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
+                                  commodities on MCX
+
+  --samco-client-id TEXT          Your Samco account Client ID
+  --samco-client-password TEXT    Your Samco account password
+  --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
+  --samco-product-type [MIS|CNC|NRML]
+                                  MIS if you are targeting intraday products, CNC if you are targeting delivery
+                                  products, NRML if you are targeting carry forward products
+
+  --samco-trading-segment [EQUITY|COMMODITY]
+                                  EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
+                                  commodities on MCX
+
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -841,7 +862,7 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        Your FTX Exchange [FTX|FTX.US]
+  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
