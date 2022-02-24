@@ -49,7 +49,7 @@ _required_brokerage_properties = {
     "OandaBrokerage": ["oanda-environment", "oanda-access-token", "oanda-account-id"],
     "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
-    "BinanceBrokerage": ["binance-api-secret", "binance-api-key", "fbinance-exchange-name"],
+    "BinanceBrokerage": ["binance-api-secret", "binance-api-key", "binance-exchange-name"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
     "SamcoBrokerage": ["samco-client-id", "samco-client-password", "samco-year-of-birth", "samco-product-type", "samco-trading-segment"],
     "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
@@ -643,6 +643,7 @@ def live(project: Path,
          binance_organization: Optional[str],
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
+         binance_exchange_name: Optional[str],
          binance_use_testnet: Optional[bool],
          zerodha_organization: Optional[str],
          zerodha_api_key: Optional[str],
@@ -783,10 +784,11 @@ def live(project: Path,
                                                         gdax_passphrase,
                                                         gdax_use_sandbox)
         elif brokerage == BinanceBrokerage.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret", "binance_use_testnet"])
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_exchange_name", "binance_use_testnet"])
             brokerage_configurer = BinanceBrokerage(_get_organization_id(binance_organization, "Binance"), 
                                                     binance_api_key, 
-                                                    binance_api_secret, 
+                                                    binance_api_secret,
+                                                    binance_exchange_name,
                                                     binance_use_testnet)
         elif brokerage == ZerodhaBrokerage.get_name():
             ensure_options(["zerodha_api_key",
@@ -923,6 +925,7 @@ def live(project: Path,
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(_get_organization_id(binance_organization, "Binance"),
                                                                     binance_api_key,
                                                                     binance_api_secret,
+                                                                    binance_exchange_name,
                                                                     binance_use_testnet))
         elif data_feed == ZerodhaDataFeed.get_name():
             ensure_options(["zerodha_api_key",

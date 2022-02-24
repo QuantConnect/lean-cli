@@ -131,11 +131,17 @@ class BinanceBrokerage(LocalBrokerage):
         )
 
         exchange_name = click.prompt("Binance Exchange [Binance|BinanceUS]", cls._get_default(lean_config, "binance-exchange-name"))
-        exchange = BinanceExchange()
+        exchange: BinanceExchange
+        testnet = False
         if(exchange_name.casefold() == "BinanceUS".casefold()):
             exchange = BinanceUSExchange()
-        elif(testnet):
-            exchange = BinanceTestnetExchange()
+        else:
+            click.confirm("Use the testnet?")
+            if(testnet):
+                exchange = BinanceTestnetExchange()
+            else:
+                exchange = BinanceExchange() 
+
 
         logger.info("""
 Create an API key by logging in and accessing the {} API Management page (https://www.{}/en/my/settings/api-management).
@@ -145,9 +151,8 @@ Create an API key by logging in and accessing the {} API Management page (https:
 
         api_key = click.prompt("API key", cls._get_default(lean_config, f'{prefix}-api-key'))
         api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, f'{prefix}-api-secret'))
-        testnet = click.confirm("Use the testnet?")
 
-        return BinanceBrokerage(organization_id, api_key, api_secret, testnet)
+        return BinanceBrokerage(organization_id, api_key, api_secret, exchange_name, testnet)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
@@ -192,7 +197,7 @@ class BinanceDataFeed(LeanConfigConfigurer):
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._brokerage.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["data-queue-handler"] = self._brokerage.data_queue_handler_name()
+        lean_config["environments"][environment_name]["data-queue-handler"] = self._brokerage._exchange.data_queue_handler_name()
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
         self._brokerage.configure_credentials(lean_config)
