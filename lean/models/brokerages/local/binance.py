@@ -166,14 +166,14 @@ Create an API key by logging in and accessing the {} API Management page (https:
 
         lean_config[f'{prefix}-api-key'] = self._api_key
         lean_config[f'{prefix}-api-secret'] = self._api_secret
-        lean_config[f'{prefix}-use-testnet'] = self._testnet
-        lean_config[f'{prefix}-api-url'] = self._exchange.get_ws_endpoint()
+        lean_config[f'{prefix}-api-url'] = self._exchange.get_api_endpoint()
         lean_config[f'{prefix}-websocket-url'] = self._exchange.get_ws_endpoint()
         
+        lean_config["binance-use-testnet"] = self._testnet
         lean_config["binance-exchange-name"] = self._exchange_name
         lean_config["job-organization-id"] = self._organization_id
 
-        self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', f'{prefix}-use-testnet'])
+        self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', "binance-use-testnet"])
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:
