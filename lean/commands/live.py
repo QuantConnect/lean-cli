@@ -49,7 +49,7 @@ _required_brokerage_properties = {
     "OandaBrokerage": ["oanda-environment", "oanda-access-token", "oanda-account-id"],
     "GDAXBrokerage": ["gdax-api-secret", "gdax-api-key", "gdax-passphrase"],
     "BitfinexBrokerage": ["bitfinex-api-secret", "bitfinex-api-key"],
-    "BinanceBrokerage": ["binance-api-secret", "binance-api-key"],
+    "BinanceBrokerage": ["binance-api-secret", "binance-api-key", "fbinance-exchange-name"],
     "ZerodhaBrokerage": ["zerodha-access-token", "zerodha-api-key", "zerodha-product-type", "zerodha-trading-segment"],
     "SamcoBrokerage": ["samco-client-id", "samco-client-password", "samco-year-of-birth", "samco-product-type", "samco-trading-segment"],
     "BloombergBrokerage": ["job-organization-id", "bloomberg-api-type", "bloomberg-environment",
@@ -347,6 +347,9 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=str,
               default=lambda: _get_default_value("binance-api-secret"),
               help="Your Binance API secret")
+@click.option("--binance-exchange-name",
+              type=str,
+              help="Binance exchange name [Binance, BinanceUS]")
 @click.option("--binance-use-testnet",
               type=bool,
               default=lambda: _get_default_value("binance-use-testnet"),

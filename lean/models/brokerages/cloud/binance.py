@@ -22,10 +22,11 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class BinanceBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Binance."""
 
-    def __init__(self, api_key: str, secret_key: str, environment: str) -> None:
+    def __init__(self, api_key: str, secret_key: str, environment: str, exchange_name: str) -> None:
         self._api_key = api_key
         self._secret_key = secret_key
         self._environment = environment
+        self._exchange_name = exchange_name
 
     @classmethod
     def get_id(cls) -> str:
@@ -43,15 +44,18 @@ Your account details are not save on QuantConnect.
 Demo credentials can be generated on Binance Testnet (https://testnet.binance.vision/).
         """.strip())
 
+        exchange_name = click.prompt("Binance Exchange [Binance|BinanceUS]")
+
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")
         environment = click.prompt("Environment", type=click.Choice(["demo", "real"], case_sensitive=False))
 
-        return BinanceBrokerage(api_key, secret_key, environment)
+        return BinanceBrokerage(api_key, secret_key, exchange_name, environment)
 
     def _get_settings(self) -> Dict[str, str]:
         return {
             "key": self._api_key,
             "secret": self._secret_key,
+            "exchange": self._exchange_name,
             "environment": "live" if self._environment == "real" else "paper"
         }

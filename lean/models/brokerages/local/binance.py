@@ -22,16 +22,97 @@ from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.config import LeanConfigConfigurer
 from lean.models.logger import Option
 
+class BinanceExchange:
+    def get_name(self) -> str:
+        return "Binance"
+
+    def get_label(self) -> str:
+        return "Binance"
+
+    def get_api_endpoint(self) -> str:
+        return "https://api.binance.com"
+
+    def get_ws_endpoint(self) -> str:
+        return "wss://stream.binance.com:9443/ws"
+
+    def get_domain(self) -> str:
+        return "binance.com"
+
+    def prefix(self) -> str:
+        return "binance"
+    
+    def live_mode_brokerage(self) -> str:
+        return "BinanceBrokerage"
+
+    def data_queue_handler_name(self) -> str:
+        return "BinanceBrokerage"
+
+class BinanceUSExchange(BinanceExchange):
+    def get_name(self) -> str:
+        return "BinanceUS"
+
+    def get_label(self) -> str:
+        return "BinanceUS"
+
+    def get_api_endpoint(self) -> str:
+        return "https://api.binance.us"
+
+    def get_ws_endpoint(self) -> str:
+        return "wss://stream.binance.us:9443/ws"
+    
+    def get_domain(self) -> str:
+        return "binance.us"
+    
+    def prefix(self) -> str:
+        return "binanceus"
+
+    def live_mode_brokerage(self) -> str:
+        return "BinanceUSBrokerage"
+
+    def data_queue_handler_name(self) -> str:
+        return "BinanceUSBrokerage"
+
+class BinanceTestnetExchange(BinanceExchange):
+    def get_name(self) -> str:
+        return "Binance"
+
+    def get_label(self) -> str:
+        return "Binance Testnet"
+
+    def get_api_endpoint(self) -> str:
+        return "https://testnet.binance.vision"
+
+    def get_ws_endpoint(self) -> str:
+        return "wss://testnet.binance.vision/ws"
+
+    def get_domain(self) -> str:
+        return "binance.com"
+
+    def prefix(self) -> str:
+        return "binance"
+
+    def live_mode_brokerage(self) -> str:
+        return "BinanceBrokerage"
+
+    def data_queue_handler_name(self) -> str:
+        return "BinanceBrokerage"
 
 class BinanceBrokerage(LocalBrokerage):
     """A LocalBrokerage implementation for the Binance brokerage."""
     _is_module_installed = False
+    _exchange: BinanceExchange
 
-    def __init__(self, organization_id: str, api_key: str, api_secret: str, testnet: bool) -> None:
+    def __init__(self, organization_id: str, api_key: str, api_secret: str, exchange_name: str, testnet: bool) -> None:
         self._organization_id = organization_id
         self._api_key = api_key
         self._api_secret = api_secret
         self._testnet = testnet
+        self._exchange_name = exchange_name
+        self._exchange = BinanceExchange()
+        if(exchange_name.casefold() == "BinanceUS".casefold()):
+            self._exchange = BinanceUSExchange()
+        elif(testnet):
+            self._exchange = BinanceTestnetExchange()
 
     @classmethod
     def get_name(cls) -> str:
@@ -49,12 +130,21 @@ class BinanceBrokerage(LocalBrokerage):
             options
         )
 
-        logger.info("""
-Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management).
-        """.strip())
+        exchange_name = click.prompt("Binance Exchange [Binance|BinanceUS]", cls._get_default(lean_config, "binance-exchange-name"))
+        exchange = BinanceExchange()
+        if(exchange_name.casefold() == "BinanceUS".casefold()):
+            exchange = BinanceUSExchange()
+        elif(testnet):
+            exchange = BinanceTestnetExchange()
 
-        api_key = click.prompt("API key", cls._get_default(lean_config, "binance-api-key"))
-        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, "binance-api-secret"))
+        logger.info("""
+Create an API key by logging in and accessing the {} API Management page (https://www.{}/en/my/settings/api-management).
+        """.format(exchange.get_label(), exchange.get_domain()).strip())
+
+        prefix = exchange.prefix()
+
+        api_key = click.prompt("API key", cls._get_default(lean_config, f'{prefix}-api-key'))
+        api_secret = logger.prompt_password("API secret", cls._get_default(lean_config, f'{prefix}-api-secret'))
         testnet = click.confirm("Use the testnet?")
 
         return BinanceBrokerage(organization_id, api_key, api_secret, testnet)
@@ -62,24 +152,23 @@ Create an API key by logging in and accessing the Binance API Management page (h
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["live-mode-brokerage"] = "BinanceBrokerage"
+        lean_config["environments"][environment_name]["live-mode-brokerage"] = self._exchange.live_mode_brokerage()
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        lean_config["binance-api-key"] = self._api_key
-        lean_config["binance-api-secret"] = self._api_secret
-        lean_config["binance-use-testnet"] = self._testnet
+        prefix = self._exchange.prefix()
 
-        if self._testnet:
-            lean_config["binance-api-url"] = "https://testnet.binance.vision"
-            lean_config["binance-websocket-url"] = "wss://testnet.binance.vision/ws"
-        else:
-            lean_config["binance-api-url"] = "https://api.binance.com"
-            lean_config["binance-websocket-url"] = "wss://stream.binance.com:9443/ws"
-
+        lean_config[f'{prefix}-api-key'] = self._api_key
+        lean_config[f'{prefix}-api-secret'] = self._api_secret
+        lean_config[f'{prefix}-use-testnet'] = self._testnet
+        lean_config[f'{prefix}-api-url'] = self._exchange.get_ws_endpoint()
+        lean_config[f'{prefix}-websocket-url'] = self._exchange.get_ws_endpoint()
+        
+        lean_config["binance-exchange-name"] = self._exchange_name
         lean_config["job-organization-id"] = self._organization_id
-        self._save_properties(lean_config, ["job-organization-id", "binance-api-key", "binance-api-secret", "binance-use-testnet"])
+
+        self._save_properties(lean_config, ["job-organization-id", f'{prefix}-api-key', f'{prefix}-api-secret', f'{prefix}-use-testnet'])
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed:
@@ -103,7 +192,7 @@ class BinanceDataFeed(LeanConfigConfigurer):
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         self._brokerage.ensure_module_installed()
 
-        lean_config["environments"][environment_name]["data-queue-handler"] = "BinanceBrokerage"
+        lean_config["environments"][environment_name]["data-queue-handler"] = self._brokerage.data_queue_handler_name()
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"
 
         self._brokerage.configure_credentials(lean_config)

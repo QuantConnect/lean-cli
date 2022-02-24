@@ -187,6 +187,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
               help="The environment to run in, paper for the sandbox, live for live trading")
 @click.option("--binance-api-key", type=str, help="Your Binance API key")
 @click.option("--binance-api-secret", type=str, help="Your Binance API secret")
+@click.option("--binance-exchange-name", type=str, help="Your Binance exchange name [Binance, BinanceUS]")
 @click.option("--binance-environment",
               type=click.Choice(["demo", "real"], case_sensitive=False),
               help="The environment to run in, demo for testnet, real for the production environment")

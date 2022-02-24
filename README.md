@@ -229,6 +229,7 @@ Options:
                                   The environment to run in, paper for the sandbox, live for live trading
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binance-exchange-name TEXT    Your Binance exchange name [Binance, BinanceUS]
   --binance-environment [demo|real]
                                   The environment to run in, demo for testnet, real for the production environment
   --kraken-api-key TEXT           Your Kraken API key
@@ -776,6 +777,7 @@ Options:
   --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binance-exchange-name TEXT    Your Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet BOOLEAN   Whether the testnet should be used
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
