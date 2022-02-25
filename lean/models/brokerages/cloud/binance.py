@@ -22,7 +22,7 @@ from lean.models.brokerages.cloud.base import CloudBrokerage
 class BinanceBrokerage(CloudBrokerage):
     """A CloudBrokerage implementation for Binance."""
 
-    def __init__(self, api_key: str, secret_key: str, environment: str, exchange_name: str) -> None:
+    def __init__(self, api_key: str, secret_key: str, exchange_name: str, environment: str) -> None:
         self._api_key = api_key
         self._secret_key = secret_key
         self._environment = environment

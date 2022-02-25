@@ -777,7 +777,7 @@ Options:
   --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
-  --binance-exchange-name TEXT    Your Binance exchange name [Binance, BinanceUS]
+  --binance-exchange-name TEXT    Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet BOOLEAN   Whether the testnet should be used
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key

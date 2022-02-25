@@ -246,6 +246,7 @@ def live(project: str,
          gdax_environment: Optional[str],
          binance_api_key: Optional[str],
          binance_api_secret: Optional[str],
+         binance_exchange_name: Optional[str],
          binance_environment: Optional[str],
          kraken_api_key: Optional[str],
          kraken_api_secret: Optional[str],
@@ -314,8 +315,8 @@ def live(project: str,
             ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_environment"])
             brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase, gdax_environment)
         elif brokerage == BinanceBrokerage.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret", "binance_environment"])
-            brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_environment)
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_exchange_name", "binance_environment"])
+            brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_exchange_name, binance_environment)
         elif brokerage == KrakenBrokerage.get_name():
             ensure_options(["kraken_api_key", "kraken_api_secret", "kraken_verification_tier"])
             brokerage_instance = KrakenBrokerage(kraken_api_key,
