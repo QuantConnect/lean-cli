@@ -299,6 +299,7 @@ brokerage_required_options = {
     "Binance": {
         "binance-api-key": "123",
         "binance-api-secret": "456",
+        "binance-exchange-name": "Binance",
         "binance-use-testnet": "yes"
     },
     "Zerodha": {
@@ -391,6 +392,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
+                                "--binance-exchange-name", "Binance",
                                 "--binance-use-testnet", "no"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -507,17 +509,21 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
 
             if brokerage == "Binance":
                 data_feed = "Bitfinex"
-                options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
+                options.extend(["--bitfinex-api-key", "123", 
+                                "--bitfinex-api-secret", "456",
+                                "--binance-exchange-name", "abc",])
             elif brokerage == "FTX":
                 data_feed = "Binance"
                 options.extend(["--ftx-exchange-name", "abc",
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
+                                "--binance-exchange-name", "Binance",
                                 "--binance-use-testnet", "no"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
+                                "--binance-exchange-name", "abc",
                                 "--binance-use-testnet", "no"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -570,6 +576,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
 
             if data_feed == "FTX":
                 options.extend(["--ftx-exchange-name", "abc"])
+            elif data_feed == "Binance":
+                options.extend(["--binance-exchange-name", "abc"])
                 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
