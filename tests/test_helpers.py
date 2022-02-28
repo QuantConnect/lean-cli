@@ -17,7 +17,8 @@ from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK)
-from lean.models.api import QCLanguage, QCLiveResults, QCProject
+from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
+    QCOrganizationData, QCOrganizationCredit
 
 
 def create_fake_lean_cli_directory() -> None:
@@ -84,3 +85,13 @@ def create_api_project(id: int, name: str) -> QCProject:
         liveResults=QCLiveResults(eStatus="Unknown"),
         libraries=[]
     )
+
+def create_api_organization() -> QCFullOrganization:
+    return QCFullOrganization(id="1",
+                              name="a",
+                              seats=1,
+                              type="type",
+                              credit=QCOrganizationCredit(movements=[], balance=1000000),
+                              products=[],
+                              data=QCOrganizationData(signedTime=None, current=False),
+                              members=[])
