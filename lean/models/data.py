@@ -55,9 +55,31 @@ class DatasetOneOfCondition(DatasetCondition):
     def check(self, option_results: Dict[str, OptionResult]) -> bool:
         if self.option not in option_results:
             return True
+        # TODO: bug? ^ returns true even if option hasn't been resolved
 
         return option_results[self.option].value in self.values
 
+class DatasetOrCondition(DatasetCondition):
+    options: List[DatasetCondition]
+
+    def check(self, option_results: Dict[str, OptionResult]) -> bool:
+        # Check each option, if any return true then its true
+        for option in self.options:
+            if option.check(option_results):
+                return True
+        
+        return False
+
+class DatasetAndCondition(DatasetCondition):
+    options: List[DatasetCondition]
+
+    def check(self, option_results: Dict[str, OptionResult]) -> bool:
+        # Check each option, if any return false, then its false
+        for option in self.options:
+            if not option.check(option_results):
+                return False
+
+        return True
 
 class DatasetOption(WrappedBaseModel, abc.ABC):
     id: str
@@ -71,10 +93,22 @@ class DatasetOption(WrappedBaseModel, abc.ABC):
             return value
 
         condition_types = {
-            "oneOf": DatasetOneOfCondition
+            "oneof": DatasetOneOfCondition,
+            "and": DatasetAndCondition,
+            "or": DatasetOrCondition
         }
 
-        return condition_types[value["type"]](**value)
+        conditionType = value["type"].lower()
+
+        # Special AND/OR (Composition of conditions)
+        if conditionType == "and" or conditionType == "or" :
+            for i in range(0, len(value["options"])):
+                option = value["options"][i]
+
+                # Recurse as needed to flush out conditional tree
+                value["options"][i] = cls.parse_condition(option)
+
+        return condition_types[conditionType](**value)
 
     def configure_interactive(self) -> OptionResult:
         """Prompt the user for input to configure this option.
@@ -191,7 +225,6 @@ class DatasetSelectOption(DatasetOption):
         else:
             return f"value (example: {min(keys, key=len)})"
 
-
 class DatasetDateOption(DatasetOption):
     start_end: bool = False
 
@@ -228,10 +261,22 @@ class DatasetPath(WrappedBaseModel):
             return value
 
         condition_types = {
-            "oneOf": DatasetOneOfCondition
+            "oneof": DatasetOneOfCondition,
+            "and": DatasetAndCondition,
+            "or": DatasetOrCondition
         }
 
-        return condition_types[value["type"]](**value)
+        conditionType = value["type"].lower()
+
+        # Special AND/OR (Composition of conditions)
+        if conditionType == "and" or conditionType == "or" :
+            for i in range(0, len(value["options"])):
+                option = value["options"][i]
+
+                # Recurse as need to flush out conditional tree
+                value["options"][i] = cls.parse_condition(option)
+
+        return condition_types[conditionType](**value)
 
 
 class Dataset(WrappedBaseModel):
@@ -254,9 +299,11 @@ class Dataset(WrappedBaseModel):
         for option in values:
             if isinstance(option, DatasetOption):
                 options.append(option)
+
+            # TODO: This is a hack around, does not respect option conditions for start-end
             elif option["type"] == "start-end":
                 description_suffix = ""
-                required_resolutions = ["tick", "second", "minute"]
+                required_resolutions = ["tick", "second", "minute", "minute/second/tick"]
 
                 resolution = next((o for o in options if o.id == "resolution"), None)
                 if resolution is not None and isinstance(resolution, DatasetSelectOption):
@@ -333,7 +380,7 @@ class Product(WrappedBaseModel):
 
         multiple_option = next((o for o in self.dataset.options if isinstance(o, DatasetTextOption) and o.multiple),
                                None)
-        if multiple_option is not None:
+        if multiple_option is not None and multiple_option.id in self.option_results:
             result = self.option_results[multiple_option.id]
 
             for index in range(len(result.value)):

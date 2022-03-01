@@ -20,11 +20,10 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.components.config.optimizer_config_manager import NodeType, OptimizerConfigManager
 from lean.container import container
-from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizationEstimate, QCFullOrganization, \
-    QCOrganizationData, QCOrganizationCredit
+from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizationEstimate
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)
-from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
+from tests.test_helpers import create_api_project, create_fake_lean_cli_directory, create_api_organization
 
 
 def create_api_optimization() -> QCOptimization:
@@ -34,17 +33,6 @@ def create_api_optimization() -> QCOptimization:
                           name="Optimization name",
                           backtests={},
                           runtimeStatistics={})
-
-
-def create_api_organization() -> QCFullOrganization:
-    return QCFullOrganization(id="1",
-                              name="a",
-                              seats=1,
-                              type="type",
-                              credit=QCOrganizationCredit(movements=[], balance=1000000),
-                              products=[],
-                              data=QCOrganizationData(signedTime=None, current=False),
-                              members=[])
 
 
 def create_api_optimization_backtest(id: int,

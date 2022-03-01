@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import multiprocessing
+import tarfile
 from pathlib import Path
 from datetime import *
 from typing import Any, List, Callable
@@ -99,11 +100,16 @@ class DataDownloader:
                     self._lean_config_manager.set_properties({
                         "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
                     })
-
+                
             progress.stop()
         except KeyboardInterrupt as e:
             progress.stop()
             raise e
+
+    def _process_bulk(self, file: Path, destination: Path):
+        tar = tarfile.open(file)
+        tar.extractall(destination)
+        tar.close()
 
     def _download_file(self,
                        relative_file: str,
@@ -132,6 +138,7 @@ class DataDownloader:
             callback()
             return
 
+
         try:
             file_content = self._api_client.data.download_file(relative_file, organization_id)
         except RequestFailedError as error:
@@ -140,4 +147,9 @@ class DataDownloader:
             return
 
         _store_local_file(file_content, local_path)
+        
+        # Special case: bulk files need unpacked
+        if "setup/" in relative_file and relative_file.endswith(".tar"):
+            self._process_bulk(local_path, data_directory)
+
         callback()
