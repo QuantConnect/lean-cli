@@ -1,16 +1,9 @@
 import json
-from tarfile import TarFile
 import pytest
 import os
+from pathlib import Path
 
 from lean.commands.data.download import *
-
-from unittest import mock
-
-import pytest
-from click.testing import CliRunner
-from dependency_injector import providers
-
 from lean.container import container
 from tests.test_helpers import create_api_organization
 
@@ -35,6 +28,7 @@ def test_bulk_extraction(setup):
 
 
 def test_non_interactive_bulk_select():
+	# TODO
     pass
 
 def test_interactive_bulk_select():
