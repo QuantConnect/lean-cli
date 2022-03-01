@@ -93,20 +93,22 @@ class DatasetOption(WrappedBaseModel, abc.ABC):
             return value
 
         condition_types = {
-            "oneOf": DatasetOneOfCondition,
+            "oneof": DatasetOneOfCondition,
             "and": DatasetAndCondition,
             "or": DatasetOrCondition
         }
 
+        conditionType = value["type"].lower()
+
         # Special AND/OR (Composition of conditions)
-        if value["type"] == "and" or value["type"] == "or" :
+        if conditionType == "and" or conditionType == "or" :
             for i in range(0, len(value["options"])):
                 option = value["options"][i]
 
                 # Recurse as needed to flush out conditional tree
                 value["options"][i] = cls.parse_condition(option)
 
-        return condition_types[value["type"]](**value)
+        return condition_types[conditionType](**value)
 
     def configure_interactive(self) -> OptionResult:
         """Prompt the user for input to configure this option.
@@ -259,20 +261,22 @@ class DatasetPath(WrappedBaseModel):
             return value
 
         condition_types = {
-            "oneOf": DatasetOneOfCondition,
+            "oneof": DatasetOneOfCondition,
             "and": DatasetAndCondition,
             "or": DatasetOrCondition
         }
 
+        conditionType = value["type"].lower()
+
         # Special AND/OR (Composition of conditions)
-        if value["type"] == "and" or value["type"] == "or" :
+        if conditionType == "and" or conditionType == "or" :
             for i in range(0, len(value["options"])):
                 option = value["options"][i]
 
                 # Recurse as need to flush out conditional tree
                 value["options"][i] = cls.parse_condition(option)
 
-        return condition_types[value["type"]](**value)
+        return condition_types[conditionType](**value)
 
 
 class Dataset(WrappedBaseModel):
