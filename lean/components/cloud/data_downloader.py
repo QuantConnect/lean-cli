@@ -130,11 +130,6 @@ class DataDownloader:
         """
         local_path = data_directory / relative_file
 
-        # Special case is bulk: #TODO IS THIS NEEDED?; what is the identifier in relative path? "bulk is placeholder"
-        isBulk = "/bulk" in relative_file and relative_file.endswith(".tar")
-        if isBulk:
-            local_path = data_directory / "bulk" / relative_file
-
         if local_path.exists() and not overwrite:
             self._logger.warn("\n".join([
                 f"{local_path} already exists, use --overwrite to overwrite it",
@@ -153,8 +148,8 @@ class DataDownloader:
 
         _store_local_file(file_content, local_path)
         
-        # Unpack our bulk files
-        if isBulk:
+        # Special case: bulk files need unpacked
+        if "setup/" in relative_file and relative_file.endswith(".tar"):
             self._process_bulk(local_path, data_directory)
 
         callback()
