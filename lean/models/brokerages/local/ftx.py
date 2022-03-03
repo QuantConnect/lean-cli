@@ -113,7 +113,11 @@ class FTXBrokerage(LocalBrokerage):
             options
         )
 
-        exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]", cls._get_default(lean_config, "ftx-exchange-name"))
+        exchange_name = exchange_name = logger.prompt_list(
+            "FTX Exchange",
+            [Option(id="FTX", label="FTX"), Option(id="FTXUS", label="FTXUS")],
+            cls._get_default(lean_config, 'ftx-exchange-name')
+        )
         exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
 
         logger.info("""

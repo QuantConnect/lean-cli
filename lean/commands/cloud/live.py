@@ -187,7 +187,9 @@ def _configure_auto_restart(logger: Logger) -> bool:
               help="The environment to run in, paper for the sandbox, live for live trading")
 @click.option("--binance-api-key", type=str, help="Your Binance API key")
 @click.option("--binance-api-secret", type=str, help="Your Binance API secret")
-@click.option("--binance-exchange-name", type=str, help="Your Binance exchange name [Binance, BinanceUS]")
+@click.option("--binance-exchange-name",
+              type=click.Choice(["Binance", "BinanceUS"], case_sensitive=False),
+              help="Your Binance exchange name")
 @click.option("--binance-environment",
               type=click.Choice(["demo", "real"], case_sensitive=False),
               help="The environment to run in, demo for testnet, real for the production environment")
@@ -197,7 +199,9 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--ftx-api-key", type=str, help="Your FTX API key")
 @click.option("--ftx-api-secret", type=str, help="Your FTX API secret")
 @click.option("--ftx-account-tier", type=str, help="Your FTX Account Tier")
-@click.option("--ftx-exchange-name", type=str, help="FTX exchange name [FTX, FTXUS]")
+@click.option("--ftx-exchange-name",
+              type=click.Choice(["FTX", "FTXUS"], case_sensitive=False),
+              help="Your FTX exchange name")
 @click.option("--zerodha-api-key", type=str, help="Your Kite Connect API key")
 @click.option("--zerodha-access-token", type=str, help="Your Kite Connect access token")
 @click.option("--zerodha-product-type", type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False), help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")

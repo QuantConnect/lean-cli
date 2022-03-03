@@ -38,7 +38,7 @@ class FTXBrokerage(CloudBrokerage):
 
     @classmethod
     def build(cls, logger: Logger) -> CloudBrokerage:
-        exchange_name = click.prompt("FTX Exchange [FTX|FTXUS]")
+        exchange_name = click.prompt("FTX Exchange", type=click.Choice(["FTX", "FTXUS"], case_sensitive=False))
         exchange = FTXExchange() if exchange_name.casefold() == "FTX".casefold() else FTXUSExchange()
 
         logger.info("""

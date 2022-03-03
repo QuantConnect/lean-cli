@@ -348,7 +348,8 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=lambda: _get_default_value("binance-api-secret"),
               help="Your Binance API secret")
 @click.option("--binance-exchange-name",
-              type=str,
+              type=click.Choice(["Binance", "BinanceUS"], case_sensitive=False),
+              default=lambda: _get_default_value("binance-exchange-name"),
               help="Binance exchange name [Binance, BinanceUS]")
 @click.option("--binance-use-testnet",
               type=bool,
@@ -603,7 +604,8 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=lambda: _get_default_value("ftx-account-tier"),
               help="Your FTX Account Tier")
 @click.option("--ftx-exchange-name",
-              type=str,
+              type=click.Choice(["FTX", "FTXUS"], case_sensitive=False),
+              default=lambda: _get_default_value("ftx-exchange-name"),
               help="FTX exchange name [FTX, FTXUS]")
 @click.option("--release",
               is_flag=True,

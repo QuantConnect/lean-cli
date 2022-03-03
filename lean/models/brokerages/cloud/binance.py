@@ -44,7 +44,7 @@ Your account details are not save on QuantConnect.
 Demo credentials can be generated on Binance Testnet (https://testnet.binance.vision/).
         """.strip())
 
-        exchange_name = click.prompt("Binance Exchange [Binance|BinanceUS]")
+        exchange_name = click.prompt("Binance Exchange", type=click.Choice(["Binance", "BinanceUS"], case_sensitive=False))
 
         api_key = click.prompt("API key")
         secret_key = logger.prompt_password("Secret key")

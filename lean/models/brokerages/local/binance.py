@@ -130,7 +130,11 @@ class BinanceBrokerage(LocalBrokerage):
             options
         )
 
-        exchange_name = click.prompt("Binance Exchange [Binance|BinanceUS]", cls._get_default(lean_config, "binance-exchange-name"))
+        exchange_name = logger.prompt_list(
+            "Binance Exchange",
+            [Option(id="Binance", label="Binance"), Option(id="BinanceUS", label="BinanceUS")],
+            cls._get_default(lean_config, 'binance-exchange-name')
+        )
         exchange: BinanceExchange
         testnet = False
         if(exchange_name.casefold() == "BinanceUS".casefold()):

@@ -511,7 +511,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 data_feed = "Bitfinex"
                 options.extend(["--bitfinex-api-key", "123", 
                                 "--bitfinex-api-secret", "456",
-                                "--binance-exchange-name", "abc",])
+                                "--binance-exchange-name", "abc"])
             elif brokerage == "FTX":
                 data_feed = "Binance"
                 options.extend(["--ftx-exchange-name", "abc",
