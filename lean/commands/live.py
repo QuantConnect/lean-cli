@@ -921,7 +921,7 @@ def live(project: Path,
                                                                             gdax_passphrase,
                                                                             gdax_use_sandbox))
         elif data_feed == BinanceDataFeed.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret", "binance_exchange_name" "binance_use_testnet"])
+            ensure_options(["binance_api_key", "binance_api_secret", "binance_exchange_name", "binance_use_testnet"])
             data_feed_configurer = BinanceDataFeed(BinanceBrokerage(_get_organization_id(binance_organization, "Binance"),
                                                                     binance_api_key,
                                                                     binance_api_secret,
