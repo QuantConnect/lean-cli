@@ -394,6 +394,13 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     return available_datasets
 
 
+def _is_bulk_download(products: List[Product]) -> bool:
+    for product in products:
+        if "data-type" in product.option_results and product.option_results["data-type"].value == "bulk":
+            return True
+    return False
+
+
 @click.command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @click.option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
@@ -431,7 +438,9 @@ def download(ctx: click.Context,
         products = _select_products_interactive(selected_organization, datasets)
 
     _confirm_organization_balance(selected_organization, products)
-    _accept_agreement(selected_organization, is_interactive)
+
+    if not _is_bulk_download(products):
+        _accept_agreement(selected_organization, is_interactive)
 
     if is_interactive:
         _confirm_payment(selected_organization, products)
