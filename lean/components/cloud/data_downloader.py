@@ -87,7 +87,7 @@ class DataDownloader:
 
             data_dir = self._lean_config_manager.get_data_directory()
             parallel(delayed(self._download_file)(data_file.file, overwrite, data_dir, organization_id,
-                                                  lambda: progress.update(progress_task, advance=1))
+                                                  lambda advance: progress.update(progress_task, advance=advance))
                      for data_file in data_files)
 
             # update our config after we download all files, and not in parallel!
@@ -117,7 +117,7 @@ class DataDownloader:
                        overwrite: bool,
                        data_directory: Path,
                        organization_id: str,
-                       callback: Callable[[], None]) -> None:
+                       progress_callback: Callable[[float], None]) -> None:
         """Downloads a single file from QuantConnect Datasets to the local data directory.
 
         If this method downloads a map or factor files zip file,
@@ -136,18 +136,16 @@ class DataDownloader:
                 f"{local_path} already exists, use --overwrite to overwrite it",
                 "You have not been charged for this file"
             ]))
-            callback()
+            progress_callback(1)
             return
 
         try:
-            self._api_client.data.download_file(relative_file, organization_id, local_path)
+            self._api_client.data.download_file(relative_file, organization_id, local_path, progress_callback)
         except RequestFailedError as error:
             self._logger.warn(f"{local_path}: {error}\nYou have not been charged for this file")
-            callback()
+            progress_callback(1)
             return
 
         # Special case: bulk files need unpacked
         if "setup/" in relative_file and relative_file.endswith(".tar"):
             self._process_bulk(local_path, data_directory)
-
-        callback()

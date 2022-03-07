@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-
+import os
 from shutil import move
 from tempfile import NamedTemporaryFile
 from lean.components.api.api_client import *
 from lean.models.api import QCDataInformation
+from typing import List, Callable
 
 
 class DataClient:
@@ -33,12 +33,14 @@ class DataClient:
         self._api = api_client
         self._http_client = http_client
 
-    def download_file(self, relative_file_path: str, organization_id: str, local_filename: str) -> None:
+    def download_file(self, relative_file_path: str, organization_id: str,
+                      local_filename: str, progress_callback: Callable[[float], None]) -> None:
         """Downloads the content of a downloadable data file.
 
         :param relative_file_path: the relative path of the data file
         :param organization_id: the id of the organization that should be billed
         :param local_filename: the final local path where the data file will be stored
+        :param progress_callback: the download progress callback
         """
         data = self._api.post("data/read", {
             "format": "link",
@@ -49,10 +51,29 @@ class DataClient:
         # we stream the data into a temporary file and later move it to it's final location
         with self._http_client.get(data["link"], stream=True) as r:
             r.raise_for_status()
+            total_size = 0
+            try:
+                total_size = int(r.headers['Content-length'])
+            except:
+                pass
+            current_size = 0
             with NamedTemporaryFile(delete=False) as f:
                 temp_file_name = f.name
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                for chunk in r.iter_content(chunk_size=1024 * 1024):
+                    if total_size != 0:
+                        previous = current_size / total_size
+
+                    current_size += f.write(chunk)
+
+                    if total_size != 0:
+                        # progressive progress update if we can
+                        progress_callback((current_size / total_size) - previous)
+            if total_size == 0:
+                # if total size not available update progress at the end
+                progress_callback(1)
+
+            directory = os.path.dirname(local_filename)
+            os.makedirs(directory, exist_ok=True)
             move(temp_file_name, local_filename)
 
     def download_public_file(self, data_endpoint: str) -> bytes:
