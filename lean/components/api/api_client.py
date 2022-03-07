@@ -123,12 +123,18 @@ class APIClient:
         timestamp = str(int(time()))
         password = sha256(f"{self._api_token}:{timestamp}".encode("utf-8")).hexdigest()
 
+        headers = {
+            "Timestamp": timestamp
+        }
+
+        version = lean.__version__
+        if lean.__version__ == 'dev':
+            version = 99999999
+        headers["User-Agent"] = f"Lean CLI {version}"
+
         response = self._http_client.request(method,
                                              full_url,
-                                             headers={
-                                                 "Timestamp": timestamp,
-                                                 "User-Agent": f"Lean CLI {lean.__version__}"
-                                             },
+                                             headers=headers,
                                              auth=(self._user_id, password),
                                              raise_for_status=False,
                                              **options)

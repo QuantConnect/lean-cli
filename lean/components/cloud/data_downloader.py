@@ -68,7 +68,7 @@ class DataDownloader:
             if "not found" in str(e):
                 pass
             else:
-                self._logger.error(str(e)) 
+                self._logger.error(str(e))
         except Exception as e:
             self._logger.error(str(e))
 
@@ -100,7 +100,7 @@ class DataDownloader:
                     self._lean_config_manager.set_properties({
                         "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
                     })
-                
+
             progress.stop()
         except KeyboardInterrupt as e:
             progress.stop()
@@ -108,6 +108,7 @@ class DataDownloader:
 
     def _process_bulk(self, file: Path, destination: Path):
         tar = tarfile.open(file)
+        tar.errorlevel = 0
         tar.extractall(destination)
         tar.close()
 
@@ -138,16 +139,13 @@ class DataDownloader:
             callback()
             return
 
-
         try:
-            file_content = self._api_client.data.download_file(relative_file, organization_id)
+            self._api_client.data.download_file(relative_file, organization_id, local_path)
         except RequestFailedError as error:
             self._logger.warn(f"{local_path}: {error}\nYou have not been charged for this file")
             callback()
             return
 
-        _store_local_file(file_content, local_path)
-        
         # Special case: bulk files need unpacked
         if "setup/" in relative_file and relative_file.endswith(".tar"):
             self._process_bulk(local_path, data_directory)

@@ -13,6 +13,8 @@
 
 from typing import List
 
+from shutil import move
+from tempfile import NamedTemporaryFile
 from lean.components.api.api_client import *
 from lean.models.api import QCDataInformation
 
@@ -31,20 +33,27 @@ class DataClient:
         self._api = api_client
         self._http_client = http_client
 
-    def download_file(self, file_path: str, organization_id: str) -> bytes:
+    def download_file(self, relative_file_path: str, organization_id: str, local_filename: str) -> None:
         """Downloads the content of a downloadable data file.
 
-        :param file_path: the path of the data file
+        :param relative_file_path: the relative path of the data file
         :param organization_id: the id of the organization that should be billed
-        :return: the content of the data file
+        :param local_filename: the final local path where the data file will be stored
         """
         data = self._api.post("data/read", {
             "format": "link",
-            "filePath": file_path,
+            "filePath": relative_file_path,
             "organizationId": organization_id
         })
 
-        return self._http_client.get(data["link"]).content
+        # we stream the data into a temporary file and later move it to it's final location
+        with self._http_client.get(data["link"], stream=True) as r:
+            r.raise_for_status()
+            with NamedTemporaryFile(delete=False) as f:
+                temp_file_name = f.name
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            move(temp_file_name, local_filename)
 
     def download_public_file(self, data_endpoint: str) -> bytes:
         """Downloads the content of a downloadable public file.
