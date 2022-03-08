@@ -343,7 +343,7 @@ brokerage_required_options = {
         "ftx-account-tier": "abc",
         "ftx-exchange-name": "FTX"
     },
-    
+
 }
 
 data_feed_required_options = {
@@ -509,12 +509,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
 
             if brokerage == "Binance":
                 data_feed = "Bitfinex"
-                options.extend(["--bitfinex-api-key", "123", 
+                options.extend(["--bitfinex-api-key", "123",
                                 "--bitfinex-api-secret", "456",
-                                "--binance-exchange-name", "abc"])
+                                "--binance-exchange-name", "Binance"])
             elif brokerage == "FTX":
                 data_feed = "Binance"
-                options.extend(["--ftx-exchange-name", "abc",
+                options.extend(["--ftx-exchange-name", "FTX",
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
                                 "--binance-exchange-name", "Binance",
@@ -523,7 +523,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-exchange-name", "abc",
+                                "--binance-exchange-name", "Binance",
                                 "--binance-use-testnet", "no"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -575,10 +575,10 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                 }))
 
             if data_feed == "FTX":
-                options.extend(["--ftx-exchange-name", "abc"])
+                options.extend(["--ftx-exchange-name", "FTXUS"])
             elif data_feed == "Binance":
-                options.extend(["--binance-exchange-name", "abc"])
-                
+                options.extend(["--binance-exchange-name", "BinanceUS"])
+
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,
