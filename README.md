@@ -229,6 +229,8 @@ Options:
                                   The environment to run in, paper for the sandbox, live for live trading
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binance-exchange-name [Binance|BinanceUS]
+                                  Your Binance exchange name
   --binance-environment [demo|real]
                                   The environment to run in, demo for testnet, real for the production environment
   --kraken-api-key TEXT           Your Kraken API key
@@ -238,7 +240,8 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
+  --ftx-exchange-name [FTX|FTXUS]
+                                  Your FTX exchange name
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]
@@ -776,6 +779,8 @@ Options:
   --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binance-exchange-name [Binance|BinanceUS]
+                                  Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet BOOLEAN   Whether the testnet should be used
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
@@ -863,7 +868,8 @@ Options:
   --ftx-api-key TEXT              Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
+  --ftx-exchange-name [FTX|FTXUS]
+                                  FTX exchange name [FTX, FTXUS]
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
