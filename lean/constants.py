@@ -69,8 +69,11 @@ UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 7
 # The interval in hours at which the CLI checks for new announcements
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 
-# The product id of the Security Master subscription
-SECURITY_MASTER_PRODUCT_ID = 37
+# The product id of the Equity Security Master subscription
+EQUITY_SECURITY_MASTER_PRODUCT_ID = 37
+
+# The product id of the Equity Bulk Security Master subscription
+BULK_EQUITY_SECURITY_MASTER_PRODUCT_ID = 180
 
 # The product id of the Terminal Link module
 TERMINAL_LINK_PRODUCT_ID = 44
