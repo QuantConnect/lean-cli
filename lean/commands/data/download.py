@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 import itertools
 import re
+from time import sleep
 import webbrowser
 from collections import OrderedDict
 from typing import Iterable, List, Optional
@@ -28,7 +30,17 @@ from lean.models.data import Dataset, DataFile, Product
 from lean.models.logger import Option
 
 _data_information: Optional[QCDataInformation] = None
-
+_presigned_terms="""
+Data Terms of Use has been signed previously.
+Find full agreement at: {link}
+==========================================================================
+CLI API Access Agreement: On {signed_time} You Agreed:
+- Display or distribution of data obtained through CLI API Access is not permitted. 
+- Data and Third Party Data obtained via CLI API Access can only be used for individual or internal employee's use.
+- Data is provided in LEAN format can not be manipulated for transmission or use in other applications.
+- QuantConnect is not liable for the quality of data received and is not responsible for trading losses.
+==========================================================================
+"""
 
 def _get_data_information(organization: QCFullOrganization) -> QCDataInformation:
     """Retrieves the datasources and prices information.
@@ -235,8 +247,12 @@ def _confirm_organization_balance(organization: QCFullOrganization, products: Li
         ]))
 
 
-def _accept_agreement(organization: QCFullOrganization, open_browser: bool) -> None:
-    """Asks the user to accept the CLI API Access and Data Agreement.
+def _verify_accept_agreement(organization: QCFullOrganization, open_browser: bool) -> None:
+    """ Verifies that the user has accepted the agreement.
+    If they haven't, asks the user to accept the CLI API Access and Data Agreement.
+    If they have, reminds them of the agreement and moves on.
+
+    The API will enforce signing the agreement at the end of the day but this is how we keep it in the process of the CLI
 
     :param organization: the organization that the user selected
     :param open_browser: whether the CLI should automatically open the agreement in the browser
@@ -246,17 +262,22 @@ def _accept_agreement(organization: QCFullOrganization, open_browser: bool) -> N
 
     info = api_client.data.get_info(organization.id)
 
-    if open_browser:
-        webbrowser.open(info.agreement)
+    # Is signed
+    if organization.data.current:
+        logger.info(_presigned_terms.format(link=info.agreement, signed_time=datetime.fromtimestamp(organization.data.signedTime)))
+        sleep(1)
+    else:
+        if open_browser:
+            webbrowser.open(info.agreement)
 
-    logger.info(f"Go to the following url to accept the CLI API Access and Data Agreement:")
-    logger.info(info.agreement)
-    logger.info("Waiting until the CLI API Access and Data Agreement has been accepted...")
+        logger.info(f"Go to the following url to accept the CLI API Access and Data Agreement:")
+        logger.info(info.agreement)
+        logger.info("Waiting until the CLI API Access and Data Agreement has been accepted...")
 
-    container.task_manager().poll(
-        make_request=lambda: api_client.organizations.get(organization.id),
-        is_done=lambda data: data.data.signedTime != organization.data.signedTime
-    )
+        container.task_manager().poll(
+            make_request=lambda: api_client.organizations.get(organization.id),
+            is_done=lambda data: data.data.current != False
+        )
 
 
 def _confirm_payment(organization: QCFullOrganization, products: List[Product]) -> None:
@@ -393,14 +414,6 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     return available_datasets
 
-
-def _is_bulk_download(products: List[Product]) -> bool:
-    for product in products:
-        if "data-type" in product.option_results and product.option_results["data-type"].value == "bulk":
-            return True
-    return False
-
-
 @click.command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @click.option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
@@ -438,9 +451,7 @@ def download(ctx: click.Context,
         products = _select_products_interactive(selected_organization, datasets)
 
     _confirm_organization_balance(selected_organization, products)
-
-    if not _is_bulk_download(products):
-        _accept_agreement(selected_organization, is_interactive)
+    _verify_accept_agreement(selected_organization, is_interactive)
 
     if is_interactive:
         _confirm_payment(selected_organization, products)
