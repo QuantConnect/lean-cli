@@ -22,6 +22,7 @@ from joblib import delayed, Parallel
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
+from lean.models.data import DataFile
 from lean.models.errors import MoreInfoError, RequestFailedError
 
 
@@ -72,7 +73,7 @@ class DataDownloader:
         except Exception as e:
             self._logger.error(str(e))
 
-    def download_files(self, data_files: List[Any], overwrite: bool, organization_id: str) -> None:
+    def download_files(self, data_files: List[DataFile], overwrite: bool, organization_id: str) -> None:
         """Downloads files from QuantConnect Datasets to the local data directory.
 
         :param data_files: the list of data files to download
@@ -91,7 +92,8 @@ class DataDownloader:
                      for data_file in data_files)
 
             # update our config after we download all files, and not in parallel!
-            for relative_file in data_files:
+            for datafile in data_files:
+                relative_file = datafile.file
                 if "/map_files/map_files_" in relative_file and relative_file.endswith(".zip"):
                     self._lean_config_manager.set_properties({
                         "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
