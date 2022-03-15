@@ -22,7 +22,6 @@ from joblib import delayed, Parallel
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
-from lean.models.data import DataFile
 from lean.models.errors import MoreInfoError, RequestFailedError
 
 
@@ -73,7 +72,7 @@ class DataDownloader:
         except Exception as e:
             self._logger.error(str(e))
 
-    def download_files(self, data_files: List[DataFile], overwrite: bool, organization_id: str) -> None:
+    def download_files(self, data_files: List[Any], overwrite: bool, organization_id: str) -> None:
         """Downloads files from QuantConnect Datasets to the local data directory.
 
         :param data_files: the list of data files to download
