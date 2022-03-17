@@ -100,7 +100,7 @@ BINANCE_PRODUCT_ID = 176
 SAMCO_PRODUCT_ID = 173
 
 # The product id of the Interactive Brokers module
-INTERACTIVE_BROKERS_PRODUCT_ID = 1111
+INTERACTIVE_BROKERS_PRODUCT_ID = 181
 
 # The product ids for which a valid subscription is seen as a valid GUI module subscription
 GUI_PRODUCT_SUBSCRIPTION_IDS = [119, 120]
