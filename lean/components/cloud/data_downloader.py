@@ -91,7 +91,8 @@ class DataDownloader:
                      for data_file in data_files)
 
             # update our config after we download all files, and not in parallel!
-            for relative_file in data_files:
+            for datafile in data_files:
+                relative_file = datafile.file
                 if "/map_files/map_files_" in relative_file and relative_file.endswith(".zip"):
                     self._lean_config_manager.set_properties({
                         "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
