@@ -421,7 +421,7 @@ class DockerManager:
         :return: a DockerClient instance which responds to requests
         """
         error = MoreInfoError("Please make sure Docker is installed and running",
-                              "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
+                              "https://www.lean.io/docs/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
         try:
             docker_client = docker.from_env()

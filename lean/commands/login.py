@@ -47,7 +47,7 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     api_client = container.api_client(user_id=user_id, api_token=api_token)
     if not api_client.is_authenticated():
         raise MoreInfoError("Credentials are invalid",
-                            "https://www.lean.io/docs/lean-cli/tutorials/authentication#02-Logging-in")
+                            "https://www.lean.io/docs/lean-cli/initialization/authenticating-accounts#02-Log-In")
 
     cli_config_manager = container.cli_config_manager()
     cli_config_manager.user_id.set_value(user_id)

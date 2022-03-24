@@ -56,7 +56,7 @@ class InteractiveBrokersBrokerage(LocalBrokerage):
         if self._trading_mode is None:
             raise MoreInfoError(
                 f"Account id '{account_id}' does not look like a valid account id",
-                "https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading#03-Interactive-Brokers"
+                "https://www.lean.io/docs/lean-cli/live-trading/interactive-brokers#02-Deploy-Local-Algorithms"
             )
 
     @classmethod

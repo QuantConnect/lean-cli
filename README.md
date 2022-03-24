@@ -8,23 +8,23 @@
 
 The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
-Visit the [documentation website](https://www.lean.io/docs/lean-cli/getting-started/lean-cli) for comprehensive and up-to-date documentation.
+Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
 
 ## Highlights
 
-- [Project scaffolding](https://www.lean.io/docs/lean-cli/tutorials/project-management)
-- [Local autocomplete](https://www.lean.io/docs/lean-cli/tutorials/local-autocomplete)
-- [Local data downloading](https://www.lean.io/docs/lean-cli/tutorials/local-data/downloading-from-quantconnect)
-- [Local backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#02-Running-local-backtests)
-- [Local debugging](https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging-local-backtests)
-- [Local research environment](https://www.lean.io/docs/lean-cli/tutorials/research)
-- [Local optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/local-optimizations)
-- [Local live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/local-live-trading)
-- [Local backtest report creation](https://www.lean.io/docs/lean-cli/tutorials/generating-reports)
-- [Cloud synchronization](https://www.lean.io/docs/lean-cli/tutorials/cloud-synchronization)
-- [Cloud backtesting](https://www.lean.io/docs/lean-cli/tutorials/backtesting/running-backtests#03-Running-cloud-backtests)
-- [Cloud optimization](https://www.lean.io/docs/lean-cli/tutorials/optimization/cloud-optimizations)
-- [Cloud live trading](https://www.lean.io/docs/lean-cli/tutorials/live-trading/cloud-live-trading)
+- [Project scaffolding](https://www.lean.io/docs/lean-cli/projects/project-management)
+- [Local autocomplete](https://www.lean.io/docs/lean-cli/projects/autocomplete)
+- [Local data downloading](https://www.lean.io/docs/lean-cli/datasets/downloading-quantconnect-data)
+- [Local backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
+- [Local debugging](https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging)
+- [Local research environment](https://www.lean.io/docs/lean-cli/research)
+- [Local optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
+- [Local live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
+- [Local backtest report creation](https://www.lean.io/docs/lean-cli/backtesting/report#02-Generate-a-Report)
+- [Cloud synchronization](https://www.lean.io/docs/lean-cli/projects/cloud-synchronization)
+- [Cloud backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#03-Run-Cloud-Backtests)
+- [Cloud optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#03-Run-Cloud-Optimizations)
+- [Cloud live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#03-Deploy-Cloud-Algorithms)
 
 ## Installation
 
@@ -54,7 +54,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 
 ## Commands
 
-*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/lean-cli/getting-started/lean-cli) for more comprehensive documentation.*
+*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for more comprehensive documentation.*
 
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
@@ -101,7 +101,7 @@ Usage: lean backtest [OPTIONS] PROJECT
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
   Go to the following url to learn how to debug backtests locally using the Lean CLI:
-  https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging-local-backtests
+  https://www.lean.io/docs/lean-cli/backtesting/debugging
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
