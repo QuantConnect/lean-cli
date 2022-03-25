@@ -94,7 +94,7 @@ setup(
         "Programming Language :: Python :: 3.9"
     ],
     project_urls={
-        "Documentation": "https://www.lean.io/docs/lean-cli/getting-started/lean-cli",
+        "Documentation": "https://www.lean.io/docs/lean-cli/key-concepts/getting-started",
         "Source": "https://github.com/QuantConnect/lean-cli"
     },
 )

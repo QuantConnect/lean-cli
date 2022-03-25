@@ -52,7 +52,7 @@ class InteractiveBrokersBrokerage(CloudBrokerage):
 
         if self._environment is None:
             raise MoreInfoError(f"Account id '{account_id}' does not look like a valid account name",
-                                "https://www.lean.io/docs/lean-cli/tutorials/live-trading/cloud-live-trading#03-Interactive-Brokers")
+                                "https://www.lean.io/docs/lean-cli/live-trading/interactive-brokers#03-Deploy-Cloud-Algorithms")
 
     @classmethod
     def get_id(cls) -> str:

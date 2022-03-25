@@ -159,7 +159,7 @@ namespace QuantConnect
     {
         /*
          * To use this library, first add it to a solution and create a project reference in your algorithm project:
-         * https://www.lean.io/docs/lean-cli/tutorials/code-sharing#02-C-code-sharing
+         * https://www.lean.io/docs/lean-cli/projects/libraries/project-libraries#02-C-Libraries
          *
          * Then add its namespace at the top of the page:
          * using QuantConnect;
@@ -291,13 +291,13 @@ def create_project(name: str, language: str) -> None:
     if language is None:
         raise MoreInfoError(
             "Please specify a language with --language or set the default language using `lean config set default-language python/csharp`",
-            "https://www.lean.io/docs/lean-cli/tutorials/project-management")
+            "https://www.lean.io/docs/lean-cli/projects/project-management")
 
     full_path = Path.cwd() / name
 
     if not container.path_manager().is_path_valid(full_path):
         raise MoreInfoError(f"'{name}' is not a valid path",
-                            "https://www.lean.io/docs/lean-cli/user-guides/troubleshooting#02-Common-errors")
+                            "https://www.lean.io/docs/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
     is_library_project = False
     try:

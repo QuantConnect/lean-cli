@@ -114,7 +114,7 @@ def report(backtest_results: Optional[Path],
         if len(result_json_files) == 0:
             raise MoreInfoError(
                 "Could not find a recent backtest result file, please use the --backtest-results option",
-                "https://www.lean.io/docs/lean-cli/tutorials/generating-reports"
+                "https://www.lean.io/docs/lean-cli/backtesting/report#02-Generate-a-Report"
             )
 
         backtest_results = sorted(result_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]

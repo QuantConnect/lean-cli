@@ -146,7 +146,7 @@ def optimize(project: Path,
 
         if len(project_parameters) == 0:
             raise MoreInfoError("The given project has no parameters to optimize",
-                                "https://www.lean.io/docs/lean-cli/tutorials/optimization/project-parameters")
+                                "https://www.lean.io/docs/lean-cli/optimization/parameters")
 
         optimization_strategy = optimizer_config_manager.configure_strategy(cloud=False)
         optimization_target = optimizer_config_manager.configure_target()

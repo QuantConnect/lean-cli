@@ -54,4 +54,4 @@ class AuthenticationError(MoreInfoError):
     def __init__(self) -> None:
         """Creates a new AuthenticationError instance."""
         super().__init__("Invalid credentials, please log in using `lean login`",
-                         "https://www.lean.io/docs/lean-cli/tutorials/authentication#02-Logging-in")
+                         "https://www.lean.io/docs/lean-cli/initialization/authenticating-accounts#02-Log-In")
