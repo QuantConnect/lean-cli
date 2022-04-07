@@ -315,6 +315,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=click.Choice(["Practice", "Trade"], case_sensitive=False),
               default=lambda: _get_default_value("oanda-environment"),
               help="The environment to run in, Practice for fxTrade Practice, Trade for fxTrade")
+@click.option("--bitfinex-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the Bitfinex module subscription")
 @click.option("--bitfinex-api-key",
               type=str,
               default=lambda: _get_default_value("bitfinex-api-key"),
@@ -636,6 +640,7 @@ def live(project: Path,
          oanda_account_id: Optional[str],
          oanda_access_token: Optional[str],
          oanda_environment: Optional[str],
+         bitfinex_organization: Optional[str],
          bitfinex_api_key: Optional[str],
          bitfinex_api_secret: Optional[str],
          gdax_api_key: Optional[str],
@@ -777,7 +782,7 @@ def live(project: Path,
             brokerage_configurer = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
         elif brokerage == BitfinexBrokerage.get_name():
             ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
-            brokerage_configurer = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
+            brokerage_configurer = BitfinexBrokerage(_get_organization_id(bitfinex_organization, "Bitfinex"), bitfinex_api_key, bitfinex_api_secret)
         elif brokerage == CoinbaseProBrokerage.get_name():
             ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
             brokerage_configurer = CoinbaseProBrokerage(gdax_api_key,
@@ -914,7 +919,7 @@ def live(project: Path,
                                                                 oanda_environment))
         elif data_feed == BitfinexDataFeed.get_name():
             ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
-            data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret))
+            data_feed_configurer = BitfinexDataFeed(BitfinexBrokerage(_get_organization_id(bitfinex_organization, "Bitfinex"), bitfinex_api_key, bitfinex_api_secret))
         elif data_feed == CoinbaseProDataFeed.get_name():
             ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_use_sandbox"])
             data_feed_configurer = CoinbaseProDataFeed(CoinbaseProBrokerage(gdax_api_key,

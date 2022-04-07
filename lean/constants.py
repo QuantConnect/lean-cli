@@ -102,6 +102,9 @@ SAMCO_PRODUCT_ID = 173
 # The product id of the Interactive Brokers module
 INTERACTIVE_BROKERS_PRODUCT_ID = 181
 
+# The product id of the BITFINEX module
+BITFINEX_PRODUCT_ID = 182
+
 # The product ids for which a valid subscription is seen as a valid GUI module subscription
 GUI_PRODUCT_SUBSCRIPTION_IDS = [119, 120]
 
