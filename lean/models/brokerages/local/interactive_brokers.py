@@ -19,12 +19,17 @@ from lean.components.util.logger import Logger
 from lean.models.brokerages.local.base import LocalBrokerage
 from lean.models.config import LeanConfigConfigurer
 from lean.models.errors import MoreInfoError
+from lean.container import container
+from lean.constants import INTERACTIVE_BROKERS_PRODUCT_ID
+from lean.models.logger import Option
 
-
-class InteractiveBrokersBrokerage(LocalBrokerage):
+class InteractiveBrokersBrokerage(LocalBrokerage): 
     """A LocalBrokerage implementation for the Interactive Brokers brokerage."""
 
-    def __init__(self, username: str, account_id: str, account_password: str) -> None:
+    _is_module_installed = False
+
+    def __init__(self, organization_id: str, username: str, account_id: str, account_password: str) -> None:
+        self._organization_id = organization_id
         self._username = username
         self._account_id = account_id
         self._account_password = account_password
@@ -64,7 +69,22 @@ class InteractiveBrokersBrokerage(LocalBrokerage):
         return "Interactive Brokers"
 
     @classmethod
+    def get_module_id(cls) -> int:
+        return INTERACTIVE_BROKERS_PRODUCT_ID
+
+    @classmethod
     def _build(cls, lean_config: Dict[str, Any], logger: Logger) -> LocalBrokerage:
+
+        api_client = container.api_client()
+
+        organizations = api_client.organizations.get_all()
+        options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+
+        organization_id = logger.prompt_list(
+            "Select the organization with the Interactive Brokers module subscription",
+            options
+        )
+
         logger.info("""
 To use IB with LEAN you must disable two-factor authentication or only use IBKR Mobile.
 This is done from your IB Account Manage Account -> Settings -> User Settings -> Security -> Secure Login System.
@@ -76,25 +96,33 @@ Interactive Brokers Lite accounts do not support API trading.
         account_id = click.prompt("Account id", cls._get_default(lean_config, "ib-account"))
         account_password = logger.prompt_password("Account password", cls._get_default(lean_config, "ib-password"))
 
-        return InteractiveBrokersBrokerage(username, account_id, account_password)
+        return InteractiveBrokersBrokerage(organization_id, username, account_id, account_password)
 
     def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        self.ensure_module_installed()
         lean_config["environments"][environment_name]["live-mode-brokerage"] = "InteractiveBrokersBrokerage"
         lean_config["environments"][environment_name]["transaction-handler"] = \
             "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        lean_config["job-organization-id"] = self._organization_id
         lean_config["ib-user-name"] = self._username
         lean_config["ib-account"] = self._account_id
         lean_config["ib-password"] = self._account_password
         lean_config["ib-agent-description"] = self._agent_description
         lean_config["ib-trading-mode"] = self._trading_mode
 
-        self._save_properties(lean_config, ["ib-user-name",
+        self._save_properties(lean_config, ["job-organization-id",
+                                            "ib-user-name",
                                             "ib-account",
                                             "ib-password",
                                             "ib-agent-description",
                                             "ib-trading-mode"])
+
+    def ensure_module_installed(self) -> None:
+        if not self._is_module_installed:
+            container.module_manager().install_module(self.__class__.get_module_id(), self._organization_id)
+            self._is_module_installed = True
 
 
 class InteractiveBrokersDataFeed(LeanConfigConfigurer):
@@ -125,6 +153,7 @@ If delayed market data is disabled, live trading will stop and LEAN will shut do
         return InteractiveBrokersDataFeed(brokerage, enable_delayed_streaming_data)
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        self._brokerage.ensure_module_installed()
         lean_config["environments"][environment_name]["data-queue-handler"] = \
             "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage"
         lean_config["environments"][environment_name]["history-provider"] = "BrokerageHistoryProvider"

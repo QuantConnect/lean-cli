@@ -271,6 +271,10 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--data-feed",
               type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               help="The data feed to use")
+@click.option("--ib-organization",
+              type=str,
+              default=lambda: _get_default_value("job-organization-id"),
+              help="The name or id of the organization with the Interactive Brokers module subscription")
 @click.option("--ib-user-name",
               type=str,
               default=lambda: _get_default_value("ib-user-name"),
@@ -621,6 +625,7 @@ def live(project: Path,
          gui_organization: Optional[str],
          brokerage: Optional[str],
          data_feed: Optional[str],
+         ib_organization: Optional[str],
          ib_user_name: Optional[str],
          ib_account: Optional[str],
          ib_password: Optional[str],
@@ -763,7 +768,7 @@ def live(project: Path,
             brokerage_configurer = PaperTradingBrokerage()
         elif brokerage == InteractiveBrokersBrokerage.get_name():
             ensure_options(["ib_user_name", "ib_account", "ib_password"])
-            brokerage_configurer = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password)
+            brokerage_configurer = InteractiveBrokersBrokerage(_get_organization_id(ib_organization, "Interactive Brokers"), ib_user_name, ib_account, ib_password)
         elif brokerage == TradierBrokerage.get_name():
             ensure_options(["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
             brokerage_configurer = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_use_sandbox)
@@ -892,9 +897,10 @@ def live(project: Path,
 
         if data_feed == InteractiveBrokersDataFeed.get_name():
             ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_enable_delayed_streaming_data"])
-            data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(ib_user_name,
-                                                                                          ib_account,
-                                                                                          ib_password),
+            data_feed_configurer = InteractiveBrokersDataFeed(InteractiveBrokersBrokerage(_get_organization_id(ib_organization, "Interactive Brokers"),
+                                                                                        ib_user_name,
+                                                                                        ib_account,
+                                                                                        ib_password),
                                                               ib_enable_delayed_streaming_data)
         elif data_feed == TradierDataFeed.get_name():
             ensure_options(["tradier_account_id", "tradier_access_token", "tradier_use_sandbox"])
