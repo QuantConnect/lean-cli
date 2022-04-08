@@ -289,7 +289,7 @@ def backtest(project: Path,
 
     \b
     Go to the following url to learn how to debug backtests locally using the Lean CLI:
-    https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging
+    https://www.lean.io/docs/lean-cli/backtesting/debugging
 
     By default the official LEAN engine image is used.
     You can override this using the --image option.

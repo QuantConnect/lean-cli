@@ -16,7 +16,7 @@ Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts
 - [Local autocomplete](https://www.lean.io/docs/lean-cli/projects/autocomplete)
 - [Local data downloading](https://www.lean.io/docs/lean-cli/datasets/downloading-quantconnect-data)
 - [Local backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
-- [Local debugging](https://www.lean.io/docs/lean-cli/tutorials/backtesting/debugging)
+- [Local debugging](https://www.lean.io/docs/lean-cli/backtesting/debugging)
 - [Local research environment](https://www.lean.io/docs/lean-cli/research)
 - [Local optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
 - [Local live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
