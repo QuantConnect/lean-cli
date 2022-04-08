@@ -768,6 +768,7 @@ Options:
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-organization TEXT    The name or id of the organization with the Bitfinex module subscription
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-api-key TEXT             Your Coinbase Pro API key
