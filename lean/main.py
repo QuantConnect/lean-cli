@@ -18,8 +18,7 @@ import site
 import sys
 import time
 from pathlib import Path
-print("debugger import")
-import debugpy; debugpy.listen(('0.0.0.0', 5678)); debugpy.wait_for_client()
+
 
 # Docker's pywin32 dependency on Windows is a common source of issues
 # In a lot of cases you'd have to manually run pywin32's post-install script as admin after pip installing the library
