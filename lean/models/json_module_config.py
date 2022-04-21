@@ -31,13 +31,6 @@ class LeanConfigConfigurer(abc.ABC):
         """
         raise NotImplementedError()
 
-    def get_live_name(cls, environment_name: str, is_brokerage=True) -> str:
-        """Returns the user-friendly name which users can identify this object by.
-
-        :return: the user-friendly name to display to users
-        """
-        return ""
-
     @abc.abstractmethod
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         """Configures the Lean configuration for this brokerage.
@@ -83,6 +76,26 @@ class LeanConfigConfigurer(abc.ABC):
         from lean.container import container
         container.lean_config_manager().set_properties({key: lean_config[key] for key in properties})
 
+    def _convert_lean_key_to_variable(self, lean_key:str) -> str:
+        """Replaces hyphens with underscore to follow python naming convention.
+
+        :param lean_key: string that uses hyphnes as separator. Used in lean config
+        """
+        return lean_key.replace('-','_')
+
+    def _convert_lean_key_to_attribute(self, lean_key:str) -> str:
+        """Replaces hyphens with underscore to follow pattern of private attribute.
+
+        :param lean_key: string that uses hyphnes as separator. Used in lean config
+        """
+        return "_" + self._convert_lean_key_to_variable(lean_key)
+
+    def _convert_variable_to_lean_key(self, variable_key:str) -> str:
+        """Replaces underscore with hyphens to follow lean config naming convention.
+
+        :param variable_key: string that uses underscore as separator as per python convention.
+        """
+        return variable_key.replace('_','-')
 
 class DebuggingMethod(Enum):
     """The debugging methods supported by the CLI."""

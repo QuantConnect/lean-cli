@@ -33,14 +33,37 @@ from lean.models.brokerages.local.samco import SamcoBrokerage, SamcoDataFeed
 from lean.models.brokerages.local.kraken import KrakenBrokerage, KrakenDataFeed
 from lean.models.brokerages.local.ftx import FTXBrokerage, FTXDataFeed
 from lean.models.config import LeanConfigConfigurer
+import json
+from lean.models.brokerages.local.json_brokerage import JsonBrokerage
 
+brokerages = []
+dataQueueHandlers = []
+historyProviders = [] 
+brokeragesAndDataQueueHandlers = {}
+json_modules = None
+
+with open('C:/Users/USER/Anaconda3/envs/myenv/Lib/site-packages/lean/cli_data.json') as f: 
+    data = json.load(f)
+    json_modules = data['modules']   
+    for json_module in json_modules:
+        if "brokerage" in json_module["type"]:
+            brokerage = JsonBrokerage(json_module)
+            brokerages.append(brokerage)
+        if "data-queue-handler" in json_module["type"]:
+            dataQueueHandler = JsonBrokerage(json_module)
+            dataQueueHandlers.append(dataQueueHandler)
+        if "history-provider" in json_module["type"]:
+            pass
+        if brokerage != None and dataQueueHandler != None:
+            brokeragesAndDataQueueHandlers.update({brokerage:[dataQueueHandler]})
+            
 all_local_brokerages = [
     PaperTradingBrokerage,
     InteractiveBrokersBrokerage,
     TradierBrokerage,
     OANDABrokerage,
     BitfinexBrokerage,
-    CoinbaseProBrokerage,
+    CoinbaseProBrokerage, 
     BinanceBrokerage,
     ZerodhaBrokerage,
     SamcoBrokerage,
@@ -50,6 +73,7 @@ all_local_brokerages = [
     KrakenBrokerage,
     FTXBrokerage
 ]
+all_local_brokerages.extend(brokerages)
 
 all_local_data_feeds = [
     InteractiveBrokersDataFeed,
@@ -66,6 +90,7 @@ all_local_data_feeds = [
     KrakenDataFeed,
     FTXDataFeed
 ]
+all_local_data_feeds.extend(dataQueueHandlers)
 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfigurer]]] = {
     PaperTradingBrokerage: all_local_data_feeds.copy(),
@@ -83,6 +108,7 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[LeanConfigConfi
     KrakenBrokerage: [KrakenDataFeed],
     FTXBrokerage: [FTXDataFeed]
 }
+local_brokerage_data_feeds.update(brokeragesAndDataQueueHandlers)
 
 if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":
     all_local_data_feeds.append(IQFeedDataFeed)

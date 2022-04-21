@@ -1,0 +1,132 @@
+{
+   "modules": [
+     {
+       "type": [
+         "brokerage",
+         "data-queue-handler",
+         "history-provider"
+       ],
+       "product-id": "176",
+       "is-brokerage": true,
+       "name": "Ronit",
+       "installs": true,
+       "configurations": [
+         {
+          "Name": "ronit-organization",
+          "Type": "input",
+          "Value": "",
+          "Environment": [
+              "live",
+              "paper"
+          ],
+          "Input-method": "prompt",
+          "Input-type": "string",
+          "Input-data":"organization having subscription of module", 
+          "Help": "The name or id of the organization with the Ronit module subscription"
+         },
+        {
+          "Name": "binance-api-key",
+          "Type": "input",
+          "Value": "",
+          "Environment": [
+            "live",
+            "paper"
+          ],
+          "Input-method": "prompt",
+          "Input-type": "string",
+          "Input-data":"API-Key", 
+          "Help": "Your Binance API key"
+        },
+        {
+          "Name": "binance-api-secret",
+          "Type": "input",
+          "Value": "",
+          "Environment": [
+            "live",
+            "paper"
+          ],
+          "Input-method": "prompt-password",
+          "Input-type": "string",
+          "Input-data":"API secret", 
+          "Help": "Your Binance API secret"
+        },
+        {
+          "Name": "binance-use-testnet",
+          "Type": "brokerage-env",
+          "Value": "",
+          "Environment": [
+            "live",
+            "paper"
+          ],
+          "Input-method": "confirm",
+          "Input-type": "boolean",
+          "Input-data":"Use the testnet?", 
+          "Help": "Whether the testnet should be used"
+        },
+         {
+           "Name": "binance-api-url",
+           "Type": "info",
+           "Value": "https://api.binance.com",
+           "Environment": [
+             "live"
+           ]
+         },
+         {
+          "Name": "binance-api-url",
+          "Type": "info",
+          "Value": "https://testnet.binance.vision",
+          "Environment": [
+            "paper"
+          ]
+        },
+         {
+           "Name": "binance-websocket-url",
+           "Type": "info",
+           "Value": "wss://stream.binance.com:9443/ws",
+           "Environment": [
+             "live"
+           ]
+         },
+         {
+          "Name": "binance-websocket-url",
+          "Type": "info",
+          "Value": "wss://testnet.binance.vision/ws",
+          "Environment": [
+            "paper"
+          ]
+        },
+         {
+           "Name": "environments",
+           "Type": "configurations-env",
+           "Value": [
+             {
+               "Name": "lean-cli",
+               "Value": [
+                 {
+                   "Name": "live-mode-brokerage",
+                   "Value": "BinanceBrokerage"
+                 },
+                 {
+                   "Name": "transaction-handler",
+                   "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                 },
+                 {
+                  "Name": "data-queue-handler",
+                  "Value": "BinanceBrokerage"
+                },
+                {
+                  "Name": "history-provider",
+                  "Value": "BrokerageHistoryProvider"
+                }
+               ]
+             }
+           ],
+           "Environment": [
+            "live",
+            "paper"
+          ]
+         }
+       ]
+     }
+   ]
+}
