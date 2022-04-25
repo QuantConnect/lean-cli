@@ -16,11 +16,11 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.brokerages.local.json_module_base import LocalBrokerage
 from lean.models.logger import Option
-from lean.models.configuration import Configuration
+from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
 import copy
 
 class JsonBrokerage(LocalBrokerage):
-    """A LocalBrokerage implementation for the Binance brokerage."""
+    """A LocalBrokerage implementation for the Json brokerage."""
     _is_module_installed = False
 
     def __init__(self, json_brokerage_data: Dict[str, Any]) -> None:
@@ -29,18 +29,30 @@ class JsonBrokerage(LocalBrokerage):
                 temp_list = []
                 for config in value:
                     temp_list.append(Configuration.factory(config))
-                self._lean_configs = temp_list
+                self._lean_configs = self.sort_configs(temp_list)
                 continue
             setattr(self, self._convert_lean_key_to_attribute(key), value)
-        self._organization_name = f"{self._name.lower()}-organization"
-                
+        self._organization_name = f'{self._name.lower().replace(" ", "-")}-organization'
+    
+    @property
+    def _user_filters(self):
+        return [config._value for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
+
+    def sort_configs(self, configs):
+        sorted_configs = []
+        brokerage_configs = []
+        for config in configs:
+            if isinstance(config, BrokerageEnvConfiguration):
+                brokerage_configs.append(config)
+            else:
+                sorted_configs.append(config)
+        return brokerage_configs + sorted_configs
+
     def get_name(self) -> str:
         return self._name
 
-    @property
-    def _testnet(self):
-        [brokerage_env_config] = [config for config in self._lean_configs if config._is_type_brokerage_env]
-        return brokerage_env_config._is_paper_environment
+    def check_if_config_passes_filters(self, config)  -> bool:
+        return all(elem in config._filter._options for elem in self._user_filters)
 
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():
@@ -55,7 +67,9 @@ class JsonBrokerage(LocalBrokerage):
         return live_name
 
     def get_configurations_env_values_from_name(self, target_env: str): 
-        [env_config] = [config for config in self._lean_configs if config._is_type_configurations_env]
+        [env_config] = [config for config in self._lean_configs if 
+                            config._is_type_configurations_env and self.check_if_config_passes_filters(config)
+                        ]
         return env_config._env_and_values[target_env]
 
     def get_organzation_id(self) -> str:
@@ -71,9 +85,19 @@ class JsonBrokerage(LocalBrokerage):
         return self._lean_configs[idx]._value
 
     def get_required_properties(self) -> List[str]:
-        return [config._name for config in self._lean_configs if config.is_required_from_user()]
+        return [config._name for config in self.get_required_configs()]
 
     def get_required_configs(self) -> List[str]:
+        return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
+                    and self.check_if_config_passes_filters(config)]
+
+    def get_essential_properties(self) -> List[str]:
+        return [config._name for config in self.get_essential_configs()]
+
+    def get_essential_configs(self) -> List[str]:
+        return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
+
+    def get_all_input_configs(self) -> List[str]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()]
 
     def _build(self, lean_config: Dict[str, Any], logger: Logger, skip_build: bool = False) -> LocalBrokerage:
@@ -81,13 +105,13 @@ class JsonBrokerage(LocalBrokerage):
         self._is_installed_and_build = skip_build
         if self._is_installed_and_build:
             return self
-        
-        logger.info("""
-Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management).
-        """.strip())
 
         for configuration in self._lean_configs:
             if not configuration.is_required_from_user():
+                continue
+            if not isinstance(configuration, BrokerageEnvConfiguration) and not self.check_if_config_passes_filters(configuration):
+                continue
+            if type(configuration) is InternalInputUserInput:
                 continue
             if self._organization_name == configuration._name:
                 api_client = container.api_client()
@@ -117,11 +141,19 @@ Create an API key by logging in and accessing the Binance API Management page (h
             return 
         lean_config["job-organization-id"] = self.get_organzation_id()
         for configuration in self._lean_configs:
+            value = None
             if configuration._is_type_configurations_env:
                 continue
-            elif (self._testnet and not "paper" in configuration._envrionment) or (not self._testnet and not "live" in configuration._envrionment):
+            elif not self.check_if_config_passes_filters(configuration):
                 continue
-            lean_config[configuration._name] = configuration._value
+            elif type(configuration) is InternalInputUserInput:
+                for option in configuration._value_options:
+                    if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
+                        value = option._value
+                        break
+            else:
+                value = configuration._value
+            lean_config[configuration._name] = value
         self._save_properties(lean_config, self.get_required_properties())
 
     def ensure_module_installed(self) -> None:

@@ -3,16 +3,72 @@
      {
        "type": [
          "brokerage",
-         "data-queue-handler",
-         "history-provider"
+         "data-queue-handler"
        ],
-       "product-id": "176",
-       "is-brokerage": true,
-       "name": "Ronit",
+       "product-id": "181",
+       "name": "Interactive Brokers",
        "installs": true,
        "configurations": [
-         {
-          "Name": "ronit-organization",
+        {
+          "Name": "ib-agent-description",
+          "Type": "internal-input",
+          "Value": "",
+          "Environment": [
+            "live","paper"
+          ],
+          "Value-options": [
+            {
+              "condition":{
+                 "type":"regex",
+                 "pattern":"^du|^df|^u",
+                 "dependent-config-id":"ib-account"
+              },
+              "value":"Individual"
+            },
+            {
+              "condition":{
+                "type":"regex",
+                "pattern":"^di|^f|^i",
+                "dependent-config-id":"ib-account"
+              },
+              "value":"Advisor"
+            }
+          ],
+          "Input-method": "prompt",
+          "Input-data":"Username", 
+          "Help": "Your IB API key"
+        },
+        {
+          "Name": "ib-trading-mode",
+          "Type": "internal-input",
+          "Value": "",
+          "Environment": [
+            "live","paper"
+          ],
+          "Value-options": [
+            {
+              "condition":{
+                 "type":"regex",
+                 "pattern":"^df|^du|^di",
+                 "dependent-config-id":"ib-account"
+              },
+              "value":"paper"
+            },
+            {
+              "condition":{
+                "type":"regex",
+                "pattern":"^f|^i|^u",
+                "dependent-config-id":"ib-account"
+              },
+              "value":"live"
+            }
+          ],
+          "Input-method": "prompt",
+          "Input-data":"Username", 
+          "Help": "Your IB API key"
+        },
+        {
+          "Name": "interactive-brokers-organization",
           "Type": "input",
           "Value": "",
           "Environment": [
@@ -20,12 +76,12 @@
               "paper"
           ],
           "Input-method": "prompt",
-          "Input-type": "string",
           "Input-data":"organization having subscription of module", 
-          "Help": "The name or id of the organization with the Ronit module subscription"
+          "Help": "The name or id of the organization with the Ronit module subscription",
+          "Log-message": "Log messages are before outputting the prompt"
          },
         {
-          "Name": "binance-api-key",
+          "Name": "ib-user-name",
           "Type": "input",
           "Value": "",
           "Environment": [
@@ -33,12 +89,23 @@
             "paper"
           ],
           "Input-method": "prompt",
-          "Input-type": "string",
-          "Input-data":"API-Key", 
-          "Help": "Your Binance API key"
+          "Input-data":"Username", 
+          "Help": "Your IB API key"
         },
         {
-          "Name": "binance-api-secret",
+          "Name": "ib-account",
+          "Type": "input",
+          "Value": "",
+          "Environment": [
+            "live",
+            "paper"
+          ],
+          "Input-method": "prompt",
+          "Input-data":"Account id", 
+          "Help": "Your IB API key"
+        },
+        {
+          "Name": "ib-password",
           "Type": "input",
           "Value": "",
           "Environment": [
@@ -46,56 +113,10 @@
             "paper"
           ],
           "Input-method": "prompt-password",
-          "Input-type": "string",
-          "Input-data":"API secret", 
-          "Help": "Your Binance API secret"
+          "Input-data":"ib-password", 
+          "Help": "Your IB API key"
         },
         {
-          "Name": "binance-use-testnet",
-          "Type": "brokerage-env",
-          "Value": "",
-          "Environment": [
-            "live",
-            "paper"
-          ],
-          "Input-method": "confirm",
-          "Input-type": "boolean",
-          "Input-data":"Use the testnet?", 
-          "Help": "Whether the testnet should be used"
-        },
-         {
-           "Name": "binance-api-url",
-           "Type": "info",
-           "Value": "https://api.binance.com",
-           "Environment": [
-             "live"
-           ]
-         },
-         {
-          "Name": "binance-api-url",
-          "Type": "info",
-          "Value": "https://testnet.binance.vision",
-          "Environment": [
-            "paper"
-          ]
-        },
-         {
-           "Name": "binance-websocket-url",
-           "Type": "info",
-           "Value": "wss://stream.binance.com:9443/ws",
-           "Environment": [
-             "live"
-           ]
-         },
-         {
-          "Name": "binance-websocket-url",
-          "Type": "info",
-          "Value": "wss://testnet.binance.vision/ws",
-          "Environment": [
-            "paper"
-          ]
-        },
-         {
            "Name": "environments",
            "Type": "configurations-env",
            "Value": [
@@ -104,7 +125,7 @@
                "Value": [
                  {
                    "Name": "live-mode-brokerage",
-                   "Value": "BinanceBrokerage"
+                   "Value": "InteractiveBrokersBrokerage"
                  },
                  {
                    "Name": "transaction-handler",
@@ -112,7 +133,7 @@
                  },
                  {
                   "Name": "data-queue-handler",
-                  "Value": "BinanceBrokerage"
+                  "Value": "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage"
                 },
                 {
                   "Name": "history-provider",
@@ -122,8 +143,7 @@
              }
            ],
            "Environment": [
-            "live",
-            "paper"
+            "live", "paper"
           ]
          }
        ]

@@ -14,7 +14,7 @@
 from typing import Any, Dict
 
 from lean.components.util.logger import Logger
-from lean.models.brokerages.local.base import LocalBrokerage
+from lean.models.brokerages.local.json_module_base import LocalBrokerage
 
 
 class PaperTradingBrokerage(LocalBrokerage):

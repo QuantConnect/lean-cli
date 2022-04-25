@@ -14,7 +14,7 @@
 from typing import Dict, Any
 
 from lean.components.util.logger import Logger
-from lean.models.config import LeanConfigConfigurer
+from lean.models.json_module_config import LeanConfigConfigurer
 
 
 class CustomDataOnlyDataFeed(LeanConfigConfigurer):

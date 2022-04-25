@@ -32,7 +32,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID
-from lean.models.config import DebuggingMethod
+from lean.models.json_module_config import DebuggingMethod
 from lean.models.docker import DockerImage
 
 

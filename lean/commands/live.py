@@ -126,7 +126,13 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     data_feed = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
     ])
-    is_data_feed_brokerage = True if brokerage._name == data_feed._name else False
+    if brokerage._name == data_feed._name:
+        is_data_feed_brokerage = True
+        # update essential properties from brokerage to datafeed
+        essential_properties_value = {config._name : config._value for config in brokerage.get_essential_configs()}
+        data_feed.update_configs(essential_properties_value)
+    else:
+        False
     data_feed.build(lean_config, logger, is_data_feed_brokerage).configure(lean_config, environment_name)
 
 
@@ -187,11 +193,18 @@ def _get_default_value(key: str) -> Optional[Any]:
     return value
         
 def options_from_json(configurations):
-    map_to_types = {
-        "string": str,
-        "boolean": bool,
-        "path-parameter": PathParameter(exists=True, file_okay=True, dir_okay=False)
-    }
+
+    def get_click_option_type(configuration):
+        if configuration._input_method == "confirm":
+            return bool
+        elif configuration._input_method == "choice":
+            return click.Choice(configuration._choices, case_sensitive=False)
+        elif configuration._input_method == "prompt":
+            return str
+        elif configuration._input_method == "prompt-password":
+            return str
+        elif configuration._input_method == "path-parameter":
+            return PathParameter(exists=True, file_okay=True, dir_okay=False)
 
     def decorator(f):
         for configuration in reversed(configurations):
@@ -199,13 +212,9 @@ def options_from_json(configurations):
             name = str(configuration._name).replace('-','_')
             param_decls = (
                 '--' + long,
-                name)
-            if configuration._input_method == "choice":
-                click_option_type = click.Choice(configuration._choices, case_sensitive=False)
-            else:
-                click_option_type = map_to_types.get(configuration._input_type, configuration._input_type) 
+                name) 
             attrs = dict(
-                type=click_option_type,
+                type=get_click_option_type(configuration),
                 help=configuration._help,
                 default=_get_default_value(configuration._default_property_name) 
             )
@@ -219,12 +228,13 @@ for module in all_local_brokerages + all_local_data_feeds:
     # NOTE: input config name accross all modules should be unique, because we are using them as options
     if not isinstance(module, JsonBrokerage):
         continue
-    for config in module.get_required_configs():
+    for config in module.get_all_input_configs():
         if config._name in run_options:
             continue
         default_property_name = config._name
         if module._organization_name == config._name:
             default_property_name = "job-organization-id"
+        # set _default_property_name to be consumed by options_from_json()
         setattr(config, '_default_property_name', default_property_name)
         run_options[config._name] = config
 
@@ -328,12 +338,22 @@ def live(project: Path,
         ensure_options(["brokerage", "data_feed"])
 
         [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_name() == brokerage]
+        # update essential properties from brokerage to datafeed
+        # needs to be updated before fetching required properties
+        essential_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_essential_properties()]
+        ensure_options(essential_properties)
+        essential_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
+        brokerage_configurer.update_configs(essential_properties_value)
         required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties()]
         ensure_options(required_properties)
         required_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
         brokerage_configurer.update_configs(required_properties_value)
         
         [data_feed_configurer] = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_name() == data_feed]
+        essential_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_essential_properties()]
+        ensure_options(essential_properties)
+        essential_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
+        data_feed_configurer.update_configs(essential_properties_value)
         required_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_required_properties()]
         ensure_options(required_properties)
         required_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}

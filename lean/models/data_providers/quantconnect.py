@@ -15,7 +15,7 @@ from typing import Dict, Any
 
 from lean.components.util.logger import Logger
 from lean.container import container
-from lean.models.config import LeanConfigConfigurer
+from lean.models.json_module_config import LeanConfigConfigurer 
 from lean.models.logger import Option
 
 

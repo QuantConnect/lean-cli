@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.models.data_providers.terminal_link import TerminalLinkDataProvider
 from lean.models.data_providers.local import LocalDataProvider
 from lean.models.data_providers.quantconnect import QuantConnectDataProvider
 
 all_data_providers = [
     LocalDataProvider,
-    QuantConnectDataProvider,
-    TerminalLinkDataProvider
+    QuantConnectDataProvider
 ]
