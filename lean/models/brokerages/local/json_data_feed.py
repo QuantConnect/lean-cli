@@ -14,15 +14,15 @@
 from typing import Any, Dict
 from lean.models.brokerages.local.json_module import JsonModule
 
-class JsonBrokerage(JsonModule):
-    """A JsonModule implementation for the Json brokerage module."""
+class JsonDataFeed(JsonModule):
+    """A JsonModule implementation for the Json data feed module."""
 
-    def __init__(self, json_brokerage_data: Dict[str, Any]) -> None:
-        super().__init__(json_brokerage_data)
+    def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
+        super().__init__(json_datafeed_data)
 
     def get_live_name(self, environment_name: str) -> str:
         environment_obj = self.get_configurations_env_values_from_name(environment_name)
-        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
+        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "data-queue-handler"]
         return live_name
     
     

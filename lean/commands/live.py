@@ -51,8 +51,8 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     brokerage = environment["live-mode-brokerage"]
     data_queue_handler = environment["data-queue-handler"]
 
-    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name, True) == brokerage]
-    [data_feed_configurer] = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name, False) == data_queue_handler]
+    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
+    [data_feed_configurer] = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) == data_queue_handler]
     brokerage_properties = brokerage_configurer.get_required_properties()
     data_queue_handler_properties = data_feed_configurer.get_required_properties()
 
@@ -127,13 +127,14 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
     ])
     if brokerage._name == data_feed._name:
-        is_data_feed_brokerage = True
         # update essential properties from brokerage to datafeed
         essential_properties_value = {config._name : config._value for config in brokerage.get_essential_configs()}
         data_feed.update_configs(essential_properties_value)
+        # mark configs are updated
+        setattr(data_feed, '_is_installed_and_build', True)
     else:
         False
-    data_feed.build(lean_config, logger, is_data_feed_brokerage).configure(lean_config, environment_name)
+    data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
 
 _cached_organizations = None
@@ -200,7 +201,7 @@ def options_from_json(configurations):
         elif configuration._input_method == "choice":
             return click.Choice(configuration._choices, case_sensitive=False)
         elif configuration._input_method == "prompt":
-            return str
+            return configuration.get_input_type()
         elif configuration._input_method == "prompt-password":
             return str
         elif configuration._input_method == "path-parameter":

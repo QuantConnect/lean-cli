@@ -11,22 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any
+from typing import Any, Dict
+from lean.models.brokerages.local.json_module import JsonModule
 
-from lean.components.util.logger import Logger
-from lean.models.json_module_config import LeanConfigConfigurer
+class JsonDataProvider(JsonModule):
+    """A JsonModule implementation for the Json data provider module."""
 
-
-class LocalDataProvider(LeanConfigConfigurer):
-    @classmethod
-    def get_name(cls) -> str:
-        return "Local"
-
-    @classmethod
-    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
-        return LocalDataProvider()
-
-    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider"
-
-        self._save_properties(lean_config, ["data-provider"])
+    def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
+        super().__init__(json_data_provider_data)

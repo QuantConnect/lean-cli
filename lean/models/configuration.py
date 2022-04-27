@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 import re
 from typing import Any, Dict, Optional
 import click
@@ -47,6 +48,10 @@ class Configuration(abc.ABC):
         self._filter = Filter(config_json_object["Environment"])
         self._is_type_configurations_env = type(self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env = type(self) is TradingEnvConfiguration
+        self._log_message = None
+        if "Log-message" in config_json_object.keys():
+            self._log_message = config_json_object["Log-message"]
+
 
     @abc.abstractmethod
     def is_required_from_user(self):
@@ -90,6 +95,9 @@ class UserInputConfiguration(Configuration, abc.ABC):
         self._input_method = config_json_object["Input-method"]
         self._input_data = config_json_object["Input-data"]
         self._help = config_json_object["Help"]
+        self._input_default = None
+        if "Input-default" in config_json_object.keys():
+            self._input_default = config_json_object["Input-default"]
 
     @abc.abstractmethod
     def AskUserForInput(self, default_value):
@@ -121,14 +129,26 @@ class InternalInputUserInput(UserInputConfiguration):
         self._value_options = value_options
 
     def AskUserForInput(self, default_value, logger: Logger):
-        return NotImplemented()
+        raise ValueError(f'user input not allowed with {self.__class__.__name__}')
 
 class PromptUserInput(UserInputConfiguration):
+    map_to_types = {
+        "string": str,
+        "boolean": bool,
+        "integer": int
+    }
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._input_type = "string"
+        if "Input-type" in config_json_object.keys():
+            self._input_type = config_json_object["Input-type"]
 
     def AskUserForInput(self, default_value, logger: Logger):
-        return click.prompt(self._input_data, default_value)
+        return click.prompt(self._input_data, default_value, type=self.get_input_type())
+
+    def get_input_type(self):
+        return self.map_to_types.get(self._input_type, self._input_type)
 
 class ChoiceUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
@@ -150,9 +170,15 @@ class PathParameterUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
+
+        default_binary = None
+        if default_value is not None:
+            default_binary = Path(default_value)
+        elif self._input_default is not None and Path(self._input_default).is_file():
+            default_binary = Path(self._input_default)
         value = click.prompt(self._input_data,
                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                    default=default_value
+                    default=default_binary
                 )
         if not value:
             str(value).replace("\\", "/")
@@ -202,8 +228,7 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
     
     def AskUserForInput(self, default_value, logger: Logger):
         if self._input_method == "confirm":
-            value = ConfirmUserInput.AskUserForInput(self, default_value, logger)
-            return "paper" if bool(value) else "live" 
+            raise ValueError(f'input method -- {self._input_method} is not allowed with {self.__class__.__name__}')
         else:
             return BrokerageEnvConfiguration.AskUserForInput(self, default_value, logger)
 

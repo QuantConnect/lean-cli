@@ -22,7 +22,6 @@ from lean.models.pydantic import WrappedBaseModel
 class LeanConfigConfigurer(abc.ABC):
     """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
 
-    @classmethod
     @abc.abstractmethod
     def get_name(cls) -> str:
         """Returns the user-friendly name which users can identify this object by.
@@ -30,15 +29,6 @@ class LeanConfigConfigurer(abc.ABC):
         :return: the user-friendly name to display to users
         """
         raise NotImplementedError()
-
-    def get_live_name(self, environment_name: str, is_brokerage=False) -> str:
-        """Returns the user-friendly name which users can identify this object by.
-
-        :param environment_name: the name of the environment to configure
-        :param is_brokerage: boolean to check if module is brokerage or datafeed
-        :return: the user-friendly name to display to users
-        """
-        return ""
 
     @abc.abstractmethod
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
@@ -52,9 +42,8 @@ class LeanConfigConfigurer(abc.ABC):
         """
         raise NotImplementedError()
 
-    @classmethod
     @abc.abstractmethod
-    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> 'LeanConfigConfigurer':
+    def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'LeanConfigConfigurer':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
         :param lean_config: the Lean configuration dict to read defaults from
@@ -63,7 +52,6 @@ class LeanConfigConfigurer(abc.ABC):
         """
         raise NotImplementedError()
 
-    @classmethod
     def _get_default(cls, lean_config: Dict[str, Any], key: str) -> Optional[Any]:
         """Returns the default value for a property based on the current Lean configuration.
 
