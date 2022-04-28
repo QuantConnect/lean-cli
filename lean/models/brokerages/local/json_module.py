@@ -42,10 +42,10 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         self.configure_credentials(lean_config)
 
     @property
-    def _user_filters(self):
+    def _user_filters(self) -> str:
         return [config._value for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
-    def sort_configs(self, configs):
+    def sort_configs(self, configs: List[Configuration]) -> List[Configuration]:
         sorted_configs = []
         brokerage_configs = []
         for config in configs:
@@ -58,18 +58,18 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
     def get_name(self) -> str:
         return self._name
 
-    def check_if_config_passes_filters(self, config)  -> bool:
+    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
         return all(elem in config._filter._options for elem in self._user_filters)
 
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():
             self.update_value_for_given_config(key,value)
 
-    def get_configurations_env_values_from_name(self, target_env: str): 
+    def get_configurations_env_values_from_name(self, target_env: str) -> List[Configuration]: 
         [env_config] = [config for config in self._lean_configs if 
                             config._is_type_configurations_env and self.check_if_config_passes_filters(config)
-                        ]
-        return env_config._env_and_values[target_env]
+                        ] or [None]
+        return [] if env_config is None else env_config._env_and_values[target_env]
 
     def get_organzation_id(self) -> str:
         [organization_id] = [config._value for config in self._lean_configs if self._organization_name == config._name]
@@ -79,24 +79,28 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         [idx] = [i for i in range(len(self._lean_configs)) if self._lean_configs[i]._name == target_name]
         self._lean_configs[idx]._value = value
 
-    def get_config_value_from_name(self, target_name: str) -> Any:
+    def get_config_value_from_name(self, target_name: str) -> str:
         [idx] = [i for i in range(len(self._lean_configs)) if self._lean_configs[i]._name == target_name]
         return self._lean_configs[idx]._value
+
+    def get_non_user_required_properties(self) -> List[Configuration]:
+        return [config._name for config in self._lean_configs if not config.is_required_from_user()
+                    and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self) -> List[str]:
         return [config._name for config in self.get_required_configs()]
 
-    def get_required_configs(self) -> List[str]:
+    def get_required_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
                     and self.check_if_config_passes_filters(config)]
 
     def get_essential_properties(self) -> List[str]:
         return [config._name for config in self.get_essential_configs()]
 
-    def get_essential_configs(self) -> List[str]:
+    def get_essential_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
-    def get_all_input_configs(self) -> List[str]:
+    def get_all_input_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()]
 
     def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'JsonModule':

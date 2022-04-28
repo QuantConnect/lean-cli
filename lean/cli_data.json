@@ -2,6 +2,226 @@
   "modules": [
     {
       "type": [
+        "brokerage",
+        "data-queue-handler",
+        "data-provider"
+      ],
+      "product-id": "44",
+      "name": "Terminal Link",
+      "installs": true,
+      "configurations": [
+       {
+         "Name": "terminal-link-organization",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+             "Production",
+             "Beta"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription"
+        },
+        {
+          "Name": "bloomberg-environment",
+          "Type": "trading-env",
+          "Value": "",
+          "Environment": [
+             "Production",
+             "Beta"
+         ],
+          "Input-method": "choice",
+          "Input-choices": ["Production", "Beta"],
+          "Input-data":"Environment", 
+          "Help": "Whether the testnet should be used"
+        },
+       {
+         "Name": "bloomberg-server-host",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+             "Production",
+             "Beta"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"Server host", 
+         "Help": "Your IB API key"
+       },
+       {
+        "Name": "bloomberg-server-port",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-type": "integer",
+        "Input-data":"Server port", 
+        "Help": "Your IB API key"
+      },
+       {
+        "Name": "bloomberg-symbol-map-file",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "path-parameter",
+        "Input-data":"Path to symbol map file", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-broker",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX broker", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-user-time-zone",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX user timezone", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-account",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX account", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-strategy",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX strategy", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-notes",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX notes", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-emsx-handling",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX handling", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Name": "bloomberg-allow-modification",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "confirm",
+        "Input-data":"Allow modification?", 
+        "Help": "Whether the testnet should be used"
+      },
+      {
+        "Name": "data-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Name": "data-downloader",
+        "Type": "info",
+        "Value": "BloombergDataDownloader",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Name": "map-file-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Name": "factor-file-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+       {
+          "Name": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "BloombergBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "BloombergBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "Production", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
         "data-provider"
       ],
       "product-id": "",
@@ -27,7 +247,7 @@
       "installs": false,
       "configurations": [
         {
-          "Name": "quantConnect-organization",
+          "Name": "quantconnect-organization",
           "Type": "input",
           "Value": "",
           "Environment": [

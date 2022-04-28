@@ -19,3 +19,7 @@ class JsonDataProvider(JsonModule):
 
     def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
         super().__init__(json_data_provider_data)
+
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        super().configure_credentials(lean_config)
+        self._save_properties(lean_config, self.get_non_user_required_properties())
