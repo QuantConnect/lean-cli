@@ -16,11 +16,10 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.logger import Option
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
-from lean.models.json_module_config import LeanConfigConfigurer
 import copy
 import abc
 
-class JsonModule(LeanConfigConfigurer, abc.ABC):
+class JsonModule(abc.ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
     def __init__(self, json_module_data: Dict[str, Any]) -> None:
@@ -35,11 +34,6 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         self._organization_name = f'{self._name.lower().replace(" ", "-")}-organization'
         self._is_module_installed = False
         self._is_installed_and_build = False
-
-
-    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        self._configure_environment(lean_config, environment_name)
-        self.configure_credentials(lean_config)
 
     @property
     def _user_filters(self) -> str:
@@ -56,6 +50,10 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         return brokerage_configs + sorted_configs
 
     def get_name(self) -> str:
+        """Returns the user-friendly name which users can identify this object by.
+
+        :return: the user-friendly name to display to users
+        """
         return self._name
 
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:
@@ -104,7 +102,12 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()]
 
     def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'JsonModule':
-        
+        """Builds a new instance of this class, prompting the user for input when necessary.
+
+        :param lean_config: the Lean configuration dict to read defaults from
+        :param logger: the logger to use
+        :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
+        """
         if self._is_installed_and_build:
             return self
 
@@ -132,36 +135,3 @@ class JsonModule(LeanConfigConfigurer, abc.ABC):
         
         return self
 
-    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        if self._is_installed_and_build:
-            return 
-        self.ensure_module_installed()
-
-        for environment_config in self.get_configurations_env_values_from_name(environment_name):
-            lean_config["environments"][environment_name][environment_config["Name"]] = environment_config["Value"]
-
-    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        if self._is_installed_and_build:
-            return
-        if self._installs:
-            lean_config["job-organization-id"] = self.get_organzation_id()
-        for configuration in self._lean_configs:
-            value = None
-            if configuration._is_type_configurations_env:
-                continue
-            elif not self.check_if_config_passes_filters(configuration):
-                continue
-            elif type(configuration) is InternalInputUserInput:
-                for option in configuration._value_options:
-                    if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
-                        value = option._value
-                        break
-            else:
-                value = configuration._value
-            lean_config[configuration._name] = value
-        self._save_properties(lean_config, self.get_required_properties())
-
-    def ensure_module_installed(self) -> None:
-        if not self._is_module_installed and self._installs:
-            container.module_manager().install_module(self._product_id, self.get_organzation_id())
-            self._is_module_installed = True

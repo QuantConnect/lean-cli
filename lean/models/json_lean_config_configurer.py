@@ -14,23 +14,14 @@
 import abc
 from enum import Enum
 from typing import Any, Dict, List, Optional
-
-from lean.components.util.logger import Logger
 from lean.models.pydantic import WrappedBaseModel
+from lean.models.json_module import JsonModule
+from lean.container import container
+from lean.models.configuration import InternalInputUserInput
 
+class JsonLeanConfigConfigurer(JsonModule, abc.ABC):
+    """The JsonLeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
 
-class LeanConfigConfigurer(abc.ABC):
-    """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
-
-    @abc.abstractmethod
-    def get_name(cls) -> str:
-        """Returns the user-friendly name which users can identify this object by.
-
-        :return: the user-friendly name to display to users
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         """Configures the Lean configuration for this brokerage.
 
@@ -40,17 +31,49 @@ class LeanConfigConfigurer(abc.ABC):
         :param lean_config: the configuration dict to write to
         :param environment_name: the name of the environment to configure
         """
-        raise NotImplementedError()
+        self._configure_environment(lean_config, environment_name)
+        self.configure_credentials(lean_config)
 
-    @abc.abstractmethod
-    def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'LeanConfigConfigurer':
-        """Builds a new instance of this class, prompting the user for input when necessary.
-
-        :param lean_config: the Lean configuration dict to read defaults from
-        :param logger: the logger to use
-        :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
+    def _configure_environment(self, lean_config: Dict[str, Any], environment_name: str) -> None:
+        """Configures the environment in the Lean config for this brokerage.
+        :param lean_config: the Lean configuration dict to write to
+        :param environment_name: the name of the environment to update
         """
-        raise NotImplementedError()
+        if self._is_installed_and_build:
+            return 
+        self.ensure_module_installed()
+
+        for environment_config in self.get_configurations_env_values_from_name(environment_name):
+            lean_config["environments"][environment_name][environment_config["Name"]] = environment_config["Value"]
+
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.
+        :param lean_config: the Lean configuration dict to write to
+        """
+        if self._is_installed_and_build:
+            return
+        if self._installs:
+            lean_config["job-organization-id"] = self.get_organzation_id()
+        for configuration in self._lean_configs:
+            value = None
+            if configuration._is_type_configurations_env:
+                continue
+            elif not self.check_if_config_passes_filters(configuration):
+                continue
+            elif type(configuration) is InternalInputUserInput:
+                for option in configuration._value_options:
+                    if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
+                        value = option._value
+                        break
+            else:
+                value = configuration._value
+            lean_config[configuration._name] = value
+        self._save_properties(lean_config, self.get_required_properties())
+
+    def ensure_module_installed(self) -> None:
+        if not self._is_module_installed and self._installs:
+            container.module_manager().install_module(self._product_id, self.get_organzation_id())
+            self._is_module_installed = True
 
     def _get_default(cls, lean_config: Dict[str, Any], key: str) -> Optional[Any]:
         """Returns the default value for a property based on the current Lean configuration.
@@ -93,6 +116,7 @@ class LeanConfigConfigurer(abc.ABC):
         :param variable_key: string that uses underscore as separator as per python convention.
         """
         return variable_key.replace('_','-')
+
 
 class DebuggingMethod(Enum):
     """The debugging methods supported by the CLI."""
