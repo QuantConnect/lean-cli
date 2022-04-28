@@ -12,9 +12,9 @@
 # limitations under the License.
 
 from typing import Any, Dict
-from lean.models.brokerages.local.json_module import JsonModule
+from lean.models.json_lean_config_configurer import JsonLeanConfigConfigurer
 
-class JsonDataFeed(JsonModule):
+class JsonDataFeed(JsonLeanConfigConfigurer):
     """A JsonModule implementation for the Json data feed module."""
 
     def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
