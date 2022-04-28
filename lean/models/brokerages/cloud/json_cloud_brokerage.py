@@ -12,14 +12,15 @@
 # limitations under the License.
 
 from typing import Dict
-from lean.models.brokerages.local.json_module import JsonModule
-
+from lean.models.json_module import JsonModule
 
 class JsonCloudBrokerage(JsonModule):
     """A JsonModule implementation for the cloud brokerages."""
 
     def get_id(self) -> str:
-        return "BinanceBrokerage"
+        environment_obj = self.get_configurations_env_values_from_name("lean-cli")
+        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
+        return live_name
 
     def _get_settings(self) -> Dict[str, str]:
         return {
