@@ -296,6 +296,7 @@
       "configurations": [
        {
          "Name": "oanda-account-id",
+         "Cloud-Name": "account",
          "Type": "input",
          "Value": "",
          "Environment": [
@@ -308,6 +309,7 @@
        },
        {
         "Name": "oanda-access-token",
+        "Cloud-Name": "key",
         "Type": "input",
         "Value": "",
         "Environment": [
@@ -319,6 +321,7 @@
       },
        {
         "Name": "oanda-environment",
+        "Cloud-Name": "environment",
         "Type": "trading-env",
         "Value": "",
         "Environment": [
