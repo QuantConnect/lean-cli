@@ -15,7 +15,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import click
 
@@ -26,6 +26,8 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 from lean.models.brokerages.local.json_brokerage import JsonBrokerage
+from lean.models.configuration import Configuration
+from lean.models.json_options import options_from_json
 
 _environment_skeleton = {
     "live-mode": True,
@@ -192,52 +194,22 @@ def _get_default_value(key: str) -> Optional[Any]:
         return None
 
     return value
-        
-def options_from_json(configurations):
 
-    def get_click_option_type(configuration):
-        if configuration._input_method == "confirm":
-            return bool
-        elif configuration._input_method == "choice":
-            return click.Choice(configuration._choices, case_sensitive=False)
-        elif configuration._input_method == "prompt":
-            return configuration.get_input_type()
-        elif configuration._input_method == "prompt-password":
-            return str
-        elif configuration._input_method == "path-parameter":
-            return PathParameter(exists=True, file_okay=True, dir_okay=False)
-
-    def decorator(f):
-        for configuration in reversed(configurations):
-            long = configuration._name
-            name = str(configuration._name).replace('-','_')
-            param_decls = (
-                '--' + long,
-                name) 
-            attrs = dict(
-                type=get_click_option_type(configuration),
-                help=configuration._help,
-                default=_get_default_value(configuration._default_property_name) 
-            )
-            click.option(*param_decls, **attrs)(f)
-        return f
-    return decorator
-
-run_options = {}
-for module in all_local_brokerages + all_local_data_feeds:
-    # TODO: current only works for json classes
-    # NOTE: input config name accross all modules should be unique, because we are using them as options
-    if not isinstance(module, JsonBrokerage):
-        continue
-    for config in module.get_all_input_configs():
-        if config._name in run_options:
+def _get_configs_for_options() -> List[Configuration]: 
+    run_options = {}
+    for module in all_local_brokerages + all_local_data_feeds:
+        if not isinstance(module, JsonBrokerage):
             continue
-        default_property_name = config._name
-        if module._organization_name == config._name:
-            default_property_name = "job-organization-id"
-        # set _default_property_name to be consumed by options_from_json()
-        setattr(config, '_default_property_name', default_property_name)
-        run_options[config._name] = config
+        for config in module.get_all_input_configs():
+            if config._name in run_options:
+                raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
+            default_property_name = config._name
+            if module._organization_name == config._name:
+                default_property_name = "job-organization-id"
+            # set _default_property_name to be consumed by options_from_json()
+            setattr(config, '_default_property_name', default_property_name)
+            run_options[config._name] = config
+    return list(run_options.values())
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -276,7 +248,7 @@ for module in all_local_brokerages + all_local_data_feeds:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-@options_from_json(list(run_options.values()))
+@options_from_json(_get_configs_for_options(), True)
 def live(project: Path,
         environment: Optional[str],
         output: Optional[Path],
