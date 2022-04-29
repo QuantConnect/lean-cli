@@ -20,12 +20,12 @@ from lean.models.brokerages.local.json_data_feed import JsonDataFeed
 from lean.models.data_providers.json_data_provider import JsonDataProvider
 from lean.models.brokerages.cloud.json_cloud_brokerage import JsonCloudBrokerage
 
-all_local_brokerages: List[JsonBrokerage]
-all_local_data_feeds = []
+all_local_brokerages: List[JsonBrokerage] = []
+all_local_data_feeds: List[JsonDataFeed] = []
 historyProviders = []
-all_data_providers = [] 
-brokeragesAndDataQueueHandlers = {}
-all_cloud_brokerages = []
+all_data_providers: List[JsonDataFeed] = [] 
+local_brokerage_data_feeds: Dict[Type[JsonBrokerage], List[Type[JsonDataFeed]]] = {}
+all_cloud_brokerages: List[JsonDataFeed] = []
 
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, '../../../cli_data.json')
@@ -47,9 +47,7 @@ with open(filename) as f:
         if "history-provider" in json_module["type"]:
             pass
         if brokerage != None and dataQueueHandler != None:
-            brokeragesAndDataQueueHandlers.update({brokerage:[dataQueueHandler]})
-
-local_brokerage_data_feeds: Dict[Type[JsonBrokerage], List[Type[JsonDataFeed]]] = brokeragesAndDataQueueHandlers
+            local_brokerage_data_feeds.update({brokerage:[dataQueueHandler]})
 
 #IQFeed DataFeed for windows
 if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":
@@ -62,3 +60,7 @@ else:
 
 # QuantConnect DataProvider
 [QuantConnectDataProvider] = [data_provider for data_provider in all_data_providers if data_provider.get_name() == "QuantConnect"]
+
+# QuantConnect DataProvider
+# TODO: remove None when paper brokerage present in config
+[PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == "Paper Trading"] or [None]
