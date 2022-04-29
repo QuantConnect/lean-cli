@@ -16,7 +16,7 @@ import click
 
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
-from commands.live import _get_default_value
+from lean.commands.live import _get_default_value
 
 def get_click_option_type(configuration):
         if configuration._input_method == "confirm":
@@ -37,6 +37,7 @@ def get_options_attributes(configuration: Configuration, is_local_brokerage: boo
     }
     if is_local_brokerage:
         optios_attributes["default"] =_get_default_value(configuration._default_property_name)
+    return optios_attributes
 
 def options_from_json(configurations: Configuration, is_local_brokerage: bool = False):
 
