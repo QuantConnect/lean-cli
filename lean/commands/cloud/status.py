@@ -16,7 +16,7 @@ import click
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCLiveAlgorithmStatus
-from lean.models.brokerages.cloud import all_cloud_brokerages, PaperTradingBrokerage
+from lean.models.brokerages.local import all_cloud_brokerages, PaperTradingBrokerage
 
 
 @click.command(cls=LeanCommand)
