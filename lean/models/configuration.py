@@ -20,9 +20,6 @@ from lean.components.util.logger import Logger
 from lean.click import PathParameter
         
 class RegexOptionCondition():
-    _type: str
-    _pattern: str
-    _dependent_config_id: str
 
     def __init__(self, condition_object: Dict[str, Any]):
         self._type = condition_object["type"]
@@ -33,8 +30,6 @@ class RegexOptionCondition():
         return len(re.findall(self._pattern, target_value, re.I)) > 0
 
 class ConditionalValueOption():
-    _value: str
-    _condition: Optional[RegexOptionCondition] = None
 
     def __init__(self, option_object: Dict[str, Any]):
         self._value = option_object["value"]
@@ -51,7 +46,6 @@ class Configuration(abc.ABC):
         self._log_message = None
         if "Log-message" in config_json_object.keys():
             self._log_message = config_json_object["Log-message"]
-
 
     @abc.abstractmethod
     def is_required_from_user(self):
@@ -96,8 +90,11 @@ class UserInputConfiguration(Configuration, abc.ABC):
         self._input_data = config_json_object["Input-data"]
         self._help = config_json_object["Help"]
         self._input_default = None
+        self._cloud_name = None
         if "Input-default" in config_json_object.keys():
             self._input_default = config_json_object["Input-default"]
+        if "Cloud-Name" in config_json_object.keys():
+            self._cloud_name = config_json_object["Cloud-Name"]
 
     @abc.abstractmethod
     def AskUserForInput(self, default_value):
