@@ -36,7 +36,7 @@ class JsonModule(abc.ABC):
         self._is_installed_and_build = False
 
     @property
-    def _user_filters(self) -> str:
+    def _user_filters(self) -> List[str]:
         return [config._value for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
     def sort_configs(self, configs: List[Configuration]) -> List[Configuration]:
@@ -55,9 +55,10 @@ class JsonModule(abc.ABC):
         :return: the user-friendly name to display to users
         """
         return self._name
-
+    
+    @abc.abstractmethod
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:
-        return all(elem in config._filter._options for elem in self._user_filters)
+        raise NotImplementedError()
 
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():
@@ -151,7 +152,10 @@ class JsonModule(abc.ABC):
             else:
                 if configuration._log_message is not None:
                     logger.info(configuration._log_message.strip())
-                user_choice = configuration.AskUserForInput(self._get_default(lean_config, configuration._name), logger)
+                if self.__class__.__name__ == 'JsonCloudBrokerage':
+                    user_choice = configuration.AskUserForInput(None, logger)
+                else:
+                    user_choice = configuration.AskUserForInput(self._get_default(lean_config, configuration._name), logger)
             self.update_value_for_given_config(configuration._name, user_choice)
         
         return self
