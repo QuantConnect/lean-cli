@@ -11,20 +11,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
+from typing import Dict, Any, List
 from lean.models.json_module import JsonModule
+from lean.models.configuration import Configuration, TradingEnvConfiguration
 
 class JsonCloudBrokerage(JsonModule):
     """A JsonModule implementation for the cloud brokerages."""
 
+    def __init__(self, json_cloud_brokerage_data: Dict[str, Any]) -> None:
+        super().__init__(json_cloud_brokerage_data)
+
+    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
+        return all(elem in config._filter._options for elem in self._user_filters)
+        
     def get_id(self) -> str:
+        """Returns the id of the brokerage.
+        :return: the id of this brokerage as it is expected by the live/create API endpoint
+        """
         environment_obj = self.get_configurations_env_values_from_name("lean-cli")
         [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
         return live_name
 
     def _get_settings(self) -> Dict[str, str]:
-        return {
-            "key": self._api_key,
-            "secret": self._secret_key,
-            "environment": "live" if self._environment == "real" else "paper"
-        }
+        """Returns all settings for this brokerage, except for the id.
+        :return: the settings of this brokerage excluding the id
+        """
+        return {config._cloud_name : config._value for config in self.get_required_configs() if type(config) != TradingEnvConfiguration}
+
+    def get_settings(self) -> Dict[str, str]:
+        """Returns all settings for this brokerage.
+        :return: the settings to set in the "brokerage" property of the live/create API endpoint
+        """
+        settings = self._get_settings()
+        [config_environment] = [config._value for config in self._lean_configs if type(config) == TradingEnvConfiguration]
+        settings["environment"] = "paper" if str(config_environment).lower() in ["practice", "demo", "paper"] else "live"
+        settings["id"] = self.get_id()
+        return settings
+
+    def get_price_data_handler(self) -> str:
+        """Returns the price data feed handler to use.
+        :return: the value to assign to the "dataHandler" property of the live/create API endpoint
+        """
+        # TODO: Handle this case with json conditions
+        if self.get_name() == "Interactive Brokers":
+            return "InteractiveBrokersHandler" if self._use_ib_feed else "QuantConnectHandler"
+        return "QuantConnectHandler"
