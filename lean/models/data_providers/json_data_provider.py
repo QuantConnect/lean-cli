@@ -13,12 +13,19 @@
 
 from typing import Any, Dict
 from lean.models.json_lean_config_configurer import JsonLeanConfigConfigurer
+from lean.models.configuration import Configuration
 
 class JsonDataProvider(JsonLeanConfigConfigurer):
     """A JsonModule implementation for the Json data provider module."""
 
     def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
         super().__init__(json_data_provider_data)
+
+    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
+        return (
+            all(elem in config._filter._options for elem in self._user_filters) 
+            and "cloud-brokerage" not in config._filter._options
+        )
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         super().configure_credentials(lean_config)

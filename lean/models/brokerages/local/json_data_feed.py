@@ -13,12 +13,19 @@
 
 from typing import Any, Dict
 from lean.models.json_lean_config_configurer import JsonLeanConfigConfigurer
+from lean.models.configuration import Configuration
 
 class JsonDataFeed(JsonLeanConfigConfigurer):
     """A JsonModule implementation for the Json data feed module."""
 
     def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
         super().__init__(json_datafeed_data)
+
+    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
+        return (
+            all(elem in config._filter._options for elem in self._user_filters) 
+            and "cloud-brokerage" not in config._filter._options
+        )
 
     def get_live_name(self, environment_name: str) -> str:
         environment_obj = self.get_configurations_env_values_from_name(environment_name)
