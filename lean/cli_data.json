@@ -287,6 +287,7 @@
     {
       "type": [
         "brokerage",
+        "cloud-brokerage",
         "data-queue-handler"
       ],
       "product-id": "",
