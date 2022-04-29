@@ -14,18 +14,18 @@
 import os
 from typing import Dict, Type, List
 from lean.container import container
-from lean.models.json_module_config import LeanConfigConfigurer
 import json
 from lean.models.brokerages.local.json_brokerage import JsonBrokerage
 from lean.models.brokerages.local.json_data_feed import JsonDataFeed
-from lean.models.brokerages.local.json_module import JsonModule
 from lean.models.data_providers.json_data_provider import JsonDataProvider
+from lean.models.brokerages.cloud.json_cloud_brokerage import JsonCloudBrokerage
 
-all_local_brokerages = []
+all_local_brokerages: List[JsonBrokerage]
 all_local_data_feeds = []
 historyProviders = []
 all_data_providers = [] 
 brokeragesAndDataQueueHandlers = {}
+all_cloud_brokerages = []
 
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, '../../../cli_data.json')
@@ -41,15 +41,17 @@ with open(filename) as f:
             dataQueueHandler = JsonDataFeed(json_module)
             all_local_data_feeds.append(dataQueueHandler)
         if "data-provider" in json_module["type"]:
-            dataProviders = JsonDataProvider(json_module)
-            all_data_providers.append(dataProviders)
+            all_data_providers.append(JsonDataProvider(json_module))
+        if "cloud-brokerage" in json_module["type"]:
+            all_cloud_brokerages.append(JsonCloudBrokerage(json_module))
         if "history-provider" in json_module["type"]:
             pass
         if brokerage != None and dataQueueHandler != None:
             brokeragesAndDataQueueHandlers.update({brokerage:[dataQueueHandler]})
 
-local_brokerage_data_feeds: Dict[Type[JsonModule], List[Type[LeanConfigConfigurer]]] = brokeragesAndDataQueueHandlers
+local_brokerage_data_feeds: Dict[Type[JsonBrokerage], List[Type[JsonDataFeed]]] = brokeragesAndDataQueueHandlers
 
+#IQFeed DataFeed for windows
 if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":
     [iqfeed_data_feed] = [data_feed for data_feed in all_local_data_feeds if data_feed.get_name() == "IQFeed"]
     for key in local_brokerage_data_feeds.keys():
@@ -58,4 +60,5 @@ if container.platform_manager().is_host_windows() or os.environ.get("__README__"
 else:
     all_local_data_feeds = [data_feed for data_feed in all_local_data_feeds if data_feed.get_name() != "IQFeed"]
 
+# QuantConnect DataProvider
 [QuantConnectDataProvider] = [data_provider for data_provider in all_data_providers if data_provider.get_name() == "QuantConnect"]
