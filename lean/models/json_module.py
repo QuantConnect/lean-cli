@@ -101,6 +101,27 @@ class JsonModule(abc.ABC):
     def get_all_input_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()]
 
+    def _convert_lean_key_to_variable(self, lean_key:str) -> str:
+        """Replaces hyphens with underscore to follow python naming convention.
+
+        :param lean_key: string that uses hyphnes as separator. Used in lean config
+        """
+        return lean_key.replace('-','_')
+
+    def _convert_lean_key_to_attribute(self, lean_key:str) -> str:
+        """Replaces hyphens with underscore to follow pattern of private attribute.
+
+        :param lean_key: string that uses hyphnes as separator. Used in lean config
+        """
+        return "_" + self._convert_lean_key_to_variable(lean_key)
+
+    def _convert_variable_to_lean_key(self, variable_key:str) -> str:
+        """Replaces underscore with hyphens to follow lean config naming convention.
+
+        :param variable_key: string that uses underscore as separator as per python convention.
+        """
+        return variable_key.replace('_','-')
+        
     def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
