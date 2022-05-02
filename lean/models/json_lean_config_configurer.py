@@ -63,6 +63,8 @@ class JsonLeanConfigConfigurer(JsonModule, abc.ABC):
                     if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
                         value = option._value
                         break
+                if not value:
+                        raise ValueError(f'No condtion matched among present options for {configuration._name}')
             else:
                 value = configuration._value
             lean_config[configuration._name] = value
