@@ -13,7 +13,7 @@
 
 from typing import Dict, Any, List
 from lean.models.json_module import JsonModule
-from lean.models.configuration import Configuration, TradingEnvConfiguration
+from lean.models.configuration import Configuration, InternalInputUserInput, TradingEnvConfiguration
 
 class JsonCloudBrokerage(JsonModule):
     """A JsonModule implementation for the cloud brokerages."""
@@ -36,15 +36,31 @@ class JsonCloudBrokerage(JsonModule):
         """Returns all settings for this brokerage, except for the id.
         :return: the settings of this brokerage excluding the id
         """
-        return {config._cloud_name : config._value for config in self.get_required_configs() if type(config) != TradingEnvConfiguration}
+        settings = {}
+        for config in self.get_required_configs():
+            value = None
+            if not config._cloud_name:
+                continue
+            # TODO: handle cases where tranding env config is not present, environment will still be required.
+            if type(config) == TradingEnvConfiguration:
+                value = "paper" if str(config).lower() in ["practice", "demo", "paper"] else "live"
+            elif type(config) is InternalInputUserInput:
+                    for option in config._value_options:
+                        if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
+                            value = option._value
+                            break
+                    if not value:
+                        raise ValueError(f'No condtion matched among present options for {config._cloud_name}')
+            else:
+                value = config._value
+            settings[config._cloud_name] = value
+        return settings
 
     def get_settings(self) -> Dict[str, str]:
         """Returns all settings for this brokerage.
         :return: the settings to set in the "brokerage" property of the live/create API endpoint
         """
-        settings = self._get_settings()
-        [config_environment] = [config._value for config in self._lean_configs if type(config) == TradingEnvConfiguration]
-        settings["environment"] = "paper" if str(config_environment).lower() in ["practice", "demo", "paper"] else "live"
+        settings = self._get_settings()        
         settings["id"] = self.get_id()
         return settings
 
@@ -54,5 +70,5 @@ class JsonCloudBrokerage(JsonModule):
         """
         # TODO: Handle this case with json conditions
         if self.get_name() == "Interactive Brokers":
-            return "InteractiveBrokersHandler" if self._use_ib_feed else "QuantConnectHandler"
+            return "InteractiveBrokersHandler" if self.get_config_value_from_name("use-ib-feed") else "QuantConnectHandler"
         return "QuantConnectHandler"
