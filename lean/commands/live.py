@@ -317,6 +317,7 @@ def live(project: Path,
         ensure_options(essential_properties)
         essential_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_configurer.update_configs(essential_properties_value)
+        # now required properties can be fetched as per data provider from esssential properties
         required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties()]
         ensure_options(required_properties)
         required_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
