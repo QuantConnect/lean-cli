@@ -13,7 +13,7 @@
 
 from pathlib import Path
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import click
 import abc
 from lean.components.util.logger import Logger
