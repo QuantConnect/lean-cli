@@ -28,9 +28,7 @@ class JsonCloudBrokerage(JsonModule):
         """Returns the id of the brokerage.
         :return: the id of this brokerage as it is expected by the live/create API endpoint
         """
-        environment_obj = self.get_configurations_env_values_from_name("lean-cli")
-        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
-        return live_name
+        return self._name
 
     def _get_settings(self) -> Dict[str, str]:
         """Returns all settings for this brokerage, except for the id.
@@ -60,7 +58,9 @@ class JsonCloudBrokerage(JsonModule):
         """Returns all settings for this brokerage.
         :return: the settings to set in the "brokerage" property of the live/create API endpoint
         """
-        settings = self._get_settings()        
+        settings = self._get_settings()
+        if "environment" not in settings.keys():
+            settings["environment"] = "live"
         settings["id"] = self.get_id()
         return settings
 
