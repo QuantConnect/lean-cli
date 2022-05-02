@@ -12,11 +12,9 @@
 # limitations under the License.
 
 import abc
-from enum import Enum
 from typing import Any, Dict, List, Optional
-from lean.models.pydantic import WrappedBaseModel
-from lean.models.json_module import JsonModule
 from lean.container import container
+from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
 
 class JsonLeanConfigConfigurer(JsonModule, abc.ABC):
@@ -95,27 +93,3 @@ class JsonLeanConfigConfigurer(JsonModule, abc.ABC):
         """
         from lean.container import container
         container.lean_config_manager().set_properties({key: lean_config[key] for key in properties})
-
-
-class DebuggingMethod(Enum):
-    """The debugging methods supported by the CLI."""
-    PyCharm = 1
-    PTVSD = 2
-    VSDBG = 3
-    Rider = 4
-
-    def get_internal_name(self) -> str:
-        """Returns the LEAN debugging method that should be used for the current enum member.
-
-        :return: a valid LEAN debugging method that should be used for the current enum member
-        """
-        return {
-            DebuggingMethod.PyCharm: "PyCharm",
-            DebuggingMethod.PTVSD: "PTVSD"
-        }.get(self, "LocalCmdline")
-
-
-class CSharpLibrary(WrappedBaseModel):
-    """The information of a PackageReference tag in a .csproj file."""
-    name: str
-    version: str

@@ -23,7 +23,7 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
-from lean.models.json_lean_config_configurer import DebuggingMethod
+from lean.models.utils import DebuggingMethod
 from lean.models.brokerages.local import all_data_providers, QuantConnectDataProvider
 from lean.models.logger import Option
 

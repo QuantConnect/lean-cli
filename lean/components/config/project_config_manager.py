@@ -18,7 +18,7 @@ from typing import List
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
-from lean.models.json_lean_config_configurer import CSharpLibrary
+from lean.models.utils import CSharpLibrary
 
 
 class ProjectConfigManager:
