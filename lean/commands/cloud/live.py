@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import webbrowser
-from typing import List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 
 import click
 
@@ -88,7 +88,7 @@ def _configure_brokerage(logger: Logger) -> JsonCloudBrokerage:
     :return: the cloud brokerage the user configured
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
-    return logger.prompt_list("Select a brokerage", brokerage_options).build(logger)
+    return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -146,15 +146,16 @@ def _configure_auto_restart(logger: Logger) -> bool:
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
     return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
-def _get_configs_for_options() -> List[Configuration]: 
+def _get_configs_for_options() -> Dict[Configuration, str]: 
     run_options = {}
+    visited_options = []
     for module in all_cloud_brokerages:
         for config in module.get_all_input_configs():
-            if config._name in run_options:
+            if config._name in visited_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
-            setattr(config, '_default_property_name', config._name)
-            run_options[config._name] = config
-    return list(run_options.values())
+            visited_options.append(config._name)
+            run_options[config] = None
+    return run_options
 
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)

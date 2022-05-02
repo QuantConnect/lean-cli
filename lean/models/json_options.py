@@ -12,11 +12,10 @@
 # limitations under the License.
 
 
+from typing import Dict
 import click
-
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
-from lean.commands.live import _get_default_value
 
 def get_click_option_type(configuration):
         if configuration._input_method == "confirm":
@@ -30,25 +29,25 @@ def get_click_option_type(configuration):
         elif configuration._input_method == "path-parameter":
             return PathParameter(exists=True, file_okay=True, dir_okay=False)
 
-def get_options_attributes(configuration: Configuration, is_local_brokerage: bool):
+def get_options_attributes(configuration: Configuration, default_value=None):
     optios_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help 
     }
-    if is_local_brokerage:
-        optios_attributes["default"] =_get_default_value(configuration._default_property_name)
+    if default_value:
+        optios_attributes["default"] = default_value
     return optios_attributes
 
-def options_from_json(configurations: Configuration, is_local_brokerage: bool = False):
+def options_from_json(configurations: Dict[Configuration, str]):
 
     def decorator(f):
-        for configuration in reversed(configurations):
+        for configuration, default_value in configurations.items():
             long = configuration._name
             name = str(configuration._name).replace('-','_')
             param_decls = (
                 '--' + long,
                 name) 
-            attrs = get_options_attributes(configuration, is_local_brokerage)
+            attrs = get_options_attributes(configuration, default_value)
             click.option(*param_decls, **attrs)(f)
         return f
     return decorator

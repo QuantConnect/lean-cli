@@ -15,7 +15,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import click
 
@@ -195,21 +195,21 @@ def _get_default_value(key: str) -> Optional[Any]:
 
     return value
 
-def _get_configs_for_options() -> List[Configuration]: 
+def _get_configs_for_options() -> Dict[Configuration, str]: 
     run_options = {}
+    visited_options = []
     for module in all_local_brokerages + all_local_data_feeds:
         if not isinstance(module, JsonBrokerage):
             continue
         for config in module.get_all_input_configs():
-            if config._name in run_options:
+            if config._name in visited_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
+            visited_options.append(config._name)
             default_property_name = config._name
             if module._organization_name == config._name:
                 default_property_name = "job-organization-id"
-            # set _default_property_name to be consumed by options_from_json()
-            setattr(config, '_default_property_name', default_property_name)
-            run_options[config._name] = config
-    return list(run_options.values())
+            run_options[config] = _get_default_value(default_property_name)
+    return run_options
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -248,7 +248,7 @@ def _get_configs_for_options() -> List[Configuration]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-@options_from_json(_get_configs_for_options(), True)
+@options_from_json(_get_configs_for_options())
 def live(project: Path,
         environment: Optional[str],
         output: Optional[Path],
