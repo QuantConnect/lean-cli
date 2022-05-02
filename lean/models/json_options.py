@@ -18,6 +18,10 @@ from lean.click import PathParameter
 from lean.models.configuration import Configuration
 
 def get_click_option_type(configuration):
+        # get type should be a method of configurations class itself.
+        # TODO: handle input can inherit type prompt.
+        if configuration._config_type == "internal-input":
+            return str
         if configuration._input_method == "confirm":
             return bool
         elif configuration._input_method == "choice":
