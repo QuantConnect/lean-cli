@@ -119,6 +119,8 @@ class UserInputConfiguration(Configuration, abc.ABC):
         return True
 
 class InternalInputUserInput(UserInputConfiguration):
+    """This class is used when configuratios are needed by LEAN config but the values
+        are derived from logic and not from user input."""
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -197,6 +199,7 @@ class PromptPasswordUserInput(UserInputConfiguration):
 
 
 class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
+    """This class is base class extended by all classes that needs to add value to user filters"""
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
     
@@ -220,6 +223,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
     
 
 class TradingEnvConfiguration(BrokerageEnvConfiguration):
+    """This class adds trading-mode/envirionment based user filters."""
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
     
@@ -230,5 +234,6 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
             return BrokerageEnvConfiguration.AskUserForInput(self, default_value, logger)
 
 class FilterEnvConfiguration(BrokerageEnvConfiguration):
+    """This class adds extra required filters to user filters."""
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
