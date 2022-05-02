@@ -217,11 +217,18 @@ def live(project: str,
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = None
-        [brokerage_configurer] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == brokerage]
-        required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties()]
+        [brokerage_instance] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == brokerage]
+        # update essential properties from brokerage to datafeed
+        # needs to be updated before fetching required properties
+        essential_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_essential_properties()]
+        ensure_options(essential_properties)
+        essential_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
+        brokerage_instance.update_configs(essential_properties_value)
+        # now required properties can be fetched as per data provider from esssential properties
+        required_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties()]
         ensure_options(required_properties)
-        required_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
-        brokerage_configurer.update_configs(required_properties_value)
+        required_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
+        brokerage_instance.update_configs(required_properties_value)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)
