@@ -140,7 +140,12 @@ class JsonModule(abc.ABC):
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue
+            if configuration._log_message is not None:
+                    logger.info(configuration._log_message.strip())
+            # TODO: use type(class) equality instead of class name (str)
             if self._organization_name == configuration._name:
+                if self.__class__.__name__ == 'JsonCloudBrokerage':
+                    continue
                 api_client = container.api_client()
                 organizations = api_client.organizations.get_all()
                 options = [Option(id=organization.id, label=organization.name) for organization in organizations]
@@ -150,8 +155,6 @@ class JsonModule(abc.ABC):
                 )
                 user_choice = organization_id
             else:
-                if configuration._log_message is not None:
-                    logger.info(configuration._log_message.strip())
                 if self.__class__.__name__ == 'JsonCloudBrokerage':
                     user_choice = configuration.AskUserForInput(None, logger)
                 else:
