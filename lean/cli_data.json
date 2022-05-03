@@ -3,11 +3,1164 @@
     {
       "type": [
         "brokerage",
+        "cloud-brokerage"
+      ],
+      "product-id": "130",
+      "id": "QuantConnectBrokerage",
+      "display-id": "Paper Trading",
+      "installs": false,
+      "configurations": [
+        {
+          "Id": "paper-environment",
+          "Cloud-id": "environment",
+          "Type": "internal-input",
+          "Value": "paper",
+          "Environment": [
+            "live","paper"
+          ],
+          "Input-method": "",
+          "Input-data":"", 
+          "Help": ""
+        },
+       {
+        "Id": "environments",
+        "Type": "configurations-env",
+        "Value": [
+          {
+            "Name": "lean-cli",
+            "Value": [
+              {
+                "Name": "live-mode-brokerage",
+                "Value": "PaperBrokerage"
+              },
+              {
+                "Name": "transaction-handler",
+                "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
+              }
+            ]
+          }
+        ],
+        "Environment": [
+         "live", "paper"
+       ]
+      }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "130",
+      "id": "KrakenBrokerage",
+      "display-id": "Kraken",
+      "installs": true,
+      "configurations": [
+       {
+         "Id": "kraken-organization",
+         "Type": "organization-id",
+         "Value": "",
+         "Environment": [
+             "live",
+             "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription"
+        },
+       {
+         "Id": "kraken-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API key", 
+         "Help": "Your IB API key",
+         "Log-message": "Log messages are before outputting the prompt"
+       },
+       {
+         "Id": "kraken-api-secret",
+         "Cloud-id": "secret",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"API secret", 
+         "Help": "Your IB API key"
+       },
+       {
+         "Id": "kraken-verification-tier",
+         "Cloud-id": "verificationTier",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "choice",
+         "Input-data":"Select the Verification Tier",
+         "Input-choices": ["Starter", "Intermediate", "Pro"], 
+         "Help": "Your IB API key"
+       },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "KrakenBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "KrakenBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "live", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "174",
+      "id": "ZerodhaBrokerage",
+      "display-id": "Zerodha",
+      "installs": true,
+      "configurations": [
+       {
+         "Id": "zerodha-organization",
+         "Type": "organization-id",
+         "Value": "",
+         "Environment": [
+             "live",
+             "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription"
+        },
+       {
+         "Id": "zerodha-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API key", 
+         "Help": "Your IB API key",
+         "Log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
+       },
+       {
+         "Id": "zerodha-access-token",
+         "Cloud-id": "accessToken",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"Access token", 
+         "Help": "Your IB API key"
+       },
+       {
+         "Id": "zerodha-product-type",
+         "Cloud-id": "productType",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "choice",
+         "Input-data":"Product type",
+         "Input-choices": ["MIS", "CNC", "NRML"], 
+         "Help": "Product type",
+         "Log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
+       },
+       {
+         "Id": "zerodha-trading-segment",
+         "Cloud-id": "tradingSegment",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "choice",
+         "Input-data":"Trading segment",
+         "Input-choices": ["EQUITY", "COMMODITY"], 
+         "Help": "Product type",
+         "Log-message": "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
+       },
+       {
+        "Id": "zerodha-history-subscription",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "live",
+          "paper"
+        ],
+        "Input-method": "confirm",
+        "Input-data":"Do you have a history API subscription?", 
+        "Help": "Whether the testnet should be used"
+      },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "ZerodhaBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "ZerodhaBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "live", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "174",
+      "id": "BitfinexBrokerage",
+      "display-id": "Bitfinex",
+      "installs": false,
+      "configurations": [
+       {
+         "Id": "bitfinex-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API key", 
+         "Help": "Your IB API key",
+         "Log-message": "Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api)."
+       },
+       {
+         "Id": "bitfinex-api-secret",
+         "Cloud-id": "secret",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"API secret", 
+         "Help": "Your IB API key"
+       },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "BitfinexBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "BitfinexBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "live", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "",
+      "id": "GDAXBrokerage",
+      "display-id": "Coinbase Pro",
+      "installs": false,
+      "configurations": [
+       {
+         "Id": "gdax-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API key", 
+         "Help": "Your IB API key",
+         "Log-message": "You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api). When creating the key, make sure you authorize it for View and Trading access."
+       },
+       {
+        "Id": "gdax-api-secret",
+        "Cloud-id": "secret",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "live",
+          "paper"
+        ],
+        "Input-method": "prompt-password",
+        "Input-data":"API secret", 
+        "Help": "Your IB API key"
+      },
+       {
+         "Id": "gdax-passphrase",
+         "Cloud-id": "passphrase",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"Passphrase", 
+         "Help": "Your IB API key"
+       },
+       {
+        "Id": "gdax-use-sandbox",
+        "Type": "trading-env",
+        "Value": "",
+        "Environment": [
+           "live",
+           "paper"
+       ],
+        "Input-method": "choice",
+        "Input-choices": ["live", "paper"],
+        "Input-data":"Use sandbox?", 
+        "Help": "Whether the testnet should be used"
+      },
+      {
+        "Id": "gdax-url",
+        "Type": "info",
+        "Value": "wss://ws-feed.pro.coinbase.com",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+       "Id": "gdax-url",
+       "Type": "info",
+       "Value": "wss://ws-feed-public.sandbox.pro.coinbase.com",
+       "Environment": [
+         "paper"
+       ]
+     },
+      {
+        "Id": "gdax-rest-api",
+        "Type": "info",
+        "Value": "https://api.pro.coinbase.com",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+       "Id": "gdax-rest-api",
+       "Type": "info",
+       "Value": "https://api-public.sandbox.pro.coinbase.com",
+       "Environment": [
+         "paper"
+       ]
+     },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "GDAXBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "GDAXDataQueueHandler"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "live", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "",
+      "id": "TradierBrokerage",
+      "display-id": "Tradier",
+      "installs": false,
+      "configurations": [
+      {
+        "Id": "tradier-account-id",
+        "Cloud-id": "account",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "live", "paper"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"Account id", 
+        "Help": "Your IB API key",
+        "Log-message": "Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api). The account id is the alpha-numeric code in a dropdown box on that page."
+      },
+      {
+        "Id": "tradier-access-token",
+        "Cloud-id": "token",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "live", "paper"
+        ],
+        "Input-method": "prompt-password",
+        "Input-data":"Access token", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "tradier-use-sandbox",
+        "Type": "trading-env",
+        "Value": "",
+        "Environment": [
+          "live", "paper"
+        ],
+        "Input-method": "choice",
+        "Input-choices": ["live", "paper"],
+        "Input-data":"Use the developer sandbox?", 
+        "Help": "Whether the testnet should be used"
+      },
+      {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "TradierBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                "Name": "data-queue-handler",
+                "Value": "TradierBrokerage"
+              }
+              ]
+            }
+          ],
+          "Environment": [
+          "live", "paper"
+        ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler",
+        "history-provider"
+      ],
+      "product-id": "176",
+      "id": "BinanceBrokerage",
+      "display-id": "Binance",
+      "installs": true,
+      "configurations": [
+        {
+         "Id": "binance-organization",
+         "Type": "organization-id",
+         "Value": "",
+         "Environment": [
+             "live",
+             "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription"
+        },
+       {
+         "Id": "binance-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API-Key", 
+         "Help": "Your Binance API key"
+       },
+       {
+         "Id": "binance-api-secret",
+         "Cloud-id": "secret",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"API secret", 
+         "Help": "Your Binance API secret"
+       },
+       {
+         "Id": "binance-use-testnet",
+         "Cloud-id": "environment",
+         "Type": "trading-env",
+         "Value": "",
+         "Environment": [
+            "live",
+            "paper"
+        ],
+         "Input-method": "choice",
+         "Input-choices": ["live", "paper"],
+         "Input-data":"trading-env", 
+         "Help": "Whether the testnet should be used"
+       },
+        {
+          "Id": "binance-api-url",
+          "Type": "info",
+          "Value": "https://api.binance.com",
+          "Environment": [
+            "live"
+          ]
+        },
+        {
+         "Id": "binance-api-url",
+         "Type": "info",
+         "Value": "https://testnet.binance.vision",
+         "Environment": [
+           "paper"
+         ]
+       },
+        {
+          "Id": "binance-websocket-url",
+          "Type": "info",
+          "Value": "wss://stream.binance.com:9443/ws",
+          "Environment": [
+            "live"
+          ]
+        },
+        {
+         "Id": "binance-websocket-url",
+         "Type": "info",
+         "Value": "wss://testnet.binance.vision/ws",
+         "Environment": [
+           "paper"
+         ]
+       },
+        {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "BinanceBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "BinanceBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "live",
+           "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "138",
+      "id": "FTXBrokerage",
+      "display-id": "FTX",
+      "installs": true,
+      "configurations": [
+        {
+         "Id": "ftx-exchange-name",
+         "Cloud-id": "exchange",
+         "Type": "filter-env",
+         "Value": "",
+         "Environment": [
+           "live","paper","FTXUS", "FTX"
+         ],
+         "Input-method": "choice",
+         "Input-data":"FTX Exchange",
+         "Input-choices": ["FTX", "FTXUS"], 
+         "Help": "FTX Exchange"
+       },
+       {
+         "Id": "ftx-organization",
+         "Type": "organization-id",
+         "Value": "",
+         "Environment": [
+             "live",
+             "paper",
+             "FTX",
+             "FTXUS"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription",
+         "Log-message": "Log messages are before outputting the prompt"
+        },
+       {
+         "Id": "ftx-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper", "FTX"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"API-Key", 
+         "Help": "Your Binance API key"
+       },
+       {
+         "Id": "ftxus-api-key",
+         "Cloud-id": "key",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper", "FTXUS"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"ftxus-api-key", 
+         "Help": "Your Binance API key"
+       },
+       {
+         "Id": "ftx-api-secret",
+         "Cloud-id": "secret",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper",
+           "FTX"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"API secret", 
+         "Help": "Your Binance API secret"
+       },
+       {
+         "Id": "ftxus-api-secret",
+         "Cloud-id": "secret",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live",
+           "paper",
+           "FTXUS"
+         ],
+         "Input-method": "prompt-password",
+         "Input-data":"ftxus-api-secret", 
+         "Help": "Your Binance API secret"
+       },
+       {
+         "Id": "ftx-account-tier",
+         "Cloud-id": "tier",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live","paper","FTX"
+         ],
+         "Input-method": "choice",
+         "Input-data":"FTX Exchange",
+         "Input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
+         "Help": "FTX Exchange"
+       },
+       {
+         "Id": "ftxus-account-tier",
+         "Cloud-id": "tier",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+           "live","paper","FTXUS"
+         ],
+         "Input-method": "choice",
+         "Input-data":"ftxus-account-tier",
+         "Input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
+         "Help": "FTX Exchange"
+       },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "FTXBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "FTXBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "paper", "FTX"
+         ]
+        },
+        {
+         "Id": "environments",
+         "Type": "configurations-env",
+         "Value": [
+           {
+             "Name": "lean-cli",
+             "Value": [
+               {
+                "Name": "live-mode-brokerage",
+                "Value": "FTXUSBrokerage"
+              },
+               {
+                 "Name": "transaction-handler",
+                 "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+               },
+               {
+                "Name": "data-queue-handler",
+                "Value": "FTXUSBrokerage"
+              },
+              {
+                "Name": "history-provider",
+                "Value": "BrokerageHistoryProvider"
+              }
+             ]
+           }
+         ],
+         "Environment": [
+           "paper","FTXUS"
+        ]
+       }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "cloud-brokerage",
+        "data-queue-handler"
+      ],
+      "product-id": "",
+      "id": "OandaBrokerage",
+      "display-id": "Oanda",
+      "installs": false,
+      "configurations": [
+       {
+         "Id": "oanda-account-id",
+         "Cloud-id": "account",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+          "Practice", "Trade"
+        ],
+         "Input-method": "prompt",
+         "Input-data":"Account id", 
+         "Help": "Your IB API key",
+         "Log-message": "Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/). It follows the following format: ###-###-######-###. You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token)."
+       },
+       {
+        "Id": "oanda-access-token",
+        "Cloud-id": "key",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "Practice", "Trade"
+        ],
+        "Input-method": "prompt-password",
+        "Input-data":"Access token", 
+        "Help": "Your IB API key"
+      },
+       {
+        "Id": "oanda-environment",
+        "Cloud-id": "environment",
+        "Type": "trading-env",
+        "Value": "",
+        "Environment": [
+          "Practice", "Trade"
+        ],
+        "Input-method": "choice",
+        "Input-choices": ["Practice", "Trade"],
+        "Input-data":"Environment?", 
+        "Help": "Whether the testnet should be used"
+      },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "OandaBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "OandaBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "Practice", "Trade"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
+        "data-queue-handler",
+        "data-provider"
+      ],
+      "product-id": "44",
+      "id": "BloombergBrokerage",
+      "display-id": "Terminal Link",
+      "installs": true,
+      "configurations": [
+       {
+         "Id": "terminal-link-organization",
+         "Type": "organization-id",
+         "Value": "",
+         "Environment": [
+             "Production",
+             "Beta"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"organization having subscription of module", 
+         "Help": "The name or id of the organization with the Ronit module subscription"
+        },
+        {
+          "Id": "bloomberg-environment",
+          "Type": "trading-env",
+          "Value": "",
+          "Environment": [
+             "Production",
+             "Beta"
+         ],
+          "Input-method": "choice",
+          "Input-choices": ["Production", "Beta"],
+          "Input-data":"Environment", 
+          "Help": "Whether the testnet should be used"
+        },
+       {
+         "Id": "bloomberg-server-host",
+         "Type": "input",
+         "Value": "",
+         "Environment": [
+             "Production",
+             "Beta"
+         ],
+         "Input-method": "prompt",
+         "Input-data":"Server host", 
+         "Help": "Your IB API key"
+       },
+       {
+        "Id": "bloomberg-server-port",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-type": "integer",
+        "Input-data":"Server port", 
+        "Help": "Your IB API key"
+      },
+       {
+        "Id": "bloomberg-symbol-map-file",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "path-parameter",
+        "Input-data":"Path to symbol map file", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-broker",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX broker", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-user-time-zone",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX user timezone", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-account",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX account", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-strategy",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX strategy", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-notes",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX notes", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-emsx-handling",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"EMSX handling", 
+        "Help": "Your IB API key"
+      },
+      {
+        "Id": "bloomberg-allow-modification",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "confirm",
+        "Input-data":"Allow modification?", 
+        "Help": "Whether the testnet should be used"
+      },
+      {
+        "Id": "data-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Id": "data-downloader",
+        "Type": "info",
+        "Value": "BloombergDataDownloader",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Id": "map-file-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+      {
+        "Id": "factor-file-provider",
+        "Type": "info",
+        "Value": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
+        "Environment": [
+          "live"
+        ]
+      },
+       {
+          "Id": "environments",
+          "Type": "configurations-env",
+          "Value": [
+            {
+              "Name": "lean-cli",
+              "Value": [
+                {
+                  "Name": "live-mode-brokerage",
+                  "Value": "BloombergBrokerage"
+                },
+                {
+                  "Name": "transaction-handler",
+                  "Value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                },
+                {
+                 "Name": "data-queue-handler",
+                 "Value": "BloombergBrokerage"
+               },
+               {
+                 "Name": "history-provider",
+                 "Value": "BrokerageHistoryProvider"
+               }
+              ]
+            }
+          ],
+          "Environment": [
+           "Production", "paper"
+         ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
       "product-id": "181",
-      "id": "Interactive Brokers",
+      "id": "InteractiveBrokersBrokerage",
+      "display-id": "Interactive Brokers",
       "installs": true,
       "configurations": [
        {
@@ -171,12 +1324,32 @@
         "data-provider"
       ],
       "product-id": "",
+      "id": "Local",
+      "display-id": "Local",
+      "installs": false,
+      "configurations": [
+        {
+          "Id": "data-provider",
+          "Type": "info",
+          "Value": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+          "Environment": [
+            "live"
+          ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "data-provider"
+      ],
+      "product-id": "",
       "id": "QuantConnect",
+      "display-id": "QuantConnect",
       "installs": false,
       "configurations": [
         {
           "Id": "quantconnect-organization",
-          "Type": "input",
+          "Type": "organization-id",
           "Value": "",
           "Environment": [
               "live",
@@ -218,6 +1391,7 @@
       ],
       "product-id": "",
       "id": "IQFeed",
+      "display-id": "IQFeed",
       "installs": false,
       "configurations": [
        {
