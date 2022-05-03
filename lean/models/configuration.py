@@ -43,6 +43,7 @@ class Configuration(abc.ABC):
         self._filter = Filter(config_json_object["Environment"])
         self._is_type_configurations_env = type(self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env = type(self) is TradingEnvConfiguration
+        self.is_type_organization_id = type(self) is OrganzationIdConfiguration
         self._log_message = None
         if "Log-message" in config_json_object.keys():
             self._log_message = config_json_object["Log-message"]
@@ -58,6 +59,8 @@ class Configuration(abc.ABC):
             return UserInputConfiguration.factory(config_json_object)
         elif config_json_object["Type"] in ["filter-env" , "trading-env"]:
             return BrokerageEnvConfiguration.factory(config_json_object)
+        elif config_json_object["Type"] == "organization-id":
+            return OrganzationIdConfiguration(config_json_object)
         else:
             raise(f'Undefined input method type {config_json_object["Type"]}')
 
@@ -197,6 +200,10 @@ class PromptPasswordUserInput(UserInputConfiguration):
     def AskUserForInput(self, default_value, logger: Logger):
         return logger.prompt_password(self._input_data, default_value)
 
+class OrganzationIdConfiguration(PromptUserInput):
+    """This class is used for job-organzation-id configurations"""
+    def __init__(self, config_json_object):
+        super().__init__(config_json_object)
 
 class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
     """This class is base class extended by all classes that needs to add value to user filters"""

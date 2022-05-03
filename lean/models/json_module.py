@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.logger import Option
-from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
+from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, OrganzationIdConfiguration
 import copy
 import abc
 
@@ -31,7 +31,6 @@ class JsonModule(abc.ABC):
                 self._lean_configs = self.sort_configs(temp_list)
                 continue
             setattr(self, self._convert_lean_key_to_attribute(key), value)
-        self._organization_name = f'{self._name.lower().replace(" ", "-")}-organization'
         self._is_module_installed = False
         self._is_installed_and_build = False
 
@@ -71,7 +70,7 @@ class JsonModule(abc.ABC):
         return [] if env_config is None else env_config._env_and_values[target_env]
 
     def get_organzation_id(self) -> str:
-        [organization_id] = [config._value for config in self._lean_configs if self._organization_name == config._name]
+        [organization_id] = [config._value for config in self._lean_configs if config.is_type_organization_id]
         return organization_id
 
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
@@ -86,8 +85,8 @@ class JsonModule(abc.ABC):
         return [config._name for config in self._lean_configs if not config.is_required_from_user()
                     and self.check_if_config_passes_filters(config)]
 
-    def get_required_properties(self) -> List[str]:
-        return [config._name for config in self.get_required_configs()]
+    def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
+        return [config._name for config in self.get_required_configs() if type(config) not in filters]
 
     def get_required_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
@@ -143,7 +142,7 @@ class JsonModule(abc.ABC):
             if configuration._log_message is not None:
                     logger.info(configuration._log_message.strip())
             # TODO: use type(class) equality instead of class name (str)
-            if self._organization_name == configuration._name:
+            if configuration.is_type_organization_id:
                 if self.__class__.__name__ == 'JsonCloudBrokerage':
                     continue
                 api_client = container.api_client()

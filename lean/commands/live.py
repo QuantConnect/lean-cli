@@ -26,7 +26,7 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 from lean.models.brokerages.local.json_brokerage import JsonBrokerage
-from lean.models.configuration import Configuration
+from lean.models.configuration import Configuration, OrganzationIdConfiguration
 from lean.models.json_options import options_from_json
 
 _environment_skeleton = {
@@ -206,7 +206,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
             visited_options.append(config._name)
             default_property_name = config._name
-            if module._organization_name == config._name:
+            if config.is_type_organization_id:
                 default_property_name = "job-organization-id"
             run_options[config] = _get_default_value(default_property_name)
     return run_options
