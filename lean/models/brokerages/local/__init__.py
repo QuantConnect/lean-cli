@@ -61,6 +61,8 @@ else:
 # QuantConnect DataProvider
 [QuantConnectDataProvider] = [data_provider for data_provider in all_data_providers if data_provider.get_name() == "QuantConnect"]
 
-# QuantConnect DataProvider
-# TODO: remove None when paper brokerage present in json data
-[PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == "Paper Trading"] or [None]
+[PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == "Paper Trading"]
+
+#add paper trading to local modules, once IQFEED has been added to local_brokerage_data_feeds
+[LocalPaperTradingBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_name() == "Paper Trading"]
+local_brokerage_data_feeds[LocalPaperTradingBrokerage] = all_local_data_feeds
