@@ -59,12 +59,15 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
             elif not self.check_if_config_passes_filters(configuration):
                 continue
             elif type(configuration) is InternalInputUserInput:
-                for option in configuration._value_options:
-                    if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
-                        value = option._value
-                        break
-                if not value:
-                        raise ValueError(f'No condtion matched among present options for {configuration._name}')
+                if not configuration._is_conditional:
+                    value = configuration._value
+                else:
+                    for option in configuration._value_options:
+                        if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
+                            value = option._value
+                            break
+                    if not value:
+                            raise ValueError(f'No condtion matched among present options for {configuration._name}')
             else:
                 value = configuration._value
             lean_config[configuration._name] = value

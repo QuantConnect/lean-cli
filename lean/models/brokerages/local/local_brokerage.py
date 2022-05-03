@@ -28,8 +28,10 @@ class LocalBrokerage(LeanConfigConfigurer):
         )
 
     def get_live_name(self, environment_name: str) -> str:
+        live_name = self._id
         environment_obj = self.get_configurations_env_values_from_name(environment_name)
-        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
+        if environment_obj:
+            [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
         return live_name
     
     

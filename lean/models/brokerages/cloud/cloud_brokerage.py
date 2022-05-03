@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from lean.models.json_module import JsonModule
 from lean.models.configuration import Configuration, InternalInputUserInput, TradingEnvConfiguration
 
@@ -28,7 +28,7 @@ class CloudBrokerage(JsonModule):
         """Returns the id of the brokerage.
         :return: the id of this brokerage as it is expected by the live/create API endpoint
         """
-        return self._name
+        return self._id
 
     def _get_settings(self) -> Dict[str, str]:
         """Returns all settings for this brokerage, except for the id.
@@ -41,8 +41,11 @@ class CloudBrokerage(JsonModule):
                 continue
             # TODO: handle cases where tranding env config is not present, environment will still be required.
             if type(config) == TradingEnvConfiguration:
-                value = "paper" if str(config).lower() in ["practice", "demo", "paper"] else "live"
+                value = "paper" if str(config).lower() in ["practice", "demo", "beta", "paper"] else "live"
             elif type(config) is InternalInputUserInput:
+                if not config._is_conditional:
+                    value = config._value
+                else:
                     for option in config._value_options:
                         if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
                             value = option._value

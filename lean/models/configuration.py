@@ -127,7 +127,11 @@ class InternalInputUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["Value-options"]]
+        self._is_conditional = False
+        value_options = []
+        if "Value-options" in config_json_object.keys():
+            value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["Value-options"]]
+            self._is_conditional = True
         self._value_options = value_options
 
     def AskUserForInput(self, default_value, logger: Logger):
@@ -241,6 +245,6 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
             return BrokerageEnvConfiguration.AskUserForInput(self, default_value, logger)
 
 class FilterEnvConfiguration(BrokerageEnvConfiguration):
-    """This class adds extra required filters to user filters."""
+    """This class adds extra filters to user filters."""
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
