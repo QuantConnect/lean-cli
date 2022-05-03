@@ -289,7 +289,7 @@ class LeanRunner:
             # Create a C# project used to resolve the dependencies of the modules
             run_options["commands"].append("mkdir /ModulesProject")
             run_options["commands"].append("dotnet new sln -o /ModulesProject")
-            run_options["commands"].append("dotnet new classlib -o /ModulesProject -f net5.0 --no-restore")
+            run_options["commands"].append("dotnet new classlib -o /ModulesProject -f net6.0 --no-restore")
             run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
             # Add all modules to the project, automatically resolving all dependencies
@@ -450,8 +450,7 @@ class LeanRunner:
         msbuild_properties = {
             "Configuration": "Release" if release else "Debug",
             "Platform": "AnyCPU",
-            "TargetFramework": "net5.0",
-            "LangVersion": "9",
+            "TargetFramework": "net6.0",
             "OutputPath": "/Compile/bin",
             "GenerateAssemblyInfo": "false",
             "GenerateTargetFrameworkAttribute": "false",
