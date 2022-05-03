@@ -25,7 +25,7 @@ from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMe
 from lean.models.brokerages.local import all_cloud_brokerages
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.json_cloud_brokerage import JsonCloudBrokerage
-from lean.models.configuration import Configuration
+from lean.models.configuration import Configuration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.json_options import options_from_json
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
@@ -225,7 +225,7 @@ def live(project: str,
         essential_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_instance.update_configs(essential_properties_value)
         # now required properties can be fetched as per data provider from esssential properties
-        required_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties()]
+        required_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([OrganzationIdConfiguration, InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
         brokerage_instance.update_configs(required_properties_value)
