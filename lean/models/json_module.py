@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Type
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.logger import Option
-from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
 import copy
 import abc
 
@@ -23,6 +23,7 @@ class JsonModule(abc.ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
     def __init__(self, json_module_data: Dict[str, Any]) -> None:
+        self._display_name = json_module_data["display-id"]
         for key,value in json_module_data.items():
             if key == "configurations":
                 temp_list = []
@@ -32,7 +33,7 @@ class JsonModule(abc.ABC):
                 continue
             setattr(self, self._convert_lean_key_to_attribute(key), value)
         self._is_module_installed = False
-        self._is_installed_and_build = False
+        self._is_installed_and_build = False 
 
     @property
     def _user_filters(self) -> List[str]:
@@ -53,7 +54,7 @@ class JsonModule(abc.ABC):
 
         :return: the user-friendly name to display to users
         """
-        return self._id
+        return self._display_name
     
     @abc.abstractmethod
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:
@@ -63,7 +64,7 @@ class JsonModule(abc.ABC):
         for key, value in key_and_values.items():
             self.update_value_for_given_config(key,value)
 
-    def get_configurations_env_values_from_name(self, target_env: str) -> List[Configuration]: 
+    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str,str]]: 
         [env_config] = [config for config in self._lean_configs if 
                             config._is_type_configurations_env and self.check_if_config_passes_filters(config)
                         ] or [None]
@@ -141,9 +142,8 @@ class JsonModule(abc.ABC):
                 continue
             if configuration._log_message is not None:
                     logger.info(configuration._log_message.strip())
-            # TODO: use type(class) equality instead of class name (str)
             if configuration.is_type_organization_id:
-                if self.__class__.__name__ == 'JsonCloudBrokerage':
+                if self.__class__.__name__ == 'CloudBrokerage':
                     continue
                 api_client = container.api_client()
                 organizations = api_client.organizations.get_all()
@@ -154,7 +154,7 @@ class JsonModule(abc.ABC):
                 )
                 user_choice = organization_id
             else:
-                if self.__class__.__name__ == 'JsonCloudBrokerage':
+                if self.__class__.__name__ == 'CloudBrokerage':
                     user_choice = configuration.AskUserForInput(None, logger)
                 else:
                     user_choice = configuration.AskUserForInput(self._get_default(lean_config, configuration._name), logger)
