@@ -132,8 +132,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         data_feed.update_configs(essential_properties_value)
         # mark configs are updated
         setattr(data_feed, '_is_installed_and_build', True)
-    else:
-        False
     data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
 
