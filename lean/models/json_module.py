@@ -23,26 +23,26 @@ class JsonModule(abc.ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
     def __init__(self, json_module_data: Dict[str, Any]) -> None:
-        self._display_name = json_module_data["display-id"]
-        for key,value in json_module_data.items():
-            if key == "configurations":
-                temp_list = []
-                for config in value:
-                    temp_list.append(Configuration.factory(config))
-                self._lean_configs = self.sort_configs(temp_list)
-                continue
-            setattr(self, self._convert_lean_key_to_attribute(key), value)
-        self._is_module_installed = False
-        self._is_installed_and_build = False 
+        self._type: List[str] = json_module_data["type"]
+        self._product_id: int = json_module_data["product-id"]
+        self._id: str = json_module_data["id"]
+        self._display_name: str = json_module_data["display-id"]
+        self._installs: bool = json_module_data["installs"]
+        self._lean_configs: List[Configuration] = []
+        for config in json_module_data["configurations"]:
+            self._lean_configs.append(Configuration.factory(config))
+        self._lean_configs = self.sort_configs()
+        self._is_module_installed: bool = False
+        self._is_installed_and_build: bool = False 
 
     @property
     def _user_filters(self) -> List[str]:
         return [config._value for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
-    def sort_configs(self, configs: List[Configuration]) -> List[Configuration]:
+    def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
         brokerage_configs = []
-        for config in configs:
+        for config in self._lean_configs:
             if isinstance(config, BrokerageEnvConfiguration):
                 brokerage_configs.append(config)
             else:
@@ -143,6 +143,7 @@ class JsonModule(abc.ABC):
             if configuration._log_message is not None:
                     logger.info(configuration._log_message.strip())
             if configuration.is_type_organization_id:
+                # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ == 'CloudBrokerage':
                     continue
                 api_client = container.api_client()
