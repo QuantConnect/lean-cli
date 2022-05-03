@@ -15,17 +15,17 @@ import os
 from typing import Dict, Type, List
 from lean.container import container
 import json
-from lean.models.brokerages.local.json_brokerage import JsonBrokerage
-from lean.models.brokerages.local.json_data_feed import JsonDataFeed
-from lean.models.data_providers.json_data_provider import JsonDataProvider
-from lean.models.brokerages.cloud.json_cloud_brokerage import JsonCloudBrokerage
+from lean.models.brokerages.local.local_brokerage import LocalBrokerage
+from lean.models.brokerages.local.data_feed import DataFeed
+from lean.models.data_providers.data_provider import DataProvider
+from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 
-all_local_brokerages: List[JsonBrokerage] = []
-all_local_data_feeds: List[JsonDataFeed] = []
+all_local_brokerages: List[LocalBrokerage] = []
+all_local_data_feeds: List[DataFeed] = []
 historyProviders = []
-all_data_providers: List[JsonDataFeed] = [] 
-local_brokerage_data_feeds: Dict[Type[JsonBrokerage], List[Type[JsonDataFeed]]] = {}
-all_cloud_brokerages: List[JsonDataFeed] = []
+all_data_providers: List[DataFeed] = [] 
+local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[DataFeed]]] = {}
+all_cloud_brokerages: List[DataFeed] = []
 
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, '../../../cli_data.json')
@@ -35,15 +35,15 @@ with open(filename) as f:
     for json_module in json_modules:
         brokerage = dataQueueHandler = dataProviders = None
         if "brokerage" in json_module["type"]:
-            brokerage = JsonBrokerage(json_module)
+            brokerage = LocalBrokerage(json_module)
             all_local_brokerages.append(brokerage)
         if "data-queue-handler" in json_module["type"]:
-            dataQueueHandler = JsonDataFeed(json_module)
+            dataQueueHandler = DataFeed(json_module)
             all_local_data_feeds.append(dataQueueHandler)
         if "data-provider" in json_module["type"]:
-            all_data_providers.append(JsonDataProvider(json_module))
+            all_data_providers.append(DataProvider(json_module))
         if "cloud-brokerage" in json_module["type"]:
-            all_cloud_brokerages.append(JsonCloudBrokerage(json_module))
+            all_cloud_brokerages.append(CloudBrokerage(json_module))
         if "history-provider" in json_module["type"]:
             pass
         if brokerage != None and dataQueueHandler != None:

@@ -15,7 +15,7 @@ from typing import Dict, Any, List
 from lean.models.json_module import JsonModule
 from lean.models.configuration import Configuration, InternalInputUserInput, TradingEnvConfiguration
 
-class JsonCloudBrokerage(JsonModule):
+class CloudBrokerage(JsonModule):
     """A JsonModule implementation for the cloud brokerages."""
 
     def __init__(self, json_cloud_brokerage_data: Dict[str, Any]) -> None:

@@ -16,18 +16,16 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-
 import click
-
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_INSTALL_ID
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
-from lean.models.brokerages.local.json_brokerage import JsonBrokerage
-from lean.models.configuration import Configuration, OrganzationIdConfiguration
-from lean.models.json_options import options_from_json
+from lean.models.brokerages.local.local_brokerage import LocalBrokerage
+from lean.models.configuration import Configuration
+from lean.models.click_options import options_from_json
 
 _environment_skeleton = {
     "live-mode": True,
@@ -199,7 +197,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
     run_options = {}
     visited_options = []
     for module in all_local_brokerages + all_local_data_feeds:
-        if not isinstance(module, JsonBrokerage):
+        if not isinstance(module, LocalBrokerage):
             continue
         for config in module.get_all_input_configs():
             if config._name in visited_options:

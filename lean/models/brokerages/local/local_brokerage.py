@@ -12,24 +12,24 @@
 # limitations under the License.
 
 from typing import Any, Dict
-from lean.models.json_lean_config_configurer import JsonLeanConfigConfigurer
+from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.configuration import Configuration
 
-class JsonDataFeed(JsonLeanConfigConfigurer):
-    """A JsonModule implementation for the Json data feed module."""
+class LocalBrokerage(LeanConfigConfigurer):
+    """A JsonModule implementation for the Json brokerage module."""
 
-    def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
-        super().__init__(json_datafeed_data)
+    def __init__(self, json_brokerage_data: Dict[str, Any]) -> None:
+        super().__init__(json_brokerage_data)
 
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:
         return (
-            all(elem in config._filter._options for elem in self._user_filters) 
+            all(user_filter in config._filter._options for user_filter in self._user_filters) 
             and "cloud-brokerage" not in config._filter._options
         )
 
     def get_live_name(self, environment_name: str) -> str:
         environment_obj = self.get_configurations_env_values_from_name(environment_name)
-        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "data-queue-handler"]
+        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "live-mode-brokerage"]
         return live_name
     
     

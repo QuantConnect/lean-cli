@@ -17,8 +17,8 @@ from lean.container import container
 from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
 
-class JsonLeanConfigConfigurer(JsonModule, abc.ABC):
-    """The JsonLeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
+class LeanConfigConfigurer(JsonModule, abc.ABC):
+    """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
         """Configures the Lean configuration for this brokerage.

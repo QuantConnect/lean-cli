@@ -12,14 +12,14 @@
 # limitations under the License.
 
 from typing import Any, Dict
-from lean.models.json_lean_config_configurer import JsonLeanConfigConfigurer
+from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.configuration import Configuration
 
-class JsonDataProvider(JsonLeanConfigConfigurer):
-    """A JsonModule implementation for the Json data provider module."""
+class DataFeed(LeanConfigConfigurer):
+    """A JsonModule implementation for the Json data feed module."""
 
-    def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
-        super().__init__(json_data_provider_data)
+    def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
+        super().__init__(json_datafeed_data)
 
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:
         return (
@@ -27,6 +27,9 @@ class JsonDataProvider(JsonLeanConfigConfigurer):
             and "cloud-brokerage" not in config._filter._options
         )
 
-    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
-        super().configure_credentials(lean_config)
-        self._save_properties(lean_config, self.get_non_user_required_properties())
+    def get_live_name(self, environment_name: str) -> str:
+        environment_obj = self.get_configurations_env_values_from_name(environment_name)
+        [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "data-queue-handler"]
+        return live_name
+    
+    

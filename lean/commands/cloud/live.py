@@ -13,9 +13,7 @@
 
 import webbrowser
 from typing import Dict, List, Tuple, Optional
-
 import click
-
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
@@ -24,9 +22,9 @@ from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMe
                              QCWebhookNotificationMethod, QCProject)
 from lean.models.brokerages.local import all_cloud_brokerages
 from lean.models.logger import Option
-from lean.models.brokerages.cloud.json_cloud_brokerage import JsonCloudBrokerage
+from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import Configuration, InternalInputUserInput, OrganzationIdConfiguration
-from lean.models.json_options import options_from_json
+from lean.models.click_options import options_from_json
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -81,7 +79,7 @@ def _prompt_notification_method() -> QCNotificationMethod:
         return QCSMSNotificationMethod(phoneNumber=phone_number)
 
 
-def _configure_brokerage(logger: Logger) -> JsonCloudBrokerage:
+def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     """Interactively configures the brokerage to use.
 
     :param logger: the logger to use
