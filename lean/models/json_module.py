@@ -23,6 +23,10 @@ class JsonModule(abc.ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
     def __init__(self, json_module_data: Dict[str, Any]) -> None:
+        # self._name = config_json_object["Id"]
+        # self._config_type = config_json_object["Type"]
+        # self._value = config_json_object["Value"]
+        # self._filter = Filter(config_json_object["Environment"])
         for key,value in json_module_data.items():
             if key == "configurations":
                 temp_list = []
@@ -53,7 +57,7 @@ class JsonModule(abc.ABC):
 
         :return: the user-friendly name to display to users
         """
-        return self._name
+        return self._id
     
     @abc.abstractmethod
     def check_if_config_passes_filters(self, config: Configuration)  -> bool:

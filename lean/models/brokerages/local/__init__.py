@@ -62,5 +62,5 @@ else:
 [QuantConnectDataProvider] = [data_provider for data_provider in all_data_providers if data_provider.get_name() == "QuantConnect"]
 
 # QuantConnect DataProvider
-# TODO: remove None when paper brokerage present in config
+# TODO: remove None when paper brokerage present in json data
 [PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == "Paper Trading"] or [None]

@@ -128,7 +128,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     data_feed = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
     ])
-    if brokerage._name == data_feed._name:
+    if brokerage._id == data_feed._id:
         # update essential properties from brokerage to datafeed
         essential_properties_value = {config._name : config._value for config in brokerage.get_essential_configs()}
         data_feed.update_configs(essential_properties_value)

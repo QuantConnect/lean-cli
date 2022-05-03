@@ -37,7 +37,7 @@ class ConditionalValueOption():
 
 class Configuration(abc.ABC):
     def __init__(self, config_json_object):
-        self._name = config_json_object["Name"]
+        self._name = config_json_object["Id"]
         self._config_type = config_json_object["Type"]
         self._value = config_json_object["Value"]
         self._filter = Filter(config_json_object["Environment"])
@@ -96,8 +96,8 @@ class UserInputConfiguration(Configuration, abc.ABC):
         self._cloud_name = None
         if "Input-default" in config_json_object.keys():
             self._input_default = config_json_object["Input-default"]
-        if "Cloud-Name" in config_json_object.keys():
-            self._cloud_name = config_json_object["Cloud-Name"]
+        if "Cloud-id" in config_json_object.keys():
+            self._cloud_name = config_json_object["Cloud-id"]
 
     @abc.abstractmethod
     def AskUserForInput(self, default_value):
