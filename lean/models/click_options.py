@@ -34,13 +34,13 @@ def get_click_option_type(configuration):
             return PathParameter(exists=True, file_okay=True, dir_okay=False)
 
 def get_options_attributes(configuration: Configuration, default_value=None):
-    optios_attributes = {
+    options_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help 
     }
-    if default_value:
-        optios_attributes["default"] = default_value
-    return optios_attributes
+    if default_value and type(default_value) == options_attributes["type"]:
+        options_attributes["default"] = default_value
+    return options_attributes
 
 def options_from_json(configurations: Dict[Configuration, str]):
 
