@@ -17,7 +17,7 @@ import click
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
 
-def get_click_option_type(configuration):
+def get_click_option_type(configuration: Configuration):
         # get type should be a method of configurations class itself.
         # TODO: handle input can inherit type prompt.
         if configuration._config_type == "internal-input":
@@ -33,12 +33,28 @@ def get_click_option_type(configuration):
         elif configuration._input_method == "path-parameter":
             return PathParameter(exists=True, file_okay=True, dir_okay=False)
 
+def get_attribute_type(configuration: Configuration):
+    # get type should be a method of configurations class itself.
+        # TODO: handle input can inherit type prompt.
+        if configuration._config_type == "internal-input":
+            return str
+        if configuration._input_method == "confirm":
+            return bool
+        elif configuration._input_method == "choice":
+            return str
+        elif configuration._input_method == "prompt":
+            return configuration.get_input_type()
+        elif configuration._input_method == "prompt-password":
+            return str
+        elif configuration._input_method == "path-parameter":
+            return str
+
 def get_options_attributes(configuration: Configuration, default_value=None):
     options_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help 
     }
-    if default_value and type(default_value) == options_attributes["type"]:
+    if default_value is not None and type(default_value) == get_attribute_type(configuration):
         options_attributes["default"] = default_value
     return options_attributes
 
