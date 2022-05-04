@@ -24,7 +24,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
-from lean.models.config import DebuggingMethod
+from lean.models.utils import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
 
 

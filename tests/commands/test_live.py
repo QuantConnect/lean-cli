@@ -14,6 +14,7 @@
 import itertools
 import json
 from pathlib import Path
+import traceback
 from unittest import mock
 
 import pytest
@@ -75,6 +76,8 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
+    traceback.print_exception(*result.exc_info)
+    
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with(mock.ANY,
@@ -279,7 +282,7 @@ brokerage_required_options = {
     "Tradier": {
         "tradier-account-id": "123",
         "tradier-access-token": "456",
-        "tradier-use-sandbox": "yes"
+        "tradier-use-sandbox": "paper"
     },
     "OANDA": {
         "oanda-account-id": "123",
@@ -294,12 +297,12 @@ brokerage_required_options = {
         "gdax-api-key": "123",
         "gdax-api-secret": "456",
         "gdax-passphrase": "789",
-        "gdax-use-sandbox": "yes"
+        "gdax-use-sandbox": "paper"
     },
     "Binance": {
         "binance-api-key": "123",
         "binance-api-secret": "456",
-        "binance-use-testnet": "yes"
+        "binance-use-testnet": "paper"
     },
     "Zerodha": {
         "zerodha-api-key": "123",
@@ -334,12 +337,12 @@ brokerage_required_options = {
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
-        "kraken-verification-tier": "abc",
+        "kraken-verification-tier": "starter",
     },
     "FTX": {
         "ftx-api-key": "abc",
         "ftx-api-secret": "abc",
-        "ftx-account-tier": "abc",
+        "ftx-account-tier": "tier1",
         "ftx-exchange-name": "FTX"
     },
     
@@ -391,7 +394,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
@@ -425,6 +428,8 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,
                                                *options])
+
+            traceback.print_exception(*result.exc_info)
 
             assert result.exit_code != 0
 
@@ -461,6 +466,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                        "--brokerage", brokerage,
                                        "--data-feed", data_feed,
                                        *options])
+
+    traceback.print_exception(*result.exc_info)
 
     assert result.exit_code == 0
 
@@ -510,20 +517,22 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
             elif brokerage == "FTX":
                 data_feed = "Binance"
-                options.extend(["--ftx-exchange-name", "abc",
+                options.extend(["--ftx-exchange-name", "FTXUS",
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
                                                "--data-feed", data_feed,
                                                *options])
+
+            traceback.print_exception(*result.exc_info)
 
             assert result.exit_code == 0
 
@@ -569,7 +578,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                 }))
 
             if data_feed == "FTX":
-                options.extend(["--ftx-exchange-name", "abc"])
+                options.extend(["--ftx-exchange-name", "FTX"])
                 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",

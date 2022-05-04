@@ -13,7 +13,7 @@
 
 import pytest
 
-from lean.models.config import DebuggingMethod
+from lean.models.utils import DebuggingMethod
 
 
 @pytest.mark.parametrize("member,result", [(DebuggingMethod.PyCharm, "PyCharm"),
