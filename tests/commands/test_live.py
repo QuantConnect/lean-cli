@@ -34,7 +34,6 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
-
     config = path.read_text(encoding="utf-8")
     config = config.replace("{", f"""
 {{
@@ -44,6 +43,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": false,
+    "interactive-brokers-organization": "testorganization",
 
     "environments": {{
         "{name}": {{
@@ -53,7 +53,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
             "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
             "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
             "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
-            "data-queue-handler": "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage",
+            "data-queue-handler": "InteractiveBrokersBrokerage",
             "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
             "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler",
             "history-provider": "BrokerageHistoryProvider"
@@ -65,6 +65,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
 
 
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
+    # TODO: currently it is not using the live-paper envrionment
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
 
