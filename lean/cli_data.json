@@ -1564,7 +1564,7 @@
         "Type": "info",
         "Value": "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider",
         "Environment": [
-          "live"
+          "Production","Beta"
         ]
       },
       {
@@ -1572,7 +1572,7 @@
         "Type": "info",
         "Value": "BloombergDataDownloader",
         "Environment": [
-          "live"
+          "Production","Beta"
         ]
       },
       {
@@ -1580,7 +1580,7 @@
         "Type": "info",
         "Value": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
         "Environment": [
-          "live"
+          "Production","Beta"
         ]
       },
       {
@@ -1588,7 +1588,7 @@
         "Type": "info",
         "Value": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
         "Environment": [
-          "live"
+          "Production","Beta"
         ]
       },
        {
@@ -1618,7 +1618,7 @@
             }
           ],
           "Environment": [
-           "Production", "paper"
+            "Production","Beta"
          ]
         }
       ]
