@@ -64,11 +64,14 @@ class JsonModule(abc.ABC):
         for key, value in key_and_values.items():
             self.update_value_for_given_config(key,value)
 
-    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str,str]]: 
+    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str,str]]:
+        env_config_values = [] 
         [env_config] = [config for config in self._lean_configs if 
                             config._is_type_configurations_env and self.check_if_config_passes_filters(config)
                         ] or [None]
-        return [] if env_config is None else env_config._env_and_values[target_env]
+        if env_config is not None and target_env in env_config._env_and_values.keys():
+            env_config_values = env_config._env_and_values[target_env]
+        return env_config_values 
 
     def get_organzation_id(self) -> str:
         [organization_id] = [config._value for config in self._lean_configs if config.is_type_organization_id]
