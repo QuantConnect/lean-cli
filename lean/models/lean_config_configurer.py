@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import abc
+import pathlib
 from typing import Any, Dict, List, Optional
 from lean.container import container
 from lean.models.json_module import JsonModule
@@ -70,6 +71,8 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             raise ValueError(f'No condtion matched among present options for {configuration._name}')
             else:
                 value = configuration._value
+            if type(value) == pathlib.WindowsPath:
+                value = str(value).replace("\\", "/")
             lean_config[configuration._name] = value
         self._save_properties(lean_config, self.get_required_properties())
 

@@ -186,8 +186,6 @@ class PathParameterUserInput(UserInputConfiguration):
                     type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                     default=default_binary
                 )
-        if not value:
-            str(value).replace("\\", "/")
         return value
 
 class ConfirmUserInput(UserInputConfiguration):
