@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from typing import Any, Dict, List, Type
 from lean.components.util.logger import Logger
 from lean.container import container
@@ -90,7 +91,12 @@ class JsonModule(abc.ABC):
                     and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
-        return [config._name for config in self.get_required_configs() if type(config) not in filters]
+        required_configs =  [config._name for config in self.get_required_configs() if type(config) not in filters]
+        # TODO: esure_options doesn't need to ensure all bloomberg options, 
+        # this should be handled from json file/configurations.py
+        if self._id == "BloombergBrokerage":
+            required_configs = [config for config in required_configs if config not in ["bloomberg-symbol-map-file"]]
+        return required_configs
 
     def get_required_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
