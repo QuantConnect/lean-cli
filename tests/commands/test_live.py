@@ -278,7 +278,9 @@ brokerage_required_options = {
     "Interactive Brokers": {
         "ib-user-name": "trader777",
         "ib-account": "DU1234567",
-        "ib-password": "hunter2"
+        "ib-password": "hunter2",
+        "ib-enable-delayed-streaming-data": "no",
+        "interactive-brokers-organization": "testorganization",
     },
     "Tradier": {
         "tradier-account-id": "123",
@@ -303,20 +305,24 @@ brokerage_required_options = {
     "Binance": {
         "binance-api-key": "123",
         "binance-api-secret": "456",
-        "binance-use-testnet": "paper"
+        "binance-use-testnet": "paper",
+        "binance-organization": "testorganization",
     },
     "Zerodha": {
         "zerodha-api-key": "123",
         "zerodha-access-token": "456",
         "zerodha-product-type": "MIS",
-        "zerodha-trading-segment": "EQUITY"
+        "zerodha-trading-segment": "EQUITY",
+        "zerodha-history-subscription": "no",
+        "zerodha-organization": "testorganization",
     },
     "Samco": {
         "samco-client-id": "123",
         "samco-client-password": "456",
         "samco-year-of-birth": "2000",
         "samco-product-type": "MIS",
-        "samco-trading-segment": "EQUITY"
+        "samco-trading-segment": "EQUITY",
+        "samco-organization": "testorganization",
     },
     "Atreyu": {
         "atreyu-host": "abc",
@@ -327,6 +333,7 @@ brokerage_required_options = {
         "atreyu-client-id": "abc",
         "atreyu-broker-mpid": "abc",
         "atreyu-locate-rqd": "abc",
+        "atreyu-organization": "testorganization",
     },
     "Terminal Link": {
         "bloomberg-environment": "Beta",
@@ -334,17 +341,25 @@ brokerage_required_options = {
         "bloomberg-server-port": "123",
         "bloomberg-emsx-broker": "abc",
         "bloomberg-allow-modification": "no",
+        "bloomberg-emsx-account": "abc",
+        "bloomberg-emsx-strategy": "abc",
+        "bloomberg-emsx-notes": "abc",
+        "bloomberg-emsx-handling": "abc",
+        "bloomberg-emsx-user-time-zone": "abc",
+        "terminal-link-organization": "testorganization",
     },
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
         "kraken-verification-tier": "starter",
+        "kraken-organization": "testorganization",
     },
     "FTX": {
         "ftx-api-key": "abc",
         "ftx-api-secret": "abc",
         "ftx-account-tier": "tier1",
-        "ftx-exchange-name": "FTX"
+        "ftx-exchange-name": "FTX",
+        "ftx-organization": "testorganization",
     },
     
 }
