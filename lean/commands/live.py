@@ -24,7 +24,7 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 from lean.models.brokerages.local.local_brokerage import LocalBrokerage
-from lean.models.configuration import Configuration
+from lean.models.configuration import Configuration, InternalInputUserInput
 from lean.models.click_options import options_from_json
 
 _environment_skeleton = {
@@ -131,6 +131,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         essential_properties_value = {config._name : config._value for config in brokerage.get_essential_configs()}
         data_feed.update_configs(essential_properties_value)
         # mark configs are updated
+        #TODO: create a setter method to set the property instead. 
         setattr(data_feed, '_is_installed_and_build', True)
     data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
@@ -192,8 +193,8 @@ def _get_default_value(key: str) -> Optional[Any]:
     return value
 
 def _get_configs_for_options() -> Dict[Configuration, str]: 
-    run_options = {}
-    visited_options = []
+    run_options: Dict[Configuration, str] = {}
+    visited_options:str = []
     for module in all_local_brokerages + all_local_data_feeds:
         if not isinstance(module, LocalBrokerage):
             continue
@@ -204,7 +205,13 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
             default_property_name = config._name
             if config.is_type_organization_id:
                 default_property_name = "job-organization-id"
-            run_options[config] = _get_default_value(default_property_name)
+            run_options[config] = None
+            try:
+                run_options[config] = _get_default_value(default_property_name)
+            except MoreInfoError as e:
+                pass
+            except Exception as e:
+                raise e
     return run_options
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -314,7 +321,7 @@ def live(project: Path,
         essential_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_configurer.update_configs(essential_properties_value)
         # now required properties can be fetched as per data provider from esssential properties
-        required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties()]
+        required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
         brokerage_configurer.update_configs(required_properties_value)
@@ -324,7 +331,7 @@ def live(project: Path,
         ensure_options(essential_properties)
         essential_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         data_feed_configurer.update_configs(essential_properties_value)
-        required_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_required_properties()]
+        required_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
         data_feed_configurer.update_configs(required_properties_value)
