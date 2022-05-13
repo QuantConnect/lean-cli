@@ -49,25 +49,25 @@ def get_attribute_type(configuration: Configuration):
         elif configuration._input_method == "path-parameter":
             return str
 
-def get_options_attributes(configuration: Configuration, default_value=None):
+def get_options_attributes(configuration: Configuration, default_key=None):
+    from lean.commands.live import _get_default_value
     options_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help 
     }
-    if default_value is not None and type(default_value) == get_attribute_type(configuration):
-        options_attributes["default"] = default_value
+    options_attributes["default"] = lambda: _get_default_value(default_key)
     return options_attributes
 
 def options_from_json(configurations: Dict[Configuration, str]):
 
     def decorator(f):
-        for configuration, default_value in configurations.items():
+        for configuration, default_key in configurations.items():
             long = configuration._name
             name = str(configuration._name).replace('-','_')
             param_decls = (
                 '--' + long,
                 name) 
-            attrs = get_options_attributes(configuration, default_value)
+            attrs = get_options_attributes(configuration, default_key)
             click.option(*param_decls, **attrs)(f)
         return f
     return decorator

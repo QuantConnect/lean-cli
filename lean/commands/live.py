@@ -205,13 +205,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
             default_property_name = config._name
             if config.is_type_organization_id:
                 default_property_name = "job-organization-id"
-            run_options[config] = None
-            try:
-                run_options[config] = _get_default_value(default_property_name)
-            except MoreInfoError as e:
-                pass
-            except Exception as e:
-                raise e
+            run_options[config] = default_property_name
     return run_options
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
