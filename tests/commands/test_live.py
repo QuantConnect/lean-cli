@@ -42,7 +42,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-password": "hunter2",
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
-    "ib-enable-delayed-streaming-data": false,
+    "ib-enable-delayed-streaming-data": "no",
     "interactive-brokers-organization": "testorganization",
 
     "environments": {{
@@ -355,6 +355,9 @@ brokerage_required_options = {
         "kraken-organization": "testorganization",
     },
     "FTX": {
+        "ftxus-api-key": "abc",
+        "ftxus-api-secret": "abc",
+        "ftxus-account-tier": "tier1",
         "ftx-api-key": "abc",
         "ftx-api-secret": "abc",
         "ftx-account-tier": "tier1",
@@ -365,19 +368,13 @@ brokerage_required_options = {
 }
 
 data_feed_required_options = {
-    "Interactive Brokers": {
-        **brokerage_required_options["Interactive Brokers"],
-        "ib-enable-delayed-streaming-data": "yes"
-    },
+    "Interactive Brokers": brokerage_required_options["Interactive Brokers"],
     "Tradier": brokerage_required_options["Tradier"],
     "OANDA": brokerage_required_options["OANDA"],
     "Bitfinex": brokerage_required_options["Bitfinex"],
     "Coinbase Pro": brokerage_required_options["Coinbase Pro"],
     "Binance": brokerage_required_options["Binance"],
-    "Zerodha": {
-        **brokerage_required_options["Zerodha"],
-        "zerodha-history-subscription": "yes"
-    },
+    "Zerodha": brokerage_required_options["Zerodha"],
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": brokerage_required_options["Terminal Link"],
     "Kraken": brokerage_required_options["Kraken"],
@@ -525,7 +522,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
                 file.write(json.dumps({
                     **missing_options_config,
-                    "data-folder": "data"
+                    "data-folder": "data",
+                    "job-organization-id": "test_ornganization"
                 }))
 
             if brokerage == "Binance":
@@ -590,7 +588,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
             with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
                 file.write(json.dumps({
                     **missing_options_config,
-                    "data-folder": "data"
+                    "data-folder": "data",
+                    "job-organization-id": "test_ornganization"
                 }))
 
             if data_feed == "FTX":
