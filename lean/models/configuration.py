@@ -237,6 +237,9 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
         super().__init__(config_json_object)
     
     def AskUserForInput(self, default_value, logger: Logger):
+        #NOTE: trading envrionment config should not use old boolean value as default
+        if type(default_value) == bool:
+            default_value = None
         if self._input_method == "confirm":
             raise ValueError(f'input method -- {self._input_method} is not allowed with {self.__class__.__name__}')
         else:
