@@ -15,7 +15,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_INSTALL_ID
@@ -192,21 +192,16 @@ def _get_default_value(key: str) -> Optional[Any]:
 
     return value
 
-def _get_configs_for_options() -> Dict[Configuration, str]: 
-    run_options: Dict[Configuration, str] = {}
-    visited_options:str = []
+def _get_configs_for_options() -> List[Configuration]: 
+    run_options: Dict[str, Configuration] = {}
     for module in all_local_brokerages + all_local_data_feeds:
         if not isinstance(module, LocalBrokerage):
             continue
         for config in module.get_all_input_configs():
-            if config._name in visited_options:
+            if config._name in run_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
-            visited_options.append(config._name)
-            default_property_name = config._name
-            if config.is_type_organization_id:
-                default_property_name = "job-organization-id"
-            run_options[config] = default_property_name
-    return run_options
+            run_options[config._name] = config
+    return list(run_options.values())
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))

@@ -12,7 +12,7 @@
 # limitations under the License.
 
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 import click
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
@@ -64,16 +64,19 @@ def get_options_attributes(configuration: Configuration, default_key=None):
     options_attributes["default"] = lambda: get_the_correct_type_default_value(default_key, get_attribute_type(configuration))
     return options_attributes
 
-def options_from_json(configurations: Dict[Configuration, str]):
+def get_default_key(configuration: Configuration):
+    return "job-organization-id" if configuration.is_type_organization_id else configuration._name
+
+def options_from_json(configurations: List[Configuration]):
 
     def decorator(f):
-        for configuration, default_key in configurations.items():
+        for configuration in configurations:
             long = configuration._name
             name = str(configuration._name).replace('-','_')
             param_decls = (
                 '--' + long,
                 name) 
-            attrs = get_options_attributes(configuration, default_key)
+            attrs = get_options_attributes(configuration, get_default_key(configuration))
             click.option(*param_decls, **attrs)(f)
         return f
     return decorator
