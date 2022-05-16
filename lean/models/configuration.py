@@ -193,7 +193,7 @@ class ConfirmUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
-        return click.confirm(self._input_data)
+        return click.prompt(self._input_data, default_value, type=bool)
 
 class PromptPasswordUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
