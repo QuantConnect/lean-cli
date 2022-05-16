@@ -43,7 +43,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": "no",
-    "interactive-brokers-organization": "testorganization",
+    "interactive-brokers-organization": "abc",
 
     "environments": {{
         "{name}": {{
@@ -280,7 +280,7 @@ brokerage_required_options = {
         "ib-account": "DU1234567",
         "ib-password": "hunter2",
         "ib-enable-delayed-streaming-data": "no",
-        "interactive-brokers-organization": "testorganization",
+        "interactive-brokers-organization": "abc",
     },
     "Tradier": {
         "tradier-account-id": "123",
@@ -306,7 +306,7 @@ brokerage_required_options = {
         "binance-api-key": "123",
         "binance-api-secret": "456",
         "binance-use-testnet": "paper",
-        "binance-organization": "testorganization",
+        "binance-organization": "abc",
     },
     "Zerodha": {
         "zerodha-api-key": "123",
@@ -314,7 +314,7 @@ brokerage_required_options = {
         "zerodha-product-type": "MIS",
         "zerodha-trading-segment": "EQUITY",
         "zerodha-history-subscription": "no",
-        "zerodha-organization": "testorganization",
+        "zerodha-organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
@@ -322,7 +322,7 @@ brokerage_required_options = {
         "samco-year-of-birth": "2000",
         "samco-product-type": "MIS",
         "samco-trading-segment": "EQUITY",
-        "samco-organization": "testorganization",
+        "samco-organization": "abc",
     },
     "Atreyu": {
         "atreyu-host": "abc",
@@ -333,7 +333,7 @@ brokerage_required_options = {
         "atreyu-client-id": "abc",
         "atreyu-broker-mpid": "abc",
         "atreyu-locate-rqd": "abc",
-        "atreyu-organization": "testorganization",
+        "atreyu-organization": "abc",
     },
     "Terminal Link": {
         "bloomberg-environment": "Beta",
@@ -346,13 +346,13 @@ brokerage_required_options = {
         "bloomberg-emsx-notes": "abc",
         "bloomberg-emsx-handling": "abc",
         "bloomberg-emsx-user-time-zone": "abc",
-        "terminal-link-organization": "testorganization",
+        "terminal-link-organization": "abc",
     },
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
         "kraken-verification-tier": "starter",
-        "kraken-organization": "testorganization",
+        "kraken-organization": "abc",
     },
     "FTX": {
         "ftxus-api-key": "abc",
@@ -362,7 +362,7 @@ brokerage_required_options = {
         "ftx-api-secret": "abc",
         "ftx-account-tier": "tier1",
         "ftx-exchange-name": "FTX",
-        "ftx-organization": "testorganization",
+        "ftx-organization": "abc",
     },
     
 }
@@ -523,7 +523,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 file.write(json.dumps({
                     **missing_options_config,
                     "data-folder": "data",
-                    "job-organization-id": "test_ornganization"
+                    "job-organization-id": "abc"
                 }))
 
             if brokerage == "Binance":
@@ -589,7 +589,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                 file.write(json.dumps({
                     **missing_options_config,
                     "data-folder": "data",
-                    "job-organization-id": "test_ornganization"
+                    "job-organization-id": "abc"
                 }))
 
             if data_feed == "FTX":
