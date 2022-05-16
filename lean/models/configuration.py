@@ -182,9 +182,11 @@ class PathParameterUserInput(UserInputConfiguration):
             default_binary = Path(default_value)
         elif self._input_default is not None and Path(self._input_default).is_file():
             default_binary = Path(self._input_default)
+        else:
+            default_binary = ""
         value = click.prompt(self._input_data,
-                    type=PathParameter(exists=True, file_okay=True, dir_okay=False),
-                    default=default_binary
+                    default=default_binary,
+                    type=PathParameter(exists=True, file_okay=True, dir_okay=False)
                 )
         return value
 
