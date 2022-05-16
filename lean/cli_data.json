@@ -1561,6 +1561,7 @@
             "Beta"
         ],
         "Input-method": "prompt",
+        "Input-default":"",
         "Input-data":"EMSX handling", 
         "Help": "Your IB API key"
       },
