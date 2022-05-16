@@ -23,9 +23,9 @@ from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
-from lean.models.brokerages.local.local_brokerage import LocalBrokerage
 from lean.models.configuration import Configuration, InternalInputUserInput
 from lean.models.click_options import options_from_json
+from lean.models.json_module import JsonModule
 
 _environment_skeleton = {
     "live-mode": True,
@@ -166,6 +166,29 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
 
     return organization.id
 
+def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
+    [target_module] = [module for module in module_list if module.get_name() == target_module_name]
+    # update essential properties from brokerage to datafeed
+    # needs to be updated before fetching required properties
+    essential_properties = [target_module._convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
+    ensure_options(essential_properties)
+    essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
+    target_module.update_configs(essential_properties_value)
+    # now required properties can be fetched as per data/filter provider from esssential properties
+    required_properties: List[str] = []
+    organization_info: Dict[str,str] = {}
+    for config in target_module.get_required_configs([InternalInputUserInput]):
+        if config.is_type_organization_id:
+            organization_info[config._name] = _get_organization_id(properties[target_module._convert_lean_key_to_variable(config._name)], target_module._id)
+            properties[target_module._convert_lean_key_to_variable(config._name)] = organization_info[config._name]
+            # skip organization id from ensure_options() because it is fetched using _get_organization_id()
+            continue
+        required_properties.append(target_module._convert_lean_key_to_variable(config._name)) 
+    ensure_options(required_properties)
+    required_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
+    required_properties_value.update(organization_info)
+    target_module.update_configs(required_properties_value)    
+    return target_module
 
 _cached_lean_config = None
 
@@ -298,28 +321,9 @@ def live(project: Path,
     elif brokerage is not None or data_feed is not None:
         ensure_options(["brokerage", "data_feed"])
 
-        [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_name() == brokerage]
-        # update essential properties from brokerage to datafeed
-        # needs to be updated before fetching required properties
-        essential_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_essential_properties()]
-        ensure_options(essential_properties)
-        essential_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
-        brokerage_configurer.update_configs(essential_properties_value)
-        # now required properties can be fetched as per data provider from esssential properties
-        required_properties = [brokerage_configurer._convert_lean_key_to_variable(prop) for prop in brokerage_configurer.get_required_properties([InternalInputUserInput])]
-        ensure_options(required_properties)
-        required_properties_value = {brokerage_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
-        brokerage_configurer.update_configs(required_properties_value)
+        [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
         
-        [data_feed_configurer] = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_name() == data_feed]
-        essential_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_essential_properties()]
-        ensure_options(essential_properties)
-        essential_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
-        data_feed_configurer.update_configs(essential_properties_value)
-        required_properties = [data_feed_configurer._convert_lean_key_to_variable(prop) for prop in data_feed_configurer.get_required_properties([InternalInputUserInput])]
-        ensure_options(required_properties)
-        required_properties_value = {data_feed_configurer._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
-        data_feed_configurer.update_configs(required_properties_value)
+        [data_feed_configurer] = [_get_and_build_module(data_feed, all_local_data_feeds, kwargs)]
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)

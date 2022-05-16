@@ -92,16 +92,17 @@ class JsonModule(abc.ABC):
                     and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
-        required_configs =  [config._name for config in self.get_required_configs() if type(config) not in filters]
+        return [config._name for config in self.get_required_configs() if type(config) not in filters]
+
+    def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
+        required_configs = [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
+                    and type(config) not in filters
+                    and self.check_if_config_passes_filters(config)]
         # TODO: esure_options doesn't need to ensure all bloomberg options, 
         # this should be handled from json file/configurations.py
         if self._id == "BloombergBrokerage":
-            required_configs = [config for config in required_configs if config not in ["bloomberg-symbol-map-file"]]
+            required_configs = [config for config in required_configs if config._name not in ["bloomberg-symbol-map-file"]]
         return required_configs
-
-    def get_required_configs(self) -> List[Configuration]:
-        return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
-                    and self.check_if_config_passes_filters(config)]
 
     def get_essential_properties(self) -> List[str]:
         return [config._name for config in self.get_essential_configs()]
