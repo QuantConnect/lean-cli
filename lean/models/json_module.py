@@ -87,7 +87,8 @@ class JsonModule(abc.ABC):
         return self._lean_configs[idx]._value
 
     def get_non_user_required_properties(self) -> List[Configuration]:
-        return [config._name for config in self._lean_configs if not config.is_required_from_user()
+        return [config._name for config in self._lean_configs if not config.is_required_from_user() 
+                    and not config._is_type_configurations_env
                     and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
