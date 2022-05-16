@@ -1450,18 +1450,6 @@
           "Input-data":"Environment", 
           "Help": "Whether the testnet should be used"
         },
-        {
-          "Id": "bloomberg-api-type",
-          "Type": "internal-input",
-          "Value": "Desktop",
-          "Environment": [
-              "Production",
-              "Beta"
-          ],
-          "Input-method": "prompt",
-          "Input-data":"Server host", 
-          "Help": "Your IB API key"
-        },
        {
          "Id": "bloomberg-server-host",
          "Type": "input",
@@ -1496,6 +1484,7 @@
             "Beta"
         ],
         "Input-method": "path-parameter",
+        "Input-default":"",
         "Input-data":"Path to symbol map file", 
         "Help": "Your IB API key"
       },
@@ -1520,6 +1509,7 @@
             "Beta"
         ],
         "Input-method": "prompt",
+        "Input-default":"",
         "Input-data":"EMSX user timezone", 
         "Help": "Your IB API key"
       },
@@ -1532,6 +1522,7 @@
             "Beta"
         ],
         "Input-method": "prompt",
+        "Input-default":"",
         "Input-data":"EMSX account", 
         "Help": "Your IB API key"
       },
@@ -1544,6 +1535,7 @@
             "Beta"
         ],
         "Input-method": "prompt",
+        "Input-default":"",
         "Input-data":"EMSX strategy", 
         "Help": "Your IB API key"
       },
@@ -1556,6 +1548,7 @@
             "Beta"
         ],
         "Input-method": "prompt",
+        "Input-default":"",
         "Input-data":"EMSX notes", 
         "Help": "Your IB API key"
       },
@@ -1582,6 +1575,18 @@
         "Input-method": "confirm",
         "Input-data":"Allow modification (yes/no)?", 
         "Help": "Whether the testnet should be used"
+      },
+      {
+        "Id": "bloomberg-api-type",
+        "Type": "internal-input",
+        "Value": "Desktop",
+        "Environment": [
+            "Production",
+            "Beta"
+        ],
+        "Input-method": "prompt",
+        "Input-data":"Server host", 
+        "Help": "Your IB API key"
       },
       {
         "Id": "data-provider",

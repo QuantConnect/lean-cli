@@ -187,16 +187,12 @@ def _get_default_value(key: str) -> Optional[Any]:
     if value == "":
         return None
 
-    if key == "iqfeed-iqconnect" and not Path(value).is_file():
-        return None
-
     return value
 
 def _get_configs_for_options() -> List[Configuration]: 
     run_options: Dict[str, Configuration] = {}
-    for module in all_local_brokerages + all_local_data_feeds:
-        if not isinstance(module, LocalBrokerage):
-            continue
+    brokerages_ids = [module._id for module in all_local_brokerages]
+    for module in all_local_brokerages + [module for module in all_local_data_feeds if module._id not in brokerages_ids]:
         for config in module.get_all_input_configs():
             if config._name in run_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 
+from pathlib import Path
 from typing import Any, Dict, List
 import click
 from lean.click import PathParameter
@@ -49,19 +50,24 @@ def get_attribute_type(configuration: Configuration):
         elif configuration._input_method == "path-parameter":
             return str
 
-def get_the_correct_type_default_value(default_key: str, expected_type: Any):
+def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any):
     from lean.commands.live import _get_default_value
-    lean_value = _get_default_value(default_key)
+    lean_value = _get_default_value(default_lean_config_key)
+    if lean_value is None and default_input_value is not None:
+        lean_value = default_input_value
+    if default_lean_config_key in ["bloomberg-symbol-map-file", "iqfeed-iqconnect"] and not Path(lean_value).is_file():
+        lean_value = None
     if lean_value is not None and type(lean_value) != expected_type and type(lean_value) == bool:
         lean_value = "paper" if lean_value else "live"
     return lean_value
 
-def get_options_attributes(configuration: Configuration, default_key=None):
+def get_options_attributes(configuration: Configuration, default_lean_config_key=None):
     options_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help 
     }
-    options_attributes["default"] = lambda: get_the_correct_type_default_value(default_key, get_attribute_type(configuration))
+    default_input_value = configuration._input_default if configuration.is_required_from_user() else None
+    options_attributes["default"] = lambda: get_the_correct_type_default_value(default_lean_config_key, default_input_value, get_attribute_type(configuration))
     return options_attributes
 
 def get_default_key(configuration: Configuration):
