@@ -22,7 +22,6 @@ from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 
 all_local_brokerages: List[LocalBrokerage] = []
 all_local_data_feeds: List[DataFeed] = []
-historyProviders = []
 all_data_providers: List[DataFeed] = [] 
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[DataFeed]]] = {}
 all_cloud_brokerages: List[DataFeed] = []
@@ -54,7 +53,7 @@ if container.platform_manager().is_host_windows() or os.environ.get("__README__"
     [iqfeed_data_feed] = [data_feed for data_feed in all_local_data_feeds if data_feed.get_name() == "IQFeed"]
     for key in local_brokerage_data_feeds.keys():
         local_brokerage_data_feeds[key].append(iqfeed_data_feed)
-# remove iqfeed from avaiable local data feeds
+# remove iqfeed from avaiable local data feeds if not windows
 else:
     all_local_data_feeds = [data_feed for data_feed in all_local_data_feeds if data_feed.get_name() != "IQFeed"]
 
