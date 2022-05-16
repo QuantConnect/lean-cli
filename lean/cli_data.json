@@ -78,6 +78,17 @@
         "Help": "Your IB API key"
       },
       {
+        "Id": "tt-rest-environment",
+        "Type": "input",
+        "Value": "",
+        "Environment": [
+          "live", "paper"
+        ],
+        "Input-method": "prompt-password",
+        "Input-data":"REST environment", 
+        "Help": "REST environment"
+      },
+      {
         "Id": "tt-market-data-sender-comp-id",
         "Type": "input",
         "Value": "",
@@ -356,6 +367,7 @@
     {
       "type": [
         "brokerage",
+        "cloud-brokerage",
         "data-queue-handler"
       ],
       "product-id": "173",
@@ -1437,6 +1449,18 @@
           "Input-choices": ["Production", "Beta"],
           "Input-data":"Environment", 
           "Help": "Whether the testnet should be used"
+        },
+        {
+          "Id": "bloomberg-api-type",
+          "Type": "internal-input",
+          "Value": "Desktop",
+          "Environment": [
+              "Production",
+              "Beta"
+          ],
+          "Input-method": "prompt",
+          "Input-data":"Server host", 
+          "Help": "Your IB API key"
         },
        {
          "Id": "bloomberg-server-host",
