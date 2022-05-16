@@ -45,7 +45,7 @@ with open(filename) as f:
             all_cloud_brokerages.append(CloudBrokerage(json_module))
         if "history-provider" in json_module["type"]:
             pass
-        if brokerage != None and dataQueueHandler != None:
+        if brokerage is not None and dataQueueHandler is not None:
             local_brokerage_data_feeds.update({brokerage:[dataQueueHandler]})
 
 #IQFeed DataFeed for windows
@@ -62,6 +62,6 @@ else:
 
 [PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == "Paper Trading"]
 
-#add paper trading to local modules, once IQFEED has been added to local_brokerage_data_feeds
+#add all_local_data_feeds to paper trading brokerage, once IQFEED has been remove from all_local_data_feeds, in case of MAC
 [LocalPaperTradingBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_name() == "Paper Trading"]
 local_brokerage_data_feeds[LocalPaperTradingBrokerage] = all_local_data_feeds
