@@ -2,7 +2,7 @@
   "modules": [
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "data-queue-handler"
       ],
       "product-id": "64",
@@ -218,7 +218,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "data-queue-handler"
       ],
       "product-id": "65",
@@ -366,7 +366,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -485,7 +485,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage"
       ],
       "product-id": "130",
@@ -531,7 +531,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -627,7 +627,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -714,7 +714,7 @@
           "paper"
         ],
         "Input-method": "confirm",
-        "Input-data":"Do you have a history API subscription?", 
+        "Input-data":"Do you have a history API subscription (yes/no)?", 
         "Help": "Whether the testnet should be used"
       },
        {
@@ -751,7 +751,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -821,7 +821,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -949,7 +949,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -1025,7 +1025,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler",
         "history-provider"
@@ -1154,7 +1154,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -1335,7 +1335,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -1416,7 +1416,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "data-queue-handler",
         "data-provider"
       ],
@@ -1580,7 +1580,7 @@
             "Beta"
         ],
         "Input-method": "confirm",
-        "Input-data":"Allow modification?", 
+        "Input-data":"Allow modification (yes/no)?", 
         "Help": "Whether the testnet should be used"
       },
       {
@@ -1649,7 +1649,7 @@
     },
     {
       "type": [
-        "brokerage",
+        "local-brokerage",
         "cloud-brokerage",
         "data-queue-handler"
       ],
@@ -1779,7 +1779,7 @@
           "paper"
         ],
         "Input-method": "confirm",
-        "Input-data":"Enable delayed market data?", 
+        "Input-data":"Enable delayed market data (yes/no)?", 
         "Help": "Your IB API key"
       },
        {
@@ -1791,7 +1791,7 @@
           "paper", "cloud-brokerage"
         ],
         "Input-method": "confirm",
-        "Input-data":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed?", 
+        "Input-data":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?", 
         "Help": "Your IB API key"
       },
        {

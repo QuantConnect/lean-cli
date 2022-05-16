@@ -33,7 +33,7 @@ with open(filename) as f:
     json_modules = data['modules']   
     for json_module in json_modules:
         brokerage = dataQueueHandler = dataProviders = None
-        if "brokerage" in json_module["type"]:
+        if "local-brokerage" in json_module["type"]:
             brokerage = LocalBrokerage(json_module)
             all_local_brokerages.append(brokerage)
         if "data-queue-handler" in json_module["type"]:
