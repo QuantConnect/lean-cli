@@ -118,7 +118,7 @@
          "help": "Your IB API key"
        },
        {
-         "id": "interactive-brokers-organization",
+         "id": "ib-organization",
          "type": "organization-id",
          "value": "",
          "environment": [
@@ -127,7 +127,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription",
+         "help": "The name or id of the organization with the Interactive Brokers module subscription",
          "log-message": "Log messages are before outputting the prompt"
         },
        {
@@ -141,7 +141,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"Username", 
-         "help": "Your IB API key"
+         "help": "Your Interactive Brokers username"
        },
        {
          "id": "ib-account",
@@ -154,7 +154,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"Account id", 
-         "help": "Your IB API key"
+         "help": "Your Interactive Brokers account id"
        },
        {
          "id": "ib-password",
@@ -166,10 +166,22 @@
            "paper"
          ],
          "input-method": "prompt-password",
-         "prompt-info":"ib-password", 
-         "help": "Your IB API key"
+         "prompt-info":"Account password", 
+         "help": "Your Interactive Brokers password"
        },
        {
+        "id": "ib-data-feed",
+        "type": "input",
+        "value": "",
+        "environment": [
+          "live",
+          "paper", "cloud-brokerage"
+        ],
+        "input-method": "confirm",
+        "prompt-info":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?", 
+        "help": "Whether the Interactive Brokers price data feed must be used instead of the QuantConnect price data feed"
+      },
+      {
         "id": "ib-enable-delayed-streaming-data",
         "type": "input",
         "value": "",
@@ -179,19 +191,7 @@
         ],
         "input-method": "confirm",
         "prompt-info":"Enable delayed market data (yes/no)?", 
-        "help": "Your IB API key"
-      },
-       {
-        "id": "use-ib-feed",
-        "type": "input",
-        "value": "",
-        "environment": [
-          "live",
-          "paper", "cloud-brokerage"
-        ],
-        "input-method": "confirm",
-        "prompt-info":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?", 
-        "help": "Your IB API key"
+        "help": "Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
       },
        {
           "id": "environments",
@@ -246,7 +246,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Account id", 
-        "help": "Your IB API key",
+        "help": "Your Tradier account id",
         "log-message": "Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api). The account id is the alpha-numeric code in a dropdown box on that page."
       },
       {
@@ -259,7 +259,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"Access token", 
-        "help": "Your IB API key"
+        "help": "Your Tradier access token"
       },
       {
         "id": "tradier-use-sandbox",
@@ -271,7 +271,7 @@
         "input-method": "choice",
         "input-choices": ["live", "paper"],
         "prompt-info":"Use the developer sandbox?", 
-        "help": "Whether the testnet should be used"
+        "help": "Whether the developer sandbox should be used"
       },
       {
           "id": "environments",
@@ -322,7 +322,7 @@
         ],
          "input-method": "prompt",
          "prompt-info":"Account id", 
-         "help": "Your IB API key",
+         "help": "Your OANDA account id",
          "log-message": "Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/). It follows the following format: ###-###-######-###. You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token)."
        },
        {
@@ -335,7 +335,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"Access token", 
-        "help": "Your IB API key"
+        "help": "Your OANDA API token"
       },
        {
         "id": "oanda-environment",
@@ -348,7 +348,7 @@
         "input-method": "choice",
         "input-choices": ["Practice", "Trade"],
         "prompt-info":"Environment?", 
-        "help": "Whether the testnet should be used"
+        "help": "The environment to run in, Practice for fxTrade Practice, Trade for fxTrade"
       },
        {
           "id": "environments",
@@ -404,7 +404,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"API key", 
-         "help": "Your IB API key",
+         "help": "Your Bitfinex API key",
          "log-message": "Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api)."
        },
        {
@@ -418,7 +418,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
-         "help": "Your IB API key"
+         "help": "Your Bitfinex API secret"
        },
        {
           "id": "environments",
@@ -474,7 +474,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"API key", 
-         "help": "Your IB API key",
+         "help": "Your Coinbase Pro API key",
          "log-message": "You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api). When creating the key, make sure you authorize it for View and Trading access."
        },
        {
@@ -488,7 +488,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"API secret", 
-        "help": "Your IB API key"
+        "help": "Your Coinbase Pro API secret"
       },
        {
          "id": "gdax-passphrase",
@@ -501,7 +501,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"Passphrase", 
-         "help": "Your IB API key"
+         "help": "Your Coinbase Pro API passphrase"
        },
        {
         "id": "gdax-use-sandbox",
@@ -514,7 +514,7 @@
         "input-method": "choice",
         "input-choices": ["live", "paper"],
         "prompt-info":"Use sandbox?", 
-        "help": "Whether the testnet should be used"
+        "help": "Whether the sandbox should be used"
       },
       {
         "id": "gdax-url",
@@ -602,7 +602,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the Binance module subscription"
         },
        {
          "id": "binance-api-key",
@@ -641,7 +641,7 @@
         ],
          "input-method": "choice",
          "input-choices": ["live", "paper"],
-         "prompt-info":"trading-env", 
+         "prompt-info":"Use the testnet?", 
          "help": "Whether the testnet should be used"
        },
         {
@@ -730,7 +730,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the zerodha module subscription"
         },
        {
          "id": "zerodha-api-key",
@@ -743,7 +743,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"API key", 
-         "help": "Your IB API key",
+         "help": "Your Kite Connect API key",
          "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
        },
        {
@@ -757,7 +757,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"Access token", 
-         "help": "Your IB API key"
+         "help": "Your Kite Connect access token"
        },
        {
          "id": "zerodha-product-type",
@@ -769,9 +769,9 @@
            "paper"
          ],
          "input-method": "choice",
-         "prompt-info":"Product type",
          "input-choices": ["MIS", "CNC", "NRML"], 
-         "help": "Product type",
+         "prompt-info":"Product type",
+         "help": "MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
          "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
        },
        {
@@ -784,9 +784,9 @@
            "paper"
          ],
          "input-method": "choice",
-         "prompt-info":"Trading segment",
          "input-choices": ["EQUITY", "COMMODITY"], 
-         "help": "Product type",
+         "prompt-info":"Trading segment",
+         "help": "EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
          "log-message": "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
        },
        {
@@ -799,7 +799,7 @@
         ],
         "input-method": "confirm",
         "prompt-info":"Do you have a history API subscription (yes/no)?", 
-        "help": "Whether the testnet should be used"
+        "help": "Whether you have a history API subscription for Zerodha"
       },
        {
           "id": "environments",
@@ -854,7 +854,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the samco module subscription"
         },
        {
          "id": "samco-client-id",
@@ -866,7 +866,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"Client ID", 
-         "help": "Your IB API key"
+         "help": "Your Samco account Client ID"
        },
        {
          "id": "samco-client-password",
@@ -878,7 +878,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"Client Password", 
-         "help": "Your IB API key"
+         "help": "Your Samco account password"
        },
        {
          "id": "samco-year-of-birth",
@@ -890,7 +890,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"Year of Birth", 
-         "help": "Year of Birth"
+         "help": "Your year of birth (YYYY) registered with Samco"
        },
        {
          "id": "samco-product-type",
@@ -901,9 +901,9 @@
            "paper"
          ],
          "input-method": "choice",
-         "prompt-info":"Product type",
          "input-choices": ["MIS", "CNC", "NRML"], 
-         "help": "Product type",
+         "prompt-info":"Product type",
+         "help": "MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
          "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
        },
        {
@@ -915,9 +915,9 @@
            "paper"
          ],
          "input-method": "choice",
-         "prompt-info":"Trading segment",
          "input-choices": ["EQUITY", "COMMODITY"], 
-         "help": "Product type",
+         "prompt-info":"Trading segment",
+         "help": "EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
          "log-message": "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
        },
        {
@@ -973,7 +973,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the Terminal Link module subscription"
         },
         {
           "id": "bloomberg-environment",
@@ -986,7 +986,7 @@
           "input-method": "choice",
           "input-choices": ["Production", "Beta"],
           "prompt-info":"Environment", 
-          "help": "Whether the testnet should be used"
+          "help": "The environment to run in"
         },
        {
          "id": "bloomberg-server-host",
@@ -998,7 +998,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"Server host", 
-         "help": "Your IB API key"
+         "help": "The host of the Bloomberg server"
        },
        {
         "id": "bloomberg-server-port",
@@ -1009,9 +1009,9 @@
             "Beta"
         ],
         "input-method": "prompt",
-        "Input-type": "integer",
+        "input-type": "integer",
         "prompt-info":"Server port", 
-        "help": "Your IB API key"
+        "help": "The port of the Bloomberg server"
       },
        {
         "id": "bloomberg-symbol-map-file",
@@ -1024,7 +1024,7 @@
         "input-method": "path-parameter",
         "input-default":"",
         "prompt-info":"Path to symbol map file", 
-        "help": "Your IB API key"
+        "help": "The path to the Bloomberg symbol map file"
       },
       {
         "id": "bloomberg-emsx-broker",
@@ -1036,7 +1036,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"EMSX broker", 
-        "help": "Your IB API key"
+        "help": "The EMSX broker to use"
       },
       {
         "id": "bloomberg-emsx-user-time-zone",
@@ -1049,7 +1049,7 @@
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX user timezone", 
-        "help": "Your IB API key"
+        "help": "The EMSX user timezone to use"
       },
       {
         "id": "bloomberg-emsx-account",
@@ -1062,7 +1062,7 @@
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX account", 
-        "help": "Your IB API key"
+        "help": "The EMSX account to use"
       },
       {
         "id": "bloomberg-emsx-strategy",
@@ -1075,7 +1075,7 @@
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX strategy", 
-        "help": "Your IB API key"
+        "help": "The EMSX strategy to use"
       },
       {
         "id": "bloomberg-emsx-notes",
@@ -1088,7 +1088,7 @@
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX notes", 
-        "help": "Your IB API key"
+        "help": "The EMSX notes to use"
       },
       {
         "id": "bloomberg-emsx-handling",
@@ -1101,7 +1101,7 @@
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX handling", 
-        "help": "Your IB API key"
+        "help": "The EMSX handling to use"
       },
       {
         "id": "bloomberg-allow-modification",
@@ -1113,7 +1113,7 @@
         ],
         "input-method": "confirm",
         "prompt-info":"Allow modification (yes/no)?", 
-        "help": "Whether the testnet should be used"
+        "help": "Whether modification is allowed"
       },
       {
         "id": "bloomberg-api-type",
@@ -1210,7 +1210,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the Atreyu module subscription"
         },
        {
          "id": "atreyu-host",
@@ -1222,7 +1222,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"host", 
-         "help": "Your IB API key"
+         "help": "The host of the Atreyu server"
        },
        {
         "id": "atreyu-req-port",
@@ -1233,9 +1233,9 @@
             "Beta"
         ],
         "input-method": "prompt",
-        "Input-type": "integer",
+        "input-type": "integer",
         "prompt-info":"Request port", 
-        "help": "Your IB API key"
+        "help": "The Atreyu request port"
       },
       {
         "id": "atreyu-sub-port",
@@ -1246,9 +1246,9 @@
             "Beta"
         ],
         "input-method": "prompt",
-        "Input-type": "integer",
+        "input-type": "integer",
         "prompt-info":"Subscribe port", 
-        "help": "Your IB API key"
+        "help": "The Atreyu subscribe port"
       },
       {
         "id": "atreyu-username",
@@ -1260,7 +1260,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Username", 
-        "help": "Your IB API key"
+        "help": "Your Atreyu username"
       },
       {
         "id": "atreyu-password",
@@ -1272,7 +1272,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"Password", 
-        "help": "Your IB API key"
+        "help": "Your Atreyu password"
       },
       {
         "id": "atreyu-client-id",
@@ -1284,7 +1284,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Client id", 
-        "help": "Your IB API key"
+        "help": "Your Atreyu client id"
       },
       {
         "id": "atreyu-broker-mpid",
@@ -1296,7 +1296,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Broker MPID", 
-        "help": "Your IB API key"
+        "help": "The broker MPID to use"
       },
       {
         "id": "atreyu-locate-rqd",
@@ -1308,7 +1308,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Locate rqd", 
-        "help": "Your IB API key"
+        "help": "The locate rqd to use"
       },
        {
           "id": "environments",
@@ -1349,7 +1349,7 @@
       "installs": true,
       "configurations": [
         {
-          "id": "trading-technologies-organization",
+          "id": "tt-organization",
           "type": "organization-id",
           "value": "",
           "environment": [
@@ -1358,7 +1358,7 @@
           ],
           "input-method": "prompt",
           "prompt-info":"organization having subscription of module", 
-          "help": "The name or id of the organization with the Ronit module subscription"
+          "help": "The name or id of the organization with the Trading Technologies module subscription"
          },
        {
          "id": "tt-user-name",
@@ -1369,7 +1369,7 @@
         ],
          "input-method": "prompt",
          "prompt-info":"User name", 
-         "help": "Your IB API key"
+         "help": "Your Trading Technologies username"
        },
        {
         "id": "tt-session-password",
@@ -1380,7 +1380,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"Session password", 
-        "help": "Your IB API key"
+        "help": "Your Trading Technologies session password"
       },
       {
         "id": "tt-account-name",
@@ -1391,7 +1391,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Account name", 
-        "help": "Your IB API key"
+        "help": "Your Trading Technologies account name"
       },
       {
         "id": "tt-rest-app-key",
@@ -1402,7 +1402,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"REST app key", 
-        "help": "Your IB API key"
+        "help": "Your Trading Technologies REST app key"
       },
       {
         "id": "tt-rest-app-secret",
@@ -1413,7 +1413,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"REST app secret", 
-        "help": "Your IB API key"
+        "help": "Your Trading Technologies REST app secret"
       },
       {
         "id": "tt-rest-environment",
@@ -1424,7 +1424,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"REST environment", 
-        "help": "REST environment"
+        "help": "The REST environment to run in"
       },
       {
         "id": "tt-market-data-sender-comp-id",
@@ -1435,7 +1435,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Market data sender comp id", 
-        "help": "Your IB API key"
+        "help": "The market data sender comp id to use"
       },
       {
         "id": "tt-market-data-target-comp-id",
@@ -1446,7 +1446,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Market data target comp id", 
-        "help": "Your IB API key"
+        "help": "The market data target comp id to use"
       },
       {
         "id": "tt-market-data-host",
@@ -1457,7 +1457,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Market data host", 
-        "help": "Your IB API key"
+        "help": "The host of the market data server"
       },
       {
         "id": "tt-market-data-port",
@@ -1468,7 +1468,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Market data port", 
-        "help": "Your IB API key"
+        "help": "The port of the market data server"
       },
       {
         "id": "tt-order-routing-sender-comp-id",
@@ -1479,7 +1479,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Order routing sender comp id", 
-        "help": "Your IB API key"
+        "help": "The order routing sender comp id to use"
       },
       {
         "id": "tt-order-routing-target-comp-id",
@@ -1490,7 +1490,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Order routing target comp id", 
-        "help": "Your IB API key"
+        "help": "The order routing target comp id to use"
       },
       {
         "id": "tt-order-routing-host",
@@ -1501,7 +1501,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Order routing host", 
-        "help": "Your IB API key"
+        "help": "The host of the order routing server"
       },
       {
         "id": "tt-order-routing-port",
@@ -1512,7 +1512,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Order routing port", 
-        "help": "Your IB API key"
+        "help": "The port of the order routing server"
       },
       {
         "id": "tt-log-fix-messages",
@@ -1524,7 +1524,7 @@
         ],
         "input-method": "confirm",
         "prompt-info":"Log FIX messages (yes/no)?", 
-        "help": "Whether the testnet should be used"
+        "help": "Whether FIX messages should be logged"
       },
        {
           "id": "environments",
@@ -1575,7 +1575,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription"
+         "help": "The name or id of the organization with the kraken module subscription"
         },
        {
          "id": "kraken-api-key",
@@ -1588,7 +1588,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"API key", 
-         "help": "Your IB API key",
+         "help": "Your Kraken API key",
          "log-message": "Log messages are before outputting the prompt"
        },
        {
@@ -1602,7 +1602,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
-         "help": "Your IB API key"
+         "help": "Your Kraken API secret"
        },
        {
          "id": "kraken-verification-tier",
@@ -1614,9 +1614,9 @@
            "paper"
          ],
          "input-method": "choice",
-         "prompt-info":"Select the Verification Tier",
          "input-choices": ["Starter", "Intermediate", "Pro"], 
-         "help": "Your IB API key"
+         "prompt-info":"Select the Verification Tier",
+         "help": "Your Kraken Verification Tier"
        },
        {
           "id": "environments",
@@ -1670,9 +1670,9 @@
            "live","paper","FTXUS", "FTX"
          ],
          "input-method": "choice",
-         "prompt-info":"FTX Exchange",
          "input-choices": ["FTX", "FTXUS"], 
-         "help": "FTX Exchange"
+         "prompt-info":"FTX Exchange",
+         "help": "FTX exchange name [FTX, FTXUS]"
        },
        {
          "id": "ftx-organization",
@@ -1686,7 +1686,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Ronit module subscription",
+         "help": "The name or id of the organization with the FTX module subscription",
          "log-message": "Log messages are before outputting the prompt"
         },
        {
@@ -1700,7 +1700,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"API-Key", 
-         "help": "Your Binance API key"
+         "help": "Your FTX API key"
        },
        {
          "id": "ftxus-api-key",
@@ -1713,7 +1713,7 @@
          ],
          "input-method": "prompt",
          "prompt-info":"ftxus-api-key", 
-         "help": "Your Binance API key"
+         "help": ""
        },
        {
          "id": "ftx-api-secret",
@@ -1727,7 +1727,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
-         "help": "Your Binance API secret"
+         "help": "Your FTX API secret"
        },
        {
          "id": "ftxus-api-secret",
@@ -1741,7 +1741,7 @@
          ],
          "input-method": "prompt-password",
          "prompt-info":"ftxus-api-secret", 
-         "help": "Your Binance API secret"
+         "help": ""
        },
        {
          "id": "ftx-account-tier",
@@ -1752,9 +1752,9 @@
            "live","paper","FTX"
          ],
          "input-method": "choice",
-         "prompt-info":"FTX Exchange",
          "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "help": "FTX Exchange"
+         "prompt-info":"FTX Exchange",
+         "help": "Your FTX Account Tier"
        },
        {
          "id": "ftxus-account-tier",
@@ -1765,9 +1765,9 @@
            "live","paper","FTXUS"
          ],
          "input-method": "choice",
-         "prompt-info":"ftxus-account-tier",
          "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "help": "FTX Exchange"
+         "prompt-info":"ftxus-account-tier",
+         "help": ""
        },
        {
           "id": "environments",
@@ -1850,7 +1850,7 @@
          "input-method": "path-parameter",
          "input-default":"C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe",
          "prompt-info":"IQConnect binary location", 
-         "help": "Your IB API key"
+         "help": "The path to the IQConnect binary"
        },
        {
         "id": "iqfeed-username",
@@ -1861,7 +1861,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Username", 
-        "help": "Your IB API key"
+        "help": "Your IQFeed username"
       },
        {
         "id": "iqfeed-password",
@@ -1872,7 +1872,7 @@
         ],
         "input-method": "prompt-password",
         "prompt-info":"Password", 
-        "help": "Your IB API key"
+        "help": "Your IQFeed password"
       },
       {
         "id": "iqfeed-productName",
@@ -1883,7 +1883,7 @@
        ],
         "input-method": "prompt",
         "prompt-info":"Product id", 
-        "help": "Your IB API key"
+        "help": "The product name of your IQFeed developer account"
       },
       {
         "id": "iqfeed-version",
@@ -1894,7 +1894,7 @@
         ],
         "input-method": "prompt",
         "prompt-info":"Product version", 
-        "help": "Your IB API key"
+        "help": "The product version of your IQFeed developer account"
       },
        {
           "id": "environments",
@@ -1954,25 +1954,6 @@
         "data-provider"
       ],
       "product-id": "",
-      "id": "Local",
-      "display-id": "Local",
-      "installs": false,
-      "configurations": [
-        {
-          "id": "data-provider",
-          "type": "info",
-          "value": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-          "environment": [
-            "live"
-          ]
-        }
-      ]
-    },
-    {
-      "type": [
-        "data-provider"
-      ],
-      "product-id": "",
       "id": "QuantConnect",
       "display-id": "QuantConnect",
       "installs": false,
@@ -1987,7 +1968,7 @@
           ],
           "input-method": "prompt",
           "prompt-info":"organization having subscription of module", 
-          "help": "The name or id of the organization with the Ronit module subscription"
+          "help": ""
          },
         {
           "id": "data-provider",
@@ -2009,6 +1990,25 @@
           "id": "factor-file-provider",
           "type": "info",
           "value": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+          "environment": [
+            "live"
+          ]
+        }
+      ]
+    },
+    {
+      "type": [
+        "data-provider"
+      ],
+      "product-id": "",
+      "id": "Local",
+      "display-id": "Local",
+      "installs": false,
+      "configurations": [
+        {
+          "id": "data-provider",
+          "type": "info",
+          "value": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
           "environment": [
             "live"
           ]
