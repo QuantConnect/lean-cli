@@ -5,7 +5,7 @@
         "local-brokerage",
         "cloud-brokerage"
       ],
-      "product-id": "130",
+      "product-id": "",
       "id": "QuantConnectBrokerage",
       "display-id": "Paper Trading",
       "installs": false,
@@ -388,7 +388,7 @@
         "cloud-brokerage",
         "data-queue-handler"
       ],
-      "product-id": "174",
+      "product-id": "",
       "id": "BitfinexBrokerage",
       "display-id": "Bitfinex",
       "installs": false,
