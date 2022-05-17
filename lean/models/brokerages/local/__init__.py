@@ -64,4 +64,6 @@ else:
 
 #add all_local_data_feeds to required brokerages, once IQFEED has been remove from all_local_data_feeds, in case of MAC
 [LocalPaperTradingBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "QuantConnectBrokerage"]
+[AtreyuBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "AtreyuBrokerage"]
 local_brokerage_data_feeds[LocalPaperTradingBrokerage] = all_local_data_feeds
+local_brokerage_data_feeds[AtreyuBrokerage] = [data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
