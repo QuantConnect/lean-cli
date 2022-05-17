@@ -76,7 +76,7 @@ def get_default_key(configuration: Configuration):
 def options_from_json(configurations: List[Configuration]):
 
     def decorator(f):
-        for configuration in configurations:
+        for configuration in reversed(configurations):
             long = configuration._name
             name = str(configuration._name).replace('-','_')
             param_decls = (

@@ -144,22 +144,22 @@ def _configure_auto_restart(logger: Logger) -> bool:
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
     return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
+#TODO: same duplication present in commands\live.py
 def _get_configs_for_options() -> Dict[Configuration, str]: 
-    run_options = {}
-    visited_options = []
+    run_options: Dict[str, Configuration] = {}
     for module in all_cloud_brokerages:
         for config in module.get_all_input_configs():
-            if config._name in visited_options:
+            if config._name in run_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
-            visited_options.append(config._name)
-            run_options[config] = None
-    return run_options
+            run_options[config._name] = config
+    return list(run_options.values())
 
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
+@options_from_json(_get_configs_for_options())
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -179,7 +179,6 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
-@options_from_json(_get_configs_for_options())
 def live(project: str,
          brokerage: str,
          node: str,

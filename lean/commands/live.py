@@ -248,6 +248,7 @@ def _get_configs_for_options() -> List[Configuration]:
 @click.option("--data-feed",
               type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               help="The data feed to use")
+@options_from_json(_get_configs_for_options())
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -259,7 +260,6 @@ def _get_configs_for_options() -> List[Configuration]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-@options_from_json(_get_configs_for_options())
 def live(project: Path,
         environment: Optional[str],
         output: Optional[Path],
