@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from typing import Any, Dict, List, Type
 from lean.components.util.logger import Logger
 from lean.container import container
@@ -119,13 +118,6 @@ class JsonModule(abc.ABC):
         :param lean_key: string that uses hyphnes as separator. Used in lean config
         """
         return lean_key.replace('-','_')
-
-    def _convert_lean_key_to_attribute(self, lean_key:str) -> str:
-        """Replaces hyphens with underscore to follow pattern of private attribute.
-
-        :param lean_key: string that uses hyphnes as separator. Used in lean config
-        """
-        return "_" + self._convert_lean_key_to_variable(lean_key)
 
     def _convert_variable_to_lean_key(self, variable_key:str) -> str:
         """Replaces underscore with hyphens to follow lean config naming convention.
