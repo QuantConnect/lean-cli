@@ -31,7 +31,7 @@ class DataFeed(LeanConfigConfigurer):
         live_name = self._id
         environment_obj = self.get_configurations_env_values_from_name(environment_name)
         if environment_obj:
-            [live_name] = [x["Value"] for x in environment_obj if x["Name"] == "data-queue-handler"]
+            [live_name] = [x["value"] for x in environment_obj if x["name"] == "data-queue-handler"]
         return live_name
     
     

@@ -37,32 +37,32 @@ class ConditionalValueOption():
 
 class Configuration(abc.ABC):
     def __init__(self, config_json_object):
-        self._name = config_json_object["Id"]
-        self._config_type = config_json_object["Type"]
-        self._value = config_json_object["Value"]
-        self._filter = Filter(config_json_object["Environment"])
+        self._name = config_json_object["id"]
+        self._config_type = config_json_object["type"]
+        self._value = config_json_object["value"]
+        self._filter = Filter(config_json_object["environment"])
         self._is_type_configurations_env = type(self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env = type(self) is TradingEnvConfiguration
         self.is_type_organization_id = type(self) is OrganzationIdConfiguration
         self._log_message = None
-        if "Log-message" in config_json_object.keys():
-            self._log_message = config_json_object["Log-message"]
+        if "log-message" in config_json_object.keys():
+            self._log_message = config_json_object["log-message"]
 
     @abc.abstractmethod
     def is_required_from_user(self):
         return NotImplemented()
 
     def factory(config_json_object):
-        if config_json_object["Type"] in ["info" , "configurations-env"]:
+        if config_json_object["type"] in ["info" , "configurations-env"]:
             return InfoConfiguration.factory(config_json_object)
-        elif config_json_object["Type"] in ["input","internal-input"]:
+        elif config_json_object["type"] in ["input","internal-input"]:
             return UserInputConfiguration.factory(config_json_object)
-        elif config_json_object["Type"] in ["filter-env" , "trading-env"]:
+        elif config_json_object["type"] in ["filter-env" , "trading-env"]:
             return BrokerageEnvConfiguration.factory(config_json_object)
-        elif config_json_object["Type"] == "organization-id":
+        elif config_json_object["type"] == "organization-id":
             return OrganzationIdConfiguration(config_json_object)
         else:
-            raise(f'Undefined input method type {config_json_object["Type"]}')
+            raise(f'Undefined input method type {config_json_object["type"]}')
 
 class Filter():
     def __init__(self, filter_environments):
@@ -73,7 +73,7 @@ class InfoConfiguration(Configuration):
         super().__init__(config_json_object)
 
     def factory(config_json_object):
-        if config_json_object["Type"] == "configurations-env":
+        if config_json_object["type"] == "configurations-env":
             return ConfigurationsEnvConfiguration(config_json_object)
         else:
             return InfoConfiguration(config_json_object)
@@ -84,20 +84,20 @@ class InfoConfiguration(Configuration):
 class ConfigurationsEnvConfiguration(InfoConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._env_and_values = {env_obj["Name"]:env_obj["Value"] for env_obj in self._value}
+        self._env_and_values = {env_obj["name"]:env_obj["value"] for env_obj in self._value}
 
 class UserInputConfiguration(Configuration, abc.ABC):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._input_method = config_json_object["Input-method"]
-        self._input_data = config_json_object["Input-data"]
-        self._help = config_json_object["Help"]
+        self._input_method = config_json_object["input-method"]
+        self._input_data = config_json_object["prompt-info"]
+        self._help = config_json_object["help"]
         self._input_default = None
         self._cloud_name = None
-        if "Input-default" in config_json_object.keys():
-            self._input_default = config_json_object["Input-default"]
-        if "Cloud-id" in config_json_object.keys():
-            self._cloud_name = config_json_object["Cloud-id"]
+        if "input-default" in config_json_object.keys():
+            self._input_default = config_json_object["input-default"]
+        if "cloud-id" in config_json_object.keys():
+            self._cloud_name = config_json_object["cloud-id"]
 
     @abc.abstractmethod
     def AskUserForInput(self, default_value):
@@ -105,17 +105,17 @@ class UserInputConfiguration(Configuration, abc.ABC):
 
     def factory(config_json_object):
         # Check "Type" before "Input-method"
-        if config_json_object["Type"] == "internal-input":
+        if config_json_object["type"] == "internal-input":
             return InternalInputUserInput(config_json_object)
-        if config_json_object["Input-method"] == "prompt":
+        if config_json_object["input-method"] == "prompt":
             return PromptUserInput(config_json_object)
-        elif config_json_object["Input-method"] == "choice":
+        elif config_json_object["input-method"] == "choice":
             return ChoiceUserInput(config_json_object)
-        elif config_json_object["Input-method"] == "confirm":
+        elif config_json_object["input-method"] == "confirm":
             return ConfirmUserInput(config_json_object)
-        elif config_json_object["Input-method"] == "prompt-password":
+        elif config_json_object["input-method"] == "prompt-password":
             return PromptPasswordUserInput(config_json_object)
-        elif config_json_object["Input-method"] == "path-parameter":
+        elif config_json_object["input-method"] == "path-parameter":
             return PathParameterUserInput(config_json_object)
 
     def is_required_from_user(self):
@@ -129,8 +129,8 @@ class InternalInputUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
         self._is_conditional = False
         value_options = []
-        if "Value-options" in config_json_object.keys():
-            value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["Value-options"]]
+        if "value-options" in config_json_object.keys():
+            value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["value-options"]]
             self._is_conditional = True
         self._value_options = value_options
 
@@ -147,8 +147,8 @@ class PromptUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._input_type = "string"
-        if "Input-type" in config_json_object.keys():
-            self._input_type = config_json_object["Input-type"]
+        if "input-type" in config_json_object.keys():
+            self._input_type = config_json_object["input-type"]
 
     def AskUserForInput(self, default_value, logger: Logger):
         return click.prompt(self._input_data, default_value, type=self.get_input_type())
@@ -159,8 +159,8 @@ class PromptUserInput(UserInputConfiguration):
 class ChoiceUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        if "Input-choices" in config_json_object.keys():
-            self._choices = config_json_object["Input-choices"]
+        if "input-choices" in config_json_object.keys():
+            self._choices = config_json_object["input-choices"]
         else:
             self._choices = []
 
@@ -215,12 +215,12 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         super().__init__(config_json_object)
     
     def factory(config_json_object):
-        if config_json_object["Type"] == "trading-env":
+        if config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration(config_json_object)
-        elif config_json_object["Type"] == "filter-env":
+        elif config_json_object["type"] == "filter-env":
             return FilterEnvConfiguration(config_json_object)
         else:
-            raise(f'Undefined input method type {config_json_object["Type"]}')
+            raise(f'Undefined input method type {config_json_object["type"]}')
 
     def AskUserForInput(self, default_value, logger: Logger):
         if self._input_method == "confirm":

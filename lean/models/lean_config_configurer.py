@@ -43,10 +43,10 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         self.ensure_module_installed()
 
         for environment_config in self.get_configurations_env_values_from_name(environment_name):
-            environment_config_name = environment_config["Name"]
+            environment_config_name = environment_config["name"]
             if self.__class__.__name__ == 'DataFeed' and environment_config_name in ["live-mode-brokerage", "transaction-handler"]:
                 continue
-            lean_config["environments"][environment_name][environment_config_name] = environment_config["Value"]
+            lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.
