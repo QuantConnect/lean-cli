@@ -43,7 +43,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": "no",
-    "interactive-brokers-organization": "abc",
+    "ib-organization": "abc",
 
     "environments": {{
         "{name}": {{
@@ -280,7 +280,7 @@ brokerage_required_options = {
         "ib-account": "DU1234567",
         "ib-password": "hunter2",
         "ib-enable-delayed-streaming-data": "no",
-        "interactive-brokers-organization": "abc",
+        "ib-organization": "abc",
     },
     "Tradier": {
         "tradier-account-id": "123",
