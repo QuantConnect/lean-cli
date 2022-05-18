@@ -23,10 +23,7 @@
                        "dependent-config-id":"module-type"
                     }
                  }
-              ],
-              "input-method":"",
-              "prompt-info":"",
-              "help":""
+              ]
            },
            {
               "id":"environments",
@@ -82,10 +79,7 @@
                     },
                     "value":"Advisor"
                  }
-              ],
-              "input-method":"prompt",
-              "prompt-info":"Username",
-              "help":"Your IB API key"
+              ]
            },
            {
               "id":"ib-trading-mode",
@@ -109,10 +103,7 @@
                     },
                     "value":"live"
                  }
-              ],
-              "input-method":"prompt",
-              "prompt-info":"Username",
-              "help":"Your IB API key"
+              ]
            },
            {
               "id":"ib-organization",
@@ -1061,10 +1052,7 @@
            {
               "id":"bloomberg-api-type",
               "type":"internal-input",
-              "value":"Desktop",
-              "input-method":"prompt",
-              "prompt-info":"Server host",
-              "help":"Your IB API key"
+              "value":"Desktop"
            },
            {
               "id":"data-provider",
@@ -1867,8 +1855,7 @@
               "type":"organization-id",
               "value":"",
               "input-method":"prompt",
-              "prompt-info":"organization having subscription of module",
-              "help":""
+              "prompt-info":"organization having subscription of module"
            },
            {
               "id":"data-provider",

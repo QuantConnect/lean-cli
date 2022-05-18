@@ -111,11 +111,14 @@ class ConfigurationsEnvConfiguration(InfoConfiguration):
 class UserInputConfiguration(Configuration, abc.ABC):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._input_method = config_json_object["input-method"]
-        self._input_data = config_json_object["prompt-info"]
-        self._help = config_json_object["help"]
-        self._input_default = None
-        self._cloud_name = None
+        self._input_method = self._input_data = self._help = ""
+        self._input_default = self._cloud_name = None
+        if "input-method" in config_json_object.keys():
+            self._input_method = config_json_object["input-method"]
+        if "prompt-info" in config_json_object.keys():
+            self._input_data = config_json_object["prompt-info"]
+        if "help" in config_json_object.keys():
+            self._help = config_json_object["help"]
         if "input-default" in config_json_object.keys():
             self._input_default = config_json_object["input-default"]
         if "cloud-id" in config_json_object.keys():
