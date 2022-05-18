@@ -158,9 +158,6 @@ class JsonModule(abc.ABC):
             if configuration._log_message is not None:
                     logger.info(configuration._log_message.strip())
             if configuration.is_type_organization_id:
-                # TODO: use type(class) equality instead of class name (str)
-                if self.__class__.__name__ == 'CloudBrokerage':
-                    continue
                 api_client = container.api_client()
                 organizations = api_client.organizations.get_all()
                 options = [Option(id=organization.id, label=organization.name) for organization in organizations]
@@ -170,6 +167,7 @@ class JsonModule(abc.ABC):
                 )
                 user_choice = organization_id
             else:
+                # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ == 'CloudBrokerage':
                     user_choice = configuration.AskUserForInput(None, logger)
                 else:

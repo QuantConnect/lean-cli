@@ -206,16 +206,11 @@ Usage: lean cloud live [OPTIONS] PROJECT
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Kraken|FTX]
                                   The brokerage to use
-  --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
   --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
                                   QuantConnect price data feed
-
-  --ib-enable-delayed-streaming-data BOOLEAN
-                                  Whether delayed data may be used when your algorithm subscribes to a security you
-                                  don't have a market data subscription for
 
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
@@ -234,10 +229,8 @@ Options:
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
   --binance-use-testnet [live|paper]
                                   Whether the testnet should be used
-  --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
-  --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]
@@ -248,9 +241,6 @@ Options:
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
 
-  --zerodha-history-subscription BOOLEAN
-                                  Whether you have a history API subscription for Zerodha
-  --samco-organization TEXT       The name or id of the organization with the samco module subscription
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
@@ -262,14 +252,12 @@ Options:
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
 
-  --kraken-organization TEXT      The name or id of the organization with the kraken module subscription
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --ftx-exchange-name [FTX|FTXUS]
                                   FTX exchange name [FTX, FTXUS]
-  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-api-key TEXT              Your FTX API key
   --ftxus-api-key TEXT
   --ftx-api-secret TEXT           Your FTX API secret

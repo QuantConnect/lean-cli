@@ -121,7 +121,15 @@
          "id": "ib-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Interactive Brokers module subscription",
@@ -178,7 +186,15 @@
         "id": "ib-enable-delayed-streaming-data",
         "type": "input",
         "value": "",
-        "filters": [],
+        "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+        ],
         "input-method": "confirm",
         "prompt-info":"Enable delayed market data (yes/no)?", 
         "help": "Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
@@ -570,7 +586,15 @@
          "id": "binance-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Binance module subscription"
@@ -707,7 +731,15 @@
          "id": "zerodha-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the zerodha module subscription"
@@ -761,7 +793,15 @@
         "id": "zerodha-history-subscription",
         "type": "input",
         "value": "",
-        "filters": [],
+        "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+        ],
         "input-method": "confirm",
         "prompt-info":"Do you have a history API subscription (yes/no)?", 
         "help": "Whether you have a history API subscription for Zerodha"
@@ -811,7 +851,15 @@
          "id": "samco-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the samco module subscription"
@@ -910,7 +958,15 @@
          "id": "terminal-link-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Terminal Link module subscription"
@@ -1098,7 +1154,15 @@
          "id": "atreyu-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Atreyu module subscription"
@@ -1217,7 +1281,15 @@
           "id": "tt-organization",
           "type": "organization-id",
           "value": "",
-          "filters": [],
+          "filters": [
+            {
+              "condition":{
+                 "type":"exact-match",
+                 "pattern":"LocalBrokerage",
+                 "dependent-config-id":"module-type"
+              }
+            }
+          ],
           "input-method": "prompt",
           "prompt-info":"organization having subscription of module", 
           "help": "The name or id of the organization with the Trading Technologies module subscription"
@@ -1398,7 +1470,15 @@
          "id": "kraken-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the kraken module subscription"
@@ -1491,7 +1571,15 @@
          "id": "ftx-organization",
          "type": "organization-id",
          "value": "",
-         "filters": [],
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
+         ],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the FTX module subscription"
