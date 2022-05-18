@@ -1615,11 +1615,18 @@
                "pattern":"FTXUS",
                "dependent-config-id":"ftx-exchange-name"
             }
+          },
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
           }
          ],
          "input-method": "prompt",
-         "prompt-info":"ftxus-api-key", 
-         "help": "",
+         "prompt-info":"API-Key", 
+         "help": "Your FTX API key",
          "log-message": "Create an API key by logging in and accessing the FTXUS Profile page (https://ftx.us/profile)."
        },
        {
@@ -1652,11 +1659,18 @@
                "pattern":"FTXUS",
                "dependent-config-id":"ftx-exchange-name"
             }
+          },
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
           }
          ],
          "input-method": "prompt-password",
-         "prompt-info":"ftxus-api-secret", 
-         "help": ""
+         "prompt-info":"API secret", 
+         "help": "Your FTX API secret"
        },
        {
          "id": "ftx-account-tier",
@@ -1689,12 +1703,19 @@
                "pattern":"FTXUS",
                "dependent-config-id":"ftx-exchange-name"
             }
+          },
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"LocalBrokerage",
+               "dependent-config-id":"module-type"
+            }
           }
          ],
          "input-method": "choice",
          "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
          "prompt-info":"Select the Account Tier",
-         "help": ""
+         "help": "Your FTX Account Tier"
        },
        {
           "id": "environments",

@@ -259,12 +259,9 @@ Options:
   --ftx-exchange-name [FTX|FTXUS]
                                   FTX exchange name [FTX, FTXUS]
   --ftx-api-key TEXT              Your FTX API key
-  --ftxus-api-key TEXT
   --ftx-api-secret TEXT           Your FTX API secret
-  --ftxus-api-secret TEXT
   --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
                                   Your FTX Account Tier
-  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -867,12 +864,13 @@ Options:
                                   FTX exchange name [FTX, FTXUS]
   --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-api-key TEXT              Your FTX API key
-  --ftxus-api-key TEXT
+  --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
-  --ftxus-api-secret TEXT
+  --ftxus-api-secret TEXT         Your FTX API secret
   --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
                                   Your FTX Account Tier
   --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
   --iqfeed-iqconnect FILE         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
