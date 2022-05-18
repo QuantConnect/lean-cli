@@ -62,6 +62,14 @@ class JsonModule(abc.ABC):
                 return False
         return True
 
+    def check_if_config_passes_module_filter(self, config: Configuration) -> bool:
+        for condition in config._filter._conditions:
+            if condition._dependent_config_id == "module-type":
+                target_value = self.__class__.__name__
+                if not condition.check(target_value):
+                    return False
+        return True
+
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():
             self.update_value_for_given_config(key,value)
@@ -111,8 +119,10 @@ class JsonModule(abc.ABC):
     def get_essential_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
-    def get_all_input_configs(self) -> List[Configuration]:
-        return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()]
+    def get_all_input_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
+        return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
+                if type(config) not in filters
+                and self.check_if_config_passes_module_filter(config)]
 
     def _convert_lean_key_to_variable(self, lean_key:str) -> str:
         """Replaces hyphens with underscore to follow python naming convention.

@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
-from lean.models.configuration import Configuration, InternalInputUserInput
+from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
 
@@ -216,7 +216,7 @@ def _get_configs_for_options() -> List[Configuration]:
     run_options: Dict[str, Configuration] = {}
     brokerages_ids = [module._id for module in all_local_brokerages]
     for module in all_local_brokerages + [module for module in all_local_data_feeds if module._id not in brokerages_ids]:
-        for config in module.get_all_input_configs():
+        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._name in run_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
             run_options[config._name] = config

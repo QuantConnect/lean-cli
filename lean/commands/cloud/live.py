@@ -23,7 +23,7 @@ from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMe
 from lean.models.brokerages.local import all_cloud_brokerages
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
-from lean.models.configuration import Configuration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
@@ -148,7 +148,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
 def _get_configs_for_options() -> Dict[Configuration, str]: 
     run_options: Dict[str, Configuration] = {}
     for module in all_cloud_brokerages:
-        for config in module.get_all_input_configs():
+        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._name in run_options:
                 raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
             run_options[config._name] = config

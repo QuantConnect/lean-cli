@@ -206,28 +206,25 @@ Usage: lean cloud live [OPTIONS] PROJECT
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Kraken|FTX]
                                   The brokerage to use
-  --paper-environment TEXT
-  --ib-agent-description TEXT     Your IB API key
-  --ib-trading-mode TEXT          Your IB API key
   --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --use-ib-feed BOOLEAN           Whether the Interactive Brokers price data feed must be used instead of the
+  --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
                                   QuantConnect price data feed
 
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
 
-  --tradier-use-sandbox [live|paper]
-                                  Whether the developer sandbox should be used
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --oanda-environment [Practice|Trade]
-                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --tradier-use-sandbox [live|paper]
+                                  Whether the developer sandbox should be used
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-use-sandbox [live|paper]
@@ -773,28 +770,22 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Custom data only]
                                   The data feed to use
-  --paper-environment TEXT
-  --ib-agent-description TEXT     Your IB API key
-  --ib-trading-mode TEXT          Your IB API key
   --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --use-ib-feed BOOLEAN           Whether the Interactive Brokers price data feed must be used instead of the
-                                  QuantConnect price data feed
-
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
 
-  --tradier-use-sandbox [live|paper]
-                                  Whether the developer sandbox should be used
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --oanda-environment [Practice|Trade]
-                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --tradier-use-sandbox [live|paper]
+                                  Whether the developer sandbox should be used
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-use-sandbox [live|paper]
@@ -832,10 +823,10 @@ Options:
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
 
-  --bloomberg-environment [Production|Beta]
-                                  The environment to run in
   --terminal-link-organization TEXT
                                   The name or id of the organization with the Terminal Link module subscription
+  --bloomberg-environment [Production|Beta]
+                                  The environment to run in
   --bloomberg-server-host TEXT    The host of the Bloomberg server
   --bloomberg-server-port INTEGER
                                   The port of the Bloomberg server
@@ -850,7 +841,6 @@ Options:
   --bloomberg-emsx-handling TEXT  The EMSX handling to use
   --bloomberg-allow-modification BOOLEAN
                                   Whether modification is allowed
-  --bloomberg-api-type TEXT       Your IB API key
   --atreyu-organization TEXT      The name or id of the organization with the Atreyu module subscription
   --atreyu-host TEXT              The host of the Atreyu server
   --atreyu-req-port INTEGER       The Atreyu request port
