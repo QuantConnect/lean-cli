@@ -1,1954 +1,1907 @@
 {
-  "modules": [
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage"
-      ],
-      "product-id": "",
-      "id": "QuantConnectBrokerage",
-      "display-id": "Paper Trading",
-      "installs": false,
-      "configurations": [
-        {
-          "id": "paper-environment",
-          "cloud-id": "environment",
-          "type": "internal-input",
-          "value": "paper",
-          "filters": [
-            {
-              "condition":{
-                 "type":"exact-match",
-                 "pattern":"CloudBrokerage",
-                 "dependent-config-id":"module-type"
-              }
-            }
-          ],
-          "input-method": "",
-          "prompt-info":"", 
-          "help": ""
-        },
-       {
-        "id": "environments",
-        "type": "configurations-env",
-        "value": [
-          {
-            "name": "lean-cli",
-            "value": [
-              {
-                "name": "live-mode-brokerage",
-                "value": "PaperBrokerage"
-              },
-              {
-                "name": "transaction-handler",
-                "value": "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
-              }
-            ]
-          }
+  "modules":[
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage"
         ],
-        "filters": []
-      }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "181",
-      "id": "InteractiveBrokersBrokerage",
-      "display-id": "Interactive Brokers",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "ib-agent-description",
-         "cloud-id": "accountType",
-         "type": "internal-input",
-         "value": "",
-         "filters": [],
-         "value-options": [
+        "product-id":"",
+        "id":"QuantConnectBrokerage",
+        "display-id":"Paper Trading",
+        "installs":false,
+        "configurations":[
            {
-             "condition":{
-                "type":"regex",
-                "pattern":"^du|^df|^u",
-                "dependent-config-id":"ib-account"
-             },
-             "value":"Individual"
+              "id":"paper-environment",
+              "cloud-id":"environment",
+              "type":"internal-input",
+              "value":"paper",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"CloudBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"",
+              "prompt-info":"",
+              "help":""
            },
            {
-             "condition":{
-               "type":"regex",
-               "pattern":"^di|^f|^i",
-               "dependent-config-id":"ib-account"
-             },
-             "value":"Advisor"
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"PaperBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
+                       }
+                    ]
+                 }
+              ]
            }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"Username", 
-         "help": "Your IB API key"
-       },
-       {
-         "id": "ib-trading-mode",
-         "cloud-id": "environment",
-         "type": "internal-input",
-         "value": "",
-         "filters": [],
-         "value-options": [
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"181",
+        "id":"InteractiveBrokersBrokerage",
+        "display-id":"Interactive Brokers",
+        "installs":true,
+        "configurations":[
            {
-             "condition":{
-                "type":"regex",
-                "pattern":"^df|^du|^di",
-                "dependent-config-id":"ib-account"
-             },
-             "value":"paper"
+              "id":"ib-agent-description",
+              "cloud-id":"accountType",
+              "type":"internal-input",
+              "value":"",
+              "value-options":[
+                 {
+                    "condition":{
+                       "type":"regex",
+                       "pattern":"^du|^df|^u",
+                       "dependent-config-id":"ib-account"
+                    },
+                    "value":"Individual"
+                 },
+                 {
+                    "condition":{
+                       "type":"regex",
+                       "pattern":"^di|^f|^i",
+                       "dependent-config-id":"ib-account"
+                    },
+                    "value":"Advisor"
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"Username",
+              "help":"Your IB API key"
            },
            {
-             "condition":{
-               "type":"regex",
-               "pattern":"^f|^i|^u",
-               "dependent-config-id":"ib-account"
-             },
-             "value":"live"
-           }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"Username", 
-         "help": "Your IB API key"
-       },
-       {
-         "id": "ib-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Interactive Brokers module subscription",
-         "log-message": "Log messages are before outputting the prompt"
-        },
-       {
-         "id": "ib-user-name",
-         "cloud-id": "user",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Username", 
-         "help": "Your Interactive Brokers username"
-       },
-       {
-         "id": "ib-account",
-         "cloud-id": "account",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Account id", 
-         "help": "Your Interactive Brokers account id"
-       },
-       {
-         "id": "ib-password",
-         "cloud-id": "password",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"Account password", 
-         "help": "Your Interactive Brokers password"
-       },
-       {
-        "id": "ib-data-feed",
-        "type": "input",
-        "value": "",
-        "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"CloudBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-        ],
-        "input-method": "confirm",
-        "prompt-info":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?", 
-        "help": "Whether the Interactive Brokers price data feed must be used instead of the QuantConnect price data feed"
-      },
-      {
-        "id": "ib-enable-delayed-streaming-data",
-        "type": "input",
-        "value": "",
-        "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-        ],
-        "input-method": "confirm",
-        "prompt-info":"Enable delayed market data (yes/no)?", 
-        "help": "Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "InteractiveBrokersBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "TradierBrokerage",
-      "display-id": "Tradier",
-      "installs": false,
-      "configurations": [
-      {
-        "id": "tradier-account-id",
-        "cloud-id": "account",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Account id", 
-        "help": "Your Tradier account id",
-        "log-message": "Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api). The account id is the alpha-numeric code in a dropdown box on that page."
-      },
-      {
-        "id": "tradier-access-token",
-        "cloud-id": "token",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"Access token", 
-        "help": "Your Tradier access token"
-      },
-      {
-        "id": "tradier-use-sandbox",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "choice",
-        "input-choices": ["live", "paper"],
-        "prompt-info":"Use the developer sandbox?", 
-        "help": "Whether the developer sandbox should be used"
-      },
-      {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "TradierBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                "name": "data-queue-handler",
-                "value": "TradierBrokerage"
-              }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "OandaBrokerage",
-      "display-id": "Oanda",
-      "installs": false,
-      "configurations": [
-       {
-         "id": "oanda-account-id",
-         "cloud-id": "account",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Account id", 
-         "help": "Your OANDA account id",
-         "log-message": "Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/). It follows the following format: ###-###-######-###. You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token)."
-       },
-       {
-        "id": "oanda-access-token",
-        "cloud-id": "key",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"Access token", 
-        "help": "Your OANDA API token"
-      },
-       {
-        "id": "oanda-environment",
-        "cloud-id": "environment",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "choice",
-        "input-choices": ["Practice", "Trade"],
-        "prompt-info":"Environment?", 
-        "help": "The environment to run in, Practice for fxTrade Practice, Trade for fxTrade"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "OandaBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "OandaBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "BitfinexBrokerage",
-      "display-id": "Bitfinex",
-      "installs": false,
-      "configurations": [
-       {
-         "id": "bitfinex-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"API key", 
-         "help": "Your Bitfinex API key",
-         "log-message": "Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api)."
-       },
-       {
-         "id": "bitfinex-api-secret",
-         "cloud-id": "secret",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"API secret", 
-         "help": "Your Bitfinex API secret"
-       },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "BitfinexBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "BitfinexBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "GDAXBrokerage",
-      "display-id": "Coinbase Pro",
-      "installs": false,
-      "configurations": [
-       {
-         "id": "gdax-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"API key", 
-         "help": "Your Coinbase Pro API key",
-         "log-message": "You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api). When creating the key, make sure you authorize it for View and Trading access."
-       },
-       {
-        "id": "gdax-api-secret",
-        "cloud-id": "secret",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"API secret", 
-        "help": "Your Coinbase Pro API secret"
-      },
-       {
-         "id": "gdax-passphrase",
-         "cloud-id": "passphrase",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"Passphrase", 
-         "help": "Your Coinbase Pro API passphrase"
-       },
-       {
-        "id": "gdax-use-sandbox",
-        "type": "trading-env",
-        "value": "",
-        "filters": [],
-        "input-method": "choice",
-        "input-choices": ["live", "paper"],
-        "prompt-info":"Use sandbox?", 
-        "help": "Whether the sandbox should be used"
-      },
-      {
-        "id": "gdax-url",
-        "type": "info",
-        "value": "wss://ws-feed.pro.coinbase.com",
-        "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"live",
-               "dependent-config-id":"gdax-use-sandbox"
-            }
-          }
-        ]
-      },
-      {
-       "id": "gdax-url",
-       "type": "info",
-       "value": "wss://ws-feed-public.sandbox.pro.coinbase.com",
-       "filters": [
-        {
-          "condition":{
-             "type":"exact-match",
-             "pattern":"paper",
-             "dependent-config-id":"gdax-use-sandbox"
-          }
-        }
-       ]
-     },
-      {
-        "id": "gdax-rest-api",
-        "type": "info",
-        "value": "https://api.pro.coinbase.com",
-        "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"live",
-               "dependent-config-id":"gdax-use-sandbox"
-            }
-          }
-        ]
-      },
-      {
-       "id": "gdax-rest-api",
-       "type": "info",
-       "value": "https://api-public.sandbox.pro.coinbase.com",
-       "filters": [
-        {
-          "condition":{
-             "type":"exact-match",
-             "pattern":"paper",
-             "dependent-config-id":"gdax-use-sandbox"
-          }
-        }
-       ]
-     },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "GDAXBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "GDAXDataQueueHandler"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler",
-        "history-provider"
-      ],
-      "product-id": "176",
-      "id": "BinanceBrokerage",
-      "display-id": "Binance",
-      "installs": true,
-      "configurations": [
-        {
-         "id": "binance-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Binance module subscription"
-        },
-       {
-         "id": "binance-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"API-Key", 
-         "help": "Your Binance API key"
-       },
-       {
-         "id": "binance-api-secret",
-         "cloud-id": "secret",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"API secret", 
-         "help": "Your Binance API secret"
-       },
-       {
-         "id": "binance-use-testnet",
-         "cloud-id": "environment",
-         "type": "trading-env",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["live", "paper"],
-         "prompt-info":"Use the testnet?", 
-         "help": "Whether the testnet should be used"
-       },
-        {
-          "id": "binance-api-url",
-          "type": "info",
-          "value": "https://api.binance.com",
-          "filters": [
-            {
-              "condition":{
-                 "type":"exact-match",
-                 "pattern":"live",
-                 "dependent-config-id":"binance-use-testnet"
-              }
-            }
-          ]
-        },
-        {
-         "id": "binance-api-url",
-         "type": "info",
-         "value": "https://testnet.binance.vision",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"paper",
-               "dependent-config-id":"binance-use-testnet"
-            }
-          }
-         ]
-       },
-        {
-          "id": "binance-websocket-url",
-          "type": "info",
-          "value": "wss://stream.binance.com:9443/ws",
-          "filters": [
-            {
-              "condition":{
-                 "type":"exact-match",
-                 "pattern":"live",
-                 "dependent-config-id":"binance-use-testnet"
-              }
-            }
-          ]
-        },
-        {
-         "id": "binance-websocket-url",
-         "type": "info",
-         "value": "wss://testnet.binance.vision/ws",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"paper",
-               "dependent-config-id":"binance-use-testnet"
-            }
-          }
-         ]
-       },
-        {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "BinanceBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "BinanceBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "174",
-      "id": "ZerodhaBrokerage",
-      "display-id": "Zerodha",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "zerodha-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the zerodha module subscription"
-        },
-       {
-         "id": "zerodha-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"API key", 
-         "help": "Your Kite Connect API key",
-         "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
-       },
-       {
-         "id": "zerodha-access-token",
-         "cloud-id": "accessToken",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"Access token", 
-         "help": "Your Kite Connect access token"
-       },
-       {
-         "id": "zerodha-product-type",
-         "cloud-id": "productType",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["MIS", "CNC", "NRML"], 
-         "prompt-info":"Product type",
-         "help": "MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
-         "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
-       },
-       {
-         "id": "zerodha-trading-segment",
-         "cloud-id": "tradingSegment",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["EQUITY", "COMMODITY"], 
-         "prompt-info":"Trading segment",
-         "help": "EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
-         "log-message": "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
-       },
-       {
-        "id": "zerodha-history-subscription",
-        "type": "input",
-        "value": "",
-        "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-        ],
-        "input-method": "confirm",
-        "prompt-info":"Do you have a history API subscription (yes/no)?", 
-        "help": "Whether you have a history API subscription for Zerodha"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "ZerodhaBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "ZerodhaBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "173",
-      "id": "SamcoBrokerage",
-      "display-id": "Samco",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "samco-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the samco module subscription"
-        },
-       {
-         "id": "samco-client-id",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Client ID", 
-         "help": "Your Samco account Client ID"
-       },
-       {
-         "id": "samco-client-password",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"Client Password", 
-         "help": "Your Samco account password"
-       },
-       {
-         "id": "samco-year-of-birth",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Year of Birth", 
-         "help": "Your year of birth (YYYY) registered with Samco"
-       },
-       {
-         "id": "samco-product-type",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["MIS", "CNC", "NRML"], 
-         "prompt-info":"Product type",
-         "help": "MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
-         "log-message": "The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
-       },
-       {
-         "id": "samco-trading-segment",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["EQUITY", "COMMODITY"], 
-         "prompt-info":"Trading segment",
-         "help": "EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
-         "log-message": "The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
-       },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "SamcoBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "SamcoBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "data-queue-handler",
-        "data-provider"
-      ],
-      "product-id": "44",
-      "id": "BloombergBrokerage",
-      "display-id": "Terminal Link",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "terminal-link-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Terminal Link module subscription"
-        },
-        {
-          "id": "bloomberg-environment",
-          "type": "input",
-          "value": "",
-          "filters": [],
-          "input-method": "choice",
-          "input-choices": ["Production", "Beta"],
-          "prompt-info":"Environment", 
-          "help": "The environment to run in"
-        },
-       {
-         "id": "bloomberg-server-host",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"Server host", 
-         "help": "The host of the Bloomberg server"
-       },
-       {
-        "id": "bloomberg-server-port",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-type": "integer",
-        "prompt-info":"Server port", 
-        "help": "The port of the Bloomberg server"
-      },
-       {
-        "id": "bloomberg-symbol-map-file",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "path-parameter",
-        "input-default":"",
-        "prompt-info":"Path to symbol map file", 
-        "help": "The path to the Bloomberg symbol map file"
-      },
-      {
-        "id": "bloomberg-emsx-broker",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"EMSX broker", 
-        "help": "The EMSX broker to use"
-      },
-      {
-        "id": "bloomberg-emsx-user-time-zone",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-default":"",
-        "prompt-info":"EMSX user timezone", 
-        "help": "The EMSX user timezone to use"
-      },
-      {
-        "id": "bloomberg-emsx-account",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-default":"",
-        "prompt-info":"EMSX account", 
-        "help": "The EMSX account to use"
-      },
-      {
-        "id": "bloomberg-emsx-strategy",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-default":"",
-        "prompt-info":"EMSX strategy", 
-        "help": "The EMSX strategy to use"
-      },
-      {
-        "id": "bloomberg-emsx-notes",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-default":"",
-        "prompt-info":"EMSX notes", 
-        "help": "The EMSX notes to use"
-      },
-      {
-        "id": "bloomberg-emsx-handling",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-default":"",
-        "prompt-info":"EMSX handling", 
-        "help": "The EMSX handling to use"
-      },
-      {
-        "id": "bloomberg-allow-modification",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "confirm",
-        "prompt-info":"Allow modification (yes/no)?", 
-        "help": "Whether modification is allowed"
-      },
-      {
-        "id": "bloomberg-api-type",
-        "type": "internal-input",
-        "value": "Desktop",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Server host", 
-        "help": "Your IB API key"
-      },
-      {
-        "id": "data-provider",
-        "type": "info",
-        "value": "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider",
-        "filters": []
-      },
-      {
-        "id": "data-downloader",
-        "type": "info",
-        "value": "BloombergDataDownloader",
-        "filters": []
-      },
-      {
-        "id": "map-file-provider",
-        "type": "info",
-        "value": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-        "filters": []
-      },
-      {
-        "id": "factor-file-provider",
-        "type": "info",
-        "value": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-        "filters": []
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "BloombergBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "BloombergBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage"
-      ],
-      "product-id": "65",
-      "id": "AtreyuBrokerage",
-      "display-id": "Atreyu",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "atreyu-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the Atreyu module subscription"
-        },
-       {
-         "id": "atreyu-host",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"host", 
-         "help": "The host of the Atreyu server"
-       },
-       {
-        "id": "atreyu-req-port",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-type": "integer",
-        "prompt-info":"Request port", 
-        "help": "The Atreyu request port"
-      },
-      {
-        "id": "atreyu-sub-port",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "input-type": "integer",
-        "prompt-info":"Subscribe port", 
-        "help": "The Atreyu subscribe port"
-      },
-      {
-        "id": "atreyu-username",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Username", 
-        "help": "Your Atreyu username"
-      },
-      {
-        "id": "atreyu-password",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"Password", 
-        "help": "Your Atreyu password"
-      },
-      {
-        "id": "atreyu-client-id",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Client id", 
-        "help": "Your Atreyu client id"
-      },
-      {
-        "id": "atreyu-broker-mpid",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Broker MPID", 
-        "help": "The broker MPID to use"
-      },
-      {
-        "id": "atreyu-locate-rqd",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Locate rqd", 
-        "help": "The locate rqd to use"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "AtreyuBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "QuantConnect.Lean.Engine.DataFeeds.Queues.LiveDataQueue"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "64",
-      "id": "TradingTechnologiesBrokerage",
-      "display-id": "Trading Technologies",
-      "installs": true,
-      "configurations": [
-        {
-          "id": "tt-organization",
-          "type": "organization-id",
-          "value": "",
-          "filters": [
-            {
-              "condition":{
-                 "type":"exact-match",
-                 "pattern":"LocalBrokerage",
-                 "dependent-config-id":"module-type"
-              }
-            }
-          ],
-          "input-method": "prompt",
-          "prompt-info":"organization having subscription of module", 
-          "help": "The name or id of the organization with the Trading Technologies module subscription"
-         },
-       {
-         "id": "tt-user-name",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"User name", 
-         "help": "Your Trading Technologies username"
-       },
-       {
-        "id": "tt-session-password",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"Session password", 
-        "help": "Your Trading Technologies session password"
-      },
-      {
-        "id": "tt-account-name",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Account name", 
-        "help": "Your Trading Technologies account name"
-      },
-      {
-        "id": "tt-rest-app-key",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"REST app key", 
-        "help": "Your Trading Technologies REST app key"
-      },
-      {
-        "id": "tt-rest-app-secret",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"REST app secret", 
-        "help": "Your Trading Technologies REST app secret"
-      },
-      {
-        "id": "tt-rest-environment",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"REST environment", 
-        "help": "The REST environment to run in"
-      },
-      {
-        "id": "tt-market-data-sender-comp-id",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Market data sender comp id", 
-        "help": "The market data sender comp id to use"
-      },
-      {
-        "id": "tt-market-data-target-comp-id",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Market data target comp id", 
-        "help": "The market data target comp id to use"
-      },
-      {
-        "id": "tt-market-data-host",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Market data host", 
-        "help": "The host of the market data server"
-      },
-      {
-        "id": "tt-market-data-port",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Market data port", 
-        "help": "The port of the market data server"
-      },
-      {
-        "id": "tt-order-routing-sender-comp-id",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Order routing sender comp id", 
-        "help": "The order routing sender comp id to use"
-      },
-      {
-        "id": "tt-order-routing-target-comp-id",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Order routing target comp id", 
-        "help": "The order routing target comp id to use"
-      },
-      {
-        "id": "tt-order-routing-host",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Order routing host", 
-        "help": "The host of the order routing server"
-      },
-      {
-        "id": "tt-order-routing-port",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Order routing port", 
-        "help": "The port of the order routing server"
-      },
-      {
-        "id": "tt-log-fix-messages",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "confirm",
-        "prompt-info":"Log FIX messages (yes/no)?", 
-        "help": "Whether FIX messages should be logged"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "TradingTechnologiesBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "TradingTechnologiesBrokerage"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "130",
-      "id": "KrakenBrokerage",
-      "display-id": "Kraken",
-      "installs": true,
-      "configurations": [
-       {
-         "id": "kraken-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the kraken module subscription"
-        },
-       {
-         "id": "kraken-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt",
-         "prompt-info":"API key", 
-         "help": "Your Kraken API key",
-         "log-message": "Log messages are before outputting the prompt"
-       },
-       {
-         "id": "kraken-api-secret",
-         "cloud-id": "secret",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "prompt-password",
-         "prompt-info":"API secret", 
-         "help": "Your Kraken API secret"
-       },
-       {
-         "id": "kraken-verification-tier",
-         "cloud-id": "verificationTier",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["Starter", "Intermediate", "Pro"], 
-         "prompt-info":"Select the Verification Tier",
-         "help": "Your Kraken Verification Tier"
-       },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "KrakenBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "KrakenBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "local-brokerage",
-        "cloud-brokerage",
-        "data-queue-handler"
-      ],
-      "product-id": "138",
-      "id": "FTXBrokerage",
-      "display-id": "FTX",
-      "installs": true,
-      "configurations": [
-        {
-         "id": "ftx-exchange-name",
-         "cloud-id": "exchange",
-         "type": "filter-env",
-         "value": "",
-         "filters": [],
-         "input-method": "choice",
-         "input-choices": ["FTX", "FTXUS"], 
-         "prompt-info":"FTX Exchange",
-         "help": "FTX exchange name [FTX, FTXUS]"
-       },
-       {
-         "id": "ftx-organization",
-         "type": "organization-id",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the FTX module subscription"
-        },
-       {
-         "id": "ftx-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTX",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"API-Key", 
-         "help": "Your FTX API key",
-         "log-message": "Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile)."
-       },
-       {
-         "id": "ftxus-api-key",
-         "cloud-id": "key",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTXUS",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          },
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt",
-         "prompt-info":"API-Key", 
-         "help": "Your FTX API key",
-         "log-message": "Create an API key by logging in and accessing the FTXUS Profile page (https://ftx.us/profile)."
-       },
-       {
-         "id": "ftx-api-secret",
-         "cloud-id": "secret",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTX",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          }
-         ],
-         "input-method": "prompt-password",
-         "prompt-info":"API secret", 
-         "help": "Your FTX API secret"
-       },
-       {
-         "id": "ftxus-api-secret",
-         "cloud-id": "secret",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTXUS",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          },
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "prompt-password",
-         "prompt-info":"API secret", 
-         "help": "Your FTX API secret"
-       },
-       {
-         "id": "ftx-account-tier",
-         "cloud-id": "tier",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTX",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          }
-         ],
-         "input-method": "choice",
-         "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "prompt-info":"Select the Account Tier",
-         "help": "Your FTX Account Tier"
-       },
-       {
-         "id": "ftxus-account-tier",
-         "cloud-id": "tier",
-         "type": "input",
-         "value": "",
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTXUS",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          },
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"LocalBrokerage",
-               "dependent-config-id":"module-type"
-            }
-          }
-         ],
-         "input-method": "choice",
-         "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "prompt-info":"Select the Account Tier",
-         "help": "Your FTX Account Tier"
-       },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                  "name": "live-mode-brokerage",
-                  "value": "FTXBrokerage"
-                },
-                {
-                  "name": "transaction-handler",
-                  "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-                },
-                {
-                 "name": "data-queue-handler",
-                 "value": "FTXBrokerage"
-               },
-               {
-                 "name": "history-provider",
-                 "value": "BrokerageHistoryProvider"
-               }
-              ]
-            }
-          ],
-          "filters": [
-            {
-              "condition":{
-                 "type":"exact-match",
-                 "pattern":"FTX",
-                 "dependent-config-id":"ftx-exchange-name"
-              }
-            }
-         ]
-        },
-        {
-         "id": "environments",
-         "type": "configurations-env",
-         "value": [
+              "id":"ib-trading-mode",
+              "cloud-id":"environment",
+              "type":"internal-input",
+              "value":"",
+              "value-options":[
+                 {
+                    "condition":{
+                       "type":"regex",
+                       "pattern":"^df|^du|^di",
+                       "dependent-config-id":"ib-account"
+                    },
+                    "value":"paper"
+                 },
+                 {
+                    "condition":{
+                       "type":"regex",
+                       "pattern":"^f|^i|^u",
+                       "dependent-config-id":"ib-account"
+                    },
+                    "value":"live"
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"Username",
+              "help":"Your IB API key"
+           },
            {
-             "name": "lean-cli",
-             "value": [
-               {
-                "name": "live-mode-brokerage",
-                "value": "FTXUSBrokerage"
-              },
-               {
-                 "name": "transaction-handler",
-                 "value": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
-               },
-               {
-                "name": "data-queue-handler",
-                "value": "FTXUSBrokerage"
-              },
-              {
-                "name": "history-provider",
-                "value": "BrokerageHistoryProvider"
-              }
-             ]
+              "id":"ib-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the Interactive Brokers module subscription",
+              "log-message":"Log messages are before outputting the prompt"
+           },
+           {
+              "id":"ib-user-name",
+              "cloud-id":"user",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Username",
+              "help":"Your Interactive Brokers username"
+           },
+           {
+              "id":"ib-account",
+              "cloud-id":"account",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Account id",
+              "help":"Your Interactive Brokers account id"
+           },
+           {
+              "id":"ib-password",
+              "cloud-id":"password",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Account password",
+              "help":"Your Interactive Brokers password"
+           },
+           {
+              "id":"ib-data-feed",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"CloudBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"confirm",
+              "prompt-info":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?",
+              "help":"Whether the Interactive Brokers price data feed must be used instead of the QuantConnect price data feed"
+           },
+           {
+              "id":"ib-enable-delayed-streaming-data",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"confirm",
+              "prompt-info":"Enable delayed market data (yes/no)?",
+              "help":"Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"InteractiveBrokersBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
            }
-         ],
-         "filters": [
-          {
-            "condition":{
-               "type":"exact-match",
-               "pattern":"FTXUS",
-               "dependent-config-id":"ftx-exchange-name"
-            }
-          }
         ]
-       }
-      ]
-    },
-    {
-      "type": [
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "IQFeed",
-      "display-id": "IQFeed",
-      "installs": false,
-      "configurations": [
-       {
-         "id": "iqfeed-iqconnect",
-         "type": "input",
-         "value": "",
-         "filters": [],
-         "input-method": "path-parameter",
-         "input-default":"C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe",
-         "prompt-info":"IQConnect binary location", 
-         "help": "The path to the IQConnect binary"
-       },
-       {
-        "id": "iqfeed-username",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Username", 
-        "help": "Your IQFeed username"
-      },
-       {
-        "id": "iqfeed-password",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt-password",
-        "prompt-info":"Password", 
-        "help": "Your IQFeed password"
-      },
-      {
-        "id": "iqfeed-productName",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Product id", 
-        "help": "The product name of your IQFeed developer account"
-      },
-      {
-        "id": "iqfeed-version",
-        "type": "input",
-        "value": "",
-        "filters": [],
-        "input-method": "prompt",
-        "prompt-info":"Product version", 
-        "help": "The product version of your IQFeed developer account"
-      },
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                 "name": "data-queue-handler",
-                 "value": "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
-               },
-               {
-                "name": "history-provider",
-                "value": "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
-              }
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"TradierBrokerage",
+        "display-id":"Tradier",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"tradier-account-id",
+              "cloud-id":"account",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Account id",
+              "help":"Your Tradier account id",
+              "log-message":"Your Tradier account id and API token can be found on your Settings/API Access page (https://dash.tradier.com/settings/api). The account id is the alpha-numeric code in a dropdown box on that page."
+           },
+           {
+              "id":"tradier-access-token",
+              "cloud-id":"token",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Access token",
+              "help":"Your Tradier access token"
+           },
+           {
+              "id":"tradier-use-sandbox",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "live",
+                 "paper"
+              ],
+              "prompt-info":"Use the developer sandbox?",
+              "help":"Whether the developer sandbox should be used"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"TradierBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"TradierBrokerage"
+                       }
+                    ]
+                 }
               ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "data-queue-handler"
-      ],
-      "product-id": "",
-      "id": "Custom data only",
-      "display-id": "Custom data only",
-      "installs": false,
-      "configurations": [
-       {
-          "id": "environments",
-          "type": "configurations-env",
-          "value": [
-            {
-              "name": "lean-cli",
-              "value": [
-                {
-                 "name": "data-queue-handler",
-                 "value": "QuantConnect.Lean.Engine.DataFeeds.Queues.LiveDataQueue"
-               }
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"OandaBrokerage",
+        "display-id":"Oanda",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"oanda-account-id",
+              "cloud-id":"account",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Account id",
+              "help":"Your OANDA account id",
+              "log-message":"Your OANDA account id can be found on your OANDA Account Statement page (https://www.oanda.com/account/statement/). It follows the following format: ###-###-######-###. You can generate an API token from the Manage API Access page (https://www.oanda.com/account/tpa/personal_token)."
+           },
+           {
+              "id":"oanda-access-token",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Access token",
+              "help":"Your OANDA API token"
+           },
+           {
+              "id":"oanda-environment",
+              "cloud-id":"environment",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "Practice",
+                 "Trade"
+              ],
+              "prompt-info":"Environment?",
+              "help":"The environment to run in, Practice for fxTrade Practice, Trade for fxTrade"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"OandaBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"OandaBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
               ]
-            }
-          ],
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "data-provider"
-      ],
-      "product-id": "",
-      "id": "QuantConnect",
-      "display-id": "QuantConnect",
-      "installs": false,
-      "configurations": [
-        {
-          "id": "quantconnect-organization",
-          "type": "organization-id",
-          "value": "",
-          "filters": [],
-          "input-method": "prompt",
-          "prompt-info":"organization having subscription of module", 
-          "help": ""
-         },
-        {
-          "id": "data-provider",
-          "type": "info",
-          "value": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider",
-          "filters": []
-        },
-        {
-          "id": "map-file-provider",
-          "type": "info",
-          "value": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
-          "filters": []
-        },
-        {
-          "id": "factor-file-provider",
-          "type": "info",
-          "value": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
-          "filters": []
-        }
-      ]
-    },
-    {
-      "type": [
-        "data-provider"
-      ],
-      "product-id": "",
-      "id": "Local",
-      "display-id": "Local",
-      "installs": false,
-      "configurations": [
-        {
-          "id": "data-provider",
-          "type": "info",
-          "value": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-          "filters": []
-        }
-      ]
-    }
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"BitfinexBrokerage",
+        "display-id":"Bitfinex",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"bitfinex-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"API key",
+              "help":"Your Bitfinex API key",
+              "log-message":"Create an API key by logging in and accessing the Bitfinex API Management page (https://www.bitfinex.com/api)."
+           },
+           {
+              "id":"bitfinex-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your Bitfinex API secret"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"BitfinexBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"BitfinexBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"GDAXBrokerage",
+        "display-id":"Coinbase Pro",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"gdax-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"API key",
+              "help":"Your Coinbase Pro API key",
+              "log-message":"You can generate Coinbase Pro API credentials on the API settings page (https://pro.coinbase.com/profile/api). When creating the key, make sure you authorize it for View and Trading access."
+           },
+           {
+              "id":"gdax-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your Coinbase Pro API secret"
+           },
+           {
+              "id":"gdax-passphrase",
+              "cloud-id":"passphrase",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Passphrase",
+              "help":"Your Coinbase Pro API passphrase"
+           },
+           {
+              "id":"gdax-use-sandbox",
+              "type":"trading-env",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "live",
+                 "paper"
+              ],
+              "prompt-info":"Use sandbox?",
+              "help":"Whether the sandbox should be used"
+           },
+           {
+              "id":"gdax-url",
+              "type":"info",
+              "value":"wss://ws-feed.pro.coinbase.com",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"live",
+                       "dependent-config-id":"gdax-use-sandbox"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"gdax-url",
+              "type":"info",
+              "value":"wss://ws-feed-public.sandbox.pro.coinbase.com",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"paper",
+                       "dependent-config-id":"gdax-use-sandbox"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"gdax-rest-api",
+              "type":"info",
+              "value":"https://api.pro.coinbase.com",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"live",
+                       "dependent-config-id":"gdax-use-sandbox"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"gdax-rest-api",
+              "type":"info",
+              "value":"https://api-public.sandbox.pro.coinbase.com",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"paper",
+                       "dependent-config-id":"gdax-use-sandbox"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"GDAXBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"GDAXDataQueueHandler"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler",
+           "history-provider"
+        ],
+        "product-id":"176",
+        "id":"BinanceBrokerage",
+        "display-id":"Binance",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"binance-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the Binance module subscription"
+           },
+           {
+              "id":"binance-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"API-Key",
+              "help":"Your Binance API key"
+           },
+           {
+              "id":"binance-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your Binance API secret"
+           },
+           {
+              "id":"binance-use-testnet",
+              "cloud-id":"environment",
+              "type":"trading-env",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "live",
+                 "paper"
+              ],
+              "prompt-info":"Use the testnet?",
+              "help":"Whether the testnet should be used"
+           },
+           {
+              "id":"binance-api-url",
+              "type":"info",
+              "value":"https://api.binance.com",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"live",
+                       "dependent-config-id":"binance-use-testnet"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"binance-api-url",
+              "type":"info",
+              "value":"https://testnet.binance.vision",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"paper",
+                       "dependent-config-id":"binance-use-testnet"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"binance-websocket-url",
+              "type":"info",
+              "value":"wss://stream.binance.com:9443/ws",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"live",
+                       "dependent-config-id":"binance-use-testnet"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"binance-websocket-url",
+              "type":"info",
+              "value":"wss://testnet.binance.vision/ws",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"paper",
+                       "dependent-config-id":"binance-use-testnet"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"BinanceBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"BinanceBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"174",
+        "id":"ZerodhaBrokerage",
+        "display-id":"Zerodha",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"zerodha-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the zerodha module subscription"
+           },
+           {
+              "id":"zerodha-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"API key",
+              "help":"Your Kite Connect API key",
+              "log-message":"The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
+           },
+           {
+              "id":"zerodha-access-token",
+              "cloud-id":"accessToken",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Access token",
+              "help":"Your Kite Connect access token"
+           },
+           {
+              "id":"zerodha-product-type",
+              "cloud-id":"productType",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "MIS",
+                 "CNC",
+                 "NRML"
+              ],
+              "prompt-info":"Product type",
+              "help":"MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
+              "log-message":"The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
+           },
+           {
+              "id":"zerodha-trading-segment",
+              "cloud-id":"tradingSegment",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "EQUITY",
+                 "COMMODITY"
+              ],
+              "prompt-info":"Trading segment",
+              "help":"EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
+              "log-message":"The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
+           },
+           {
+              "id":"zerodha-history-subscription",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"confirm",
+              "prompt-info":"Do you have a history API subscription (yes/no)?",
+              "help":"Whether you have a history API subscription for Zerodha"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"ZerodhaBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"ZerodhaBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"173",
+        "id":"SamcoBrokerage",
+        "display-id":"Samco",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"samco-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the samco module subscription"
+           },
+           {
+              "id":"samco-client-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Client ID",
+              "help":"Your Samco account Client ID"
+           },
+           {
+              "id":"samco-client-password",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Client Password",
+              "help":"Your Samco account password"
+           },
+           {
+              "id":"samco-year-of-birth",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Year of Birth",
+              "help":"Your year of birth (YYYY) registered with Samco"
+           },
+           {
+              "id":"samco-product-type",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "MIS",
+                 "CNC",
+                 "NRML"
+              ],
+              "prompt-info":"Product type",
+              "help":"MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products",
+              "log-message":"The product type must be set to MIS if you are targeting intraday products, CNC if you are targeting delivery products or NRML if you are targeting carry forward products."
+           },
+           {
+              "id":"samco-trading-segment",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "EQUITY",
+                 "COMMODITY"
+              ],
+              "prompt-info":"Trading segment",
+              "help":"EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX",
+              "log-message":"The trading segment must be set to EQUITY if you are trading equities on NSE or BSE, or COMMODITY if you are trading commodities on MCX."
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"SamcoBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"SamcoBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "data-queue-handler",
+           "data-provider"
+        ],
+        "product-id":"44",
+        "id":"BloombergBrokerage",
+        "display-id":"Terminal Link",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"terminal-link-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the Terminal Link module subscription"
+           },
+           {
+              "id":"bloomberg-environment",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "Production",
+                 "Beta"
+              ],
+              "prompt-info":"Environment",
+              "help":"The environment to run in"
+           },
+           {
+              "id":"bloomberg-server-host",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Server host",
+              "help":"The host of the Bloomberg server"
+           },
+           {
+              "id":"bloomberg-server-port",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-type":"integer",
+              "prompt-info":"Server port",
+              "help":"The port of the Bloomberg server"
+           },
+           {
+              "id":"bloomberg-symbol-map-file",
+              "type":"input",
+              "value":"",
+              "input-method":"path-parameter",
+              "input-default":"",
+              "prompt-info":"Path to symbol map file",
+              "help":"The path to the Bloomberg symbol map file"
+           },
+           {
+              "id":"bloomberg-emsx-broker",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"EMSX broker",
+              "help":"The EMSX broker to use"
+           },
+           {
+              "id":"bloomberg-emsx-user-time-zone",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-default":"",
+              "prompt-info":"EMSX user timezone",
+              "help":"The EMSX user timezone to use"
+           },
+           {
+              "id":"bloomberg-emsx-account",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-default":"",
+              "prompt-info":"EMSX account",
+              "help":"The EMSX account to use"
+           },
+           {
+              "id":"bloomberg-emsx-strategy",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-default":"",
+              "prompt-info":"EMSX strategy",
+              "help":"The EMSX strategy to use"
+           },
+           {
+              "id":"bloomberg-emsx-notes",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-default":"",
+              "prompt-info":"EMSX notes",
+              "help":"The EMSX notes to use"
+           },
+           {
+              "id":"bloomberg-emsx-handling",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-default":"",
+              "prompt-info":"EMSX handling",
+              "help":"The EMSX handling to use"
+           },
+           {
+              "id":"bloomberg-allow-modification",
+              "type":"input",
+              "value":"",
+              "input-method":"confirm",
+              "prompt-info":"Allow modification (yes/no)?",
+              "help":"Whether modification is allowed"
+           },
+           {
+              "id":"bloomberg-api-type",
+              "type":"internal-input",
+              "value":"Desktop",
+              "input-method":"prompt",
+              "prompt-info":"Server host",
+              "help":"Your IB API key"
+           },
+           {
+              "id":"data-provider",
+              "type":"info",
+              "value":"QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
+           },
+           {
+              "id":"data-downloader",
+              "type":"info",
+              "value":"BloombergDataDownloader"
+           },
+           {
+              "id":"map-file-provider",
+              "type":"info",
+              "value":"QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider"
+           },
+           {
+              "id":"factor-file-provider",
+              "type":"info",
+              "value":"QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"BloombergBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"BloombergBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage"
+        ],
+        "product-id":"65",
+        "id":"AtreyuBrokerage",
+        "display-id":"Atreyu",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"atreyu-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the Atreyu module subscription"
+           },
+           {
+              "id":"atreyu-host",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"host",
+              "help":"The host of the Atreyu server"
+           },
+           {
+              "id":"atreyu-req-port",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-type":"integer",
+              "prompt-info":"Request port",
+              "help":"The Atreyu request port"
+           },
+           {
+              "id":"atreyu-sub-port",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "input-type":"integer",
+              "prompt-info":"Subscribe port",
+              "help":"The Atreyu subscribe port"
+           },
+           {
+              "id":"atreyu-username",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Username",
+              "help":"Your Atreyu username"
+           },
+           {
+              "id":"atreyu-password",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Password",
+              "help":"Your Atreyu password"
+           },
+           {
+              "id":"atreyu-client-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Client id",
+              "help":"Your Atreyu client id"
+           },
+           {
+              "id":"atreyu-broker-mpid",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Broker MPID",
+              "help":"The broker MPID to use"
+           },
+           {
+              "id":"atreyu-locate-rqd",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Locate rqd",
+              "help":"The locate rqd to use"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"AtreyuBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"QuantConnect.Lean.Engine.DataFeeds.Queues.LiveDataQueue"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"64",
+        "id":"TradingTechnologiesBrokerage",
+        "display-id":"Trading Technologies",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"tt-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the Trading Technologies module subscription"
+           },
+           {
+              "id":"tt-user-name",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"User name",
+              "help":"Your Trading Technologies username"
+           },
+           {
+              "id":"tt-session-password",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Session password",
+              "help":"Your Trading Technologies session password"
+           },
+           {
+              "id":"tt-account-name",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Account name",
+              "help":"Your Trading Technologies account name"
+           },
+           {
+              "id":"tt-rest-app-key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"REST app key",
+              "help":"Your Trading Technologies REST app key"
+           },
+           {
+              "id":"tt-rest-app-secret",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"REST app secret",
+              "help":"Your Trading Technologies REST app secret"
+           },
+           {
+              "id":"tt-rest-environment",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"REST environment",
+              "help":"The REST environment to run in"
+           },
+           {
+              "id":"tt-market-data-sender-comp-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Market data sender comp id",
+              "help":"The market data sender comp id to use"
+           },
+           {
+              "id":"tt-market-data-target-comp-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Market data target comp id",
+              "help":"The market data target comp id to use"
+           },
+           {
+              "id":"tt-market-data-host",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Market data host",
+              "help":"The host of the market data server"
+           },
+           {
+              "id":"tt-market-data-port",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Market data port",
+              "help":"The port of the market data server"
+           },
+           {
+              "id":"tt-order-routing-sender-comp-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Order routing sender comp id",
+              "help":"The order routing sender comp id to use"
+           },
+           {
+              "id":"tt-order-routing-target-comp-id",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Order routing target comp id",
+              "help":"The order routing target comp id to use"
+           },
+           {
+              "id":"tt-order-routing-host",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Order routing host",
+              "help":"The host of the order routing server"
+           },
+           {
+              "id":"tt-order-routing-port",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Order routing port",
+              "help":"The port of the order routing server"
+           },
+           {
+              "id":"tt-log-fix-messages",
+              "type":"input",
+              "value":"",
+              "input-method":"confirm",
+              "prompt-info":"Log FIX messages (yes/no)?",
+              "help":"Whether FIX messages should be logged"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"TradingTechnologiesBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"TradingTechnologiesBrokerage"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"130",
+        "id":"KrakenBrokerage",
+        "display-id":"Kraken",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"kraken-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the kraken module subscription"
+           },
+           {
+              "id":"kraken-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"API key",
+              "help":"Your Kraken API key",
+              "log-message":"Log messages are before outputting the prompt"
+           },
+           {
+              "id":"kraken-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your Kraken API secret"
+           },
+           {
+              "id":"kraken-verification-tier",
+              "cloud-id":"verificationTier",
+              "type":"input",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "Starter",
+                 "Intermediate",
+                 "Pro"
+              ],
+              "prompt-info":"Select the Verification Tier",
+              "help":"Your Kraken Verification Tier"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"KrakenBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"KrakenBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "local-brokerage",
+           "cloud-brokerage",
+           "data-queue-handler"
+        ],
+        "product-id":"138",
+        "id":"FTXBrokerage",
+        "display-id":"FTX",
+        "installs":true,
+        "configurations":[
+           {
+              "id":"ftx-exchange-name",
+              "cloud-id":"exchange",
+              "type":"filter-env",
+              "value":"",
+              "input-method":"choice",
+              "input-choices":[
+                 "FTX",
+                 "FTXUS"
+              ],
+              "prompt-info":"FTX Exchange",
+              "help":"FTX exchange name [FTX, FTXUS]"
+           },
+           {
+              "id":"ftx-organization",
+              "type":"organization-id",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":"The name or id of the organization with the FTX module subscription"
+           },
+           {
+              "id":"ftx-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTX",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"API-Key",
+              "help":"Your FTX API key",
+              "log-message":"Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile)."
+           },
+           {
+              "id":"ftxus-api-key",
+              "cloud-id":"key",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTXUS",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 },
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt",
+              "prompt-info":"API-Key",
+              "help":"Your FTX API key",
+              "log-message":"Create an API key by logging in and accessing the FTXUS Profile page (https://ftx.us/profile)."
+           },
+           {
+              "id":"ftx-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTX",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 }
+              ],
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your FTX API secret"
+           },
+           {
+              "id":"ftxus-api-secret",
+              "cloud-id":"secret",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTXUS",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 },
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"prompt-password",
+              "prompt-info":"API secret",
+              "help":"Your FTX API secret"
+           },
+           {
+              "id":"ftx-account-tier",
+              "cloud-id":"tier",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTX",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 }
+              ],
+              "input-method":"choice",
+              "input-choices":[
+                 "Tier1",
+                 "Tier2",
+                 "Tier3",
+                 "Tier4",
+                 "Tier5",
+                 "Tier6"
+              ],
+              "prompt-info":"Select the Account Tier",
+              "help":"Your FTX Account Tier"
+           },
+           {
+              "id":"ftxus-account-tier",
+              "cloud-id":"tier",
+              "type":"input",
+              "value":"",
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTXUS",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 },
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"LocalBrokerage",
+                       "dependent-config-id":"module-type"
+                    }
+                 }
+              ],
+              "input-method":"choice",
+              "input-choices":[
+                 "Tier1",
+                 "Tier2",
+                 "Tier3",
+                 "Tier4",
+                 "Tier5",
+                 "Tier6"
+              ],
+              "prompt-info":"Select the Account Tier",
+              "help":"Your FTX Account Tier"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"FTXBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"FTXBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ],
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTX",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 }
+              ]
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"live-mode-brokerage",
+                          "value":"FTXUSBrokerage"
+                       },
+                       {
+                          "name":"transaction-handler",
+                          "value":"QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+                       },
+                       {
+                          "name":"data-queue-handler",
+                          "value":"FTXUSBrokerage"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"BrokerageHistoryProvider"
+                       }
+                    ]
+                 }
+              ],
+              "filters":[
+                 {
+                    "condition":{
+                       "type":"exact-match",
+                       "pattern":"FTXUS",
+                       "dependent-config-id":"ftx-exchange-name"
+                    }
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"IQFeed",
+        "display-id":"IQFeed",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"iqfeed-iqconnect",
+              "type":"input",
+              "value":"",
+              "input-method":"path-parameter",
+              "input-default":"C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe",
+              "prompt-info":"IQConnect binary location",
+              "help":"The path to the IQConnect binary"
+           },
+           {
+              "id":"iqfeed-username",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Username",
+              "help":"Your IQFeed username"
+           },
+           {
+              "id":"iqfeed-password",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt-password",
+              "prompt-info":"Password",
+              "help":"Your IQFeed password"
+           },
+           {
+              "id":"iqfeed-productName",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Product id",
+              "help":"The product name of your IQFeed developer account"
+           },
+           {
+              "id":"iqfeed-version",
+              "type":"input",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"Product version",
+              "help":"The product version of your IQFeed developer account"
+           },
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"data-queue-handler",
+                          "value":"QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
+                       },
+                       {
+                          "name":"history-provider",
+                          "value":"QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "data-queue-handler"
+        ],
+        "product-id":"",
+        "id":"Custom data only",
+        "display-id":"Custom data only",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"environments",
+              "type":"configurations-env",
+              "value":[
+                 {
+                    "name":"lean-cli",
+                    "value":[
+                       {
+                          "name":"data-queue-handler",
+                          "value":"QuantConnect.Lean.Engine.DataFeeds.Queues.LiveDataQueue"
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     },
+     {
+        "type":[
+           "data-provider"
+        ],
+        "product-id":"",
+        "id":"QuantConnect",
+        "display-id":"QuantConnect",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"quantconnect-organization",
+              "type":"organization-id",
+              "value":"",
+              "input-method":"prompt",
+              "prompt-info":"organization having subscription of module",
+              "help":""
+           },
+           {
+              "id":"data-provider",
+              "type":"info",
+              "value":"QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider"
+           },
+           {
+              "id":"map-file-provider",
+              "type":"info",
+              "value":"QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+           },
+           {
+              "id":"factor-file-provider",
+              "type":"info",
+              "value":"QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
+           }
+        ]
+     },
+     {
+        "type":[
+           "data-provider"
+        ],
+        "product-id":"",
+        "id":"Local",
+        "display-id":"Local",
+        "installs":false,
+        "configurations":[
+           {
+              "id":"data-provider",
+              "type":"info",
+              "value":"QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider"
+           }
+        ]
+     }
   ]
 }
