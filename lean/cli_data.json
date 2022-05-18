@@ -15,8 +15,14 @@
           "cloud-id": "environment",
           "type": "internal-input",
           "value": "paper",
-          "environment": [
-            "live","paper", "cloud-brokerage"
+          "filters": [
+            {
+              "condition":{
+                 "type":"exact-match",
+                 "pattern":"CloudBrokerage",
+                 "dependent-config-id":"module-type"
+              }
+            }
           ],
           "input-method": "",
           "prompt-info":"", 
@@ -40,9 +46,7 @@
             ]
           }
         ],
-        "environment": [
-         "live", "paper"
-       ]
+        "filters": []
       }
       ]
     },
@@ -62,9 +66,7 @@
          "cloud-id": "accountType",
          "type": "internal-input",
          "value": "",
-         "environment": [
-           "live","paper"
-         ],
+         "filters": [],
          "value-options": [
            {
              "condition":{
@@ -92,9 +94,7 @@
          "cloud-id": "environment",
          "type": "internal-input",
          "value": "",
-         "environment": [
-           "live","paper"
-         ],
+         "filters": [],
          "value-options": [
            {
              "condition":{
@@ -121,10 +121,7 @@
          "id": "ib-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Interactive Brokers module subscription",
@@ -135,10 +132,7 @@
          "cloud-id": "user",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Username", 
          "help": "Your Interactive Brokers username"
@@ -148,10 +142,7 @@
          "cloud-id": "account",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Account id", 
          "help": "Your Interactive Brokers account id"
@@ -161,10 +152,7 @@
          "cloud-id": "password",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"Account password", 
          "help": "Your Interactive Brokers password"
@@ -173,9 +161,14 @@
         "id": "ib-data-feed",
         "type": "input",
         "value": "",
-        "environment": [
-          "live",
-          "paper", "cloud-brokerage"
+        "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"CloudBrokerage",
+               "dependent-config-id":"module-type"
+            }
+          }
         ],
         "input-method": "confirm",
         "prompt-info":"Do you want to use the Interactive Brokers price data feed instead of the QuantConnect price data feed (yes/no)?", 
@@ -185,10 +178,7 @@
         "id": "ib-enable-delayed-streaming-data",
         "type": "input",
         "value": "",
-        "environment": [
-          "live",
-          "paper"
-        ],
+        "filters": [],
         "input-method": "confirm",
         "prompt-info":"Enable delayed market data (yes/no)?", 
         "help": "Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
@@ -219,9 +209,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -241,9 +229,7 @@
         "cloud-id": "account",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Account id", 
         "help": "Your Tradier account id",
@@ -254,20 +240,16 @@
         "cloud-id": "token",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"Access token", 
         "help": "Your Tradier access token"
       },
       {
         "id": "tradier-use-sandbox",
-        "type": "trading-env",
+        "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "choice",
         "input-choices": ["live", "paper"],
         "prompt-info":"Use the developer sandbox?", 
@@ -295,9 +277,7 @@
               ]
             }
           ],
-          "environment": [
-          "live", "paper"
-        ]
+          "filters": []
         }
       ]
     },
@@ -317,9 +297,7 @@
          "cloud-id": "account",
          "type": "input",
          "value": "",
-         "environment": [
-          "Practice", "Trade"
-        ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Account id", 
          "help": "Your OANDA account id",
@@ -330,9 +308,7 @@
         "cloud-id": "key",
         "type": "input",
         "value": "",
-        "environment": [
-          "Practice", "Trade"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"Access token", 
         "help": "Your OANDA API token"
@@ -340,11 +316,9 @@
        {
         "id": "oanda-environment",
         "cloud-id": "environment",
-        "type": "trading-env",
+        "type": "input",
         "value": "",
-        "environment": [
-          "Practice", "Trade"
-        ],
+        "filters": [],
         "input-method": "choice",
         "input-choices": ["Practice", "Trade"],
         "prompt-info":"Environment?", 
@@ -376,9 +350,7 @@
               ]
             }
           ],
-          "environment": [
-           "Practice", "Trade"
-         ]
+          "filters": []
         }
       ]
     },
@@ -398,10 +370,7 @@
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"API key", 
          "help": "Your Bitfinex API key",
@@ -412,10 +381,7 @@
          "cloud-id": "secret",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
          "help": "Your Bitfinex API secret"
@@ -446,9 +412,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -468,10 +432,7 @@
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"API key", 
          "help": "Your Coinbase Pro API key",
@@ -482,10 +443,7 @@
         "cloud-id": "secret",
         "type": "input",
         "value": "",
-        "environment": [
-          "live",
-          "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"API secret", 
         "help": "Your Coinbase Pro API secret"
@@ -495,10 +453,7 @@
          "cloud-id": "passphrase",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"Passphrase", 
          "help": "Your Coinbase Pro API passphrase"
@@ -507,10 +462,7 @@
         "id": "gdax-use-sandbox",
         "type": "trading-env",
         "value": "",
-        "environment": [
-           "live",
-           "paper"
-       ],
+        "filters": [],
         "input-method": "choice",
         "input-choices": ["live", "paper"],
         "prompt-info":"Use sandbox?", 
@@ -520,32 +472,56 @@
         "id": "gdax-url",
         "type": "info",
         "value": "wss://ws-feed.pro.coinbase.com",
-        "environment": [
-          "live"
+        "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"live",
+               "dependent-config-id":"gdax-use-sandbox"
+            }
+          }
         ]
       },
       {
        "id": "gdax-url",
        "type": "info",
        "value": "wss://ws-feed-public.sandbox.pro.coinbase.com",
-       "environment": [
-         "paper"
+       "filters": [
+        {
+          "condition":{
+             "type":"exact-match",
+             "pattern":"paper",
+             "dependent-config-id":"gdax-use-sandbox"
+          }
+        }
        ]
      },
       {
         "id": "gdax-rest-api",
         "type": "info",
         "value": "https://api.pro.coinbase.com",
-        "environment": [
-          "live"
+        "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"live",
+               "dependent-config-id":"gdax-use-sandbox"
+            }
+          }
         ]
       },
       {
        "id": "gdax-rest-api",
        "type": "info",
        "value": "https://api-public.sandbox.pro.coinbase.com",
-       "environment": [
-         "paper"
+       "filters": [
+        {
+          "condition":{
+             "type":"exact-match",
+             "pattern":"paper",
+             "dependent-config-id":"gdax-use-sandbox"
+          }
+        }
        ]
      },
        {
@@ -574,9 +550,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -596,10 +570,7 @@
          "id": "binance-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Binance module subscription"
@@ -609,10 +580,7 @@
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"API-Key", 
          "help": "Your Binance API key"
@@ -622,10 +590,7 @@
          "cloud-id": "secret",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
          "help": "Your Binance API secret"
@@ -635,10 +600,7 @@
          "cloud-id": "environment",
          "type": "trading-env",
          "value": "",
-         "environment": [
-            "live",
-            "paper"
-        ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["live", "paper"],
          "prompt-info":"Use the testnet?", 
@@ -648,32 +610,56 @@
           "id": "binance-api-url",
           "type": "info",
           "value": "https://api.binance.com",
-          "environment": [
-            "live"
+          "filters": [
+            {
+              "condition":{
+                 "type":"exact-match",
+                 "pattern":"live",
+                 "dependent-config-id":"binance-use-testnet"
+              }
+            }
           ]
         },
         {
          "id": "binance-api-url",
          "type": "info",
          "value": "https://testnet.binance.vision",
-         "environment": [
-           "paper"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"paper",
+               "dependent-config-id":"binance-use-testnet"
+            }
+          }
          ]
        },
         {
           "id": "binance-websocket-url",
           "type": "info",
           "value": "wss://stream.binance.com:9443/ws",
-          "environment": [
-            "live"
+          "filters": [
+            {
+              "condition":{
+                 "type":"exact-match",
+                 "pattern":"live",
+                 "dependent-config-id":"binance-use-testnet"
+              }
+            }
           ]
         },
         {
          "id": "binance-websocket-url",
          "type": "info",
          "value": "wss://testnet.binance.vision/ws",
-         "environment": [
-           "paper"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"paper",
+               "dependent-config-id":"binance-use-testnet"
+            }
+          }
          ]
        },
         {
@@ -702,10 +688,7 @@
               ]
             }
           ],
-          "environment": [
-           "live",
-           "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -724,10 +707,7 @@
          "id": "zerodha-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the zerodha module subscription"
@@ -737,10 +717,7 @@
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"API key", 
          "help": "Your Kite Connect API key",
@@ -751,10 +728,7 @@
          "cloud-id": "accessToken",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"Access token", 
          "help": "Your Kite Connect access token"
@@ -764,10 +738,7 @@
          "cloud-id": "productType",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["MIS", "CNC", "NRML"], 
          "prompt-info":"Product type",
@@ -779,10 +750,7 @@
          "cloud-id": "tradingSegment",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["EQUITY", "COMMODITY"], 
          "prompt-info":"Trading segment",
@@ -793,10 +761,7 @@
         "id": "zerodha-history-subscription",
         "type": "input",
         "value": "",
-        "environment": [
-          "live",
-          "paper"
-        ],
+        "filters": [],
         "input-method": "confirm",
         "prompt-info":"Do you have a history API subscription (yes/no)?", 
         "help": "Whether you have a history API subscription for Zerodha"
@@ -827,9 +792,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -848,10 +811,7 @@
          "id": "samco-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the samco module subscription"
@@ -860,10 +820,7 @@
          "id": "samco-client-id",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Client ID", 
          "help": "Your Samco account Client ID"
@@ -872,10 +829,7 @@
          "id": "samco-client-password",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"Client Password", 
          "help": "Your Samco account password"
@@ -884,10 +838,7 @@
          "id": "samco-year-of-birth",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Year of Birth", 
          "help": "Your year of birth (YYYY) registered with Samco"
@@ -896,10 +847,7 @@
          "id": "samco-product-type",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["MIS", "CNC", "NRML"], 
          "prompt-info":"Product type",
@@ -910,10 +858,7 @@
          "id": "samco-trading-segment",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["EQUITY", "COMMODITY"], 
          "prompt-info":"Trading segment",
@@ -946,9 +891,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -967,22 +910,16 @@
          "id": "terminal-link-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "Production",
-             "Beta"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Terminal Link module subscription"
         },
         {
           "id": "bloomberg-environment",
-          "type": "trading-env",
+          "type": "input",
           "value": "",
-          "environment": [
-             "Production",
-             "Beta"
-         ],
+          "filters": [],
           "input-method": "choice",
           "input-choices": ["Production", "Beta"],
           "prompt-info":"Environment", 
@@ -992,10 +929,7 @@
          "id": "bloomberg-server-host",
          "type": "input",
          "value": "",
-         "environment": [
-             "Production",
-             "Beta"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"Server host", 
          "help": "The host of the Bloomberg server"
@@ -1004,10 +938,7 @@
         "id": "bloomberg-server-port",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-type": "integer",
         "prompt-info":"Server port", 
@@ -1017,10 +948,7 @@
         "id": "bloomberg-symbol-map-file",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "path-parameter",
         "input-default":"",
         "prompt-info":"Path to symbol map file", 
@@ -1030,10 +958,7 @@
         "id": "bloomberg-emsx-broker",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"EMSX broker", 
         "help": "The EMSX broker to use"
@@ -1042,10 +967,7 @@
         "id": "bloomberg-emsx-user-time-zone",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX user timezone", 
@@ -1055,10 +977,7 @@
         "id": "bloomberg-emsx-account",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX account", 
@@ -1068,10 +987,7 @@
         "id": "bloomberg-emsx-strategy",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX strategy", 
@@ -1081,10 +997,7 @@
         "id": "bloomberg-emsx-notes",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX notes", 
@@ -1094,10 +1007,7 @@
         "id": "bloomberg-emsx-handling",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-default":"",
         "prompt-info":"EMSX handling", 
@@ -1107,10 +1017,7 @@
         "id": "bloomberg-allow-modification",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "confirm",
         "prompt-info":"Allow modification (yes/no)?", 
         "help": "Whether modification is allowed"
@@ -1119,10 +1026,7 @@
         "id": "bloomberg-api-type",
         "type": "internal-input",
         "value": "Desktop",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Server host", 
         "help": "Your IB API key"
@@ -1131,33 +1035,25 @@
         "id": "data-provider",
         "type": "info",
         "value": "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider",
-        "environment": [
-          "Production","Beta"
-        ]
+        "filters": []
       },
       {
         "id": "data-downloader",
         "type": "info",
         "value": "BloombergDataDownloader",
-        "environment": [
-          "Production","Beta"
-        ]
+        "filters": []
       },
       {
         "id": "map-file-provider",
         "type": "info",
         "value": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-        "environment": [
-          "Production","Beta"
-        ]
+        "filters": []
       },
       {
         "id": "factor-file-provider",
         "type": "info",
         "value": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-        "environment": [
-          "Production","Beta"
-        ]
+        "filters": []
       },
        {
           "id": "environments",
@@ -1185,9 +1081,7 @@
               ]
             }
           ],
-          "environment": [
-            "Production","Beta"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1204,10 +1098,7 @@
          "id": "atreyu-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "Production",
-             "Beta"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the Atreyu module subscription"
@@ -1216,10 +1107,7 @@
          "id": "atreyu-host",
          "type": "input",
          "value": "",
-         "environment": [
-             "Production",
-             "Beta"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"host", 
          "help": "The host of the Atreyu server"
@@ -1228,10 +1116,7 @@
         "id": "atreyu-req-port",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-type": "integer",
         "prompt-info":"Request port", 
@@ -1241,10 +1126,7 @@
         "id": "atreyu-sub-port",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "input-type": "integer",
         "prompt-info":"Subscribe port", 
@@ -1254,10 +1136,7 @@
         "id": "atreyu-username",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Username", 
         "help": "Your Atreyu username"
@@ -1266,10 +1145,7 @@
         "id": "atreyu-password",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"Password", 
         "help": "Your Atreyu password"
@@ -1278,10 +1154,7 @@
         "id": "atreyu-client-id",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Client id", 
         "help": "Your Atreyu client id"
@@ -1290,10 +1163,7 @@
         "id": "atreyu-broker-mpid",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Broker MPID", 
         "help": "The broker MPID to use"
@@ -1302,10 +1172,7 @@
         "id": "atreyu-locate-rqd",
         "type": "input",
         "value": "",
-        "environment": [
-            "Production",
-            "Beta"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Locate rqd", 
         "help": "The locate rqd to use"
@@ -1332,9 +1199,7 @@
               ]
             }
           ],
-          "environment": [
-           "Production", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1352,10 +1217,7 @@
           "id": "tt-organization",
           "type": "organization-id",
           "value": "",
-          "environment": [
-              "live",
-              "paper"
-          ],
+          "filters": [],
           "input-method": "prompt",
           "prompt-info":"organization having subscription of module", 
           "help": "The name or id of the organization with the Trading Technologies module subscription"
@@ -1364,9 +1226,7 @@
          "id": "tt-user-name",
          "type": "input",
          "value": "",
-         "environment": [
-          "live", "paper"
-        ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"User name", 
          "help": "Your Trading Technologies username"
@@ -1375,9 +1235,7 @@
         "id": "tt-session-password",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"Session password", 
         "help": "Your Trading Technologies session password"
@@ -1386,9 +1244,7 @@
         "id": "tt-account-name",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Account name", 
         "help": "Your Trading Technologies account name"
@@ -1397,9 +1253,7 @@
         "id": "tt-rest-app-key",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"REST app key", 
         "help": "Your Trading Technologies REST app key"
@@ -1408,9 +1262,7 @@
         "id": "tt-rest-app-secret",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"REST app secret", 
         "help": "Your Trading Technologies REST app secret"
@@ -1419,9 +1271,7 @@
         "id": "tt-rest-environment",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"REST environment", 
         "help": "The REST environment to run in"
@@ -1430,9 +1280,7 @@
         "id": "tt-market-data-sender-comp-id",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Market data sender comp id", 
         "help": "The market data sender comp id to use"
@@ -1441,9 +1289,7 @@
         "id": "tt-market-data-target-comp-id",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Market data target comp id", 
         "help": "The market data target comp id to use"
@@ -1452,9 +1298,7 @@
         "id": "tt-market-data-host",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Market data host", 
         "help": "The host of the market data server"
@@ -1463,9 +1307,7 @@
         "id": "tt-market-data-port",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Market data port", 
         "help": "The port of the market data server"
@@ -1474,9 +1316,7 @@
         "id": "tt-order-routing-sender-comp-id",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Order routing sender comp id", 
         "help": "The order routing sender comp id to use"
@@ -1485,9 +1325,7 @@
         "id": "tt-order-routing-target-comp-id",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Order routing target comp id", 
         "help": "The order routing target comp id to use"
@@ -1496,9 +1334,7 @@
         "id": "tt-order-routing-host",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Order routing host", 
         "help": "The host of the order routing server"
@@ -1507,9 +1343,7 @@
         "id": "tt-order-routing-port",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Order routing port", 
         "help": "The port of the order routing server"
@@ -1518,10 +1352,7 @@
         "id": "tt-log-fix-messages",
         "type": "input",
         "value": "",
-        "environment": [
-            "live",
-            "paper"
-        ],
+        "filters": [],
         "input-method": "confirm",
         "prompt-info":"Log FIX messages (yes/no)?", 
         "help": "Whether FIX messages should be logged"
@@ -1548,9 +1379,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1569,10 +1398,7 @@
          "id": "kraken-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
          "help": "The name or id of the organization with the kraken module subscription"
@@ -1582,10 +1408,7 @@
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"API key", 
          "help": "Your Kraken API key",
@@ -1596,10 +1419,7 @@
          "cloud-id": "secret",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
          "help": "Your Kraken API secret"
@@ -1609,10 +1429,7 @@
          "cloud-id": "verificationTier",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["Starter", "Intermediate", "Pro"], 
          "prompt-info":"Select the Verification Tier",
@@ -1644,9 +1461,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1666,9 +1481,7 @@
          "cloud-id": "exchange",
          "type": "filter-env",
          "value": "",
-         "environment": [
-           "live","paper","FTXUS", "FTX"
-         ],
+         "filters": [],
          "input-method": "choice",
          "input-choices": ["FTX", "FTXUS"], 
          "prompt-info":"FTX Exchange",
@@ -1678,52 +1491,62 @@
          "id": "ftx-organization",
          "type": "organization-id",
          "value": "",
-         "environment": [
-             "live",
-             "paper",
-             "FTX",
-             "FTXUS"
-         ],
+         "filters": [],
          "input-method": "prompt",
          "prompt-info":"organization having subscription of module", 
-         "help": "The name or id of the organization with the FTX module subscription",
-         "log-message": "Log messages are before outputting the prompt"
+         "help": "The name or id of the organization with the FTX module subscription"
         },
        {
          "id": "ftx-api-key",
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper", "FTX"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTX",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "prompt",
          "prompt-info":"API-Key", 
-         "help": "Your FTX API key"
+         "help": "Your FTX API key",
+         "log-message": "Create an API key by logging in and accessing the FTX Profile page (https://ftx.com/profile)."
        },
        {
          "id": "ftxus-api-key",
          "cloud-id": "key",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper", "FTXUS"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTXUS",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "prompt",
          "prompt-info":"ftxus-api-key", 
-         "help": ""
+         "help": "",
+         "log-message": "Create an API key by logging in and accessing the FTXUS Profile page (https://ftx.us/profile)."
        },
        {
          "id": "ftx-api-secret",
          "cloud-id": "secret",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper",
-           "FTX"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTX",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "prompt-password",
          "prompt-info":"API secret", 
@@ -1734,10 +1557,14 @@
          "cloud-id": "secret",
          "type": "input",
          "value": "",
-         "environment": [
-           "live",
-           "paper",
-           "FTXUS"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTXUS",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "prompt-password",
          "prompt-info":"ftxus-api-secret", 
@@ -1748,12 +1575,18 @@
          "cloud-id": "tier",
          "type": "input",
          "value": "",
-         "environment": [
-           "live","paper","FTX"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTX",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "choice",
          "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "prompt-info":"FTX Exchange",
+         "prompt-info":"Select the Account Tier",
          "help": "Your FTX Account Tier"
        },
        {
@@ -1761,12 +1594,18 @@
          "cloud-id": "tier",
          "type": "input",
          "value": "",
-         "environment": [
-           "live","paper","FTXUS"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTXUS",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
          ],
          "input-method": "choice",
          "input-choices": ["Tier1", "Tier2", "Tier3", "Tier4", "Tier5", "Tier6"], 
-         "prompt-info":"ftxus-account-tier",
+         "prompt-info":"Select the Account Tier",
          "help": ""
        },
        {
@@ -1795,8 +1634,14 @@
               ]
             }
           ],
-          "environment": [
-           "paper", "FTX"
+          "filters": [
+            {
+              "condition":{
+                 "type":"exact-match",
+                 "pattern":"FTX",
+                 "dependent-config-id":"ftx-exchange-name"
+              }
+            }
          ]
         },
         {
@@ -1825,8 +1670,14 @@
              ]
            }
          ],
-         "environment": [
-           "paper","FTXUS"
+         "filters": [
+          {
+            "condition":{
+               "type":"exact-match",
+               "pattern":"FTXUS",
+               "dependent-config-id":"ftx-exchange-name"
+            }
+          }
         ]
        }
       ]
@@ -1844,9 +1695,7 @@
          "id": "iqfeed-iqconnect",
          "type": "input",
          "value": "",
-         "environment": [
-          "live", "paper"
-        ],
+         "filters": [],
          "input-method": "path-parameter",
          "input-default":"C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe",
          "prompt-info":"IQConnect binary location", 
@@ -1856,9 +1705,7 @@
         "id": "iqfeed-username",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Username", 
         "help": "Your IQFeed username"
@@ -1867,9 +1714,7 @@
         "id": "iqfeed-password",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt-password",
         "prompt-info":"Password", 
         "help": "Your IQFeed password"
@@ -1878,9 +1723,7 @@
         "id": "iqfeed-productName",
         "type": "input",
         "value": "",
-        "environment": [
-         "live", "paper"
-       ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Product id", 
         "help": "The product name of your IQFeed developer account"
@@ -1889,9 +1732,7 @@
         "id": "iqfeed-version",
         "type": "input",
         "value": "",
-        "environment": [
-          "live", "paper"
-        ],
+        "filters": [],
         "input-method": "prompt",
         "prompt-info":"Product version", 
         "help": "The product version of your IQFeed developer account"
@@ -1914,9 +1755,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1943,9 +1782,7 @@
               ]
             }
           ],
-          "environment": [
-           "live", "paper"
-         ]
+          "filters": []
         }
       ]
     },
@@ -1962,10 +1799,7 @@
           "id": "quantconnect-organization",
           "type": "organization-id",
           "value": "",
-          "environment": [
-              "live",
-              "paper"
-          ],
+          "filters": [],
           "input-method": "prompt",
           "prompt-info":"organization having subscription of module", 
           "help": ""
@@ -1974,25 +1808,19 @@
           "id": "data-provider",
           "type": "info",
           "value": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider",
-          "environment": [
-            "live"
-          ]
+          "filters": []
         },
         {
           "id": "map-file-provider",
           "type": "info",
           "value": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
-          "environment": [
-            "live"
-          ]
+          "filters": []
         },
         {
           "id": "factor-file-provider",
           "type": "info",
           "value": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
-          "environment": [
-            "live"
-          ]
+          "filters": []
         }
       ]
     },
@@ -2009,9 +1837,7 @@
           "id": "data-provider",
           "type": "info",
           "value": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-          "environment": [
-            "live"
-          ]
+          "filters": []
         }
       ]
     }

@@ -20,9 +20,6 @@ class CloudBrokerage(JsonModule):
 
     def __init__(self, json_cloud_brokerage_data: Dict[str, Any]) -> None:
         super().__init__(json_cloud_brokerage_data)
-
-    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
-        return all(elem in config._filter._options for elem in self._user_filters)
         
     def get_id(self) -> str:
         """Returns the id of the brokerage.

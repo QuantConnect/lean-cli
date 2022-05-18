@@ -33,11 +33,7 @@ class JsonModule(abc.ABC):
             self._lean_configs.append(Configuration.factory(config))
         self._lean_configs = self.sort_configs()
         self._is_module_installed: bool = False
-        self._is_installed_and_build: bool = False 
-
-    @property
-    def _user_filters(self) -> List[str]:
-        return [config._value for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
+        self._is_installed_and_build: bool = False
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
@@ -56,9 +52,15 @@ class JsonModule(abc.ABC):
         """
         return self._display_name
     
-    @abc.abstractmethod
-    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
-        raise NotImplementedError()
+    def check_if_config_passes_filters(self, config: Configuration) -> bool:
+        for condition in config._filter._conditions:
+            if condition._dependent_config_id == "module-type":
+                target_value = self.__class__.__name__
+            else:
+                target_value = self.get_config_value_from_name(condition._dependent_config_id)
+            if not condition.check(target_value):
+                return False
+        return True
 
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():

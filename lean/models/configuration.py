@@ -13,18 +13,37 @@
 
 from pathlib import Path
 import re
-from typing import Any, Dict
+from typing import Any, Dict, List
 import click
 import abc
 from lean.components.util.logger import Logger
 from lean.click import PathParameter
-        
-class RegexOptionCondition():
 
+class BaseCondition(abc.ABC):
+    
     def __init__(self, condition_object: Dict[str, Any]):
         self._type = condition_object["type"]
         self._pattern = str(condition_object["pattern"])
         self._dependent_config_id = condition_object["dependent-config-id"]
+
+    def factory(condition_object: Dict[str, Any]):
+        if condition_object["type"] == "regex":
+            return RegexCondition(condition_object)
+        elif condition_object["type"] == "exact-match":
+            return ExactMatchCondition(condition_object)
+        else:
+            raise ValueError(f'Undefined condition type {condition_object["type"]}')
+
+    @abc.abstractmethod
+    def check(self, target_value: str) -> bool:
+        raise NotImplemented()
+
+class ExactMatchCondition(BaseCondition):
+
+    def check(self, target_value: str) -> bool:
+        return self._pattern.casefold() == target_value.casefold()
+
+class RegexCondition(BaseCondition):
 
     def check(self, target_value: str) -> bool:
         return len(re.findall(self._pattern, target_value, re.I)) > 0
@@ -33,14 +52,14 @@ class ConditionalValueOption():
 
     def __init__(self, option_object: Dict[str, Any]):
         self._value = option_object["value"]
-        self._condition = RegexOptionCondition(option_object["condition"])
+        self._condition = BaseCondition.factory(option_object["condition"])
 
 class Configuration(abc.ABC):
     def __init__(self, config_json_object):
         self._name = config_json_object["id"]
         self._config_type = config_json_object["type"]
         self._value = config_json_object["value"]
-        self._filter = Filter(config_json_object["environment"])
+        self._filter = Filter(config_json_object["filters"])
         self._is_type_configurations_env = type(self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env = type(self) is TradingEnvConfiguration
         self.is_type_organization_id = type(self) is OrganzationIdConfiguration
@@ -62,12 +81,12 @@ class Configuration(abc.ABC):
         elif config_json_object["type"] == "organization-id":
             return OrganzationIdConfiguration(config_json_object)
         else:
-            raise(f'Undefined input method type {config_json_object["type"]}')
+            raise ValueError(f'Undefined input method type {config_json_object["type"]}')
 
 class Filter():
-    def __init__(self, filter_environments):
-        self._options = filter_environments
-
+    def __init__(self, filter_conditions):
+        self._conditions: List[BaseCondition] = [BaseCondition.factory(condition["condition"]) for condition in filter_conditions]
+    
 class InfoConfiguration(Configuration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -220,7 +239,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         elif config_json_object["type"] == "filter-env":
             return FilterEnvConfiguration(config_json_object)
         else:
-            raise(f'Undefined input method type {config_json_object["type"]}')
+            raise ValueError(f'Undefined input method type {config_json_object["type"]}')
 
     def AskUserForInput(self, default_value, logger: Logger):
         if self._input_method == "confirm":
@@ -230,7 +249,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         elif self._input_method == "prompt":
             return PromptUserInput.AskUserForInput(self, default_value, logger)
         else:
-            raise(f"Undefined input method type {self._input_method}")
+            raise ValueError(f"Undefined input method type {self._input_method}")
     
 
 class TradingEnvConfiguration(BrokerageEnvConfiguration):

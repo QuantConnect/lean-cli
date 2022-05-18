@@ -21,12 +21,6 @@ class DataProvider(LeanConfigConfigurer):
     def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
         super().__init__(json_data_provider_data)
 
-    def check_if_config_passes_filters(self, config: Configuration)  -> bool:
-        return (
-            all(elem in config._filter._options for elem in self._user_filters) 
-            and "cloud-brokerage" not in config._filter._options
-        )
-
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         super().configure_credentials(lean_config)
         self._save_properties(lean_config, self.get_non_user_required_properties())
