@@ -18,37 +18,40 @@ import click
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
 
+
 def get_click_option_type(configuration: Configuration):
-        # get type should be a method of configurations class itself.
-        # TODO: handle input can inherit type prompt.
-        if configuration._config_type == "internal-input":
-            return str
-        if configuration._input_method == "confirm":
-            return bool
-        elif configuration._input_method == "choice":
-            return click.Choice(configuration._choices, case_sensitive=False)
-        elif configuration._input_method == "prompt":
-            return configuration.get_input_type()
-        elif configuration._input_method == "prompt-password":
-            return str
-        elif configuration._input_method == "path-parameter":
-            return PathParameter(exists=True, file_okay=True, dir_okay=False)
+    # get type should be a method of configurations class itself.
+    # TODO: handle input can inherit type prompt.
+    if configuration._config_type == "internal-input":
+        return str
+    if configuration._input_method == "confirm":
+        return bool
+    elif configuration._input_method == "choice":
+        return click.Choice(configuration._choices, case_sensitive=False)
+    elif configuration._input_method == "prompt":
+        return configuration.get_input_type()
+    elif configuration._input_method == "prompt-password":
+        return str
+    elif configuration._input_method == "path-parameter":
+        return PathParameter(exists=True, file_okay=True, dir_okay=False)
+
 
 def get_attribute_type(configuration: Configuration):
     # get type should be a method of configurations class itself.
-        # TODO: handle input can inherit type prompt.
-        if configuration._config_type == "internal-input":
-            return str
-        if configuration._input_method == "confirm":
-            return bool
-        elif configuration._input_method == "choice":
-            return str
-        elif configuration._input_method == "prompt":
-            return configuration.get_input_type()
-        elif configuration._input_method == "prompt-password":
-            return str
-        elif configuration._input_method == "path-parameter":
-            return str
+    # TODO: handle input can inherit type prompt.
+    if configuration._config_type == "internal-input":
+        return str
+    if configuration._input_method == "confirm":
+        return bool
+    elif configuration._input_method == "choice":
+        return str
+    elif configuration._input_method == "prompt":
+        return configuration.get_input_type()
+    elif configuration._input_method == "prompt-password":
+        return str
+    elif configuration._input_method == "path-parameter":
+        return str
+
 
 def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any):
     from lean.commands.live import _get_default_value
@@ -61,28 +64,33 @@ def get_the_correct_type_default_value(default_lean_config_key: str, default_inp
         lean_value = "paper" if lean_value else "live"
     return lean_value
 
+
 def get_options_attributes(configuration: Configuration, default_lean_config_key=None):
     options_attributes = {
         "type": get_click_option_type(configuration),
-        "help": configuration._help 
+        "help": configuration._help
     }
     default_input_value = configuration._input_default if configuration.is_required_from_user() else None
-    options_attributes["default"] = lambda: get_the_correct_type_default_value(default_lean_config_key, default_input_value, get_attribute_type(configuration))
+    options_attributes["default"] = lambda: get_the_correct_type_default_value(
+        default_lean_config_key, default_input_value, get_attribute_type(configuration))
     return options_attributes
+
 
 def get_default_key(configuration: Configuration):
     return "job-organization-id" if configuration.is_type_organization_id else configuration._name
+
 
 def options_from_json(configurations: List[Configuration]):
 
     def decorator(f):
         for configuration in reversed(configurations):
             long = configuration._name
-            name = str(configuration._name).replace('-','_')
+            name = str(configuration._name).replace('-', '_')
             param_decls = (
                 '--' + long,
-                name) 
-            attrs = get_options_attributes(configuration, get_default_key(configuration))
+                name)
+            attrs = get_options_attributes(
+                configuration, get_default_key(configuration))
             click.option(*param_decls, **attrs)(f)
         return f
     return decorator

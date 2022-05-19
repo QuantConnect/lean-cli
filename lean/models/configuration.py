@@ -19,8 +19,9 @@ import abc
 from lean.components.util.logger import Logger
 from lean.click import PathParameter
 
+
 class BaseCondition(abc.ABC):
-    
+
     def __init__(self, condition_object: Dict[str, str]):
         self._type: str = condition_object["type"]
         self._pattern: str = str(condition_object["pattern"])
@@ -32,36 +33,44 @@ class BaseCondition(abc.ABC):
         elif condition_object["type"] == "exact-match":
             return ExactMatchCondition(condition_object)
         else:
-            raise ValueError(f'Undefined condition type {condition_object["type"]}')
+            raise ValueError(
+                f'Undefined condition type {condition_object["type"]}')
 
     @abc.abstractmethod
     def check(self, target_value: str) -> bool:
-        raise NotImplemented()
+        raise NotImplementedError()
+
 
 class ExactMatchCondition(BaseCondition):
 
     def check(self, target_value: str) -> bool:
         return self._pattern.casefold() == target_value.casefold()
 
+
 class RegexCondition(BaseCondition):
 
     def check(self, target_value: str) -> bool:
         return len(re.findall(self._pattern, target_value, re.I)) > 0
 
+
 class ConditionalValueOption():
 
     def __init__(self, option_object: Dict[str, Any]):
         self._value: str = option_object["value"]
-        self._condition: BaseCondition = BaseCondition.factory(option_object["condition"])
+        self._condition: BaseCondition = BaseCondition.factory(
+            option_object["condition"])
+
 
 class Configuration(abc.ABC):
     def __init__(self, config_json_object):
         self._name: str = config_json_object["id"]
         self._config_type: str = config_json_object["type"]
         self._value: str = config_json_object["value"]
-        self._is_type_configurations_env: bool = type(self) is ConfigurationsEnvConfiguration
+        self._is_type_configurations_env: bool = type(
+            self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
-        self.is_type_organization_id: bool = type(self) is OrganzationIdConfiguration
+        self.is_type_organization_id: bool = type(
+            self) is OrganzationIdConfiguration
         self._log_message: str = ""
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]
@@ -75,21 +84,25 @@ class Configuration(abc.ABC):
         return NotImplemented()
 
     def factory(config_json_object) -> 'Configuration':
-        if config_json_object["type"] in ["info" , "configurations-env"]:
+        if config_json_object["type"] in ["info", "configurations-env"]:
             return InfoConfiguration.factory(config_json_object)
-        elif config_json_object["type"] in ["input","internal-input"]:
+        elif config_json_object["type"] in ["input", "internal-input"]:
             return UserInputConfiguration.factory(config_json_object)
-        elif config_json_object["type"] in ["filter-env" , "trading-env"]:
+        elif config_json_object["type"] in ["filter-env", "trading-env"]:
             return BrokerageEnvConfiguration.factory(config_json_object)
         elif config_json_object["type"] == "organization-id":
             return OrganzationIdConfiguration(config_json_object)
         else:
-            raise ValueError(f'Undefined input method type {config_json_object["type"]}')
+            raise ValueError(
+                f'Undefined input method type {config_json_object["type"]}')
+
 
 class Filter():
     def __init__(self, filter_conditions):
-        self._conditions: List[BaseCondition] = [BaseCondition.factory(condition["condition"]) for condition in filter_conditions]
-    
+        self._conditions: List[BaseCondition] = [BaseCondition.factory(
+            condition["condition"]) for condition in filter_conditions]
+
+
 class InfoConfiguration(Configuration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -102,11 +115,14 @@ class InfoConfiguration(Configuration):
 
     def is_required_from_user(self):
         return False
- 
+
+
 class ConfigurationsEnvConfiguration(InfoConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._env_and_values = {env_obj["name"]:env_obj["value"] for env_obj in self._value}
+        self._env_and_values = {
+            env_obj["name"]: env_obj["value"] for env_obj in self._value}
+
 
 class UserInputConfiguration(Configuration, abc.ABC):
     def __init__(self, config_json_object):
@@ -146,6 +162,7 @@ class UserInputConfiguration(Configuration, abc.ABC):
     def is_required_from_user(self):
         return True
 
+
 class InternalInputUserInput(UserInputConfiguration):
     """This class is used when configuratios are needed by LEAN config but the values
         are derived from logic and not from user input."""
@@ -155,12 +172,15 @@ class InternalInputUserInput(UserInputConfiguration):
         self._is_conditional: bool = False
         value_options: List[ConditionalValueOption] = []
         if "value-options" in config_json_object.keys():
-            value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["value-options"]]
+            value_options = [ConditionalValueOption(
+                value_option) for value_option in config_json_object["value-options"]]
             self._is_conditional = True
         self._value_options = value_options
 
     def AskUserForInput(self, default_value, logger: Logger):
-        raise ValueError(f'user input not allowed with {self.__class__.__name__}')
+        raise ValueError(
+            f'user input not allowed with {self.__class__.__name__}')
+
 
 class PromptUserInput(UserInputConfiguration):
     map_to_types = {
@@ -181,20 +201,21 @@ class PromptUserInput(UserInputConfiguration):
     def get_input_type(self):
         return self.map_to_types.get(self._input_type, self._input_type)
 
+
 class ChoiceUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._choices: List[str] = []
         if "input-choices" in config_json_object.keys():
             self._choices = config_json_object["input-choices"]
-            
 
     def AskUserForInput(self, default_value, logger: Logger):
         return click.prompt(
-                    self._input_data,
-                    default_value,
-                    type=click.Choice(self._choices, case_sensitive=False)
-                )
+            self._input_data,
+            default_value,
+            type=click.Choice(self._choices, case_sensitive=False)
+        )
+
 
 class PathParameterUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
@@ -210,10 +231,12 @@ class PathParameterUserInput(UserInputConfiguration):
         else:
             default_binary = ""
         value = click.prompt(self._input_data,
-                    default=default_binary,
-                    type=PathParameter(exists=True, file_okay=True, dir_okay=False)
-                )
+                             default=default_binary,
+                             type=PathParameter(
+                                 exists=True, file_okay=True, dir_okay=False)
+                             )
         return value
+
 
 class ConfirmUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
@@ -222,6 +245,7 @@ class ConfirmUserInput(UserInputConfiguration):
     def AskUserForInput(self, default_value, logger: Logger):
         return click.prompt(self._input_data, default_value, type=bool)
 
+
 class PromptPasswordUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -229,23 +253,28 @@ class PromptPasswordUserInput(UserInputConfiguration):
     def AskUserForInput(self, default_value, logger: Logger):
         return logger.prompt_password(self._input_data, default_value)
 
+
 class OrganzationIdConfiguration(PromptUserInput):
     """This class is used for job-organzation-id configurations"""
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
 
+
 class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
     """This class is base class extended by all classes that needs to add value to user filters"""
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-    
+
     def factory(config_json_object) -> 'BrokerageEnvConfiguration':
         if config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration(config_json_object)
         elif config_json_object["type"] == "filter-env":
             return FilterEnvConfiguration(config_json_object)
         else:
-            raise ValueError(f'Undefined input method type {config_json_object["type"]}')
+            raise ValueError(
+                f'Undefined input method type {config_json_object["type"]}')
 
     def AskUserForInput(self, default_value, logger: Logger):
         if self._input_method == "confirm":
@@ -255,24 +284,29 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         elif self._input_method == "prompt":
             return PromptUserInput.AskUserForInput(self, default_value, logger)
         else:
-            raise ValueError(f"Undefined input method type {self._input_method}")
-    
+            raise ValueError(
+                f"Undefined input method type {self._input_method}")
+
 
 class TradingEnvConfiguration(BrokerageEnvConfiguration):
     """This class adds trading-mode/envirionment based user filters."""
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-    
+
     def AskUserForInput(self, default_value, logger: Logger):
-        #NOTE: trading envrionment config should not use old boolean value as default
+        # NOTE: trading envrionment config should not use old boolean value as default
         if type(default_value) == bool:
             default_value = "paper" if default_value else "live"
         if self._input_method == "confirm":
-            raise ValueError(f'input method -- {self._input_method} is not allowed with {self.__class__.__name__}')
+            raise ValueError(
+                f'input method -- {self._input_method} is not allowed with {self.__class__.__name__}')
         else:
             return BrokerageEnvConfiguration.AskUserForInput(self, default_value, logger)
 
+
 class FilterEnvConfiguration(BrokerageEnvConfiguration):
     """This class adds extra filters to user filters."""
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)

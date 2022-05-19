@@ -18,6 +18,7 @@ from lean.container import container
 from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
 
+
 class LeanConfigConfigurer(JsonModule, abc.ABC):
     """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
 
@@ -39,7 +40,7 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param environment_name: the name of the environment to update
         """
         if self._is_installed_and_build:
-            return 
+            return
         self.ensure_module_installed()
 
         for environment_config in self.get_configurations_env_values_from_name(environment_name):
@@ -71,7 +72,8 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             value = option._value
                             break
                     if not value:
-                            raise ValueError(f'No condtion matched among present options for {configuration._name}')
+                        raise ValueError(
+                            f'No condtion matched among present options for {configuration._name}')
             else:
                 value = configuration._value
             if type(value) == pathlib.WindowsPath:
@@ -81,7 +83,8 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
 
     def ensure_module_installed(self) -> None:
         if not self._is_module_installed and self._installs:
-            container.module_manager().install_module(self._product_id, self.get_organzation_id())
+            container.module_manager().install_module(
+                self._product_id, self.get_organzation_id())
             self._is_module_installed = True
 
     def _get_default(cls, lean_config: Dict[str, Any], key: str) -> Optional[Any]:
@@ -103,4 +106,5 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param properties: the names of the properties to save persistently
         """
         from lean.container import container
-        container.lean_config_manager().set_properties({key: lean_config[key] for key in properties})
+        container.lean_config_manager().set_properties(
+            {key: lean_config[key] for key in properties})

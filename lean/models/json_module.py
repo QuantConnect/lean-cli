@@ -19,6 +19,7 @@ from lean.models.configuration import BrokerageEnvConfiguration, Configuration, 
 import copy
 import abc
 
+
 class JsonModule(abc.ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
@@ -51,13 +52,14 @@ class JsonModule(abc.ABC):
         :return: the user-friendly name to display to users
         """
         return self._display_name
-    
+
     def check_if_config_passes_filters(self, config: Configuration) -> bool:
         for condition in config._filter._conditions:
             if condition._dependent_config_id == "module-type":
                 target_value = self.__class__.__name__
             else:
-                target_value = self.get_config_value_from_name(condition._dependent_config_id)
+                target_value = self.get_config_value_from_name(
+                    condition._dependent_config_id)
             if not condition.check(target_value):
                 return False
         return True
@@ -72,45 +74,49 @@ class JsonModule(abc.ABC):
 
     def update_configs(self, key_and_values: Dict[str, str]):
         for key, value in key_and_values.items():
-            self.update_value_for_given_config(key,value)
+            self.update_value_for_given_config(key, value)
 
-    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str,str]]:
-        env_config_values = [] 
-        [env_config] = [config for config in self._lean_configs if 
-                            config._is_type_configurations_env and self.check_if_config_passes_filters(config)
+    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str, str]]:
+        env_config_values = []
+        [env_config] = [config for config in self._lean_configs if
+                        config._is_type_configurations_env and self.check_if_config_passes_filters(
+                            config)
                         ] or [None]
         if env_config is not None and target_env in env_config._env_and_values.keys():
             env_config_values = env_config._env_and_values[target_env]
-        return env_config_values 
+        return env_config_values
 
     def get_organzation_id(self) -> str:
-        [organization_id] = [config._value for config in self._lean_configs if config.is_type_organization_id]
+        [organization_id] = [
+            config._value for config in self._lean_configs if config.is_type_organization_id]
         return organization_id
 
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
-        [idx] = [i for i in range(len(self._lean_configs)) if self._lean_configs[i]._name == target_name]
+        [idx] = [i for i in range(len(self._lean_configs))
+                 if self._lean_configs[i]._name == target_name]
         self._lean_configs[idx]._value = value
 
     def get_config_value_from_name(self, target_name: str) -> str:
-        [idx] = [i for i in range(len(self._lean_configs)) if self._lean_configs[i]._name == target_name]
+        [idx] = [i for i in range(len(self._lean_configs))
+                 if self._lean_configs[i]._name == target_name]
         return self._lean_configs[idx]._value
 
     def get_non_user_required_properties(self) -> List[Configuration]:
-        return [config._name for config in self._lean_configs if not config.is_required_from_user() 
-                    and not config._is_type_configurations_env
-                    and self.check_if_config_passes_filters(config)]
+        return [config._name for config in self._lean_configs if not config.is_required_from_user() and not
+                config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
         return [config._name for config in self.get_required_configs() if type(config) not in filters]
 
     def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
         required_configs = [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
-                    and type(config) not in filters
-                    and self.check_if_config_passes_filters(config)]
-        # TODO: esure_options doesn't need to ensure all bloomberg options, 
+                            and type(config) not in filters
+                            and self.check_if_config_passes_filters(config)]
+        # TODO: esure_options doesn't need to ensure all bloomberg options,
         # this should be handled from json file/configurations.py
         if self._id == "BloombergBrokerage":
-            required_configs = [config for config in required_configs if config._name not in ["bloomberg-symbol-map-file"]]
+            required_configs = [config for config in required_configs if config._name not in [
+                "bloomberg-symbol-map-file"]]
         return required_configs
 
     def get_essential_properties(self) -> List[str]:
@@ -124,20 +130,20 @@ class JsonModule(abc.ABC):
                 if type(config) not in filters
                 and self.check_if_config_passes_module_filter(config)]
 
-    def _convert_lean_key_to_variable(self, lean_key:str) -> str:
+    def _convert_lean_key_to_variable(self, lean_key: str) -> str:
         """Replaces hyphens with underscore to follow python naming convention.
 
         :param lean_key: string that uses hyphnes as separator. Used in lean config
         """
-        return lean_key.replace('-','_')
+        return lean_key.replace('-', '_')
 
-    def _convert_variable_to_lean_key(self, variable_key:str) -> str:
+    def _convert_variable_to_lean_key(self, variable_key: str) -> str:
         """Replaces underscore with hyphens to follow lean config naming convention.
 
         :param variable_key: string that uses underscore as separator as per python convention.
         """
-        return variable_key.replace('_','-')
-        
+        return variable_key.replace('_', '-')
+
     def build(self, lean_config: Dict[str, Any], logger: Logger) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
@@ -156,13 +162,15 @@ class JsonModule(abc.ABC):
             if type(configuration) is InternalInputUserInput:
                 continue
             if configuration._log_message is not None:
-                    logger.info(configuration._log_message.strip())
+                logger.info(configuration._log_message.strip())
             if configuration.is_type_organization_id:
                 api_client = container.api_client()
                 organizations = api_client.organizations.get_all()
-                options = [Option(id=organization.id, label=organization.name) for organization in organizations]
+                options = [Option(id=organization.id, label=organization.name)
+                           for organization in organizations]
                 organization_id = logger.prompt_list(
-                    "Select the organization with the {} module subscription".format(self.get_name()),
+                    "Select the organization with the {} module subscription".format(
+                        self.get_name()),
                     options
                 )
                 user_choice = organization_id
@@ -171,8 +179,9 @@ class JsonModule(abc.ABC):
                 if self.__class__.__name__ == 'CloudBrokerage':
                     user_choice = configuration.AskUserForInput(None, logger)
                 else:
-                    user_choice = configuration.AskUserForInput(self._get_default(lean_config, configuration._name), logger)
-            self.update_value_for_given_config(configuration._name, user_choice)
-        
-        return self
+                    user_choice = configuration.AskUserForInput(
+                        self._get_default(lean_config, configuration._name), logger)
+            self.update_value_for_given_config(
+                configuration._name, user_choice)
 
+        return self

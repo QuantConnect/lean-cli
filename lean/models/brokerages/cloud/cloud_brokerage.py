@@ -15,12 +15,13 @@ from typing import Dict, Any
 from lean.models.json_module import JsonModule
 from lean.models.configuration import Configuration, InternalInputUserInput, TradingEnvConfiguration
 
+
 class CloudBrokerage(JsonModule):
     """A JsonModule implementation for the cloud brokerages."""
 
     def __init__(self, json_cloud_brokerage_data: Dict[str, Any]) -> None:
         super().__init__(json_cloud_brokerage_data)
-        
+
     def get_id(self) -> str:
         """Returns the id of the brokerage.
         :return: the id of this brokerage as it is expected by the live/create API endpoint
@@ -38,7 +39,8 @@ class CloudBrokerage(JsonModule):
                 continue
             # TODO: handle cases where tranding env config is not present, environment will still be required.
             if type(config) == TradingEnvConfiguration:
-                value = "paper" if str(config).lower() in ["practice", "demo", "beta", "paper"] else "live"
+                value = "paper" if str(config).lower() in [
+                    "practice", "demo", "beta", "paper"] else "live"
             elif type(config) is InternalInputUserInput:
                 if not config._is_conditional:
                     value = config._value
@@ -48,7 +50,8 @@ class CloudBrokerage(JsonModule):
                             value = option._value
                             break
                     if not value:
-                        raise ValueError(f'No condtion matched among present options for {config._cloud_name}')
+                        raise ValueError(
+                            f'No condtion matched among present options for {config._cloud_name}')
             else:
                 value = config._value
             settings[config._cloud_name] = value

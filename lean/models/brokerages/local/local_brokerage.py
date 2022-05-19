@@ -15,6 +15,7 @@ from typing import Any, Dict
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.configuration import Configuration
 
+
 class LocalBrokerage(LeanConfigConfigurer):
     """A JsonModule implementation for the Json brokerage module."""
 
@@ -23,9 +24,9 @@ class LocalBrokerage(LeanConfigConfigurer):
 
     def get_live_name(self, environment_name: str) -> str:
         live_name = self._id
-        environment_obj = self.get_configurations_env_values_from_name(environment_name)
+        environment_obj = self.get_configurations_env_values_from_name(
+            environment_name)
         if environment_obj:
-            [live_name] = [x["value"] for x in environment_obj if x["name"] == "live-mode-brokerage"]
+            [live_name] = [x["value"]
+                           for x in environment_obj if x["name"] == "live-mode-brokerage"]
         return live_name
-    
-    
