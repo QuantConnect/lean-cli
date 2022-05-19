@@ -120,8 +120,7 @@
               ],
               "input-method":"prompt",
               "prompt-info":"organization having subscription of module",
-              "help":"The name or id of the organization with the Interactive Brokers module subscription",
-              "log-message":"Log messages are before outputting the prompt"
+              "help":"The name or id of the organization with the Interactive Brokers module subscription"
            },
            {
               "id":"ib-user-name",
@@ -130,7 +129,8 @@
               "value":"",
               "input-method":"prompt",
               "prompt-info":"Username",
-              "help":"Your Interactive Brokers username"
+              "help":"Your Interactive Brokers username",
+              "log-message":"To use IB with LEAN you must disable two-factor authentication or only use IBKR Mobile. This is done from your IB Account Manage Account -> Settings -> User Settings -> Security -> Secure Login System. In the Secure Login System, deselect all options or only select \"IB Key Security via IBKR Mobile\". Interactive Brokers Lite accounts do not support API trading."
            },
            {
               "id":"ib-account",
@@ -182,7 +182,8 @@
               ],
               "input-method":"confirm",
               "prompt-info":"Enable delayed market data (yes/no)?",
-              "help":"Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for"
+              "help":"Whether delayed data may be used when your algorithm subscribes to a security you don't have a market data subscription for",
+              "log-message":"Delayed market data is used when you subscribe to data for which you don't have a market data subscription on IB. If delayed market data is disabled, live trading will stop and LEAN will shut down when this happens."
            },
            {
               "id":"environments",
@@ -583,7 +584,8 @@
               "value":"",
               "input-method":"prompt",
               "prompt-info":"API-Key",
-              "help":"Your Binance API key"
+              "help":"Your Binance API key",
+              "log-message":"Create an API key by logging in and accessing the Binance API Management page (https://www.binance.com/en/my/settings/api-management)."
            },
            {
               "id":"binance-api-secret",
@@ -1428,7 +1430,7 @@
               "input-method":"prompt",
               "prompt-info":"API key",
               "help":"Your Kraken API key",
-              "log-message":"Log messages are before outputting the prompt"
+              "log-message":"Create an API key by logging in and accessing the Kraken API Management page (https://www.kraken.com/u/security/api)."
            },
            {
               "id":"kraken-api-secret",
@@ -1760,7 +1762,8 @@
               "input-method":"path-parameter",
               "input-default":"C:/Program Files (x86)/DTN/IQFeed/iqconnect.exe",
               "prompt-info":"IQConnect binary location",
-              "help":"The path to the IQConnect binary"
+              "help":"The path to the IQConnect binary",
+              "log-message":"The IQFeed data feed requires an IQFeed developer account and a locally installed IQFeed client."
            },
            {
               "id":"iqfeed-username",
