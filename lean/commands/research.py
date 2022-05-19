@@ -22,9 +22,7 @@ from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE, GUI_PRODUCT_INSTALL_ID
 from lean.container import container
-from lean.models.brokerages.local import all_data_providers
-from lean.models.brokerages.local import QuantConnectDataProvider
-
+from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 
 def _check_docker_output(chunk: str, port: int) -> None:
     """Checks the output of the Docker container and opens the browser if Jupyter Lab has started.
