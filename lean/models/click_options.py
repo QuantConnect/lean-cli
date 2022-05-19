@@ -33,7 +33,7 @@ def get_click_option_type(configuration: Configuration):
     elif configuration._input_method == "prompt-password":
         return str
     elif configuration._input_method == "path-parameter":
-        return PathParameter(exists=True, file_okay=True, dir_okay=False)
+        return PathParameter(exists=False, file_okay=True, dir_okay=False)
 
 
 def get_attribute_type(configuration: Configuration):
@@ -58,8 +58,6 @@ def get_the_correct_type_default_value(default_lean_config_key: str, default_inp
     lean_value = _get_default_value(default_lean_config_key)
     if lean_value is None and default_input_value is not None:
         lean_value = default_input_value
-    if default_lean_config_key in ["bloomberg-symbol-map-file", "iqfeed-iqconnect"] and not Path(lean_value).is_file():
-        lean_value = None
     if lean_value is not None and type(lean_value) != expected_type and type(lean_value) == bool:
         lean_value = "paper" if lean_value else "live"
     return lean_value

@@ -986,7 +986,7 @@
               "type":"input",
               "value":"",
               "input-method":"path-parameter",
-              "input-default":"",
+              "input-default":"bloomberg-symbol-map.json",
               "prompt-info":"Path to symbol map file",
               "help":"The path to the Bloomberg symbol map file"
            },

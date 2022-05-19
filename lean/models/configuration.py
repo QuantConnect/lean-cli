@@ -328,7 +328,7 @@ class PathParameterUserInput(UserInputConfiguration):
         value = click.prompt(self._input_data,
                              default=default_binary,
                              type=PathParameter(
-                                 exists=True, file_okay=True, dir_okay=False)
+                                 exists=False, file_okay=True, dir_okay=False)
                              )
         return value
 
