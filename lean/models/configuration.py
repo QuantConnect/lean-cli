@@ -79,10 +79,6 @@ class Configuration(abc.ABC):
         else:
             self._filter = Filter([])
 
-    @abc.abstractmethod
-    def is_required_from_user(self):
-        return NotImplemented()
-
     def factory(config_json_object) -> 'Configuration':
         if config_json_object["type"] in ["info", "configurations-env"]:
             return InfoConfiguration.factory(config_json_object)
@@ -106,15 +102,13 @@ class Filter():
 class InfoConfiguration(Configuration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._is_required_from_user = False
 
     def factory(config_json_object) -> 'InfoConfiguration':
         if config_json_object["type"] == "configurations-env":
             return ConfigurationsEnvConfiguration(config_json_object)
         else:
             return InfoConfiguration(config_json_object)
-
-    def is_required_from_user(self):
-        return False
 
 
 class ConfigurationsEnvConfiguration(InfoConfiguration):
@@ -127,6 +121,7 @@ class ConfigurationsEnvConfiguration(InfoConfiguration):
 class UserInputConfiguration(Configuration, abc.ABC):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._is_required_from_user = True
         self._input_method = self._input_data = self._help = ""
         self._input_default = self._cloud_name = None
         if "input-method" in config_json_object.keys():
@@ -159,9 +154,6 @@ class UserInputConfiguration(Configuration, abc.ABC):
         elif config_json_object["input-method"] == "path-parameter":
             return PathParameterUserInput(config_json_object)
 
-    def is_required_from_user(self):
-        return True
-
 
 class InternalInputUserInput(UserInputConfiguration):
     """This class is used when configuratios are needed by LEAN config but the values
@@ -169,6 +161,7 @@ class InternalInputUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._is_required_from_user = False
         self._is_conditional: bool = False
         value_options: List[ConditionalValueOption] = []
         if "value-options" in config_json_object.keys():

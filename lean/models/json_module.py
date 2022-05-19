@@ -102,14 +102,14 @@ class JsonModule(abc.ABC):
         return self._lean_configs[idx]._value
 
     def get_non_user_required_properties(self) -> List[Configuration]:
-        return [config._name for config in self._lean_configs if not config.is_required_from_user() and not
+        return [config._name for config in self._lean_configs if not config._is_required_from_user and not
                 config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
         return [config._name for config in self.get_required_configs() if type(config) not in filters]
 
     def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
-        required_configs = [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
+        required_configs = [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
                             and type(config) not in filters
                             and self.check_if_config_passes_filters(config)]
         # TODO: esure_options doesn't need to ensure all bloomberg options,
@@ -126,7 +126,7 @@ class JsonModule(abc.ABC):
         return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
     def get_all_input_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
-        return [copy.copy(config) for config in self._lean_configs if config.is_required_from_user()
+        return [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
                 if type(config) not in filters
                 and self.check_if_config_passes_module_filter(config)]
 
@@ -155,7 +155,7 @@ class JsonModule(abc.ABC):
             return self
 
         for configuration in self._lean_configs:
-            if not configuration.is_required_from_user():
+            if not configuration._is_required_from_user:
                 continue
             if not isinstance(configuration, BrokerageEnvConfiguration) and not self.check_if_config_passes_filters(configuration):
                 continue

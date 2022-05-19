@@ -70,7 +70,7 @@ def get_options_attributes(configuration: Configuration, default_lean_config_key
         "type": get_click_option_type(configuration),
         "help": configuration._help
     }
-    default_input_value = configuration._input_default if configuration.is_required_from_user() else None
+    default_input_value = configuration._input_default if configuration._is_required_from_user else None
     options_attributes["default"] = lambda: get_the_correct_type_default_value(
         default_lean_config_key, default_input_value, get_attribute_type(configuration))
     return options_attributes
