@@ -21,6 +21,7 @@ from lean.click import PathParameter
 
 
 class BaseCondition(abc.ABC):
+    """Base condition class extended to all types of conditions"""
 
     def __init__(self, condition_object: Dict[str, str]):
         self._type: str = condition_object["type"]
@@ -28,6 +29,12 @@ class BaseCondition(abc.ABC):
         self._dependent_config_id: str = condition_object["dependent-config-id"]
 
     def factory(condition_object: Dict[str, str]) -> 'BaseCondition':
+        """Creates an instance of the child classes.
+
+        :param condition_object: the json object dict with condition info
+        :raises ValueError: When the wrong condition type is provided
+        :return: An instance of BaseCondition
+        """
         if condition_object["type"] == "regex":
             return RegexCondition(condition_object)
         elif condition_object["type"] == "exact-match":
@@ -38,22 +45,40 @@ class BaseCondition(abc.ABC):
 
     @abc.abstractmethod
     def check(self, target_value: str) -> bool:
+        """validates the condition against the provided values
+
+        :param target_value: value to validate the condition against
+        :return: True if the condition is valid otherwise False
+        """
         raise NotImplementedError()
 
 
 class ExactMatchCondition(BaseCondition):
+    """This class is used when the condition needs to be evaluated with equality"""
 
     def check(self, target_value: str) -> bool:
+        """validates the condition against the provided values
+
+        :param target_value: value to validate the condition against
+        :return: True if the condition is valid otherwise False
+        """
         return self._pattern.casefold() == target_value.casefold()
 
 
 class RegexCondition(BaseCondition):
+    """This class is used when the condition needs to be evaluated using regex"""
 
     def check(self, target_value: str) -> bool:
+        """validates the condition against the provided values
+
+        :param target_value: value to validate the condition against
+        :return: True if the condition is valid otherwise False
+        """
         return len(re.findall(self._pattern, target_value, re.I)) > 0
 
 
 class ConditionalValueOption():
+    """This class is used when the condition needs to be evaluated using regex"""
 
     def __init__(self, option_object: Dict[str, Any]):
         self._value: str = option_object["value"]
@@ -62,6 +87,8 @@ class ConditionalValueOption():
 
 
 class Configuration(abc.ABC):
+    """Base configuration class extended to all types of configurations"""
+
     def __init__(self, config_json_object):
         self._name: str = config_json_object["id"]
         self._config_type: str = config_json_object["type"]
@@ -80,6 +107,13 @@ class Configuration(abc.ABC):
             self._filter = Filter([])
 
     def factory(config_json_object) -> 'Configuration':
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :raises ValueError: When the wrong configuration type is provided.
+        :return: An instance of Configuration.
+        """
+
         if config_json_object["type"] in ["info", "configurations-env"]:
             return InfoConfiguration.factory(config_json_object)
         elif config_json_object["type"] in ["input", "internal-input"]:
@@ -94,17 +128,31 @@ class Configuration(abc.ABC):
 
 
 class Filter():
+    """This class handles the conditional filters added to configurations.
+    """
+
     def __init__(self, filter_conditions):
         self._conditions: List[BaseCondition] = [BaseCondition.factory(
             condition["condition"]) for condition in filter_conditions]
 
 
 class InfoConfiguration(Configuration):
+    """Configuration class used for informational configurations.
+
+    Doesn't support user prompt inputs.
+    Values of this configuration isn't persistently saved in the Lean configuration.
+    """
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._is_required_from_user = False
 
     def factory(config_json_object) -> 'InfoConfiguration':
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: An instance of InfoConfiguration.
+        """
         if config_json_object["type"] == "configurations-env":
             return ConfigurationsEnvConfiguration(config_json_object)
         else:
@@ -112,6 +160,12 @@ class InfoConfiguration(Configuration):
 
 
 class ConfigurationsEnvConfiguration(InfoConfiguration):
+    """Configuration class used for environment properties.
+
+    Doesn't support user prompt inputs.
+    Values of this configuration isn't persistently saved in the Lean configuration.
+    """
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._env_and_values = {
@@ -119,6 +173,13 @@ class ConfigurationsEnvConfiguration(InfoConfiguration):
 
 
 class UserInputConfiguration(Configuration, abc.ABC):
+    """Base class extended to all confiugration class than store values in Lean config.
+
+    Values are expected from the user via prompts.
+    Values of this configuration is persistently saved in the Lean configuration,
+    until specified explicitly.
+    """
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._is_required_from_user = True
@@ -136,11 +197,23 @@ class UserInputConfiguration(Configuration, abc.ABC):
             self._cloud_name = config_json_object["cloud-id"]
 
     @abc.abstractmethod
-    def AskUserForInput(self, default_value):
+    def AskUserForInput(self, default_value: Any, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         return NotImplemented()
 
     def factory(config_json_object) -> 'UserInputConfiguration':
-        # Check "Type" before "Input-method"
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: An instance of UserInputConfiguration.
+        """
+        # NOTE: Check "Type" before "Input-method"
         if config_json_object["type"] == "internal-input":
             return InternalInputUserInput(config_json_object)
         if config_json_object["input-method"] == "prompt":
@@ -157,7 +230,7 @@ class UserInputConfiguration(Configuration, abc.ABC):
 
 class InternalInputUserInput(UserInputConfiguration):
     """This class is used when configuratios are needed by LEAN config but the values
-        are derived from logic and not from user input."""
+        are derived from other dependent configurations and not from user input."""
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -171,6 +244,13 @@ class InternalInputUserInput(UserInputConfiguration):
         self._value_options = value_options
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         raise ValueError(
             f'user input not allowed with {self.__class__.__name__}')
 
@@ -189,6 +269,13 @@ class PromptUserInput(UserInputConfiguration):
             self._input_type = config_json_object["input-type"]
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         return click.prompt(self._input_data, default_value, type=self.get_input_type())
 
     def get_input_type(self):
@@ -203,6 +290,13 @@ class ChoiceUserInput(UserInputConfiguration):
             self._choices = config_json_object["input-choices"]
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         return click.prompt(
             self._input_data,
             default_value,
@@ -215,6 +309,13 @@ class PathParameterUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
 
         default_binary = None
         if default_value is not None:
@@ -236,6 +337,13 @@ class ConfirmUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         return click.prompt(self._input_data, default_value, type=bool)
 
 
@@ -244,6 +352,13 @@ class PromptPasswordUserInput(UserInputConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         return logger.prompt_password(self._input_data, default_value)
 
 
@@ -261,6 +376,11 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         super().__init__(config_json_object)
 
     def factory(config_json_object) -> 'BrokerageEnvConfiguration':
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: An instance of BrokerageEnvConfiguration.
+        """
         if config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration(config_json_object)
         elif config_json_object["type"] == "filter-env":
@@ -270,6 +390,13 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
                 f'Undefined input method type {config_json_object["type"]}')
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         if self._input_method == "confirm":
             return ConfirmUserInput.AskUserForInput(self, default_value, logger)
         elif self._input_method == "choice":
@@ -288,6 +415,13 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
         super().__init__(config_json_object)
 
     def AskUserForInput(self, default_value, logger: Logger):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :return: The value provided by the user.
+        """
         # NOTE: trading envrionment config should not use old boolean value as default
         if type(default_value) == bool:
             default_value = "paper" if default_value else "live"
