@@ -21,12 +21,12 @@ from lean.click import PathParameter
 
 class BaseCondition(abc.ABC):
     
-    def __init__(self, condition_object: Dict[str, Any]):
-        self._type = condition_object["type"]
-        self._pattern = str(condition_object["pattern"])
-        self._dependent_config_id = condition_object["dependent-config-id"]
+    def __init__(self, condition_object: Dict[str, str]):
+        self._type: str = condition_object["type"]
+        self._pattern: str = str(condition_object["pattern"])
+        self._dependent_config_id: str = condition_object["dependent-config-id"]
 
-    def factory(condition_object: Dict[str, Any]):
+    def factory(condition_object: Dict[str, str]) -> 'BaseCondition':
         if condition_object["type"] == "regex":
             return RegexCondition(condition_object)
         elif condition_object["type"] == "exact-match":
@@ -51,18 +51,18 @@ class RegexCondition(BaseCondition):
 class ConditionalValueOption():
 
     def __init__(self, option_object: Dict[str, Any]):
-        self._value = option_object["value"]
-        self._condition = BaseCondition.factory(option_object["condition"])
+        self._value: str = option_object["value"]
+        self._condition: BaseCondition = BaseCondition.factory(option_object["condition"])
 
 class Configuration(abc.ABC):
     def __init__(self, config_json_object):
-        self._name = config_json_object["id"]
-        self._config_type = config_json_object["type"]
-        self._value = config_json_object["value"]
-        self._is_type_configurations_env = type(self) is ConfigurationsEnvConfiguration
-        self._is_type_trading_env = type(self) is TradingEnvConfiguration
-        self.is_type_organization_id = type(self) is OrganzationIdConfiguration
-        self._log_message = None
+        self._name: str = config_json_object["id"]
+        self._config_type: str = config_json_object["type"]
+        self._value: str = config_json_object["value"]
+        self._is_type_configurations_env: bool = type(self) is ConfigurationsEnvConfiguration
+        self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
+        self.is_type_organization_id: bool = type(self) is OrganzationIdConfiguration
+        self._log_message: str = ""
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]
         if "filters" in config_json_object.keys():
@@ -74,7 +74,7 @@ class Configuration(abc.ABC):
     def is_required_from_user(self):
         return NotImplemented()
 
-    def factory(config_json_object):
+    def factory(config_json_object) -> 'Configuration':
         if config_json_object["type"] in ["info" , "configurations-env"]:
             return InfoConfiguration.factory(config_json_object)
         elif config_json_object["type"] in ["input","internal-input"]:
@@ -94,7 +94,7 @@ class InfoConfiguration(Configuration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
 
-    def factory(config_json_object):
+    def factory(config_json_object) -> 'InfoConfiguration':
         if config_json_object["type"] == "configurations-env":
             return ConfigurationsEnvConfiguration(config_json_object)
         else:
@@ -128,7 +128,7 @@ class UserInputConfiguration(Configuration, abc.ABC):
     def AskUserForInput(self, default_value):
         return NotImplemented()
 
-    def factory(config_json_object):
+    def factory(config_json_object) -> 'UserInputConfiguration':
         # Check "Type" before "Input-method"
         if config_json_object["type"] == "internal-input":
             return InternalInputUserInput(config_json_object)
@@ -152,8 +152,8 @@ class InternalInputUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._is_conditional = False
-        value_options = []
+        self._is_conditional: bool = False
+        value_options: List[ConditionalValueOption] = []
         if "value-options" in config_json_object.keys():
             value_options = [ConditionalValueOption(value_option) for value_option in config_json_object["value-options"]]
             self._is_conditional = True
@@ -171,7 +171,7 @@ class PromptUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._input_type = "string"
+        self._input_type: str = "string"
         if "input-type" in config_json_object.keys():
             self._input_type = config_json_object["input-type"]
 
@@ -184,10 +184,10 @@ class PromptUserInput(UserInputConfiguration):
 class ChoiceUserInput(UserInputConfiguration):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._choices: List[str] = []
         if "input-choices" in config_json_object.keys():
             self._choices = config_json_object["input-choices"]
-        else:
-            self._choices = []
+            
 
     def AskUserForInput(self, default_value, logger: Logger):
         return click.prompt(
@@ -239,7 +239,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
     
-    def factory(config_json_object):
+    def factory(config_json_object) -> 'BrokerageEnvConfiguration':
         if config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration(config_json_object)
         elif config_json_object["type"] == "filter-env":
