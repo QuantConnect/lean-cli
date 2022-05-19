@@ -22,15 +22,16 @@ from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 
 all_local_brokerages: List[LocalBrokerage] = []
 all_local_data_feeds: List[DataFeed] = []
-all_data_providers: List[DataFeed] = [] 
-local_brokerage_data_feeds: Dict[Type[LocalBrokerage], List[Type[DataFeed]]] = {}
+all_data_providers: List[DataFeed] = []
+local_brokerage_data_feeds: Dict[Type[LocalBrokerage],
+                                 List[Type[DataFeed]]] = {}
 all_cloud_brokerages: List[DataFeed] = []
 
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, '../../../cli_data.json')
-with open(filename) as f: 
+with open(filename) as f:
     data = json.load(f)
-    json_modules = data['modules']   
+    json_modules = data['modules']
     for json_module in json_modules:
         brokerage = dataQueueHandler = dataProviders = None
         if "local-brokerage" in json_module["type"]:
@@ -46,24 +47,31 @@ with open(filename) as f:
         if "history-provider" in json_module["type"]:
             pass
         if brokerage is not None and dataQueueHandler is not None:
-            local_brokerage_data_feeds.update({brokerage:[dataQueueHandler]})
+            local_brokerage_data_feeds.update({brokerage: [dataQueueHandler]})
 
-#IQFeed DataFeed for windows
+# IQFeed DataFeed for windows
 if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":
-    [iqfeed_data_feed] = [data_feed for data_feed in all_local_data_feeds if data_feed._id == "IQFeed"]
+    [iqfeed_data_feed] = [
+        data_feed for data_feed in all_local_data_feeds if data_feed._id == "IQFeed"]
     for key in local_brokerage_data_feeds.keys():
         local_brokerage_data_feeds[key].append(iqfeed_data_feed)
 # remove iqfeed from avaiable local data feeds if not windows
 else:
-    all_local_data_feeds = [data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
+    all_local_data_feeds = [
+        data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
 
 # QuantConnect DataProvider
-[QuantConnectDataProvider] = [data_provider for data_provider in all_data_providers if data_provider._id == "QuantConnect"]
+[QuantConnectDataProvider] = [
+    data_provider for data_provider in all_data_providers if data_provider._id == "QuantConnect"]
 
-[PaperTradingBrokerage] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]
+[PaperTradingBrokerage] = [
+    cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]
 
-#add all_local_data_feeds to required brokerages, once IQFEED has been remove from all_local_data_feeds, in case of MAC
-[LocalPaperTradingBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "QuantConnectBrokerage"]
-[AtreyuBrokerage] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "AtreyuBrokerage"]
+# add all_local_data_feeds to required brokerages, once IQFEED has been remove from all_local_data_feeds, in case of MAC
+[LocalPaperTradingBrokerage] = [
+    local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "QuantConnectBrokerage"]
+[AtreyuBrokerage] = [
+    local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "AtreyuBrokerage"]
 local_brokerage_data_feeds[LocalPaperTradingBrokerage] = all_local_data_feeds
-local_brokerage_data_feeds[AtreyuBrokerage] = [data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
+local_brokerage_data_feeds[AtreyuBrokerage] = [
+    data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
