@@ -93,6 +93,7 @@ class Configuration(abc.ABC):
         self._name: str = config_json_object["id"]
         self._config_type: str = config_json_object["type"]
         self._value: str = config_json_object["value"]
+        self._is_required_from_user = False
         self._is_type_configurations_env: bool = type(
             self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
