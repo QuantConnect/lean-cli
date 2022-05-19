@@ -19,6 +19,8 @@ from lean.models.brokerages.local.local_brokerage import LocalBrokerage
 from lean.models.brokerages.local.data_feed import DataFeed
 from lean.models.data_providers.data_provider import DataProvider
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
+import requests
+from pathlib import Path
 
 all_local_brokerages: List[LocalBrokerage] = []
 all_local_data_feeds: List[DataFeed] = []
@@ -28,8 +30,25 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage],
 all_cloud_brokerages: List[DataFeed] = []
 
 dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, '../../../cli_data.json')
-with open(filename) as f:
+file_path = os.path.join(dirname, '../../../modules-1.0.json')
+
+# check if new file is avaiable online
+url = "https://cdn.quantconnect.com/cli/modules-1.0.json"
+try:
+    res = requests.get(url)
+    if res.ok:
+        new_content = res.json()
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(new_content, f, ensure_ascii=False, indent=4)
+except Exception as e:
+    # No need to do anything if file isn't avaiable
+    pass
+
+# check if file exists
+if not Path(file_path).is_file():
+    raise FileNotFoundError(f"Modules json not found in the given path {file_path}")
+
+with open(file_path) as f:
     data = json.load(f)
     json_modules = data['modules']
     for json_module in json_modules:
