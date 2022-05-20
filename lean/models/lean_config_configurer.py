@@ -76,7 +76,7 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             f'No condtion matched among present options for {configuration._id}')
             else:
                 value = configuration._value
-            if type(value) == pathlib.WindowsPath:
+            if type(value) == pathlib.WindowsPath or type(value) == pathlib.PosixPath:
                 value = str(value).replace("\\", "/")
             lean_config[configuration._id] = value
         self._save_properties(lean_config, self.get_required_properties())
