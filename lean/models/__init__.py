@@ -19,7 +19,7 @@ from pathlib import Path
 json_modules = {}
 
 dirname = os.path.dirname(__file__)
-file_path = os.path.join(dirname, '../../../modules-1.0.json')
+file_path = os.path.join(dirname, '../modules-1.0.json')
 
 # check if new file is avaiable online
 url = "https://cdn.quantconnect.com/cli/modules-1.0.json"
