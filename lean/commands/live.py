@@ -214,12 +214,18 @@ def _get_default_value(key: str) -> Optional[Any]:
 
 def _get_configs_for_options() -> List[Configuration]: 
     run_options: Dict[str, Configuration] = {}
-    brokerages_ids = [module._id for module in all_local_brokerages]
-    for module in all_local_brokerages + [module for module in all_local_data_feeds if module._id not in brokerages_ids]:
+    config_with_module_id: Dict[str, str] = {}
+    for module in all_local_brokerages + all_local_data_feeds:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._name in run_options:
-                raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
+                if (config._name in config_with_module_id 
+                    and config_with_module_id[config._name] == module._id):
+                    # config of same module
+                    continue
+                else:
+                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
             run_options[config._name] = config
+            config_with_module_id[config._name] = module._id
     return list(run_options.values())
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
