@@ -75,15 +75,15 @@ def get_options_attributes(configuration: Configuration, default_lean_config_key
 
 
 def get_default_key(configuration: Configuration):
-    return "job-organization-id" if configuration.is_type_organization_id else configuration._name
+    return "job-organization-id" if configuration.is_type_organization_id else configuration._id
 
 
 def options_from_json(configurations: List[Configuration]):
 
     def decorator(f):
         for configuration in reversed(configurations):
-            long = configuration._name
-            name = str(configuration._name).replace('-', '_')
+            long = configuration._id
+            name = str(configuration._id).replace('-', '_')
             param_decls = (
                 '--' + long,
                 name)

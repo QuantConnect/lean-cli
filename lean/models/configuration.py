@@ -90,7 +90,7 @@ class Configuration(abc.ABC):
     """Base configuration class extended to all types of configurations"""
 
     def __init__(self, config_json_object):
-        self._name: str = config_json_object["id"]
+        self._id: str = config_json_object["id"]
         self._config_type: str = config_json_object["type"]
         self._value: str = config_json_object["value"]
         self._is_required_from_user = False
@@ -184,18 +184,18 @@ class UserInputConfiguration(Configuration, abc.ABC):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._is_required_from_user = True
-        self._input_method = self._input_data = self._help = ""
-        self._input_default = self._cloud_name = None
+        self._input_method = self._prompt_info = self._help = ""
+        self._input_default = self._cloud_id = None
         if "input-method" in config_json_object.keys():
             self._input_method = config_json_object["input-method"]
         if "prompt-info" in config_json_object.keys():
-            self._input_data = config_json_object["prompt-info"]
+            self._prompt_info = config_json_object["prompt-info"]
         if "help" in config_json_object.keys():
             self._help = config_json_object["help"]
         if "input-default" in config_json_object.keys():
             self._input_default = config_json_object["input-default"]
         if "cloud-id" in config_json_object.keys():
-            self._cloud_name = config_json_object["cloud-id"]
+            self._cloud_id = config_json_object["cloud-id"]
 
     @abc.abstractmethod
     def AskUserForInput(self, default_value: Any, logger: Logger):
@@ -277,7 +277,7 @@ class PromptUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return click.prompt(self._input_data, default_value, type=self.get_input_type())
+        return click.prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
         return self.map_to_types.get(self._input_type, self._input_type)
@@ -299,7 +299,7 @@ class ChoiceUserInput(UserInputConfiguration):
         :return: The value provided by the user.
         """
         return click.prompt(
-            self._input_data,
+            self._prompt_info,
             default_value,
             type=click.Choice(self._choices, case_sensitive=False)
         )
@@ -325,7 +325,7 @@ class PathParameterUserInput(UserInputConfiguration):
             default_binary = Path(self._input_default)
         else:
             default_binary = ""
-        value = click.prompt(self._input_data,
+        value = click.prompt(self._prompt_info,
                              default=default_binary,
                              type=PathParameter(
                                  exists=False, file_okay=True, dir_okay=False)
@@ -345,7 +345,7 @@ class ConfirmUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return click.prompt(self._input_data, default_value, type=bool)
+        return click.prompt(self._prompt_info, default_value, type=bool)
 
 
 class PromptPasswordUserInput(UserInputConfiguration):
@@ -360,7 +360,7 @@ class PromptPasswordUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return logger.prompt_password(self._input_data, default_value)
+        return logger.prompt_password(self._prompt_info, default_value)
 
 
 class OrganzationIdConfiguration(PromptUserInput):

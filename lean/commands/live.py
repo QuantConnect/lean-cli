@@ -128,7 +128,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     ])
     if brokerage._id == data_feed._id:
         # update essential properties from brokerage to datafeed
-        essential_properties_value = {config._name : config._value for config in brokerage.get_essential_configs()}
+        essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
         data_feed.update_configs(essential_properties_value)
         # mark configs are updated
         #TODO: create a setter method to set the property instead. 
@@ -179,11 +179,11 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     organization_info: Dict[str,str] = {}
     for config in target_module.get_required_configs([InternalInputUserInput]):
         if config.is_type_organization_id:
-            organization_info[config._name] = _get_organization_id(properties[target_module._convert_lean_key_to_variable(config._name)], target_module._id)
-            properties[target_module._convert_lean_key_to_variable(config._name)] = organization_info[config._name]
+            organization_info[config._id] = _get_organization_id(properties[target_module._convert_lean_key_to_variable(config._id)], target_module._id)
+            properties[target_module._convert_lean_key_to_variable(config._id)] = organization_info[config._id]
             # skip organization id from ensure_options() because it is fetched using _get_organization_id()
             continue
-        required_properties.append(target_module._convert_lean_key_to_variable(config._name)) 
+        required_properties.append(target_module._convert_lean_key_to_variable(config._id)) 
     ensure_options(required_properties)
     required_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
     required_properties_value.update(organization_info)
@@ -217,15 +217,15 @@ def _get_configs_for_options() -> List[Configuration]:
     config_with_module_id: Dict[str, str] = {}
     for module in all_local_brokerages + all_local_data_feeds:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._name in run_options:
-                if (config._name in config_with_module_id 
-                    and config_with_module_id[config._name] == module._id):
+            if config._id in run_options:
+                if (config._id in config_with_module_id 
+                    and config_with_module_id[config._id] == module._id):
                     # config of same module
                     continue
                 else:
-                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
-            run_options[config._name] = config
-            config_with_module_id[config._name] = module._id
+                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
+            run_options[config._id] = config
+            config_with_module_id[config._id] = module._id
     return list(run_options.values())
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)

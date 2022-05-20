@@ -93,20 +93,20 @@ class JsonModule(abc.ABC):
 
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
         [idx] = [i for i in range(len(self._lean_configs))
-                 if self._lean_configs[i]._name == target_name]
+                 if self._lean_configs[i]._id == target_name]
         self._lean_configs[idx]._value = value
 
     def get_config_value_from_name(self, target_name: str) -> str:
         [idx] = [i for i in range(len(self._lean_configs))
-                 if self._lean_configs[i]._name == target_name]
+                 if self._lean_configs[i]._id == target_name]
         return self._lean_configs[idx]._value
 
     def get_non_user_required_properties(self) -> List[Configuration]:
-        return [config._name for config in self._lean_configs if not config._is_required_from_user and not
+        return [config._id for config in self._lean_configs if not config._is_required_from_user and not
                 config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
-        return [config._name for config in self.get_required_configs() if type(config) not in filters]
+        return [config._id for config in self.get_required_configs() if type(config) not in filters]
 
     def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
         required_configs = [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
@@ -120,7 +120,7 @@ class JsonModule(abc.ABC):
         return required_configs
 
     def get_essential_properties(self) -> List[str]:
-        return [config._name for config in self.get_essential_configs()]
+        return [config._id for config in self.get_essential_configs()]
 
     def get_essential_configs(self) -> List[Configuration]:
         return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
@@ -180,8 +180,8 @@ class JsonModule(abc.ABC):
                     user_choice = configuration.AskUserForInput(None, logger)
                 else:
                     user_choice = configuration.AskUserForInput(
-                        self._get_default(lean_config, configuration._name), logger)
+                        self._get_default(lean_config, configuration._id), logger)
             self.update_value_for_given_config(
-                configuration._name, user_choice)
+                configuration._id, user_choice)
 
         return self

@@ -149,9 +149,9 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
     run_options: Dict[str, Configuration] = {}
     for module in all_cloud_brokerages:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._name in run_options:
-                raise ValueError(f'Options names should be unique. Duplicate key present: {config._name}')
-            run_options[config._name] = config
+            if config._id in run_options:
+                raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
+            run_options[config._id] = config
     return list(run_options.values())
 
 @click.command(cls=LeanCommand)

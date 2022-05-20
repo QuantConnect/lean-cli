@@ -35,7 +35,7 @@ class CloudBrokerage(JsonModule):
         settings = {}
         for config in self.get_required_configs():
             value = None
-            if not config._cloud_name:
+            if not config._cloud_id:
                 continue
             # TODO: handle cases where tranding env config is not present, environment will still be required.
             if type(config) == TradingEnvConfiguration:
@@ -51,10 +51,10 @@ class CloudBrokerage(JsonModule):
                             break
                     if not value:
                         raise ValueError(
-                            f'No condtion matched among present options for {config._cloud_name}')
+                            f'No condtion matched among present options for {config._cloud_id}')
             else:
                 value = config._value
-            settings[config._cloud_name] = value
+            settings[config._cloud_id] = value
         return settings
 
     def get_settings(self) -> Dict[str, str]:
