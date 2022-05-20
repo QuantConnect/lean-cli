@@ -39,12 +39,15 @@ class JsonModule(abc.ABC):
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
         brokerage_configs = []
+        organization_config = []
         for config in self._lean_configs:
             if isinstance(config, BrokerageEnvConfiguration):
                 brokerage_configs.append(config)
+            elif config.is_type_organization_id:
+                organization_config.append(config)
             else:
                 sorted_configs.append(config)
-        return brokerage_configs + sorted_configs
+        return brokerage_configs + organization_config + sorted_configs
 
     def get_name(self) -> str:
         """Returns the user-friendly name which users can identify this object by.
@@ -115,7 +118,7 @@ class JsonModule(abc.ABC):
         # TODO: esure_options doesn't need to ensure all bloomberg options,
         # this should be handled from json file/configurations.py
         if self._id == "BloombergBrokerage":
-            required_configs = [config for config in required_configs if config._name not in [
+            required_configs = [config for config in required_configs if config._id not in [
                 "bloomberg-symbol-map-file"]]
         return required_configs
 
