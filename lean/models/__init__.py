@@ -17,12 +17,12 @@ import requests
 from pathlib import Path
 
 json_modules = {}
-
+file_name = "modules-1.1.json"
 dirname = os.path.dirname(__file__)
-file_path = os.path.join(dirname, '../modules-1.0.json')
+file_path = os.path.join(dirname, f'../{file_name}')
 
 # check if new file is avaiable online
-url = "https://cdn.quantconnect.com/cli/modules-1.0.json"
+url = f"https://cdn.quantconnect.com/cli/{file_name}"
 try:
     res = requests.get(url)
     if res.ok:
