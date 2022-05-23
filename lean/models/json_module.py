@@ -109,7 +109,7 @@ class JsonModule(abc.ABC):
                 config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
     def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
-        return [config._id for config in self.get_required_configs() if type(config) not in filters]
+        return [config._id for config in self.get_required_configs(filters)]
 
     def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
         required_configs = [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
