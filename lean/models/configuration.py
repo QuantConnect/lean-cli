@@ -410,7 +410,10 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
 
 
 class TradingEnvConfiguration(BrokerageEnvConfiguration):
-    """This class adds trading-mode/envirionment based user filters."""
+    """This class adds trading-mode/envirionment based user filters.
+    
+    Normalizes the value of envrionment values(live/paper) for cloud live. 
+    """
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
