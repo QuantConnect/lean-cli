@@ -73,5 +73,5 @@ class CloudBrokerage(JsonModule):
         """
         # TODO: Handle this case with json conditions
         if self.get_name() == "Interactive Brokers":
-            return "InteractiveBrokersHandler" if self.get_config_value_from_name("use-ib-feed") else "QuantConnectHandler"
+            return "InteractiveBrokersHandler" if self.get_config_value_from_name("ib-data-feed") else "QuantConnectHandler"
         return "QuantConnectHandler"
