@@ -78,7 +78,7 @@ class RegexCondition(BaseCondition):
 
 
 class ConditionalValueOption():
-    """This class is used when the condition needs to be evaluated using regex"""
+    """This class is used when mutliple values needs to be evaluated based on conditions."""
 
     def __init__(self, option_object: Dict[str, Any]):
         self._value: str = option_object["value"]
