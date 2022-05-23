@@ -285,7 +285,7 @@ brokerage_required_options = {
     "Tradier": {
         "tradier-account-id": "123",
         "tradier-access-token": "456",
-        "tradier-use-sandbox": "paper"
+        "tradier-environment": "paper"
     },
     "OANDA": {
         "oanda-account-id": "123",
