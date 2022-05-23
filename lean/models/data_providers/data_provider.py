@@ -11,22 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any
+from typing import Any, Dict
+from lean.models.lean_config_configurer import LeanConfigConfigurer
+from lean.models.configuration import Configuration
 
-from lean.components.util.logger import Logger
-from lean.models.config import LeanConfigConfigurer
 
+class DataProvider(LeanConfigConfigurer):
+    """A JsonModule implementation for the Json data provider module."""
 
-class LocalDataProvider(LeanConfigConfigurer):
-    @classmethod
-    def get_name(cls) -> str:
-        return "Local"
+    def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
+        super().__init__(json_data_provider_data)
 
-    @classmethod
-    def build(cls, lean_config: Dict[str, Any], logger: Logger) -> LeanConfigConfigurer:
-        return LocalDataProvider()
-
-    def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
-        lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider"
-
-        self._save_properties(lean_config, ["data-provider"])
+    def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
+        super().configure_credentials(lean_config)
+        self._save_properties(
+            lean_config, self.get_non_user_required_properties())

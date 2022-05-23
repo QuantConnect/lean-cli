@@ -111,7 +111,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Local|QuantConnect|Terminal Link]
+  --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
@@ -204,7 +204,7 @@ Usage: lean cloud live [OPTIONS] PROJECT
   events and --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Kraken|FTX|Zerodha|Samco]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Kraken|FTX]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -214,31 +214,23 @@ Options:
 
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --tradier-environment [demo|real]
-                                  The environment to run in, demo for the Developer Sandbox, real for live trading
+  --tradier-environment [live|paper]
+                                  Whether the developer sandbox should be used
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [demo|real]
-                                  The environment to run in, demo for fxTrade Practice, real for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --gdax-use-sandbox [live|paper]
+                                  Whether the sandbox should be used
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-environment [paper|live]
-                                  The environment to run in, paper for the sandbox, live for live trading
+  --binance-use-testnet [live|paper]
+                                  Whether the testnet should be used
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
-  --binance-environment [demo|real]
-                                  The environment to run in, demo for testnet, real for the production environment
-  --kraken-api-key TEXT           Your Kraken API key
-  --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier TEXT
-                                  Your Kraken Verification Tier
-  --ftx-api-key TEXT              Your FTX API key
-  --ftx-api-secret TEXT           Your FTX API secret
-  --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]
@@ -260,6 +252,20 @@ Options:
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
 
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier [Starter|Intermediate|Pro]
+                                  Your Kraken Verification Tier
+  --ftx-exchange-name [FTX|FTXUS]
+                                  FTX exchange name [FTX, FTXUS]
+  --ftx-api-key TEXT              Your FTX API key
+  --ftxus-api-key TEXT            Your FTX API key
+  --ftx-api-secret TEXT           Your FTX API secret
+  --ftxus-api-secret TEXT         Your FTX API secret
+  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
+  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -749,9 +755,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --gui                           Enable monitoring and controlling of the deployment via the local GUI
   --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|OANDA|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Custom data only|Kraken|FTX|IQFeed]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Custom data only]
                                   The data feed to use
   --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
@@ -763,21 +769,24 @@ Options:
 
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --tradier-use-sandbox BOOLEAN   Whether the developer sandbox should be used
-  --oanda-account-id TEXT         Your OANDA account id
-  --oanda-access-token TEXT       Your OANDA API token
+  --tradier-environment [live|paper]
+                                  Whether the developer sandbox should be used
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --gdax-use-sandbox [live|paper]
+                                  Whether the sandbox should be used
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-use-sandbox BOOLEAN      Whether the sandbox should be used
+  --binance-use-testnet [live|paper]
+                                  Whether the testnet should be used
   --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
-  --binance-use-testnet BOOLEAN   Whether the testnet should be used
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
@@ -803,11 +812,6 @@ Options:
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
 
-  --iqfeed-iqconnect FILE         The path to the IQConnect binary
-  --iqfeed-username TEXT          Your IQFeed username
-  --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-product-name TEXT      The product name of your IQFeed developer account
-  --iqfeed-version TEXT           The product version of your IQFeed developer account
   --terminal-link-organization TEXT
                                   The name or id of the organization with the Terminal Link module subscription
   --bloomberg-environment [Production|Beta]
@@ -858,13 +862,24 @@ Options:
   --kraken-organization TEXT      The name or id of the organization with the kraken module subscription
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier TEXT
+  --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --ftx-exchange-name [FTX|FTXUS]
+                                  FTX exchange name [FTX, FTXUS]
   --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-api-key TEXT              Your FTX API key
+  --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
-  --ftx-account-tier TEXT         Your FTX Account Tier
-  --ftx-exchange-name TEXT        FTX exchange name [FTX, FTXUS]
+  --ftxus-api-secret TEXT         Your FTX API secret
+  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
+  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
+  --iqfeed-iqconnect FILE         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-productName TEXT       The product name of your IQFeed developer account
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
@@ -1042,7 +1057,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Local|QuantConnect|Terminal Link]
+  --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect

@@ -11,28 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.models.brokerages.cloud.bitfinex import BitfinexBrokerage
-from lean.models.brokerages.cloud.binance import BinanceBrokerage
-from lean.models.brokerages.cloud.coinbase_pro import CoinbaseProBrokerage
-from lean.models.brokerages.cloud.interactive_brokers import InteractiveBrokersBrokerage
-from lean.models.brokerages.cloud.oanda import OANDABrokerage
-from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
-from lean.models.brokerages.cloud.tradier import TradierBrokerage
-from lean.models.brokerages.cloud.kraken import KrakenBrokerage
-from lean.models.brokerages.cloud.ftx import FTXBrokerage
-from lean.models.brokerages.cloud.zerodha import ZerodhaBrokerage
-from lean.models.brokerages.cloud.samco import SamcoBrokerage
+from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
+from lean.models import json_modules
+from typing import List
 
-all_cloud_brokerages = [
-    PaperTradingBrokerage,
-    InteractiveBrokersBrokerage,
-    TradierBrokerage,
-    OANDABrokerage,
-    BitfinexBrokerage,
-    CoinbaseProBrokerage,
-    BinanceBrokerage,
-    KrakenBrokerage,
-    FTXBrokerage,
-    ZerodhaBrokerage,
-    SamcoBrokerage,
-]
+all_cloud_brokerages: List[CloudBrokerage] = []
+
+for json_module in json_modules:
+    if "cloud-brokerage" in json_module["type"]:
+        all_cloud_brokerages.append(CloudBrokerage(json_module))
+
+[PaperTradingBrokerage] = [
+    cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]

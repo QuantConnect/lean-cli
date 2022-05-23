@@ -23,8 +23,8 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.logger import Logger
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, GUI_PRODUCT_INSTALL_ID
-from lean.models.config import DebuggingMethod
 from lean.models.errors import MoreInfoError
+from lean.models.utils import DebuggingMethod
 
 
 class LeanConfigManager:

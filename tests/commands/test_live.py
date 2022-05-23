@@ -14,6 +14,7 @@
 import itertools
 import json
 from pathlib import Path
+import traceback
 from unittest import mock
 
 import pytest
@@ -33,7 +34,6 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
-
     config = path.read_text(encoding="utf-8")
     config = config.replace("{", f"""
 {{
@@ -42,7 +42,8 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-password": "hunter2",
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
-    "ib-enable-delayed-streaming-data": false,
+    "ib-enable-delayed-streaming-data": "no",
+    "ib-organization": "abc",
 
     "environments": {{
         "{name}": {{
@@ -52,7 +53,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
             "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
             "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
             "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
-            "data-queue-handler": "QuantConnect.Brokerages.InteractiveBrokers.InteractiveBrokersBrokerage",
+            "data-queue-handler": "InteractiveBrokersBrokerage",
             "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
             "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler",
             "history-provider": "BrokerageHistoryProvider"
@@ -64,6 +65,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
 
 
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
+    # TODO: currently it is not using the live-paper envrionment
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
 
@@ -75,6 +77,8 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
+    traceback.print_exception(*result.exc_info)
+    
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with(mock.ANY,
@@ -274,12 +278,14 @@ brokerage_required_options = {
     "Interactive Brokers": {
         "ib-user-name": "trader777",
         "ib-account": "DU1234567",
-        "ib-password": "hunter2"
+        "ib-password": "hunter2",
+        "ib-enable-delayed-streaming-data": "no",
+        "ib-organization": "abc",
     },
     "Tradier": {
         "tradier-account-id": "123",
         "tradier-access-token": "456",
-        "tradier-use-sandbox": "yes"
+        "tradier-environment": "paper"
     },
     "OANDA": {
         "oanda-account-id": "123",
@@ -294,25 +300,29 @@ brokerage_required_options = {
         "gdax-api-key": "123",
         "gdax-api-secret": "456",
         "gdax-passphrase": "789",
-        "gdax-use-sandbox": "yes"
+        "gdax-use-sandbox": "paper"
     },
     "Binance": {
         "binance-api-key": "123",
         "binance-api-secret": "456",
-        "binance-use-testnet": "yes"
+        "binance-use-testnet": "paper",
+        "binance-organization": "abc",
     },
     "Zerodha": {
         "zerodha-api-key": "123",
         "zerodha-access-token": "456",
         "zerodha-product-type": "MIS",
-        "zerodha-trading-segment": "EQUITY"
+        "zerodha-trading-segment": "EQUITY",
+        "zerodha-history-subscription": "no",
+        "zerodha-organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
         "samco-client-password": "456",
         "samco-year-of-birth": "2000",
         "samco-product-type": "MIS",
-        "samco-trading-segment": "EQUITY"
+        "samco-trading-segment": "EQUITY",
+        "samco-organization": "abc",
     },
     "Atreyu": {
         "atreyu-host": "abc",
@@ -323,6 +333,7 @@ brokerage_required_options = {
         "atreyu-client-id": "abc",
         "atreyu-broker-mpid": "abc",
         "atreyu-locate-rqd": "abc",
+        "atreyu-organization": "abc",
     },
     "Terminal Link": {
         "bloomberg-environment": "Beta",
@@ -330,35 +341,40 @@ brokerage_required_options = {
         "bloomberg-server-port": "123",
         "bloomberg-emsx-broker": "abc",
         "bloomberg-allow-modification": "no",
+        "bloomberg-emsx-account": "abc",
+        "bloomberg-emsx-strategy": "abc",
+        "bloomberg-emsx-notes": "abc",
+        "bloomberg-emsx-handling": "abc",
+        "bloomberg-emsx-user-time-zone": "abc",
+        "terminal-link-organization": "abc",
     },
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
-        "kraken-verification-tier": "abc",
+        "kraken-verification-tier": "starter",
+        "kraken-organization": "abc",
     },
     "FTX": {
+        "ftxus-api-key": "abc",
+        "ftxus-api-secret": "abc",
+        "ftxus-account-tier": "tier1",
         "ftx-api-key": "abc",
         "ftx-api-secret": "abc",
-        "ftx-account-tier": "abc",
-        "ftx-exchange-name": "FTX"
+        "ftx-account-tier": "tier1",
+        "ftx-exchange-name": "FTX",
+        "ftx-organization": "abc",
     },
     
 }
 
 data_feed_required_options = {
-    "Interactive Brokers": {
-        **brokerage_required_options["Interactive Brokers"],
-        "ib-enable-delayed-streaming-data": "yes"
-    },
+    "Interactive Brokers": brokerage_required_options["Interactive Brokers"],
     "Tradier": brokerage_required_options["Tradier"],
     "OANDA": brokerage_required_options["OANDA"],
     "Bitfinex": brokerage_required_options["Bitfinex"],
     "Coinbase Pro": brokerage_required_options["Coinbase Pro"],
     "Binance": brokerage_required_options["Binance"],
-    "Zerodha": {
-        **brokerage_required_options["Zerodha"],
-        "zerodha-history-subscription": "yes"
-    },
+    "Zerodha": brokerage_required_options["Zerodha"],
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": brokerage_required_options["Terminal Link"],
     "Kraken": brokerage_required_options["Kraken"],
@@ -391,7 +407,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
@@ -425,6 +441,8 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,
                                                *options])
+
+            traceback.print_exception(*result.exc_info)
 
             assert result.exit_code != 0
 
@@ -461,6 +479,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                        "--brokerage", brokerage,
                                        "--data-feed", data_feed,
                                        *options])
+
+    traceback.print_exception(*result.exc_info)
 
     assert result.exit_code == 0
 
@@ -502,7 +522,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
                 file.write(json.dumps({
                     **missing_options_config,
-                    "data-folder": "data"
+                    "data-folder": "data",
+                    "job-organization-id": "abc"
                 }))
 
             if brokerage == "Binance":
@@ -510,20 +531,22 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
             elif brokerage == "FTX":
                 data_feed = "Binance"
-                options.extend(["--ftx-exchange-name", "abc",
+                options.extend(["--ftx-exchange-name", "FTXUS",
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-api-key", "123",
                                 "--binance-api-secret", "456",
-                                "--binance-use-testnet", "no"])
+                                "--binance-use-testnet", "live"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
                                                "--data-feed", data_feed,
                                                *options])
+
+            traceback.print_exception(*result.exc_info)
 
             assert result.exit_code == 0
 
@@ -565,11 +588,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
             with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
                 file.write(json.dumps({
                     **missing_options_config,
-                    "data-folder": "data"
+                    "data-folder": "data",
+                    "job-organization-id": "abc"
                 }))
 
             if data_feed == "FTX":
-                options.extend(["--ftx-exchange-name", "abc"])
+                options.extend(["--ftx-exchange-name", "FTX"])
                 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",

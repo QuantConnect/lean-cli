@@ -26,7 +26,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
-from lean.models.config import DebuggingMethod
+from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from lean.models.modules import NuGetPackage
 from tests.test_helpers import create_fake_lean_cli_directory

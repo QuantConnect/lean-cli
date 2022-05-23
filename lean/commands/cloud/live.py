@@ -12,30 +12,19 @@
 # limitations under the License.
 
 import webbrowser
-from typing import List, Tuple, Optional
-
+from typing import Dict, List, Tuple, Optional
 import click
-
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCProject)
-from lean.models.brokerages.cloud import all_cloud_brokerages, BinanceBrokerage
-from lean.models.brokerages.cloud.base import CloudBrokerage
-from lean.models.brokerages.cloud.bitfinex import BitfinexBrokerage
-from lean.models.brokerages.cloud.coinbase_pro import CoinbaseProBrokerage
-from lean.models.brokerages.cloud.interactive_brokers import InteractiveBrokersBrokerage
-from lean.models.brokerages.cloud.oanda import OANDABrokerage
-from lean.models.brokerages.cloud.paper_trading import PaperTradingBrokerage
-from lean.models.brokerages.cloud.tradier import TradierBrokerage
-from lean.models.brokerages.cloud.zerodha import ZerodhaBrokerage
-from lean.models.brokerages.cloud.samco import SamcoBrokerage
-from lean.models.brokerages.cloud.kraken import KrakenBrokerage
-from lean.models.brokerages.cloud.ftx import FTXBrokerage
 from lean.models.logger import Option
-
+from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
+from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.click_options import options_from_json
+from lean.models.brokerages.cloud import all_cloud_brokerages
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -97,7 +86,7 @@ def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     :return: the cloud brokerage the user configured
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
-    return logger.prompt_list("Select a brokerage", brokerage_options).build(logger)
+    return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -155,57 +144,22 @@ def _configure_auto_restart(logger: Logger) -> bool:
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
     return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
+#TODO: same duplication present in commands\live.py
+def _get_configs_for_options() -> Dict[Configuration, str]: 
+    run_options: Dict[str, Configuration] = {}
+    for module in all_cloud_brokerages:
+        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
+            if config._id in run_options:
+                raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
+            run_options[config._id] = config
+    return list(run_options.values())
 
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@click.option("--ib-user-name", type=str, help="Your Interactive Brokers username")
-@click.option("--ib-account", type=str, help="Your Interactive Brokers account id")
-@click.option("--ib-password", type=str, help="Your Interactive Brokers password")
-@click.option("--ib-data-feed",
-              type=bool,
-              help="Whether the Interactive Brokers price data feed must be used instead of the QuantConnect price data feed")
-@click.option("--tradier-account-id", type=str, help="Your Tradier account id")
-@click.option("--tradier-access-token", type=str, help="Your Tradier access token")
-@click.option("--tradier-environment",
-              type=click.Choice(["demo", "real"], case_sensitive=False),
-              help="The environment to run in, demo for the Developer Sandbox, real for live trading")
-@click.option("--oanda-account-id", type=str, help="Your OANDA account id")
-@click.option("--oanda-access-token", type=str, help="Your OANDA API token")
-@click.option("--oanda-environment",
-              type=click.Choice(["demo", "real"], case_sensitive=False),
-              help="The environment to run in, demo for fxTrade Practice, real for fxTrade")
-@click.option("--bitfinex-api-key", type=str, help="Your Bitfinex API key")
-@click.option("--bitfinex-api-secret", type=str, help="Your Bitfinex API secret")
-@click.option("--gdax-api-key", type=str, help="Your Coinbase Pro API key")
-@click.option("--gdax-api-secret", type=str, help="Your Coinbase Pro API secret")
-@click.option("--gdax-passphrase", type=str, help="Your Coinbase Pro API passphrase")
-@click.option("--gdax-environment",
-              type=click.Choice(["paper", "live"], case_sensitive=False),
-              help="The environment to run in, paper for the sandbox, live for live trading")
-@click.option("--binance-api-key", type=str, help="Your Binance API key")
-@click.option("--binance-api-secret", type=str, help="Your Binance API secret")
-@click.option("--binance-environment",
-              type=click.Choice(["demo", "real"], case_sensitive=False),
-              help="The environment to run in, demo for testnet, real for the production environment")
-@click.option("--kraken-api-key", type=str, help="Your Kraken API key")
-@click.option("--kraken-api-secret", type=str, help="Your Kraken API secret")
-@click.option("--kraken-verification-tier", type=str, help="Your Kraken Verification Tier")
-@click.option("--ftx-api-key", type=str, help="Your FTX API key")
-@click.option("--ftx-api-secret", type=str, help="Your FTX API secret")
-@click.option("--ftx-account-tier", type=str, help="Your FTX Account Tier")
-@click.option("--ftx-exchange-name", type=str, help="FTX exchange name [FTX, FTXUS]")
-@click.option("--zerodha-api-key", type=str, help="Your Kite Connect API key")
-@click.option("--zerodha-access-token", type=str, help="Your Kite Connect access token")
-@click.option("--zerodha-product-type", type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False), help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")
-@click.option("--zerodha-trading-segment", type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False), help="EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX")
-@click.option("--samco-client-id", type=str, help="Your Samco account Client ID")
-@click.option("--samco-client-password", type=str, help="Your Samco account password")
-@click.option("--samco-year-of-birth", type=str, help="Your year of birth (YYYY) registered with Samco")
-@click.option("--samco-product-type", type=click.Choice(["MIS", "CNC", "NRML"], case_sensitive=False), help="MIS if you are targeting intraday products, CNC if you are targeting delivery products, NRML if you are targeting carry forward products")
-@click.option("--samco-trading-segment", type=click.Choice(["EQUITY", "COMMODITY"], case_sensitive=False), help="EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading commodities on MCX")
+@options_from_json(_get_configs_for_options())
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -227,41 +181,6 @@ def _configure_auto_restart(logger: Logger) -> bool:
               help="Automatically open the live results in the browser once the deployment starts")
 def live(project: str,
          brokerage: str,
-         ib_user_name: Optional[str],
-         ib_account: Optional[str],
-         ib_password: Optional[str],
-         ib_data_feed: Optional[bool],
-         tradier_account_id: Optional[str],
-         tradier_access_token: Optional[str],
-         tradier_environment: Optional[str],
-         oanda_account_id: Optional[str],
-         oanda_access_token: Optional[str],
-         oanda_environment: Optional[str],
-         bitfinex_api_key: Optional[str],
-         bitfinex_api_secret: Optional[str],
-         gdax_api_key: Optional[str],
-         gdax_api_secret: Optional[str],
-         gdax_passphrase: Optional[str],
-         gdax_environment: Optional[str],
-         binance_api_key: Optional[str],
-         binance_api_secret: Optional[str],
-         binance_environment: Optional[str],
-         kraken_api_key: Optional[str],
-         kraken_api_secret: Optional[str],
-         kraken_verification_tier: Optional[str],
-         ftx_api_key: Optional[str],
-         ftx_api_secret: Optional[str],
-         ftx_account_tier: Optional[str],
-         ftx_exchange_name: Optional[str],
-         zerodha_api_key: Optional[str],
-         zerodha_access_token: Optional[str],
-         zerodha_product_type: Optional[str],
-         zerodha_trading_segment: Optional[str],
-         samco_client_id: Optional[str],
-         samco_client_password: Optional[str],
-         samco_year_of_birth: Optional[str],
-         samco_product_type: Optional[str],
-         samco_trading_segment: Optional[str],
          node: str,
          auto_restart: bool,
          notify_order_events: Optional[bool],
@@ -270,7 +189,8 @@ def live(project: str,
          notify_webhooks: Optional[str],
          notify_sms: Optional[str],
          push: bool,
-         open_browser: bool) -> None:
+         open_browser: bool,
+         **kwargs) -> None:
     """Start live trading for a project in the cloud.
 
     PROJECT must be the name or the id of the project to start live trading for.
@@ -294,58 +214,18 @@ def live(project: str,
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = None
-
-        if brokerage == PaperTradingBrokerage.get_name():
-            brokerage_instance = PaperTradingBrokerage()
-        elif brokerage == InteractiveBrokersBrokerage.get_name():
-            ensure_options(["ib_user_name", "ib_account", "ib_password", "ib_data_feed"])
-            brokerage_instance = InteractiveBrokersBrokerage(ib_user_name, ib_account, ib_password, ib_data_feed)
-        elif brokerage == TradierBrokerage.get_name():
-            ensure_options(["tradier_account_id", "tradier_access_token", "tradier_environment"])
-            brokerage_instance = TradierBrokerage(tradier_account_id, tradier_access_token, tradier_environment)
-        elif brokerage == OANDABrokerage.get_name():
-            ensure_options(["oanda_account_id", "oanda_access_token", "oanda_environment"])
-            brokerage_instance = OANDABrokerage(oanda_account_id, oanda_access_token, oanda_environment)
-        elif brokerage == BitfinexBrokerage.get_name():
-            ensure_options(["bitfinex_api_key", "bitfinex_api_secret"])
-            brokerage_instance = BitfinexBrokerage(bitfinex_api_key, bitfinex_api_secret)
-        elif brokerage == CoinbaseProBrokerage.get_name():
-            ensure_options(["gdax_api_key", "gdax_api_secret", "gdax_passphrase", "gdax_environment"])
-            brokerage_instance = CoinbaseProBrokerage(gdax_api_key, gdax_api_secret, gdax_passphrase, gdax_environment)
-        elif brokerage == BinanceBrokerage.get_name():
-            ensure_options(["binance_api_key", "binance_api_secret", "binance_environment"])
-            brokerage_instance = BinanceBrokerage(binance_api_key, binance_api_secret, binance_environment)
-        elif brokerage == KrakenBrokerage.get_name():
-            ensure_options(["kraken_api_key", "kraken_api_secret", "kraken_verification_tier"])
-            brokerage_instance = KrakenBrokerage(kraken_api_key,
-                                                   kraken_api_secret,
-                                                   kraken_verification_tier)
-        elif brokerage == FTXBrokerage.get_name():
-            ensure_options(["ftx_api_key", "ftx_api_secret", "ftx_account_tier", "ftx_exchange_name"])
-            brokerage_instance = FTXBrokerage(ftx_api_key,
-                                                ftx_api_secret,
-                                                ftx_account_tier,
-                                                ftx_exchange_name)
-        elif brokerage == ZerodhaBrokerage.get_name():
-            ensure_options(["zerodha_api_key",
-                            "zerodha_access_token",
-                            "zerodha_product_type",
-                            "zerodha_trading_segment"])
-            brokerage_instance = ZerodhaBrokerage(zerodha_api_key,
-                                                    zerodha_access_token,
-                                                    zerodha_product_type,
-                                                    zerodha_trading_segment)
-        elif brokerage == SamcoBrokerage.get_name():
-            ensure_options(["samco_client_id",
-                            "samco_client_password",
-                            "samco_year_of_birth",
-                            "samco_product_type",
-                            "samco_trading_segment"])
-            brokerage_instance = SamcoBrokerage(samco_client_id,
-                                                samco_client_password,
-                                                samco_year_of_birth,
-                                                samco_product_type,
-                                                samco_trading_segment)
+        [brokerage_instance] = [cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage.get_name() == brokerage]
+        # update essential properties from brokerage to datafeed
+        # needs to be updated before fetching required properties
+        essential_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_essential_properties()]
+        ensure_options(essential_properties)
+        essential_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
+        brokerage_instance.update_configs(essential_properties_value)
+        # now required properties can be fetched as per data provider from esssential properties
+        required_properties = [brokerage_instance._convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([OrganzationIdConfiguration, InternalInputUserInput])]
+        ensure_options(required_properties)
+        required_properties_value = {brokerage_instance._convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
+        brokerage_instance.update_configs(required_properties_value)
 
         all_nodes = api_client.nodes.get_all(cloud_project.organizationId)
         live_node = next((n for n in all_nodes.live if n.id == node or n.name == node), None)

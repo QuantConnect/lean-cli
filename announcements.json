@@ -1,6 +1,10 @@
 {
     "announcements": [
         {
+            "date": "2022-05-23",
+            "message": "We've added new json based approach of adding new modules to reduce the overhead and duplications."
+        },
+        {
             "date": "2022-02-02",
             "message": "We've added cloud live support for Samco and Zerodha brokerages for India Market"
         },

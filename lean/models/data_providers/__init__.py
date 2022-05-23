@@ -11,12 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.models.data_providers.terminal_link import TerminalLinkDataProvider
-from lean.models.data_providers.local import LocalDataProvider
-from lean.models.data_providers.quantconnect import QuantConnectDataProvider
+from typing import List
+from lean.models.data_providers.data_provider import DataProvider
+from lean.models import json_modules
 
-all_data_providers = [
-    LocalDataProvider,
-    QuantConnectDataProvider,
-    TerminalLinkDataProvider
-]
+all_data_providers: List[DataProvider] = []
+
+for json_module in json_modules:
+    if "data-provider" in json_module["type"]:
+        all_data_providers.append(DataProvider(json_module))
+
+# QuantConnect DataProvider
+[QuantConnectDataProvider] = [
+    data_provider for data_provider in all_data_providers if data_provider._id == "QuantConnect"]

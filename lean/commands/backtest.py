@@ -23,10 +23,9 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
-from lean.models.config import DebuggingMethod
-from lean.models.data_providers import all_data_providers
-from lean.models.data_providers.quantconnect import QuantConnectDataProvider
+from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
+from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.

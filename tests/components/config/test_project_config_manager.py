@@ -15,7 +15,7 @@ from pathlib import Path
 
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.xml_manager import XMLManager
-from lean.models.config import CSharpLibrary
+from lean.models.utils import CSharpLibrary
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
