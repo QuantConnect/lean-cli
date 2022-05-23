@@ -214,12 +214,12 @@ Options:
 
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --tradier-use-sandbox [live|paper]
+  --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --oanda-account-id TEXT         Your OANDA account id
-  --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-use-sandbox [live|paper]
@@ -259,8 +259,12 @@ Options:
   --ftx-exchange-name [FTX|FTXUS]
                                   FTX exchange name [FTX, FTXUS]
   --ftx-api-key TEXT              Your FTX API key
+  --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
+  --ftxus-api-secret TEXT         Your FTX API secret
   --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+                                  Your FTX Account Tier
+  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
                                   Your FTX Account Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
@@ -765,12 +769,12 @@ Options:
 
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
-  --tradier-use-sandbox [live|paper]
+  --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --oanda-account-id TEXT         Your OANDA account id
-  --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-use-sandbox [live|paper]
