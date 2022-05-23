@@ -277,7 +277,7 @@ def live(project: Path,
         release: bool,
         image: Optional[str],
         update: bool,
-        *args, **kwargs) -> None:
+        **kwargs) -> None:
     """Start live trading a project locally using Docker.
 
     \b

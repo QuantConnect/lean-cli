@@ -153,9 +153,9 @@ class JsonModule(abc.ABC):
             return self
 
         for configuration in self._lean_configs:
-            if not configuration._is_required_from_user:
+            if not self.check_if_config_passes_filters(configuration):
                 continue
-            if not isinstance(configuration, BrokerageEnvConfiguration) and not self.check_if_config_passes_filters(configuration):
+            if not configuration._is_required_from_user:
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue
@@ -173,12 +173,11 @@ class JsonModule(abc.ABC):
                 )
                 user_choice = organization_id
             else:
+                default_value = None
                 # TODO: use type(class) equality instead of class name (str)
-                if self.__class__.__name__ == 'CloudBrokerage':
-                    user_choice = configuration.AskUserForInput(None, logger)
-                else:
-                    user_choice = configuration.AskUserForInput(
-                        self._get_default(lean_config, configuration._id), logger)
+                if self.__class__.__name__ != 'CloudBrokerage':
+                    default_value = self._get_default(lean_config, configuration._id)
+                user_choice = configuration.AskUserForInput(default_value, logger)
             self.update_value_for_given_config(
                 configuration._id, user_choice)
 

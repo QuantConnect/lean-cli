@@ -190,7 +190,7 @@ def live(project: str,
          notify_sms: Optional[str],
          push: bool,
          open_browser: bool,
-         *args, **kwargs) -> None:
+         **kwargs) -> None:
     """Start live trading for a project in the cloud.
 
     PROJECT must be the name or the id of the project to start live trading for.

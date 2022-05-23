@@ -13,7 +13,7 @@
 
 from typing import Dict, Any
 from lean.models.json_module import JsonModule
-from lean.models.configuration import Configuration, InternalInputUserInput, TradingEnvConfiguration
+from lean.models.configuration import InternalInputUserInput, TradingEnvConfiguration
 
 
 class CloudBrokerage(JsonModule):
