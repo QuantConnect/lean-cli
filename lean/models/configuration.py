@@ -235,7 +235,6 @@ class InternalInputUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
-        self._is_required_from_user = False
         self._is_conditional: bool = False
         value_options: List[ConditionalValueOption] = []
         if "value-options" in config_json_object.keys():
