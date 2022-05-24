@@ -151,7 +151,7 @@ class JsonModule(abc.ABC):
         """
         if self._is_installed_and_build:
             return self
-
+        logger.info(f'Configure credentials for {self._display_name}')
         for configuration in self._lean_configs:
             if not self.check_if_config_passes_filters(configuration):
                 continue
