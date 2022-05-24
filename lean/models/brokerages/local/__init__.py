@@ -24,32 +24,18 @@ local_brokerage_data_feeds: Dict[Type[LocalBrokerage],
                                  List[Type[DataFeed]]] = {}
 
 for json_module in json_modules:
-    brokerage = dataQueueHandler = None
     if "local-brokerage" in json_module["type"]:
-        brokerage = LocalBrokerage(json_module)
-        all_local_brokerages.append(brokerage)
+        all_local_brokerages.append(LocalBrokerage(json_module))
     if "data-queue-handler" in json_module["type"]:
-        dataQueueHandler = DataFeed(json_module)
-        all_local_data_feeds.append(dataQueueHandler)
-    if brokerage is not None and dataQueueHandler is not None:
-        local_brokerage_data_feeds.update({brokerage: [dataQueueHandler]})
+        all_local_data_feeds.append(DataFeed(json_module))
 
-# IQFeed DataFeed for windows
-if container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true":
-    [iqfeed_data_feed] = [
-        data_feed for data_feed in all_local_data_feeds if data_feed._id == "IQFeed"]
-    for key in local_brokerage_data_feeds.keys():
-        local_brokerage_data_feeds[key].append(iqfeed_data_feed)
-# remove iqfeed from avaiable local data feeds if not windows
-else:
+# Remove IQFeed DataFeed for other than windows machines
+if not [container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true"]:
     all_local_data_feeds = [
         data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
 
-# add all_local_data_feeds to required brokerages, once IQFEED has been remove from all_local_data_feeds, in case of MAC
-[LocalPaperTradingBrokerage] = [
-    local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "QuantConnectBrokerage"]
-[AtreyuBrokerage] = [
-    local_brokerage for local_brokerage in all_local_brokerages if local_brokerage._id == "AtreyuBrokerage"]
-local_brokerage_data_feeds[LocalPaperTradingBrokerage] = all_local_data_feeds
-local_brokerage_data_feeds[AtreyuBrokerage] = [
-    data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
+for local_brokerage in all_local_brokerages:
+    data_feeds_for_brokerage = all_local_data_feeds
+    if local_brokerage._id == "AtreyuBrokerage":
+        data_feeds_for_brokerage = [data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
+    local_brokerage_data_feeds[local_brokerage] = data_feeds_for_brokerage
