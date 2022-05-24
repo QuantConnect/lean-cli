@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import subprocess
 import time
 from datetime import datetime
@@ -334,7 +335,7 @@ def live(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
         lean_config["environments"] = {
-            environment_name: _environment_skeleton
+            environment_name: copy.copy(_environment_skeleton)
         }
 
         [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
