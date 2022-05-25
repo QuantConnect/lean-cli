@@ -492,8 +492,54 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  None,
                                                  False,
                                                  False)
+@pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
+                         itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
+def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
+    create_fake_lean_cli_directory()
 
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
 
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    options = []
+
+    for key, value in brokerage_required_options[brokerage].items():
+        options.extend([f"--{key}", value])
+
+    for key, value in data_feed_required_options[data_feed1].items():
+        options.extend([f"--{key}", value])
+
+    for key, value in data_feed_required_options[data_feed2].items():
+        options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["live", "Python Project",
+                                       "--brokerage", brokerage,
+                                       "--data-feed", data_feed1,
+                                       "--data-feed", data_feed2,
+                                       *options])
+
+    traceback.print_exception(*result.exc_info)
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "lean-cli",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 False,
+                                                 False)
+
+                                                 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(brokerage: str) -> None:
     create_fake_lean_cli_directory()
@@ -598,6 +644,62 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,
+                                               *options])
+
+            assert result.exit_code == 0
+
+            lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                         "lean-cli",
+                                                         Path("Python Project/main.py").resolve(),
+                                                         mock.ANY,
+                                                         ENGINE_IMAGE,
+                                                         None,
+                                                         False,
+                                                         False)
+
+
+@pytest.mark.parametrize("data_feed1,data_feed2", itertools.combinations(data_feed_required_options.keys(), 2))
+def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_settings(data_feed1: str, data_feed2: str) -> None:
+    create_fake_lean_cli_directory()
+
+    required_options = list(data_feed_required_options[data_feed1].items()) + list(data_feed_required_options[data_feed2].items())
+    if len(required_options) > 8:
+        #Skip computationally expensive tests
+        pytest.skip('computationally expensive test')
+    for length in range(len(required_options)):
+        for current_options in itertools.combinations(required_options, length):
+            docker_manager = mock.Mock()
+            container.docker_manager.override(providers.Object(docker_manager))
+
+            lean_runner = mock.Mock()
+            container.lean_runner.override(providers.Object(lean_runner))
+
+            api_client = mock.MagicMock()
+            api_client.organizations.get_all.return_value = [
+                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+            ]
+            container.api_client.override(providers.Object(api_client))
+
+            options = []
+
+            for key, value in current_options:
+                options.extend([f"--{key}", value])
+
+            missing_options_config = {key: value for key, value in set(required_options) - set(current_options)}
+            with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+                file.write(json.dumps({
+                    **missing_options_config,
+                    "data-folder": "data",
+                    "job-organization-id": "abc"
+                }))
+
+            if data_feed1 == "FTX" or data_feed2 == "FTX":
+                options.extend(["--ftx-exchange-name", "FTX"])
+                
+            result = CliRunner().invoke(lean, ["live", "Python Project",
+                                               "--brokerage", "Paper Trading",
+                                               "--data-feed", data_feed1,
+                                               "--data-feed", data_feed2,
                                                *options])
 
             assert result.exit_code == 0
