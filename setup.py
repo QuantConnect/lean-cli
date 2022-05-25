@@ -61,7 +61,7 @@ install_requires = [
     "pyshortcuts~=1.8.0",
     "wrapt~=1.12.1",
     "setuptools",
-    "tk",
+    "tk;platform_system=='Linux'",
     f"quantconnect-stubs{get_stubs_version_range()}"
 ]
 
