@@ -32,6 +32,17 @@ The CLI can be installed and updated by running `pip install --upgrade lean`.
 
 Note that many commands in the CLI require Docker to run. See [Get Docker](https://docs.docker.com/get-docker/) for instructions on how to install Docker for your operating system.
 
+**Note:** Some Linux users may need to install `tkinter` using the following commands:
+
+``` 
+For Python 3
+
+sudo apt-get install python3-tk
+
+For Python 2.7
+
+sudo apt-get install python-tk
+```
 After installing the CLI, open a terminal in an empty directory and run `lean init`. This command downloads the latest configuration file and sample data from the [QuantConnect/Lean](https://github.com/QuantConnect/Lean) repository. We recommend running all Lean CLI commands in the same directory `lean init` was ran in.
 
 ## Usage
