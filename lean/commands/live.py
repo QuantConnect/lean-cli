@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import subprocess
 import time
 from datetime import datetime
@@ -49,13 +50,14 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
                                 "https://www.lean.io/docs/lean-cli/live-trading")
 
     brokerage = environment["live-mode-brokerage"]
-    data_queue_handler = environment["data-queue-handler"]
+    data_queue_handlers = environment["data-queue-handler"]
 
     [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
-    [data_feed_configurer] = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) == data_queue_handler]
+    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
     brokerage_properties = brokerage_configurer.get_required_properties()
-    data_queue_handler_properties = data_feed_configurer.get_required_properties()
-
+    data_queue_handler_properties = []
+    for data_feed_configurer in data_feed_configurers:
+        data_queue_handler_properties.extend(data_feed_configurer.get_required_properties())
     required_properties = list(set(brokerage_properties + data_queue_handler_properties))
     missing_properties = [p for p in required_properties if p not in lean_config or lean_config[p] == ""]
     missing_properties = set(missing_properties)
@@ -123,17 +125,18 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
 
     brokerage.build(lean_config, logger).configure(lean_config, environment_name)
 
-    data_feed = logger.prompt_list("Select a data feed", [
+    data_feeds = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
-    ])
-    if brokerage._id == data_feed._id:
-        # update essential properties from brokerage to datafeed
-        essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
-        data_feed.update_configs(essential_properties_value)
-        # mark configs are updated
-        #TODO: create a setter method to set the property instead. 
-        setattr(data_feed, '_is_installed_and_build', True)
-    data_feed.build(lean_config, logger).configure(lean_config, environment_name)
+    ], multiple= True)
+    for data_feed in data_feeds:
+        if brokerage._id == data_feed._id:
+            # update essential properties from brokerage to datafeed
+            essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
+            data_feed.update_configs(essential_properties_value)
+            # mark configs are updated
+            #TODO: create a setter method to set the property instead. 
+            setattr(data_feed, '_is_installed_and_build', True)
+        data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
 
 _cached_organizations = None
@@ -253,6 +256,7 @@ def _get_configs_for_options() -> List[Configuration]:
               help="The brokerage to use")
 @click.option("--data-feed",
               type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
+              multiple=True,
               help="The data feed to use")
 @options_from_json(_get_configs_for_options())
 @click.option("--release",
@@ -318,28 +322,28 @@ def live(project: Path,
 
     lean_config_manager = container.lean_config_manager()
 
-    if environment is not None and (brokerage is not None or data_feed is not None):
+    if environment is not None and (brokerage is not None or len(data_feed) > 0):
         raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
 
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-    elif brokerage is not None or data_feed is not None:
+    elif brokerage is not None or len(data_feed) > 0:
         ensure_options(["brokerage", "data_feed"])
-
-        [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
-        
-        [data_feed_configurer] = [_get_and_build_module(data_feed, all_local_data_feeds, kwargs)]
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
         lean_config["environments"] = {
-            environment_name: _environment_skeleton
+            environment_name: copy.copy(_environment_skeleton)
         }
 
+        [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
         brokerage_configurer.configure(lean_config, environment_name)
-        data_feed_configurer.configure(lean_config, environment_name)
+
+        for df in data_feed:
+            [data_feed_configurer] = [_get_and_build_module(df, all_local_data_feeds, kwargs)]
+            data_feed_configurer.configure(lean_config, environment_name)
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)

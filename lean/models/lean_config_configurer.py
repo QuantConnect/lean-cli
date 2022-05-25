@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from lean.container import container
 from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
-
+import copy
 
 class LeanConfigConfigurer(JsonModule, abc.ABC):
     """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
@@ -45,9 +45,18 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
 
         for environment_config in self.get_configurations_env_values_from_name(environment_name):
             environment_config_name = environment_config["name"]
-            if self.__class__.__name__ == 'DataFeed' and environment_config_name in ["live-mode-brokerage", "transaction-handler"]:
-                continue
-            lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
+            if self.__class__.__name__ == 'DataFeed':
+                if environment_config_name == "data-queue-handler":
+                    previous_value = []
+                    if "data-queue-handler" in lean_config["environments"][environment_name]:
+                        previous_value = copy.copy(lean_config["environments"][environment_name][environment_config_name])
+                    previous_value.append(environment_config["value"])
+                    lean_config["environments"][environment_name][environment_config_name] = copy.copy(previous_value)
+            elif self.__class__.__name__ == 'LocalBrokerage':
+                if environment_config_name != "data-queue-handler":
+                    lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
+            else:
+                raise ValueError(f'{self.__class__.__name__} not valid for _configure_environment()')
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.

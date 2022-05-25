@@ -78,7 +78,7 @@ class Logger:
         progress.start()
         return progress
 
-    def prompt_list(self, text: str, options: List[Option], default: Optional[str] = None) -> Any:
+    def prompt_list(self, text: str, options: List[Option], default: Optional[str] = None, multiple: bool = False) -> Any:
         """Asks the user to select an option from a list of possible options.
 
         The user will not be prompted for input if there is only a single option.
@@ -88,6 +88,18 @@ class Logger:
         :param default: the default value if no input is given
         :return: the chosen option's id
         """
+        def validate_option(input_value: Any):
+            try:
+                index = int(input_value)
+                if 0 < index <= len(options):
+                    return options[index - 1].id
+            except ValueError:
+                option = next((option for option in options if option.label == input_value), None)
+                if option is not None:
+                    return option.id
+
+            self.info("Please enter the number or label of an option")
+
         if len(options) == 1:
             self.info(f"{text}: {options[0].label}")
             return options[0].id
@@ -97,18 +109,22 @@ class Logger:
             self.info(f"{i + 1}) {option.label}")
 
         while True:
-            user_input = click.prompt("Enter an option", type=str, default=default, show_default=True)
-
-            try:
-                index = int(user_input)
-                if 0 < index <= len(options):
-                    return options[index - 1].id
-            except ValueError:
-                option = next((option for option in options if option.label == user_input), None)
-                if option is not None:
-                    return option.id
-
-            self.info("Please enter the number or label of an option")
+            if not multiple:
+                user_input = click.prompt("Enter an option", type=str, default=default, show_default=True)
+                user_selected_value = validate_option(user_input)
+                if user_selected_value is not None:
+                    return user_selected_value
+            else:
+                user_selected_values = []
+                user_inputs = click.prompt("To enter multiple options, seprate them with comma.", type=str, default=default, show_default=True)
+                user_inputs = str(user_inputs).strip(",").split(",")
+                expected_outputs = len(user_inputs)
+                for user_input in user_inputs:
+                    user_selected_value = validate_option(user_input)
+                    if user_selected_value is not None:
+                        user_selected_values.append(user_selected_value)
+                if len(user_selected_values) == expected_outputs:
+                    return user_selected_values
 
     def prompt_password(self, text: str, default: Optional[str] = None) -> str:
         """Asks the user for a string value while masking the given input.
