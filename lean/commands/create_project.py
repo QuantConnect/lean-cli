@@ -11,15 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
-
 import click
-
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCLanguage
 from lean.models.errors import MoreInfoError
+from lean.components.util.name_extraction import convert_to_class_name
 
 DEFAULT_PYTHON_MAIN = '''
 from AlgorithmImports import *
@@ -262,17 +260,6 @@ DEFAULT_CSHARP_NOTEBOOK = """
 """.strip() + "\n"
 
 
-def _capitalize(word: str) -> str:
-    """Capitalizes the given word.
-
-    :param word: the word to capitalize
-    :return: the word with the first letter capitalized (any other uppercase characters are preserved)
-    """
-    if word == "":
-        return word
-    return word[0].upper() + word[1:]
-
-
 @click.command(cls=LeanCommand)
 @click.argument("name", type=str)
 @click.option("--language", "-l",
@@ -317,8 +304,7 @@ def create_project(name: str, language: str) -> None:
         project_manager = container.project_manager()
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
-    # Convert the project name into a valid class name by removing all non-alphanumeric characters
-    class_name = re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, full_path.name.split(" "))))
+    class_name = convert_to_class_name(full_path)
 
     if language == "python":
         main_name = "main.py"
