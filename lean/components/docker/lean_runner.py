@@ -483,8 +483,9 @@ class LeanRunner:
         run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
 
         # Copy over the algorithm DLL
-        run_options["commands"].append(
-            f'cp "/Compile/bin/{project_file.stem}.dll" "/Lean/Launcher/bin/Debug/{project_file.stem}.dll"')
+        # Copy over the project reference DLLs'
+        # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
+        run_options["commands"].append("cp -R -n /Compile/bin/. /Lean/Launcher/bin/Debug/")
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
         # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
