@@ -19,7 +19,7 @@ from enum import Enum
 from typing import List, Any, Optional, Dict, Set, Tuple, Pattern
 
 import click
-from dateutil.rrule import rrule, DAILY, YEARLY
+from dateutil.rrule import rrule, DAILY
 from joblib import Parallel, delayed
 from pydantic import validator
 
@@ -423,20 +423,12 @@ class Product(WrappedBaseModel):
 
             if has_start_end and start is not None and end is not None:
                 variables_to_use = {**variables}
-                if variables_to_use["resolution"] not in ["hour", "daily"]:
-                    for date in rrule(DAILY, dtstart=start, until=end):
-                        variables_to_use["date"] = date
-                        variables_to_use["year"] = date.strftime("%Y")
-                        variables_to_use["month"] = date.strftime("%m")
-                        variables_to_use["day"] = date.strftime("%d")
-                        possible_files.add(self._render_template(template, variables_to_use))
-                else:
-                    for date in rrule(YEARLY, dtstart=start, until=end):
-                        variables_to_use["date"] = date
-                        variables_to_use["year"] = date.strftime("%Y")
-                        variables_to_use["month"] = date.strftime("%m")
-                        variables_to_use["day"] = date.strftime("%d")
-                        possible_files.add(self._render_template(template, variables_to_use))
+                for date in rrule(DAILY, dtstart=start, until=end):
+                    variables_to_use["date"] = date
+                    variables_to_use["year"] = date.strftime("%Y")
+                    variables_to_use["month"] = date.strftime("%m")
+                    variables_to_use["day"] = date.strftime("%d")
+                    possible_files.add(self._render_template(template, variables_to_use))
 
             prefix = self._get_common_prefix(list(possible_files))
 
