@@ -39,10 +39,7 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param lean_config: the Lean configuration dict to write to
         :param environment_name: the name of the environment to update
         """
-        if self._is_installed_and_build:
-            return
         self.ensure_module_installed()
-
         for environment_config in self.get_configurations_env_values_from_name(environment_name):
             environment_config_name = environment_config["name"]
             if self.__class__.__name__ == 'DataFeed':
@@ -62,8 +59,6 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.
         :param lean_config: the Lean configuration dict to write to
         """
-        if self._is_installed_and_build:
-            return
         if self._installs:
             lean_config["job-organization-id"] = self.get_organzation_id()
         for configuration in self._lean_configs:

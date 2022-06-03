@@ -116,7 +116,7 @@ class Logger:
                     return user_selected_value
             else:
                 user_selected_values = []
-                user_inputs = click.prompt("To enter multiple options, seprate them with comma.", type=str, default=default, show_default=True)
+                user_inputs = click.prompt("To enter multiple options, separate them with comma.", type=str, default=default, show_default=True)
                 user_inputs = str(user_inputs).strip(",").split(",")
                 expected_outputs = len(user_inputs)
                 for user_input in user_inputs:

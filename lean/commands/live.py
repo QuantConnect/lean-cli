@@ -130,11 +130,14 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     ], multiple= True)
     for data_feed in data_feeds:
         if brokerage._id == data_feed._id:
-            # update essential properties from brokerage to datafeed
+            # update essential properties, so that other dependent values can be fetched.
             essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
             data_feed.update_configs(essential_properties_value)
+            # now required properties can be fetched as per data/filter provider from esssential properties
+            required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
+            data_feed.update_configs(required_properties_value)
             # mark configs are updated
-            #TODO: create a setter method to set the property instead. 
+            #TODO: create a setter method to set the property instead.
             setattr(data_feed, '_is_installed_and_build', True)
         data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
