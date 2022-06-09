@@ -52,7 +52,7 @@ install_requires = [
     "docker~=5.0.3",
     "rich~=9.10.0",
     "dependency-injector~=4.39.1",
-    "pydantic~=1.9.1",
+    "pydantic~=1.8.2",
     "python-dateutil~=2.8.2",
     "lxml~=4.9.0",
     "maskpass==0.3.6",
