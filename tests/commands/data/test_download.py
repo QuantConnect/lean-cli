@@ -229,3 +229,13 @@ bulk_datasource="""
 	]
 }
 """
+
+def test_validate_datafile() -> None:
+
+	try:
+		value = "/^equity\\/usa\\/(factor_files|map_files)\\/[^\\/]+.zip$/m"	
+		target = re.compile(value[value.index("/") + 1:value.rindex("/")])
+		vendor = QCDataVendor(vendorName="Algoseek", regex=target)
+		DataFile(file='equity/usa/daily/aal.zip', vendor=vendor)
+	except Exception as err:
+		pytest.fail(f"{err}")
