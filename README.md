@@ -83,10 +83,6 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean create-project`](#lean-create-project)
 - [`lean data download`](#lean-data-download)
 - [`lean data generate`](#lean-data-generate)
-- [`lean gui logs`](#lean-gui-logs)
-- [`lean gui restart`](#lean-gui-restart)
-- [`lean gui start`](#lean-gui-start)
-- [`lean gui stop`](#lean-gui-stop)
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
@@ -568,77 +564,6 @@ Options:
 
 _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
 
-### `lean gui logs`
-
-See the logs of the local GUI.
-
-```
-Usage: lean gui logs [OPTIONS]
-
-  See the logs of the local GUI.
-
-Options:
-  -f, --follow  Update the logs in real-time while the GUI is running
-  --verbose     Enable debug logging
-  --help        Show this message and exit.
-```
-
-_See code: [lean/commands/gui/logs.py](lean/commands/gui/logs.py)_
-
-### `lean gui restart`
-
-Restart the local GUI and open it in the browser.
-
-```
-Usage: lean gui restart [OPTIONS]
-
-  Restart the local GUI and open it in the browser.
-
-Options:
-  --no-open  Skip opening the local GUI in the browser after restarting it
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/gui/restart.py](lean/commands/gui/restart.py)_
-
-### `lean gui start`
-
-Start the local GUI.
-
-```
-Usage: lean gui start [OPTIONS]
-
-  Start the local GUI.
-
-Options:
-  --organization TEXT  The name or id of the organization with the local GUI module subscription
-  --port INTEGER       The port to run the local GUI on (defaults to 5612)
-  --no-open            Skip opening the local GUI in the browser after starting it
-  --shortcut           Create a desktop shortcut for launching the local GUI
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
-```
-
-_See code: [lean/commands/gui/start.py](lean/commands/gui/start.py)_
-
-### `lean gui stop`
-
-Stop the local GUI.
-
-```
-Usage: lean gui stop [OPTIONS]
-
-  Stop the local GUI.
-
-Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
-```
-
-_See code: [lean/commands/gui/stop.py](lean/commands/gui/stop.py)_
-
 ### `lean init`
 
 Scaffold a Lean configuration file and data directory.
@@ -756,8 +681,6 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --gui                           Enable monitoring and controlling of the deployment via the local GUI
-  --gui-organization TEXT         The name or id of the organization with the local GUI module subscription
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Custom data only]
