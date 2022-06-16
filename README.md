@@ -126,10 +126,8 @@ Options:
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
-
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
                                   QuantConnect as data provider
-
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the backtest
@@ -163,8 +161,8 @@ Usage: lean build [OPTIONS] [ROOT]
   6. The default engine image is set to lean-cli/engine:latest.
   7. The default research image is set to lean-cli/research:latest.
 
-  When the foundation Dockerfile is the same as the official foundation Dockerfile, quantconnect/lean:foundation is
-  used instead of building a custom foundation image.
+  When the foundation Dockerfile is the same as the official foundation Dockerfile, quantconnect/lean:foundation is used
+  instead of building a custom foundation image.
 
 Options:
   --tag TEXT  The tag to apply to custom images (defaults to latest)
@@ -210,9 +208,9 @@ Usage: lean cloud live [OPTIONS] PROJECT
   PROJECT must be the name or the id of the project to start live trading for.
 
   By default an interactive wizard is shown letting you configure the deployment. If --brokerage is given the command
-  runs in non-interactive mode. In this mode the CLI does not prompt for input or confirmation. In non-interactive
-  mode the options specific to the given brokerage are required, as well as --node, --auto-restart, --notify-order-
-  events and --notify-insights.
+  runs in non-interactive mode. In this mode the CLI does not prompt for input or confirmation. In non-interactive mode
+  the options specific to the given brokerage are required, as well as --node, --auto-restart, --notify-order-events and
+  --notify-insights.
 
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Kraken|FTX]
@@ -222,7 +220,6 @@ Options:
   --ib-password TEXT              Your Interactive Brokers password
   --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
                                   QuantConnect price data feed
-
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
@@ -247,22 +244,18 @@ Options:
   --zerodha-product-type [MIS|CNC|NRML]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-
   --zerodha-trading-segment [EQUITY|COMMODITY]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
   --samco-product-type [MIS|CNC|NRML]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-
   --samco-trading-segment [EQUITY|COMMODITY]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
@@ -273,9 +266,9 @@ Options:
   --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftxus-api-secret TEXT         Your FTX API secret
-  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|VIP1|VIP2|VIP3|MM1|MM2|MM3]
                                   Your FTX Account Tier
-  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|Tier7|Tier8|Tier9|VIP1|VIP2|MM1|MM2|MM3]
                                   Your FTX Account Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
@@ -284,7 +277,6 @@ Options:
   --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications
   --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
                                   configuring webhook-notifications
-
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
@@ -306,8 +298,8 @@ Usage: lean cloud optimize [OPTIONS] PROJECT
   PROJECT must be the name or id of the project to optimize.
 
   An interactive prompt will be shown to configure the optimizer. If --target is given the command runs in non-
-  interactive mode. In this mode the CLI does not prompt for input and the following options become required:
-  --target, --target-direction, --parameter, --node and --parallel-nodes.
+  interactive mode. In this mode the CLI does not prompt for input and the following options become required: --target,
+  --target-direction, --parameter, --node and --parallel-nodes.
 
   In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
   - --parameter <name> <min value> <max value> <step size>
@@ -406,8 +398,8 @@ Usage: lean config get [OPTIONS] KEY
 
   Get the current value of a configurable option.
 
-  Sensitive options like credentials cannot be retrieved this way for security reasons. Please open
-  ~/.lean/credentials if you want to see your currently stored credentials.
+  Sensitive options like credentials cannot be retrieved this way for security reasons. Please open ~/.lean/credentials
+  if you want to see your currently stored credentials.
 
   Run `lean config list` to show all available options.
 
@@ -558,7 +550,7 @@ Usage: lean data generate [OPTIONS]
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
-  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [required]
+  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0; required]
   --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
                                   The security type to generate data for (defaults to Equity)
   --resolution [Tick|Second|Minute|Hour|Daily]
@@ -676,12 +668,12 @@ Usage: lean library add [OPTIONS] PROJECT NAME
 
   NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
 
-  If --version is not given, the package is pinned to the latest compatible version. For C# projects, this is the
-  latest available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what
-  the Docker images use).
+  If --version is not given, the package is pinned to the latest compatible version. For C# projects, this is the latest
+  available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what the
+  Docker images use).
 
-  Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH and
-  the --no-local flag has not been given.
+  Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH and the
+  --no-local flag has not been given.
 
   Custom Python libraries are added to your project's requirements.txt file and are installed in your local Python
   environment so you get local autocomplete for the library. The last step can be skipped with the --no-local flag.
@@ -716,8 +708,8 @@ Usage: lean library remove [OPTIONS] PROJECT NAME
 
   NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
 
-  Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH
-  and the --no-local flag has not been given.
+  Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH and
+  the --no-local flag has not been given.
 
   Custom Python libraries are removed from the project's requirements.txt file.
 
@@ -747,9 +739,9 @@ Usage: lean live [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If
-  --environment, --brokerage or --data-feed are given the command runs in non-interactive mode. In this mode the CLI
-  does not prompt for input.
+  By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If --environment,
+  --brokerage or --data-feed are given the command runs in non-interactive mode. In this mode the CLI does not prompt
+  for input.
 
   If --environment is given it must be the name of a live environment in the Lean configuration.
 
@@ -777,19 +769,22 @@ Options:
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
-
+  --tradier-organization TEXT     The name or id of the organization with the Tradier module subscription
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --oanda-organization TEXT       The name or id of the organization with the Oanda module subscription
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
+  --bitfinex-organization TEXT    The name or id of the organization with the Bitfinex module subscription
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --gdax-use-sandbox [live|paper]
                                   Whether the sandbox should be used
+  --gdax-organization TEXT        The name or id of the organization with the Coinbase Pro module subscription
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
@@ -804,11 +799,9 @@ Options:
   --zerodha-product-type [MIS|CNC|NRML]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-
   --zerodha-trading-segment [EQUITY|COMMODITY]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-
   --zerodha-history-subscription BOOLEAN
                                   Whether you have a history API subscription for Zerodha
   --samco-organization TEXT       The name or id of the organization with the samco module subscription
@@ -818,11 +811,9 @@ Options:
   --samco-product-type [MIS|CNC|NRML]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-
   --samco-trading-segment [EQUITY|COMMODITY]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-
   --terminal-link-organization TEXT
                                   The name or id of the organization with the Terminal Link module subscription
   --bloomberg-environment [Production|Beta]
@@ -882,9 +873,9 @@ Options:
   --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
   --ftxus-api-secret TEXT         Your FTX API secret
-  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|VIP1|VIP2|VIP3|MM1|MM2|MM3]
                                   Your FTX Account Tier
-  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6]
+  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|Tier7|Tier8|Tier9|VIP1|VIP2|MM1|MM2|MM3]
                                   Your FTX Account Tier
   --iqfeed-iqconnect FILE         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
@@ -972,15 +963,15 @@ Usage: lean optimize [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  By default an interactive wizard is shown letting you configure the optimizer. If --optimizer-config or --strategy
-  is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input.
+  By default an interactive wizard is shown letting you configure the optimizer. If --optimizer-config or --strategy is
+  given the command runs in non-interactive mode. In this mode the CLI does not prompt for input.
 
   The --optimizer-config option can be used to specify the configuration to run the optimizer with.
   When using the option it should point to a file like this (the algorithm-* properties should be omitted):
   https://github.com/QuantConnect/Lean/blob/master/Optimizer.Launcher/config.json
 
-  If --strategy is given the optimizer configuration is read from the given options. In this case --strategy,
-  --target, --target-direction and --parameter become required.
+  If --strategy is given the optimizer configuration is read from the given options. In this case --strategy, --target,
+  --target-direction and --parameter become required.
 
   In non-interactive mode the --parameter option can be provided multiple times to configure multiple parameters:
   - --parameter <name> <min value> <max value> <step size>
@@ -1063,8 +1054,8 @@ Usage: lean research [OPTIONS] PROJECT
 
   Run a Jupyter Lab environment locally using Docker.
 
-  By default the official LEAN research image is used. You can override this using the --image option. Alternatively
-  you can set the default research image using `lean config set research-image <image>`.
+  By default the official LEAN research image is used. You can override this using the --image option. Alternatively you
+  can set the default research image using `lean config set research-image <image>`.
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
@@ -1072,10 +1063,8 @@ Options:
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
-
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
                                   when using QuantConnect as data provider
-
   -d, --detach                    Run Jupyter Lab in a detached Docker container and return immediately
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
