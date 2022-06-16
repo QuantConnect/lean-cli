@@ -75,7 +75,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
-        "lean": ["icons/*", "ssh/*"]
+        "lean": ["ssh/*"]
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]

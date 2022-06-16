@@ -112,10 +112,6 @@ class UpdateManager:
             if remote_digest == local_digest:
                 return
 
-            # Don't update existing image when running from local GUI
-            if os.environ.get("QC_LOCAL_GUI", "false") == "true":
-                return
-
         self._docker_manager.pull_image(image)
 
     def show_announcements(self) -> None:

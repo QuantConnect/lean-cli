@@ -29,13 +29,7 @@ class Logger:
 
     def __init__(self) -> None:
         """Creates a new Logger instance."""
-        # In Docker the terminal size is unknown, so we disable rich's text wrapping by setting width to a high value
-        if os.environ.get("QC_LOCAL_GUI", "false") == "true":
-            width = 999999
-        else:
-            width = None
-
-        self._console = Console(markup=False, highlight=False, emoji=False, width=width)
+        self._console = Console(markup=False, highlight=False, emoji=False, width=None)
         self.debug_logging_enabled = False
 
     def debug(self, message: Any) -> None:

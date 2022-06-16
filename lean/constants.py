@@ -102,14 +102,5 @@ SAMCO_PRODUCT_ID = 173
 # The product id of the Interactive Brokers module
 INTERACTIVE_BROKERS_PRODUCT_ID = 181
 
-# The product ids for which a valid subscription is seen as a valid GUI module subscription
-GUI_PRODUCT_SUBSCRIPTION_IDS = [119, 120]
-
-# The product id of the product the files are retrieved from when installing the GUI module
-GUI_PRODUCT_INSTALL_ID = 119
-
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"
-
-# The name of the Docker container running the local GUI
-LOCAL_GUI_CONTAINER_NAME = "lean_cli_gui"
