@@ -20,7 +20,6 @@ from lean.commands.cloud import cloud
 from lean.commands.config import config
 from lean.commands.create_project import create_project
 from lean.commands.data import data
-from lean.commands.gui import gui
 from lean.commands.init import init
 from lean.commands.library import library
 from lean.commands.live import live
@@ -46,7 +45,6 @@ lean.add_command(config)
 lean.add_command(cloud)
 lean.add_command(data)
 lean.add_command(library)
-lean.add_command(gui)
 
 lean.add_command(login)
 lean.add_command(logout)

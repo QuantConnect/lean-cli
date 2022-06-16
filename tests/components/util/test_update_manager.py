@@ -187,22 +187,6 @@ def test_pull_docker_image_if_necessary_does_nothing_when_api_responds_with_erro
     docker_manager.pull_image.assert_not_called()
 
 
-def test_pull_docker_image_if_necessary_does_not_update_existing_image_when_called_from_gui() -> None:
-    os.environ["QC_LOCAL_GUI"] = "true"
-
-    logger, storage, docker_manager, update_manager = create_objects()
-
-    docker_manager.image_installed.return_value = True
-    docker_manager.get_local_digest.return_value = "abc"
-    docker_manager.get_remote_digest.return_value = "def"
-
-    update_manager.pull_docker_image_if_necessary(DOCKER_IMAGE, False)
-
-    docker_manager.pull_image.assert_not_called()
-
-    os.environ["QC_LOCAL_GUI"] = "false"
-
-
 def test_show_announcements_logs_when_announcements_have_never_been_shown(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
                       "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",

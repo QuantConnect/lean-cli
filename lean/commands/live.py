@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
-from lean.constants import DEFAULT_ENGINE_IMAGE, GUI_PRODUCT_INSTALL_ID
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
@@ -246,14 +246,6 @@ def _get_configs_for_options() -> List[Configuration]:
               is_flag=True,
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
-@click.option("--gui",
-              is_flag=True,
-              default=False,
-              help="Enable monitoring and controlling of the deployment via the local GUI")
-@click.option("--gui-organization",
-              type=str,
-              default=lambda: _get_default_value("job-organization-id"),
-              help="The name or id of the organization with the local GUI module subscription")
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
@@ -277,8 +269,6 @@ def live(project: Path,
         environment: Optional[str],
         output: Optional[Path],
         detach: bool,
-        gui: bool,
-        gui_organization: Optional[str],
         brokerage: Optional[str],
         data_feed: Optional[str],
         release: bool,
@@ -316,12 +306,6 @@ def live(project: Path,
 
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    if gui:
-        module_manager = container.module_manager()
-        module_manager.install_module(GUI_PRODUCT_INSTALL_ID, _get_organization_id(gui_organization, "local GUI"))
-
-        detach = True
 
     lean_config_manager = container.lean_config_manager()
 
@@ -379,13 +363,5 @@ def live(project: Path,
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
-    if gui:
-        lean_config["lean-manager-type"] = "QuantConnect.GUI.GuiLeanManager"
-        output_config_manager.get_output_config(output).set("gui", True)
-
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
-
-    if gui:
-        logger = container.logger()
-        logger.info(f"You can monitor the status of the live deployment in the GUI")
