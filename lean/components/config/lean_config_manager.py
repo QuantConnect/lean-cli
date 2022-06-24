@@ -262,6 +262,12 @@ class LeanConfigManager:
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
 
+        # No real limit for the object store by default
+        if "storage-limit-mb" not in config:
+            config["storage-limit-mb"] = "9999999"
+        if "storage-file-count" not in config:
+            config["storage-file-count"] = "9999999"
+
         return config
 
     def configure_data_purchase_limit(self, lean_config: Dict[str, Any], data_purchase_limit: Optional[int]) -> None:
