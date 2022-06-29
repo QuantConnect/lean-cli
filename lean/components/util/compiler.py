@@ -1,5 +1,3 @@
-import hashlib
-import uuid
 from typing import Dict, Any
 from lean.container import container
 import sys
@@ -15,7 +13,10 @@ project_config_manager = container.project_config_manager()
 cli_config_manager = container.cli_config_manager()
 logger = container.logger()
 
-def _compile() -> bool:
+def _compile() -> Dict[str, Any]:
+    """
+    This function compile c# and python project files.
+    """
     message = {
         "result": False,
         "algorithmType": "",
@@ -41,77 +42,66 @@ def _compile() -> bool:
     engine_image = cli_config_manager.get_engine_image(
         project_config.get("engine-image", None))
 
-    try:
-        message["result"] = docker_manager.run_image(engine_image, **run_options)
-    except Exception as e:
-        pass
+    message["result"] = docker_manager.run_image(engine_image, **run_options)
     temp_manager.delete_temporary_directories_when_done = False
     return message
 
-def broadcast_success():
+def process_success() -> Dict[str, Any]:
     return {
         "eType": "BuildSuccess",
     }
 
-def parse_csharp_errors(csharp_output):
+def parse_csharp_errors(csharp_output) -> list:
     errors = []
 
     relevant_output = csharp_output[csharp_output.index("Build FAILED."):]
     for match in re.findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
-        errors.append({
-            "iLine": int(match[1]),
-            "iColumn": int(match[2]),
-            "sType": match[3],
-            "sErrorText": match[5],
-            "sErrorFilename": match[0].split("/")[-1]
-        })
+        errors.append(f'{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]} \n')
 
     return errors
 
-def parse_python_errors(python_output):
+def parse_python_errors(python_output) -> list:
     errors = []
 
     for match in re.findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
-        errors.append({
-            "iLine": int(match[1]),
-            "iColumn": len(match[2]),
-            "sType": "error",
-            "sErrorText": match[3],
-            "sErrorFilename": match[0]
-        })
+        errors.append(f"Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]} \n")
 
     for match in re.findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
-        errors.append({
-            "iLine": int(match[2]),
-            "iColumn": 0,
-            "sType": "error",
-            "sErrorText": match[0],
-            "sErrorFilename": match[1]
-        })
+        errors.append(f"Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]} \n")
 
     return errors
 
-def broadcast_error(algorithm_type, output):
+def process_error(algorithm_type, message) -> Dict[str, Any]:
 
     errors = []
-    if algorithm_type is "csharp":
-        errors.extend(parse_csharp_errors(output))
-    elif algorithm_type is "python":
-        errors.extend(parse_python_errors(output))
+    if algorithm_type == "csharp":
+        errors.extend(parse_csharp_errors(message))
+    elif algorithm_type == "python":
+        errors.extend(parse_python_errors(message))
 
     return {
         "eType": "BuildError",
         "aErrors": errors,
     }
 
+def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
+    """ It captures the stdout of the method given to run.
 
-def compile_create():
+    :param method_name_to_run: name of the method to run
+    :return: result of the method and the stdout of the process
+    """
     f = io.StringIO()
     with redirect_stdout(f):
-        compile_data = _compile()
+        result = method_name_to_run(*args, **kwargs)
     stdout = f.getvalue()
-    if compile_data["result"]:
-        processed_output = broadcast_success()
+    return (result, stdout)
+
+def compile() -> None:
+    """This is a utility function that is used by the vscode plugin project.
+    """
+    compile_result, stdout = redirect_stdout_of_subprocess(_compile)
+    if compile_result["result"]:
+        processed_output = process_success()
     else:
-        processed_output = broadcast_error(compile_data["algorithmType"], stdout)
-    logger.info(processed_output) 
+        processed_output = process_error(compile_result["algorithmType"], stdout)
+    logger.info(str(processed_output))
