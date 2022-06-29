@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import os
 import re
 import uuid
 from datetime import datetime
@@ -34,7 +33,6 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
-
 
 class LeanRunner:
     """The LeanRunner class contains the code that runs the LEAN engine locally."""
@@ -93,6 +91,7 @@ class LeanRunner:
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
         """
+        from lean.components.util import compiler
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
@@ -136,7 +135,16 @@ class LeanRunner:
         self._project_manager.copy_code(algorithm_file.parent, output_dir / "code")
 
         # Run the engine and log the result
-        success = self._docker_manager.run_image(image, **run_options)
+        # Run as a subprocess to capture the output before logging it
+        success, stdout = compiler.redirect_stdout_of_subprocess(self._docker_manager.run_image, image, **run_options)
+        
+        # Format error messages for clearer output logs
+        if not success:
+            algorithm_type = "python" if algorithm_file.name.endswith(".py") else "csharp"
+            errors = compiler.process_error(algorithm_type, stdout)
+        self._logger.info(stdout)
+        for error in errors["aErrors"]:
+            self._logger.error(error)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
