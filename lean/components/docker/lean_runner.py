@@ -302,12 +302,8 @@ class LeanRunner:
                 "python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
 
         # Set up language-specific run options
-        if algorithm_file.name.endswith(".py"):
-            self.set_up_python_options(project_dir, run_options)
-        else:
-            if not set_up_common_csharp_options_called:
-                self.set_up_common_csharp_options(run_options)
-            self.set_up_csharp_options(project_dir, run_options, release)
+        self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
+                                            set_up_common_csharp_options_called, release)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -695,3 +691,13 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
         if len(zip_names) == 0 or (datetime.now() - datetime.strptime(zip_names[0], "%Y%m%d")).days > 7:
             lean_config[config_key] = disk_provider
+
+    def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,
+                                            set_up_common_csharp_options_called, release) -> None:
+        # Set up language-specific run options
+        if algorithm_file.name.endswith(".py"):
+            self.set_up_python_options(project_dir, run_options)
+        else:
+            if not set_up_common_csharp_options_called:
+                self.set_up_common_csharp_options(run_options)
+            self.set_up_csharp_options(project_dir, run_options, release)

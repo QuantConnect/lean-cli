@@ -23,28 +23,19 @@ def _compile() -> bool:
 
     project_id = int(sys.argv[-1])
     project_dir = project_manager.get_project_by_id(project_id)
-
-    compile_id = uuid.uuid4().hex
+    algorithm_file = project_manager.find_algorithm_file(project_dir)
+    message["algorithmType"] = "python" if algorithm_file.name.endswith(".py") else "csharp"
 
     # The dict containing all options passed to `docker run`
     # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
     run_options: Dict[str, Any] = {
-        "name": f"lean_cli_compile_{project_id}_{compile_id}",
         "commands": [],
         "environment": {},
         "mounts": [],
         "volumes": {}
     }
 
-    algorithm_file = project_manager.find_algorithm_file(project_dir)
-
-    if algorithm_file.name.endswith(".py"):
-        lean_runner.set_up_python_options(project_dir, run_options)
-        message["algorithmType"] = "python"
-    else:
-        lean_runner.set_up_common_csharp_options(run_options)
-        lean_runner.set_up_csharp_options(project_dir, run_options, True)
-        message["algorithmType"] = "csharp"
+    lean_runner.setup_language_specific_run_options(run_options, project_dir, algorithm_file, False, False)
 
     project_config = project_config_manager.get_project_config(project_dir)
     engine_image = cli_config_manager.get_engine_image(
