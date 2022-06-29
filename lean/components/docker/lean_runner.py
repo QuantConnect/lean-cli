@@ -338,6 +338,16 @@ class LeanRunner:
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
         """
+
+        # Compile python files
+        source_files = self._project_manager.get_source_files(project_dir)
+        source_files = [file.relative_to(
+            project_dir).as_posix() for file in source_files]
+        source_files = [f'"/LeanCLI/{file}"' for file in source_files]
+
+        run_options["commands"].append(
+            f"python -m compileall {' '.join(source_files)}")
+            
         # Mount the project directory
         run_options["volumes"][str(project_dir)] = {
             "bind": "/LeanCLI",
