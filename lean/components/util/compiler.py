@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Any
 from lean.container import container
 import sys
@@ -46,10 +47,10 @@ def _compile() -> Dict[str, Any]:
     temp_manager.delete_temporary_directories_when_done = False
     return message
 
-def process_success() -> Dict[str, Any]:
-    return {
+def create_success() -> Dict[str, Any]:
+    return json.dumps({
         "eType": "BuildSuccess",
-    }
+    })
 
 def parse_csharp_errors(csharp_output) -> list:
     errors = []
@@ -71,7 +72,7 @@ def parse_python_errors(python_output) -> list:
 
     return errors
 
-def process_error(algorithm_type, message) -> Dict[str, Any]:
+def create_error(algorithm_type, message) -> Dict[str, Any]:
 
     errors = []
     if algorithm_type == "csharp":
@@ -79,10 +80,10 @@ def process_error(algorithm_type, message) -> Dict[str, Any]:
     elif algorithm_type == "python":
         errors.extend(parse_python_errors(message))
 
-    return {
+    return json.dumps({
         "eType": "BuildError",
         "aErrors": errors,
-    }
+    })
 
 def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
     """ It captures the stdout of the method given to run.
@@ -101,7 +102,7 @@ def compile() -> None:
     """
     compile_result, stdout = redirect_stdout_of_subprocess(_compile)
     if compile_result["result"]:
-        processed_output = process_success()
+        processed_output = create_success()
     else:
-        processed_output = process_error(compile_result["algorithmType"], stdout)
-    logger.info(str(processed_output))
+        processed_output = create_error(compile_result["algorithmType"], stdout)
+    logger.info(processed_output)

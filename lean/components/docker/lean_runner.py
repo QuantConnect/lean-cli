@@ -141,7 +141,8 @@ class LeanRunner:
         # Format error messages for cleaner output logs
         if not success:
             algorithm_type = "python" if algorithm_file.name.endswith(".py") else "csharp"
-            errors = compiler.process_error(algorithm_type, stdout)
+            jsonString = compiler.create_error(algorithm_type, stdout)
+            errors = json.loads(jsonString)
             for error in errors["aErrors"]:
                 self._logger.error(error)
         self._logger.info(stdout)
