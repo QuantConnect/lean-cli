@@ -138,13 +138,13 @@ class LeanRunner:
         # Run as a subprocess to capture the output before logging it
         success, stdout = compiler.redirect_stdout_of_subprocess(self._docker_manager.run_image, image, **run_options)
         
-        # Format error messages for clearer output logs
+        # Format error messages for cleaner output logs
         if not success:
             algorithm_type = "python" if algorithm_file.name.endswith(".py") else "csharp"
             errors = compiler.process_error(algorithm_type, stdout)
+            for error in errors["aErrors"]:
+                self._logger.error(error)
         self._logger.info(stdout)
-        for error in errors["aErrors"]:
-            self._logger.error(error)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
