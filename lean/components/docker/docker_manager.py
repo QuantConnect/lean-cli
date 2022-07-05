@@ -79,6 +79,9 @@ class DockerManager:
         If kwargs contains an "on_output" property, it is removed before passing it on to docker.containers.run
         and the given lambda is ran whenever the Docker container prints anything.
 
+        If kwargs contains an "format_output" property, it is removed before passing it on to docker.containers.run
+        and the given lambda is ran after the Docker container completes running.
+
         If kwargs contains a "commands" property, it is removed before passing it on to docker.containers.run
         and the Docker container is configured to run the given commands.
         This property causes the "entrypoint" property to be overwritten if it exists.
@@ -94,6 +97,7 @@ class DockerManager:
             self.pull_image(image)
 
         on_output = kwargs.pop("on_output", lambda chunk: None)
+        format_output = kwargs.pop("format_output", lambda chunk: None)
         commands = kwargs.pop("commands", None)
 
         if commands is not None:
@@ -204,12 +208,13 @@ class DockerManager:
         def print_logs() -> None:
             chunk_buffer = bytes()
             is_first_time = True
+            log_dump = ""
 
             try:
                 while True:
                     container.reload()
                     if container.status != "running":
-                        return
+                        return log_dump
 
                     if is_first_time:
                         tail = "all"
@@ -230,6 +235,7 @@ class DockerManager:
                         if on_output is not None:
                             on_output(chunk)
 
+                        log_dump = log_dump + chunk
                         self._logger.info(chunk.rstrip())
 
                         if not is_tty:
@@ -248,7 +254,12 @@ class DockerManager:
                 # This will crash when the container exits, ignore the exception
                 pass
 
-        logs_thread = threading.Thread(target=print_logs)
+        def print_and_format_logs():
+            log_dump = print_logs()
+            if format_output is not None:
+                format_output(log_dump)
+
+        logs_thread = threading.Thread(target=print_and_format_logs)
         logs_thread.daemon = True
         logs_thread.start()
 

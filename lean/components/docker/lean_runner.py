@@ -91,7 +91,6 @@ class LeanRunner:
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
         """
-        from lean.components.util import compiler
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`
@@ -136,16 +135,11 @@ class LeanRunner:
 
         # Run the engine and log the result
         # Run as a subprocess to capture the output before logging it
-        success, stdout = compiler.redirect_stdout_of_subprocess(self._docker_manager.run_image, image, **run_options)
-        
+
         # Format error messages for cleaner output logs
-        if not success:
-            algorithm_type = "python" if algorithm_file.name.endswith(".py") else "csharp"
-            jsonString = compiler.create_error(algorithm_type, stdout)
-            errors = json.loads(jsonString)
-            for error in errors["aErrors"]:
-                self._logger.error(error)
-        self._logger.info(stdout)
+        run_options["format_output"] = self.format_error_before_logging
+        
+        success = self._docker_manager.run_image(image, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         relative_project_dir = project_dir.relative_to(cli_root_dir)
@@ -710,3 +704,20 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             if not set_up_common_csharp_options_called:
                 self.set_up_common_csharp_options(run_options)
             self.set_up_csharp_options(project_dir, run_options, release)
+
+    def format_error_before_logging(self, chunk: str):
+        from lean.components.util import compiler
+        errors = []
+
+        # As we don't have algorithm type information. We can check errors for both
+        # Python
+        jsonString = compiler.get_errors("python", chunk)
+        jsonData = json.loads(jsonString)
+        errors.extend(jsonData["aErrors"])
+        # CSharp
+        jsonString = compiler.get_errors("csharp", chunk)
+        jsonData = json.loads(jsonString)
+        errors.extend(jsonData["aErrors"])
+
+        for error in errors:
+            self._logger.info(error)
