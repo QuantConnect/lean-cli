@@ -208,6 +208,7 @@ def test_optimize_copies_code_to_output_directory() -> None:
 
     project_manager = mock.Mock()
     project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
+    project_manager.get_source_files.return_value = [Path.cwd() / "Python Project" / "main.py"]
     container.project_manager.override(providers.Object(project_manager))
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
