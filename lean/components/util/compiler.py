@@ -1,3 +1,16 @@
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# Lean CLI v1.0. Copyright 2021 QuantConnect Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Dict, Any
 from lean.container import container
@@ -13,6 +26,64 @@ temp_manager = container.temp_manager()
 project_config_manager = container.project_config_manager()
 cli_config_manager = container.cli_config_manager()
 logger = container.logger()
+
+
+def get_success() -> Dict[str, Any]:
+    """Compiles success message.
+
+    :return: success object as json dump.
+    """
+    return json.dumps({
+        "eType": "BuildSuccess",
+    })
+
+
+def get_errors(algorithm_type: str, message: str) -> Dict[str, Any]:
+    """Compiles error message based on given input
+
+    :param algorithm_type: type of algorithm: "python" or "csharp".
+    :param message: message from which errors needs to be formatted.
+    :return: error object as json dump.
+    """
+    errors = []
+    if algorithm_type == "csharp":
+        errors.extend(_parse_csharp_errors(message))
+    elif algorithm_type == "python":
+        errors.extend(_parse_python_errors(message))
+
+    return json.dumps({
+        "eType": "BuildError",
+        "aErrors": errors,
+    })
+
+
+def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
+    """ It captures the stdout of the method given to run.
+
+    :param method_name_to_run: name of the method to run
+    :return: result of the method and the stdout of the process
+    """
+    f = io.StringIO()
+    with redirect_stdout(f):
+        result = method_name_to_run(*args, **kwargs)
+    stdout = f.getvalue()
+    return (result, stdout)
+
+
+def compile() -> None:
+    """This is a utility function that is used by the vscode plugin project.
+    """
+
+    # We need to print the stdout of the docker run command from here,
+    # so that it can be picked up by the subprocess that is being 
+    # called by the vscode plugin.
+    compile_result, stdout = redirect_stdout_of_subprocess(_compile)
+    if compile_result["result"]:
+        processed_output = get_success()
+    else:
+        processed_output = get_errors(compile_result["algorithmType"], stdout)
+    logger.info(processed_output)
+
 
 def _compile() -> Dict[str, Any]:
     """
@@ -47,62 +118,43 @@ def _compile() -> Dict[str, Any]:
     temp_manager.delete_temporary_directories_when_done = False
     return message
 
-def create_success() -> Dict[str, Any]:
-    return json.dumps({
-        "eType": "BuildSuccess",
-    })
-
-def parse_csharp_errors(csharp_output) -> list:
+def _parse_csharp_errors(csharp_output: str) -> list:
     errors = []
 
-    relevant_output = csharp_output[csharp_output.index("Build FAILED."):]
-    for match in re.findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
-        errors.append(f'{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]} \n')
+    try:
+        relevant_output = csharp_output[csharp_output.index("Build FAILED."):]
+        for match in re.findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
+            if match[3] == "error":
+                errors.append(f'{bcolors.FAIL}{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
+            else:
+                errors.append(f'{bcolors.WARNING}{match[3]}: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
+    except Exception:
+        pass
 
     return errors
 
-def parse_python_errors(python_output) -> list:
+def _parse_python_errors(python_output: str) -> list:
     errors = []
 
-    for match in re.findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
-        errors.append(f"Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]} \n")
+    try:
+        for match in re.findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
+            errors.append(f"{bcolors.FAIL}Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}{bcolors.ENDC}\n")
 
-    for match in re.findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
-        errors.append(f"Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]} \n")
-
+        for match in re.findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
+            errors.append(f"{bcolors.FAIL}Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}{bcolors.ENDC}\n")
+    except Exception:
+        pass
+    
     return errors
 
-def create_error(algorithm_type, message) -> Dict[str, Any]:
 
-    errors = []
-    if algorithm_type == "csharp":
-        errors.extend(parse_csharp_errors(message))
-    elif algorithm_type == "python":
-        errors.extend(parse_python_errors(message))
-
-    return json.dumps({
-        "eType": "BuildError",
-        "aErrors": errors,
-    })
-
-def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
-    """ It captures the stdout of the method given to run.
-
-    :param method_name_to_run: name of the method to run
-    :return: result of the method and the stdout of the process
-    """
-    f = io.StringIO()
-    with redirect_stdout(f):
-        result = method_name_to_run(*args, **kwargs)
-    stdout = f.getvalue()
-    return (result, stdout)
-
-def compile() -> None:
-    """This is a utility function that is used by the vscode plugin project.
-    """
-    compile_result, stdout = redirect_stdout_of_subprocess(_compile)
-    if compile_result["result"]:
-        processed_output = create_success()
-    else:
-        processed_output = create_error(compile_result["algorithmType"], stdout)
-    logger.info(processed_output)
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[33m'
+    FAIL = '\033[31m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
