@@ -38,7 +38,8 @@ def get_success() -> Dict[str, Any]:
     })
 
 
-def get_errors(algorithm_type: str, message: str) -> Dict[str, Any]:
+def get_errors(algorithm_type: str, message: str, color_coding_required: bool = True,
+                                        warning_required: bool = True) -> Dict[str, Any]:
     """Compiles error message based on given input
 
     :param algorithm_type: type of algorithm: "python" or "csharp".
@@ -47,9 +48,9 @@ def get_errors(algorithm_type: str, message: str) -> Dict[str, Any]:
     """
     errors = []
     if algorithm_type == "csharp":
-        errors.extend(_parse_csharp_errors(message))
+        errors.extend(_parse_csharp_errors(message, color_coding_required, warning_required))
     elif algorithm_type == "python":
-        errors.extend(_parse_python_errors(message))
+        errors.extend(_parse_python_errors(message, color_coding_required))
 
     return json.dumps({
         "eType": "BuildError",
@@ -81,7 +82,7 @@ def compile() -> None:
     if compile_result["result"]:
         processed_output = get_success()
     else:
-        processed_output = get_errors(compile_result["algorithmType"], stdout)
+        processed_output = get_errors(compile_result["algorithmType"], stdout, False, False)
     logger.info(processed_output)
 
 
@@ -118,30 +119,41 @@ def _compile() -> Dict[str, Any]:
     temp_manager.delete_temporary_directories_when_done = False
     return message
 
-def _parse_csharp_errors(csharp_output: str) -> list:
+def _parse_csharp_errors(csharp_output: str, color_coding_required: bool, warning_required: bool) -> list:
     errors = []
 
     try:
         relevant_output = csharp_output[csharp_output.index("Build FAILED."):]
         for match in re.findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
-            if match[3] == "error":
-                errors.append(f'{bcolors.FAIL}{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
+            if color_coding_required:
+                if match[3] == "error":
+                    errors.append(f'{bcolors.FAIL}{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
+                elif warning_required:
+                    errors.append(f'{bcolors.WARNING}{match[3]}: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
             else:
-                errors.append(f'{bcolors.WARNING}{match[3]}: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
+                if match[3] == "warning" and not warning_required:
+                    continue
+                errors.append(f'{match[3]}: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}\n')
     except Exception:
         pass
 
     return errors
 
-def _parse_python_errors(python_output: str) -> list:
+def _parse_python_errors(python_output: str, color_coding_required: bool) -> list:
     errors = []
 
     try:
         for match in re.findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
-            errors.append(f"{bcolors.FAIL}Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}{bcolors.ENDC}\n")
+            if color_coding_required:
+                errors.append(f"{bcolors.FAIL}Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}{bcolors.ENDC}\n")
+            else:
+                errors.append(f"Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}\n")
 
         for match in re.findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
-            errors.append(f"{bcolors.FAIL}Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}{bcolors.ENDC}\n")
+            if color_coding_required:
+                errors.append(f"{bcolors.FAIL}Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}{bcolors.ENDC}\n")
+            else:
+                errors.append(f"Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}\n")
     except Exception:
         pass
     
