@@ -47,7 +47,7 @@ class JsonModule(abc.ABC):
                 organization_config.append(config)
             else:
                 sorted_configs.append(config)
-        return brokerage_configs + organization_config + sorted_configs
+        return organization_config + brokerage_configs + sorted_configs
 
     def get_name(self) -> str:
         """Returns the user-friendly name which users can identify this object by.

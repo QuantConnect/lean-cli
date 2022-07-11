@@ -35,7 +35,4 @@ if not [container.platform_manager().is_host_windows() or os.environ.get("__READ
         data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
 
 for local_brokerage in all_local_brokerages:
-    data_feeds_for_brokerage = all_local_data_feeds
-    if local_brokerage._id == "AtreyuBrokerage":
-        data_feeds_for_brokerage = [data_feed for data_feed in all_local_data_feeds if data_feed._id != "Custom data only"]
-    local_brokerage_data_feeds[local_brokerage] = data_feeds_for_brokerage
+    local_brokerage_data_feeds[local_brokerage] = all_local_data_feeds
