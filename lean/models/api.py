@@ -188,7 +188,7 @@ class QCBacktest(WrappedBaseModel):
 
         :return: a url which when visited opens an Algorithm Lab tab containing the backtest's results
         """
-        return f"https://www.quantconnect.com/terminal/#open/{self.projectId}/{self.backtestId}"
+        return f"https://www.quantconnect.com/project/{self.projectId}/{self.backtestId}"
 
     def get_statistics_table(self) -> Table:
         """Converts the statistics into a pretty table.
