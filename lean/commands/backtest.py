@@ -16,7 +16,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
 import click
 
 from lean.click import LeanCommand, PathParameter
@@ -270,6 +269,9 @@ def _select_organization() -> QCMinimalOrganization:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the backtest")
+@click.option("--backtest-name",
+              type=str,
+              help="Backtest name to update in lean config")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -279,7 +281,8 @@ def backtest(project: Path,
              data_purchase_limit: Optional[int],
              release: bool,
              image: Optional[str],
-             update: bool) -> None:
+             update: bool,
+             backtest_name: str) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -346,6 +349,10 @@ def backtest(project: Path,
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
 
+    # Set backtest name
+    if backtest_name is not None and backtest_name != "":
+        lean_config["backtest-name"] = backtest_name
+    
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config,
                          "backtesting",
