@@ -127,6 +127,7 @@ Options:
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the backtest
+  --backtest-name TEXT            Backtest name
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -231,10 +232,14 @@ Options:
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --binance-exchange-name [Binance|BinanceUS]
+                                  Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet [live|paper]
                                   Whether the testnet should be used
   --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [MIS|CNC|NRML]
@@ -683,7 +688,7 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Custom data only]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
   --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
@@ -697,25 +702,29 @@ Options:
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
+  --oanda-organization TEXT       The name or id of the organization with the Oanda module subscription
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
-  --oanda-organization TEXT       The name or id of the organization with the Oanda module subscription
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --bitfinex-organization TEXT    The name or id of the organization with the Bitfinex module subscription
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --gdax-organization TEXT        The name or id of the organization with the Coinbase Pro module subscription
   --gdax-use-sandbox [live|paper]
                                   Whether the sandbox should be used
-  --gdax-organization TEXT        The name or id of the organization with the Coinbase Pro module subscription
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --binance-organization TEXT     The name or id of the organization with the Binance module subscription
+  --binance-exchange-name [Binance|BinanceUS]
+                                  Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet [live|paper]
                                   Whether the testnet should be used
-  --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
@@ -789,9 +798,9 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-exchange-name [FTX|FTXUS]
                                   FTX exchange name [FTX, FTXUS]
-  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-api-key TEXT              Your FTX API key
   --ftxus-api-key TEXT            Your FTX API key
   --ftx-api-secret TEXT           Your FTX API secret
@@ -805,6 +814,7 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --polygon-api-key TEXT          Your Polygon data feed API Key
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
