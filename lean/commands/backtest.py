@@ -271,7 +271,7 @@ def _select_organization() -> QCMinimalOrganization:
               help="Pull the LEAN engine image before running the backtest")
 @click.option("--backtest-name",
               type=str,
-              help="Backtest name to update in lean config")
+              help="Backtest name")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,

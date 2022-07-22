@@ -127,7 +127,7 @@ Options:
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the backtest
-  --backtest-name TEXT            Backtest name to update in lean config
+  --backtest-name TEXT            Backtest name
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
