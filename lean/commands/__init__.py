@@ -22,7 +22,7 @@ from lean.commands.create_project import create_project
 from lean.commands.data import data
 from lean.commands.init import init
 from lean.commands.library import library
-from lean.commands.live import live
+from lean.commands.live.live import live
 from lean.commands.login import login
 from lean.commands.logout import logout
 from lean.commands.logs import logs
@@ -45,7 +45,7 @@ lean.add_command(config)
 lean.add_command(cloud)
 lean.add_command(data)
 lean.add_command(library)
-
+lean.add_command(live)
 lean.add_command(login)
 lean.add_command(logout)
 lean.add_command(whoami)
@@ -55,6 +55,5 @@ lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)
 lean.add_command(report)
-lean.add_command(live)
 lean.add_command(build)
 lean.add_command(logs)

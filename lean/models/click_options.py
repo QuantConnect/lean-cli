@@ -12,8 +12,7 @@
 # limitations under the License.
 
 
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, List
 import click
 from lean.click import PathParameter
 from lean.models.configuration import Configuration

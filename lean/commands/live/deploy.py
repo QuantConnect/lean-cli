@@ -27,6 +27,7 @@ from lean.models.logger import Option
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
+from lean.commands.live.live import live
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -235,7 +236,7 @@ def _get_configs_for_options() -> List[Configuration]:
             config_with_module_id[config._id] = module._id
     return list(run_options.values())
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--environment",
               type=str,
@@ -269,7 +270,7 @@ def _get_configs_for_options() -> List[Configuration]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-def live(project: Path,
+def deploy(project: Path,
         environment: Optional[str],
         output: Optional[Path],
         detach: bool,
