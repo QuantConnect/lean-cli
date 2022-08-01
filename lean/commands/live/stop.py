@@ -13,12 +13,12 @@
 
 
 from pathlib import Path
+import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.components.util.logger import Logger
-from lean.constants import COMMANDS_FILE_PATH
-
+from lean.constants import COMMANDS_FILE_PATH, COMMAND_RESULT_FILE_BASENAME
+import time
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -26,18 +26,30 @@ def stop(project: Path) -> None:
     """
     Stop an already running local live trading a project.
     """
-    
-    docker_container_name = container.output_config_manager().get_container_name(project)
-    data = {[
-        {
+    logger = container.logger()
+    live_dir = container.project_config_manager().get_latest_live_directory(project)
+    docker_container_name = container.output_config_manager().get_container_name(Path(live_dir))
+    command_id = uuid.uuid4().hex
+    data = {
+            "$type": "QuantConnect.Commands.AlgorithmStatusCommand, QuantConnect.Common",
+            "Id": command_id,
             "Status": "Stopped"
         }
-    ]}
-    # Logger.info(f"Sending command to container {docker_container_name}")
+    file_name = COMMANDS_FILE_PATH / f'command-{int(time.time())}.json'
     try:
-        container.docker_manager().write_to_file(docker_container_name, COMMANDS_FILE_PATH, data)
+        logger.info(f"stop(): executing stop command")
+        container.docker_manager().write_to_file(docker_container_name, file_name, data)
     except Exception as e:
-        Logger.error(f"Failed to execute the command: {e}")
+        logger.error(f"stop(): Failed to execute the command: {e}")
+    
+    #Check for result
+    logger.info(f"stop(): waiting for results...")
+    result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'
+    result = container.docker_manager().read_from_file(docker_container_name, result_file_path)
+    if result["success"] or not result["container-running"]:
+        logger.info(f"stop(): Success: The command was executed successfully")
+    else:
+        logger.info(f"stop(): Failed: to execute the command successfully. {result['error']}")
 
 
 

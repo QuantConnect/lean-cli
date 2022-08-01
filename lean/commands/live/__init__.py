@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from lean.commands.live.live import live
 from lean.commands.live.deploy import deploy
 from lean.commands.live.stop import stop
-from lean.commands.live.live import live
+from lean.commands.live.liquidate import liquidate
 
 live.add_command(deploy)
 live.add_command(stop)
+live.add_command(liquidate)
