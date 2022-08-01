@@ -30,7 +30,10 @@ CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
 
 # The file in which we send live commands to running docker container
-COMMANDS_FILE_PATH = Path("/Lean/Launcher/bin/Debug/commands.json")
+COMMANDS_FILE_PATH = Path("/Lean/Launcher/bin/Debug")
+
+# The file in which we send live commands to running docker container
+COMMAND_RESULT_FILE_BASENAME = "result-command"
 
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"
