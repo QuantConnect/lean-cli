@@ -20,10 +20,11 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 import types
 from pathlib import Path
-from typing import Optional, Set
-
+from typing import Optional, Set, Any, Dict
+from subprocess import Popen, PIPE, STDOUT
 import docker
 from dateutil.parser import isoparse
 from docker.errors import APIError
@@ -423,6 +424,72 @@ class DockerManager:
         except Exception as exception:
             return "Permission denied" in str(exception)
         return False
+
+    def write_to_file(self, docker_container_name: str, docker_file: Path, data: Dict[str, Any]) -> None:        
+        """Write data to the file in docker.
+
+        Args:
+            docker_file: The Dockerfile to write to.
+            options: The options to write to the Dockerfile.
+        """
+        docker_container = self.get_container_by_name(docker_container_name)
+        if docker_container is None:
+            raise ValueError(f"Container {docker_container_name} does not exist")
+
+        data = json.dumps(data)
+        data = data.replace('"','\\"')
+        command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
+        try:
+            subprocess.run(command, shell=True, check=True)
+        except subprocess.CalledProcessError as exception:
+            raise ValueError(f"Failed to write to {docker_file.name}: {exception.output.decode('utf-8')}")
+        except Exception as e:
+            raise ValueError(f"Failed to write to {docker_file.name}: {e}")
+    
+    def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=30) -> None:
+        """Read data from file in docker.
+
+        Args:
+            docker_file: The Dockerfile to write to.
+            options: The options to write to the Dockerfile.
+        """
+        command = f'docker exec {docker_container_name} bash -c "cat {docker_file.as_posix()}"'
+        start = time.time()
+        success = False
+        error_message = None
+        container_running = True
+        while time.time() - start < timeout:
+            try:
+                docker_container = self.get_container_by_name(docker_container_name)
+                if docker_container is None:
+                    error_message = f"Container {docker_container_name} does not exist"
+                    container_running = False
+                    break
+                p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                output = p.stdout.read().decode('utf-8')
+                if output is not None and output != "":
+                    success = True
+                    break
+            except subprocess.CalledProcessError as exception:
+                error_message = f"Failed to read result from docker file {docker_file.name}: {exception.output.decode('utf-8')} {p.stderr.read().decode('utf-8')}"
+                time.sleep(interval)
+            except Exception as e:
+                error_message = f"Failed to read result from docker file {docker_file.name}: {e} {p.stderr.read().decode('utf-8')}"
+                time.sleep(interval)
+
+        if success:
+            result = json.loads(output)
+            success = result["Success"]
+
+        if not success and not error_message:
+            error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds"
+        
+        return {
+            "error": error_message,
+            "success": success,
+            "container-running": container_running
+        }
+
 
     def _get_docker_client(self) -> docker.DockerClient:
         """Creates a DockerClient instance.
