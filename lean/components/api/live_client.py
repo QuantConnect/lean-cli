@@ -16,7 +16,7 @@ from math import floor
 from typing import List, Optional
 
 from lean.components.api.api_client import *
-from lean.models.api import QCFullLiveAlgorithm, QCLiveAlgorithmStatus, QCMinimalLiveAlgorithm, QCNotificationMethod
+from lean.models.api import QCFullLiveAlgorithm, QCLiveAlgorithmStatus, QCMinimalLiveAlgorithm, QCNotificationMethod, QCRestResponse
 
 
 class LiveClient:
@@ -103,20 +103,22 @@ class LiveClient:
         data = self._api.post("live/create", parameters)
         return QCMinimalLiveAlgorithm(**data)
 
-    def stop(self, project_id: int) -> None:
+    def stop(self, project_id: int) -> QCRestResponse:
         """Stops live trading for a certain project without liquidated existing positions.
 
         :param project_id: the id of the project to stop live trading for
         """
-        self._api.post("live/update/stop", {
+        data = self._api.post("live/update/stop", {
             "projectId": project_id
         })
+        return QCRestResponse(**data)
 
-    def liquidate_and_stop(self, project_id: int) -> None:
+    def liquidate_and_stop(self, project_id: int) -> QCRestResponse:
         """Stops live trading and liquidates existing positions for a certain project.
 
         :param project_id: the id of the project to stop live trading and liquidate existing positions for
         """
-        self._api.post("live/update/liquidate", {
+        data = self._api.post("live/update/liquidate", {
             "projectId": project_id
         })
+        return QCRestResponse(**data)

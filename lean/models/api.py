@@ -278,6 +278,10 @@ class QCLiveAlgorithmStatus(str, Enum):
     History = "History"
 
 
+class QCRestResponse(WrappedBaseModel):
+    success: bool
+    error: Optional[List[str]]
+
 class QCMinimalLiveAlgorithm(WrappedBaseModel):
     projectId: int
     deployId: str

@@ -25,6 +25,7 @@ from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.commands.cloud.live.live import live
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -154,7 +155,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
             run_options[config._id] = config
     return list(run_options.values())
 
-@click.command(cls=LeanCommand)
+@live.command(cls=LeanCommand, default_command=True, name="deploy")
 @click.argument("project", type=str)
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
@@ -179,7 +180,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
-def live(project: str,
+def deploy(project: str,
          brokerage: str,
          node: str,
          auto_restart: bool,
