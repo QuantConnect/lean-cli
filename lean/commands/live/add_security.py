@@ -76,7 +76,7 @@ def add_security(project: Path,
             docker_container_name, file_name, data)
     except Exception as e:
         logger.error(f"add_security(): Failed to send the command, error: {e}")
-
+        return
     # Check for result
     logger.info("add_security(): waiting for results...")
     result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'

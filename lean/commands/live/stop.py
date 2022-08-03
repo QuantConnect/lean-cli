@@ -41,7 +41,7 @@ def stop(project: Path) -> None:
         container.docker_manager().write_to_file(docker_container_name, file_name, data)
     except Exception as e:
         logger.error(f"stop(): Failed to send the command, error: {e}")
-    
+        return
     #Check for result
     logger.info(f"stop(): waiting for results...")
     result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'
