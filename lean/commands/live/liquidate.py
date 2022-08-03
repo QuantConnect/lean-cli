@@ -13,60 +13,57 @@
 
 
 from pathlib import Path
-from typing import Optional
 import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.constants import COMMANDS_FILE_PATH, COMMAND_RESULT_FILE_BASENAME
+from lean.constants import COMMANDS_FILE_PATH, COMMAND_FILE_BASENAME, COMMAND_RESULT_FILE_BASENAME
 import time
+
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker",
-              type=str,
-              help="The environment to use")
-@click.option("--market",
-              type=str,
-              help="The environment to use")
-@click.option("--security-type",
-              type=str,
-              help="The environment to use")
+@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to liquidate")
+@click.option("--market", type=str, required=True, help="The market of the symbol to liquidate")
+@click.option("--security-type", type=str, required=True, help="The security type of the symbol to liquidate")
 def liquidate(project: Path,
-            ticker: Optional[str],
-            market: Optional[str],
-            security_type: Optional[str]) -> None:
+              ticker: str,
+              market: str,
+              security_type: str) -> None:
     """
     Liquidate the given symbol from the latest deployment of the given project.
     """
     logger = container.logger()
     live_dir = container.project_config_manager().get_latest_live_directory(project)
-    docker_container_name = container.output_config_manager().get_container_name(Path(live_dir))
+    docker_container_name = container.output_config_manager(
+    ).get_container_name(Path(live_dir))
     command_id = uuid.uuid4().hex
     data = {
-            "$type": "QuantConnect.Commands.LiquidateCommand, QuantConnect.Common",
-            "Id":command_id,
-            "Ticker": ticker,
-            "Market": market,
-            "SecurityType": security_type
-        }
-    file_name = COMMANDS_FILE_PATH / f'command-{int(time.time())}.json'
+        "$type": "QuantConnect.Commands.LiquidateCommand, QuantConnect.Common",
+        "Id": command_id,
+        "Ticker": ticker,
+        "Market": market,
+        "SecurityType": security_type
+    }
+    file_name = COMMANDS_FILE_PATH / f'{COMMAND_FILE_BASENAME}-{int(time.time())}.json'
     try:
-        logger.info(f"liquidate(): executing liquidate command with {ticker} {market} {security_type}")
-        container.docker_manager().write_to_file(docker_container_name, file_name, data)
+        logger.info(
+            f"liquidate(): sending command.")
+        container.docker_manager().write_to_file(
+            docker_container_name, file_name, data)
     except Exception as e:
-        logger.error(f"liquidate(): Failed to execute the command LiquidateCommand: {e}")
-    
-    #Check for result
-    logger.info(f"liquidate(): waiting for results...")
+        logger.error(f"liquidate(): Failed to send the command, error: {e}")
+
+    # Check for result
+    logger.info("liquidate(): waiting for results...")
     result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'
-    result = container.docker_manager().read_from_file(docker_container_name, result_file_path)
+    result = container.docker_manager().read_from_file(
+        docker_container_name, result_file_path)
     if "success" in result and result["success"]:
-        logger.info(f"liquidate(): Success: The command was executed successfully")
-    if "container-running" in result and not result["container-running"]:
-        logger.info(f"liquidate(): Failed: The container is not running")
+        logger.info(
+            "liquidate(): Success: The command was executed successfully")
+    elif "container-running" in result and not result["container-running"]:
+        logger.info("liquidate(): Failed: The container is not running")
     else:
-        logger.info(f"liquidate(): Failed: to execute the command successfully. {result['error']}")
-
-
-
+        logger.info(
+            f"liquidate(): Failed: to execute the command successfully. {result['error']}")

@@ -17,7 +17,7 @@ import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.constants import COMMANDS_FILE_PATH, COMMAND_RESULT_FILE_BASENAME
+from lean.constants import COMMANDS_FILE_PATH, COMMAND_FILE_BASENAME, COMMAND_RESULT_FILE_BASENAME
 import time
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -35,12 +35,12 @@ def stop(project: Path) -> None:
             "Id": command_id,
             "Status": "Stopped"
         }
-    file_name = COMMANDS_FILE_PATH / f'command-{int(time.time())}.json'
+    file_name = COMMANDS_FILE_PATH / f'{COMMAND_FILE_BASENAME}-{int(time.time())}.json'
     try:
-        logger.info(f"stop(): executing stop command")
+        logger.info(f"stop(): sending command.")
         container.docker_manager().write_to_file(docker_container_name, file_name, data)
     except Exception as e:
-        logger.error(f"stop(): Failed to execute the command: {e}")
+        logger.error(f"stop(): Failed to send the command, error: {e}")
     
     #Check for result
     logger.info(f"stop(): waiting for results...")
