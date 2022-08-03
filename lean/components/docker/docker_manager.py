@@ -24,7 +24,7 @@ import time
 import types
 from pathlib import Path
 from typing import Optional, Set, Any, Dict
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 import docker
 from dateutil.parser import isoparse
 from docker.errors import APIError
@@ -435,7 +435,9 @@ class DockerManager:
         docker_container = self.get_container_by_name(docker_container_name)
         if docker_container is None:
             raise ValueError(f"Container {docker_container_name} does not exist")
-
+        if docker_container.status != "running":
+            raise ValueError(f"Container {docker_container_name} is not running")
+            
         data = json.dumps(data)
         data = data.replace('"','\\"')
         command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
@@ -480,7 +482,8 @@ class DockerManager:
         if success:
             result = json.loads(output)
             success = result["Success"]
-
+            if not success:
+                error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
         if not success and not error_message:
             error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds"
         
