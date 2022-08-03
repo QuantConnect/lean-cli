@@ -429,8 +429,9 @@ class DockerManager:
         """Write data to the file in docker.
 
         Args:
+            docker_container_name: The name of the container to write to
             docker_file: The Dockerfile to write to.
-            options: The options to write to the Dockerfile.
+            data: The data to write to the Dockerfile.
         """
         docker_container = self.get_container_by_name(docker_container_name)
         if docker_container is None:
@@ -448,12 +449,14 @@ class DockerManager:
         except Exception as e:
             raise ValueError(f"Failed to write to {docker_file.name}: {e}")
     
-    def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=30) -> None:
+    def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=30) -> Dict[str,Any]:
         """Read data from file in docker.
 
         Args:
+            docker_container_name: The name of the container to write to
             docker_file: The Dockerfile to write to.
-            options: The options to write to the Dockerfile.
+            interval: The interval to sleep before checking again.
+            timeout: The timeout to wait for the file.
         """
         command = f'docker exec {docker_container_name} bash -c "cat {docker_file.as_posix()}"'
         start = time.time()
