@@ -28,9 +28,6 @@ CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 # The directory in which modules are stored
 MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
 
-# The base path of the running docker container to which we send the command file
-COMMANDS_FILE_PATH = Path("/Lean/Launcher/bin/Debug")
-
 # The file in which we send live commands to running docker container
 COMMAND_FILE_BASENAME = "command"
 

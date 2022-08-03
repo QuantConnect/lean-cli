@@ -18,8 +18,7 @@ import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.constants import COMMANDS_FILE_PATH, COMMAND_FILE_BASENAME, COMMAND_RESULT_FILE_BASENAME
-import time
+from lean.commands.live.live import get_command_file_name, get_result_file_name
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -69,7 +68,7 @@ def add_security(project: Path,
         "Leverage": leverage,
         "ExtendedMarketHours": extended_market_hours
     }
-    file_name = COMMANDS_FILE_PATH / f'{COMMAND_FILE_BASENAME}-{int(time.time())}.json'
+    file_name = get_command_file_name()
     try:
         logger.info("add_security(): sending command.")
         container.docker_manager().write_to_file(
@@ -79,7 +78,7 @@ def add_security(project: Path,
         return
     # Check for result
     logger.info("add_security(): waiting for results...")
-    result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'
+    result_file_path = get_result_file_name(command_id)
     result = container.docker_manager().read_from_file(
         docker_container_name, result_file_path)
     if "success" in result and result["success"]:

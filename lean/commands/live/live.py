@@ -13,6 +13,9 @@
 
 import click
 from lean.components.util.click_group_default_command import DefaultCommandGroup
+from lean.constants import COMMAND_FILE_BASENAME, COMMAND_RESULT_FILE_BASENAME
+import time
+from pathlib import Path
 
 @click.group(cls=DefaultCommandGroup)
 def live() -> None:
@@ -20,3 +23,9 @@ def live() -> None:
     # This method is intentionally empty
     # It is used as the command group for all `lean cloud <command>` commands
     pass
+
+def get_command_file_name():
+    return Path(f'{COMMAND_FILE_BASENAME}-{int(time.time())}.json')
+
+def get_result_file_name(command_id: str):
+    return Path(f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json')
