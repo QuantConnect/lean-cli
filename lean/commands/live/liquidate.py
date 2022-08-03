@@ -13,6 +13,7 @@
 
 
 from pathlib import Path
+from typing import Optional
 import uuid
 import click
 from lean.click import LeanCommand, PathParameter
@@ -23,13 +24,13 @@ import time
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to liquidate")
-@click.option("--market", type=str, required=True, help="The market of the symbol to liquidate")
-@click.option("--security-type", type=str, required=True, help="The security type of the symbol to liquidate")
+@click.option("--ticker", type=str, help="The ticker of the symbol to liquidate")
+@click.option("--market", type=str, help="The market of the symbol to liquidate")
+@click.option("--security-type", type=str, default=0, help="The security type of the symbol to liquidate")
 def liquidate(project: Path,
-              ticker: str,
-              market: str,
-              security_type: str) -> None:
+              ticker: Optional[str],
+              market: Optional[str],
+              security_type: Optional[str]) -> None:
     """
     Liquidate the given symbol from the latest deployment of the given project.
     """
@@ -53,7 +54,7 @@ def liquidate(project: Path,
             docker_container_name, file_name, data)
     except Exception as e:
         logger.error(f"liquidate(): Failed to send the command, error: {e}")
-
+        return
     # Check for result
     logger.info("liquidate(): waiting for results...")
     result_file_path = COMMANDS_FILE_PATH / f'{COMMAND_RESULT_FILE_BASENAME}-{command_id}.json'
