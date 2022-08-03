@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import random
 from pathlib import Path
 from typing import List
@@ -58,18 +57,23 @@ class ProjectConfigManager:
 
         return project_id
 
-    def get_latest_live_directory(self, project_directory: Path) -> int:
+    def get_latest_live_directory(self, project_directory: Path) -> Path:
         """Returns the path of the latest live directory.
 
         :param project_directory: the path to the project to retrieve the local id of
         :return: the path of the latest live directory
         """
-        live_dir = os.path.join(project_directory, "live")
-        result = sorted((os.path.join(live_dir, dir) for dir in os.listdir(live_dir)),key=lambda x: os.stat(x).st_ctime, reverse=True)
-        if result:
-            return result[0]
-        return None
+        live_root_dir = project_directory / "live"
+        if not live_root_dir.is_dir():
+            return None
 
+        live_dirs = []
+        for live_dir in sorted(list(live_root_dir.iterdir())):
+            if (live_dir / "log.txt").is_file():
+                live_dirs.append(live_dir)
+
+        return live_dirs[-1]
+        
     def get_csharp_libraries(self, project_directory: Path) -> List[CSharpLibrary]:
         """Returns the custom C# libraries in a project.
 
