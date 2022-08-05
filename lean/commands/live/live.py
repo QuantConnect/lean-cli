@@ -84,5 +84,5 @@ def get_result(command_id: str, docker_container_name: str, container_running_re
             logger.info(
                 f"live.get_result(): {inspect.stack()[1].function} - Success: The command was executed successfully")
     else:
-        raise Exception(f"live.get_result(): {inspect.stack()[1].function} - \
-        Failed: to execute the command successfully. {result['error']}")
+        raise Exception((f"live.get_result(): {inspect.stack()[1].function} - "
+                        + f"Failed: to execute the command successfully. {result['error']}"))
