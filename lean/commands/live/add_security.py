@@ -17,30 +17,30 @@ from typing import Optional
 import uuid
 import click
 from lean.click import LeanCommand, PathParameter
-from lean.container import container
-from lean.commands.live.live import get_command_file_name, get_result_file_name
+from lean.commands.live.live import get_result, send_command
+
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--ticker", type=str, required=True, help="The ticker of the symbol to liquidate")
 @click.option("--market", type=str, required=True, help="The market of the symbol to liquidate")
 @click.option("--security-type", type=str, required=True, help="The security type of the symbol to liquidate")
-@click.option("--resolution", 
-                type=str,
-                default="Minute",
-                help="The resolution of the symbol to liquidate")
-@click.option("--fill-data-forward", 
-                is_flag=True,
-                default=False,
-                help="The ticker of the symbol to liquidate")
-@click.option("--leverage", 
-                type=float, 
-                default=0.0,
-                help="The market of the symbol to liquidate")
+@click.option("--resolution",
+              type=str,
+              default="Minute",
+              help="The resolution of the symbol to liquidate")
+@click.option("--fill-data-forward",
+              is_flag=True,
+              default=False,
+              help="The ticker of the symbol to liquidate")
+@click.option("--leverage",
+              type=float,
+              default=0.0,
+              help="The market of the symbol to liquidate")
 @click.option("--extended-market-hours",
-                is_flag=True,
-                default=True,
-                help="The security type of the symbol to liquidate")
+              is_flag=True,
+              default=True,
+              help="The security type of the symbol to liquidate")
 def add_security(project: Path,
                  ticker: str,
                  market: str,
@@ -52,11 +52,8 @@ def add_security(project: Path,
     """
     Represents a command to add a security to the algorithm.
     """
-    logger = container.logger()
-    live_dir = container.project_config_manager().get_latest_live_directory(project)
-    docker_container_name = container.output_config_manager(
-    ).get_container_name(Path(live_dir))
     command_id = uuid.uuid4().hex
+
     data = {
         "$type": "QuantConnect.Commands.AddSecurityCommand, QuantConnect.Common",
         "Id": command_id,
@@ -68,24 +65,14 @@ def add_security(project: Path,
         "Leverage": leverage,
         "ExtendedMarketHours": extended_market_hours
     }
-    file_name = get_command_file_name()
+
     try:
-        logger.info("add_security(): sending command.")
-        container.docker_manager().write_to_file(
-            docker_container_name, file_name, data)
+        docker_container_name = send_command(project, data)
     except Exception as e:
-        logger.error(f"add_security(): Failed to send the command, error: {e}")
-        return
-    # Check for result
-    logger.info("add_security(): waiting for results...")
-    result_file_path = get_result_file_name(command_id)
-    result = container.docker_manager().read_from_file(
-        docker_container_name, result_file_path)
-    if "success" in result and result["success"]:
-        logger.info(
-            "add_security(): Success: The command was executed successfully")
-    elif "container-running" in result and not result["container-running"]:
-        logger.info("add_security(): Failed: The container is not running")
-    else:
-        logger.info(
-            f"add_security(): Failed: to execute the command successfully. {result['error']}")
+        raise Exception(
+            f"add_security(): Failed to send the command, error: {e}")
+
+    try:
+        get_result(command_id, docker_container_name)
+    except Exception as e:
+        raise Exception(f"add_security(): Error: {e}")

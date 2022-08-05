@@ -17,8 +17,7 @@ from typing import Optional
 import uuid
 import click
 from lean.click import LeanCommand, PathParameter
-from lean.container import container
-from lean.commands.live.live import get_command_file_name, get_result_file_name
+from lean.commands.live.live import get_result, send_command
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -32,22 +31,20 @@ from lean.commands.live.live import get_command_file_name, get_result_file_name
 @click.option("--stop-price", type=float, default=0.0, help="The stop price of the order to be submitted")
 @click.option("--tag", type=str, help="The tag to be attached to the order")
 def submit_order(project: Path,
-              ticker: str,
-              market: str,
-              security_type: str,
-              order_type: str,
-              quantity: float,
-              limit_price: Optional[float],
-              stop_price: Optional[float],
-              tag: Optional[str]) -> None:
+                 ticker: str,
+                 market: str,
+                 security_type: str,
+                 order_type: str,
+                 quantity: float,
+                 limit_price: Optional[float],
+                 stop_price: Optional[float],
+                 tag: Optional[str]) -> None:
     """
     Represents a command to submit an order to the algorithm.
     """
-    logger = container.logger()
-    live_dir = container.project_config_manager().get_latest_live_directory(project)
-    docker_container_name = container.output_config_manager(
-    ).get_container_name(Path(live_dir))
+
     command_id = uuid.uuid4().hex
+
     data = {
         "$type": "QuantConnect.Commands.OrderCommand, QuantConnect.Common",
         "Id": command_id,
@@ -60,25 +57,14 @@ def submit_order(project: Path,
         "StopPrice": stop_price,
         "Tag": tag
     }
-    file_name = get_command_file_name()
+
     try:
-        logger.info(
-            f"submit_order(): sending command.")
-        container.docker_manager().write_to_file(
-            docker_container_name, file_name, data)
+        docker_container_name = send_command(project, data)
     except Exception as e:
-        logger.error(f"submit_order(): Failed to send the command, error: {e}")
-        return
-    # Check for result
-    logger.info("submit_order(): waiting for results...")
-    result_file_path = get_result_file_name(command_id)
-    result = container.docker_manager().read_from_file(
-        docker_container_name, result_file_path)
-    if "success" in result and result["success"]:
-        logger.info(
-            "submit_order(): Success: The command was executed successfully")
-    elif "container-running" in result and not result["container-running"]:
-        logger.info("submit_order(): Failed: The container is not running")
-    else:
-        logger.info(
-            f"submit_order(): Failed: to execute the command successfully. {result['error']}")
+        raise Exception(
+            f"submit_order(): Failed to send the command, error: {e}")
+
+    try:
+        get_result(command_id, docker_container_name)
+    except Exception as e:
+        raise Exception(f"submit_order(): Error: {e}")

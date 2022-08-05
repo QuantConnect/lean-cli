@@ -16,8 +16,7 @@ from pathlib import Path
 import uuid
 import click
 from lean.click import LeanCommand, PathParameter
-from lean.container import container
-from lean.commands.live.live import get_command_file_name, get_result_file_name
+from lean.commands.live.live import get_result, send_command
 
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -27,39 +26,26 @@ from lean.commands.live.live import get_command_file_name, get_result_file_name
               required=True,
               help="The order id to be cancelled")
 def cancel_order(project: Path,
-              order_id: str) -> None:
+                 order_id: str) -> None:
     """
     Represents a command to cancel a specific order by id.
     """
-    logger = container.logger()
-    live_dir = container.project_config_manager().get_latest_live_directory(project)
-    docker_container_name = container.output_config_manager(
-    ).get_container_name(Path(live_dir))
+
     command_id = uuid.uuid4().hex
+
     data = {
-            "$type": "QuantConnect.Commands.CancelOrderCommand, QuantConnect.Common",
-            "Id": command_id,
-            "OrderId": order_id
-        }
-    file_name = get_command_file_name()
+        "$type": "QuantConnect.Commands.CancelOrderCommand, QuantConnect.Common",
+        "Id": command_id,
+        "OrderId": order_id
+    }
+
     try:
-        logger.info(
-            f"cancel_order(): sending command.")
-        container.docker_manager().write_to_file(
-            docker_container_name, file_name, data)
+        docker_container_name = send_command(project, data)
     except Exception as e:
-        logger.error(f"cancel_order(): Failed to send the command, error: {e}")
-        return
-    # Check for result
-    logger.info("cancel_order(): waiting for results...")
-    result_file_path = get_result_file_name(command_id)
-    result = container.docker_manager().read_from_file(
-        docker_container_name, result_file_path)
-    if "success" in result and result["success"]:
-        logger.info(
-            "cancel_order(): Success: The command was executed successfully")
-    elif "container-running" in result and not result["container-running"]:
-        logger.info("liquidate(): Failed: The container is not running")
-    else:
-        logger.info(
-            f"cancel_order(): Failed: to execute the command successfully. {result['error']}")
+        raise Exception(
+            f"cancel_order(): Failed to send the command, error: {e}")
+
+    try:
+        get_result(command_id, docker_container_name)
+    except Exception as e:
+        raise Exception(f"cancel_order(): Error: {e}")
