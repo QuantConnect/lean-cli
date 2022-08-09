@@ -818,6 +818,7 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --polygon-api-key TEXT          Your Polygon data feed API Key
   --quantconnect-organization TEXT
+                                  The name or id of the organization with the QuantConnect datafeed module subscription
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
