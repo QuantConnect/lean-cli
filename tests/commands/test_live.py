@@ -312,17 +312,17 @@ brokerage_required_options = {
     "Zerodha": {
         "zerodha-api-key": "123",
         "zerodha-access-token": "456",
-        "zerodha-product-type": "MIS",
-        "zerodha-trading-segment": "EQUITY",
-        "zerodha-history-subscription": "no",
+        "zerodha-product-type": "mis",
+        "zerodha-trading-segment": "equity",
+        "zerodha-history-subscription": "false",
         "zerodha-organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
         "samco-client-password": "456",
         "samco-year-of-birth": "2000",
-        "samco-product-type": "MIS",
-        "samco-trading-segment": "EQUITY",
+        "samco-product-type": "mis",
+        "samco-trading-segment": "equity",
         "samco-organization": "abc",
     },
     "Atreyu": {
