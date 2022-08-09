@@ -690,6 +690,8 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
+  --data-provider [Terminal Link|QuantConnect|Local]
+                                  Update the Lean configuration file to retrieve data from the given provider
   --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -815,6 +817,7 @@ Options:
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --polygon-api-key TEXT          Your Polygon data feed API Key
+  --quantconnect-organization TEXT
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before starting live trading
