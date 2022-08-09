@@ -323,6 +323,8 @@ class LeanRunner:
         run_options["name"] = f"lean_cli_{str(uuid.uuid4()).replace('-', '')}"
         output_config = self._output_config_manager.get_output_config(output_dir)
         output_config.set("container", run_options["name"])
+        if "backtest-name" in lean_config:
+            output_config.set("backtest-name", lean_config["backtest-name"])
 
         if "environment" in lean_config and "environments" in lean_config:
             environment = lean_config["environments"][lean_config["environment"]]
