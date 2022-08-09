@@ -312,17 +312,17 @@ brokerage_required_options = {
     "Zerodha": {
         "zerodha-api-key": "123",
         "zerodha-access-token": "456",
-        "zerodha-product-type": "MIS",
-        "zerodha-trading-segment": "EQUITY",
-        "zerodha-history-subscription": "no",
+        "zerodha-product-type": "mis",
+        "zerodha-trading-segment": "equity",
+        "zerodha-history-subscription": "false",
         "zerodha-organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
         "samco-client-password": "456",
         "samco-year-of-birth": "2000",
-        "samco-product-type": "MIS",
-        "samco-trading-segment": "EQUITY",
+        "samco-product-type": "mis",
+        "samco-trading-segment": "equity",
         "samco-organization": "abc",
     },
     "Atreyu": {
@@ -381,6 +381,50 @@ data_feed_required_options = {
     "Kraken": brokerage_required_options["Kraken"],
     "FTX": brokerage_required_options["FTX"],
 }
+
+
+data_providers_required_options = {
+    "QuantConnect": {},
+    "local": {},
+    "Terminal Link": brokerage_required_options["Terminal Link"]
+}
+
+
+@pytest.mark.parametrize("data_provider", data_providers_required_options.keys())
+def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    options = []
+    for key, value in data_providers_required_options[data_provider].items():
+        options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", 
+                                "--data-provider", data_provider,
+                                *options])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
+                                                 Path("CSharp Project/Main.cs").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 False,
+                                                 False)
 
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])

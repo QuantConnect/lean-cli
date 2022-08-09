@@ -27,6 +27,7 @@ from lean.models.logger import Option
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
+from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
     "live-mode": True,
@@ -221,7 +222,7 @@ def _get_default_value(key: str) -> Optional[Any]:
 def _get_configs_for_options() -> List[Configuration]: 
     run_options: Dict[str, Configuration] = {}
     config_with_module_id: Dict[str, str] = {}
-    for module in all_local_brokerages + all_local_data_feeds:
+    for module in all_local_brokerages + all_local_data_feeds + all_data_providers:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._id in run_options:
                 if (config._id in config_with_module_id 
@@ -253,6 +254,9 @@ def _get_configs_for_options() -> List[Configuration]:
               type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               multiple=True,
               help="The data feed to use")
+@click.option("--data-provider",
+              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              help="Update the Lean configuration file to retrieve data from the given provider")
 @options_from_json(_get_configs_for_options())
 @click.option("--release",
               is_flag=True,
@@ -271,6 +275,7 @@ def live(project: Path,
         detach: bool,
         brokerage: Optional[str],
         data_feed: Optional[str],
+        data_provider: Optional[str],
         release: bool,
         image: Optional[str],
         update: bool,
@@ -331,10 +336,15 @@ def live(project: Path,
         for df in data_feed:
             [data_feed_configurer] = [_get_and_build_module(df, all_local_data_feeds, kwargs)]
             data_feed_configurer.configure(lean_config, environment_name)
+
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name)
+
+    if data_provider is not None:
+        [data_provider_configurer] = [_get_and_build_module(data_provider, all_data_providers, kwargs)]
+        data_provider_configurer.configure(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
