@@ -53,13 +53,20 @@ def get_attribute_type(configuration: Configuration):
         return str
 
 
-def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any):
+def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any,
+                                       choices: List[str] = None):
     from lean.commands.live import _get_default_value
     lean_value = _get_default_value(default_lean_config_key)
     if lean_value is None and default_input_value is not None:
         lean_value = default_input_value
+    # This handles backwards compatibility for the old modules.json values.
     if lean_value is not None and type(lean_value) != expected_type and type(lean_value) == bool:
-        lean_value = "paper" if lean_value else "live"
+        if choices and "true" in choices and "false" in choices:
+            # Backwards compatibility for zeroha-history-subscription.
+            lean_value = "true" if lean_value else "false"
+        else:
+            # Backwards compatibility for tradier-use-sandbox
+            lean_value = "paper" if lean_value else "live"
     return lean_value
 
 
@@ -70,7 +77,8 @@ def get_options_attributes(configuration: Configuration, default_lean_config_key
     }
     default_input_value = configuration._input_default if configuration._is_required_from_user else None
     options_attributes["default"] = lambda: get_the_correct_type_default_value(
-        default_lean_config_key, default_input_value, get_attribute_type(configuration))
+        default_lean_config_key, default_input_value, get_attribute_type(configuration),
+        configuration._choices if configuration._input_method == "choice" else None)
     return options_attributes
 
 
