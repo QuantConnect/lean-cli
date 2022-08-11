@@ -54,7 +54,7 @@ def get_attribute_type(configuration: Configuration):
 
 def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any,
                                        choices: List[str] = None):
-    from lean.commands.live import _get_default_value
+    from lean.commands.live.deploy import _get_default_value
     lean_value = _get_default_value(default_lean_config_key)
     if lean_value is None and default_input_value is not None:
         lean_value = default_input_value
