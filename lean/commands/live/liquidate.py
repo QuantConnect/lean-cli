@@ -43,9 +43,5 @@ def liquidate(project: Path,
         "SecurityType": security_type
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(f"liquidate(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)

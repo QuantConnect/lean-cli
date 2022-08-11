@@ -66,10 +66,5 @@ def add_security(project: Path,
         "ExtendedMarketHours": extended_market_hours
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(
-            f"add_security(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)

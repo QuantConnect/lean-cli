@@ -23,7 +23,7 @@ from lean.commands.live.live import get_result, send_command
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 def stop(project: Path) -> None:
     """
-    Stop an already running local live trading a project.
+    Stop an already running local live trading project.
     """
     command_id = uuid.uuid4().hex
 
@@ -33,10 +33,6 @@ def stop(project: Path) -> None:
         "Status": "Stopped"
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(f"stop(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)
 

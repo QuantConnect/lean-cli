@@ -22,13 +22,13 @@ from lean.components.util.click_custom_parameters import DECIMAL
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to submit")
-@click.option("--market", type=str, required=True, help="The market of the symbol to submit")
-@click.option("--security-type", required=True, type=str, help="The security type of the symbol to submit")
-@click.option("--order-type", type=str, required=True, help="The order type to be submit")
-@click.option("--quantity", type=DECIMAL, required=True, help="the number of units to be ordered (directional)")
-@click.option("--limit-price", type=DECIMAL, default=0.0, help="The limit price of the order to submit")
-@click.option("--stop-price", type=DECIMAL, default=0.0, help="The stop price of the order to be submit")
+@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to be submitted")
+@click.option("--market", type=str, required=True, help="The market of the symbol to be submitted")
+@click.option("--security-type", required=True, type=str, help="The security type of the symbol to be submitted")
+@click.option("--order-type", type=str, required=True, help="The order type to be submitted")
+@click.option("--quantity", type=DECIMAL, required=True, help="The number of units to be ordered (directional)")
+@click.option("--limit-price", type=DECIMAL, default=0.0, help="The limit price of the order be submitted")
+@click.option("--stop-price", type=DECIMAL, default=0.0, help="The stop price of the order to be submitted")
 @click.option("--tag", type=str, help="The tag to be attached to the order")
 def submit_order(project: Path,
                  ticker: str,
@@ -58,10 +58,5 @@ def submit_order(project: Path,
         "Tag": tag
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(
-            f"submit_order(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)

@@ -39,11 +39,6 @@ def cancel_order(project: Path,
         "OrderId": order_id
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(
-            f"cancel_order(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)
 

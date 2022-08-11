@@ -26,8 +26,8 @@ from lean.components.util.click_custom_parameters import DECIMAL
               type=int,
               required=True,
               help="The order id to be updated")
-@click.option("--quantity", type=DECIMAL, help="the number of units to be ordered (directional)")
-@click.option("--limit-price", type=DECIMAL, help="The limit price of the order to updated")
+@click.option("--quantity", type=DECIMAL, help="The number of units to be updated (directional)")
+@click.option("--limit-price", type=DECIMAL, help="The limit price of the order to be updated")
 @click.option("--stop-price", type=DECIMAL, help="The stop price of the order to be updated")
 @click.option("--tag", type=str, help="The tag to be attached to the order")
 def update_order(project: Path,
@@ -52,10 +52,5 @@ def update_order(project: Path,
         "Tag": tag
     }
 
-    try:
-        docker_container_name = send_command(project, data)
-    except Exception as e:
-        raise Exception(
-            f"update_order(): Failed to send the command, error: {e}")
-
+    docker_container_name = send_command(project, data)
     get_result(command_id, docker_container_name)
