@@ -22,13 +22,13 @@ from lean.components.util.click_custom_parameters import DECIMAL
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to added")
-@click.option("--market", type=str, required=True, help="The market of the symbol to added")
-@click.option("--security-type", type=str, required=True, help="The security type of the symbol to added")
+@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to add")
+@click.option("--market", type=str, required=True, help="The market of the symbol to add")
+@click.option("--security-type", type=str, required=True, help="The security type of the symbol to add")
 @click.option("--resolution",
               type=str,
               default="Minute",
-              help="The resolution of the symbol to added")
+              help="The resolution of the symbol to add")
 @click.option("--fill-data-forward",
               is_flag=True,
               default=True,
