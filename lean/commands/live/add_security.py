@@ -18,7 +18,7 @@ import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
-
+from lean.components.util.click_custom_parameters import DECIMAL
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -34,7 +34,7 @@ from lean.commands.live.live import get_result, send_command
               default=True,
               help="The fill forward behavior, true to fill forward, false otherwise - defaults to true")
 @click.option("--leverage",
-              type=float,
+              type=DECIMAL,
               default=0.0,
               help="The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything else")
 @click.option("--extended-market-hours",
@@ -47,7 +47,7 @@ def add_security(project: Path,
                  security_type: str,
                  resolution: Optional[str],
                  fill_data_forward: Optional[bool],
-                 leverage: Optional[float],
+                 leverage: Optional[DECIMAL],
                  extended_market_hours: Optional[bool]) -> None:
     """
     Represents a command to add a security to the algorithm.

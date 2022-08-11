@@ -714,7 +714,7 @@ Options:
   --security-type TEXT     The security type of the symbol to added  [required]
   --resolution TEXT        The resolution of the symbol to added
   --fill-data-forward      The fill forward behavior, true to fill forward, false otherwise - defaults to true
-  --leverage FLOAT         The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything
+  --leverage DECIMAL       The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything
                            else
   --extended-market-hours  The extended market hours flag, true to allow pre/post market data, false for only in market
                            data
@@ -962,17 +962,17 @@ Usage: lean live submit-order [OPTIONS] PROJECT
   Represents a command to submit an order to the algorithm.
 
 Options:
-  --ticker TEXT         The ticker of the symbol to submitted  [required]
-  --market TEXT         The market of the symbol to submitted  [required]
-  --security-type TEXT  The security type of the symbol to submitted  [required]
-  --order-type TEXT     The order type to be submitted  [required]
-  --quantity FLOAT      the number of units to be ordered (directional)  [required]
-  --limit-price FLOAT   The limit price of the order to submitted
-  --stop-price FLOAT    The stop price of the order to be submitted
-  --tag TEXT            The tag to be attached to the order
-  --lean-config FILE    The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose             Enable debug logging
-  --help                Show this message and exit.
+  --ticker TEXT          The ticker of the symbol to submitted  [required]
+  --market TEXT          The market of the symbol to submitted  [required]
+  --security-type TEXT   The security type of the symbol to submitted  [required]
+  --order-type TEXT      The order type to be submitted  [required]
+  --quantity DECIMAL     the number of units to be ordered (directional)  [required]
+  --limit-price DECIMAL  The limit price of the order to submitted
+  --stop-price DECIMAL   The stop price of the order to be submitted
+  --tag TEXT             The tag to be attached to the order
+  --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose              Enable debug logging
+  --help                 Show this message and exit.
 ```
 
 _See code: [lean/commands/live/submit_order.py](lean/commands/live/submit_order.py)_
@@ -987,14 +987,14 @@ Usage: lean live update-order [OPTIONS] PROJECT
   Represents a command to update a specific order by id.
 
 Options:
-  --order-id INTEGER   The order id to be updated  [required]
-  --quantity FLOAT     the number of units to be ordered (directional)
-  --limit-price FLOAT  The limit price of the order to updated
-  --stop-price FLOAT   The stop price of the order to be updated
-  --tag TEXT           The tag to be attached to the order
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
+  --order-id INTEGER     The order id to be updated  [required]
+  --quantity DECIMAL     the number of units to be ordered (directional)
+  --limit-price DECIMAL  The limit price of the order to updated
+  --stop-price DECIMAL   The stop price of the order to be updated
+  --tag TEXT             The tag to be attached to the order
+  --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose              Enable debug logging
+  --help                 Show this message and exit.
 ```
 
 _See code: [lean/commands/live/update_order.py](lean/commands/live/update_order.py)_

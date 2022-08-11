@@ -18,7 +18,7 @@ import click
 from lean.click import LeanCommand, PathParameter
 from typing import Optional
 from lean.commands.live.live import get_result, send_command
-
+from lean.components.util.click_custom_parameters import DECIMAL
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -26,15 +26,15 @@ from lean.commands.live.live import get_result, send_command
               type=int,
               required=True,
               help="The order id to be updated")
-@click.option("--quantity", type=float, help="the number of units to be ordered (directional)")
-@click.option("--limit-price", type=float, help="The limit price of the order to updated")
-@click.option("--stop-price", type=float, help="The stop price of the order to be updated")
+@click.option("--quantity", type=DECIMAL, help="the number of units to be ordered (directional)")
+@click.option("--limit-price", type=DECIMAL, help="The limit price of the order to updated")
+@click.option("--stop-price", type=DECIMAL, help="The stop price of the order to be updated")
 @click.option("--tag", type=str, help="The tag to be attached to the order")
 def update_order(project: Path,
                  order_id: str,
-                 quantity: Optional[float],
-                 limit_price: Optional[float],
-                 stop_price: Optional[float],
+                 quantity: Optional[DECIMAL],
+                 limit_price: Optional[DECIMAL],
+                 stop_price: Optional[DECIMAL],
                  tag: Optional[str]) -> None:
     """
     Represents a command to update a specific order by id.

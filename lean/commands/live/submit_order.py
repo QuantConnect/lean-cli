@@ -18,7 +18,7 @@ import uuid
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
-
+from lean.components.util.click_custom_parameters import DECIMAL
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -26,18 +26,18 @@ from lean.commands.live.live import get_result, send_command
 @click.option("--market", type=str, required=True, help="The market of the symbol to submitted")
 @click.option("--security-type", required=True, type=str, help="The security type of the symbol to submitted")
 @click.option("--order-type", type=str, required=True, help="The order type to be submitted")
-@click.option("--quantity", type=float, required=True, help="the number of units to be ordered (directional)")
-@click.option("--limit-price", type=float, default=0.0, help="The limit price of the order to submitted")
-@click.option("--stop-price", type=float, default=0.0, help="The stop price of the order to be submitted")
+@click.option("--quantity", type=DECIMAL, required=True, help="the number of units to be ordered (directional)")
+@click.option("--limit-price", type=DECIMAL, default=0.0, help="The limit price of the order to submitted")
+@click.option("--stop-price", type=DECIMAL, default=0.0, help="The stop price of the order to be submitted")
 @click.option("--tag", type=str, help="The tag to be attached to the order")
 def submit_order(project: Path,
                  ticker: str,
                  market: str,
                  security_type: str,
                  order_type: str,
-                 quantity: float,
-                 limit_price: Optional[float],
-                 stop_price: Optional[float],
+                 quantity: DECIMAL,
+                 limit_price: Optional[DECIMAL],
+                 stop_price: Optional[DECIMAL],
                  tag: Optional[str]) -> None:
     """
     Represents a command to submit an order to the algorithm.
