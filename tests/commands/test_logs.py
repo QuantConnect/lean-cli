@@ -19,7 +19,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from tests.test_helpers import create_fake_lean_cli_directory
-
+import time
 
 def _prepare_directories() -> None:
     create_fake_lean_cli_directory()
@@ -30,6 +30,7 @@ def _prepare_directories() -> None:
             output_directory.mkdir(parents=True)
 
             log_file = output_directory / "log.txt"
+            time.sleep(0.001)
             with log_file.open("w+") as file:
                 file.write(f"{project}/{mode}")
 
