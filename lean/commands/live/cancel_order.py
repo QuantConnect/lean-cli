@@ -22,7 +22,7 @@ from lean.commands.live.live import get_result, send_command
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--order-id",
-              type=str,
+              type=int,
               required=True,
               help="The order id to be cancelled")
 def cancel_order(project: Path,
@@ -45,7 +45,5 @@ def cancel_order(project: Path,
         raise Exception(
             f"cancel_order(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"cancel_order(): Error: {e}")
+    get_result(command_id, docker_container_name)
+

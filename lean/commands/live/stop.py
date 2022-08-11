@@ -38,7 +38,5 @@ def stop(project: Path) -> None:
     except Exception as e:
         raise Exception(f"stop(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"stop(): Error: {e}")
+    get_result(command_id, docker_container_name)
+

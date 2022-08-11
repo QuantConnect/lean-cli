@@ -64,7 +64,4 @@ def submit_order(project: Path,
         raise Exception(
             f"submit_order(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"submit_order(): Error: {e}")
+    get_result(command_id, docker_container_name)

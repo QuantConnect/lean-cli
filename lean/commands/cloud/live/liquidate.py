@@ -33,4 +33,4 @@ def liquidate(project: str) -> None:
     if response.success:
         logger.info(f"cloud.live.liquidate(): command executed successfully.")
     else:
-        logger.error(f"cloud.live.liquidate(): command failed.")
+        raise Exception("cloud.live.liquidate(): Failed: to execute the command successfully.")

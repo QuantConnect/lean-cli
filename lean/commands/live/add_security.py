@@ -22,25 +22,25 @@ from lean.commands.live.live import get_result, send_command
 
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to liquidate")
-@click.option("--market", type=str, required=True, help="The market of the symbol to liquidate")
-@click.option("--security-type", type=str, required=True, help="The security type of the symbol to liquidate")
+@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to added")
+@click.option("--market", type=str, required=True, help="The market of the symbol to added")
+@click.option("--security-type", type=str, required=True, help="The security type of the symbol to added")
 @click.option("--resolution",
               type=str,
               default="Minute",
-              help="The resolution of the symbol to liquidate")
+              help="The resolution of the symbol to added")
 @click.option("--fill-data-forward",
               is_flag=True,
-              default=False,
-              help="The ticker of the symbol to liquidate")
+              default=True,
+              help="The fill forward behavior, true to fill forward, false otherwise - defaults to true")
 @click.option("--leverage",
               type=float,
               default=0.0,
-              help="The market of the symbol to liquidate")
+              help="The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything else")
 @click.option("--extended-market-hours",
               is_flag=True,
-              default=True,
-              help="The security type of the symbol to liquidate")
+              default=False,
+              help="The extended market hours flag, true to allow pre/post market data, false for only in market data")
 def add_security(project: Path,
                  ticker: str,
                  market: str,
@@ -72,7 +72,4 @@ def add_security(project: Path,
         raise Exception(
             f"add_security(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"add_security(): Error: {e}")
+    get_result(command_id, docker_container_name)

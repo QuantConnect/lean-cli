@@ -23,9 +23,9 @@ from lean.commands.live.live import get_result, send_command
 @click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @click.option("--order-id",
-              type=str,
+              type=int,
               required=True,
-              help="The order id to be cancelled")
+              help="The order id to be updated")
 @click.option("--quantity", type=float, help="the number of units to be ordered (directional)")
 @click.option("--limit-price", type=float, help="The limit price of the order to updated")
 @click.option("--stop-price", type=float, help="The stop price of the order to be updated")
@@ -37,7 +37,7 @@ def update_order(project: Path,
                  stop_price: Optional[float],
                  tag: Optional[str]) -> None:
     """
-    Represents a command to cancel a specific order by id.
+    Represents a command to update a specific order by id.
     """
 
     command_id = uuid.uuid4().hex
@@ -58,7 +58,4 @@ def update_order(project: Path,
         raise Exception(
             f"update_order(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"update_order(): Error: {e}")
+    get_result(command_id, docker_container_name)

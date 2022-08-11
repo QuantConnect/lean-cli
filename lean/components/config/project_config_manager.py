@@ -65,14 +65,15 @@ class ProjectConfigManager:
         """
         live_root_dir = project_directory / "live"
         if not live_root_dir.is_dir():
-            return None
+            raise ValueError(f"live directory {live_root_dir} is not a directory")
 
-        live_dirs = []
-        for live_dir in sorted(list(live_root_dir.iterdir())):
-            if (live_dir / "log.txt").is_file():
-                live_dirs.append(live_dir)
+        for live_dir in sorted(list(live_root_dir.iterdir()), reverse=True):
+            if not (live_dir / "log.txt").is_file():
+                continue
+            return live_dir
+        
+        raise ValueError("live directory with log.txt not found")
 
-        return live_dirs[-1]
         
     def get_csharp_libraries(self, project_directory: Path) -> List[CSharpLibrary]:
         """Returns the custom C# libraries in a project.

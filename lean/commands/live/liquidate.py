@@ -48,7 +48,4 @@ def liquidate(project: Path,
     except Exception as e:
         raise Exception(f"liquidate(): Failed to send the command, error: {e}")
 
-    try:
-        get_result(command_id, docker_container_name)
-    except Exception as e:
-        raise Exception(f"liquidate(): Error: {e}")
+    get_result(command_id, docker_container_name)

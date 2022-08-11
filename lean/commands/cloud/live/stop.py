@@ -34,6 +34,6 @@ def stop(project: str) -> None:
     if response.success:
         logger.info(f"cloud.live.stop(): command executed successfully.")
     else:
-        logger.error(f"cloud.live.stop(): command failed.")
+        raise Exception("cloud.live.stop(): Failed: to execute the command successfully.")
 
 
