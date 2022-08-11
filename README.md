@@ -71,6 +71,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean backtest`](#lean-backtest)
 - [`lean build`](#lean-build)
 - [`lean cloud backtest`](#lean-cloud-backtest)
+- [`lean cloud live`](#lean-cloud-live)
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
 - [`lean cloud live stop`](#lean-cloud-live-stop)
@@ -88,6 +89,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
+- [`lean live`](#lean-live)
 - [`lean live add-security`](#lean-live-add-security)
 - [`lean live cancel-order`](#lean-live-cancel-order)
 - [`lean live deploy`](#lean-live-deploy)
@@ -200,6 +202,26 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
+
+### `lean cloud live`
+
+Interact with the QuantConnect cloud live deployments.
+
+```
+Usage: lean cloud live [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the QuantConnect cloud live deployments.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  deploy     Start live trading for a project in the cloud.
+  liquidate  Stops live trading and liquidates existing positions for a certain project.
+  stop       Stops live trading for a certain project without liquidating existing positions.
+```
+
+_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
 
 ### `lean cloud live deploy`
 
@@ -699,6 +721,30 @@ Options:
 
 _See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_
 
+### `lean live`
+
+Interact with the local machine.
+
+```
+Usage: lean live [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the local machine.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  add-security  Represents a command to add a security to the algorithm.
+  cancel-order  Represents a command to cancel a specific order by id.
+  deploy        Start live trading a project locally using Docker.
+  liquidate     Liquidate the given symbol from the latest deployment of the given project.
+  stop          Stop an already running local live trading project.
+  submit-order  Represents a command to submit an order to the algorithm.
+  update-order  Represents a command to update a specific order by id.
+```
+
+_See code: [lean/commands/live.py](lean/commands/live.py)_
+
 ### `lean live add-security`
 
 Represents a command to add a security to the algorithm.
@@ -709,10 +755,10 @@ Usage: lean live add-security [OPTIONS] PROJECT
   Represents a command to add a security to the algorithm.
 
 Options:
-  --ticker TEXT            The ticker of the symbol to added  [required]
-  --market TEXT            The market of the symbol to added  [required]
-  --security-type TEXT     The security type of the symbol to added  [required]
-  --resolution TEXT        The resolution of the symbol to added
+  --ticker TEXT            The ticker of the symbol to add  [required]
+  --market TEXT            The market of the symbol to add  [required]
+  --security-type TEXT     The security type of the symbol to add  [required]
+  --resolution TEXT        The resolution of the symbol to add
   --fill-data-forward      The fill forward behavior, true to fill forward, false otherwise - defaults to true
   --leverage DECIMAL       The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything
                            else
@@ -937,12 +983,12 @@ _See code: [lean/commands/live/liquidate.py](lean/commands/live/liquidate.py)_
 
 ### `lean live stop`
 
-Stop an already running local live trading a project.
+Stop an already running local live trading project.
 
 ```
 Usage: lean live stop [OPTIONS] PROJECT
 
-  Stop an already running local live trading a project.
+  Stop an already running local live trading project.
 
 Options:
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -962,12 +1008,12 @@ Usage: lean live submit-order [OPTIONS] PROJECT
   Represents a command to submit an order to the algorithm.
 
 Options:
-  --ticker TEXT          The ticker of the symbol to submitted  [required]
-  --market TEXT          The market of the symbol to submitted  [required]
-  --security-type TEXT   The security type of the symbol to submitted  [required]
+  --ticker TEXT          The ticker of the symbol to be submitted  [required]
+  --market TEXT          The market of the symbol to be submitted  [required]
+  --security-type TEXT   The security type of the symbol to be submitted  [required]
   --order-type TEXT      The order type to be submitted  [required]
-  --quantity DECIMAL     the number of units to be ordered (directional)  [required]
-  --limit-price DECIMAL  The limit price of the order to submitted
+  --quantity DECIMAL     The number of units to be ordered (directional)  [required]
+  --limit-price DECIMAL  The limit price of the order be submitted
   --stop-price DECIMAL   The stop price of the order to be submitted
   --tag TEXT             The tag to be attached to the order
   --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -988,8 +1034,8 @@ Usage: lean live update-order [OPTIONS] PROJECT
 
 Options:
   --order-id INTEGER     The order id to be updated  [required]
-  --quantity DECIMAL     the number of units to be ordered (directional)
-  --limit-price DECIMAL  The limit price of the order to updated
+  --quantity DECIMAL     The number of units to be updated (directional)
+  --limit-price DECIMAL  The limit price of the order to be updated
   --stop-price DECIMAL   The stop price of the order to be updated
   --tag TEXT             The tag to be attached to the order
   --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
