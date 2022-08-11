@@ -17,7 +17,7 @@ import requests
 from pathlib import Path
 
 json_modules = {}
-file_name = "modules-1.2.json"
+file_name = "modules-1.3.json"
 dirname = os.path.dirname(__file__)
 file_path = os.path.join(dirname, f'../{file_name}')
 
