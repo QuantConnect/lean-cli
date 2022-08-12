@@ -27,6 +27,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.models.pydantic import WrappedBaseModel
+from lean.components.util.click_group_default_command import DefaultCommandGroup
 
 
 class NamedCommand(WrappedBaseModel):
@@ -47,6 +48,9 @@ def get_commands(group: Group, parent_names: List[str] = []) -> List[NamedComman
     all_commands = []
 
     for obj in group.commands.values():
+        if isinstance(obj, DefaultCommandGroup):
+            name_parts = parent_names + [group.name, obj.name]
+            all_commands.append(NamedCommand(name=" ".join(name_parts), command=obj))
         if isinstance(obj, Group):
             all_commands.extend(get_commands(obj, parent_names + [group.name]))
         else:

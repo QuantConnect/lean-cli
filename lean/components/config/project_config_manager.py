@@ -57,6 +57,24 @@ class ProjectConfigManager:
 
         return project_id
 
+    def get_latest_live_directory(self, project_directory: Path) -> Path:
+        """Returns the path of the latest live directory.
+
+        :param project_directory: the path to the project to retrieve the local id of
+        :return: the path of the latest live directory
+        """
+        live_root_dir = project_directory / "live"
+        if not live_root_dir.is_dir():
+            raise ValueError(f"live directory {live_root_dir} is not a directory")
+
+        for live_dir in sorted(list(live_root_dir.iterdir()), reverse=True):
+            if not (live_dir / "log.txt").is_file():
+                continue
+            return live_dir
+        
+        raise ValueError("live directory with log.txt not found")
+
+        
     def get_csharp_libraries(self, project_directory: Path) -> List[CSharpLibrary]:
         """Returns the custom C# libraries in a project.
 

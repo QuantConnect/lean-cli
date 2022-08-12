@@ -45,7 +45,7 @@ class OutputConfigManager:
         """
         return self._get_id(backtest_directory, 1)
 
-    def get_backtest_name(self, backtest_directory: Path) -> int:
+    def get_backtest_name(self, backtest_directory: Path) -> str:
         """Returns the name of a backtest.
 
         :param backtest_directory: the path to the backtest to retrieve the id of
@@ -58,7 +58,7 @@ class OutputConfigManager:
 
         raise ValueError("Backtest name is not set")
 
-    def get_container_name(self, backtest_directory: Path) -> int:
+    def get_container_name(self, backtest_directory: Path) -> str:
         """Returns the name of a the docker container lean is running in.
 
         :param backtest_directory: the path to the backtest to retrieve the id of

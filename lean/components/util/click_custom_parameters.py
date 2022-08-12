@@ -12,26 +12,15 @@
 # limitations under the License.
 
 import click
+from decimal import Decimal, DecimalException
 
-from lean.commands.cloud.backtest import backtest
-from lean.commands.cloud.live.live import live
-from lean.commands.cloud.optimize import optimize
-from lean.commands.cloud.pull import pull
-from lean.commands.cloud.push import push
-from lean.commands.cloud.status import status
+class DecimalParamType(click.ParamType):
+    name = "decimal"
 
+    def convert(self, value, param, ctx):
+        try:
+            return Decimal(value)
+        except DecimalException:
+            self.fail(f"{value!r} is not a valid decimal", param, ctx)
 
-@click.group()
-def cloud() -> None:
-    """Interact with the QuantConnect cloud."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean cloud <command>` commands
-    pass
-
-
-cloud.add_command(pull)
-cloud.add_command(push)
-cloud.add_command(backtest)
-cloud.add_command(optimize)
-cloud.add_command(live)
-cloud.add_command(status)
+DECIMAL = DecimalParamType()

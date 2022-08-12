@@ -72,6 +72,9 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean build`](#lean-build)
 - [`lean cloud backtest`](#lean-cloud-backtest)
 - [`lean cloud live`](#lean-cloud-live)
+- [`lean cloud live deploy`](#lean-cloud-live-deploy)
+- [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
+- [`lean cloud live stop`](#lean-cloud-live-stop)
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
@@ -87,6 +90,13 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
 - [`lean live`](#lean-live)
+- [`lean live add-security`](#lean-live-add-security)
+- [`lean live cancel-order`](#lean-live-cancel-order)
+- [`lean live deploy`](#lean-live-deploy)
+- [`lean live liquidate`](#lean-live-liquidate)
+- [`lean live stop`](#lean-live-stop)
+- [`lean live submit-order`](#lean-live-submit-order)
+- [`lean live update-order`](#lean-live-update-order)
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean logs`](#lean-logs)
@@ -195,10 +205,30 @@ _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
 
 ### `lean cloud live`
 
+Interact with the QuantConnect cloud live deployments.
+
+```
+Usage: lean cloud live [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the QuantConnect cloud live deployments.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  deploy     Start live trading for a project in the cloud.
+  liquidate  Stops live trading and liquidates existing positions for a certain project.
+  stop       Stops live trading for a certain project without liquidating existing positions.
+```
+
+_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
+
+### `lean cloud live deploy`
+
 Start live trading for a project in the cloud.
 
 ```
-Usage: lean cloud live [OPTIONS] PROJECT
+Usage: lean cloud live deploy [OPTIONS] PROJECT
 
   Start live trading for a project in the cloud.
 
@@ -242,19 +272,21 @@ Options:
   --binanceus-api-secret TEXT     Your Binance API secret
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
-  --zerodha-product-type [MIS|CNC|NRML]
+  --zerodha-product-type [mis|cnc|nrml]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-  --zerodha-trading-segment [EQUITY|COMMODITY]
+  --zerodha-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --zerodha-history-subscription [true|false]
+                                  Whether you have a history API subscription for Zerodha
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
-  --samco-product-type [MIS|CNC|NRML]
+  --samco-product-type [mis|cnc|nrml]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-  --samco-trading-segment [EQUITY|COMMODITY]
+  --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
   --kraken-api-key TEXT           Your Kraken API key
@@ -285,7 +317,39 @@ Options:
   --help                          Show this message and exit.
 ```
 
-_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
+_See code: [lean/commands/cloud/live/deploy.py](lean/commands/cloud/live/deploy.py)_
+
+### `lean cloud live liquidate`
+
+Stops live trading and liquidates existing positions for a certain project.
+
+```
+Usage: lean cloud live liquidate [OPTIONS] PROJECT
+
+  Stops live trading and liquidates existing positions for a certain project.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/live/liquidate.py](lean/commands/cloud/live/liquidate.py)_
+
+### `lean cloud live stop`
+
+Stops live trading for a certain project without liquidating existing positions.
+
+```
+Usage: lean cloud live stop [OPTIONS] PROJECT
+
+  Stops live trading for a certain project without liquidating existing positions.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/live/stop.py](lean/commands/cloud/live/stop.py)_
 
 ### `lean cloud optimize`
 
@@ -659,10 +723,78 @@ _See code: [lean/commands/library/remove.py](lean/commands/library/remove.py)_
 
 ### `lean live`
 
+Interact with the local machine.
+
+```
+Usage: lean live [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the local machine.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  add-security  Represents a command to add a security to the algorithm.
+  cancel-order  Represents a command to cancel a specific order by id.
+  deploy        Start live trading a project locally using Docker.
+  liquidate     Liquidate the given symbol from the latest deployment of the given project.
+  stop          Stop an already running local live trading project.
+  submit-order  Represents a command to submit an order to the algorithm.
+  update-order  Represents a command to update a specific order by id.
+```
+
+_See code: [lean/commands/live.py](lean/commands/live.py)_
+
+### `lean live add-security`
+
+Represents a command to add a security to the algorithm.
+
+```
+Usage: lean live add-security [OPTIONS] PROJECT
+
+  Represents a command to add a security to the algorithm.
+
+Options:
+  --ticker TEXT            The ticker of the symbol to add  [required]
+  --market TEXT            The market of the symbol to add  [required]
+  --security-type TEXT     The security type of the symbol to add  [required]
+  --resolution TEXT        The resolution of the symbol to add
+  --fill-data-forward      The fill forward behavior, true to fill forward, false otherwise - defaults to true
+  --leverage DECIMAL       The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything
+                           else
+  --extended-market-hours  The extended market hours flag, true to allow pre/post market data, false for only in market
+                           data
+  --lean-config FILE       The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                Enable debug logging
+  --help                   Show this message and exit.
+```
+
+_See code: [lean/commands/live/add_security.py](lean/commands/live/add_security.py)_
+
+### `lean live cancel-order`
+
+Represents a command to cancel a specific order by id.
+
+```
+Usage: lean live cancel-order [OPTIONS] PROJECT
+
+  Represents a command to cancel a specific order by id.
+
+Options:
+  --order-id INTEGER  The order id to be cancelled  [required]
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
+```
+
+_See code: [lean/commands/live/cancel_order.py](lean/commands/live/cancel_order.py)_
+
+### `lean live deploy`
+
 Start live trading a project locally using Docker.
 
 ```
-Usage: lean live [OPTIONS] PROJECT
+Usage: lean live deploy [OPTIONS] PROJECT
 
   Start live trading a project locally using Docker.
 
@@ -730,22 +862,22 @@ Options:
   --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
-  --zerodha-product-type [MIS|CNC|NRML]
+  --zerodha-product-type [mis|cnc|nrml]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-  --zerodha-trading-segment [EQUITY|COMMODITY]
+  --zerodha-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --zerodha-history-subscription BOOLEAN
+  --zerodha-history-subscription [true|false]
                                   Whether you have a history API subscription for Zerodha
   --samco-organization TEXT       The name or id of the organization with the samco module subscription
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
-  --samco-product-type [MIS|CNC|NRML]
+  --samco-product-type [mis|cnc|nrml]
                                   MIS if you are targeting intraday products, CNC if you are targeting delivery
                                   products, NRML if you are targeting carry forward products
-  --samco-trading-segment [EQUITY|COMMODITY]
+  --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
   --terminal-link-organization TEXT
@@ -827,7 +959,91 @@ Options:
   --help                          Show this message and exit.
 ```
 
-_See code: [lean/commands/live.py](lean/commands/live.py)_
+_See code: [lean/commands/live/deploy.py](lean/commands/live/deploy.py)_
+
+### `lean live liquidate`
+
+Liquidate the given symbol from the latest deployment of the given project.
+
+```
+Usage: lean live liquidate [OPTIONS] PROJECT
+
+  Liquidate the given symbol from the latest deployment of the given project.
+
+Options:
+  --ticker TEXT         The ticker of the symbol to liquidate
+  --market TEXT         The market of the symbol to liquidate
+  --security-type TEXT  The security type of the symbol to liquidate
+  --lean-config FILE    The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose             Enable debug logging
+  --help                Show this message and exit.
+```
+
+_See code: [lean/commands/live/liquidate.py](lean/commands/live/liquidate.py)_
+
+### `lean live stop`
+
+Stop an already running local live trading project.
+
+```
+Usage: lean live stop [OPTIONS] PROJECT
+
+  Stop an already running local live trading project.
+
+Options:
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
+```
+
+_See code: [lean/commands/live/stop.py](lean/commands/live/stop.py)_
+
+### `lean live submit-order`
+
+Represents a command to submit an order to the algorithm.
+
+```
+Usage: lean live submit-order [OPTIONS] PROJECT
+
+  Represents a command to submit an order to the algorithm.
+
+Options:
+  --ticker TEXT          The ticker of the symbol to be submitted  [required]
+  --market TEXT          The market of the symbol to be submitted  [required]
+  --security-type TEXT   The security type of the symbol to be submitted  [required]
+  --order-type TEXT      The order type to be submitted  [required]
+  --quantity DECIMAL     The number of units to be ordered (directional)  [required]
+  --limit-price DECIMAL  The limit price of the order be submitted
+  --stop-price DECIMAL   The stop price of the order to be submitted
+  --tag TEXT             The tag to be attached to the order
+  --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose              Enable debug logging
+  --help                 Show this message and exit.
+```
+
+_See code: [lean/commands/live/submit_order.py](lean/commands/live/submit_order.py)_
+
+### `lean live update-order`
+
+Represents a command to update a specific order by id.
+
+```
+Usage: lean live update-order [OPTIONS] PROJECT
+
+  Represents a command to update a specific order by id.
+
+Options:
+  --order-id INTEGER     The order id to be updated  [required]
+  --quantity DECIMAL     The number of units to be updated (directional)
+  --limit-price DECIMAL  The limit price of the order to be updated
+  --stop-price DECIMAL   The stop price of the order to be updated
+  --tag TEXT             The tag to be attached to the order
+  --lean-config FILE     The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose              Enable debug logging
+  --help                 Show this message and exit.
+```
+
+_See code: [lean/commands/live/update_order.py](lean/commands/live/update_order.py)_
 
 ### `lean login`
 

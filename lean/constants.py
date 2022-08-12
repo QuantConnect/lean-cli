@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
@@ -28,6 +27,12 @@ CACHE_PATH = str(Path("~/.lean/cache").expanduser())
 
 # The directory in which modules are stored
 MODULES_DIRECTORY = str(Path("~/.lean/modules").expanduser())
+
+# The file in which we send live commands to running docker container
+COMMAND_FILE_BASENAME = "command"
+
+# The file from which we read results of the command sent to the docker container
+COMMAND_RESULT_FILE_BASENAME = "result-command"
 
 # The default name of the file containing the Lean engine configuration
 DEFAULT_LEAN_CONFIG_FILE_NAME = "lean.json"

@@ -11,27 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from lean.commands.live.live import live
+from lean.commands.live.deploy import deploy
+from lean.commands.live.stop import stop
+from lean.commands.live.liquidate import liquidate
+from lean.commands.live.submit_order import submit_order
+from lean.commands.live.cancel_order import cancel_order
+from lean.commands.live.add_security import add_security
+from lean.commands.live.update_order import update_order
 
-from lean.commands.cloud.backtest import backtest
-from lean.commands.cloud.live.live import live
-from lean.commands.cloud.optimize import optimize
-from lean.commands.cloud.pull import pull
-from lean.commands.cloud.push import push
-from lean.commands.cloud.status import status
-
-
-@click.group()
-def cloud() -> None:
-    """Interact with the QuantConnect cloud."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean cloud <command>` commands
-    pass
-
-
-cloud.add_command(pull)
-cloud.add_command(push)
-cloud.add_command(backtest)
-cloud.add_command(optimize)
-cloud.add_command(live)
-cloud.add_command(status)
+live.add_command(deploy)
+live.add_command(stop)
+live.add_command(liquidate)
+live.add_command(submit_order)
+live.add_command(cancel_order)
+live.add_command(add_security)
+live.add_command(update_order)

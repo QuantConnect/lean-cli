@@ -1,0 +1,39 @@
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# Lean CLI v1.0. Copyright 2021 QuantConnect Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
+import click
+from lean.click import LeanCommand
+from lean.container import container
+
+
+@click.command(cls=LeanCommand)
+@click.argument("project", type=str)
+def stop(project: str) -> None:
+    """
+    Stops live trading for a certain project without liquidating existing positions.
+    """
+    logger = container.logger()
+    api_client = container.api_client()
+
+    cloud_project_manager = container.cloud_project_manager()
+    cloud_project = cloud_project_manager.get_cloud_project(project, False)
+    logger.info(f"cloud.live.stop(): sending command.")
+    response = api_client.live.stop(cloud_project.projectId)
+    if response.success:
+        logger.info(f"cloud.live.stop(): command executed successfully.")
+    else:
+        raise Exception("cloud.live.stop(): Failed: to execute the command successfully.")
+
+
