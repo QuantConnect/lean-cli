@@ -38,7 +38,7 @@ from lean.constants import SITE_PACKAGES_VOLUME_LIMIT, \
     DOCKER_NETWORK
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
-
+from lean.components.util.custom_json_encoder import DecimalEncoder
 
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
@@ -439,7 +439,7 @@ class DockerManager:
         if docker_container.status != "running":
             raise ValueError(f"Container {docker_container_name} is not running")
             
-        data = json.dumps(data)
+        data = json.dumps(data, cls=DecimalEncoder)
         data = data.replace('"','\\"')
         command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
         try:
