@@ -18,10 +18,11 @@ import click
 from docker.errors import APIError
 from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_RESEARCH_IMAGE
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 from lean.components.util.name_extraction import convert_to_class_name
+
 
 def _check_docker_output(chunk: str, port: int) -> None:
     """Checks the output of the Docker container and opens the browser if Jupyter Lab has started.
@@ -80,7 +81,7 @@ def research(project: Path,
 
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
-    lean_config["composer-dll-directory"] = "/Lean/Launcher/bin/Debug"
+    lean_config["composer-dll-directory"] = LEAN_ROOT_PATH
     lean_config["research-object-store-name"] = algorithm_name
 
     if download_data:
@@ -103,7 +104,7 @@ def research(project: Path,
 
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))
-    run_options["mounts"].append(Mount(target="/Lean/Launcher/bin/Debug/Notebooks/config.json",
+    run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/Notebooks/config.json",
                                        source=str(local_config_path),
                                        type="bind",
                                        read_only=True))
@@ -120,7 +121,7 @@ def research(project: Path,
 
     # Mount the project to the notebooks directory
     run_options["volumes"][str(project)] = {
-        "bind": "/Lean/Launcher/bin/Debug/Notebooks",
+        "bind": f"{LEAN_ROOT_PATH}/Notebooks",
         "mode": "rw"
     }
 

@@ -17,6 +17,9 @@ from pathlib import Path
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
 
 # The file in which general CLI configuration is stored
+LEAN_ROOT_PATH = "/Lean/Launcher/bin/Debug"
+
+# The file in which general CLI configuration is stored
 GENERAL_CONFIG_PATH = str(Path("~/.lean/config").expanduser())
 
 # The file in which credentials are stored

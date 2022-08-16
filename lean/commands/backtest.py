@@ -17,9 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 import click
-
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
@@ -61,7 +60,7 @@ def _migrate_python_pycharm(project_dir: Path) -> None:
         library_dir = None
 
     for mapping in path_mappings.findall(".//mapping"):
-        if mapping.get("local-root") == "$PROJECT_DIR$" and mapping.get("remote-root") == "/Lean/Launcher/bin/Debug":
+        if mapping.get("local-root") == "$PROJECT_DIR$" and mapping.get("remote-root") == LEAN_ROOT_PATH:
             mapping.set("remote-root", "/LeanCLI")
             made_changes = True
 
@@ -108,7 +107,7 @@ def _migrate_python_vscode(project_dir: Path) -> None:
         library_dir = None
 
     for mapping in config["pathMappings"]:
-        if mapping["localRoot"] == "${workspaceFolder}" and mapping["remoteRoot"] == "/Lean/Launcher/bin/Debug":
+        if mapping["localRoot"] == "${workspaceFolder}" and mapping["remoteRoot"] == LEAN_ROOT_PATH:
             mapping["remoteRoot"] = "/LeanCLI"
             made_changes = True
 
