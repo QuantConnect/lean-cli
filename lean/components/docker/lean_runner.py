@@ -496,7 +496,7 @@ class LeanRunner:
         # Copy over the algorithm DLL
         # Copy over the project reference DLLs'
         # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        run_options["commands"].append(f"cp -R -n /Compile/bin/. {LEAN_ROOT_PATH}")
+        run_options["commands"].append(f"cp -R -n /Compile/bin/. {LEAN_ROOT_PATH}/")
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
         # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
