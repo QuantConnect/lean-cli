@@ -45,14 +45,13 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     try:
         cloud_project = cloud_project_manager.get_cloud_project(project, push)
     except RuntimeError as e:
-        error_message = f'No project with the given name or id "{project}" found in your cloud projects.'
         if cloud_project_manager._project_config_manager.try_get_project_config(Path.cwd() / project,
                                                                         cloud_project_manager._path_manager):
+            error_message = f'No project with the given name or id "{project}" found in your cloud projects.'
             error_message += f" Please use `lean cloud backtest --push {project}` to backtest in cloud."
+        else:
+            error_message = f'No project with the given name or id "{project}" found in your cloud or local projects.'
         raise RuntimeError(error_message)
-    except RequestFailedError as e:
-        raise RuntimeError(f"{e}. Please login to your account" + 
-                                    " https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-login.")
 
     if name is None:
         name = container.name_generator().generate_name()
