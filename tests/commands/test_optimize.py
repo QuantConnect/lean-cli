@@ -21,7 +21,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
@@ -136,7 +136,7 @@ def test_optimize_mounts_lean_config() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert any([mount["Target"] == "/Lean/Launcher/bin/Debug/config.json" for mount in kwargs["mounts"]])
+    assert any([mount["Target"] == f"{LEAN_ROOT_PATH}/config.json" for mount in kwargs["mounts"]])
 
 
 def test_optimize_mounts_data_directory() -> None:

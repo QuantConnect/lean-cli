@@ -112,6 +112,7 @@ def init() -> None:
     cli_config_manager = container.cli_config_manager()
     if cli_config_manager.default_language.get_value() is None:
         default_language = click.prompt("What should the default language for new projects be?",
+                                        default=cli_config_manager.default_language.default_value,
                                         type=click.Choice(cli_config_manager.default_language.allowed_values))
         cli_config_manager.default_language.set_value(default_language)
 
@@ -121,8 +122,8 @@ The following objects have been created:
 - {DEFAULT_DATA_DIRECTORY_NAME}/ contains the data that is used when running the LEAN engine locally
 
 The following documentation pages may be useful:
-- Setting up local autocomplete: https://www.lean.io/docs/lean-cli/projects/autocomplete
-- Synchronizing projects with the cloud: https://www.lean.io/docs/lean-cli/projects/cloud-synchronization
+- Setting up local autocomplete: https://www.lean.io/docs/v2/lean-cli/projects/autocomplete
+- Synchronizing projects with the cloud: https://www.lean.io/docs/v2/lean-cli/projects/cloud-synchronization
 
 Here are some commands to get you going:
 - Run `lean create-project "My Project"` to create a new project with starter code

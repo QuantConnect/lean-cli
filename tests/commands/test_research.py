@@ -19,7 +19,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.constants import DEFAULT_RESEARCH_IMAGE
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -56,8 +56,8 @@ def test_research_mounts_lean_config_to_notebooks_directory_as_well() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    lean_config = next(m["Source"] for m in kwargs["mounts"] if m["Target"] == "/Lean/Launcher/bin/Debug/config.json")
-    assert any(m["Source"] == lean_config and m["Target"] == "/Lean/Launcher/bin/Debug/Notebooks/config.json" for m in
+    lean_config = next(m["Source"] for m in kwargs["mounts"] if m["Target"] == f"{LEAN_ROOT_PATH}/config.json")
+    assert any(m["Source"] == lean_config and m["Target"] == f"{LEAN_ROOT_PATH}/Notebooks/config.json" for m in
                kwargs["mounts"])
 
 
@@ -77,7 +77,7 @@ def test_research_adds_credentials_to_project_config() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Launcher/bin/Debug/Notebooks/config.json"][0]
+    mount = [m for m in kwargs["mounts"] if m["Target"] == f"{LEAN_ROOT_PATH}/Notebooks/config.json"][0]
 
     with open(mount["Source"]) as file:
         config = json.load(file)

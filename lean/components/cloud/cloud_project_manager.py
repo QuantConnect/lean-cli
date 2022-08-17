@@ -57,9 +57,7 @@ class CloudProjectManager:
         """
         # If the given input is a valid project directory, we try to use that project
         local_path = Path.cwd() / input
-        if self._path_manager.is_path_valid(local_path) \
-                and local_path.is_dir() \
-                and self._project_config_manager.get_project_config(local_path).file.exists():
+        if self._project_config_manager.try_get_project_config(local_path, self._path_manager):
             if push:
                 self._push_manager.push_projects([local_path])
 

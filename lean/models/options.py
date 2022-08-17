@@ -68,7 +68,8 @@ class ChoiceOption(Option):
                  description: str,
                  allowed_values: List[str],
                  is_sensitive: bool,
-                 storage: Storage) -> None:
+                 storage: Storage,
+                 default_value: str = None) -> None:
         """Creates a new ChoiceOption instance.
 
         :param key: the name of the key of the option in the given file, should use hyphens for separation
@@ -76,8 +77,10 @@ class ChoiceOption(Option):
         :param allowed_values: the values which can be set
         :param is_sensitive: whether the contents of this option may be logged without masking it
         :param storage: the Storage instance to store this option in
+        :param default_value: the default value to use for the choices
         """
         self.allowed_values = allowed_values
+        self.default_value = default_value
 
         if description.endswith("."):
             description = description[:-1]

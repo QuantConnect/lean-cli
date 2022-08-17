@@ -30,9 +30,10 @@ from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID
+from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROOT_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
+
 
 class LeanRunner:
     """The LeanRunner class contains the code that runs the LEAN engine locally."""
@@ -314,7 +315,7 @@ class LeanRunner:
             file.write(json.dumps(lean_config, indent=4))
 
         # Mount the Lean config
-        run_options["mounts"].append(Mount(target="/Lean/Launcher/bin/Debug/config.json",
+        run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/config.json",
                                            source=str(config_path),
                                            type="bind",
                                            read_only=True))
@@ -495,7 +496,7 @@ class LeanRunner:
         # Copy over the algorithm DLL
         # Copy over the project reference DLLs'
         # Copy over all output DLLs that don't already exist in /Lean/Launcher/bin/Debug
-        run_options["commands"].append("cp -R -n /Compile/bin/. /Lean/Launcher/bin/Debug/")
+        run_options["commands"].append(f"cp -R -n /Compile/bin/. {LEAN_ROOT_PATH}/")
 
         # Copy over all library DLLs that don't already exist in /Lean/Launcher/bin/Debug
         # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
@@ -652,7 +653,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             package_reference.clear()
 
             package_reference.tag = "Reference"
-            package_reference.set("Include", "/Lean/Launcher/bin/Debug/*.dll")
+            package_reference.set("Include", f"{LEAN_ROOT_PATH}/*.dll")
             package_reference.append(self._xml_manager.parse("<Private>False</Private>"))
 
             include_added = True

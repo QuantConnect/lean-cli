@@ -13,12 +13,11 @@
 
 import webbrowser
 from typing import Optional
-
 import click
-
 from lean.click import LeanCommand
 from lean.container import container
-
+from pathlib import Path
+from lean.models.errors import RequestFailedError
 
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
@@ -43,7 +42,16 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     logger = container.logger()
 
     cloud_project_manager = container.cloud_project_manager()
-    cloud_project = cloud_project_manager.get_cloud_project(project, push)
+    try:
+        cloud_project = cloud_project_manager.get_cloud_project(project, push)
+    except RuntimeError as e:
+        if cloud_project_manager._project_config_manager.try_get_project_config(Path.cwd() / project,
+                                                                        cloud_project_manager._path_manager):
+            error_message = f'No project with the given name or id "{project}" found in your cloud projects.'
+            error_message += f" Please use `lean cloud backtest --push {project}` to backtest in cloud."
+        else:
+            error_message = f'No project with the given name or id "{project}" found in your cloud or local projects.'
+        raise RuntimeError(error_message)
 
     if name is None:
         name = container.name_generator().generate_name()
