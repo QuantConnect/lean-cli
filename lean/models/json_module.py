@@ -92,6 +92,7 @@ class JsonModule(abc.ABC):
     def get_organzation_id(self) -> str:
         [organization_id] = [
             config._value for config in self._lean_configs if config.is_type_organization_id]
+        container.logger().debug(f"JsonModule.get_organzation_id: organization id being used: {organization_id}")
         return organization_id
 
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:

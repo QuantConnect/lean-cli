@@ -277,6 +277,7 @@ class LeanRunner:
         # Set up modules
         installed_packages = self._module_manager.get_installed_packages()
         if len(installed_packages) > 0:
+            self._logger.debug(f"LeanRunner.run_lean(): installed packages {len(installed_packages)}")
             self.set_up_common_csharp_options(run_options)
             set_up_common_csharp_options_called = True
 
@@ -297,6 +298,7 @@ class LeanRunner:
 
             # Add all modules to the project, automatically resolving all dependencies
             for package in installed_packages:
+                self._logger.debug(f"LeanRunner.run_lean(): Adding module {package} to the project")
                 run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
                 run_options["commands"].append(
                     f"dotnet add /ModulesProject package {package.name} --version {package.version}")
