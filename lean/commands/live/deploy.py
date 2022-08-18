@@ -135,9 +135,11 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             # update essential properties, so that other dependent values can be fetched.
             essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
             data_feed.update_configs(essential_properties_value)
+            container.logger().debug(f"interactive: essential_properties_value: {brokerage._id} {essential_properties_value}")
             # now required properties can be fetched as per data/filter provider from esssential properties
             required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
             data_feed.update_configs(required_properties_value)
+            container.logger().debug(f"interactive: required_properties_value: {required_properties_value}")
             # mark configs are updated
             #TODO: create a setter method to set the property instead.
             setattr(data_feed, '_is_installed_and_build', True)
@@ -164,6 +166,7 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
         _cached_organizations = api_client.organizations.get_all()
 
     if given_input is not None:
+        container.logger().debug(f"deploy._get_organization_id: non-interactive input organization id: {given_input}")
         organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
         if organization is None:
             raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
@@ -172,6 +175,7 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
         options = [Option(id=organization, label=organization.name) for organization in _cached_organizations]
         organization = logger.prompt_list(f"Select the organization with the {label} module subscription", options)
 
+    container.logger().debug(f"deploy._get_organization_id: user selected organization id: {organization.id}")
     return organization.id
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
@@ -182,6 +186,7 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     ensure_options(essential_properties)
     essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
     target_module.update_configs(essential_properties_value)
+    container.logger().debug(f"non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
     # now required properties can be fetched as per data/filter provider from esssential properties
     required_properties: List[str] = []
     organization_info: Dict[str,str] = {}
@@ -195,7 +200,8 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     ensure_options(required_properties)
     required_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
     required_properties_value.update(organization_info)
-    target_module.update_configs(required_properties_value)    
+    target_module.update_configs(required_properties_value)
+    container.logger().debug(f"non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")    
     return target_module
 
 _cached_lean_config = None
