@@ -11,20 +11,20 @@ The Lean CLI is a cross-platform CLI aimed at making it easier to develop with t
 Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
 
 ## Highlights
-
-- [Project scaffolding](https://www.lean.io/docs/lean-cli/projects/project-management)
-- [Local autocomplete](https://www.lean.io/docs/lean-cli/projects/autocomplete)
-- [Local data downloading](https://www.lean.io/docs/lean-cli/datasets/downloading-quantconnect-data)
-- [Local backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
-- [Local debugging](https://www.lean.io/docs/lean-cli/backtesting/debugging)
-- [Local research environment](https://www.lean.io/docs/lean-cli/research)
-- [Local optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
-- [Local live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
-- [Local backtest report creation](https://www.lean.io/docs/lean-cli/backtesting/report#02-Generate-a-Report)
-- [Cloud synchronization](https://www.lean.io/docs/lean-cli/projects/cloud-synchronization)
-- [Cloud backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#03-Run-Cloud-Backtests)
-- [Cloud optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#03-Run-Cloud-Optimizations)
-- [Cloud live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#03-Deploy-Cloud-Algorithms)
+v2/
+- [Project scaffolding](https://www.lean.io/docs/v2/lean-cli/projects/project-management)
+- [Local autocomplete](https://www.lean.io/docs/v2/lean-cli/projects/autocomplete)
+- [Local data downloading](https://www.lean.io/docs/v2/lean-cli/datasets/downloading-quantconnect-data)
+- [Local backtesting](https://www.lean.io/docs/v2/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
+- [Local debugging](https://www.lean.io/docs/v2/lean-cli/backtesting/debugging)
+- [Local research environment](https://www.lean.io/docs/v2/lean-cli/research)
+- [Local optimization](https://www.lean.io/docs/v2/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
+- [Local live trading](https://www.lean.io/docs/v2/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
+- [Local backtest report creation](https://www.lean.io/docs/v2/lean-cli/backtesting/report#02-Generate-a-Report)
+- [Cloud synchronization](https://www.lean.io/docs/v2/lean-cli/projects/cloud-synchronization)
+- [Cloud backtesting](https://www.lean.io/docs/v2/lean-cli/backtesting/deployment#03-Run-Cloud-Backtests)
+- [Cloud optimization](https://www.lean.io/docs/v2/lean-cli/optimization/deployment#03-Run-Cloud-Optimizations)
+- [Cloud live trading](https://www.lean.io/docs/v2/lean-cli/live-trading/quantconnect-paper-trading#03-Deploy-Cloud-Algorithms)
 
 ## Installation
 
