@@ -16,7 +16,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE, LOCAL_LIVE_ENVIRONMENT_NAME
@@ -30,6 +30,7 @@ from lean.models.json_module import JsonModule
 from lean.commands.live.live import live
 from lean.models.data_providers import all_data_providers
 
+
 _environment_skeleton = {
     "live-mode": True,
     "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
@@ -38,12 +39,13 @@ _environment_skeleton = {
     "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler"
 }
 
-def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
-    """Raises an error if any required properties are missing.
+
+def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[JsonModule, List[JsonModule]]:
+    """Returns the configurable modules from the given environment.
 
     :param lean_config: the LEAN configuration that should be used
     :param environment_name: the name of the environment
-    :param lean_config_path: the path to the LEAN configuration file
+    :return: the configurable modules from the given environment
     """
     environment = lean_config["environments"][environment_name]
     for key in ["live-mode-brokerage", "data-queue-handler"]:
@@ -53,9 +55,19 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-
     [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
     data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
+    return brokerage_configurer, data_feed_configurers
+
+
+def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
+    """Raises an error if any required properties are missing.
+
+    :param lean_config: the LEAN configuration that should be used
+    :param environment_name: the name of the environment
+    :param lean_config_path: the path to the LEAN configuration file
+    """
+    brokerage_configurer, data_feed_configurers = _get_configurable_modules_from_environment(lean_config, environment_name)
     brokerage_properties = brokerage_configurer.get_required_properties()
     data_queue_handler_properties = []
     for data_feed_configurer in data_feed_configurers:
@@ -328,6 +340,11 @@ def deploy(project: Path,
         lean_config["environments"] = {
             environment_name: copy.copy(_environment_skeleton)
         }
+    else:
+        # use non-interactive mode if environment is given
+        env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
+        brokerage = env_brokerage.get_name() if brokerage is None else brokerage
+        data_feed = [ dqh.get_name() for dqh in env_data_queue_handlers] if len(data_feed) == 0 else data_feed
 
     if brokerage is not None or len(data_feed) > 0:
         # non-interactive

@@ -75,7 +75,15 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",])
 
     traceback.print_exception(*result.exc_info)
 
@@ -100,7 +108,15 @@ def test_live_aborts_when_environment_does_not_exist() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "fake-environment"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "fake-environment",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",])
 
     assert result.exit_code != 0
 
@@ -117,7 +133,15 @@ def test_live_aborts_when_environment_has_live_mode_set_to_false() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "backtesting"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "backtesting",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",])
 
     assert result.exit_code != 0
 
@@ -134,7 +158,15 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",])
 
     assert result.exit_code == 0
 
@@ -155,9 +187,18 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+
     result = CliRunner().invoke(lean, ["live",
                                        "Python Project",
                                        "--environment", "live-paper",
+                                       "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",
                                        "--output", "Python Project/custom"])
 
     assert result.exit_code == 0
@@ -179,7 +220,16 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", "--release"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", 
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",
+                                        "--release"])
 
     assert result.exit_code == 0
 
@@ -203,7 +253,16 @@ def test_live_calls_lean_runner_with_detach() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--detach"])
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", 
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",
+                                        "--detach"])
 
     assert result.exit_code == 0
 
@@ -413,6 +472,8 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
 
     result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", 
                                 "--data-provider", data_provider,
+                                "--brokerage", "Paper Trading",
+                                "--data-feed", "Custom data only",
                                 *options])
 
     assert result.exit_code == 0
@@ -775,7 +836,10 @@ def test_live_forces_update_when_update_option_given() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--update"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",
+                                         "--update"])
 
     assert result.exit_code == 0
 
@@ -802,7 +866,9 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper",
+                                        "--brokerage", "Paper Trading",
+                                        "--data-feed", "Custom data only",])
 
     assert result.exit_code == 0
 
@@ -829,7 +895,10 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean,
-                                ["live", "Python Project", "--environment", "live-paper", "--image", "custom/lean:456"])
+                                ["live", "Python Project", "--environment", "live-paper", 
+                                "--brokerage", "Paper Trading",
+                                "--data-feed", "Custom data only",
+                                "--image", "custom/lean:456"])
 
     assert result.exit_code == 0
 
