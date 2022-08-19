@@ -15,6 +15,7 @@ import abc
 import pathlib
 from typing import Any, Dict, List, Optional
 from lean.container import container
+from lean.constants import LOCAL_LIVE_ENVIRONMENT_NAME
 from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
 import copy
@@ -40,18 +41,23 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param environment_name: the name of the environment to update
         """
         self.ensure_module_installed()
-        for environment_config in self.get_configurations_env_values_from_name(environment_name):
-            environment_config_name = environment_config["name"]
+        if environment_name != LOCAL_LIVE_ENVIRONMENT_NAME:
+            return
+        environment_configs = self.get_configurations_env_values_from_name(LOCAL_LIVE_ENVIRONMENT_NAME)
+        # cleanup data structure provided by modules.json
+        environment_configs = {config["name"]: config["value"] for config in environment_configs}
+
+        for environment_config_name, environment_config_value in environment_configs.items():
             if self.__class__.__name__ == 'DataFeed':
                 if environment_config_name == "data-queue-handler":
                     previous_value = []
                     if "data-queue-handler" in lean_config["environments"][environment_name]:
                         previous_value = copy.copy(lean_config["environments"][environment_name][environment_config_name])
-                    previous_value.append(environment_config["value"])
+                    previous_value.append(environment_config_value)
                     lean_config["environments"][environment_name][environment_config_name] = copy.copy(previous_value)
             elif self.__class__.__name__ == 'LocalBrokerage':
                 if environment_config_name != "data-queue-handler":
-                    lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
+                    lean_config["environments"][environment_name][environment_config_name] = environment_config_value
             else:
                 raise ValueError(f'{self.__class__.__name__} not valid for _configure_environment()')
 

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, LOCAL_LIVE_ENVIRONMENT_NAME
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
@@ -117,10 +117,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     """
     logger = container.logger()
 
-    lean_config["environments"] = {
-        environment_name: _environment_skeleton
-    }
-
     brokerage = logger.prompt_list("Select a brokerage", [
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
@@ -187,7 +183,7 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
     target_module.update_configs(essential_properties_value)
     container.logger().debug(f"non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
-    # now required properties can be fetched as per data/filter provider from esssential properties
+    # now required properties can be fetched as per data/filter provider from essential properties
     required_properties: List[str] = []
     organization_info: Dict[str,str] = {}
     for config in target_module.get_required_configs([InternalInputUserInput]):
@@ -312,6 +308,7 @@ def deploy(project: Path,
     _cached_organizations = None
     global _cached_lean_config
     _cached_lean_config = None
+    environment_name = LOCAL_LIVE_ENVIRONMENT_NAME
 
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -321,21 +318,20 @@ def deploy(project: Path,
 
     lean_config_manager = container.lean_config_manager()
 
-    if environment is not None and (brokerage is not None or len(data_feed) > 0):
-        raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
-
     if environment is not None:
         environment_name = environment
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-    elif brokerage is not None or len(data_feed) > 0:
-        ensure_options(["brokerage", "data_feed"])
 
-        environment_name = "lean-cli"
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+    lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
+    # Don't overwrite if user's environment config
+    if environment_name == LOCAL_LIVE_ENVIRONMENT_NAME:
         lean_config["environments"] = {
             environment_name: copy.copy(_environment_skeleton)
         }
+
+    if brokerage is not None or len(data_feed) > 0:
+        # non-interactive
+        ensure_options(["brokerage", "data_feed"])
 
         [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
         brokerage_configurer.configure(lean_config, environment_name)
@@ -345,8 +341,6 @@ def deploy(project: Path,
             data_feed_configurer.configure(lean_config, environment_name)
 
     else:
-        environment_name = "lean-cli"
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name)
 
     if data_provider is not None:
