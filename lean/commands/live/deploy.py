@@ -31,7 +31,6 @@ from lean.models.json_module import JsonModule
 from lean.commands.live.live import live
 from lean.models.data_providers import all_data_providers
 
-
 _environment_skeleton = {
     "live-mode": True,
     "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
@@ -67,6 +66,8 @@ def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str,
     :param modules: the modules to check
     """
     for module in modules:
+        if not module._installs:
+            continue
         organization_id = module.get_organzation_id()
         if organization_id is None or organization_id == "":
             [organization_config] = module.get_config_from_type(OrganzationIdConfiguration)
