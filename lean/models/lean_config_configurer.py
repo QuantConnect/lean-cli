@@ -39,7 +39,6 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param lean_config: the Lean configuration dict to write to
         :param environment_name: the name of the environment to update
         """
-        self.ensure_module_installed()
         for environment_config in self.get_configurations_env_values_from_name(environment_name):
             environment_config_name = environment_config["name"]
             if self.__class__.__name__ == 'DataFeed':
@@ -86,11 +85,11 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
         self._save_properties(lean_config, self.get_required_properties())
 
-    def ensure_module_installed(self) -> None:
+    def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:
             container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
             container.module_manager().install_module(
-                self._product_id, self.get_organzation_id())
+                self._product_id, organization_id)
             self._is_module_installed = True
 
     def _get_default(cls, lean_config: Dict[str, Any], key: str) -> Optional[Any]:

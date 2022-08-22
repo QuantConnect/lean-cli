@@ -75,6 +75,12 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     traceback.print_exception(*result.exc_info)
@@ -134,6 +140,12 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
@@ -155,6 +167,12 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+    
     result = CliRunner().invoke(lean, ["live",
                                        "Python Project",
                                        "--environment", "live-paper",
@@ -179,6 +197,12 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
     result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", "--release"])
 
     assert result.exit_code == 0
@@ -202,6 +226,12 @@ def test_live_calls_lean_runner_with_detach() -> None:
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--detach"])
 
