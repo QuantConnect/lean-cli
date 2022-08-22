@@ -89,6 +89,9 @@ class JsonModule(abc.ABC):
             env_config_values = env_config._env_and_values[target_env]
         return env_config_values
 
+    def get_config_from_type(self, config_type: Configuration) -> str:
+        return [copy.copy(config) for config in self._lean_configs if type(config) is config_type]
+
     def get_organzation_id(self) -> str:
         [organization_id] = [
             config._value for config in self._lean_configs if config.is_type_organization_id]

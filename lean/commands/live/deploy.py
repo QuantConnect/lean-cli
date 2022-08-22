@@ -16,19 +16,21 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
+from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
+from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
 from lean.commands.live.live import live
 from lean.models.data_providers import all_data_providers
+
 
 _environment_skeleton = {
     "live-mode": True,
@@ -38,12 +40,13 @@ _environment_skeleton = {
     "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler"
 }
 
-def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
-    """Raises an error if any required properties are missing.
+
+def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer]]:
+    """Returns the configurable modules from the given environment.
 
     :param lean_config: the LEAN configuration that should be used
     :param environment_name: the name of the environment
-    :param lean_config_path: the path to the LEAN configuration file
+    :return: the configurable modules from the given environment
     """
     environment = lean_config["environments"][environment_name]
     for key in ["live-mode-brokerage", "data-queue-handler"]:
@@ -53,9 +56,32 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-
     [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
     data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
+    return brokerage_configurer, data_feed_configurers
+
+
+def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str, Any]) -> None:
+    """Raises an error if any of the given modules are not installed.
+
+    :param modules: the modules to check
+    """
+    for module in modules:
+        organization_id = module.get_organzation_id()
+        if organization_id is None or organization_id == "":
+            [organization_config] = module.get_config_from_type(OrganzationIdConfiguration)
+            organization_id = _get_non_interactive_organization_id(module, organization_config, user_kwargs)
+        module.ensure_module_installed(organization_id)
+
+
+def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
+    """Raises an error if any required properties are missing.
+
+    :param lean_config: the LEAN configuration that should be used
+    :param environment_name: the name of the environment
+    :param lean_config_path: the path to the LEAN configuration file
+    """
+    brokerage_configurer, data_feed_configurers = _get_configurable_modules_from_environment(lean_config, environment_name)
     brokerage_properties = brokerage_configurer.get_required_properties()
     data_queue_handler_properties = []
     for data_feed_configurer in data_feed_configurers:
@@ -136,7 +162,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
             data_feed.update_configs(essential_properties_value)
             container.logger().debug(f"interactive: essential_properties_value: {brokerage._id} {essential_properties_value}")
-            # now required properties can be fetched as per data/filter provider from esssential properties
+            # now required properties can be fetched as per data/filter provider from essential properties
             required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
             data_feed.update_configs(required_properties_value)
             container.logger().debug(f"interactive: required_properties_value: {required_properties_value}")
@@ -178,6 +204,10 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
     container.logger().debug(f"deploy._get_organization_id: user selected organization id: {organization.id}")
     return organization.id
 
+def _get_non_interactive_organization_id(module: LeanConfigConfigurer, 
+                                        organization_config: OrganzationIdConfiguration, user_kwargs: Dict[str, Any]) -> str:
+    return _get_organization_id(user_kwargs[module._convert_lean_key_to_variable(organization_config._id)], module._id)
+
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
@@ -187,12 +217,12 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
     target_module.update_configs(essential_properties_value)
     container.logger().debug(f"non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
-    # now required properties can be fetched as per data/filter provider from esssential properties
+    # now required properties can be fetched as per data/filter provider from essential properties
     required_properties: List[str] = []
     organization_info: Dict[str,str] = {}
     for config in target_module.get_required_configs([InternalInputUserInput]):
         if config.is_type_organization_id:
-            organization_info[config._id] = _get_organization_id(properties[target_module._convert_lean_key_to_variable(config._id)], target_module._id)
+            organization_info[config._id] = _get_non_interactive_organization_id(target_module, config, properties)
             properties[target_module._convert_lean_key_to_variable(config._id)] = organization_info[config._id]
             # skip organization id from ensure_options() because it is fetched using _get_organization_id()
             continue
@@ -361,6 +391,9 @@ def deploy(project: Path,
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/lean-cli/live-trading")
+
+    env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
+    _install_modules([env_brokerage] + env_data_queue_handlers, kwargs)
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
