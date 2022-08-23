@@ -11,7 +11,7 @@ The Lean CLI is a cross-platform CLI aimed at making it easier to develop with t
 Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
 
 ## Highlights
-v2/
+
 - [Project scaffolding](https://www.lean.io/docs/v2/lean-cli/projects/project-management)
 - [Local autocomplete](https://www.lean.io/docs/v2/lean-cli/projects/autocomplete)
 - [Local data downloading](https://www.lean.io/docs/v2/lean-cli/datasets/downloading-quantconnect-data)
@@ -220,8 +220,6 @@ Commands:
   liquidate  Stops live trading and liquidates existing positions for a certain project.
   stop       Stops live trading for a certain project without liquidating existing positions.
 ```
-
-_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
 
 ### `lean cloud live deploy`
 
@@ -742,8 +740,6 @@ Commands:
   submit-order  Represents a command to submit an order to the algorithm.
   update-order  Represents a command to update a specific order by id.
 ```
-
-_See code: [lean/commands/live.py](lean/commands/live.py)_
 
 ### `lean live add-security`
 
