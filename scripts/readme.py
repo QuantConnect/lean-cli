@@ -86,13 +86,15 @@ def main() -> None:
         help_output = CliRunner().invoke(c.command, ["--help"], prog_name=c.name, terminal_width=120).output.strip()
         help_output = f"```\n{help_output}\n```"
 
-        command_source = f"lean/commands/{c.name.replace('lean ', '').replace(' ', '/').replace('-', '_')}.py"
-        command_source = f"_See code: [{command_source}]({command_source})_"
+        command_source = None
+        if not isinstance(c.command, DefaultCommandGroup):
+            command_source = f"lean/commands/{c.name.replace('lean ', '').replace(' ', '/').replace('-', '_')}.py"
+            command_source = f"_See code: [{command_source}]({command_source})_"
 
         section_parts = [header, help_str, help_output, command_source]
 
         table_of_contents.append(f"- [`{c.name}`](#{get_header_id(c.name)})")
-        command_sections.append("\n\n".join(section_parts))
+        command_sections.append("\n\n".join(filter(None, section_parts)))
 
     full_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)
     full_text = "\n".join(["<!-- commands start -->", full_text, "<!-- commands end -->"])

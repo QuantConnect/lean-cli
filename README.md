@@ -12,19 +12,19 @@ Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts
 
 ## Highlights
 
-- [Project scaffolding](https://www.lean.io/docs/lean-cli/projects/project-management)
-- [Local autocomplete](https://www.lean.io/docs/lean-cli/projects/autocomplete)
-- [Local data downloading](https://www.lean.io/docs/lean-cli/datasets/downloading-quantconnect-data)
-- [Local backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
-- [Local debugging](https://www.lean.io/docs/lean-cli/backtesting/debugging)
-- [Local research environment](https://www.lean.io/docs/lean-cli/research)
-- [Local optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
-- [Local live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
-- [Local backtest report creation](https://www.lean.io/docs/lean-cli/backtesting/report#02-Generate-a-Report)
-- [Cloud synchronization](https://www.lean.io/docs/lean-cli/projects/cloud-synchronization)
-- [Cloud backtesting](https://www.lean.io/docs/lean-cli/backtesting/deployment#03-Run-Cloud-Backtests)
-- [Cloud optimization](https://www.lean.io/docs/lean-cli/optimization/deployment#03-Run-Cloud-Optimizations)
-- [Cloud live trading](https://www.lean.io/docs/lean-cli/live-trading/quantconnect-paper-trading#03-Deploy-Cloud-Algorithms)
+- [Project scaffolding](https://www.lean.io/docs/v2/lean-cli/projects/project-management)
+- [Local autocomplete](https://www.lean.io/docs/v2/lean-cli/projects/autocomplete)
+- [Local data downloading](https://www.lean.io/docs/v2/lean-cli/datasets/downloading-quantconnect-data)
+- [Local backtesting](https://www.lean.io/docs/v2/lean-cli/backtesting/deployment#02-Run-Local-Backtests)
+- [Local debugging](https://www.lean.io/docs/v2/lean-cli/backtesting/debugging)
+- [Local research environment](https://www.lean.io/docs/v2/lean-cli/research)
+- [Local optimization](https://www.lean.io/docs/v2/lean-cli/optimization/deployment#02-Run-Local-Optimizations)
+- [Local live trading](https://www.lean.io/docs/v2/lean-cli/live-trading/quantconnect-paper-trading#02-Deploy-Local-Algorithms)
+- [Local backtest report creation](https://www.lean.io/docs/v2/lean-cli/backtesting/report#02-Generate-a-Report)
+- [Cloud synchronization](https://www.lean.io/docs/v2/lean-cli/projects/cloud-synchronization)
+- [Cloud backtesting](https://www.lean.io/docs/v2/lean-cli/backtesting/deployment#03-Run-Cloud-Backtests)
+- [Cloud optimization](https://www.lean.io/docs/v2/lean-cli/optimization/deployment#03-Run-Cloud-Optimizations)
+- [Cloud live trading](https://www.lean.io/docs/v2/lean-cli/live-trading/quantconnect-paper-trading#03-Deploy-Cloud-Algorithms)
 
 ## Installation
 
@@ -220,8 +220,6 @@ Commands:
   liquidate  Stops live trading and liquidates existing positions for a certain project.
   stop       Stops live trading for a certain project without liquidating existing positions.
 ```
-
-_See code: [lean/commands/cloud/live.py](lean/commands/cloud/live.py)_
 
 ### `lean cloud live deploy`
 
@@ -742,8 +740,6 @@ Commands:
   submit-order  Represents a command to submit an order to the algorithm.
   update-order  Represents a command to update a specific order by id.
 ```
-
-_See code: [lean/commands/live.py](lean/commands/live.py)_
 
 ### `lean live add-security`
 
