@@ -37,13 +37,7 @@ class HTTPClient:
         :param kwargs: any kwargs to pass on to requests.get()
         :return: the response of the request
         """
-        self._log_request("GET", url, **kwargs)
-
-        raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.get(url, **kwargs)
-
-        self._check_response(response, raise_for_status)
-        return response
+        return self.request("GET", url, **kwargs)
 
     def post(self, url: str, **kwargs) -> requests.Response:
         """A wrapper around requests.post().
@@ -54,13 +48,7 @@ class HTTPClient:
         :param kwargs: any kwargs to pass on to requests.post()
         :return: the response of the request
         """
-        self._log_request("POST", url, **kwargs)
-
-        raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.post(url, **kwargs)
-
-        self._check_response(response, raise_for_status)
-        return response
+        return self.request("POST", url, **kwargs)
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
         """A wrapper around requests.request().
@@ -75,7 +63,13 @@ class HTTPClient:
         self._log_request(method, url, **kwargs)
 
         raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.request(method, url, **kwargs)
+        try:
+            response = requests.request(method, url, **kwargs)
+        except requests.exceptions.SSLError as e:
+            self._logger.error(f"""Detected SSL error, this might be due to
+            custom certificates in you environment or system trust store.
+            `Please visit library/homePage https://pypi.org/project/python-certifi-win32/`
+            {e}""".strip())
 
         self._check_response(response, raise_for_status)
         return response
