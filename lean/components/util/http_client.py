@@ -67,12 +67,12 @@ class HTTPClient:
         try:
             response = requests.request(method, url, **kwargs)
         except requests.exceptions.SSLError as e:
-            raise MoreInfoError(f"""
+            raise Exception(f"""
 Detected SSL error, this might be due to custom certificates in your environment or system trust store.
 A known limitation of the python requests implementation. 
 Please consider installing library https://pypi.org/project/python-certifi-win32/. 
-Related issue
-    """.strip(), "https://github.com/psf/requests/issues/2966")
+Related issue https://github.com/psf/requests/issues/2966
+    """.strip())
 
         self._check_response(response, raise_for_status)
         return response

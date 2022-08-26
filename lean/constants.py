@@ -20,10 +20,10 @@ from pathlib import Path
 LEAN_PYTHON_VERSION = "3.8"
 
 # The strict python version of docker image
-LEAN_STRICT_PYTHON_VERSION = LEAN_PYTHON_VERSION + ".13"
+LEAN_STRICT_PYTHON_VERSION =  f"{LEAN_PYTHON_VERSION}.13"
 
 # The path to the root python directory in docker image
-DOCKER_PYTHON_SITE_PACKAGES_PATH = "/root/.local/lib/python3.8/site-packages"
+DOCKER_PYTHON_SITE_PACKAGES_PATH = f"/root/.local/lib/python{LEAN_PYTHON_VERSION}/site-packages"
 
 # The file in which general CLI configuration is stored
 LEAN_ROOT_PATH = "/Lean/Launcher/bin/Debug"
