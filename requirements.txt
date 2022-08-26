@@ -4,7 +4,7 @@
 -e .
 
 wheel
-pytest==6.2.2
-pyfakefs==4.3.3
-responses==0.12.1
-lxml-stubs==0.1.1
+pytest==7.1.2
+pyfakefs==4.6.3
+responses==0.21.0
+lxml-stubs==0.4.0
