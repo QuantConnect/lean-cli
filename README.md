@@ -661,7 +661,7 @@ Usage: lean library add [OPTIONS] PROJECT NAME
   NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
 
   If --version is not given, the package is pinned to the latest compatible version. For C# projects, this is the latest
-  available version. For Python projects, this is the latest version compatible with Python 3.6 (which is what the
+  available version. For Python projects, this is the latest version compatible with Python 3.8 (which is what the
   Docker images use).
 
   Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH and the
@@ -1244,7 +1244,7 @@ _See code: [lean/commands/whoami.py](lean/commands/whoami.py)_
 
 ## Development
 
-To work on the Lean CLI, clone the repository, enter an environment containing Python 3.6+ and run `pip install -r requirements.txt`. This command will install the required dependencies and installs the CLI in editable mode. This means you'll be able to edit the code and immediately see the results the next time you run `lean`.
+To work on the Lean CLI, clone the repository, enter an environment containing Python 3.7+ and run `pip install -r requirements.txt`. This command will install the required dependencies and installs the CLI in editable mode. This means you'll be able to edit the code and immediately see the results the next time you run `lean`.
 
 If you need to add dependencies, first update `setup.py` (if it is a production dependency) or `requirements.txt` (if it is a development dependency) and then re-run `pip install -r requirements.txt`.
 

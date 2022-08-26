@@ -275,7 +275,7 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
 
     If --version is not given, the package is pinned to the latest compatible version.
     For C# projects, this is the latest available version.
-    For Python projects, this is the latest version compatible with Python 3.6 (which is what the Docker images use).
+    For Python projects, this is the latest version compatible with Python 3.8 (which is what the Docker images use).
 
     Custom C# libraries are added to your project's .csproj file,
     which is then restored if dotnet is on your PATH and the --no-local flag has not been given.
