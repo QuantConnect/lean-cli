@@ -16,6 +16,7 @@ import json
 import requests
 
 from lean.components.util.logger import Logger
+from lean.models.errors import MoreInfoError
 
 
 class HTTPClient:
@@ -66,11 +67,12 @@ class HTTPClient:
         try:
             response = requests.request(method, url, **kwargs)
         except requests.exceptions.SSLError as e:
-            self._logger.error(f"""Detected SSL error, this might be due to custom certificates in your environment or system trust store.
-            A known limitation of the python requests implementation. 
-            Please consider installing library https://pypi.org/project/python-certifi-win32/. 
-            Related issue https://github.com/psf/requests/issues/2966
-            {e}""".strip())
+            raise MoreInfoError(f"""
+Detected SSL error, this might be due to custom certificates in your environment or system trust store.
+A known limitation of the python requests implementation. 
+Please consider installing library https://pypi.org/project/python-certifi-win32/. 
+Related issue
+    """.strip(), "https://github.com/psf/requests/issues/2966")
 
         self._check_response(response, raise_for_status)
         return response

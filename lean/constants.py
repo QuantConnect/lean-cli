@@ -16,11 +16,11 @@ from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
 
-# The strict python version of docker image
-LEAN_STRICT_PYTHON_VERSION = "3.8.13"
-
 # The python version of docker image
 LEAN_PYTHON_VERSION = "3.8"
+
+# The strict python version of docker image
+LEAN_STRICT_PYTHON_VERSION = LEAN_PYTHON_VERSION + ".13"
 
 # The path to the root python directory in docker image
 DOCKER_PYTHON_SITE_PACKAGES_PATH = "/root/.local/lib/python3.8/site-packages"
