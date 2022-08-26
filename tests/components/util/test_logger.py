@@ -67,7 +67,7 @@ def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> N
     logger = Logger()
     progress = logger.progress()
 
-    result = progress._started
+    result = progress.live._started
 
     progress.stop()
     assert result
