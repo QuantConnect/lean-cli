@@ -10,9 +10,6 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, macos-12, macos-11, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-        exclude:
-          - os: ubuntu-22.04
-            python-version: '3.6'
 
     steps:
       - name: Checkout
@@ -42,9 +39,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.8
 
       - name: Install packaging dependencies
         run: pip install wheel
