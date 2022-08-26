@@ -18,7 +18,7 @@ import subprocess
 from distutils.version import StrictVersion
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
-
+from lean.constants import LEAN_STRICT_PYTHON_VERSION
 import click
 from dateutil.parser import isoparse
 from lxml import etree
@@ -158,8 +158,7 @@ def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
     pypi_data = json.loads(response.text)
     name = pypi_data["info"]["name"]
 
-    required_python_version = "3.6.7" if platform.machine() in ["arm64", "aarch64"] else "3.6.8"
-    required_python_version = StrictVersion(required_python_version)
+    required_python_version = StrictVersion(LEAN_STRICT_PYTHON_VERSION)
 
     last_compatible_version = None
     last_compatible_version_upload_time = None
@@ -233,7 +232,7 @@ def _add_python(project_dir: Path, name: str, version: Optional[str], no_local: 
 
     :param project_dir: the path to the project directory
     :param name: the name of the library to add
-    :param version: the version of the library to use, or None to pin to the latest version supporting Python 3.6
+    :param version: the version of the library to use, or None to pin to the latest version supporting Python 3.8
     :param no_local: whether installing the package in the local Python environment must be skipped
     """
     logger = container.logger()
