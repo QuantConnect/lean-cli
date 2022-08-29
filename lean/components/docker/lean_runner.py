@@ -31,6 +31,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROOT_PATH
+from lean.constants import DOCKER_PYTHON_SITE_PACKAGES_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
 
@@ -401,7 +402,7 @@ class LeanRunner:
         # Mount a volume to the user packages directory so we don't install packages every time
         site_packages_volume = self._docker_manager.create_site_packages_volume(requirements_txt)
         run_options["volumes"][site_packages_volume] = {
-            "bind": "/root/.local/lib/python3.6/site-packages",
+            "bind": f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}",
             "mode": "rw"
         }
 
@@ -412,7 +413,7 @@ class LeanRunner:
         # We only need to do this if it hasn't already been done before for this site packages volume
         # To keep track of this we create a special file in the site packages directory after installation
         # If this file already exists we can skip pip install completely
-        marker_file = "/root/.local/lib/python3.6/site-packages/pip-install-done"
+        marker_file = f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}/pip-install-done"
         run_options["commands"].extend([
             f"! test -f {marker_file} && pip install --user --progress-bar off -r /requirements.txt",
             f"touch {marker_file}"

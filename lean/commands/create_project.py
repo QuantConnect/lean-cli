@@ -113,7 +113,7 @@ DEFAULT_PYTHON_NOTEBOOK = """
             "name": "python",
             "nbconvert_exporter": "python",
             "pygments_lexer": "ipython3",
-            "version": "3.6.8"
+            "version": "3.8.13"
         }
     },
     "nbformat": 4,

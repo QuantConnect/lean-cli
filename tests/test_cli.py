@@ -204,7 +204,7 @@ def test_cli() -> None:
     assert (python_project_dir / "requirements.txt").is_file()
     assert f"altair==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
 
-    # Cannot add custom Python library incompatible with Python 3.6
+    # Cannot add custom Python library incompatible with lean.constants.LEAN_PYTHON_VERSION
     run_command(["lean", "library", "add", python_project_name, "PyS3DE"], cwd=test_dir, expected_return_code=1)
 
     # Cannot add custom Python library without version when it's not on PyPI
@@ -217,8 +217,8 @@ def test_cli() -> None:
                 cwd=test_dir,
                 expected_return_code=1)
 
-    # Cannot add custom Python library with version when version is incompatible with Python 3.6
-    run_command(["lean", "library", "add", python_project_name, "matplotlib", "--version", "3.4.2"],
+    # Cannot add custom Python library with version when version is incompatible with lean.constants.LEAN_PYTHON_VERSION
+    run_command(["lean", "library", "add", python_project_name, "matplotlib", "--version", "2.2.3"],
                 cwd=test_dir,
                 expected_return_code=1)
 

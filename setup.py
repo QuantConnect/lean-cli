@@ -46,19 +46,17 @@ def get_stubs_version_range() -> str:
 
 # Production dependencies
 install_requires = [
-    "click~=8.0.4",
-    "requests~=2.27.1",
-    "json5~=0.9.8",
-    "docker~=5.0.3",
-    "rich~=9.10.0",
-    "dependency-injector~=4.39.1",
-    "pydantic~=1.8.2",
+    "click~=8.1.3",
+    "requests~=2.28.1",
+    "json5~=0.9.10",
+    "docker~=6.0.0",
+    "rich~=12.5.1",
+    "dependency-injector~=4.40.0",
+    "pydantic~=1.9.2",
     "python-dateutil~=2.8.2",
-    "lxml~=4.9.0",
+    "lxml~=4.9.1",
     "maskpass==0.3.6",
     "joblib~=1.1.0",
-    "python-certifi-win32~=1.6",
-    "pyshortcuts~=1.8.2",
     "wrapt~=1.14.1",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
@@ -81,17 +79,17 @@ setup(
         "console_scripts": ["lean=lean.main:main"]
     },
     install_requires=install_requires,
-    python_requires=">= 3.6",
+    python_requires=">= 3.7",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: Financial and Insurance Industry",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9"
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10"
     ],
     project_urls={
         "Documentation": "https://www.lean.io/docs/lean-cli/key-concepts/getting-started",

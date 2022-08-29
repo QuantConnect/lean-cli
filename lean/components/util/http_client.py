@@ -16,6 +16,7 @@ import json
 import requests
 
 from lean.components.util.logger import Logger
+from lean.models.errors import MoreInfoError
 
 
 class HTTPClient:
@@ -37,13 +38,7 @@ class HTTPClient:
         :param kwargs: any kwargs to pass on to requests.get()
         :return: the response of the request
         """
-        self._log_request("GET", url, **kwargs)
-
-        raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.get(url, **kwargs)
-
-        self._check_response(response, raise_for_status)
-        return response
+        return self.request("GET", url, **kwargs)
 
     def post(self, url: str, **kwargs) -> requests.Response:
         """A wrapper around requests.post().
@@ -54,13 +49,7 @@ class HTTPClient:
         :param kwargs: any kwargs to pass on to requests.post()
         :return: the response of the request
         """
-        self._log_request("POST", url, **kwargs)
-
-        raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.post(url, **kwargs)
-
-        self._check_response(response, raise_for_status)
-        return response
+        return self.request("POST", url, **kwargs)
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
         """A wrapper around requests.request().
@@ -75,7 +64,15 @@ class HTTPClient:
         self._log_request(method, url, **kwargs)
 
         raise_for_status = kwargs.pop("raise_for_status", True)
-        response = requests.request(method, url, **kwargs)
+        try:
+            response = requests.request(method, url, **kwargs)
+        except requests.exceptions.SSLError as e:
+            raise Exception(f"""
+Detected SSL error, this might be due to custom certificates in your environment or system trust store.
+A known limitation of the python requests implementation. 
+Please consider installing library https://pypi.org/project/python-certifi-win32/. 
+Related issue https://github.com/psf/requests/issues/2966
+    """.strip())
 
         self._check_response(response, raise_for_status)
         return response

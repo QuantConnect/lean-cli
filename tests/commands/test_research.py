@@ -19,7 +19,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -164,10 +164,10 @@ def test_research_opens_browser_when_container_started(open) -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    logs = """
+    logs = f"""
 [I 21:06:21.500 LabApp] Writing notebook server cookie secret to /root/.local/share/jupyter/runtime/notebook_cookie_secret
 [W 21:06:21.692 LabApp] All authentication is disabled.  Anyone who can connect to this server will be able to run code.
-[I 21:06:21.698 LabApp] JupyterLab extension loaded from /opt/miniconda3/lib/python3.6/site-packages/jupyterlab
+[I 21:06:21.698 LabApp] JupyterLab extension loaded from /opt/miniconda3/lib/python{LEAN_PYTHON_VERSION}/site-packages/jupyterlab
 [I 21:06:21.698 LabApp] JupyterLab application directory is /opt/miniconda3/share/jupyter/lab
 [I 21:06:21.700 LabApp] Serving notebooks from local directory: /Lean/Launcher/bin/Debug/Notebooks
 [I 21:06:21.700 LabApp] The Jupyter Notebook is running at:
