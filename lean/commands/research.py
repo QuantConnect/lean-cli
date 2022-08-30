@@ -134,7 +134,7 @@ def research(project: Path,
     # Allow notebooks to be embedded in iframes
     run_options["commands"].append("mkdir -p ~/.jupyter")
     run_options["commands"].append(
-        'echo "c.NotebookApp.disable_check_xsrf = True\nc.NotebookApp.tornado_settings = {\'headers\': {\'Content-Security-Policy\': \'frame-ancestors self *\'}}" > ~/.jupyter/jupyter_notebook_config.py')
+        'echo "c.ServerApp.disable_check_xsrf = True\nc.ServerApp.tornado_settings = {\'headers\': {\'Content-Security-Policy\': \'frame-ancestors self *\'}}" > ~/.jupyter/jupyter_server_config.py')
 
     # Hide headers in notebooks
     run_options["commands"].append("mkdir -p ~/.ipython/profile_default/static/custom")
