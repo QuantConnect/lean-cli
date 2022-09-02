@@ -878,21 +878,27 @@ Options:
                                   commodities on MCX
   --terminal-link-organization TEXT
                                   The name or id of the organization with the Terminal Link module subscription
-  --bloomberg-environment [Production|Beta]
+  --terminal-link-environment [Production|Beta]
                                   The environment to run in
-  --bloomberg-server-host TEXT    The host of the Bloomberg server
-  --bloomberg-server-port INTEGER
-                                  The port of the Bloomberg server
-  --bloomberg-symbol-map-file FILE
-                                  The path to the Bloomberg symbol map file
-  --bloomberg-emsx-broker TEXT    The EMSX broker to use
-  --bloomberg-emsx-user-time-zone TEXT
+  --terminal-link-server-host TEXT
+                                  The host of the TerminalLink server
+  --terminal-link-server-port INTEGER
+                                  The port of the TerminalLink server
+  --terminal-link-symbol-map-file FILE
+                                  The path to the TerminalLink symbol map file
+  --terminal-link-emsx-broker TEXT
+                                  The EMSX broker to use
+  --terminal-link-emsx-user-time-zone TEXT
                                   The EMSX user timezone to use
-  --bloomberg-emsx-account TEXT   The EMSX account to use
-  --bloomberg-emsx-strategy TEXT  The EMSX strategy to use
-  --bloomberg-emsx-notes TEXT     The EMSX notes to use
-  --bloomberg-emsx-handling TEXT  The EMSX handling to use
-  --bloomberg-allow-modification BOOLEAN
+  --terminal-link-emsx-account TEXT
+                                  The EMSX account to use
+  --terminal-link-emsx-strategy TEXT
+                                  The EMSX strategy to use
+  --terminal-link-emsx-notes TEXT
+                                  The EMSX notes to use
+  --terminal-link-emsx-handling TEXT
+                                  The EMSX handling to use
+  --terminal-link-allow-modification BOOLEAN
                                   Whether modification is allowed
   --atreyu-organization TEXT      The name or id of the organization with the Atreyu module subscription
   --atreyu-host TEXT              The host of the Atreyu server
