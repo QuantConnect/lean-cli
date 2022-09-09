@@ -35,7 +35,8 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
 from lean.constants import SITE_PACKAGES_VOLUME_LIMIT, \
-    DOCKER_NETWORK
+    DOCKER_NETWORK, CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
+
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 from lean.components.util.custom_json_encoder import DecimalEncoder
@@ -59,8 +60,11 @@ class DockerManager:
 
         :param image: the image to pull
         """
-        self._logger.info(f"Pulling {image}...")
+        if image.name == CUSTOM_RESEARCH or image.name == CUSTOM_ENGINE or image.name == CUSTOM_FOUNDATION:
+            self._logger.info(f"Skip pulling local image {image}...")
+            return
 
+        self._logger.info(f"Pulling {image}...")
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
@@ -425,7 +429,7 @@ class DockerManager:
             return "Permission denied" in str(exception)
         return False
 
-    def write_to_file(self, docker_container_name: str, docker_file: Path, data: Dict[str, Any]) -> None:        
+    def write_to_file(self, docker_container_name: str, docker_file: Path, data: Dict[str, Any]) -> None:
         """Write data to the file in docker.
 
         Args:
@@ -438,7 +442,7 @@ class DockerManager:
             raise ValueError(f"Container {docker_container_name} does not exist")
         if docker_container.status != "running":
             raise ValueError(f"Container {docker_container_name} is not running")
-            
+
         data = json.dumps(data, cls=DecimalEncoder)
         data = data.replace('"','\\"')
         command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
@@ -448,7 +452,7 @@ class DockerManager:
             raise ValueError(f"Failed to write to {docker_file.name}: {exception.output.decode('utf-8')}")
         except Exception as e:
             raise ValueError(f"Failed to write to {docker_file.name}: {e}")
-    
+
     def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=30) -> Dict[str,Any]:
         """Read data from file in docker.
 
@@ -489,7 +493,7 @@ class DockerManager:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
         if not success and not error_message:
             error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds"
-        
+
         return {
             "error": error_message,
             "success": success,
