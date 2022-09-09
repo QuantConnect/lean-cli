@@ -140,7 +140,7 @@ class LeanRunner:
 
         # Format error messages for cleaner output logs
         run_options["format_output"] = self.format_error_before_logging
-        
+
         success = self._docker_manager.run_image(image, **run_options)
 
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
@@ -186,7 +186,7 @@ class LeanRunner:
 
         # Install the required modules when they're needed
         if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
-            and lean_config.get("data-downloader", None) == "BloombergDataDownloader":
+            and lean_config.get("data-downloader", None) == "TerminalLinkDataDownloader":
             self._module_manager.install_module(TERMINAL_LINK_PRODUCT_ID, lean_config["job-organization-id"])
 
         # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
@@ -249,7 +249,7 @@ class LeanRunner:
 
         # Mount all local files referenced in the Lean config
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        for key in ["transaction-log", "bloomberg-symbol-map-file"]:
+        for key in ["transaction-log", "terminal-link-symbol-map-file"]:
             if key not in lean_config or lean_config[key] == "":
                 continue
 
@@ -266,7 +266,7 @@ class LeanRunner:
             lean_config[key] = f"/Files/{key}"
 
         # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
-        for key in ["bloomberg-server-host"]:
+        for key in ["terminal-link-server-host"]:
             if key not in lean_config:
                 continue
 
@@ -352,7 +352,7 @@ class LeanRunner:
 
         run_options["commands"].append(
             f"python -m compileall {' '.join(source_files)}")
-            
+
         # Mount the project directory
         run_options["volumes"][str(project_dir)] = {
             "bind": "/LeanCLI",

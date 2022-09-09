@@ -172,7 +172,7 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
     container.api_client.override(providers.Object(api_client))
-    
+
     result = CliRunner().invoke(lean, ["live",
                                        "Python Project",
                                        "--environment", "live-paper",
@@ -367,16 +367,16 @@ brokerage_required_options = {
         "atreyu-organization": "abc",
     },
     "Terminal Link": {
-        "bloomberg-environment": "Beta",
-        "bloomberg-server-host": "abc",
-        "bloomberg-server-port": "123",
-        "bloomberg-emsx-broker": "abc",
-        "bloomberg-allow-modification": "no",
-        "bloomberg-emsx-account": "abc",
-        "bloomberg-emsx-strategy": "abc",
-        "bloomberg-emsx-notes": "abc",
-        "bloomberg-emsx-handling": "abc",
-        "bloomberg-emsx-user-time-zone": "abc",
+        "terminal-link-environment": "Beta",
+        "terminal-link-server-host": "abc",
+        "terminal-link-server-port": "123",
+        "terminal-link-emsx-broker": "abc",
+        "terminal-link-allow-modification": "no",
+        "terminal-link-emsx-account": "abc",
+        "terminal-link-emsx-strategy": "abc",
+        "terminal-link-emsx-notes": "abc",
+        "terminal-link-emsx-handling": "abc",
+        "terminal-link-emsx-user-time-zone": "abc",
         "terminal-link-organization": "abc",
     },
     "Kraken": {
@@ -441,7 +441,7 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
     for key, value in data_providers_required_options[data_provider].items():
         options.extend([f"--{key}", value])
 
-    result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", 
+    result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper",
                                 "--data-provider", data_provider,
                                 *options])
 
