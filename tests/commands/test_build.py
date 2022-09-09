@@ -21,10 +21,11 @@ from dependency_injector import providers
 from lean.commands import lean
 from lean.container import container
 from lean.models.docker import DockerImage
+from lean.constants import CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
 
-CUSTOM_FOUNDATION_IMAGE = DockerImage(name="lean-cli/foundation", tag="latest")
-CUSTOM_ENGINE_IMAGE = DockerImage(name="lean-cli/engine", tag="latest")
-CUSTOM_RESEARCH_IMAGE = DockerImage(name="lean-cli/research", tag="latest")
+CUSTOM_FOUNDATION_IMAGE = DockerImage(name=CUSTOM_FOUNDATION, tag="latest")
+CUSTOM_ENGINE_IMAGE = DockerImage(name=CUSTOM_ENGINE, tag="latest")
+CUSTOM_RESEARCH_IMAGE = DockerImage(name=CUSTOM_RESEARCH, tag="latest")
 
 
 def create_fake_repositories() -> None:

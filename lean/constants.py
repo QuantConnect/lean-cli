@@ -16,6 +16,11 @@ from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
 
+# Custom images names
+CUSTOM_FOUNDATION = "lean-cli/foundation"
+CUSTOM_ENGINE = "lean-cli/engine"
+CUSTOM_RESEARCH = "lean-cli/research"
+
 # The python version of docker image
 LEAN_PYTHON_VERSION = "3.8"
 

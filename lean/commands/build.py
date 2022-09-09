@@ -20,7 +20,7 @@ import click
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
 from lean.models.docker import DockerImage
-
+from lean.constants import CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
 
 def _normalize_newlines(text: str) -> str:
     """Normalizes the newlines in a string to use \n (instead of \r or \r\n).
@@ -160,16 +160,16 @@ def build(root: Path, tag: str) -> None:
         foundation_image = DockerImage(name="quantconnect/lean", tag="foundation")
         container.docker_manager().pull_image(foundation_image)
     else:
-        foundation_image = DockerImage(name="lean-cli/foundation", tag=tag)
+        foundation_image = DockerImage(name=CUSTOM_FOUNDATION, tag=tag)
         _build_image(root, foundation_dockerfile, None, foundation_image)
 
     _compile_csharp(root, lean_dir, foundation_image)
     _compile_csharp(root, alpha_streams_dir, foundation_image)
 
-    custom_engine_image = DockerImage(name="lean-cli/engine", tag=tag)
+    custom_engine_image = DockerImage(name=CUSTOM_ENGINE, tag=tag)
     _build_image(root, lean_dir / "Dockerfile", foundation_image, custom_engine_image)
 
-    custom_research_image = DockerImage(name="lean-cli/research", tag=tag)
+    custom_research_image = DockerImage(name=CUSTOM_RESEARCH, tag=tag)
     _build_image(root, lean_dir / "DockerfileJupyter", custom_engine_image, custom_research_image)
 
     logger = container.logger()
