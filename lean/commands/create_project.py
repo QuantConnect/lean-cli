@@ -40,67 +40,6 @@ class $CLASS_NAME$(QCAlgorithm):
             self.Debug("Purchased Stock")
 '''.strip() + "\n"
 
-POMEGRANATE_PYTHON_MAIN = ''''
-from AlgorithmImports import *
-from pomegranate import *
-
-class $CLASS_NAME$(QCAlgorithm):
-    def Initialize(self):
-        self.SetStartDate(2013, 10, 7)  # Set Start Date
-        self.SetEndDate(2013, 10, 11)  # Set End Date
-        
-        dists = [NormalDistribution(5, 1), NormalDistribution(1, 7), NormalDistribution(8,2)]
-        trans_mat = numpy.array([[0.7, 0.3, 0.0],
-                                    [0.0, 0.8, 0.2],
-                                    [0.0, 0.0, 0.9]])
-        starts = numpy.array([1.0, 0.0, 0.0])
-        ends = numpy.array([0.0, 0.0, 0.1])
-        model = HiddenMarkovModel.from_matrix(trans_mat, dists, starts, ends)
-'''.strip() + "\n"
-
-TENSORFORCE_PYTHON_MAIN = '''
-from AlgorithmImports import *
-from tensorforce import Agent, Environment
-
-class $CLASS_NAME$(QCAlgorithm):
-    def Initialize(self):
-        self.SetStartDate(2013, 10, 7)  # Set Start Date
-        self.SetEndDate(2013, 10, 11)  # Set End Date
-        
-        # Pre-defined or custom environment
-        environment = Environment.create(
-            environment='gym', level='CartPole', max_episode_timesteps=500
-        )
-
-        # Instantiate a Tensorforce agent
-        agent = Agent.create(
-            agent='tensorforce',
-            environment=environment,  # alternatively: states, actions, (max_episode_timesteps)
-            memory=10000,
-            update=dict(unit='timesteps', batch_size=64),
-            optimizer=dict(type='adam', learning_rate=3e-4),
-            policy=dict(network='auto'),
-            objective='policy_gradient',
-            reward_estimation=dict(horizon=20)
-        )
-
-        # Train for 2 episodes
-        for _ in range(2):
-
-            # Initialize episode
-            states = environment.reset()
-            terminal = False
-
-            while not terminal:
-                # Episode timestep
-                actions = agent.act(states=states)
-                states, terminal, reward = environment.execute(actions=actions)
-                agent.observe(terminal=terminal, reward=reward)
-
-        agent.close()
-        environment.close()
-'''.strip() + "\n"
-
 LIBRARY_PYTHON_MAIN = '''
 from AlgorithmImports import *
 

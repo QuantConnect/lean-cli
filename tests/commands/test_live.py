@@ -873,10 +873,11 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv,project_name", [("Foundation-Py-Deafult", "Python Project"),
-                                                ("Foundation-Pomegranate", "Python Pomegranate Project"),
-                                                ("Foundation-Tensorforce", "Python TensorForce Project")])
-def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str, project_name: str) -> None:
+@pytest.mark.parametrize("python_venv", ["Foundation-Py-Deafult",
+                                        "Foundation-Pomegranate",
+                                        "Foundation-Tensorforce",
+                                        None])
+def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
 
@@ -889,13 +890,13 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean,
-                                ["live", project_name, "--environment", "live-paper", "--python-venv", python_venv])
+                                ["live", "Python Project", "--environment", "live-paper", "--python-venv", python_venv])
 
     assert result.exit_code == 0
 
     lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "live-paper",
-                                                 Path(f"{project_name}/main.py").resolve(),
+                                                 Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,

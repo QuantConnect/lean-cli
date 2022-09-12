@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
-                                          DEFAULT_PYTHON_NOTEBOOK, POMEGRANATE_PYTHON_MAIN, TENSORFORCE_PYTHON_MAIN)
+                                          DEFAULT_PYTHON_NOTEBOOK)
 from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
     QCOrganizationData, QCOrganizationCredit
 
@@ -35,16 +35,6 @@ def create_fake_lean_cli_directory() -> None:
         (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME$", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
         (Path.cwd() / "Python Project" / "config.json"): json.dumps({
-            "algorithm-language": "Python",
-            "parameters": {}
-        }),
-        (Path.cwd() / "Python Pomegranate Project" / "main.py"): POMEGRANATE_PYTHON_MAIN.replace("$NAME$", "PythonPomegranateProject"),
-        (Path.cwd() / "Python Pomegranate Project" / "config.json"): json.dumps({
-            "algorithm-language": "Python",
-            "parameters": {}
-        }),
-        (Path.cwd() / "Python TensorForce Project" / "main.py"): TENSORFORCE_PYTHON_MAIN.replace("$NAME$", "PythonTensorforceProject"),
-        (Path.cwd() / "Python TensorForce Project" / "config.json"): json.dumps({
             "algorithm-language": "Python",
             "parameters": {}
         }),
