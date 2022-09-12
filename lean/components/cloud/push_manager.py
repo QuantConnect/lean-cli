@@ -108,9 +108,9 @@ class PushManager:
         """
         cloud_files = self._api_client.files.get_all(cloud_project.projectId)
         local_files = self._project_manager.get_source_files(project)
+        local_file_names = [local_file.relative_to(project).as_posix() for local_file in local_files]
 
-        for local_file in local_files:
-            file_name = local_file.relative_to(project).as_posix()
+        for local_file, file_name in zip(local_files, local_file_names):
             self._last_file = local_file
 
             if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
@@ -130,7 +130,7 @@ class PushManager:
 
         # Delete locally removed files in cloud
         files_to_remove = [cloud_file for cloud_file in cloud_files
-                           if not any(local_file.name == cloud_file.name for local_file in local_files)]
+                           if not any(local_file_name == cloud_file.name for local_file_name in local_file_names)]
         for file in files_to_remove:
             self._api_client.files.delete(cloud_project.projectId, file.name)
             self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
