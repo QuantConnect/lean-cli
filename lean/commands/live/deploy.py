@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import click
 from lean.click import LeanCommand, PathParameter, ensure_options
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_PYTHON_VENV
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
@@ -310,7 +310,7 @@ def _get_configs_for_options() -> List[Configuration]:
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--python-venv",
               type=str,
-              help=f"The Python virtual environment to use (defaults to {DEFAULT_PYTHON_VENV})")
+              help=f"The Python virtual environment to use")
 @click.option("--update",
               is_flag=True,
               default=False,

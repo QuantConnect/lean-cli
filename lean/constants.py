@@ -63,9 +63,6 @@ PROJECT_CONFIG_FILE_NAME = "config.json"
 # The default Docker image used when running the LEAN engine locally
 DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 
-# The default path of Python virtual environment used when running the LEAN engine locally
-DEFAULT_PYTHON_VENV = "/Foundation-Py-Default"
-
 # The default Docker image used when running a Jupyter Lab environment locally
 DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 

@@ -261,6 +261,35 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  False)
 
 
+@pytest.mark.parametrize("python_venv,backtest_project", [(None, "Python Project"),
+                                                ("Foundation-Py-Deafult", "Python Project"),
+                                                ("Foundation-Pomegranate", "Python Pomegranate Project"),
+                                                ("Foundation-Tensorforce", "Python TensorForce Project")])
+def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str, backtest_project: str) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    result = CliRunner().invoke(lean, ["backtest", backtest_project, "--python-venv", python_venv])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
+                                                 Path(f"{backtest_project}/main.py").resolve(),
+                                                 mock.ANY,
+                                                 DockerImage(name="custom/lean", tag="123"),
+                                                 None,
+                                                 False,
+                                                 False)
+
+
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
                                                     ("PyCharm", DebuggingMethod.PyCharm),
                                                     ("ptvsd", DebuggingMethod.PTVSD),
