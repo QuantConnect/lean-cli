@@ -107,8 +107,9 @@ class PushManager:
         :param cloud_project: the cloud project to push the files to
         """
         cloud_files = self._api_client.files.get_all(cloud_project.projectId)
+        local_files = self._project_manager.get_source_files(project)
 
-        for local_file in self._project_manager.get_source_files(project):
+        for local_file in local_files:
             file_name = local_file.relative_to(project).as_posix()
             self._last_file = local_file
 
@@ -126,6 +127,13 @@ class PushManager:
                 new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
                 self._project_manager.update_last_modified_time(local_file, new_file.modified)
                 self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
+
+        # Delete locally removed files in cloud
+        files_to_remove = [cloud_file for cloud_file in cloud_files
+                           if not any(local_file.name == cloud_file.name for local_file in local_files)]
+        for file in files_to_remove:
+            self._api_client.files.delete(cloud_project.projectId, file.name)
+            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
 
         self._last_file = None
 
