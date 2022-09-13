@@ -424,7 +424,7 @@ def deploy(project: Path,
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
     
     if python_venv is not None and python_venv != "":
-        lean_config["python-venv"] = f"/{python_venv}"
+        lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

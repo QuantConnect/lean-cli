@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 import json
 from pathlib import Path
 from unittest import mock
@@ -280,9 +281,18 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    project_path = Path("Python Project/main.py").resolve()
+    algorithm_file = container.project_manager().find_algorithm_file(project_path)
+    output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    lean_config = container.lean_config_manager().get_complete_lean_config("backtesting", project_path, None)
+    lean_config["algorithm-id"] = str(container.output_config_manager().get_backtest_id(output))
+    if python_venv:
+        lean_config["python-venv"] = f'/{python_venv}'
+
+    lean_runner.run_lean.assert_called_once_with(lean_config,
                                                  "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
+                                                 project_path,
                                                  mock.ANY,
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,
