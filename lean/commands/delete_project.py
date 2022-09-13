@@ -18,20 +18,36 @@ from lean.container import container
 
 
 @click.command(cls=LeanCommand)
-@click.argument("path", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-def delete_project(path: Path) -> None:
+@click.argument("project", type=str)
+def delete_project(project: str) -> None:
     """Delete a project both locally and in remotely, if there is a counterpart in the cloud.
+
+    The project is selected by name or id.
     """
     # Remove project from cloud
-    project_config = container.project_config_manager().get_project_config(path)
-    cloud_id = project_config.get("cloud-id")
-    if cloud_id is not None:
+    api_client = container.api_client()
+    all_projects = api_client.projects.get_all()
+    project_manager = container.project_manager()
+    logger = container.logger()
+
+    projects = []
+    try:
+        projects = project_manager.get_projects_by_name_or_id(all_projects, project)
+    except RuntimeError:
+        # The project might only be local
+        logger.info(f"The project {project} was not found in the cloud. "
+                                f"It will be removed locally if it exists.")
+        pass
+
+    full_project = next(iter(projects), None)
+
+    if full_project is not None:
         api_client = container.api_client()
-        api_client.projects.delete(cloud_id)
+        api_client.projects.delete(full_project.projectId)
 
     # Remove project locally
     project_manager = container.project_manager()
-    project_manager.delete_project(path)
+    project_path = full_project.name if full_project is not None else project
+    project_manager.delete_project(project_path)
 
-    logger = container.logger()
-    logger.info(f"Successfully deleted project '{path}'")
+    logger.info(f"Successfully deleted project '{project_path}'")
