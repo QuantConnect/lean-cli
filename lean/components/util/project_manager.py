@@ -157,6 +157,13 @@ class ProjectManager:
             self._generate_csproj(project_dir)
             self.generate_rider_config()
 
+    def delete_project(self, project_dir: Path) -> None:
+        """Deletes a project directory.
+
+        :param project_dir: the directory of the project to delete
+        """
+        shutil.rmtree(project_dir)
+
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
         try:

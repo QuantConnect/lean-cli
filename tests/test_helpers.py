@@ -32,13 +32,13 @@ def create_fake_lean_cli_directory() -> None:
     "data-folder": "data"
 }
         """,
-        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME$", "PythonProject"),
+        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$CLASS_NAME$", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
         (Path.cwd() / "Python Project" / "config.json"): json.dumps({
             "algorithm-language": "Python",
             "parameters": {}
         }),
-        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$NAME$", "CSharpProject"),
+        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$CLASS_NAME$", "CSharpProject"),
         (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
         (Path.cwd() / "CSharp Project" / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
