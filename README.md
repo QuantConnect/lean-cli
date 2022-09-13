@@ -424,7 +424,7 @@ Usage: lean cloud push [OPTIONS]
 
   This command overrides the content of cloud files with the content of their respective local counterparts.
 
-  This command will not delete cloud files which don't have a local counterpart.
+  This command will delete cloud files which don't have a local counterpart.
 
 Options:
   --project DIRECTORY  Path to the local project to push (all local projects if not specified)
