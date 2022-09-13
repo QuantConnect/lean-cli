@@ -13,11 +13,14 @@
 
 import json
 from pathlib import Path
+from unittest import mock
 from re import sub
 
 from click.testing import CliRunner
 
 from lean.commands import lean
+from lean.components.api.project_client import ProjectClient
+from lean.components.config.storage import Storage
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -27,20 +30,6 @@ def assert_project_exists(path: str) -> None:
     assert project_dir.exists()
     assert (project_dir / "main.py").exists()
     assert (project_dir / "research.ipynb").exists()
-
-    class_name = ''.join(sub(r"([_\-])+", " ", path).title().replace(" ", ""))
-
-    with open(project_dir / "main.py") as file:
-        if path.startswith("Library/"):
-            assert f"class {class_name}" in file.read()
-        else:
-            assert f"class {class_name}(QCAlgorithm)" in file.read()
-
-    with open(project_dir / "research.ipynb") as file:
-        assert json.load(file)["metadata"]["kernelspec"]["language"] == "python"
-
-    with open(project_dir / "config.json") as file:
-        assert json.load(file)["algorithm-language"] == "Python"
 
 
 def assert_project_does_not_exist(path: str) -> None:
@@ -53,8 +42,37 @@ def test_delete_project_deletes_project_directory() -> None:
 
     path = "Python Project"
     assert_project_exists(path)
+
+    with mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
+        result = CliRunner().invoke(lean, ["delete-project", path])
+        assert result.exit_code == 0
+
+    mock_delete.assert_not_called()
+    assert_project_does_not_exist(path)
+
+
+def test_delete_project_deletes_in_cloud_if_cloud_id_is_set() -> None:
+    create_fake_lean_cli_directory()
+
+    project_id = 1
+    path = "Python Project"
+    assert_project_exists(path)
+
+    with mock.patch.object(Storage, 'get', return_value=project_id) as mock_get,\
+         mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
+        result = CliRunner().invoke(lean, ["delete-project", path])
+        assert result.exit_code == 0
+
+    mock_get.assert_called_once_with("cloud-id")
+    mock_delete.assert_called_once_with(project_id)
+    assert_project_does_not_exist(path)
+
+
+def test_delete_project_aborts_when_path_does_not_exist() -> None:
+    create_fake_lean_cli_directory()
+
+    path = "Non Existing Project"
+    assert_project_does_not_exist(path)
     result = CliRunner().invoke(lean, ["delete-project", path])
 
-    assert result.exit_code == 0
-
-    assert_project_does_not_exist(path)
+    assert result.exit_code != 0

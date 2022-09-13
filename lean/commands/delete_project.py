@@ -20,7 +20,7 @@ from lean.container import container
 @click.command(cls=LeanCommand)
 @click.argument("path", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 def delete_project(path: Path) -> None:
-    """Delete a project both locally and in the cloud.
+    """Delete a project both locally and in remotely, if there is a counterpart in the cloud.
     """
     # Remove project from cloud
     project_config = container.project_config_manager().get_project_config(path)
