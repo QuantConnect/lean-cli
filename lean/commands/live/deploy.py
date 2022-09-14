@@ -310,7 +310,7 @@ def _get_configs_for_options() -> List[Configuration]:
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--python-venv",
               type=str,
-              help=f"The Python virtual environment to use")
+              help=f"The path of the python virtual environment to be used")
 @click.option("--update",
               is_flag=True,
               default=False,
