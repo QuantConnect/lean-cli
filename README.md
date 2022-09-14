@@ -136,6 +136,8 @@ Options:
                                   QuantConnect as data provider
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --python-venv [Foundation-Py-Default|Foundation-Pomegranate|Foundation-Tensorforce]
+                                  The python virtual environment to use
   --update                        Pull the LEAN engine image before running the backtest
   --backtest-name TEXT            Backtest name
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -955,6 +957,8 @@ Options:
                                   The name or id of the organization with the QuantConnect datafeed module subscription
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --python-venv [Foundation-Py-Default|Foundation-Pomegranate|Foundation-Tensorforce]
+                                  The python virtual environment to use
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
