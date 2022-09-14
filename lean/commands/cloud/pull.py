@@ -30,10 +30,17 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     This command will not delete local files for which there is no counterpart in the cloud.
     """
     # Parse which projects need to be pulled
+    project_id = None
+    if project is not None:
+        try:
+            project_id = int(project)
+        except ValueError:
+            pass
+
     api_client = container.api_client()
     all_projects = api_client.projects.get_all()
     project_manager = container.project_manager()
-    projects_to_pull = project_manager.get_projects_by_name_or_id(all_projects, project)
+    projects_to_pull = project_manager.get_projects_by_name_or_id(all_projects, project_id or project)
 
     if project is None and not pull_bootcamp:
         projects_to_pull = [p for p in projects_to_pull if not p.name.startswith("Boot Camp/")]

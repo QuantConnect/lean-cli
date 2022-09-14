@@ -86,6 +86,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean create-project`](#lean-create-project)
 - [`lean data download`](#lean-data-download)
 - [`lean data generate`](#lean-data-generate)
+- [`lean delete-project`](#lean-delete-project)
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
@@ -631,6 +632,24 @@ Options:
 ```
 
 _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
+
+### `lean delete-project`
+
+Delete a project locally and in the cloud if it exists.
+
+```
+Usage: lean delete-project [OPTIONS] PROJECT
+
+  Delete a project locally and in the cloud if it exists.
+
+  The project is selected by name or cloud id.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/delete_project.py](lean/commands/delete_project.py)_
 
 ### `lean init`
 

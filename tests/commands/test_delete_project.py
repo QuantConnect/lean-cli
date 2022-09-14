@@ -98,21 +98,6 @@ def test_delete_project_aborts_when_path_does_not_exist() -> None:
     mock_delete.assert_not_called()
 
 
-def test_delete_project_aborts_when_path_is_no_a_valid_project() -> None:
-    create_fake_lean_cli_directory()
-
-    path = "Non Existing Project"
-    assert_project_does_not_exist(path)
-
-    with mock.patch.object(ProjectClient, 'get_all', return_value=create_cloud_projects()) as mock_get_all,\
-         mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
-        result = CliRunner().invoke(lean, ["delete-project", path])
-        assert result.exit_code != 0
-
-    mock_get_all.assert_called_once()
-    mock_delete.assert_not_called()
-
-
 def test_delete_project_by_id_aborts_when_not_found_in_cloud() -> None:
     create_fake_lean_cli_directory()
 

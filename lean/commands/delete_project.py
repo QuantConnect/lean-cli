@@ -22,9 +22,9 @@ from lean.container import container
 @click.command(cls=LeanCommand)
 @click.argument("project", type=str)
 def delete_project(project: str) -> None:
-    """Delete a project both locally and in remotely, if there is a counterpart in the cloud.
+    """Delete a project locally and in the cloud if it exists.
 
-    The project is selected by name or id.
+    The project is selected by name or cloud id.
     """
     # Remove project from cloud
     api_client = container.api_client()

@@ -164,9 +164,6 @@ class ProjectManager:
 
         :param project_dir: the directory of the project to delete
         """
-        if not self._directory_is_project(project_dir):
-            raise RuntimeError(f"Project directory {project_dir} is not a valid Lean project directory")
-
         try:
             shutil.rmtree(project_dir)
         except FileNotFoundError:
@@ -194,30 +191,6 @@ class ProjectManager:
             projects = cloud_projects
 
         return projects
-
-    def _directory_is_project(self, project_dir: Path) -> bool:
-        """Checks if a directory is a project.
-
-        :param project_dir: the directory of the project to check
-        """
-        if not project_dir.exists():
-            return False
-
-        config_file = project_dir / "config.json"
-        if not config_file.exists():
-            return False
-
-        project_language = None
-        with open(config_file) as file:
-            project_language = json.load(file)["algorithm-language"]
-
-        if project_language is None:
-            return False
-
-        if project_language == "Python":
-            return (project_dir / "main.py").exists() and (project_dir / "research.ipynb").exists()
-
-        return (project_dir / "Main.cs").exists() and (project_dir / "research.ipynb").exists()
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
