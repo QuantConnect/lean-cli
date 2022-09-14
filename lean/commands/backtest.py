@@ -264,6 +264,9 @@ def _select_organization() -> QCMinimalOrganization:
 @click.option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+@click.option("--python-venv",
+              type=str,
+              help=f"The path of the python virtual environment to be used")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -280,6 +283,7 @@ def backtest(project: Path,
              data_purchase_limit: Optional[int],
              release: bool,
              image: Optional[str],
+             python_venv: Optional[str],
              update: bool,
              backtest_name: str) -> None:
     """Backtest a project locally using Docker.
@@ -351,6 +355,9 @@ def backtest(project: Path,
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
+        
+    if python_venv is not None and python_venv != "":
+        lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config,

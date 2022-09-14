@@ -871,3 +871,36 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  None,
                                                  False,
                                                  False)
+
+
+@pytest.mark.parametrize("python_venv", ["Custom-venv",
+                                        "/Custom-venv",
+                                        None])
+def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
+    result = CliRunner().invoke(lean,
+                                ["live", "Python Project", "--environment", "live-paper", "--python-venv", python_venv])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    if python_venv:
+        assert args[0]["python-venv"] == "/Custom-venv"
+    else:
+        assert "python-venv" not in args[0]
