@@ -262,10 +262,9 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv", [None,
-                                        "Foundation-Py-Deafult",
-                                        "Foundation-Pomegranate",
-                                        "Foundation-Tensorforce"])
+@pytest.mark.parametrize("python_venv", ["Custom-venv",
+                                        "/Custom-venv",
+                                        None])
 def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
 
@@ -275,29 +274,23 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    api_client = mock.Mock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--python-venv", python_venv])
 
     assert result.exit_code == 0
 
-    project_path = Path("Python Project/main.py").resolve()
-    algorithm_file = container.project_manager().find_algorithm_file(project_path)
-    output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    
-    lean_config = container.lean_config_manager().get_complete_lean_config("backtesting", project_path, None)
-    lean_config["algorithm-id"] = str(container.output_config_manager().get_backtest_id(output))
-    if python_venv:
-        lean_config["python-venv"] = f'/{python_venv}'
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
 
-    lean_runner.run_lean.assert_called_once_with(lean_config,
-                                                 "backtesting",
-                                                 project_path,
-                                                 mock.ANY,
-                                                 DockerImage(name="custom/lean", tag="123"),
-                                                 None,
-                                                 False,
-                                                 False)
+    if python_venv:
+        assert args[0]["python-venv"] == f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
+    else:
+        assert "python-venv" not in args[0]
 
 
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
