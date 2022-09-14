@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 import itertools
 import json
 from pathlib import Path
@@ -902,6 +901,6 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
     args, _ = lean_runner.run_lean.call_args
 
     if python_venv:
-        assert args[0]["python-venv"] == f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
+        assert args[0]["python-venv"] == "/Custom-venv"
     else:
         assert "python-venv" not in args[0]
