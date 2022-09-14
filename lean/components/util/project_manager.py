@@ -18,7 +18,7 @@ import site
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pkg_resources
 
@@ -160,29 +160,64 @@ class ProjectManager:
     def delete_project(self, project_dir: Path) -> None:
         """Deletes a project directory.
 
-        :cloud_projects: all projects fetched from the cloud
+        Raises an error if the project directory does not exist.
+
         :param project_dir: the directory of the project to delete
         """
-        shutil.rmtree(project_dir)
+        if not self._directory_is_project(project_dir):
+            raise RuntimeError(f"Project directory {project_dir} is not a valid Lean project directory")
 
-    def get_projects_by_name_or_id(self, cloud_projects: List[QCProject], project: Optional[str]) -> List[QCProject]:
+        try:
+            shutil.rmtree(project_dir)
+        except FileNotFoundError:
+            raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
+
+    def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
+                                   project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.
 
         :param cloud_projects: all projects fetched from the cloud
         :param project: the name or id of the project
+        :return: a list of all the projects in the cloud that match the given name or id
         """
         projects = []
+        search_by_id = isinstance(project, int)
 
         if project is not None:
-            project_path = Path(project).as_posix()
+            project_path = Path(project).as_posix() if not search_by_id else None
             projects = [p for p in cloud_projects
-                        if str(p.projectId) == project or Path(p.name).as_posix() == project_path]
+                        if search_by_id and p.projectId == project or
+                        not search_by_id and Path(p.name).as_posix() == project_path]
             if len(projects) == 0:
                 raise RuntimeError("No project with the given name or id exists in the cloud")
         else:
             projects = cloud_projects
 
         return projects
+
+    def _directory_is_project(self, project_dir: Path) -> bool:
+        """Checks if a directory is a project.
+
+        :param project_dir: the directory of the project to check
+        """
+        if not project_dir.exists():
+            return False
+
+        config_file = project_dir / "config.json"
+        if not config_file.exists():
+            return False
+
+        project_language = None
+        with open(config_file) as file:
+            project_language = json.load(file)["algorithm-language"]
+
+        if project_language is None:
+            return False
+
+        if project_language == "Python":
+            return (project_dir / "main.py").exists() and (project_dir / "research.ipynb").exists()
+
+        return (project_dir / "Main.cs").exists() and (project_dir / "research.ipynb").exists()
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""

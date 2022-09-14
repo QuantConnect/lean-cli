@@ -12,8 +12,10 @@
 # limitations under the License.
 
 from pathlib import Path
+
 import click
-from lean.click import LeanCommand, PathParameter
+
+from lean.click import LeanCommand
 from lean.container import container
 
 
@@ -30,24 +32,30 @@ def delete_project(project: str) -> None:
     project_manager = container.project_manager()
     logger = container.logger()
 
+    project_id = None
+    try:
+        project_id = int(project)
+    except ValueError:
+        pass
+
     projects = []
     try:
-        projects = project_manager.get_projects_by_name_or_id(all_projects, project)
+        projects = project_manager.get_projects_by_name_or_id(all_projects, project_id or project)
     except RuntimeError:
-        # The project might only be local
-        logger.info(f"The project {project} was not found in the cloud. "
-                                f"It will be removed locally if it exists.")
-        pass
+        # If searching by id, we cannot try lo locate the project locally
+        if project_id is not None:
+            raise RuntimeError(f"The project with ID {project_id} was not found in the cloud.")
+
+        # The project might only be local, look for the path
+        logger.info(f"The project {project} was not found in the cloud. It will be removed locally if it exists.")
 
     full_project = next(iter(projects), None)
 
     if full_project is not None:
-        api_client = container.api_client()
         api_client.projects.delete(full_project.projectId)
 
     # Remove project locally
-    project_manager = container.project_manager()
     project_path = full_project.name if full_project is not None else project
-    project_manager.delete_project(project_path)
+    project_manager.delete_project(Path(project_path))
 
     logger.info(f"Successfully deleted project '{project_path}'")

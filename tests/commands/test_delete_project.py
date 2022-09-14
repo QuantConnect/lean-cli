@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import List
 from unittest import mock
 
 import pytest
@@ -19,6 +20,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.api.project_client import ProjectClient
+from lean.models.api import QCProject
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 
 
@@ -35,13 +37,20 @@ def assert_project_does_not_exist(path: str) -> None:
     assert not project_dir.exists()
 
 
+def create_cloud_projects(count: int = 10) -> List[QCProject]:
+    return [create_api_project(i, f"Python Project {i}") for i in range(1, count + 1)]
+
+
 def test_delete_project_locally_that_does_not_have_cloud_counterpart() -> None:
     create_fake_lean_cli_directory()
 
     path = "Python Project"
     assert_project_exists(path)
 
-    with mock.patch.object(ProjectClient, 'get_all', return_value=[]) as mock_get_all,\
+    cloud_projects = create_cloud_projects()
+    assert not any(project.name == path for project in cloud_projects)
+
+    with mock.patch.object(ProjectClient, 'get_all', return_value=cloud_projects) as mock_get_all,\
          mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
         result = CliRunner().invoke(lean, ["delete-project", path])
         assert result.exit_code == 0
@@ -51,14 +60,20 @@ def test_delete_project_locally_that_does_not_have_cloud_counterpart() -> None:
     assert_project_does_not_exist(path)
 
 
-@pytest.mark.parametrize("name_or_id", ["Python Project", "1"])
+@pytest.mark.parametrize("name_or_id", ["Python Project", "11"])
 def test_delete_project_deletes_in_cloud(name_or_id: str) -> None:
     create_fake_lean_cli_directory()
 
-    cloud_project = create_api_project(1, "Python Project")
-    assert_project_exists(cloud_project.name)
+    path = "Python Project"
+    assert_project_exists(path)
 
-    with mock.patch.object(ProjectClient, 'get_all', return_value=[cloud_project]) as mock_get_all,\
+    cloud_projects = create_cloud_projects(10)
+    assert not any(project.name == path for project in cloud_projects)
+
+    cloud_project = create_api_project(len(cloud_projects) + 1, path)
+    cloud_projects.append(cloud_project)
+
+    with mock.patch.object(ProjectClient, 'get_all', return_value=cloud_projects) as mock_get_all,\
          mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
         result = CliRunner().invoke(lean, ["delete-project", name_or_id])
         assert result.exit_code == 0
@@ -74,11 +89,44 @@ def test_delete_project_aborts_when_path_does_not_exist() -> None:
     path = "Non Existing Project"
     assert_project_does_not_exist(path)
 
-    with mock.patch.object(ProjectClient, 'get_all', return_value=[]) as mock_get_all,\
+    with mock.patch.object(ProjectClient, 'get_all', return_value=create_cloud_projects()) as mock_get_all,\
          mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
         result = CliRunner().invoke(lean, ["delete-project", path])
         assert result.exit_code != 0
 
     mock_get_all.assert_called_once()
     mock_delete.assert_not_called()
+
+
+def test_delete_project_aborts_when_path_is_no_a_valid_project() -> None:
+    create_fake_lean_cli_directory()
+
+    path = "Non Existing Project"
     assert_project_does_not_exist(path)
+
+    with mock.patch.object(ProjectClient, 'get_all', return_value=create_cloud_projects()) as mock_get_all,\
+         mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
+        result = CliRunner().invoke(lean, ["delete-project", path])
+        assert result.exit_code != 0
+
+    mock_get_all.assert_called_once()
+    mock_delete.assert_not_called()
+
+
+def test_delete_project_by_id_aborts_when_not_found_in_cloud() -> None:
+    create_fake_lean_cli_directory()
+
+    path = "Python Project"
+    assert_project_exists(path)
+
+    cloud_projects = create_cloud_projects(10)
+    project_id = str(len(cloud_projects) + 1)
+
+    with mock.patch.object(ProjectClient, 'get_all', return_value=[]) as mock_get_all,\
+         mock.patch.object(ProjectClient, 'delete', return_value=None) as mock_delete:
+        result = CliRunner().invoke(lean, ["delete-project", project_id])
+        assert result.exit_code != 0
+
+    mock_get_all.assert_called_once()
+    mock_delete.assert_not_called()
+    assert_project_exists(path)
