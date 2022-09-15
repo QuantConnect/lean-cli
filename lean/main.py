@@ -73,7 +73,7 @@ def _ensure_win32_available() -> None:
         print("It looks like you're using the Python distribution from the Microsoft Store")
         print("This distribution is not supported by the CLI, we recommend using the Anaconda distribution instead")
         print(
-            "See https://www.lean.io/docs/lean-cli/installation/installing-pip#02-Install-on-Windows for more information")
+            "See https://www.lean.io/docs/v2/lean-cli/installation/installing-pip#02-Install-on-Windows for more information")
         sys.exit(1)
 
     print("pywin32 has not been installed completely, which may lead to errors")
@@ -123,7 +123,7 @@ def main() -> None:
             exception_str = io.getvalue().strip()
             exception_str = exception_str.replace("Try 'lean", "\nTry 'lean")
             exception_str = exception_str.replace("for help.",
-                                                  "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
+                                                  "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
             container.update_manager().warn_if_cli_outdated(force=True)
 

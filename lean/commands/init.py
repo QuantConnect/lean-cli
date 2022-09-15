@@ -76,7 +76,7 @@ def init() -> None:
         if path.exists():
             relative_path = path.relative_to(current_dir)
             raise MoreInfoError(f"{relative_path} already exists, please run this command in an empty directory",
-                                "https://www.lean.io/docs/lean-cli/initialization/directory-structure#02-lean-init")
+                                "https://www.lean.io/docs/v2/lean-cli/initialization/directory-structure#02-lean-init")
 
     logger = container.logger()
 

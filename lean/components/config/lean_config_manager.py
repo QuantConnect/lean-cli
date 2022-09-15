@@ -80,7 +80,7 @@ class LeanConfigManager:
             # If the parent directory is the same as the current directory we can't go up any more
             if current_dir.parent == current_dir:
                 raise MoreInfoError(f"'{DEFAULT_LEAN_CONFIG_FILE_NAME}' not found",
-                                    "https://www.lean.io/docs/lean-cli/initialization/configuration#03-Lean-Configuration")
+                                    "https://www.lean.io/docs/v2/lean-cli/initialization/configuration#03-Lean-Configuration")
 
             current_dir = current_dir.parent
 

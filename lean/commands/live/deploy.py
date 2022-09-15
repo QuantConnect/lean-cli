@@ -51,7 +51,7 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
     for key in ["live-mode-brokerage", "data-queue-handler"]:
         if key not in environment:
             raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
-                                "https://www.lean.io/docs/lean-cli/live-trading")
+                                "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
@@ -102,7 +102,7 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
 Please configure the following missing {properties_str} in {lean_config_path}:
 {missing_properties}
 Go to the following url for documentation on {these_str} {properties_str}:
-https://www.lean.io/docs/lean-cli/live-trading
+https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading
     """.strip())
 
 
@@ -396,11 +396,11 @@ def deploy(project: Path,
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
         raise MoreInfoError(f"{lean_config_path} does not contain an environment named '{environment_name}'",
-                            "https://www.lean.io/docs/lean-cli/live-trading")
+                            "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
-                            "https://www.lean.io/docs/lean-cli/live-trading")
+                            "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
     env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
     _install_modules([env_brokerage] + env_data_queue_handlers, kwargs)

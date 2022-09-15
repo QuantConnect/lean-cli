@@ -119,7 +119,7 @@ def remove(project: Path, name: str, no_local: bool) -> None:
 
     if project_language is None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
-                            "https://www.lean.io/docs/lean-cli/projects/project-management#02-Create-Projects")
+                            "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
     if project_language == "CSharp":
         _remove_csharp(project, name, no_local)
