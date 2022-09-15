@@ -311,6 +311,8 @@ Options:
   --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
                                   configuring webhook-notifications
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
+  --notify-telegram TEXT          A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-
+                                  notifications
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
   --verbose                       Enable debug logging
