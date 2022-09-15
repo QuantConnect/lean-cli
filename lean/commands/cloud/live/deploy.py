@@ -19,7 +19,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
-                             QCWebhookNotificationMethod, QCProject)
+                             QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
@@ -40,9 +40,13 @@ def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     sms_methods = [method for method in methods if isinstance(method, QCSMSNotificationMethod)]
     sms_methods = "None" if len(sms_methods) == 0 else ", ".join(method.phoneNumber for method in sms_methods)
 
+    telegram_methods = [method for method in methods if isinstance(method, QCTelegramNotificationMethod)]
+    telegram_methods = "None" if len(telegram_methods) == 0 else ", ".join(f"{{{method.id}, {method.token}}}" for method in telegram_methods)
+
     logger.info(f"Email notifications: {email_methods}")
     logger.info(f"Webhook notifications: {webhook_methods}")
     logger.info(f"SMS notifications: {sms_methods}")
+    logger.info(f"Telegram notifications: {telegram_methods}")
 
 
 def _prompt_notification_method() -> QCNotificationMethod:
@@ -53,7 +57,8 @@ def _prompt_notification_method() -> QCNotificationMethod:
     logger = container.logger()
     selected_method = logger.prompt_list("Select a notification method", [Option(id="email", label="Email"),
                                                                           Option(id="webhook", label="Webhook"),
-                                                                          Option(id="sms", label="SMS")])
+                                                                          Option(id="sms", label="SMS"),
+                                                                          Option(id="telegram", label="Telegram")])
 
     if selected_method == "email":
         address = click.prompt("Email address")
@@ -75,6 +80,16 @@ def _prompt_notification_method() -> QCNotificationMethod:
             headers[key] = value
 
         return QCWebhookNotificationMethod(address=address, headers=headers)
+    elif selected_method == "telegram":
+        id = click.prompt("User Id/Group Id")
+
+        custom_bot = click.confirm("Is a custom bot being used?", default=False)
+        if custom_bot:
+            token = click.prompt("Token (optional)")
+        else:
+            token = None
+
+        return QCTelegramNotificationMethod(id=id, token=token)
     else:
         phone_number = click.prompt("Phone number")
         return QCSMSNotificationMethod(phoneNumber=phone_number)
@@ -117,7 +132,7 @@ def _configure_notifications(logger: Logger) -> Tuple[bool, bool, List[QCNotific
     """
     logger.info(
         "You can optionally request for your strategy to send notifications when it generates an order or emits an insight")
-    logger.info("You can use any combination of email notifications, webhook notifications and SMS notifications")
+    logger.info("You can use any combination of email notifications, webhook notifications, SMS notifications, and telegram notifications")
     notify_order_events = click.confirm("Do you want to send notifications on order events?", default=False)
     notify_insights = click.confirm("Do you want to send notifications on insights?", default=False)
     notify_methods = []
@@ -172,6 +187,7 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
               type=str,
               help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications")
 @click.option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
+@click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -189,6 +205,7 @@ def deploy(project: str,
          notify_emails: Optional[str],
          notify_webhooks: Optional[str],
          notify_sms: Optional[str],
+         notify_telegram: Optional[str],
          push: bool,
          open_browser: bool,
          **kwargs) -> None:
@@ -253,6 +270,12 @@ def deploy(project: str,
         if notify_sms is not None:
             for phoneNumber in notify_sms.split(","):
                 notify_methods.append(QCSMSNotificationMethod(phoneNumber=phoneNumber))
+
+        if notify_telegram is not None:
+            for config in notify_telegram.split(","):
+                id, token = config.split(":", 1)    # telegram token is like "01234567:Abc132xxx..."
+                token = None if not token else token
+                notify_methods.append(QCTelegramNotificationMethod(id=id, token=token))
     else:
         brokerage_instance = _configure_brokerage(logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
