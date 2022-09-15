@@ -18,7 +18,7 @@ import site
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Union
 
 import pkg_resources
 
@@ -156,6 +156,41 @@ class ProjectManager:
             self._generate_vscode_csharp_config(project_dir)
             self._generate_csproj(project_dir)
             self.generate_rider_config()
+
+    def delete_project(self, project_dir: Path) -> None:
+        """Deletes a project directory.
+
+        Raises an error if the project directory does not exist.
+
+        :param project_dir: the directory of the project to delete
+        """
+        try:
+            shutil.rmtree(project_dir)
+        except FileNotFoundError:
+            raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
+
+    def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
+                                   project: Optional[Union[str, int]]) -> List[QCProject]:
+        """Returns a list of all the projects in the cloud that match the given name or id.
+
+        :param cloud_projects: all projects fetched from the cloud
+        :param project: the name or id of the project
+        :return: a list of all the projects in the cloud that match the given name or id
+        """
+        projects = []
+        search_by_id = isinstance(project, int)
+
+        if project is not None:
+            project_path = Path(project).as_posix() if not search_by_id else None
+            projects = [p for p in cloud_projects
+                        if search_by_id and p.projectId == project or
+                        not search_by_id and Path(p.name).as_posix() == project_path]
+            if len(projects) == 0:
+                raise RuntimeError("No project with the given name or id exists in the cloud")
+        else:
+            projects = cloud_projects
+
+        return projects
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
