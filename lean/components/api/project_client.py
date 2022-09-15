@@ -47,17 +47,21 @@ class ProjectClient:
         data = self._api.get("projects/read")
         return [self._process_project(QCProject(**project)) for project in data["projects"]]
 
-    def create(self, name: str, language: QCLanguage) -> QCCreatedProject:
+    def create(self, name: str, language: QCLanguage, organization_id: Optional[str]) -> QCCreatedProject:
         """Creates a new project.
 
         :param name: the name of the project to create
         :param language: the language of the project to create
+        :param organization_id: the id of the organization to create the project in
         :return: the created project
         """
-        data = self._api.post("projects/create", {
+        parameters = {
             "name": name,
             "language": language.value
-        })
+        }
+        if organization_id is not None:
+            parameters["organizationId"] = organization_id
+        data = self._api.post("projects/create", parameters)
 
         return self._process_project(QCCreatedProject(**data["projects"][0]))
 
