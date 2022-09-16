@@ -25,7 +25,11 @@ from lean.container import container
 @click.option("--project",
               type=PathParameter(exists=True, file_okay=False, dir_okay=True),
               help="Path to the local project to push (all local projects if not specified)")
-def push(project: Optional[Path]) -> None:
+@click.option("--organization-id",
+              type=str,
+              help="ID of the organization where the project will be created in. This is ignored if the project has "
+                   "already been created in the cloud")
+def push(project: Optional[Path], organization_id: Optional[str]) -> None:
     """Push local projects to QuantConnect.
 
     This command overrides the content of cloud files with the content of their respective local counterparts.
@@ -43,4 +47,4 @@ def push(project: Optional[Path]) -> None:
         projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
 
     push_manager = container.push_manager()
-    push_manager.push_projects(projects_to_push)
+    push_manager.push_projects(projects_to_push, organization_id)

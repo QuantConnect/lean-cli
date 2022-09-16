@@ -12,17 +12,20 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Optional
 from unittest import mock
 from datetime import datetime
 
+import pytest
 from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.components.api.project_client import ProjectClient
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
-from lean.models.api import QCFullFile
-from tests.test_helpers import create_fake_lean_cli_directory
+from lean.models.api import QCFullFile, QCLanguage
+from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 
 
 def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
@@ -51,7 +54,7 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
 
     assert result.exit_code == 0
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], None)
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
@@ -118,3 +121,20 @@ def test_cloud_push_removes_locally_removed_files_in_cloud() -> None:
     project_config_manager.get_project_config.assert_called()
     client.files.get_all.assert_called_once()
     client.files.delete.assert_called_once()
+
+
+@pytest.mark.parametrize("organization_id", ["d6e62db42593c72e67a534513413b692", None])
+def test_cloud_push_creates_project_with_optional_organization_id(organization_id: Optional[str]) -> None:
+    create_fake_lean_cli_directory()
+
+    path = "Python Project"
+
+    with mock.patch.object(ProjectClient, 'create', return_value=create_api_project(1, path)) as mock_create_project,\
+         mock.patch.object(ProjectClient, 'get_all', return_value=[]) as mock_get_all_projects:
+        organization_id_option = ["--organization-id", organization_id] if organization_id is not None else []
+        result = CliRunner().invoke(lean, ["cloud", "push", "--project", path, *organization_id_option])
+
+    assert result.exit_code == 0
+
+    mock_get_all_projects.assert_called_once()
+    mock_create_project.assert_called_once_with(path, QCLanguage.Python, organization_id)

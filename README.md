@@ -429,9 +429,11 @@ Usage: lean cloud push [OPTIONS]
   This command will delete cloud files which don't have a local counterpart.
 
 Options:
-  --project DIRECTORY  Path to the local project to push (all local projects if not specified)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
+  --project DIRECTORY     Path to the local project to push (all local projects if not specified)
+  --organization-id TEXT  ID of the organization where the project will be created in. This is ignored if the project
+                          has already been created in the cloud
+  --verbose               Enable debug logging
+  --help                  Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
