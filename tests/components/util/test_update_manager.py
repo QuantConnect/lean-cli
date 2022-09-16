@@ -194,7 +194,7 @@ def test_show_announcements_logs_when_announcements_have_never_been_shown(reques
                           "announcements": [
                               {
                                   "date": "2021-06-04",
-                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/datasets/local-data"
+                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/v2/lean-cli/datasets/local-data"
                               }
                           ]
                       }))
@@ -213,7 +213,7 @@ def test_show_announcements_logs_when_announcements_have_been_updated(requests_m
                           "announcements": [
                               {
                                   "date": "2021-06-04",
-                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/datasets/local-data"
+                                  "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/v2/lean-cli/datasets/local-data"
                               }
                           ]
                       }))
@@ -238,7 +238,7 @@ def test_show_announcements_only_checks_once_every_day(requests_mock: RequestsMo
                               "announcements": [
                                   {
                                       "date": "2021-06-04",
-                                      "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/datasets/local-data"
+                                      "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/v2/lean-cli/datasets/local-data"
                                   }
                               ]
                           }))
@@ -259,7 +259,7 @@ def test_show_announcements_does_nothing_when_latest_announcements_shown_before(
         "announcements": [
             {
                 "date": "2021-06-04",
-                "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/lean-cli/datasets/local-data"
+                "message": "Downloading data for local usage is now a lot easier:\nhttps://www.lean.io/docs/v2/lean-cli/datasets/local-data"
             }
         ]
     })

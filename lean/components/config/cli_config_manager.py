@@ -76,7 +76,7 @@ class CLIConfigManager:
 
         if option is None:
             raise MoreInfoError(f"There doesn't exist an option with key '{key}'",
-                                "https://www.lean.io/docs/lean-cli/api-reference/lean-config-set#02-Description")
+                                "https://www.lean.io/docs/v2/lean-cli/api-reference/lean-config-set#02-Description")
 
         return option
 
