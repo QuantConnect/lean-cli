@@ -18,7 +18,7 @@ from pathlib import Path
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK)
 from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
-    QCOrganizationData, QCOrganizationCredit
+    QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice
 
 
 def create_fake_lean_cli_directory() -> None:
@@ -94,3 +94,50 @@ def create_api_organization() -> QCFullOrganization:
                               products=[],
                               data=QCOrganizationData(signedTime=None, current=False),
                               members=[])
+
+
+def create_qc_nodes() -> QCNodeList:
+    backtest = [QCNode(
+        id="1",
+        name="backtest",
+        sku="backtest_test",
+        busy=False,
+        projectName="Python Project",
+        description="test node",
+        usedBy="Python Project",
+        price=QCNodePrice(monthly=1, yearly=2),
+        speed=0.1,
+        cpu=1,
+        ram=0.2,
+        assets=1
+    )]
+    research = [QCNode(
+        id="2",
+        name="research",
+        sku="research_test",
+        busy=False,
+        projectName="Python Project",
+        description="test node",
+        usedBy="Python Project",
+        price=QCNodePrice(monthly=1, yearly=2),
+        speed=0.1,
+        cpu=1,
+        ram=0.2,
+        assets=2
+    )]
+    live = [QCNode(
+        id="3",
+        name="live",
+        sku="live_test",
+        busy=False,
+        projectName="Python Project",
+        description="test node",
+        usedBy="Python Project",
+        price=QCNodePrice(monthly=1, yearly=2),
+        speed=0.1,
+        cpu=1,
+        ram=0.2,
+        assets=3
+    )]
+    
+    return QCNodeList(backtest=backtest, research=research, live=live)
