@@ -8,7 +8,7 @@
 
 The Lean CLI is a cross-platform CLI aimed at making it easier to develop with the LEAN engine locally and in the cloud.
 
-Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
+Visit the [documentation website](https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
 
 ## Highlights
 
@@ -65,7 +65,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 
 ## Commands
 
-*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/lean-cli/key-concepts/getting-started) for more comprehensive documentation.*
+*Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started) for more comprehensive documentation.*
 
 <!-- commands start -->
 - [`lean backtest`](#lean-backtest)
@@ -119,7 +119,7 @@ Usage: lean backtest [OPTIONS] PROJECT
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
   Go to the following url to learn how to debug backtests locally using the Lean CLI:
-  https://www.lean.io/docs/lean-cli/backtesting/debugging
+  https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
@@ -311,6 +311,8 @@ Options:
   --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
                                   configuring webhook-notifications
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
+  --notify-telegram TEXT          A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-
+                                  notifications
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
   --verbose                       Enable debug logging
@@ -429,9 +431,11 @@ Usage: lean cloud push [OPTIONS]
   This command will delete cloud files which don't have a local counterpart.
 
 Options:
-  --project DIRECTORY  Path to the local project to push (all local projects if not specified)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
+  --project DIRECTORY     Path to the local project to push (all local projects if not specified)
+  --organization-id TEXT  ID of the organization where the project will be created in. This is ignored if the project
+                          has already been created in the cloud
+  --verbose               Enable debug logging
+  --help                  Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_

@@ -76,7 +76,7 @@ class LeanCommand(click.Command):
                     # Abort with a display-friendly error message if the command requires a Lean config and none found
                     raise MoreInfoError(
                         "This command requires a Lean configuration file, run `lean init` in an empty directory to create one, or specify the file to use with --lean-config",
-                        "https://www.lean.io/docs/lean-cli/key-concepts/troubleshooting#02-Common-Errors"
+                        "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors"
                     )
 
         if self._requires_docker and "pytest" not in sys.modules:

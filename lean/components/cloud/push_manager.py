@@ -13,7 +13,7 @@
 
 import traceback
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -43,10 +43,11 @@ class PushManager:
         self._project_config_manager = project_config_manager
         self._last_file = None
 
-    def push_projects(self, projects_to_push: List[Path]) -> None:
+    def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str]) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
+        :param organization_id: the id of the organization where the project will be pushed to
         """
         projects_to_push = sorted(projects_to_push)
 
@@ -56,7 +57,7 @@ class PushManager:
             relative_path = project.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
-                self._push_project(project, cloud_projects)
+                self._push_project(project, cloud_projects, organization_id)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
@@ -64,13 +65,14 @@ class PushManager:
                 else:
                     self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
-    def _push_project(self, project: Path, cloud_projects: List[QCProject]) -> None:
+    def _push_project(self, project: Path, cloud_projects: List[QCProject], organization_id: Optional[str]) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
 
         :param project: the local project to push
         :param cloud_projects: a list containing all of the user's cloud projects
+        :param organization_id: the id of the organization to push the project to
         """
         project_name = project.relative_to(Path.cwd()).as_posix()
 
@@ -86,8 +88,11 @@ class PushManager:
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             new_project = self._api_client.projects.create(project_name,
-                                                           QCLanguage[project_config.get("algorithm-language")])
-            self._logger.info(f"Successfully created cloud project '{project_name}'")
+                                                           QCLanguage[project_config.get("algorithm-language")],
+                                                           organization_id)
+
+            organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
+            self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")
 
             project_config.set("cloud-id", new_project.projectId)
 

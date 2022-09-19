@@ -156,7 +156,7 @@ def _migrate_csharp_rider(project_dir: Path) -> None:
         logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
         logger.warn("Please restart Rider and start debugging again")
         logger.warn(
-            "See https://www.lean.io/docs/lean-cli/backtesting/debugging#05-C-and-Rider for the updated instructions")
+            "See https://www.lean.io/docs/v2/lean-cli/backtesting/debugging#05-C-and-Rider for the updated instructions")
 
         raise click.Abort()
 
@@ -294,7 +294,7 @@ def backtest(project: Path,
 
     \b
     Go to the following url to learn how to debug backtests locally using the Lean CLI:
-    https://www.lean.io/docs/lean-cli/backtesting/debugging
+    https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
     By default the official LEAN engine image is used.
     You can override this using the --image option.
