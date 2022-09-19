@@ -274,7 +274,7 @@ def deploy(project: str,
         if notify_telegram is not None:
             for config in notify_telegram.split(","):
                 id_token_pair = config.split(":", 1)    # telegram token is like "01234567:Abc132xxx..."
-                if len(config.split(":", 1)) == 2:
+                if len(id_token_pair) == 2:
                     chat_id, token = id_token_pair
                     token = None if not token else token
                     notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
