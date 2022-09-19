@@ -30,7 +30,6 @@ CUSTOM_RESEARCH_IMAGE = DockerImage(name=CUSTOM_RESEARCH, tag="latest")
 
 def create_fake_repositories() -> None:
     lean_dir = Path.cwd() / "Lean"
-    alpha_streams_dir = Path.cwd() / "AlphaStreams"
 
     for name in ["DockerfileLeanFoundation", "DockerfileLeanFoundationARM", "Dockerfile", "DockerfileJupyter"]:
         path = lean_dir / name
@@ -41,8 +40,6 @@ FROM ubuntu
 RUN true
             """.strip())
 
-    alpha_streams_dir.mkdir()
-
 
 dockerfiles_seen = []
 
@@ -51,7 +48,7 @@ def build_image(root: Path, dockerfile: Path, target_image: DockerImage) -> None
     dockerfiles_seen.append(dockerfile.read_text(encoding="utf-8").strip())
 
 
-def test_build_compiles_lean_and_alpha_streams_sdk() -> None:
+def test_build_compiles_lean() -> None:
     create_fake_repositories()
 
     docker_manager = mock.Mock()
@@ -61,7 +58,7 @@ def test_build_compiles_lean_and_alpha_streams_sdk() -> None:
 
     assert result.exit_code == 0
 
-    assert docker_manager.run_image.call_count == 2
+    assert docker_manager.run_image.call_count == 1
 
 
 @mock.patch("platform.machine")
