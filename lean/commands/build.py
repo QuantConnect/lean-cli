@@ -120,11 +120,11 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
 @click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
 @click.option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
 def build(root: Path, tag: str) -> None:
-    """Build Docker images of your own version of LEAN and the Alpha Streams SDK.
+    """Build Docker images of your own version of LEAN.
 
     \b
-    ROOT must point to a directory containing the LEAN repository and the Alpha Streams SDK repository:
-    https://github.com/QuantConnect/Lean & https://github.com/QuantConnect/AlphaStreams
+    ROOT must point to a directory containing the LEAN repository:
+    https://github.com/QuantConnect/Lean
 
     When ROOT is not given, the current directory is used as root directory.
 
@@ -132,11 +132,10 @@ def build(root: Path, tag: str) -> None:
     This command performs the following actions:
     1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
     2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
-    3. The Alpha Streams SDK is compiled in a Docker container using the lean-cli/foundation:latest image.
-    4. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
-    5. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
-    6. The default engine image is set to lean-cli/engine:latest.
-    7. The default research image is set to lean-cli/research:latest.
+    3. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
+    4. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
+    5. The default engine image is set to lean-cli/engine:latest.
+    6. The default research image is set to lean-cli/research:latest.
 
     When the foundation Dockerfile is the same as the official foundation Dockerfile,
     quantconnect/lean:foundation is used instead of building a custom foundation image.
@@ -144,10 +143,6 @@ def build(root: Path, tag: str) -> None:
     lean_dir = root / "Lean"
     if not lean_dir.is_dir():
         raise RuntimeError(f"Please clone https://github.com/QuantConnect/Lean to '{lean_dir}'")
-
-    alpha_streams_dir = root / "AlphaStreams"
-    if not lean_dir.is_dir():
-        raise RuntimeError(f"Please clone https://github.com/QuantConnect/AlphaStreams to '{alpha_streams_dir}'")
 
     (root / "DataLibraries").mkdir(exist_ok=True)
 
@@ -164,7 +159,6 @@ def build(root: Path, tag: str) -> None:
         _build_image(root, foundation_dockerfile, None, foundation_image)
 
     _compile_csharp(root, lean_dir, foundation_image)
-    _compile_csharp(root, alpha_streams_dir, foundation_image)
 
     custom_engine_image = DockerImage(name=CUSTOM_ENGINE, tag=tag)
     _build_image(root, lean_dir / "Dockerfile", foundation_image, custom_engine_image)
