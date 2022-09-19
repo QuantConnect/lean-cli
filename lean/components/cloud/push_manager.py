@@ -99,6 +99,9 @@ class PushManager:
             # We need to retrieve the created project again to get all project details
             cloud_project = self._api_client.projects.get(new_project.projectId)
 
+            # set organization-id in project config
+            project_config.set("organization-id", cloud_project.organizationId)
+
         # Push local files to cloud
         self._push_files(project, cloud_project)
 
