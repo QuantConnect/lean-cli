@@ -132,10 +132,10 @@ def build(root: Path, tag: str) -> None:
     This command performs the following actions:
     1. The lean-cli/foundation:latest image is built from Lean/DockerfileLeanFoundation(ARM).
     2. LEAN is compiled in a Docker container using the lean-cli/foundation:latest image.
-    4. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
-    5. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
-    6. The default engine image is set to lean-cli/engine:latest.
-    7. The default research image is set to lean-cli/research:latest.
+    3. The lean-cli/engine:latest image is built from Lean/Dockerfile using lean-cli/foundation:latest as base image.
+    4. The lean-cli/research:latest image is built from Lean/DockerfileJupyter using lean-cli/engine:latest as base image.
+    5. The default engine image is set to lean-cli/engine:latest.
+    6. The default research image is set to lean-cli/research:latest.
 
     When the foundation Dockerfile is the same as the official foundation Dockerfile,
     quantconnect/lean:foundation is used instead of building a custom foundation image.
