@@ -320,7 +320,12 @@ class QCSMSNotificationMethod(WrappedBaseModel):
     phoneNumber: str
 
 
-QCNotificationMethod = Union[QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod]
+class QCTelegramNotificationMethod(WrappedBaseModel):
+    id: str
+    token: Optional[str] = None
+
+
+QCNotificationMethod = Union[QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod]
 
 
 class QCCard(WrappedBaseModel):
