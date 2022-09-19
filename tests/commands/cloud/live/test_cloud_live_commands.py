@@ -77,13 +77,21 @@ def test_cloud_live_deploy() -> None:
                                                   False,
                                                   [])
 
-@pytest.mark.parametrize("notice_method,config", [("emails", "customAddress:customSubject"),
+@pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
+                                             ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
                                              ("webhooks", "customAddress:header1=value1"),
                                              ("webhooks", "customAddress:header1=value1:header2=value2"),
+                                             ("webhooks", "customAddress1:header1=value1:header2=value2,customAddress2:header3=value3"),
                                              ("sms", "customNumber"),
+                                             ("sms", "customNumber1,customNumber2,customNumber3"),
+                                             ("telegram", "customId"),
+                                             ("telegram", "customId1,customNumber2"),
                                              ("telegram", "customId:"),
-                                             ("telegram", "customId:custom:token")])
-def test_cloud_live_deploy_with_notifications(notice_method: str, config: str) -> None:
+                                             ("telegram", "customId1:,customNumber2:"),
+                                             ("telegram", "customId:custom:token"),
+                                             ("telegram", "customId1:custom:token1,customId2"),
+                                             ("telegram", "customId1:custom:token1,customId2:custom:token2")])
+def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) -> None:
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
@@ -98,34 +106,41 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, config: str) -
         
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
-                                       f"--notify-{notice_method}", config])
+                                       f"--notify-{notice_method}", configs])
     
     assert result.exit_code == 0
     
-    if notice_method == "emails":
-        address, subject = config.split(":")
-        notification = QCEmailNotificationMethod(address=address, subject=subject)
-        
-    elif notice_method == "webhooks":
-        address, headers = config.split(":", 1)
-        headers_dict = {}
-        
-        for header in headers.split(":"):
-            key, value = header.split("=")
-            headers_dict[key] = value
-                
-        notification = QCWebhookNotificationMethod(address=address, headers=headers_dict)
-        
-    elif notice_method == "sms":
-        notification = QCSMSNotificationMethod(phoneNumber=config)
-        
-    else:
-        id, token = config.split(":", 1)
-        
-        if not token:
-            notification = QCTelegramNotificationMethod(id=id)
+    notification = []
+    
+    for config in configs.split(","):
+        if notice_method == "emails":
+            address, subject = config.split(":")
+            notification.append(QCEmailNotificationMethod(address=address, subject=subject))
+            
+        elif notice_method == "webhooks":
+            address, headers = config.split(":", 1)
+            headers_dict = {}
+            
+            for header in headers.split(":"):
+                key, value = header.split("=")
+                headers_dict[key] = value
+                    
+            notification.append(QCWebhookNotificationMethod(address=address, headers=headers_dict))
+            
+        elif notice_method == "sms":
+            notification.append(QCSMSNotificationMethod(phoneNumber=config))
+            
         else:
-            notification = QCTelegramNotificationMethod(id=id, token=token)
+            id_token_pair = config.split(":", 1)
+            
+            if len(id_token_pair) == 2:
+                chat_id, token = id_token_pair
+                if not token:
+                    notification.append(QCTelegramNotificationMethod(id=chat_id))
+                else:
+                    notification.append(QCTelegramNotificationMethod(id=chat_id, token=token))
+            else:
+                notification.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
     
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                   mock.ANY,
@@ -136,4 +151,4 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, config: str) -
                                                   mock.ANY,
                                                   True,
                                                   True,
-                                                  [notification])
+                                                  notification)

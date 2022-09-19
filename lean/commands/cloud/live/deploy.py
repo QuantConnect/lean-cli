@@ -81,7 +81,7 @@ def _prompt_notification_method() -> QCNotificationMethod:
 
         return QCWebhookNotificationMethod(address=address, headers=headers)
     elif selected_method == "telegram":
-        id = click.prompt("User Id/Group Id")
+        chat_id = click.prompt("User Id/Group Id")
 
         custom_bot = click.confirm("Is a custom bot being used?", default=False)
         if custom_bot:
@@ -89,7 +89,7 @@ def _prompt_notification_method() -> QCNotificationMethod:
         else:
             token = None
 
-        return QCTelegramNotificationMethod(id=id, token=token)
+        return QCTelegramNotificationMethod(id=chat_id, token=token)
     else:
         phone_number = click.prompt("Phone number")
         return QCSMSNotificationMethod(phoneNumber=phone_number)
@@ -273,9 +273,13 @@ def deploy(project: str,
 
         if notify_telegram is not None:
             for config in notify_telegram.split(","):
-                id, token = config.split(":", 1)    # telegram token is like "01234567:Abc132xxx..."
-                token = None if not token else token
-                notify_methods.append(QCTelegramNotificationMethod(id=id, token=token))
+                id_token_pair = config.split(":", 1)    # telegram token is like "01234567:Abc132xxx..."
+                if len(config.split(":", 1)) == 2:
+                    chat_id, token = id_token_pair
+                    token = None if not token else token
+                    notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
+                else:
+                    notify_methods.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
     else:
         brokerage_instance = _configure_brokerage(logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
