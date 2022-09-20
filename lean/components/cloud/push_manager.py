@@ -43,7 +43,7 @@ class PushManager:
         self._project_config_manager = project_config_manager
         self._last_file = None
 
-    def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str]) -> None:
+    def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
