@@ -17,6 +17,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.components.cloud.pull_manager import PullManager
 from lean.container import container
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 
@@ -134,3 +135,38 @@ def test_cloud_pull_aborts_when_project_input_matches_no_cloud_projects() -> Non
     assert result.exit_code != 0
 
     pull_manager.pull_projects.assert_not_called()
+
+def test_cloud_pull_updates_lean_config() -> None:
+    create_fake_lean_cli_directory()
+
+    def my_side_effect(*args, **kwargs):
+        return True
+
+    cloud_projects = [create_api_project(1, "Project 1")]
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    container.api_client.override(providers.Object(api_client))
+
+    project_config = mock.Mock()
+
+    project_config_manager = mock.Mock()
+    project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
+
+    project_manager = mock.Mock()
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    platform_manager = mock.Mock()
+    container.platform_manager.override(providers.Object(platform_manager))
+
+    pull_manager = PullManager(mock.Mock(), api_client, project_manager, project_config_manager, platform_manager)
+    container.pull_manager.override(providers.Object(pull_manager))
+
+    pull_manager.get_local_project_path = mock.MagicMock(side_effect=my_side_effect)
+    pull_manager._pull_files = mock.MagicMock(side_effect=my_side_effect)
+
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", "1"])
+
+    assert result.exit_code == 0
+
+    project_config.set.assert_called_with("organization-id", "123")

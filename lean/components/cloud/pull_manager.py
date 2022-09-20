@@ -84,6 +84,7 @@ class PullManager:
         project_config.set("algorithm-language", project.language.name)
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
         project_config.set("description", project.description)
+        project_config.set("organization-id", project.organizationId)
 
     def _pull_files(self, project: QCProject, local_project_path: Path) -> None:
         """Pull the files of a single project.
