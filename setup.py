@@ -46,17 +46,17 @@ def get_stubs_version_range() -> str:
 
 # Production dependencies
 install_requires = [
-    "click~=8.1.3",
-    "requests~=2.28.1",
-    "json5~=0.9.10",
-    "docker~=6.0.0",
-    "rich~=12.5.1",
-    "dependency-injector~=4.40.0",
-    "pydantic~=1.9.2",
-    "python-dateutil~=2.8.2",
-    "lxml~=4.9.1",
+    "click>=8.0.4",
+    "requests>=2.27.1",
+    "json5>=0.9.8",
+    "docker>=6.0.0",
+    "rich>=9.10.0",
+    "dependency-injector>=4.39.1",
+    "pydantic>=1.8.2",
+    "python-dateutil>=2.8.2",
+    "lxml>=4.9.0",
     "maskpass==0.3.6",
-    "joblib~=1.1.0",
+    "joblib>=1.1.0",
     "wrapt~=1.14.1",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}"
