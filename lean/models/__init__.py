@@ -13,6 +13,7 @@
 
 import os
 import json
+import time
 import requests
 from pathlib import Path
 
@@ -21,16 +22,18 @@ file_name = "modules-1.3.json"
 dirname = os.path.dirname(__file__)
 file_path = os.path.join(dirname, f'../{file_name}')
 
-# check if new file is avaiable online
+# check if new file is available online
 url = f"https://cdn.quantconnect.com/cli/{file_name}"
 try:
-    res = requests.get(url)
-    if res.ok:
-        new_content = res.json()
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(new_content, f, ensure_ascii=False, indent=4)
+    # fetch if file not available or fetched before 1 day
+    if not os.path.exists(file_path) or (time.time() - os.path.getmtime(file_path) >  86400):
+        res = requests.get(url, timeout=5)
+        if res.ok:
+            new_content = res.json()
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(new_content, f, ensure_ascii=False, indent=4)
 except Exception as e:
-    # No need to do anything if file isn't avaiable
+    # No need to do anything if file isn't available
     pass
 
 # check if file exists
