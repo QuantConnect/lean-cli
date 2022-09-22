@@ -271,6 +271,16 @@ brokerage_required_options = {
                                             ("Paper Trading", "USD:100,EUR:200"),
                                             ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
+                                            ("Binance", "USD:100"),
+                                            ("Bitfinex", "USD:100"),
+                                            ("FTX", "USD:100"),
+                                            ("Coinbase Pro", "USD:100"),
+                                            ("Interactive Brokers", "USD:100"),
+                                            ("Kraken", "USD:100"),
+                                            ("OANDA", "USD:100"),
+                                            ("Samco", "USD:100"),
+                                            ("Terminal Link", "USD:100"),
+                                            ("Tradier", "USD:100"),
                                             ("Zerodha", "USD:100")])
 def test_cloud_live_deploy_with_initial_cash_balance(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
