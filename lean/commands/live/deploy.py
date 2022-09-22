@@ -449,8 +449,8 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
-    brokerage_id = lean_config["environments"]["live-mode-brokerage"]
-    if brokerage_id in [broker._id for broker in local_brokerages_with_editable_cash_balance]:
+    brokerage_id = lean_config["environments"]["lean-cli"]["live-mode-brokerage"]
+    if brokerage_id in [broker.get_live_name("lean-cli") for broker in local_brokerages_with_editable_cash_balance]:
         if live_cash_balance is not None and live_cash_balance != "":
             cash_list = []
             for cash_pair in live_cash_balance.split(","):

@@ -395,7 +395,24 @@ brokerage_required_options = {
         "ftx-exchange-name": "FTX",
         "ftx-organization": "abc",
     },
-
+    "Trading Technologies": {
+        "tt-organization": "abc",
+        "tt-user-name": "abc",
+        "tt-session-password": "abc",
+        "tt-account-name": "abc",
+        "tt-rest-app-key": "abc",
+        "tt-rest-app-secret": "abc",
+        "tt-rest-environment": "abc",
+        "tt-market-data-sender-comp-id": "abc",
+        "tt-market-data-target-comp-id": "abc",
+        "tt-market-data-host": "abc",
+        "tt-market-data-port": "abc",
+        "tt-order-routing-sender-comp-id": "abc",
+        "tt-order-routing-target-comp-id": "abc",
+        "tt-order-routing-host": "abc",
+        "tt-order-routing-port": "abc",
+        "tt-log-fix-messages": "no"
+    }
 }
 
 data_feed_required_options = {
@@ -904,3 +921,68 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert args[0]["python-venv"] == "/Custom-venv"
     else:
         assert "python-venv" not in args[0]
+
+
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
+                                            ("Paper Trading", "USD:100,EUR:200"),
+                                            ("Atreyu", "USD:100"),
+                                            ("Trading Technologies", "USD:100"),
+                                            ("Binance", "USD:100"),
+                                            ("Bitfinex", "USD:100"),
+                                            ("FTX", "USD:100"),
+                                            ("Coinbase Pro", "USD:100"),
+                                            ("Interactive Brokers", "USD:100"),
+                                            ("Kraken", "USD:100"),
+                                            ("OANDA", "USD:100"),
+                                            ("Samco", "USD:100"),
+                                            ("Terminal Link", "USD:100"),
+                                            ("Tradier", "USD:100"),
+                                            ("Zerodha", "USD:100")])
+def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+    
+    options = []
+    required_options = brokerage_required_options[brokerage].items()
+    for key, value in required_options:
+        options.extend([f"--{key}", value])
+    
+    options_config = {key: value for key, value in set(required_options)}
+    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
+        file.write(json.dumps({
+            **options_config,
+            "data-folder": "data",
+            "job-organization-id": "abc"
+        }))
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
+                                       "--data-feed", "Custom data only", *options])
+    
+    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
+        assert result.exit_code != 0
+        lean_runner.run_lean.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+    
+    cash_pairs = cash.split(",")
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+    else:
+        cash_list = [{"currency": "USD", "amount": 100}]
+
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    assert args[0]["live-cash-balance"] == cash_list

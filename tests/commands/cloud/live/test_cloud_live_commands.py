@@ -282,7 +282,7 @@ brokerage_required_options = {
                                             ("Terminal Link", "USD:100"),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", "USD:100")])
-def test_cloud_live_deploy_with_initial_cash_balance(brokerage: str, cash: str) -> None:
+def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
