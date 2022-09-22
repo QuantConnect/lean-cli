@@ -24,7 +24,7 @@ from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
-from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.models.brokerages.cloud import all_cloud_brokerages, cloud_brokerages_with_editable_cash_balance
 from lean.commands.cloud.live.live import live
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
@@ -103,6 +103,27 @@ def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
     return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
+
+        
+def _configure_initial_cash_balance(logger: Logger) -> List[Dict[str, float]]:
+    """Interactively configures the intial cash balance.
+
+    :param logger: the logger to use
+    :return: the list of dictionary containing intial currency and amount information
+    """
+    cash_list = []
+    continue_adding = True
+    
+    while continue_adding:
+        currency = click.prompt("Currency")
+        amount = click.prompt("Amount", type=float)
+        cash_list.append({"currency": currency, "amount": amount})
+        logger.info(f"Cash balance: {cash_list}")
+        
+        if not click.confirm("Do you want to add other currency?", default=False):
+            continue_adding = False
+            
+    return cash_list
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -188,6 +209,9 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
               help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications")
 @click.option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
 @click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
+@click.option("--live-cash-balance",
+              type=str,
+              help=f"A comma-separated list of currency:amount pairs of initial cash balance")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -206,6 +230,7 @@ def deploy(project: str,
          notify_webhooks: Optional[str],
          notify_sms: Optional[str],
          notify_telegram: Optional[str],
+         live_cash_balance: Optional[str],
          push: bool,
          open_browser: bool,
          **kwargs) -> None:
@@ -289,6 +314,19 @@ def deploy(project: str,
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
 
+    if brokerage_instance.get_name() in [broker.get_name() for broker in cloud_brokerages_with_editable_cash_balance]:
+        if live_cash_balance is not None and live_cash_balance != "":
+            cash_list = []
+            for cash_pair in live_cash_balance.split(","):
+                currency, amount = cash_pair.split(":")
+                cash_list.append({"currency": currency, "amount": float(amount)})
+            live_cash_balance = cash_list
+        elif click.confirm("Do you want to set initial cash balance?", default=False):
+            cash_list = _configure_initial_cash_balance()
+            live_cash_balance = cash_list
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+    
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Environment: {brokerage_settings['environment'].title()}")
@@ -300,6 +338,8 @@ def deploy(project: str,
     logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")
     if notify_order_events or notify_insights:
         _log_notification_methods(notify_methods)
+    if live_cash_balance:
+        logger.info(live_cash_balance)
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:
@@ -316,7 +356,8 @@ def deploy(project: str,
                                            cloud_project.leanVersionId,
                                            notify_order_events,
                                            notify_insights,
-                                           notify_methods)
+                                           notify_methods,
+                                           live_cash_balance)
 
     logger.info(f"Live url: {live_algorithm.get_url()}")
 

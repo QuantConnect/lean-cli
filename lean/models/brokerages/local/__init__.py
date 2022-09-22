@@ -19,13 +19,20 @@ from lean.models.brokerages.local.data_feed import DataFeed
 from lean.models import json_modules
 
 all_local_brokerages: List[LocalBrokerage] = []
+local_brokerages_with_editable_cash_balance: List[LocalBrokerage] = []
+local_brokerages_with_editable_holdings: List[LocalBrokerage] = []
 all_local_data_feeds: List[DataFeed] = []
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage],
                                  List[Type[DataFeed]]] = {}
 
 for json_module in json_modules:
     if "local-brokerage" in json_module["type"]:
-        all_local_brokerages.append(LocalBrokerage(json_module))
+        local_brokerage = LocalBrokerage(json_module)
+        all_local_brokerages.append(local_brokerage)
+        if json_module["live-cash-balance-state"]:
+            local_brokerages_with_editable_cash_balance.append(local_brokerage)
+        if json_module["live-holdings-state"]:
+            local_brokerages_with_editable_holdings.append(local_brokerage)
     if "data-queue-handler" in json_module["type"]:
         all_local_data_feeds.append(DataFeed(json_module))
 

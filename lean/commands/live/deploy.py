@@ -21,7 +21,8 @@ import click
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
+from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds, \
+                                         local_brokerages_with_editable_cash_balance
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
@@ -172,6 +173,24 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             setattr(data_feed, '_is_installed_and_build', True)
         data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
+        
+def _configure_initial_cash_balance() -> List[Dict[str, float]]:
+    logger = container.logger()
+    
+    cash_list = []
+    continue_adding = True
+    
+    while continue_adding:
+        currency = click.prompt("Currency")
+        amount = click.prompt("Amount", type=float)
+        cash_list.append({"currency": currency, "amount": amount})
+        logger.info(f"Cash balance: {cash_list}")
+        
+        if not click.confirm("Do you want to add other currency?", default=False):
+            continue_adding = False
+            
+    return cash_list
+
 
 _cached_organizations = None
 
@@ -311,6 +330,9 @@ def _get_configs_for_options() -> List[Configuration]:
 @click.option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
+@click.option("--live-cash-balance",
+              type=str,
+              help=f"A comma-separated list of currency:amount pairs of initial cash balance")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -325,6 +347,7 @@ def deploy(project: Path,
         release: bool,
         image: Optional[str],
         python_venv: Optional[str],
+        live_cash_balance: Optional[str],
         update: bool,
         **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -425,6 +448,20 @@ def deploy(project: Path,
     
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
+    
+    brokerage_id = lean_config["environments"]["live-mode-brokerage"]
+    if brokerage_id in [broker._id for broker in local_brokerages_with_editable_cash_balance]:
+        if live_cash_balance is not None and live_cash_balance != "":
+            cash_list = []
+            for cash_pair in live_cash_balance.split(","):
+                currency, amount = cash_pair.split(":")
+                cash_list.append({"currency": currency, "amount": float(amount)})
+            lean_config["live-cash-balance"] = cash_list
+        elif click.confirm("Do you want to set initial cash balance?", default=False):
+            cash_list = _configure_initial_cash_balance()
+            lean_config["live-cash-balance"] = cash_list
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_id}")
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

@@ -75,7 +75,8 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY,
                                                   False,
                                                   False,
-                                                  [])
+                                                  [],
+                                                  None)
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
@@ -151,4 +152,168 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   mock.ANY,
                                                   True,
                                                   True,
-                                                  notification)
+                                                  notification,
+                                                  None)
+
+brokerage_required_options = {
+    "Paper Trading": {},
+    "Interactive Brokers": {
+        "ib-user-name": "trader777",
+        "ib-account": "DU1234567",
+        "ib-password": "hunter2",
+        "ib-enable-delayed-streaming-data": "no",
+        "ib-organization": "abc",
+    },
+    "Tradier": {
+        "tradier-account-id": "123",
+        "tradier-access-token": "456",
+        "tradier-environment": "paper"
+    },
+    "OANDA": {
+        "oanda-account-id": "123",
+        "oanda-access-token": "456",
+        "oanda-environment": "Practice"
+    },
+    "Bitfinex": {
+        "bitfinex-api-key": "123",
+        "bitfinex-api-secret": "456",
+    },
+    "Coinbase Pro": {
+        "gdax-api-key": "123",
+        "gdax-api-secret": "456",
+        "gdax-passphrase": "789",
+        "gdax-use-sandbox": "paper"
+    },
+    "Binance": {
+        "binance-exchange-name": "binance",
+        "binance-api-key": "123",
+        "binance-api-secret": "456",
+        "binance-use-testnet": "paper",
+        "binance-organization": "abc",
+    },
+    "Zerodha": {
+        "zerodha-api-key": "123",
+        "zerodha-access-token": "456",
+        "zerodha-product-type": "mis",
+        "zerodha-trading-segment": "equity",
+        "zerodha-history-subscription": "false",
+        "zerodha-organization": "abc",
+    },
+    "Samco": {
+        "samco-client-id": "123",
+        "samco-client-password": "456",
+        "samco-year-of-birth": "2000",
+        "samco-product-type": "mis",
+        "samco-trading-segment": "equity",
+        "samco-organization": "abc",
+    },
+    "Atreyu": {
+        "atreyu-host": "abc",
+        "atreyu-req-port": "123",
+        "atreyu-sub-port": "456",
+        "atreyu-username": "abc",
+        "atreyu-password": "abc",
+        "atreyu-client-id": "abc",
+        "atreyu-broker-mpid": "abc",
+        "atreyu-locate-rqd": "abc",
+        "atreyu-organization": "abc",
+    },
+    "Terminal Link": {
+        "terminal-link-environment": "Beta",
+        "terminal-link-server-host": "abc",
+        "terminal-link-server-port": "123",
+        "terminal-link-emsx-broker": "abc",
+        "terminal-link-allow-modification": "no",
+        "terminal-link-emsx-account": "abc",
+        "terminal-link-emsx-strategy": "abc",
+        "terminal-link-emsx-notes": "abc",
+        "terminal-link-emsx-handling": "abc",
+        "terminal-link-emsx-user-time-zone": "abc",
+        "terminal-link-organization": "abc",
+    },
+    "Kraken": {
+        "kraken-api-key": "abc",
+        "kraken-api-secret": "abc",
+        "kraken-verification-tier": "starter",
+        "kraken-organization": "abc",
+    },
+    "FTX": {
+        "ftxus-api-key": "abc",
+        "ftxus-api-secret": "abc",
+        "ftxus-account-tier": "tier1",
+        "ftx-api-key": "abc",
+        "ftx-api-secret": "abc",
+        "ftx-account-tier": "tier1",
+        "ftx-exchange-name": "FTX",
+        "ftx-organization": "abc",
+    },
+    "Trading Technologies": {
+        "tt-organization": "abc",
+        "tt-user-name": "abc",
+        "tt-session-password": "abc",
+        "tt-account-name": "abc",
+        "tt-rest-app-key": "abc",
+        "tt-rest-app-secret": "abc",
+        "tt-rest-environment": "abc",
+        "tt-market-data-sender-comp-id": "123",
+        "tt-market-data-target-comp-id": "123",
+        "tt-market-data-host": "abc",
+        "tt-market-data-port": "123",
+        "tt-order-routing-sender-comp-id": "123",
+        "tt-order-routing-target-comp-id": "123",
+        "tt-order-routing-host": "abc",
+        "tt-order-routing-port": "123",
+        "tt-log-fix-messages": "abc"
+    }
+}
+
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
+                                            ("Paper Trading", "USD:100,EUR:200"),
+                                            ("Atreyu", "USD:100"),
+                                            ("Trading Technologies", "USD:100"),
+                                            ("Zerodha", "USD:100")])
+def test_cloud_live_deploy_with_initial_cash_balance(brokerage: str, cash: str) -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    container.api_client.override(providers.Object(api_client))
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner.override(providers.Object(cloud_runner))
+    
+    options = []
+    for key, value in brokerage_required_options[brokerage].items():
+        options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+                                       "--notify-insights", "no", *options])
+
+    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
+        assert result.exit_code != 0
+        api_client.live.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+    
+    cash_pairs = cash.split(",")
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+    else:
+        cash_list = [{"currency": "USD", "amount": 100}]
+    
+    api_client.live.start.assert_called_once_with(mock.ANY,
+                                                  mock.ANY,
+                                                  "3",
+                                                  mock.ANY,
+                                                  mock.ANY,
+                                                  True,
+                                                  mock.ANY,
+                                                  False,
+                                                  False,
+                                                  [],
+                                                  cash_list)
