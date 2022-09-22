@@ -239,7 +239,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -288,6 +288,33 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --atreyu-host TEXT              The host of the Atreyu server
+  --atreyu-req-port INTEGER       The Atreyu request port
+  --atreyu-sub-port INTEGER       The Atreyu subscribe port
+  --atreyu-username TEXT          Your Atreyu username
+  --atreyu-password TEXT          Your Atreyu password
+  --atreyu-client-id TEXT         Your Atreyu client id
+  --atreyu-broker-mpid TEXT       The broker MPID to use
+  --atreyu-locate-rqd TEXT        The locate rqd to use
+  --tt-user-name TEXT             Your Trading Technologies username
+  --tt-session-password TEXT      Your Trading Technologies session password
+  --tt-account-name TEXT          Your Trading Technologies account name
+  --tt-rest-app-key TEXT          Your Trading Technologies REST app key
+  --tt-rest-app-secret TEXT       Your Trading Technologies REST app secret
+  --tt-rest-environment TEXT      The REST environment to run in
+  --tt-market-data-sender-comp-id TEXT
+                                  The market data sender comp id to use
+  --tt-market-data-target-comp-id TEXT
+                                  The market data target comp id to use
+  --tt-market-data-host TEXT      The host of the market data server
+  --tt-market-data-port TEXT      The port of the market data server
+  --tt-order-routing-sender-comp-id TEXT
+                                  The order routing sender comp id to use
+  --tt-order-routing-target-comp-id TEXT
+                                  The order routing target comp id to use
+  --tt-order-routing-host TEXT    The host of the order routing server
+  --tt-order-routing-port TEXT    The port of the order routing server
+  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
@@ -312,6 +339,7 @@ Options:
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
   --notify-telegram TEXT          A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-
                                   notifications
+  --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
   --verbose                       Enable debug logging
@@ -979,6 +1007,7 @@ Options:
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
+  --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
