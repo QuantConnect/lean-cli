@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import platform
 import shutil
 import subprocess
 from distutils.version import StrictVersion
@@ -83,7 +82,7 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
 
-def _add_csharp(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+def _add_csharp_package(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a custom C# library to a C# project.
 
     Adds the library to the project's .csproj file, and restores the project is dotnet is on the user's PATH.
@@ -224,7 +223,7 @@ def _add_python_package_to_requirements(requirements_file: Path, name: str, vers
     requirements_file.write_text(new_content, encoding="utf-8")
 
 
-def _add_python(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+def _add_python_package(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a custom Python library to a Python project.
 
     Adds the library to the project's requirements.txt file,
@@ -260,6 +259,83 @@ def _add_python(project_dir: Path, name: str, version: Optional[str], no_local: 
                 f"Something went wrong while installing {name} {version} locally, see the logs above for more information")
 
 
+def _add_lean_library_reference_to_project(project_dir: Path, library_dir: Path) -> None:
+    """Adds a LeanCLI library reference to a project.
+
+    Adds the library path to the project's config.json
+
+    :param project_dir: the path to the project directory
+    :param library_dir: the path to the C# library directory
+    """
+    logger = container.logger()
+    project_config = container.project_config_manager().get_project_config(project_dir)
+    libraries = project_config.get("libraries", [])
+
+    logger.info(f"Adding {library_dir.name} reference to project {project_dir.name}")
+
+    if library_dir in libraries:
+        logger.info(f"Library {library_dir.name} was already added to the project {project_dir.name}")
+        return
+
+    lean_config_manager = container.lean_config_manager()
+    path_manager = container.path_manager()
+    path = path_manager.get_relative_path(library_dir, lean_config_manager.get_cli_root_directory())
+    libraries.append(path.as_posix())
+    project_config.set("libraries", libraries)
+
+
+def _add_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: bool) -> None:
+    """Adds a LeanCLI C# library to a C# project.
+
+    :param project_dir: the path to the project directory
+    :param library_dir: the path to the C# library directory
+    :param no_local: whether restoring the packages locally must be skipped
+    """
+    _add_lean_library_reference_to_project(project_dir, library_dir)
+
+
+def _add_python_lean_library(project_dir: Path, library_dir: Path, no_local: bool) -> None:
+    """Adds a LeanCLI Python library to a Python project.
+
+    :param project_dir: the path to the project directory
+    :param library_dir: the path to the C# library directory
+    :param no_local: whether restoring the packages locally must be skipped
+    """
+    _add_lean_library_reference_to_project(project_dir, library_dir)
+
+
+def _is_lean_library(path: Path) -> bool:
+    """Checks whether the library name is a Lean library path
+
+    :param path: path to check whether it is a Lean library
+    :return: true if the path is a Lean library path
+    """
+    path_manager = container.path_manager()
+    if not path_manager.is_path_valid(path):
+        return False
+
+    lean_config_manager = container.lean_config_manager()
+    relative_path = path_manager.get_relative_path(path, lean_config_manager.get_cli_root_directory())
+    path_parts = relative_path.parts
+
+    return len(path_parts) > 0 and path_parts[0] == "Library" and relative_path.is_dir()
+
+
+def _is_valid_lean_library_for_project(path: Path, project_language: str) -> bool:
+    """Checks whether the library name is a Lean library path
+
+    :param path: path to check whether it is a valid Lean library
+    :param project_language: language of the project the library is for
+    :return: true if the library is a Lean library path
+    """
+    logger = container.logger()
+
+    library_config = container.project_config_manager().get_project_config(path)
+    library_language = library_config.get("algorithm-language", None)
+
+    return library_language is not None and library_language == project_language
+
+
 @click.command(cls=LeanCommand)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.argument("name", type=str)
@@ -292,6 +368,7 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     $ lean library add "My Python Project" tensorflow
     $ lean library add "My Python Project" tensorflow --version 2.5.0
     """
+    logger = container.logger()
     project_config = container.project_config_manager().get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
 
@@ -299,7 +376,21 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    if project_language == "CSharp":
-        _add_csharp(project, name, version, no_local)
+    library_dir = Path(name).expanduser().resolve()
+    if _is_lean_library(library_dir):
+        if not _is_valid_lean_library_for_project(library_dir, project_language):
+            raise MoreInfoError(
+                f'{name} is not a valid Lean CLI library path for the project',
+                "https://www.lean.io/docs/v2/lean-cli/projects/libraries/project-libraries#03-Python-Libraries")
+
+        logger.info(f"Adding LeanCLI library {name} to project {project}")
+        if project_language == "CSharp":
+            _add_csharp_lean_library(project, library_dir, no_local)
+        else:
+            _add_python_lean_library(project, library_dir, no_local)
     else:
-        _add_python(project, name, version, no_local)
+        logger.info(f"Adding package {name} to project {project}")
+        if project_language == "CSharp":
+            _add_csharp_package(project, name, version, no_local)
+        else:
+            _add_python_package(project, name, version, no_local)
