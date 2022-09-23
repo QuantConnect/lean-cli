@@ -21,6 +21,7 @@ from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod
 from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes
+from tests.commands.test_live import brokerage_required_options
 
 def test_cloud_live_stop() -> None:
     create_fake_lean_cli_directory()
@@ -155,117 +156,6 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   notification,
                                                   None)
 
-brokerage_required_options = {
-    "Paper Trading": {},
-    "Interactive Brokers": {
-        "ib-user-name": "trader777",
-        "ib-account": "DU1234567",
-        "ib-password": "hunter2",
-        "ib-enable-delayed-streaming-data": "no",
-        "ib-organization": "abc",
-    },
-    "Tradier": {
-        "tradier-account-id": "123",
-        "tradier-access-token": "456",
-        "tradier-environment": "paper"
-    },
-    "OANDA": {
-        "oanda-account-id": "123",
-        "oanda-access-token": "456",
-        "oanda-environment": "Practice"
-    },
-    "Bitfinex": {
-        "bitfinex-api-key": "123",
-        "bitfinex-api-secret": "456",
-    },
-    "Coinbase Pro": {
-        "gdax-api-key": "123",
-        "gdax-api-secret": "456",
-        "gdax-passphrase": "789",
-        "gdax-use-sandbox": "paper"
-    },
-    "Binance": {
-        "binance-exchange-name": "binance",
-        "binance-api-key": "123",
-        "binance-api-secret": "456",
-        "binance-use-testnet": "paper",
-        "binance-organization": "abc",
-    },
-    "Zerodha": {
-        "zerodha-api-key": "123",
-        "zerodha-access-token": "456",
-        "zerodha-product-type": "mis",
-        "zerodha-trading-segment": "equity",
-        "zerodha-history-subscription": "false",
-        "zerodha-organization": "abc",
-    },
-    "Samco": {
-        "samco-client-id": "123",
-        "samco-client-password": "456",
-        "samco-year-of-birth": "2000",
-        "samco-product-type": "mis",
-        "samco-trading-segment": "equity",
-        "samco-organization": "abc",
-    },
-    "Atreyu": {
-        "atreyu-host": "abc",
-        "atreyu-req-port": "123",
-        "atreyu-sub-port": "456",
-        "atreyu-username": "abc",
-        "atreyu-password": "abc",
-        "atreyu-client-id": "abc",
-        "atreyu-broker-mpid": "abc",
-        "atreyu-locate-rqd": "abc",
-        "atreyu-organization": "abc",
-    },
-    "Terminal Link": {
-        "terminal-link-environment": "Beta",
-        "terminal-link-server-host": "abc",
-        "terminal-link-server-port": "123",
-        "terminal-link-emsx-broker": "abc",
-        "terminal-link-allow-modification": "no",
-        "terminal-link-emsx-account": "abc",
-        "terminal-link-emsx-strategy": "abc",
-        "terminal-link-emsx-notes": "abc",
-        "terminal-link-emsx-handling": "abc",
-        "terminal-link-emsx-user-time-zone": "abc",
-        "terminal-link-organization": "abc",
-    },
-    "Kraken": {
-        "kraken-api-key": "abc",
-        "kraken-api-secret": "abc",
-        "kraken-verification-tier": "starter",
-        "kraken-organization": "abc",
-    },
-    "FTX": {
-        "ftxus-api-key": "abc",
-        "ftxus-api-secret": "abc",
-        "ftxus-account-tier": "tier1",
-        "ftx-api-key": "abc",
-        "ftx-api-secret": "abc",
-        "ftx-account-tier": "tier1",
-        "ftx-exchange-name": "FTX",
-        "ftx-organization": "abc",
-    },
-    "Trading Technologies": {
-        "tt-organization": "abc",
-        "tt-user-name": "abc",
-        "tt-session-password": "abc",
-        "tt-account-name": "abc",
-        "tt-rest-app-key": "abc",
-        "tt-rest-app-secret": "abc",
-        "tt-rest-environment": "abc",
-        "tt-market-data-sender-comp-id": "123",
-        "tt-market-data-target-comp-id": "123",
-        "tt-market-data-host": "abc",
-        "tt-market-data-port": "123",
-        "tt-order-routing-sender-comp-id": "123",
-        "tt-order-routing-target-comp-id": "123",
-        "tt-order-routing-host": "abc",
-        "tt-order-routing-port": "123",
-        "tt-log-fix-messages": "abc"
-    }
-}
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),

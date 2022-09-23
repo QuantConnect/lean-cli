@@ -56,7 +56,7 @@ class LiveClient:
               project_id: int,
               compile_id: str,
               node_id: str,
-              brokerage_settings: Dict[str, str],
+              brokerage_settings: Dict[str, Any],
               price_data_handler: str,
               automatic_redeploy: bool,
               version_id: int,
@@ -76,9 +76,12 @@ class LiveClient:
         :param notify_order_events: whether notifications should be sent on order events
         :param notify_insights: whether notifications should be sent on insights
         :param notify_methods: the places to send notifications to
-        :param notify_methods: the list of initial cash balance
+        :param live_cash_balance: the list of initial cash balance
         :return: the created live algorithm
         """
+
+        if live_cash_balance:
+            brokerage_settings["cash"] = live_cash_balance
 
         parameters = {
             "projectId": project_id,
@@ -101,10 +104,6 @@ class LiveClient:
                 "events": events,
                 "targets": [{x: y for x, y in method.dict().items() if y} for method in notify_methods]
             }
-            
-        if live_cash_balance:
-            parameters["portfolio"] = {}
-            parameters["portfolio"]["cash"] = live_cash_balance
 
         data = self._api.post("live/create", parameters)
         return QCMinimalLiveAlgorithm(**data)

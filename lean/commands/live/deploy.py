@@ -28,6 +28,7 @@ from lean.models.logger import Option
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
+from lean.commands.cloud.live.deploy import _configure_initial_cash_balance
 from lean.commands.live.live import live
 from lean.models.data_providers import all_data_providers
 
@@ -171,25 +172,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             #TODO: create a setter method to set the property instead.
             setattr(data_feed, '_is_installed_and_build', True)
         data_feed.build(lean_config, logger).configure(lean_config, environment_name)
-
-        
-def _configure_initial_cash_balance() -> List[Dict[str, float]]:
-    logger = container.logger()
-    
-    cash_list = []
-    continue_adding = True
-    
-    while continue_adding:
-        currency = click.prompt("Currency")
-        amount = click.prompt("Amount", type=float)
-        cash_list.append({"currency": currency, "amount": amount})
-        logger.info(f"Cash balance: {cash_list}")
-        
-        if not click.confirm("Do you want to add other currency?", default=False):
-            continue_adding = False
-            
-    return cash_list
-
 
 _cached_organizations = None
 
@@ -450,15 +432,8 @@ def deploy(project: Path,
     
     brokerage_id = lean_config["environments"]["lean-cli"]["live-mode-brokerage"]
     if brokerage_id in [broker.get_live_name("lean-cli") for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
-        if live_cash_balance is not None and live_cash_balance != "":
-            cash_list = []
-            for cash_pair in live_cash_balance.split(","):
-                currency, amount = cash_pair.split(":")
-                cash_list.append({"currency": currency, "amount": float(amount)})
-            lean_config["live-cash-balance"] = cash_list
-        elif click.confirm("Do you want to set initial cash balance?", default=False):
-            cash_list = _configure_initial_cash_balance()
-            lean_config["live-cash-balance"] = cash_list
+        logger = container.logger()
+        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_id}")
     

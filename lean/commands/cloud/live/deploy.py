@@ -105,23 +105,31 @@ def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
 
         
-def _configure_initial_cash_balance(logger: Logger) -> List[Dict[str, float]]:
+def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str) -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
+    :param live_cash_balance: the initial cash balance option input
     :return: the list of dictionary containing intial currency and amount information
     """
     cash_list = []
-    continue_adding = True
     
-    while continue_adding:
-        currency = click.prompt("Currency")
-        amount = click.prompt("Amount", type=float)
-        cash_list.append({"currency": currency, "amount": amount})
-        logger.info(f"Cash balance: {cash_list}")
+    if live_cash_balance is not None and live_cash_balance != "":
+        for cash_pair in live_cash_balance.split(","):
+            currency, amount = cash_pair.split(":")
+            cash_list.append({"currency": currency, "amount": float(amount)})
         
-        if not click.confirm("Do you want to add other currency?", default=False):
-            continue_adding = False
+    elif click.confirm("Do you want to set initial cash balance?", default=False):
+        continue_adding = True
+    
+        while continue_adding:
+            currency = click.prompt("Currency")
+            amount = click.prompt("Amount", type=float)
+            cash_list.append({"currency": currency, "amount": amount})
+            logger.info(f"Cash balance: {cash_list}")
+            
+            if not click.confirm("Do you want to add other currency?", default=False):
+                continue_adding = False
             
     return cash_list
 
@@ -315,15 +323,7 @@ def deploy(project: str,
     price_data_handler = brokerage_instance.get_price_data_handler()
 
     if brokerage_instance in [broker for broker in all_cloud_brokerages if broker._editable_initial_cash_balance]:
-        if live_cash_balance is not None and live_cash_balance != "":
-            cash_list = []
-            for cash_pair in live_cash_balance.split(","):
-                currency, amount = cash_pair.split(":")
-                cash_list.append({"currency": currency, "amount": float(amount)})
-            live_cash_balance = cash_list
-        elif click.confirm("Do you want to set initial cash balance?", default=False):
-            cash_list = _configure_initial_cash_balance()
-            live_cash_balance = cash_list
+        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
