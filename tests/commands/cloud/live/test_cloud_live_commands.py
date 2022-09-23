@@ -77,7 +77,7 @@ def test_cloud_live_deploy() -> None:
                                                   False,
                                                   False,
                                                   [],
-                                                  None)
+                                                  mock.ANY)
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
@@ -154,7 +154,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   True,
                                                   True,
                                                   notification,
-                                                  None)
+                                                  mock.ANY)
 
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
@@ -200,20 +200,23 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     assert result.exit_code == 0
     
-    cash_pairs = cash.split(",")
-    if len(cash_pairs) == 2:
-        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+    if cash:
+        cash_pairs = cash.split(",")
+        if len(cash_pairs) == 2:
+            cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+        else:
+            cash_list = [{"currency": "USD", "amount": 100}]
     else:
-        cash_list = [{"currency": "USD", "amount": 100}]
-    
+        cash_list = []
+        
     api_client.live.start.assert_called_once_with(mock.ANY,
-                                                  mock.ANY,
-                                                  "3",
-                                                  mock.ANY,
-                                                  mock.ANY,
-                                                  True,
-                                                  mock.ANY,
-                                                  False,
-                                                  False,
-                                                  [],
-                                                  cash_list)
+                                                mock.ANY,
+                                                "3",
+                                                mock.ANY,
+                                                mock.ANY,
+                                                True,
+                                                mock.ANY,
+                                                False,
+                                                False,
+                                                [],
+                                                cash_list)

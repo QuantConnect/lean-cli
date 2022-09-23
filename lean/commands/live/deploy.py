@@ -25,11 +25,11 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
-from lean.commands.cloud.live.deploy import _configure_initial_cash_balance
 from lean.commands.live.live import live
+from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -262,21 +262,6 @@ def _get_default_value(key: str) -> Optional[Any]:
 
     return value
 
-def _get_configs_for_options() -> List[Configuration]: 
-    run_options: Dict[str, Configuration] = {}
-    config_with_module_id: Dict[str, str] = {}
-    for module in all_local_brokerages + all_local_data_feeds + all_data_providers:
-        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._id in run_options:
-                if (config._id in config_with_module_id 
-                    and config_with_module_id[config._id] == module._id):
-                    # config of same module
-                    continue
-                else:
-                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
-            run_options[config._id] = config
-            config_with_module_id[config._id] = module._id
-    return list(run_options.values())
 
 @live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -300,7 +285,7 @@ def _get_configs_for_options() -> List[Configuration]:
 @click.option("--data-provider",
               type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
-@options_from_json(_get_configs_for_options())
+@options_from_json(_get_configs_for_options("local"))
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -434,6 +419,8 @@ def deploy(project: Path,
     if brokerage_id in [broker.get_live_name("lean-cli") for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
         logger = container.logger()
         live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)
+        if live_cash_balance:
+            lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_id}")
     

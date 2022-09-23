@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import webbrowser
-from typing import Dict, List, Tuple, Optional
+from typing import List, Tuple, Optional
 import click
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
@@ -22,10 +22,11 @@ from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMe
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
+from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -104,35 +105,6 @@ def _configure_brokerage(logger: Logger) -> CloudBrokerage:
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
     return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
 
-        
-def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str) -> List[Dict[str, float]]:
-    """Interactively configures the intial cash balance.
-
-    :param logger: the logger to use
-    :param live_cash_balance: the initial cash balance option input
-    :return: the list of dictionary containing intial currency and amount information
-    """
-    cash_list = []
-    
-    if live_cash_balance is not None and live_cash_balance != "":
-        for cash_pair in live_cash_balance.split(","):
-            currency, amount = cash_pair.split(":")
-            cash_list.append({"currency": currency, "amount": float(amount)})
-        
-    elif click.confirm("Do you want to set initial cash balance?", default=False):
-        continue_adding = True
-    
-        while continue_adding:
-            currency = click.prompt("Currency")
-            amount = click.prompt("Amount", type=float)
-            cash_list.append({"currency": currency, "amount": amount})
-            logger.info(f"Cash balance: {cash_list}")
-            
-            if not click.confirm("Do you want to add other currency?", default=False):
-                continue_adding = False
-            
-    return cash_list
-
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
     """Interactively configures the live node to use.
@@ -189,22 +161,13 @@ def _configure_auto_restart(logger: Logger) -> bool:
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
     return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
-#TODO: same duplication present in commands\live.py
-def _get_configs_for_options() -> Dict[Configuration, str]: 
-    run_options: Dict[str, Configuration] = {}
-    for module in all_cloud_brokerages:
-        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._id in run_options:
-                raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
-            run_options[config._id] = config
-    return list(run_options.values())
 
 @live.command(cls=LeanCommand, default_command=True, name="deploy")
 @click.argument("project", type=str)
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@options_from_json(_get_configs_for_options())
+@options_from_json(_get_configs_for_options("cloud"))
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
