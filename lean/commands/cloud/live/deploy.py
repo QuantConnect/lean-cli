@@ -24,7 +24,7 @@ from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
-from lean.models.brokerages.cloud import all_cloud_brokerages, cloud_brokerages_with_editable_cash_balance
+from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
@@ -314,7 +314,7 @@ def deploy(project: str,
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
 
-    if brokerage_instance.get_name() in [broker.get_name() for broker in cloud_brokerages_with_editable_cash_balance]:
+    if brokerage_instance in [broker for broker in all_cloud_brokerages if broker._editable_initial_cash_balance]:
         if live_cash_balance is not None and live_cash_balance != "":
             cash_list = []
             for cash_pair in live_cash_balance.split(","):
@@ -339,7 +339,7 @@ def deploy(project: str,
     if notify_order_events or notify_insights:
         _log_notification_methods(notify_methods)
     if live_cash_balance:
-        logger.info(live_cash_balance)
+        logger.info(f"Initial live cash balance: {live_cash_balance}")
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:

@@ -21,6 +21,8 @@ class CloudBrokerage(JsonModule):
 
     def __init__(self, json_cloud_brokerage_data: Dict[str, Any]) -> None:
         super().__init__(json_cloud_brokerage_data)
+        self._editable_initial_cash_balance = json_cloud_brokerage_data["live-cash-balance-state"]
+        self._editable_initial_holdings = json_cloud_brokerage_data["live-holdings-state"]
 
     def get_id(self) -> str:
         """Returns the id of the brokerage.

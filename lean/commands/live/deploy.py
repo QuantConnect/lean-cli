@@ -21,8 +21,7 @@ import click
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds, \
-                                         local_brokerages_with_editable_cash_balance
+from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
@@ -450,7 +449,7 @@ def deploy(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     brokerage_id = lean_config["environments"]["lean-cli"]["live-mode-brokerage"]
-    if brokerage_id in [broker.get_live_name("lean-cli") for broker in local_brokerages_with_editable_cash_balance]:
+    if brokerage_id in [broker.get_live_name("lean-cli") for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
         if live_cash_balance is not None and live_cash_balance != "":
             cash_list = []
             for cash_pair in live_cash_balance.split(","):

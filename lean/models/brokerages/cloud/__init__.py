@@ -16,17 +16,10 @@ from lean.models import json_modules
 from typing import List
 
 all_cloud_brokerages: List[CloudBrokerage] = []
-cloud_brokerages_with_editable_cash_balance: List[CloudBrokerage] = []
-cloud_brokerages_with_editable_holdings: List[CloudBrokerage] = []
 
 for json_module in json_modules:
     if "cloud-brokerage" in json_module["type"]:
-        cloud_brokerage = CloudBrokerage(json_module)
-        all_cloud_brokerages.append(cloud_brokerage)
-        if json_module["live-cash-balance-state"]:
-            cloud_brokerages_with_editable_cash_balance.append(cloud_brokerage)
-        if json_module["live-holdings-state"]:
-            cloud_brokerages_with_editable_holdings.append(cloud_brokerage)
+        all_cloud_brokerages.append(CloudBrokerage(json_module))
 
 [PaperTradingBrokerage] = [
     cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]
