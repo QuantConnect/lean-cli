@@ -63,7 +63,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
 
     path.write_text(config, encoding="utf-8")
 
-'''
+
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     # TODO: currently it is not using the live-paper envrionment
     create_fake_lean_cli_directory()
@@ -301,7 +301,7 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
     assert result.exit_code != 0
 
     lean_runner.run_lean.assert_not_called()
-'''
+
 
 brokerage_required_options = {
     "Paper Trading": {},
@@ -436,7 +436,7 @@ data_providers_required_options = {
     "Terminal Link": brokerage_required_options["Terminal Link"]
 }
 
-'''
+
 @pytest.mark.parametrize("data_provider", data_providers_required_options.keys())
 def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
     create_fake_lean_cli_directory()
@@ -921,7 +921,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert args[0]["python-venv"] == "/Custom-venv"
     else:
         assert "python-venv" not in args[0]
-'''
+
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),

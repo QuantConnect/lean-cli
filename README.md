@@ -239,7 +239,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Atreyu|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -288,14 +288,6 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --atreyu-host TEXT              The host of the Atreyu server
-  --atreyu-req-port INTEGER       The Atreyu request port
-  --atreyu-sub-port INTEGER       The Atreyu subscribe port
-  --atreyu-username TEXT          Your Atreyu username
-  --atreyu-password TEXT          Your Atreyu password
-  --atreyu-client-id TEXT         Your Atreyu client id
-  --atreyu-broker-mpid TEXT       The broker MPID to use
-  --atreyu-locate-rqd TEXT        The locate rqd to use
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
