@@ -193,7 +193,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
                                        "--notify-insights", "no", *options])
 
-    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
+    if brokerage not in ["Paper Trading", "Trading Technologies"]:
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
         return

@@ -969,6 +969,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--data-feed", "Custom data only", *options])
     
+    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed frommodule-*.json)
     if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
