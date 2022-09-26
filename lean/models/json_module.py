@@ -163,6 +163,8 @@ class JsonModule(abc.ABC):
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue
+            if self.__class__.__name__ == 'CloudBrokerage' and not configuration._is_cloud_property:
+                continue
             if configuration._log_message is not None:
                 logger.info(configuration._log_message.strip())
             if configuration.is_type_organization_id:
