@@ -12,10 +12,12 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import List
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
+from lean.models.utils import LeanLibraryReference
 
 
 class LibraryManager:
@@ -46,29 +48,41 @@ class LibraryManager:
 
         relative_path = self._path_manager.get_relative_path(path, self._lean_config_manager.get_cli_root_directory())
         path_parts = relative_path.parts
-
-        return len(path_parts) > 0 and path_parts[0] == "Library" and relative_path.is_dir()
-
-    def is_valid_lean_library_for_project(self, path: Path, project_language: str) -> str:
-        """Checks whether the library name is a Lean library path
-
-        :param path: path to check whether it is a valid Lean library
-        :param project_language: language of the project the library is for
-        :return: true if the library is a Lean library path
-        """
         library_config = self._project_config_manager.get_project_config(path)
         library_language = library_config.get("algorithm-language", None)
 
-        return library_language is not None and library_language == project_language
+        return (
+            len(path_parts) > 0 and
+            path_parts[0] == "Library" and
+            relative_path.is_dir() and
+            library_language is not None
+        )
 
-    def get_csharp_lean_library_path_for_csproj_file(self, project_dir: Path, library_dir: Path) -> str:
+    def get_csharp_lean_library_path_for_csproj_file(self, project_dir: Path, library_dir: Path) -> Path:
+        """Gets the library path to be used for the project's .csproj file.
+
+        The returned path is relative to the project directory so auto complete can be provided.
+
+        :param project_dir: The path to the project directory
+        :param library_dir: The path to the library directory
+        :return The path to be used for the project's .csproj file
+        """
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         project_dir_relative_to_cli = self._path_manager.get_relative_path(project_dir, cli_root_dir)
         library_dir_relative_to_cli = self._path_manager.get_relative_path(library_dir, cli_root_dir)
         library_csproj_file = self.get_csproj_file_path(library_dir_relative_to_cli)
         library_csproj_file = "../" * len(project_dir_relative_to_cli.parts) / library_csproj_file
 
-        return library_csproj_file.as_posix()
+        return library_csproj_file
+
+    def get_library_path_for_project_config_file(self, library_dir: Path) -> Path:
+        """Gets the library path to be used for the project's config.json file.
+
+        :param library_dir: The path to the library directory
+        :return The path to be used for the project's config.json file
+        """
+        lean_cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        return self._path_manager.get_relative_path(library_dir, lean_cli_root_dir)
 
     @staticmethod
     def get_csproj_file_path(project_dir: Path) -> Path:

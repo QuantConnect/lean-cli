@@ -12,6 +12,8 @@
 # limitations under the License.
 
 from enum import Enum
+from pathlib import Path
+
 from lean.models.pydantic import WrappedBaseModel
 
 class DebuggingMethod(Enum):
@@ -31,7 +33,14 @@ class DebuggingMethod(Enum):
             DebuggingMethod.PTVSD: "PTVSD"
         }.get(self, "LocalCmdline")
 
+
 class CSharpLibrary(WrappedBaseModel):
     """The information of a PackageReference tag in a .csproj file."""
     name: str
     version: str
+
+
+class LeanLibraryReference(WrappedBaseModel):
+    """The information of a library reference in a project's config.json file"""
+    name: str
+    path: Path

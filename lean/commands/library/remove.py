@@ -22,6 +22,7 @@ from pkg_resources import Requirement
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
 from lean.models.errors import MoreInfoError
+from lean.models.utils import LeanLibraryReference
 
 
 def _remove_csharp_package(project_dir: Path, name: Union[str, Path], no_local: bool, is_lean_library: bool = False) -> None:
@@ -50,10 +51,19 @@ def _remove_csharp_package(project_dir: Path, name: Union[str, Path], no_local: 
     if is_lean_library:
         xml_element_name = './/ProjectReference'
         library_reference = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, name)
+    else:
+        library_reference = library_reference.lower()
 
-    library_reference = library_reference.lower()
     for package_reference in csproj_tree.findall(xml_element_name):
-        if package_reference.get("Include", "").lower() == library_reference:
+        library_reference_in_file = package_reference.get("Include", "")
+        if is_lean_library:
+            # Convert to Path so the comparison works if running on a different OS
+            # where the library was added to the project
+            library_reference_in_file = Path(library_reference_in_file)
+        else:
+            library_reference_in_file = library_reference_in_file.lower()
+
+        if library_reference_in_file == library_reference:
             package_reference.getparent().remove(package_reference)
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
@@ -108,15 +118,10 @@ def _remove_lean_library_reference_from_project(project_dir: Path, library_dir: 
     :param project_dir: the path to the project directory
     :param library_dir: the path to the C# library directory
     """
+    library_relative_path = container.library_manager().get_library_path_for_project_config_file(library_dir)
     project_config = container.project_config_manager().get_project_config(project_dir)
     libraries = project_config.get("libraries", [])
-
-    lean_config_manager = container.lean_config_manager()
-    path_manager = container.path_manager()
-    lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
-    library_relative_path = path_manager.get_relative_path(library_dir, lean_cli_root_dir).as_posix()
-
-    libraries.remove(library_relative_path)
+    libraries = [library for library in libraries if LeanLibraryReference(**library).path != library_relative_path]
     project_config.set("libraries", libraries)
 
 
