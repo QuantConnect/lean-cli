@@ -12,12 +12,10 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
-from lean.models.utils import LeanLibraryReference
 
 
 class LibraryManager:

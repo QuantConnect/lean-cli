@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
-                                          DEFAULT_PYTHON_NOTEBOOK)
+                                          DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
 from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
     QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice
 
@@ -32,19 +32,48 @@ def create_fake_lean_cli_directory() -> None:
     "data-folder": "data"
 }
         """,
-        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$NAME$", "PythonProject"),
+        (Path.cwd() / "Python Project" / "main.py"): DEFAULT_PYTHON_MAIN.replace("$CLASS_NAME$", "PythonProject"),
         (Path.cwd() / "Python Project" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
         (Path.cwd() / "Python Project" / "config.json"): json.dumps({
             "algorithm-language": "Python",
             "parameters": {}
         }),
-        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$NAME$", "CSharpProject"),
+        (Path.cwd() / "CSharp Project" / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$CLASS_NAME$", "CSharpProject"),
         (Path.cwd() / "CSharp Project" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
         (Path.cwd() / "CSharp Project" / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
             "parameters": {}
         }),
         (Path.cwd() / "CSharp Project" / "CSharp Project.csproj"): """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net6.0</TargetFramework>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.11940" />
+    </ItemGroup>
+</Project>
+        """,
+        (Path.cwd() / "Library" / "Python Library" / "main.py"):
+            LIBRARY_PYTHON_MAIN.replace("$CLASS_NAME$", "PythonLibrary"),
+        (Path.cwd() / "Library" / "Python Library" / "research.ipynb"): DEFAULT_PYTHON_NOTEBOOK,
+        (Path.cwd() / "Library" / "Python Library" / "config.json"): json.dumps({
+            "algorithm-language": "Python",
+            "parameters": {}
+        }),
+        (Path.cwd() / "Library" / "CSharp Library" / "Main.cs"):
+            LIBRARY_CSHARP_MAIN.replace("$CLASS_NAME$", "CSharpLibrary"),
+        (Path.cwd() / "Library" / "CSharp Library" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
+        (Path.cwd() / "Library" / "CSharp Library" / "config.json"): json.dumps({
+            "algorithm-language": "CSharp",
+            "parameters": {}
+        }),
+        (Path.cwd() / "Library" / "CSharp Library" / "CSharp Library.csproj"): """
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -139,5 +168,5 @@ def create_qc_nodes() -> QCNodeList:
         ram=0.2,
         assets=3
     )]
-    
+
     return QCNodeList(backtest=backtest, research=research, live=live)
