@@ -127,15 +127,6 @@ def _restore_csharp_project(csproj_file: Path, original_csproj_content: str, no_
         raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
 
 
-def _get_csproj_file_path(project_dir: Path) -> Path:
-    """Gets the path to the csproj file in the project directory.
-
-    :param project_dir: Path to the project directory
-    :return: Path to the csproj file in the project directory
-    """
-    return next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
-
-
 def _add_csharp_nuget_package(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a NuGet package to the project in the given directory.
 
@@ -152,7 +143,8 @@ def _add_csharp_nuget_package(project_dir: Path, name: str, version: Optional[st
         logger.info("Retrieving latest available version from NuGet")
         name, version = _get_nuget_package(name)
 
-    csproj_file = _get_csproj_file_path(project_dir)
+    library_manager = container.library_manager()
+    csproj_file = library_manager.get_csproj_file_path(project_dir)
     path_manager = container.path_manager()
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(csproj_file)}'")
 
@@ -174,15 +166,9 @@ def _add_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: boo
     if already_added:
         return
 
-    path_manager = container.path_manager()
-    lean_config_manager = container.lean_config_manager()
-
-    cli_root_dir = lean_config_manager.get_cli_root_directory()
-    project_dir_relative_to_cli = path_manager.get_relative_path(project_dir, cli_root_dir)
-    library_dir_relative_to_cli = path_manager.get_relative_path(library_dir, cli_root_dir)
-    library_csproj_file = _get_csproj_file_path(library_dir_relative_to_cli)
-    library_csproj_file = "../" * len(project_dir_relative_to_cli.parts) / library_csproj_file
-    project_csproj_file = _get_csproj_file_path(project_dir)
+    library_manager = container.library_manager()
+    library_csproj_file = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
+    project_csproj_file = library_manager.get_csproj_file_path(project_dir)
 
     original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
     _add_csharp_project_to_csproj(project_csproj_file, library_csproj_file)

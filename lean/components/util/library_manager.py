@@ -16,8 +16,6 @@ from pathlib import Path
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
-from lean.components.util.platform_manager import PlatformManager
-from lean.components.util.xml_manager import XMLManager
 
 
 class LibraryManager:
@@ -51,7 +49,7 @@ class LibraryManager:
 
         return len(path_parts) > 0 and path_parts[0] == "Library" and relative_path.is_dir()
 
-    def is_valid_lean_library_for_project(self, path: Path, project_language: str) -> bool:
+    def is_valid_lean_library_for_project(self, path: Path, project_language: str) -> str:
         """Checks whether the library name is a Lean library path
 
         :param path: path to check whether it is a valid Lean library
@@ -62,3 +60,21 @@ class LibraryManager:
         library_language = library_config.get("algorithm-language", None)
 
         return library_language is not None and library_language == project_language
+
+    def get_csharp_lean_library_path_for_csproj_file(self, project_dir: Path, library_dir: Path) -> str:
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        project_dir_relative_to_cli = self._path_manager.get_relative_path(project_dir, cli_root_dir)
+        library_dir_relative_to_cli = self._path_manager.get_relative_path(library_dir, cli_root_dir)
+        library_csproj_file = self.get_csproj_file_path(library_dir_relative_to_cli)
+        library_csproj_file = "../" * len(project_dir_relative_to_cli.parts) / library_csproj_file
+
+        return library_csproj_file.as_posix()
+
+    @staticmethod
+    def get_csproj_file_path(project_dir: Path) -> Path:
+        """Gets the path to the csproj file in the project directory.
+
+        :param project_dir: Path to the project directory
+        :return: Path to the csproj file in the project directory
+        """
+        return next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))

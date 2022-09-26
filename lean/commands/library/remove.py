@@ -14,6 +14,7 @@
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Union
 
 import click
 from pkg_resources import Requirement
@@ -23,27 +24,36 @@ from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-def _remove_csharp_nuget_package(project_dir: Path, name: str, no_local: bool) -> None:
+def _remove_csharp_package(project_dir: Path, name: Union[str, Path], no_local: bool, is_lean_library: bool = False) -> None:
     """Removes a custom C# library from a C# project.
 
     Removes the library from the project's .csproj file,
     and restores the project if dotnet is on the user's PATH and no_local is False.
 
     :param project_dir: the path to the project directory
-    :param name: the name of the library to remove
-    :param no_local:
+    :param name: the name of the NuGet package or path to the Lean CLI library to remove
+    :param no_local: Whether restoring the packages locally must be skipped
+    :param is_lean_library: Whether the library is a Lean CLI library
     """
     logger = container.logger()
     path_manager = container.path_manager()
+    library_manager = container.library_manager()
 
-    csproj_file = next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
+    csproj_file = library_manager.get_csproj_file_path(project_dir)
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(csproj_file)}'")
 
     xml_manager = container.xml_manager()
     csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
-    for package_reference in csproj_tree.findall(".//PackageReference"):
-        if package_reference.get("Include", "").lower() == name.lower():
+    xml_element_name = './/PackageReference'
+    library_reference = name
+    if is_lean_library:
+        xml_element_name = './/ProjectReference'
+        library_reference = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, name)
+
+    library_reference = library_reference.lower()
+    for package_reference in csproj_tree.findall(xml_element_name):
+        if package_reference.get("Include", "").lower() == library_reference:
             package_reference.getparent().remove(package_reference)
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
@@ -121,6 +131,7 @@ def _remove_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: 
     :param no_local: Whether restoring the packages locally must be skipped
     """
     _remove_lean_library_reference_from_project(project_dir, library_dir)
+    _remove_csharp_package(project_dir, library_dir, no_local, is_lean_library=True)
 
 
 def _remove_python_lean_library(project_dir: Path, library_dir: Path) -> None:
@@ -164,18 +175,15 @@ def remove(project: Path, name: str, no_local: bool) -> None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    logger = container.logger()
     library_manager = container.library_manager()
     library_dir = Path(name).expanduser().resolve()
     if library_manager.is_lean_library(library_dir):
-        logger.info(f"Removing Lean CLI library {library_dir} from project {project}")
         if project_language == "CSharp":
             _remove_csharp_lean_library(project, library_dir, no_local)
         else:
             _remove_python_lean_library(project, library_dir)
     else:
-        logger.info(f"Removing package {name} from project {project}")
         if project_language == "CSharp":
-            _remove_csharp_nuget_package(project, name, no_local)
+            _remove_csharp_package(project, name, no_local, is_lean_library=False)
         else:
             _remove_python_pypi_package(project, name)
