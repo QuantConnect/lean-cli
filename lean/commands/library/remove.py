@@ -38,9 +38,10 @@ def _remove_csharp_package(project_dir: Path, name: Union[str, Path], no_local: 
     """
     logger = container.logger()
     path_manager = container.path_manager()
+    project_manager = container.project_manager()
     library_manager = container.library_manager()
 
-    csproj_file = library_manager.get_csproj_file_path(project_dir)
+    csproj_file = project_manager.get_csproj_file_path(project_dir)
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(csproj_file)}'")
 
     xml_manager = container.xml_manager()

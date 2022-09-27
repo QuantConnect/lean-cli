@@ -549,3 +549,12 @@ class ProjectManager:
             directories.append(root_dir / editor_name)
 
         return directories
+
+    @staticmethod
+    def get_csproj_file_path(project_dir: Path) -> Path:
+        """Gets the path to the csproj file in the project directory.
+
+        :param project_dir: Path to the project directory
+        :return: Path to the csproj file in the project directory
+        """
+        return next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))

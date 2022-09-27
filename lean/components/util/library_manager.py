@@ -16,21 +16,25 @@ from pathlib import Path
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
+from lean.components.util.project_manager import ProjectManager
 
 
 class LibraryManager:
     """The LibraryManager class provides utilities for handling a libraries."""
 
     def __init__(self,
+                 project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
                  path_manager: PathManager) -> None:
         """Creates a new LibraryManager instance.
 
-        :param project_config_manager: the ProjectConfigManager to use when creating new projects
+        :param project_manager: the ProjectManager to use when requesting project csproj file
+        :param project_config_manager: the ProjectConfigManager to use to get project's config
         :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
         :param path_manager: the path manager to use to handle library paths
         """
+        self._project_manager = project_manager
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
         self._path_manager = path_manager
@@ -68,7 +72,7 @@ class LibraryManager:
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         project_dir_relative_to_cli = self._path_manager.get_relative_path(project_dir, cli_root_dir)
         library_dir_relative_to_cli = self._path_manager.get_relative_path(library_dir, cli_root_dir)
-        library_csproj_file = self.get_csproj_file_path(library_dir_relative_to_cli)
+        library_csproj_file = self._project_manager.get_csproj_file_path(library_dir_relative_to_cli)
         library_csproj_file = "../" * len(project_dir_relative_to_cli.parts) / library_csproj_file
 
         return library_csproj_file
@@ -81,12 +85,3 @@ class LibraryManager:
         """
         lean_cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         return self._path_manager.get_relative_path(library_dir, lean_cli_root_dir)
-
-    @staticmethod
-    def get_csproj_file_path(project_dir: Path) -> Path:
-        """Gets the path to the csproj file in the project directory.
-
-        :param project_dir: Path to the project directory
-        :return: Path to the csproj file in the project directory
-        """
-        return next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))

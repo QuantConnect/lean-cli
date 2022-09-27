@@ -21,6 +21,7 @@ from lean.components.config.storage import Storage
 from lean.components.util.library_manager import LibraryManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
+from lean.components.util.project_manager import ProjectManager
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -31,9 +32,12 @@ def _create_library_manager() -> LibraryManager:
                                             mock.Mock(),
                                             mock.Mock(),
                                             cache_storage)
-    path_manager = PathManager(PlatformManager())
+    platform_manager = PlatformManager()
+    path_manager = PathManager(platform_manager)
+    project_config_manager = mock.Mock()
+    project_manager = ProjectManager(project_config_manager, lean_config_manager, mock.Mock(), platform_manager)
 
-    return LibraryManager(mock.Mock(), lean_config_manager, path_manager)
+    return LibraryManager(project_manager, project_config_manager, lean_config_manager, path_manager)
 
 
 @pytest.mark.parametrize("path, expected_result", [
@@ -53,7 +57,7 @@ def test_is_lean_library_returns_true_when_path_is_a_library_directory(path: Pat
     assert result == expected_result
 
 
-@pytest.mark.parametrize("project_depth", range(1, 11))
+@pytest.mark.parametrize("project_depth", range(5))
 def test_get_csharp_lean_library_path_for_csproj_file(project_depth: int) -> None:
     create_fake_lean_cli_directory()
 

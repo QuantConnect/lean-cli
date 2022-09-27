@@ -161,8 +161,8 @@ def _add_csharp_nuget_package(project_dir: Path, name: str, version: Optional[st
         logger.info("Retrieving latest available version from NuGet")
         name, version = _get_nuget_package(name)
 
-    library_manager = container.library_manager()
-    csproj_file = library_manager.get_csproj_file_path(project_dir)
+    project_manager = container.project_manager()
+    csproj_file = project_manager.get_csproj_file_path(project_dir)
     path_manager = container.path_manager()
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(csproj_file)}'")
 
@@ -187,11 +187,12 @@ def _add_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: boo
         return
 
     library_manager = container.library_manager()
-    library_csproj_file = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
-    project_csproj_file = library_manager.get_csproj_file_path(project_dir)
+    library_csproj_file_path = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
+    project_manager = container.project_manager()
+    project_csproj_file = project_manager.get_csproj_file_path(project_dir)
 
     original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
-    _add_csharp_project_to_csproj(project_csproj_file, library_csproj_file)
+    _add_csharp_project_to_csproj(project_csproj_file, library_csproj_file_path)
     _try_restore_csharp_project(project_csproj_file, original_csproj_content, no_local)
 
 

@@ -85,7 +85,11 @@ class Container(DeclarativeContainer):
                                 lean_config_manager,
                                 xml_manager,
                                 platform_manager)
-    library_manager = Singleton(LibraryManager, project_config_manager, lean_config_manager, path_manager)
+    library_manager = Singleton(LibraryManager,
+                                project_manager,
+                                project_config_manager,
+                                lean_config_manager,
+                                path_manager)
 
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)
