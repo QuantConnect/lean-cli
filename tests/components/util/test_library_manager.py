@@ -17,11 +17,14 @@ from unittest import mock
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.library_manager import LibraryManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
+from lean.container import container
+from lean.models.utils import LeanLibraryReference
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -34,10 +37,18 @@ def _create_library_manager() -> LibraryManager:
                                             cache_storage)
     platform_manager = PlatformManager()
     path_manager = PathManager(platform_manager)
-    project_config_manager = mock.Mock()
-    project_manager = ProjectManager(project_config_manager, lean_config_manager, mock.Mock(), platform_manager)
+    xml_manager = mock.Mock()
+    project_config_manager = ProjectConfigManager(xml_manager)
+    project_manager = ProjectManager(project_config_manager, lean_config_manager, xml_manager, platform_manager)
 
     return LibraryManager(project_manager, project_config_manager, lean_config_manager, path_manager)
+
+
+def _project_has_library_reference_in_config(project_dir: Path, library_dir: Path) -> bool:
+    project_config = container.project_config_manager().get_project_config(project_dir)
+    libraries = project_config.get("libraries", [])
+
+    return any(LeanLibraryReference(**library).path == library_dir.relative_to(Path.cwd()) for library in libraries)
 
 
 @pytest.mark.parametrize("path, expected_result", [
@@ -73,8 +84,8 @@ def test_get_csharp_lean_library_path_for_csproj_file(project_depth: int) -> Non
     # plus 'Library/CSharp Library/CSharp Project.csproj' (2 more parts),
     # plus the csproj file name (1 more part)
     expected_csproj_file_path = \
-        Path("/".join(".." for i in range(project_depth + 1))) / library_dir_relative_to_cli / "CSharp Library.csproj"
-    assert csproj_file_path == expected_csproj_file_path
+        (Path("/".join(".." for i in range(project_depth + 1))) / library_dir_relative_to_cli / "CSharp Library.csproj")
+    assert Path(csproj_file_path) == expected_csproj_file_path
 
 
 def test_get_library_path_for_project_config_file() -> None:
@@ -83,6 +94,27 @@ def test_get_library_path_for_project_config_file() -> None:
     library_dir = Path.cwd() / "Library" / "CSharp Library"
 
     library_manager = _create_library_manager()
-    library_reference = library_manager.get_library_path_for_project_config_file(library_dir)
+    library_reference = Path(library_manager.get_library_path_for_project_config_file(library_dir))
 
     assert library_reference == library_dir.relative_to(Path.cwd())
+
+
+def test_add_and_remove_lean_library_reference_to_project() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    library_dir = Path.cwd() / "Library" / "CSharp Library"
+
+    library_manager = _create_library_manager()
+
+    # Add
+    assert not library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
+    # Already added
+    assert library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
+
+    assert _project_has_library_reference_in_config(project_dir, library_dir)
+
+    # Remove
+    library_manager.remove_lean_library_reference_from_project(project_dir, library_dir)
+
+    assert not _project_has_library_reference_in_config(project_dir, library_dir)

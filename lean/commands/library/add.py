@@ -26,7 +26,6 @@ from pkg_resources import Requirement
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
 from lean.models.errors import MoreInfoError
-from lean.models.utils import LeanLibraryReference
 
 
 def _get_nuget_package(name: str) -> Tuple[str, str]:
@@ -83,7 +82,7 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
 
-def _add_csharp_project_to_csproj(csproj_file: Path, library_csproj_file: Path) -> None:
+def _add_csharp_project_to_csproj(csproj_file: Path, library_csproj_path: str) -> None:
     """Adds a Lean CLI library project reference to a .csproj file.
 
     :param csproj_file: the path to the .csproj file
@@ -92,13 +91,13 @@ def _add_csharp_project_to_csproj(csproj_file: Path, library_csproj_file: Path) 
     xml_manager = container.xml_manager()
     csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
-    existing_project_reference = csproj_tree.find(f".//ProjectReference[@Include='{library_csproj_file}']")
+    existing_project_reference = csproj_tree.find(f".//ProjectReference[@Include='{library_csproj_path}']")
     if existing_project_reference is None:
         last_item_group = csproj_tree.find(".//ItemGroup[last()]")
         if last_item_group is None:
             last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
 
-        last_item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_file}" />'))
+        last_item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_path}" />'))
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
@@ -145,7 +144,7 @@ def _try_restore_csharp_project(csproj_file: Path, original_csproj_content: str,
         raise e
 
 
-def _add_csharp_nuget_package(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a NuGet package to the project in the given directory.
 
     Adds the library to the project's .csproj file, and restores the project if dotnet is on the user's PATH.
@@ -171,7 +170,7 @@ def _add_csharp_nuget_package(project_dir: Path, name: str, version: Optional[st
     _try_restore_csharp_project(csproj_file, original_csproj_content, no_local)
 
 
-def _add_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: bool) -> None:
+def _add_lean_library_to_csharp_project(project_dir: Path, library_dir: Path, no_local: bool) -> None:
     """Adds a Lean CLI C# library to the project's csproj file.
 
     It will add a reference to the library and restore the project if dotnet is the user's PATH.
@@ -180,14 +179,25 @@ def _add_csharp_lean_library(project_dir: Path, library_dir: Path, no_local: boo
     :param library_dir: Path to the library directory
     :param no_local: Whether restoring the packages locally must be skipped
     """
-    already_added = _add_lean_library_reference_to_project(project_dir, library_dir)
+    library_manager = container.library_manager()
+    already_added = library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
     # If the library was already referenced by the project, do not proceed further with adding it to the .csproj file
     if already_added:
         container.logger().info(f"Library {library_dir.name} has already been added to the project {project_dir.name}")
         return
 
-    library_manager = container.library_manager()
+    library_config = container.project_config_manager().get_project_config(library_dir)
+    library_language = library_config.get("algorithm-language", None)
+
+    # Python library references are not added to .csproj file
+    if library_language == 'Python':
+        return
+
     library_csproj_file_path = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
+
+    if library_csproj_file_path is None:
+        return
+
     project_manager = container.project_manager()
     project_csproj_file = project_manager.get_csproj_file_path(project_dir)
 
@@ -301,7 +311,7 @@ def _add_python_package_to_requirements(requirements_file: Path, name: str, vers
     requirements_file.write_text(new_content, encoding="utf-8")
 
 
-def _add_python_pypi_package(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a custom Python library to a Python project.
 
     Adds the library to the project's requirements.txt file,
@@ -333,45 +343,18 @@ def _add_python_pypi_package(project_dir: Path, name: str, version: Optional[str
         process = subprocess.run(["pip", "install", f"{name}=={version}"])
 
         if process.returncode != 0:
-            raise RuntimeError(
-                f"Something went wrong while installing {name} {version} locally, see the logs above for more information")
+            raise RuntimeError(f"Something went wrong while installing {name} {version} "
+                               "locally, see the logs above for more information")
 
 
-def _add_lean_library_reference_to_project(project_dir: Path, library_dir: Path) -> bool:
-    """Adds a Lean CLI library reference to a project.
-
-    Adds the library path to the project's config.json
-
-    :param project_dir: the path to the project directory
-    :param library_dir: the path to the library directory
-    :return: True if the library has already been added to the project, that is, if the reference already exists in the
-             project's config.json file. False if the library was added successfully.
-    """
-    project_config = container.project_config_manager().get_project_config(project_dir)
-    libraries = project_config.get("libraries", [])
-    library_relative_path = container.library_manager().get_library_path_for_project_config_file(library_dir)
-
-    if any(library.path == library_relative_path for library in libraries):
-        logger = container.logger()
-        logger.info(f"Library {library_dir.name} has already been added to the project {project_dir.name}")
-        return True
-
-    libraries.append(json.loads(LeanLibraryReference(
-        name=library_dir.name,
-        path=library_relative_path
-    ).json()))
-    project_config.set("libraries", libraries)
-
-    return False
-
-
-def _add_python_lean_library(project_dir: Path, library_dir: Path) -> None:
+def _add_lean_library_to_python_project(project_dir: Path, library_dir: Path) -> None:
     """Adds a Lean CLI Python library to a Python project.
 
     :param project_dir: the path to the project directory
     :param library_dir: the path to the C# library directory
     """
-    _add_lean_library_reference_to_project(project_dir, library_dir)
+    library_manager = container.library_manager()
+    library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
 
 
 @click.command(cls=LeanCommand)
@@ -425,12 +408,12 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     if library_manager.is_lean_library(library_dir):
         logger.info(f"Adding Lean CLI library {library_dir} to project {project}")
         if project_language == "CSharp":
-            _add_csharp_lean_library(project, library_dir, no_local)
+            _add_lean_library_to_csharp_project(project, library_dir, no_local)
         else:
-            _add_python_lean_library(project, library_dir)
+            _add_lean_library_to_python_project(project, library_dir)
     else:
         logger.info(f"Adding package {name} to project {project}")
         if project_language == "CSharp":
-            _add_csharp_nuget_package(project, name, version, no_local)
+            _add_nuget_package_to_csharp_project(project, name, version, no_local)
         else:
-            _add_python_pypi_package(project, name, version, no_local)
+            _add_pypi_package_to_python_project(project, name, version, no_local)

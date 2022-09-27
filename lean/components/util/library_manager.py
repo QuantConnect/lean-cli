@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
+from lean.models.utils import LeanLibraryReference
 
 
 class LibraryManager:
@@ -60,7 +62,7 @@ class LibraryManager:
             library_language is not None
         )
 
-    def get_csharp_lean_library_path_for_csproj_file(self, project_dir: Path, library_dir: Path) -> Path:
+    def get_csharp_lean_library_path_for_csproj_file(self, project_dir: Path, library_dir: Path) -> str:
         """Gets the library path to be used for the project's .csproj file.
 
         The returned path is relative to the project directory so auto complete can be provided.
@@ -73,15 +75,56 @@ class LibraryManager:
         project_dir_relative_to_cli = self._path_manager.get_relative_path(project_dir, cli_root_dir)
         library_dir_relative_to_cli = self._path_manager.get_relative_path(library_dir, cli_root_dir)
         library_csproj_file = self._project_manager.get_csproj_file_path(library_dir_relative_to_cli)
-        library_csproj_file = "../" * len(project_dir_relative_to_cli.parts) / library_csproj_file
 
-        return library_csproj_file
+        if library_csproj_file is None:
+            return None
 
-    def get_library_path_for_project_config_file(self, library_dir: Path) -> Path:
+        return ("../" * len(project_dir_relative_to_cli.parts) / library_csproj_file).as_posix()
+
+    def get_library_path_for_project_config_file(self, library_dir: Path) -> str:
         """Gets the library path to be used for the project's config.json file.
 
         :param library_dir: The path to the library directory
         :return The path to be used for the project's config.json file
         """
         lean_cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        return self._path_manager.get_relative_path(library_dir, lean_cli_root_dir)
+        return self._path_manager.get_relative_path(library_dir, lean_cli_root_dir).as_posix()
+
+    def add_lean_library_reference_to_project(self, project_dir: Path, library_dir: Path) -> bool:
+        """Adds a Lean CLI library reference to a project.
+
+        Adds the library path to the project's config.json
+
+        :param project_dir: the path to the project directory
+        :param library_dir: the path to the library directory
+        :return: True if the library has already been added to the project, that is, if the reference already exists in
+                 the project's config.json file. False if the library was added successfully.
+        """
+        project_config = self._project_config_manager.get_project_config(project_dir)
+        libraries = project_config.get("libraries", [])
+        library_relative_path = Path(self.get_library_path_for_project_config_file(library_dir))
+
+        if any(LeanLibraryReference(**library).path == library_relative_path for library in libraries):
+            return True
+
+        libraries.append(json.loads(LeanLibraryReference(
+            name=library_dir.name,
+            path=library_relative_path
+        ).json()))
+        project_config.set("libraries", libraries)
+
+        return False
+
+    def remove_lean_library_reference_from_project(self, project_dir: Path, library_dir: Path) -> None:
+        """Removed a Lean CLI library reference from a project.
+
+        Removes the library path from the project's config.json
+
+        :param project_dir: the path to the project directory
+        :param library_dir: the path to the C# library directory
+        """
+        library_relative_path = Path(self.get_library_path_for_project_config_file(library_dir))
+        project_config = self._project_config_manager.get_project_config(project_dir)
+        libraries = project_config.get("libraries", [])
+        libraries = [library for library in libraries if LeanLibraryReference(**library).path != library_relative_path]
+        project_config.set("libraries", libraries)

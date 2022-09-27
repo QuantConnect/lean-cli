@@ -419,23 +419,7 @@ class ProjectManager:
 
         :param project_dir: the path of the new project
         """
-        self._generate_file(project_dir / f"{project_dir.name}.csproj", """
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net6.0</TargetFramework>
-        <OutputPath>bin/$(Configuration)</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
-        <NoWarn>CS0618</NoWarn>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
-        <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
-    </ItemGroup>
-</Project>
-        """)
+        self._generate_file(project_dir / f"{project_dir.name}.csproj", self.get_csproj_file_default_content())
 
     def generate_rider_config(self) -> None:
         """Generates C# debugging configuration for Rider."""
@@ -551,10 +535,30 @@ class ProjectManager:
         return directories
 
     @staticmethod
+    def get_csproj_file_default_content() -> str:
+        return """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net6.0</TargetFramework>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
+        <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
+    </ItemGroup>
+</Project>
+        """
+
+    @staticmethod
     def get_csproj_file_path(project_dir: Path) -> Path:
         """Gets the path to the csproj file in the project directory.
 
         :param project_dir: Path to the project directory
         :return: Path to the csproj file in the project directory
         """
-        return next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
+        return next((p for p in project_dir.iterdir() if p.name.endswith(".csproj")), None)

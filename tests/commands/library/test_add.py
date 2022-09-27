@@ -42,11 +42,21 @@ def _assert_library_reference_was_added_to_csharp_project_csproj_file(project_di
     xml_manager = container.xml_manager()
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
-    assert any(Path(project_reference.get("Include")) == library_reference
+    assert any(project_reference.get("Include") == library_reference
                for project_reference in csproj_tree.findall('.//ProjectReference'))
 
 
-def test_adds_library_reference_to_python_project_config_file() -> None:
+def _assert_library_reference_was_not_added_to_csharp_project_csproj_file(project_dir: Path, library_dir: Path) -> None:
+    project_csproj_file = container.project_manager().get_csproj_file_path(project_dir)
+
+    xml_manager = container.xml_manager()
+    csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
+
+    assert not any(str(library_dir) in project_reference.get("Include", "")
+                   for project_reference in csproj_tree.findall('.//ProjectReference'))
+
+
+def test_adds_library_reference_to_python_project() -> None:
     create_fake_lean_cli_directory()
 
     project_dir = Path("Python Project")
@@ -60,7 +70,7 @@ def test_adds_library_reference_to_python_project_config_file() -> None:
 
 
 @pytest.mark.parametrize("project_depth", range(5))
-def test_adds_library_reference_to_csharp_project_config_file(project_depth: int) -> None:
+def test_adds_library_reference_to_csharp_project(project_depth: int) -> None:
     create_fake_lean_cli_directory_with_subdirectories(project_depth)
 
     project_dir = Path("/".join(f"Subdir{i}" for i in range(project_depth))) / "CSharp Project"
@@ -72,6 +82,20 @@ def test_adds_library_reference_to_csharp_project_config_file(project_depth: int
 
     _assert_library_reference_was_added_to_project_config_file(project_dir, library_dir)
     _assert_library_reference_was_added_to_csharp_project_csproj_file(project_dir, library_dir)
+
+
+def test_adds_python_library_reference_to_csharp_project() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path("CSharp Project")
+    library_dir = Path("Library/Python Library")
+
+    result = CliRunner().invoke(lean, ["library", "add", str(project_dir), str(library_dir), "--no-local"])
+
+    assert result.exit_code == 0
+
+    _assert_library_reference_was_added_to_project_config_file(project_dir, library_dir)
+    _assert_library_reference_was_not_added_to_csharp_project_csproj_file(project_dir, library_dir)
 
 
 @pytest.mark.parametrize("project_dir", [

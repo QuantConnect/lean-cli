@@ -17,6 +17,7 @@ from pathlib import Path
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
+from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
     QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice
 
@@ -40,21 +41,7 @@ def _get_csharp_project_files(path: Path) -> dict:
             "algorithm-language": "CSharp",
             "parameters": {}
         }),
-        (path / "CSharp Project.csproj"): """
-        <Project Sdk="Microsoft.NET.Sdk">
-            <PropertyGroup>
-                <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-                <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-                <TargetFramework>net6.0</TargetFramework>
-                <OutputPath>bin/$(Configuration)</OutputPath>
-                <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-                <NoWarn>CS0618</NoWarn>
-            </PropertyGroup>
-            <ItemGroup>
-                <PackageReference Include="QuantConnect.Lean" Version="2.5.11940" />
-            </ItemGroup>
-        </Project>
-            """
+        (path / "CSharp Project.csproj"): ProjectManager.get_csproj_file_default_content()
     }
 
 
@@ -74,21 +61,8 @@ def _get_fake_libraries() -> dict:
             "algorithm-language": "CSharp",
             "parameters": {}
         }),
-        (Path.cwd() / "Library" / "CSharp Library" / "CSharp Library.csproj"): """
-    <Project Sdk="Microsoft.NET.Sdk">
-        <PropertyGroup>
-            <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-            <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-            <TargetFramework>net6.0</TargetFramework>
-            <OutputPath>bin/$(Configuration)</OutputPath>
-            <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-            <NoWarn>CS0618</NoWarn>
-        </PropertyGroup>
-        <ItemGroup>
-            <PackageReference Include="QuantConnect.Lean" Version="2.5.11940" />
-        </ItemGroup>
-    </Project>
-        """
+        (Path.cwd() / "Library" / "CSharp Library" / "CSharp Library.csproj"):
+            ProjectManager.get_csproj_file_default_content()
     }
 
 
@@ -160,6 +134,7 @@ def create_api_project(id: int, name: str) -> QCProject:
         liveResults=QCLiveResults(eStatus="Unknown"),
         libraries=[]
     )
+
 
 def create_api_organization() -> QCFullOrganization:
     return QCFullOrganization(id="1",
