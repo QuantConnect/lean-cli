@@ -187,7 +187,8 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
     
     options = []
     for key, value in brokerage_required_options[brokerage].items():
-        options.extend([f"--{key}", value])
+        if "organization" not in key:
+            options.extend([f"--{key}", value])
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
