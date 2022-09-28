@@ -129,7 +129,7 @@ def remove(project: Path, name: str, no_local: bool) -> None:
         if project_language == "CSharp":
             library_manager.remove_lean_library_from_csharp_project(project, library_dir, no_local)
         else:
-            _remove_lean_library_from_python_project(project, library_dir)
+            library_manager.remove_lean_library_from_python_project(project, library_dir)
     else:
         if project_language == "CSharp":
             _remove_package_from_csharp_project(project, name, no_local)

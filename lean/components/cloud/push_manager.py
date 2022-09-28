@@ -20,6 +20,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
+from lean.models.errors import RequestFailedError
 
 
 class PushManager:
@@ -140,7 +141,17 @@ class PushManager:
         files_to_remove = [cloud_file for cloud_file in cloud_files
                            if not any(local_file_name == cloud_file.name for local_file_name in local_file_names)]
         for file in files_to_remove:
-            self._api_client.files.delete(cloud_project.projectId, file.name)
+            self._last_file = Path(file.name)
+
+            try:
+                self._api_client.files.delete(cloud_project.projectId, file.name)
+            except RequestFailedError as e:
+                # Some files fetched from cloud are not downloaded to local environments (like copies of library files),
+                # so the delete call will fail with "File not found" error
+                if "File not found" in str(e):
+                    continue
+                raise e
+
             self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
 
         self._last_file = None
