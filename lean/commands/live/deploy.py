@@ -419,8 +419,8 @@ def deploy(project: Path,
     brokerage_id = lean_config["environments"][environment_name]["live-mode-brokerage"]
     if brokerage_id in [broker.get_live_name(environment_name) for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
         logger = container.logger()
-        previous_portfolio_state = json.loads(open(get_state_json("live")).read())
-        previous_cash_state = previous_portfolio_state["Cash"]
+        previous_portfolio_state = json.loads(open(get_state_json("live"), encoding="iso-8859-1").read())
+        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
         live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance

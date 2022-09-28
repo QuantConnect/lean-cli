@@ -55,10 +55,11 @@ def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str, prev
     """
     cash_list = []
     previous_cash_balance = []
-    for cash_state in previous_cash_state.values():
-        currency = cash_state["Symbol"]
-        amount = cash_state["Amount"]
-        previous_cash_balance.append({"currency": currency, "amount": amount})
+    if previous_cash_state:
+        for cash_state in previous_cash_state.values():
+            currency = cash_state["Symbol"]
+            amount = cash_state["Amount"]
+            previous_cash_balance.append({"currency": currency, "amount": amount})
     
     if live_cash_balance is not None and live_cash_balance != "":
         for cash_pair in live_cash_balance.split(","):
@@ -86,7 +87,7 @@ def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str, prev
 def get_state_json(environment: str):
     backtest_json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
     result_json_files = [f for f in backtest_json_files if
-                            not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json") and not f.name.endswith("minute.json")]
+                            not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json") and not len(f.name) > 13]
 
     if len(result_json_files) == 0:
         return None

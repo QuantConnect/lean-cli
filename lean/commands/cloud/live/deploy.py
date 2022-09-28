@@ -287,7 +287,7 @@ def deploy(project: str,
 
     if brokerage_instance._editable_initial_cash_balance:
         last_state = api_client.get("live/read/portfolio", {"projectId": cloud_project.projectId})
-        previous_cash_state = last_state["portfolio"]["cash"]
+        previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
         live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")

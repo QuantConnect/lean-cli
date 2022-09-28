@@ -159,8 +159,9 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   mock.ANY)
 
 
-@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
-                                            ("Paper Trading", None),
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", None),
+                                            ("Paper Trading", ""),
+                                            ("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
                                             ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
