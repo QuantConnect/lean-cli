@@ -415,7 +415,7 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
-    brokerage_id = lean_config["environments"]["lean-cli"]["live-mode-brokerage"]
+    brokerage_id = lean_config["environments"][environment_name]["live-mode-brokerage"]
     if brokerage_id in [broker.get_live_name("lean-cli") for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
         logger = container.logger()
         live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)

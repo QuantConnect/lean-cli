@@ -285,7 +285,7 @@ def deploy(project: str,
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
 
-    if brokerage_instance in [broker for broker in all_cloud_brokerages if broker._editable_initial_cash_balance]:
+    if brokerage_instance._editable_initial_cash_balance:
         live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
