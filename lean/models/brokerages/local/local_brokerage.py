@@ -21,7 +21,6 @@ class LocalBrokerage(LeanConfigConfigurer):
 
     def __init__(self, json_brokerage_data: Dict[str, Any]) -> None:
         super().__init__(json_brokerage_data)
-        self._editable_initial_cash_balance = json_brokerage_data["live-cash-balance-state"]
 
     def get_live_name(self, environment_name: str) -> str:
         live_name = self._id

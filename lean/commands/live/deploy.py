@@ -416,8 +416,7 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
-    brokerage_id = lean_config["environments"][environment_name]["live-mode-brokerage"]
-    if brokerage_id in [broker.get_live_name(environment_name) for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
+    if env_brokerage._editable_initial_cash_balance:
         logger = container.logger()
         previous_portfolio_state = json.loads(open(get_state_json("live"), encoding="iso-8859-1").read())
         previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
