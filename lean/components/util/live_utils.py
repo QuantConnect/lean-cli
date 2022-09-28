@@ -12,12 +12,14 @@
 # limitations under the License.
 
 import click
-from typing import Dict, List
+from pathlib import Path
+from typing import Any, Dict, List
 from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
 from lean.models.data_providers import all_data_providers
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
+from lean.models.lean_config_configurer import LeanConfigConfigurer
 
 def _get_configs_for_options(env: str) -> List[Configuration]:
     if env == "cloud": 
@@ -43,21 +45,27 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
     return list(run_options.values())
 
 
-def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str) -> List[Dict[str, float]]:
+def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
     :param live_cash_balance: the initial cash balance option input
+    :param previous_cash_state: the dictionary containing cash balance in previous portfolio state
     :return: the list of dictionary containing intial currency and amount information
     """
     cash_list = []
+    previous_cash_balance = []
+    for cash_state in previous_cash_state.values():
+        currency = cash_state["Symbol"]
+        amount = cash_state["Amount"]
+        previous_cash_balance.append({"currency": currency, "amount": amount})
     
     if live_cash_balance is not None and live_cash_balance != "":
         for cash_pair in live_cash_balance.split(","):
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
         
-    elif click.confirm("Do you want to set initial cash balance?", default=False):
+    elif click.confirm(f"Do you want to set initial cash balance? {previous_cash_balance}", default=False):
         continue_adding = True
     
         while continue_adding:
@@ -68,5 +76,19 @@ def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str) -> L
             
             if not click.confirm("Do you want to add other currency?", default=False):
                 continue_adding = False
+                
+    else:
+        cash_list = previous_cash_balance
             
     return cash_list
+
+
+def get_state_json(environment: str):
+    backtest_json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
+    result_json_files = [f for f in backtest_json_files if
+                            not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json") and not f.name.endswith("minute.json")]
+
+    if len(result_json_files) == 0:
+        return None
+
+    return sorted(result_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]

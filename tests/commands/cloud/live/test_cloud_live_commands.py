@@ -54,6 +54,7 @@ def test_cloud_live_deploy() -> None:
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'portfolio': {"cash": {}}}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -98,6 +99,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'portfolio': {"cash": {}}}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -158,6 +160,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
+                                            ("Paper Trading", None),
                                             ("Paper Trading", "USD:100,EUR:200"),
                                             ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
@@ -177,6 +180,21 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {
+            'portfolio': {
+                'cash': {
+                    'USD': {
+                        'SecuritySymbols': [],
+                        'Symbol': 'USD',
+                        'Amount': 500,
+                        'ConversionRate': 1,
+                        'CurrencySymbol': '$',
+                        'ValueInAccountCurrency': 500
+                    }
+                }
+            },
+            'success': True
+        }
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -208,7 +226,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         else:
             cash_list = [{"currency": "USD", "amount": 100}]
     else:
-        cash_list = []
+        cash_list = [{"currency": "USD", "amount": 500}]
         
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                 mock.ANY,

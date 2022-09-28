@@ -15,6 +15,7 @@ import copy
 import subprocess
 import time
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import click
@@ -29,7 +30,7 @@ from lean.models.configuration import InternalInputUserInput, OrganzationIdConfi
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
 from lean.commands.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance
+from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance, get_state_json
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -416,9 +417,11 @@ def deploy(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     brokerage_id = lean_config["environments"][environment_name]["live-mode-brokerage"]
-    if brokerage_id in [broker.get_live_name("lean-cli") for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
+    if brokerage_id in [broker.get_live_name(environment_name) for broker in all_local_brokerages if broker._editable_initial_cash_balance]:
         logger = container.logger()
-        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance)
+        previous_portfolio_state = json.loads(open(get_state_json("live")).read())
+        previous_cash_state = previous_portfolio_state["Cash"]
+        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":

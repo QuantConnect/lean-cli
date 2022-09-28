@@ -22,6 +22,7 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
+from lean.components.util.live_utils import get_state_json
 
 
 def _find_project_directory(backtest_file: Path) -> Optional[Path]:
@@ -107,17 +108,12 @@ def report(backtest_results: Optional[Path],
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
     if backtest_results is None:
-        backtest_json_files = list(Path.cwd().rglob("backtests/*/*.json"))
-        result_json_files = [f for f in backtest_json_files if
-                             not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json")]
-
-        if len(result_json_files) == 0:
+        backtest_results = get_state_json("backtest")
+        if not backtest_results:
             raise MoreInfoError(
-                "Could not find a recent backtest result file, please use the --backtest-results option",
-                "https://www.lean.io/docs/v2/lean-cli/reports#02-Generate-Reports"
+            "Could not find a recent backtest result file, please use the --backtest-results option",
+            "https://www.lean.io/docs/v2/lean-cli/reports#02-Generate-Reports"
             )
-
-        backtest_results = sorted(result_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
 
     logger = container.logger()
 

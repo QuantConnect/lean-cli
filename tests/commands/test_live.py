@@ -940,6 +940,21 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Zerodha", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
+    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "results.json"
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    with results_path.open("w+", encoding="utf-8") as file:
+        file.write('''{
+  "Cash": {
+    "USD": {
+      "SecuritySymbols": [],
+      "Symbol": "USD",
+      "Amount": 5000,
+      "ConversionRate": 0.0,
+      "CurrencySymbol": "$",
+      "ValueInAccountCurrency": 0.0
+    }
+  }
+}''')
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -980,8 +995,10 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     cash_pairs = cash.split(",")
     if len(cash_pairs) == 2:
         cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
-    else:
+    elif len(cash_pairs) == 1:
         cash_list = [{"currency": "USD", "amount": 100}]
+    else:
+        cash_list = [{"currency": "USD", "amount": 5000}]
 
     lean_runner.run_lean.assert_called_once()
     args, _ = lean_runner.run_lean.call_args
