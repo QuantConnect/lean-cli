@@ -81,15 +81,19 @@ class Container(DeclarativeContainer):
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
     project_manager = Singleton(ProjectManager,
+                                logger,
                                 project_config_manager,
                                 lean_config_manager,
+                                path_manager,
                                 xml_manager,
                                 platform_manager)
     library_manager = Singleton(LibraryManager,
+                                logger,
                                 project_manager,
                                 project_config_manager,
                                 lean_config_manager,
-                                path_manager)
+                                path_manager,
+                                xml_manager)
 
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)

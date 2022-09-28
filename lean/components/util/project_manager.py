@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import site
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,8 @@ import pkg_resources
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.logger import Logger
+from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
@@ -34,19 +37,25 @@ class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
 
     def __init__(self,
+                 logger: Logger,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
+                 path_manager: PathManager,
                  xml_manager: XMLManager,
                  platform_manager: PlatformManager) -> None:
         """Creates a new ProjectManager instance.
 
+        :param logger: the logger to use to log messages with
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
         :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
+        :param path_manager: the path manager to use to handle library paths
         :param xml_manager: the XMLManager to use when working with XML
         :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
+        self._logger = logger
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
+        self._path_manager = path_manager
         self._xml_manager = xml_manager
         self._platform_manager = platform_manager
 
@@ -173,24 +182,67 @@ class ProjectManager:
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.
 
+        This will also return all the libraries referenced by the project.
+
         :param cloud_projects: all projects fetched from the cloud
         :param project: the name or id of the project
-        :return: a list of all the projects in the cloud that match the given name or id
+        :return: a list of all the projects in the cloud that match the given name or id,
+                 including the libraries they might reference
         """
-        projects = []
         search_by_id = isinstance(project, int)
 
         if project is not None:
             project_path = Path(project).as_posix() if not search_by_id else None
-            projects = [p for p in cloud_projects
-                        if search_by_id and p.projectId == project or
-                        not search_by_id and Path(p.name).as_posix() == project_path]
+            projects = [project for project in cloud_projects
+                        if (search_by_id and project.projectId == project or
+                            not search_by_id and Path(project.name).as_posix() == project_path)]
+
             if len(projects) == 0:
                 raise RuntimeError("No project with the given name or id exists in the cloud")
+
+            library_ids = [library_id for project in projects for library_id in project.libraries]
+            libraries = [project for project in cloud_projects if project.projectId in library_ids]
+            projects.extend(libraries)
         else:
             projects = cloud_projects
 
         return projects
+
+    def restore_csharp_project(self, csproj_file: Path, no_local: bool) -> None:
+        """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
+
+        :param csproj_file: Path to the project's csproj file
+        :param no_local: Whether restoring the packages locally must be skipped
+        """
+        if no_local:
+            return
+
+        if shutil.which("dotnet") is None:
+            self._logger.info(f"Project {csproj_file.parent} will not be restored because dotnet was not found in PATH")
+            return
+
+        project_dir = csproj_file.parent
+        self._logger.info(
+            f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}' to provide local autocomplete: {project_dir}, {csproj_file}, {Path.cwd()}")
+
+        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+
+        if process.returncode != 0:
+            raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
+
+    def try_restore_csharp_project(self, csproj_file: Path, original_csproj_content: str, no_local: bool) -> None:
+        """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
+
+        :param csproj_file: Path to the project's csproj file
+        :param original_csproj_content: The original csproj file content
+        :param no_local: Whether restoring the packages locally must be skipped
+        """
+        try:
+            self.restore_csharp_project(csproj_file, no_local)
+        except RuntimeError as e:
+            self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
+            csproj_file.write_text(original_csproj_content, encoding="utf-8")
+            raise e
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""

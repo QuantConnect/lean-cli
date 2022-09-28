@@ -82,68 +82,6 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
 
-def _add_csharp_project_to_csproj(csproj_file: Path, library_csproj_path: str) -> None:
-    """Adds a Lean CLI library project reference to a .csproj file.
-
-    :param csproj_file: the path to the .csproj file
-    :param library_csproj_file: the path to the library's .csproj file
-    """
-    xml_manager = container.xml_manager()
-    csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
-
-    existing_project_reference = csproj_tree.find(f".//ProjectReference[@Include='{library_csproj_path}']")
-    if existing_project_reference is None:
-        last_item_group = csproj_tree.find(".//ItemGroup[last()]")
-        if last_item_group is None:
-            last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
-
-        last_item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_path}" />'))
-
-    csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
-
-
-def _restore_csharp_project(csproj_file: Path, no_local: bool) -> None:
-    """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
-
-    :param csproj_file: Path to the project's csproj file
-    :param no_local: Whether restoring the packages locally must be skipped
-    """
-    logger = container.logger()
-    path_manager = container.path_manager()
-
-    if no_local:
-        return
-
-    if shutil.which("dotnet") is None:
-        logger.info(f"Project {csproj_file.parent} will not be restored because dotnet was not found in PATH")
-        return
-
-    project_dir = csproj_file.parent
-    logger.info(f"Restoring packages in '{path_manager.get_relative_path(project_dir)}' to provide local autocomplete")
-
-    process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
-
-    if process.returncode != 0:
-        raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
-
-
-def _try_restore_csharp_project(csproj_file: Path, original_csproj_content: str, no_local: bool) -> None:
-    """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
-
-    :param csproj_file: Path to the project's csproj file
-    :param original_csproj_content: The original csproj file content
-    :param no_local: Whether restoring the packages locally must be skipped
-    """
-    try:
-        _restore_csharp_project(csproj_file, no_local)
-    except RuntimeError as e:
-        logger = container.logger()
-        path_manager = container.path_manager()
-        logger.warn(f"Reverting the changes to '{path_manager.get_relative_path(csproj_file)}'")
-        csproj_file.write_text(original_csproj_content, encoding="utf-8")
-        raise e
-
-
 def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a NuGet package to the project in the given directory.
 
@@ -167,43 +105,7 @@ def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: 
 
     original_csproj_content = csproj_file.read_text(encoding="utf-8")
     _add_csharp_package_to_csproj(csproj_file, name, version)
-    _try_restore_csharp_project(csproj_file, original_csproj_content, no_local)
-
-
-def _add_lean_library_to_csharp_project(project_dir: Path, library_dir: Path, no_local: bool) -> None:
-    """Adds a Lean CLI C# library to the project's csproj file.
-
-    It will add a reference to the library and restore the project if dotnet is the user's PATH.
-
-    :param project_dir: Path to the project directory
-    :param library_dir: Path to the library directory
-    :param no_local: Whether restoring the packages locally must be skipped
-    """
-    library_manager = container.library_manager()
-    already_added = library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
-    # If the library was already referenced by the project, do not proceed further with adding it to the .csproj file
-    if already_added:
-        container.logger().info(f"Library {library_dir.name} has already been added to the project {project_dir.name}")
-        return
-
-    library_config = container.project_config_manager().get_project_config(library_dir)
-    library_language = library_config.get("algorithm-language", None)
-
-    # Python library references are not added to .csproj file
-    if library_language == 'Python':
-        return
-
-    library_csproj_file_path = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
-
-    if library_csproj_file_path is None:
-        return
-
-    project_manager = container.project_manager()
-    project_csproj_file = project_manager.get_csproj_file_path(project_dir)
-
-    original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
-    _add_csharp_project_to_csproj(project_csproj_file, library_csproj_file_path)
-    _try_restore_csharp_project(project_csproj_file, original_csproj_content, no_local)
+    project_manager.try_restore_csharp_project(csproj_file, original_csproj_content, no_local)
 
 
 def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version: StrictVersion) -> bool:
@@ -347,16 +249,6 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
                                "locally, see the logs above for more information")
 
 
-def _add_lean_library_to_python_project(project_dir: Path, library_dir: Path) -> None:
-    """Adds a Lean CLI Python library to a Python project.
-
-    :param project_dir: the path to the project directory
-    :param library_dir: the path to the C# library directory
-    """
-    library_manager = container.library_manager()
-    library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
-
-
 @click.command(cls=LeanCommand)
 @click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @click.argument("name", type=str)
@@ -408,9 +300,9 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     if library_manager.is_lean_library(library_dir):
         logger.info(f"Adding Lean CLI library {library_dir} to project {project}")
         if project_language == "CSharp":
-            _add_lean_library_to_csharp_project(project, library_dir, no_local)
+            library_manager.add_lean_library_to_csharp_project(project, library_dir, no_local)
         else:
-            _add_lean_library_to_python_project(project, library_dir)
+            library_manager.add_lean_library_to_python_project(project, library_dir)
     else:
         logger.info(f"Adding package {name} to project {project}")
         if project_language == "CSharp":
