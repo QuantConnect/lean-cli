@@ -371,29 +371,34 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
 def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
     create_fake_lean_cli_directory()
 
+    lean_config_manager = container.lean_config_manager()
+    lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
+
     launch_json_path = Path.cwd() / "Python Project" / ".vscode" / "launch.json"
-    _generate_file(launch_json_path, """
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debug with Lean CLI",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/Lean/Launcher/bin/Debug"
-                }
-            ]
-        }
-    ]
-}
-        """)
+    _generate_file(launch_json_path, json.dumps({
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Debug with Lean CLI",
+                "type": "python",
+                "request": "attach",
+                "connect": {
+                    "host": "localhost",
+                    "port": 5678
+                },
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "/Lean/Launcher/bin/Debug"
+                    },
+                    {
+                        "localRoot": str(lean_cli_root_dir / "Library"),
+                        "remoteRoot": "/Library"
+                    }
+                ]
+            }
+        ]
+    }))
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -419,6 +424,10 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
             {
                 "localRoot": "${workspaceFolder}",
                 "remoteRoot": "/LeanCLI"
+            },
+            {
+                "localRoot": str(lean_cli_root_dir / "Library"),
+                "remoteRoot": "/Library"
             }
         ]
     }

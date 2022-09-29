@@ -39,9 +39,20 @@ def _create_library_manager() -> LibraryManager:
     path_manager = PathManager(platform_manager)
     xml_manager = mock.Mock()
     project_config_manager = ProjectConfigManager(xml_manager)
-    project_manager = ProjectManager(project_config_manager, lean_config_manager, xml_manager, platform_manager)
+    logger = mock.Mock()
+    project_manager = ProjectManager(logger,
+                                     project_config_manager,
+                                     lean_config_manager,
+                                     path_manager,
+                                     xml_manager,
+                                     platform_manager)
 
-    return LibraryManager(project_manager, project_config_manager, lean_config_manager, path_manager)
+    return LibraryManager(logger,
+                          project_manager,
+                          project_config_manager,
+                          lean_config_manager,
+                          path_manager,
+                          xml_manager)
 
 
 def _project_has_library_reference_in_config(project_dir: Path, library_dir: Path) -> bool:
