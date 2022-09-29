@@ -193,9 +193,9 @@ class ProjectManager:
 
         if project is not None:
             project_path = Path(project).as_posix() if not search_by_id else None
-            projects = [project for project in cloud_projects
-                        if (search_by_id and project.projectId == project or
-                            not search_by_id and Path(project.name).as_posix() == project_path)]
+            projects = [cloud_project for cloud_project in cloud_projects
+                        if (search_by_id and cloud_project.projectId == project or
+                            not search_by_id and Path(cloud_project.name).as_posix() == project_path)]
 
             if len(projects) == 0:
                 raise RuntimeError("No project with the given name or id exists in the cloud")
