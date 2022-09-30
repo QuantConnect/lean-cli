@@ -655,3 +655,33 @@ def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider()
     args, _ = lean_runner.run_lean.call_args
 
     assert "data-purchase-limit" not in args[0]
+
+
+def test_backtest_adds_python_libraries_path_to_lean_config() -> None:
+    create_fake_lean_cli_directory()
+
+    lean_config_manager = container.lean_config_manager()
+    lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
+    project_path = lean_cli_root_dir / "Python Project"
+    library_path = lean_cli_root_dir / "Library/Python Library"
+
+    library_manager = container.library_manager()
+    library_manager.add_lean_library_to_project(project_path, library_path, False)
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    result = CliRunner().invoke(lean, ["backtest", str(project_path)])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    lean_config = args[0]
+    expected_library_path = (Path("/") / library_path.relative_to(lean_cli_root_dir)).as_posix()
+
+    assert expected_library_path in lean_config.get('python-additional-paths')
