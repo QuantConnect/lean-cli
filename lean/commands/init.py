@@ -37,6 +37,7 @@ def _download_repository(output_path: Path) -> None:
     response = container.http_client().get("https://github.com/QuantConnect/Lean/archive/master.zip", stream=True)
 
     total_size_bytes = int(response.headers.get("content-length", 0))
+    print_file_size_at_mb = 10
 
     # Sometimes content length isn't set, don't show a progress bar in that case
     if total_size_bytes > 0:
@@ -51,10 +52,15 @@ def _download_repository(output_path: Path) -> None:
 
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-
+                written_bytes += len(chunk)
+                
                 if progress is not None:
-                    written_bytes += len(chunk)
                     progress.update(progress_task, completed=(written_bytes / total_size_bytes) * 100)
+                
+                file_size_mb = round(written_bytes / 1024 / 1024, 2)
+                if file_size_mb >= print_file_size_at_mb:
+                    print_file_size_at_mb += 20
+                    logger.info(f"Download Progress {file_size_mb} MB")
     except KeyboardInterrupt as e:
         if progress is not None:
             progress.stop()
@@ -65,7 +71,10 @@ def _download_repository(output_path: Path) -> None:
 
 
 @click.command(cls=LeanCommand)
-def init() -> None:
+@click.option("--language", "-l",
+              type=click.Choice(container.cli_config_manager().default_language.allowed_values, case_sensitive=False),
+              help="The default language to use for new projects")
+def init(language: str) -> None:
     """Scaffold a Lean configuration file and data directory."""
     current_dir = Path.cwd()
     data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
@@ -111,7 +120,7 @@ def init() -> None:
     # Prompt for some general configuration if not set yet
     cli_config_manager = container.cli_config_manager()
     if cli_config_manager.default_language.get_value() is None:
-        default_language = click.prompt("What should the default language for new projects be?",
+        default_language = language if language is not None else click.prompt("What should the default language for new projects be?",
                                         default=cli_config_manager.default_language.default_value,
                                         type=click.Choice(cli_config_manager.default_language.allowed_values))
         cli_config_manager.default_language.set_value(default_language)

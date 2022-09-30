@@ -664,8 +664,9 @@ Usage: lean init [OPTIONS]
   Scaffold a Lean configuration file and data directory.
 
 Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  -l, --language [python|csharp]  The default language to use for new projects
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/init.py](lean/commands/init.py)_
