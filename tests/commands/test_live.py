@@ -35,7 +35,7 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
     config = path.read_text(encoding="utf-8")
-    config = config.replace("{", f
+    config = config.replace("{", f"""
 {{
     "ib-account": "DU1234567",
     "ib-user-name": "trader777",
@@ -59,7 +59,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
             "history-provider": "BrokerageHistoryProvider"
         }}
     }},
-    )
+    """)
 
     path.write_text(config, encoding="utf-8")
 
