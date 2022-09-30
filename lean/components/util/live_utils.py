@@ -12,8 +12,12 @@
 # limitations under the License.
 
 import click
+from datetime import datetime
+import json
 from pathlib import Path
+import os
 from typing import Any, Dict, List
+from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
@@ -45,7 +49,28 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
     return list(run_options.values())
 
 
-def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+    cloud_deployment_list = api_client.get("live/read")
+    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S") for instance in cloud_deployment_list["live"] 
+                             if instance["projectId"] == project_id]
+    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else datetime.min
+    
+    local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S") for subdir in os.listdir(f"{project_name}/live")]
+    local_last_time = sorted(local_deployment_time, reverse = True)[0] if local_deployment_time else datetime.min
+    
+    if cloud_last_time > local_last_time:
+        last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
+        previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
+    elif cloud_last_time < local_last_time:
+        previous_portfolio_state = json.loads(open(get_state_json("live")).read())
+        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
+    else:
+        return None
+    
+    return previous_cash_state
+
+
+def configure_initial_cash_balance(logger: Logger, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
@@ -84,12 +109,20 @@ def _configure_initial_cash_balance(logger: Logger, live_cash_balance: str, prev
     return cash_list
 
 
-def get_state_json(environment: str):
-    backtest_json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
-    result_json_files = [f for f in backtest_json_files if
-                            not f.name.endswith("-order-events.json") and not f.name.endswith("alpha-results.json") and not len(f.name) > 13]
+def _filter_json_name_backtest(file: Path) -> bool:
+    return not file.name.endswith("-order-events.json") and not file.name.endswith("alpha-results.json")
 
-    if len(result_json_files) == 0:
+
+def _filter_json_name_live(file: Path) -> bool:
+    return file.name.replace("L-", "", 1).replace(".json", "").isdigit()    # The json should have name like "L-1234567890.json"
+
+
+def get_state_json(environment: str) -> str:
+    json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
+    name_filter = _filter_json_name_backtest if environment == "backtest" else _filter_json_name_live
+    filtered_json_files = [f for f in json_files if name_filter(f)]
+
+    if len(filtered_json_files) == 0:
         return None
 
-    return sorted(result_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
+    return sorted(filtered_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]

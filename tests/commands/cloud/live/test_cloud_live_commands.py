@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from pathlib import Path
 from unittest import mock
 from click.testing import CliRunner
 from dependency_injector import providers
@@ -51,10 +51,11 @@ def test_cloud_live_liquidate() -> None:
 
 def test_cloud_live_deploy() -> None:
     create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project/live").mkdir()
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'portfolio': {"cash": {}}}
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -96,10 +97,11 @@ def test_cloud_live_deploy() -> None:
                                              ("telegram", "customId1:custom:token1,customId2:custom:token2")])
 def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) -> None:
     create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project/live").mkdir()
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'portfolio': {"cash": {}}}
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -159,9 +161,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   mock.ANY)
 
 
-@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", None),
-                                            ("Paper Trading", ""),
-                                            ("Paper Trading", "USD:100"),
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
                                             ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
@@ -178,10 +178,16 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Zerodha", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project/live").mkdir()
+
+    cloud_project_manager = mock.Mock()
+    cloud_id = cloud_project_manager.get_cloud_project().projectId
+    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
+            'live': [], 'projectId': cloud_id, 'launched': "2020-01-01 00:00:00",
             'portfolio': {
                 'cash': {
                     'USD': {
@@ -197,9 +203,6 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
             'success': True
         }
     container.api_client.override(providers.Object(api_client))
-
-    cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))

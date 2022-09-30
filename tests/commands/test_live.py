@@ -35,7 +35,7 @@ ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 def create_fake_environment(name: str, live_mode: bool) -> None:
     path = Path.cwd() / "lean.json"
     config = path.read_text(encoding="utf-8")
-    config = config.replace("{", f"""
+    config = config.replace("{", f
 {{
     "ib-account": "DU1234567",
     "ib-user-name": "trader777",
@@ -59,7 +59,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
             "history-provider": "BrokerageHistoryProvider"
         }}
     }},
-    """)
+    )
 
     path.write_text(config, encoding="utf-8")
 
@@ -501,6 +501,17 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                                 "--binance-api-secret", "456",
                                 "--binance-use-testnet", "live"])
 
+            if brokerage == "Trading Technologies":
+                data_feed = "Binance"
+                
+                api_client = mock.MagicMock()
+                api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+                container.api_client.override(providers.Object(api_client))
+                
+                (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
+        
+                options.extend(["--live-cash-balance", "USD:100"])
+
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
                                                "--data-feed", data_feed,
@@ -524,6 +535,12 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             lean_runner = mock.Mock()
             container.lean_runner.override(providers.Object(lean_runner))
 
+            api_client = mock.MagicMock()
+            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+            container.api_client.override(providers.Object(api_client))
+
+            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
+
             options = []
 
             for key, value in current_options:
@@ -532,6 +549,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed,
+                                               "--live-cash-balance", "USD:100",
                                                *options])
 
             traceback.print_exception(*result.exc_info)
@@ -552,8 +570,9 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
-
+    
     api_client = mock.MagicMock()
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
@@ -566,6 +585,10 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 
     for key, value in data_feed_required_options[data_feed].items():
         options.extend([f"--{key}", value])
+
+    if brokerage == "Trading Technologies" or brokerage == "Paper Trading":
+        (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
+        options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
@@ -596,10 +619,13 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
     container.lean_runner.override(providers.Object(lean_runner))
 
     api_client = mock.MagicMock()
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
     container.api_client.override(providers.Object(api_client))
+
+    (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
     options = []
 
@@ -611,6 +637,9 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
 
     for key, value in data_feed_required_options[data_feed2].items():
         options.extend([f"--{key}", value])
+
+    if brokerage == "Trading Technologies" or brokerage == "Paper Trading":
+        options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
@@ -646,6 +675,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
+            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
@@ -674,6 +704,9 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
                                 "--binance-use-testnet", "live"])
+            elif brokerage == "Trading Technologies" or brokerage == "Paper Trading":
+                (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
+                options.extend(["--live-cash-balance", "USD:100"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-exchange-name", "binance",
@@ -714,10 +747,13 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
+            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
             container.api_client.override(providers.Object(api_client))
+
+            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
             options = []
 
@@ -739,7 +775,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
-                                               "--data-feed", data_feed,
+                                               "--data-feed", data_feed, 
+                                               "--live-cash-balance", "USD:100",
                                                *options])
 
             assert result.exit_code == 0
@@ -771,10 +808,13 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
+            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
             container.api_client.override(providers.Object(api_client))
+
+            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
             options = []
 
@@ -798,6 +838,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                                                "--brokerage", "Paper Trading",
                                                "--data-feed", data_feed1,
                                                "--data-feed", data_feed2,
+                                               "--live-cash-balance", "USD:100",
                                                *options])
 
             assert result.exit_code == 0
@@ -923,9 +964,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert "python-venv" not in args[0]
 
 
-@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", None),
-                                            ("Paper Trading", ""),
-                                            ("Paper Trading", "USD:100"),
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
                                             ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
@@ -942,8 +981,8 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Zerodha", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
-    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "results.json"
-    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "L-1234567890.json"
+    results_path.mkdir(parents=True, exist_ok=True)
     with results_path.open("w+", encoding="utf-8") as file:
         file.write('''{
   "Cash": {
@@ -986,7 +1025,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--data-feed", "Custom data only", *options])
     
-    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed frommodule-*.json)
+    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
     if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()

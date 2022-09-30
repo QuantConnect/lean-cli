@@ -30,7 +30,7 @@ from lean.models.configuration import InternalInputUserInput, OrganzationIdConfi
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule
 from lean.commands.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance, get_state_json
+from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance, get_state_json
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -412,19 +412,18 @@ def deploy(project: Path,
 
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
-    
+    container.logger().info(project_config.get("id", None))
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     if env_brokerage._editable_initial_cash_balance:
         logger = container.logger()
-        previous_portfolio_state = json.loads(open(get_state_json("live"), encoding="iso-8859-1").read())
-        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
-        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
+        previous_cash_state = get_latest_cash_state(container.api_client(), project_config.get("cloud-id", None), project)
+        live_cash_balance = configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":
-        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_id}")
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

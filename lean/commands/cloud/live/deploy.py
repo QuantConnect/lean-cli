@@ -26,7 +26,7 @@ from lean.models.configuration import InternalInputUserInput, OrganzationIdConfi
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, _configure_initial_cash_balance
+from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -286,9 +286,8 @@ def deploy(project: str,
     price_data_handler = brokerage_instance.get_price_data_handler()
 
     if brokerage_instance._editable_initial_cash_balance:
-        last_state = api_client.get("live/read/portfolio", {"projectId": cloud_project.projectId})
-        previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
-        live_cash_balance = _configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
+        previous_cash_state = get_latest_cash_state(api_client, cloud_project.projectId, project)
+        live_cash_balance = configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
