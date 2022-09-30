@@ -34,7 +34,6 @@ def _add_local_library_references_to_project(project: QCProject, cloud_libraries
     for i, library in enumerate(cloud_libraries, start=1):
         logger.info(f"[{i}/{len(cloud_libraries)}] "
                     f"Adding/updating local library {library.name} reference to project {project.name}")
-        # TODO: no_local flag??
         library_manager.add_lean_library_to_project(project_dir, cwd / library.name, False)
 
 
@@ -56,7 +55,6 @@ def _remove_local_library_references_from_project(project: QCProject, cloud_libr
     for i, library_reference in enumerate(libraries_to_remove, start=1):
         logger.info(f"[{i}/{len(libraries_to_remove)}] "
                     f"Removing local library {library_reference.name} reference from project {project.name}")
-        # TODO: no_local flag??
         library_manager.remove_lean_library_from_project(project_dir, Path.cwd() / library_reference.path, False)
 
 

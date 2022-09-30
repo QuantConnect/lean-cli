@@ -23,6 +23,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
+from lean.components.util.xml_manager import XMLManager
 from lean.container import container
 from lean.models.utils import LeanLibraryReference
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -37,7 +38,7 @@ def _create_library_manager() -> LibraryManager:
                                             cache_storage)
     platform_manager = PlatformManager()
     path_manager = PathManager(platform_manager)
-    xml_manager = mock.Mock()
+    xml_manager = XMLManager()
     project_config_manager = ProjectConfigManager(xml_manager)
     logger = mock.Mock()
     project_manager = ProjectManager(logger,
@@ -129,3 +130,52 @@ def test_add_and_remove_lean_library_reference_to_project() -> None:
     library_manager.remove_lean_library_reference_from_project(project_dir, library_dir)
 
     assert not _project_has_library_reference_in_config(project_dir, library_dir)
+
+
+def test_add_csharp_library_to_csharp_project_does_not_modify_csproj_if_library_is_already_added() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    library_dir = Path.cwd() / "Library" / "CSharp Library"
+
+    library_manager = _create_library_manager()
+    with mock.patch.object(library_manager,
+                           "get_csharp_lean_library_path_for_csproj_file",
+                           return_value="") as mock_get_library_csproj:
+
+        # Add
+        assert not library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
+
+        # Already added, csproj shouldn't be touched
+        library_manager.add_lean_library_to_csharp_project(project_dir, library_dir, True)
+        mock_get_library_csproj.assert_not_called()
+
+
+def test_add_library_to_csharp_project_does_not_modify_csproj_if_library_is_python() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    library_dir = Path.cwd() / "Library" / "Python Library"
+
+    library_manager = _create_library_manager()
+    with mock.patch.object(library_manager,
+                           "get_csharp_lean_library_path_for_csproj_file",
+                           return_value="") as mock_get_library_csproj:
+        # Already added, csproj shouldn't be touched
+        library_manager.add_lean_library_to_csharp_project(project_dir, library_dir, True)
+        mock_get_library_csproj.assert_not_called()
+
+
+def test_add_csharp_library_to_csharp_project_adds_library_to_project_csproj() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    library_dir = Path.cwd() / "Library" / "CSharp Library"
+
+    library_manager = _create_library_manager()
+    with mock.patch.object(library_manager,
+                           "get_csharp_lean_library_path_for_csproj_file",
+                           return_value=(library_dir / f"{library_dir.name}.csproj").as_posix()) as mock_get_library_csproj:
+        # Already added, csproj shouldn't be touched
+        library_manager.add_lean_library_to_csharp_project(project_dir, library_dir, True)
+        mock_get_library_csproj.assert_called_once_with(project_dir, library_dir)
