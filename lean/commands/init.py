@@ -37,6 +37,7 @@ def _download_repository(output_path: Path) -> None:
     response = container.http_client().get("https://github.com/QuantConnect/Lean/archive/master.zip", stream=True)
 
     total_size_bytes = int(response.headers.get("content-length", 0))
+    print_file_size_at_mb = 10
 
     # Sometimes content length isn't set, don't show a progress bar in that case
     if total_size_bytes > 0:
@@ -51,10 +52,16 @@ def _download_repository(output_path: Path) -> None:
 
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-
+                written_bytes += len(chunk)
+                
                 if progress is not None:
-                    written_bytes += len(chunk)
                     progress.update(progress_task, completed=(written_bytes / total_size_bytes) * 100)
+                
+                # print progress to stdout, to be used by vscode's ControllerLeanCLI.leanInitialize
+                file_size_mb = round(written_bytes / 1024 / 1024, 2)
+                if file_size_mb >= print_file_size_at_mb:
+                    print_file_size_at_mb += 20
+                    logger.info(f"Download Progress {file_size_mb} MB")
     except KeyboardInterrupt as e:
         if progress is not None:
             progress.stop()
