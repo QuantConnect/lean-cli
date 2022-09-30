@@ -455,6 +455,15 @@ class LeanRunner:
             "mode": "ro"
         }
 
+        # Check if the user has library projects
+        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+        if library_dir.is_dir():
+            # Mount the library projects
+            run_options["volumes"][str(library_dir)] = {
+                "bind": "/Library",
+                "mode": "ro"
+            }
+
         # Ensure all .csproj files refer to the version of LEAN in the Docker container
         csproj_temp_dir = self._temp_manager.create_temporary_directory()
         for path in compile_root.rglob("*.csproj"):
