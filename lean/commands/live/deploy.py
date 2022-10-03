@@ -416,10 +416,12 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
-    if env_brokerage._editable_initial_cash_balance:
+    cash_balance_option = env_brokerage._initial_cash_balance
+    if cash_balance_option:
+        optional_cash_balance = cash_balance_option == "optional"
         logger = container.logger()
         previous_cash_state = get_latest_cash_state(container.api_client(), project_config.get("cloud-id", None), project)
-        live_cash_balance = configure_initial_cash_balance(logger, live_cash_balance, previous_cash_state)
+        live_cash_balance = configure_initial_cash_balance(logger, optional_cash_balance, live_cash_balance, previous_cash_state)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":

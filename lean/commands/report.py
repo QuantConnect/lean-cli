@@ -108,7 +108,7 @@ def report(backtest_results: Optional[Path],
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
     if backtest_results is None:
-        backtest_results = get_state_json("backtest")
+        backtest_results = get_state_json("backtests")
         if not backtest_results:
             raise MoreInfoError(
             "Could not find a recent backtest result file, please use the --backtest-results option",

@@ -73,10 +73,11 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
     return previous_cash_state
 
 
-def configure_initial_cash_balance(logger: Logger, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def configure_initial_cash_balance(logger: Logger, optional: bool, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
+    :param optional: if the initial cash balance setting is optional
     :param live_cash_balance: the initial cash balance option input
     :param previous_cash_state: the dictionary containing cash balance in previous portfolio state
     :return: the list of dictionary containing intial currency and amount information
@@ -93,11 +94,13 @@ def configure_initial_cash_balance(logger: Logger, live_cash_balance: str, previ
         for cash_pair in live_cash_balance.split(","):
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
-        
-    elif click.confirm(f"Do you want to set initial cash balance? {previous_cash_balance}", default=False):
+            
+    elif (not optional and not previous_cash_balance)\
+    or click.confirm(f"Do you want to set initial cash balance? {previous_cash_balance}", default=False):
         continue_adding = True
     
         while continue_adding:
+            logger.info("Adding initial cash balance...")
             currency = click.prompt("Currency")
             amount = click.prompt("Amount", type=float)
             cash_list.append({"currency": currency, "amount": amount})
@@ -122,7 +125,7 @@ def _filter_json_name_live(file: Path) -> bool:
 
 def get_state_json(environment: str) -> str:
     json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
-    name_filter = _filter_json_name_backtest if environment == "backtest" else _filter_json_name_live
+    name_filter = _filter_json_name_backtest if environment == "backtests" else _filter_json_name_live
     filtered_json_files = [f for f in json_files if name_filter(f)]
 
     if len(filtered_json_files) == 0:
