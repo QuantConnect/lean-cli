@@ -205,7 +205,11 @@ def test_cloud_push_pushes_libraries_referenced_by_the_project() -> None:
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
     project_path = lean_cli_root_dir / "Python Project"
-    library_path = lean_cli_root_dir / "Library/Python Library"
+    python_library_path = lean_cli_root_dir / "Library/Python Library"
+    csharp_library_path = lean_cli_root_dir / "Library/CSharp Library"
+
+    # library_manager = container.library_manager()
+    # library_manager.add_lean_library_reference_to_project(python_library_path, csharp_library_path)
 
     push_manager = mock.Mock()
     push_manager.push_projects = mock.Mock()
@@ -217,9 +221,13 @@ def test_cloud_push_pushes_libraries_referenced_by_the_project() -> None:
 
     cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, 6)]
     project_id = 1000
-    library_id = 1001
+    python_library_id = 1001
+    csharp_library_id = 1002
     cloud_projects.append(create_api_project(project_id, project_path.name))
-    cloud_projects.append(create_api_project(library_id, str(library_path.relative_to(lean_cli_root_dir))))
+    cloud_projects.append(create_api_project(python_library_id,
+                                             str(python_library_path.relative_to(lean_cli_root_dir))))
+    cloud_projects.append(create_api_project(csharp_library_id,
+                                             str(csharp_library_path.relative_to(lean_cli_root_dir))))
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
 
     container.api_client.override(providers.Object(api_client))
@@ -227,39 +235,57 @@ def test_cloud_push_pushes_libraries_referenced_by_the_project() -> None:
     project_config = mock.Mock()
     project_config.file.exists = mock.MagicMock(return_value=True)
     project_config.get = mock.MagicMock(return_value=[{
-        "name": library_path.name,
-        "path": str(library_path.relative_to(lean_cli_root_dir))
+        "name": python_library_path.name,
+        "path": str(python_library_path.relative_to(lean_cli_root_dir))
     }])
 
-    library_config = mock.Mock()
-    library_config.get = mock.MagicMock(return_value=str(library_id))
+    python_library_config = mock.Mock()
+    python_library_libraries = [{
+        "name": csharp_library_path.name,
+        "path": str(csharp_library_path.relative_to(lean_cli_root_dir))
+    }]
+    python_library_config.get = mock.MagicMock(side_effect=[python_library_libraries,
+                                                            str(python_library_id),
+                                                            python_library_libraries])
 
-    library_projects_config = mock.Mock()
-    library_projects_config.get = mock.MagicMock(return_value=[])
+    csharp_library_config = mock.Mock()
+    csharp_library_config.get = mock.MagicMock(side_effect=[[], str(csharp_library_id), []])
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(side_effect=[project_config,
                                                                             project_config,
-                                                                            library_config,
-                                                                            library_projects_config])
+                                                                            python_library_config,
+                                                                            csharp_library_config,
+                                                                            project_config,
+                                                                            python_library_config,
+                                                                            python_library_config,
+                                                                            csharp_library_config,
+                                                                            csharp_library_config])
     container.project_config_manager.override(providers.Object(project_config_manager))
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path.name])
 
     assert result.exit_code == 0
 
-    push_manager.push_projects.assert_called_once_with([project_path, library_path], None)
+    push_manager.push_projects.assert_called_once_with([project_path, python_library_path, csharp_library_path], None)
 
     project_config_manager.get_project_config.assert_has_calls([mock.call(project_path),
                                                                 mock.call(project_path),
-                                                                mock.call(library_path),
-                                                                mock.call(library_path)])
+                                                                mock.call(python_library_path),
+                                                                mock.call(csharp_library_path),
+                                                                mock.call(project_path),
+                                                                mock.call(python_library_path),
+                                                                mock.call(python_library_path),
+                                                                mock.call(csharp_library_path),
+                                                                mock.call(csharp_library_path)])
     project_config.get.assert_has_calls([mock.call("libraries", []), mock.call("libraries", [])])
-    library_config.get.assert_called_once_with("cloud-id", None)
-    library_projects_config.get.assert_has_calls([mock.call("libraries", [])])
+    python_library_config.get.assert_has_calls([mock.call("libraries", []),
+                                                mock.call("cloud-id", None),
+                                                mock.call("libraries", [])])
 
     api_client.projects.get_all.assert_called_once()
-    api_client.projects.add_library.assert_called_once_with(project_id, library_id)
+    api_client.projects.add_library.assert_has_calls([mock.call(project_id, python_library_id),
+                                                      mock.call(python_library_id, csharp_library_id)])
     api_client.projects.delete_library.assert_not_called()
 
 
@@ -349,16 +375,15 @@ def test_cloud_push_adds_and_removes_libraries_simultaneously() -> None:
     }])
 
     library_config = mock.Mock()
-    library_config.get = mock.MagicMock(return_value=str(local_library_id))
-
-    library_projects_config = mock.Mock()
-    library_projects_config.get = mock.MagicMock(return_value=[])
+    library_config.get = mock.MagicMock(side_effect=[[], str(local_library_id), []])
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(side_effect=[project_config,
                                                                             project_config,
                                                                             library_config,
-                                                                            library_projects_config])
+                                                                            project_config,
+                                                                            library_config,
+                                                                            library_config])
     container.project_config_manager.override(providers.Object(project_config_manager))
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path.name])
@@ -370,10 +395,13 @@ def test_cloud_push_adds_and_removes_libraries_simultaneously() -> None:
     project_config_manager.get_project_config.assert_has_calls([mock.call(project_path),
                                                                 mock.call(project_path),
                                                                 mock.call(local_library_path),
+                                                                mock.call(project_path),
+                                                                mock.call(local_library_path),
                                                                 mock.call(local_library_path)])
     project_config.get.assert_has_calls([mock.call("libraries", []), mock.call("libraries", [])])
-    library_config.get.assert_called_once_with("cloud-id", None)
-    library_projects_config.get.assert_has_calls([mock.call("libraries", [])])
+    library_config.get.assert_has_calls([mock.call("libraries", []),
+                                         mock.call("cloud-id", None),
+                                         mock.call("libraries", [])])
 
     api_client.projects.get_all.assert_called_once()
     api_client.projects.add_library.assert_called_once_with(test_project.projectId, local_library_id)

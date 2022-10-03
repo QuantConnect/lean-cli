@@ -614,7 +614,6 @@ class ProjectManager:
             referenced_libraries.extend(self._get_libraries(cloud_projects, library, seen_libraries))
 
         libraries.extend(referenced_libraries)
-        seen_libraries = None
 
         return list(set(libraries))
 
@@ -637,8 +636,6 @@ class ProjectManager:
         libraries = []
         for project in projects:
             libraries.extend(self._get_libraries(cloud_projects, project, seen_projects))
-
-        seen_projects = None
 
         return list(set(libraries))
 

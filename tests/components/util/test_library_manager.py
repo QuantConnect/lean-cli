@@ -175,7 +175,25 @@ def test_add_csharp_library_to_csharp_project_adds_library_to_project_csproj() -
     library_manager = _create_library_manager()
     with mock.patch.object(library_manager,
                            "get_csharp_lean_library_path_for_csproj_file",
-                           return_value=(library_dir / f"{library_dir.name}.csproj").as_posix()) as mock_get_library_csproj:
+                           return_value=(library_dir / f"{library_dir.name}.csproj").as_posix()) \
+            as mock_get_library_csproj:
         # Already added, csproj shouldn't be touched
         library_manager.add_lean_library_to_csharp_project(project_dir, library_dir, True)
         mock_get_library_csproj.assert_called_once_with(project_dir, library_dir)
+
+
+def test_detects_circular_dependencies() -> None:
+    create_fake_lean_cli_directory()
+
+    python_library_dir = Path.cwd() / "Library" / "Python Library"
+    csharp_library_dir = Path.cwd() / "Library" / "CSharp Library"
+
+    library_manager = _create_library_manager()
+
+    assert not library_manager.add_lean_library_reference_to_project(python_library_dir, csharp_library_dir)
+
+    try:
+        library_manager.add_lean_library_reference_to_project(csharp_library_dir, python_library_dir)
+        assert False, "Expected library_manager.add_lean_library_reference_to_project() to raise on circular dependency"
+    except RuntimeError:
+        pass

@@ -102,7 +102,7 @@ def _update_cloud_library_references(projects: List[Path]) -> None:
 
 def _get_libraries_to_push(project_dir: Path, seen_projects: List[Path] = None) -> List[Path]:
     if seen_projects is None:
-        seen_projects = []
+        seen_projects = [project_dir]
 
     project_config_manager = container.project_config_manager()
     project_config = project_config_manager.get_project_config(project_dir)
@@ -115,13 +115,12 @@ def _get_libraries_to_push(project_dir: Path, seen_projects: List[Path] = None) 
         if library_path in seen_projects:
             continue
 
-        referenced_libraries.extend(_get_libraries_to_push(library_path))
         seen_projects.append(library_path)
+        referenced_libraries.extend(_get_libraries_to_push(library_path, seen_projects))
 
     libraries.extend(referenced_libraries)
-    seen_projects = None
 
-    return list(set(libraries))
+    return list(dict.fromkeys(libraries))
 
 
 @click.command(cls=LeanCommand)

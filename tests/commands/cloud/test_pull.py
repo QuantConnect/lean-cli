@@ -28,12 +28,12 @@ from tests.test_helpers import create_api_project, create_fake_lean_cli_director
 def _make_cloud_projects_and_libraries(project_count: int, library_count: int) -> Tuple[List[QCProject], List[QCProject]]:
     cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, project_count + 1)]
     libraries = [create_api_project(i, f"Library/Library {i - project_count}")
-                 for i in range(project_count + 1, library_count + 1)]
+                 for i in range(project_count + 1, project_count + library_count + 1)]
 
     return cloud_projects, libraries
 
 
-def _add_libraries_to_cloud_project(project: QCProject, libraries: QCProject) -> None:
+def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject]) -> None:
     libraries_ids = [library.projectId for library in libraries]
     project.libraries.extend(libraries_ids)
 
@@ -204,6 +204,10 @@ def test_pull_pulls_libraries_referenced_by_the_project() -> None:
     test_project_libraries = libraries[:2]
     _add_libraries_to_cloud_project(test_project, test_project_libraries)
 
+    test_library = test_project_libraries[0]
+    test_library_library = libraries[2]
+    _add_libraries_to_cloud_project(test_library, [test_library_library])
+
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
     api_client.files.get_all = mock.MagicMock(return_value=[])
@@ -220,7 +224,8 @@ def test_pull_pulls_libraries_referenced_by_the_project() -> None:
 
     api_client.projects.get_all.assert_called_once()
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries] +
+        [mock.call(library_id) for library_id in test_library.libraries],
         any_order=True)
 
     lean_config_manager = container.lean_config_manager()
@@ -228,7 +233,8 @@ def test_pull_pulls_libraries_referenced_by_the_project() -> None:
 
     library_manager.add_lean_library_to_project.assert_has_calls(
         [mock.call(lean_cli_root_dir / test_project.name, lean_cli_root_dir / library.name, False)
-         for library in test_project_libraries],
+         for library in test_project_libraries] +
+        [mock.call(lean_cli_root_dir / test_library.name, lean_cli_root_dir / test_library_library.name, False)],
         any_order=True)
     library_manager.remove_lean_library_from_project.assert_not_called()
 
