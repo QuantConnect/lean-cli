@@ -103,6 +103,14 @@ class QCProject(WrappedBaseModel):
         """
         return f"https://www.quantconnect.com/project/{self.projectId}"
 
+    def __hash__(self):
+        return hash(self.projectId)
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.projectId == other.projectId
+
 
 class QCCreatedProject(WrappedBaseModel):
     projectId: int

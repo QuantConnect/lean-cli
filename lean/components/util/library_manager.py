@@ -113,17 +113,25 @@ class LibraryManager:
                  the project's config.json file. False if the library was added successfully.
         """
         project_config = self._project_config_manager.get_project_config(project_dir)
-        libraries = project_config.get("libraries", [])
+        project_libraries = project_config.get("libraries", [])
         library_relative_path = Path(self.get_library_path_for_project_config_file(library_dir))
 
-        if any(LeanLibraryReference(**library).path == library_relative_path for library in libraries):
+        if any(LeanLibraryReference(**library).path == library_relative_path for library in project_libraries):
             return True
 
-        libraries.append(json.loads(LeanLibraryReference(
+        library_config = self._project_config_manager.get_project_config(library_dir)
+        library_libraries = library_config.get("libraries", [])
+        project_relative_path = Path(self.get_library_path_for_project_config_file(project_dir))
+
+        if any(LeanLibraryReference(**library).path == project_relative_path for library in library_libraries):
+            raise RuntimeError("Circular dependency detected between "
+                               f"{project_relative_path} and {library_relative_path}")
+
+        project_libraries.append(json.loads(LeanLibraryReference(
             name=library_dir.name,
             path=library_relative_path
         ).json()))
-        project_config.set("libraries", libraries)
+        project_config.set("libraries", project_libraries)
 
         return False
 

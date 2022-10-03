@@ -100,6 +100,30 @@ def _update_cloud_library_references(projects: List[Path]) -> None:
         _remove_outdated_libraries(cloud_project, local_libraries_cloud_ids, cloud_projects)
 
 
+def _get_libraries_to_push(project_dir: Path, seen_projects: List[Path] = None) -> List[Path]:
+    if seen_projects is None:
+        seen_projects = []
+
+    project_config_manager = container.project_config_manager()
+    project_config = project_config_manager.get_project_config(project_dir)
+    libraries_in_config = project_config.get("libraries", [])
+    libraries = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
+
+    referenced_libraries = []
+    for library_path in libraries:
+        # Avoid infinite recursion
+        if library_path in seen_projects:
+            continue
+
+        referenced_libraries.extend(_get_libraries_to_push(library_path))
+        seen_projects.append(library_path)
+
+    libraries.extend(referenced_libraries)
+    seen_projects = None
+
+    return list(set(libraries))
+
+
 @click.command(cls=LeanCommand)
 @click.option("--project",
               type=PathParameter(exists=True, file_okay=False, dir_okay=True),
@@ -122,10 +146,7 @@ def push(project: Optional[Path], organization_id: Optional[str]) -> None:
         if not project_config.file.exists():
             raise RuntimeError(f"'{project}' is not a Lean project")
 
-        projects_to_push = [project]
-        libraries_in_config = project_config.get("libraries", [])
-        libraries = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
-        projects_to_push.extend(libraries)
+        projects_to_push = [project, *_get_libraries_to_push(project)]
     else:
         projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
 
