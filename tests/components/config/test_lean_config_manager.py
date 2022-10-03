@@ -24,6 +24,7 @@ from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
+from lean.container import container
 from lean.models.utils import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -543,6 +544,36 @@ def test_get_complete_lean_config_sets_parameters() -> None:
         "key2": "value2",
         "key3": "value3"
     }
+
+
+def test_get_complete_lean_config_sets_python_additional_paths() -> None:
+    create_fake_lean_cli_directory()
+
+    manager = _create_lean_config_manager()
+    config = manager.get_complete_lean_config("my-environment", Path.cwd() / "Python Project" / "main.py", None)
+
+    assert config["python-additional-paths"] == []
+
+
+def test_get_complete_lean_config_sets_python_additional_paths_when_there_are_libraries() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "Python Project"
+    relative_library_dir = Path("Library/Python Library")
+    library_dir = Path.cwd() / relative_library_dir
+
+    library_manager = container.library_manager()
+    library_manager.add_lean_library_to_project(project_dir, library_dir, False)
+
+    manager = _create_lean_config_manager()
+    config = manager.get_complete_lean_config("my-environment", project_dir / "main.py", None)
+
+    python_additional_paths = config["python-additional-paths"]
+    expected_python_paths = [(Path("/") / relative_library_dir).as_posix(), "/Library"]
+
+    assert python_additional_paths is not None
+    assert len(python_additional_paths) == len(python_additional_paths)
+    assert all([path in expected_python_paths for path in python_additional_paths])
 
 
 @pytest.mark.parametrize("provider,limit,result", [

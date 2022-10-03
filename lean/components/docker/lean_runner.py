@@ -229,6 +229,21 @@ class LeanRunner:
             "ports": docker_project_config.get("ports", {})
         }
 
+        # Mount the project directory
+        run_options["volumes"][str(project_dir)] = {
+            "bind": "/LeanCLI",
+            "mode": "rw"
+        }
+
+        # Check if the user has library projects and mount the Library directory
+        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+        if library_dir.is_dir():
+            # Mount the library projects
+            run_options["volumes"][str(library_dir)] = {
+                "bind": "/Library",
+                "mode": "rw"
+            }
+
         # Mount the data directory
         run_options["volumes"][str(data_dir)] = {
             "bind": "/Lean/Data",
@@ -353,22 +368,8 @@ class LeanRunner:
         run_options["commands"].append(
             f"python -m compileall {' '.join(source_files)}")
 
-        # Mount the project directory
-        run_options["volumes"][str(project_dir)] = {
-            "bind": "/LeanCLI",
-            "mode": "rw"
-        }
-
-        # Check if the user has library projects
-        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
-        if library_dir.is_dir():
-            # Mount the library projects
-            run_options["volumes"][str(library_dir)] = {
-                "bind": "/Library",
-                "mode": "rw"
-            }
-            
         # Combine the requirements from all library projects and the current project
+        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
         requirements_files = list(library_dir.rglob("requirements.txt")) + [project_dir / "requirements.txt"]
         requirements_files = [file for file in requirements_files if file.is_file()]
         requirements = self._concat_python_requirements(requirements_files)
@@ -444,21 +445,6 @@ class LeanRunner:
         :param release: whether C# projects should be compiled in release configuration instead of debug
         """
         compile_root = self._get_csharp_compile_root(project_dir)
-
-        # Mount the compile root
-        run_options["volumes"][str(compile_root)] = {
-            "bind": "/LeanCLI",
-            "mode": "ro"
-        }
-
-        # Check if the user has library projects
-        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
-        if library_dir.is_dir():
-            # Mount the library projects
-            run_options["volumes"][str(library_dir)] = {
-                "bind": "/Library",
-                "mode": "ro"
-            }
 
         # Ensure all .csproj files refer to the version of LEAN in the Docker container
         csproj_temp_dir = self._temp_manager.create_temporary_directory()

@@ -681,11 +681,13 @@ Usage: lean library add [OPTIONS] PROJECT NAME
 
   PROJECT must be the path to the project.
 
-  NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
+  NAME must be either the name of a NuGet package (for C# projects), a PyPI package (for Python projects), or a path to
+  a Lean CLI library.
 
-  If --version is not given, the package is pinned to the latest compatible version. For C# projects, this is the latest
-  available version. For Python projects, this is the latest version compatible with Python 3.8 (which is what the
-  Docker images use).
+  If --version is not given, and the library is a NuGet or PyPI package the package, it is pinned to the latest
+  compatible version. For C# projects, this is the latest available version. For Python projects, this is the latest
+  version compatible with Python 3.8 (which is what the Docker images use). For Lean CLI library projects, this is
+  ignored.
 
   Custom C# libraries are added to your project's .csproj file, which is then restored if dotnet is on your PATH and the
   --no-local flag has not been given.
@@ -696,10 +698,12 @@ Usage: lean library add [OPTIONS] PROJECT NAME
   C# example usage:
   $ lean library add "My CSharp Project" Microsoft.ML
   $ lean library add "My CSharp Project" Microsoft.ML --version 1.5.5
+  $ lean library add "My CSharp Project" "Library/My CSharp Library"
 
   Python example usage:
   $ lean library add "My Python Project" tensorflow
   $ lean library add "My Python Project" tensorflow --version 2.5.0
+  $ lean library add "My Python Project" "Library/My Python Library"
 
 Options:
   --version TEXT  The version of the library to add (defaults to latest compatible version)
@@ -721,7 +725,8 @@ Usage: lean library remove [OPTIONS] PROJECT NAME
 
   PROJECT must be the path to the project directory.
 
-  NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
+  NAME must be either the name of the NuGet package (for C# projects), the PyPI package (for Python projects), or the
+  path to the Lean CLI library to remove.
 
   Custom C# libraries are removed from the project's .csproj file, which is then restored if dotnet is on your PATH and
   the --no-local flag has not been given.
