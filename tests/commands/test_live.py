@@ -481,6 +481,10 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
     required_options = brokerage_required_options[brokerage].items()
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
+            if len(required_options) > 8:
+                #Skip computationally expensive tests
+                pytest.skip('computationally expensive test')
+                
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
@@ -503,13 +507,9 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
 
             if brokerage == "Trading Technologies":
                 data_feed = "Binance"
-                
-                api_client = mock.MagicMock()
-                api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
-                container.api_client.override(providers.Object(api_client))
-                
-                (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
-        
+                options.extend(["--binance-api-key", "123",
+                                "--binance-api-secret", "456",
+                                "--binance-use-testnet", "live"])
                 options.extend(["--live-cash-balance", "USD:100"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -534,12 +534,6 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 
             lean_runner = mock.Mock()
             container.lean_runner.override(providers.Object(lean_runner))
-
-            api_client = mock.MagicMock()
-            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
-            container.api_client.override(providers.Object(api_client))
-
-            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
             options = []
 
@@ -572,7 +566,6 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
     container.lean_runner.override(providers.Object(lean_runner))
     
     api_client = mock.MagicMock()
-    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
@@ -587,7 +580,6 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
         options.extend([f"--{key}", value])
 
     if brokerage == "Trading Technologies" or brokerage == "Paper Trading":
-        (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
         options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -607,6 +599,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  None,
                                                  False,
                                                  False)
+
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
 def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
@@ -619,13 +612,10 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
     container.lean_runner.override(providers.Object(lean_runner))
 
     api_client = mock.MagicMock()
-    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
     container.api_client.override(providers.Object(api_client))
-
-    (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
     options = []
 
@@ -668,6 +658,10 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
     required_options = brokerage_required_options[brokerage].items()
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
+            if len(required_options) > 8:
+                #Skip computationally expensive tests
+                pytest.skip('computationally expensive test')
+                
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
@@ -675,7 +669,6 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
-            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
@@ -704,8 +697,12 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                                 "--binance-api-key", "123",
                                 "--binance-api-secret", "456",
                                 "--binance-use-testnet", "live"])
-            elif brokerage == "Trading Technologies" or brokerage == "Paper Trading":
-                (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
+            elif brokerage == "Trading Technologies" or brokerage == "Atreyu":                
+                data_feed = "Binance"
+                options.extend(["--binance-exchange-name", "binance",
+                                "--binance-api-key", "123",
+                                "--binance-api-secret", "456",
+                                "--binance-use-testnet", "live"])
                 options.extend(["--live-cash-balance", "USD:100"])
             else:
                 data_feed = "Binance"
@@ -740,6 +737,10 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
     required_options = data_feed_required_options[data_feed].items()
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
+            if len(required_options) > 8:
+                #Skip computationally expensive tests
+                pytest.skip('computationally expensive test')
+                
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
@@ -747,13 +748,10 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
-            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
             container.api_client.override(providers.Object(api_client))
-
-            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
             options = []
 
@@ -808,13 +806,10 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
             container.lean_runner.override(providers.Object(lean_runner))
 
             api_client = mock.MagicMock()
-            api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
             api_client.organizations.get_all.return_value = [
                 QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
             ]
             container.api_client.override(providers.Object(api_client))
-
-            (Path.cwd() / "Python Project/live").mkdir(parents=True, exist_ok=True)
 
             options = []
 
@@ -863,6 +858,12 @@ def test_live_forces_update_when_update_option_given() -> None:
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
+
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--update"])
 
     assert result.exit_code == 0
@@ -887,6 +888,12 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
@@ -913,6 +920,12 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    api_client = mock.MagicMock()
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    container.api_client.override(providers.Object(api_client))
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
@@ -981,9 +994,9 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Zerodha", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
-    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00" / "L-1234567890.json"
+    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00"
     results_path.mkdir(parents=True, exist_ok=True)
-    with results_path.open("w+", encoding="utf-8") as file:
+    with (results_path / "L-1234567890.json").open("w+", encoding="utf-8") as file:
         file.write('''{
   "Cash": {
     "USD": {
@@ -1033,14 +1046,11 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
 
     assert result.exit_code == 0
     
-    if cash:
-        cash_pairs = cash.split(",")
-        if len(cash_pairs) == 2:
-            cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
-        else:
-            cash_list = [{"currency": "USD", "amount": 100}]
+    cash_pairs = cash.split(",")
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
     else:
-        cash_list = [{"currency": "USD", "amount": 5000}]
+        cash_list = [{"currency": "USD", "amount": 100}]
 
     lean_runner.run_lean.assert_called_once()
     args, _ = lean_runner.run_lean.call_args

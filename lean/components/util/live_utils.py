@@ -62,7 +62,10 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
         previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
     elif cloud_last_time < local_last_time:
-        previous_portfolio_state = json.loads(open(get_state_json("live")).read())
+        previous_state_file = get_state_json("live")
+        if not previous_state_file:
+            return None
+        previous_portfolio_state = json.loads(open(previous_state_file).read())
         previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
     else:
         return None
