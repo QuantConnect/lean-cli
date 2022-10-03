@@ -367,11 +367,7 @@ class LeanRunner:
                 "bind": "/Library",
                 "mode": "rw"
             }
-
-            # Ensure library projects are used when resolving Python imports
-            run_options["commands"].append("mkdir -p $(python -m site --user-site)")
-            run_options["commands"].append("echo /Library > $(python -m site --user-site)/lean-cli.pth")
-
+            
         # Combine the requirements from all library projects and the current project
         requirements_files = list(library_dir.rglob("requirements.txt")) + [project_dir / "requirements.txt"]
         requirements_files = [file for file in requirements_files if file.is_file()]

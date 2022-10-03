@@ -365,6 +365,8 @@ def backtest(project: Path,
         library_references = project_config.get("libraries", [])
         python_paths = lean_config.get("python-additional-paths", [])
         python_paths.extend([(Path("/") / library["path"]).as_posix() for library in library_references])
+        if len(python_paths) > 0:
+            python_paths.append("/Library")
         lean_config["python-additional-paths"] = python_paths
 
     lean_runner = container.lean_runner()

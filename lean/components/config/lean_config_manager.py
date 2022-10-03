@@ -261,6 +261,7 @@ class LeanConfigManager:
 
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
+        config["python-additional-paths"] = project_config.get("python-additional-paths", [])
 
         # No real limit for the object store by default
         if "storage-limit-mb" not in config:
