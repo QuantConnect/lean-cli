@@ -23,6 +23,7 @@ from lxml import etree
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
+from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
@@ -31,18 +32,23 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def _create_project_manager() -> ProjectManager:
+    logger = mock.Mock()
     xml_manager = XMLManager()
     project_config_manager = ProjectConfigManager(xml_manager)
     cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
+    platform_manager = PlatformManager()
+    path_manager = PathManager(platform_manager)
 
-    return ProjectManager(project_config_manager,
+    return ProjectManager(logger,
+                          project_config_manager,
                           LeanConfigManager(mock.Mock(),
                                             mock.Mock(),
                                             project_config_manager,
                                             mock.Mock(),
                                             cache_storage),
+                          path_manager,
                           xml_manager,
-                          PlatformManager())
+                          platform_manager)
 
 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:

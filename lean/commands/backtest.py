@@ -355,10 +355,10 @@ def backtest(project: Path,
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
-        
+
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
-    
+
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config,
                          "backtesting",

@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import site
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,8 @@ import pkg_resources
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.logger import Logger
+from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
@@ -34,19 +37,25 @@ class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
 
     def __init__(self,
+                 logger: Logger,
                  project_config_manager: ProjectConfigManager,
                  lean_config_manager: LeanConfigManager,
+                 path_manager: PathManager,
                  xml_manager: XMLManager,
                  platform_manager: PlatformManager) -> None:
         """Creates a new ProjectManager instance.
 
+        :param logger: the logger to use to log messages with
         :param project_config_manager: the ProjectConfigManager to use when creating new projects
         :param lean_config_manager: the LeanConfigManager to get the CLI root directory from
+        :param path_manager: the path manager to use to handle library paths
         :param xml_manager: the XMLManager to use when working with XML
         :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
+        self._logger = logger
         self._project_config_manager = project_config_manager
         self._lean_config_manager = lean_config_manager
+        self._path_manager = path_manager
         self._xml_manager = xml_manager
         self._platform_manager = platform_manager
 
@@ -173,24 +182,65 @@ class ProjectManager:
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.
 
+        This will also return all the libraries referenced by the project.
+
         :param cloud_projects: all projects fetched from the cloud
         :param project: the name or id of the project
-        :return: a list of all the projects in the cloud that match the given name or id
+        :return: a list of all the projects in the cloud that match the given name or id,
+                 including the libraries they might reference
         """
-        projects = []
         search_by_id = isinstance(project, int)
 
         if project is not None:
             project_path = Path(project).as_posix() if not search_by_id else None
-            projects = [p for p in cloud_projects
-                        if search_by_id and p.projectId == project or
-                        not search_by_id and Path(p.name).as_posix() == project_path]
+            projects = [cloud_project for cloud_project in cloud_projects
+                        if (search_by_id and cloud_project.projectId == project or
+                            not search_by_id and Path(cloud_project.name).as_posix() == project_path)]
+
             if len(projects) == 0:
                 raise RuntimeError("No project with the given name or id exists in the cloud")
+
+            projects.extend(self._get_projects_libraries(cloud_projects, projects))
         else:
             projects = cloud_projects
 
         return projects
+
+    def restore_csharp_project(self, csproj_file: Path, no_local: bool) -> None:
+        """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
+
+        :param csproj_file: Path to the project's csproj file
+        :param no_local: Whether restoring the packages locally must be skipped
+        """
+        if no_local:
+            return
+
+        if shutil.which("dotnet") is None:
+            self._logger.info(f"Project {csproj_file.parent} will not be restored because dotnet was not found in PATH")
+            return
+
+        project_dir = csproj_file.parent
+        self._logger.info(
+            f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}' to provide local autocomplete: {project_dir}, {csproj_file}, {Path.cwd()}")
+
+        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+
+        if process.returncode != 0:
+            raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
+
+    def try_restore_csharp_project(self, csproj_file: Path, original_csproj_content: str, no_local: bool) -> None:
+        """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
+
+        :param csproj_file: Path to the project's csproj file
+        :param original_csproj_content: The original csproj file content
+        :param no_local: Whether restoring the packages locally must be skipped
+        """
+        try:
+            self.restore_csharp_project(csproj_file, no_local)
+        except RuntimeError as e:
+            self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
+            csproj_file.write_text(original_csproj_content, encoding="utf-8")
+            raise e
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
@@ -419,23 +469,7 @@ class ProjectManager:
 
         :param project_dir: the path of the new project
         """
-        self._generate_file(project_dir / f"{project_dir.name}.csproj", """
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net6.0</TargetFramework>
-        <OutputPath>bin/$(Configuration)</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
-        <NoWarn>CS0618</NoWarn>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
-        <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
-    </ItemGroup>
-</Project>
-        """)
+        self._generate_file(project_dir / f"{project_dir.name}.csproj", self.get_csproj_file_default_content())
 
     def generate_rider_config(self) -> None:
         """Generates C# debugging configuration for Rider."""
@@ -549,3 +583,87 @@ class ProjectManager:
             directories.append(root_dir / editor_name)
 
         return directories
+
+    def _get_libraries(self,
+                       cloud_projects: List[QCProject],
+                       project: QCProject,
+                       seen_libraries: List[int] = None) -> List[QCProject]:
+        """Gets the libraries referenced by the project and its dependencies.
+
+        It recursively gets every Lean CLI library referenced by the project
+        and the ones referenced by those libraries as well.
+
+        :param cloud_projects: the cloud projects list to search in.
+        :param project: the starting point for the libraries gathering.
+        :param seen_libraries: list of seen library IDs to avoid infinite recursion.
+        """
+        if seen_libraries is None:
+            seen_libraries = []
+
+        libraries = [cloud_project
+                     for library_id in project.libraries
+                     for cloud_project in cloud_projects if cloud_project.projectId == library_id]
+
+        referenced_libraries = []
+        for library in libraries:
+            # Avoid infinite recursion
+            if library.projectId in seen_libraries:
+                continue
+
+            seen_libraries.append(library.projectId)
+            referenced_libraries.extend(self._get_libraries(cloud_projects, library, seen_libraries))
+
+        libraries.extend(referenced_libraries)
+
+        return list(set(libraries))
+
+    def _get_projects_libraries(self,
+                                cloud_projects: List[QCProject],
+                                projects: List[QCProject],
+                                seen_projects: List[int] = None) -> List[QCProject]:
+        """Gets the libraries referenced by the passed projects and its dependencies.
+
+        It recursively gets every Lean CLI library referenced by the passed projects
+        and the ones referenced by those libraries as well.
+
+        :param cloud_projects: the cloud projects list to search in.
+        :param projects: the starting point list of projects for the libraries gathering.
+        :param seen_projects: list of seen project IDs to avoid infinite recursion.
+        """
+        if seen_projects is None:
+            seen_projects = [project.projectId for project in projects]
+
+        libraries = []
+        for project in projects:
+            libraries.extend(self._get_libraries(cloud_projects, project, seen_projects))
+
+        return list(set(libraries))
+
+    @staticmethod
+    def get_csproj_file_default_content() -> str:
+        return """
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <TargetFramework>net6.0</TargetFramework>
+        <OutputPath>bin/$(Configuration)</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
+        <NoWarn>CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean" Version="2.5.*"/>
+        <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
+    </ItemGroup>
+</Project>
+        """
+
+    @staticmethod
+    def get_csproj_file_path(project_dir: Path) -> Path:
+        """Gets the path to the csproj file in the project directory.
+
+        :param project_dir: Path to the project directory
+        :return: Path to the csproj file in the project directory
+        """
+        return next((p for p in project_dir.iterdir() if p.name.endswith(".csproj")), None)

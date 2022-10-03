@@ -20,6 +20,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
+from lean.models.errors import RequestFailedError
 
 
 class PushManager:
@@ -138,8 +139,10 @@ class PushManager:
 
         # Delete locally removed files in cloud
         files_to_remove = [cloud_file for cloud_file in cloud_files
-                           if not any(local_file_name == cloud_file.name for local_file_name in local_file_names)]
+                           if (not cloud_file.isLibrary and
+                               not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
         for file in files_to_remove:
+            self._last_file = Path(file.name)
             self._api_client.files.delete(cloud_project.projectId, file.name)
             self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
 

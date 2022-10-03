@@ -262,6 +262,16 @@ class LeanConfigManager:
         project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
         config["parameters"] = project_config.get("parameters", {})
 
+        # Add libraries paths to python project
+        project_language = project_config.get("algorithm-language", None)
+        if project_language == "Python":
+            library_references = project_config.get("libraries", [])
+            python_paths = config.get("python-additional-paths", [])
+            python_paths.extend([(Path("/") / library["path"]).as_posix() for library in library_references])
+            if len(python_paths) > 0:
+                python_paths.append("/Library")
+            config["python-additional-paths"] = python_paths
+
         # No real limit for the object store by default
         if "storage-limit-mb" not in config:
             config["storage-limit-mb"] = "9999999"

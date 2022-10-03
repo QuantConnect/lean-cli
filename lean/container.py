@@ -30,6 +30,7 @@ from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
 from lean.components.util.http_client import HTTPClient
+from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
@@ -80,10 +81,19 @@ class Container(DeclarativeContainer):
     optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
 
     project_manager = Singleton(ProjectManager,
+                                logger,
                                 project_config_manager,
                                 lean_config_manager,
+                                path_manager,
                                 xml_manager,
                                 platform_manager)
+    library_manager = Singleton(LibraryManager,
+                                logger,
+                                project_manager,
+                                project_config_manager,
+                                lean_config_manager,
+                                path_manager,
+                                xml_manager)
 
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
     pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)

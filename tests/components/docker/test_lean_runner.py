@@ -21,6 +21,7 @@ from lean.components.config.output_config_manager import OutputConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.docker.lean_runner import LeanRunner
+from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
@@ -56,7 +57,14 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     module_manager.get_installed_packages.return_value = [NuGetPackage(name="QuantConnect.Brokerages", version="1.0.0")]
 
     xml_manager = XMLManager()
-    project_manager = ProjectManager(project_config_manager, lean_config_manager, xml_manager, PlatformManager())
+    platform_manager = PlatformManager()
+    path_manager = PathManager(platform_manager)
+    project_manager = ProjectManager(logger,
+                                     project_config_manager,
+                                     lean_config_manager,
+                                     path_manager,
+                                     xml_manager,
+                                     platform_manager)
 
     return LeanRunner(logger,
                       project_config_manager,

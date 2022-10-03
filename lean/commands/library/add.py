@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import json
-import platform
 import shutil
 import subprocess
 from distutils.version import StrictVersion
@@ -83,10 +82,10 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
 
-def _add_csharp(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
-    """Adds a custom C# library to a C# project.
+def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+    """Adds a NuGet package to the project in the given directory.
 
-    Adds the library to the project's .csproj file, and restores the project is dotnet is on the user's PATH.
+    Adds the library to the project's .csproj file, and restores the project if dotnet is on the user's PATH.
 
     :param project_dir: the path to the project directory
     :param name: the name of the library to add
@@ -94,29 +93,19 @@ def _add_csharp(project_dir: Path, name: str, version: Optional[str], no_local: 
     :param no_local: whether restoring the packages locally must be skipped
     """
     logger = container.logger()
-    path_manager = container.path_manager()
 
     if version is None:
         logger.info("Retrieving latest available version from NuGet")
         name, version = _get_nuget_package(name)
 
-    csproj_file = next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
+    project_manager = container.project_manager()
+    csproj_file = project_manager.get_csproj_file_path(project_dir)
+    path_manager = container.path_manager()
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(csproj_file)}'")
 
     original_csproj_content = csproj_file.read_text(encoding="utf-8")
     _add_csharp_package_to_csproj(csproj_file, name, version)
-
-    if not no_local and shutil.which("dotnet") is not None:
-        logger.info(
-            f"Restoring packages in '{path_manager.get_relative_path(project_dir)}' to provide local autocomplete")
-
-        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
-
-        if process.returncode != 0:
-            logger.warn(f"Reverting the changes to '{path_manager.get_relative_path(csproj_file)}'")
-            csproj_file.write_text(original_csproj_content, encoding="utf-8")
-
-            raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
+    project_manager.try_restore_csharp_project(csproj_file, original_csproj_content, no_local)
 
 
 def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version: StrictVersion) -> bool:
@@ -224,7 +213,7 @@ def _add_python_package_to_requirements(requirements_file: Path, name: str, vers
     requirements_file.write_text(new_content, encoding="utf-8")
 
 
-def _add_python(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
+def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: Optional[str], no_local: bool) -> None:
     """Adds a custom Python library to a Python project.
 
     Adds the library to the project's requirements.txt file,
@@ -256,8 +245,8 @@ def _add_python(project_dir: Path, name: str, version: Optional[str], no_local: 
         process = subprocess.run(["pip", "install", f"{name}=={version}"])
 
         if process.returncode != 0:
-            raise RuntimeError(
-                f"Something went wrong while installing {name} {version} locally, see the logs above for more information")
+            raise RuntimeError(f"Something went wrong while installing {name} {version} "
+                               "locally, see the logs above for more information")
 
 
 @click.command(cls=LeanCommand)
@@ -270,11 +259,14 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
 
     PROJECT must be the path to the project.
 
-    NAME must be the name of a NuGet package (for C# projects) or of a PyPI package (for Python projects).
+    NAME must be either the name of a NuGet package (for C# projects), a PyPI package (for Python projects),
+    or a path to a Lean CLI library.
 
-    If --version is not given, the package is pinned to the latest compatible version.
+    If --version is not given, and the library is a NuGet or PyPI package the package, it is pinned to the latest
+    compatible version.
     For C# projects, this is the latest available version.
     For Python projects, this is the latest version compatible with Python 3.8 (which is what the Docker images use).
+    For Lean CLI library projects, this is ignored.
 
     Custom C# libraries are added to your project's .csproj file,
     which is then restored if dotnet is on your PATH and the --no-local flag has not been given.
@@ -286,12 +278,15 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     C# example usage:
     $ lean library add "My CSharp Project" Microsoft.ML
     $ lean library add "My CSharp Project" Microsoft.ML --version 1.5.5
+    $ lean library add "My CSharp Project" "Library/My CSharp Library"
 
     \b
     Python example usage:
     $ lean library add "My Python Project" tensorflow
     $ lean library add "My Python Project" tensorflow --version 2.5.0
+    $ lean library add "My Python Project" "Library/My Python Library"
     """
+    logger = container.logger()
     project_config = container.project_config_manager().get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
 
@@ -299,7 +294,18 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    if project_language == "CSharp":
-        _add_csharp(project, name, version, no_local)
+    library_manager = container.library_manager()
+    library_dir = Path(name).expanduser().resolve()
+
+    if library_manager.is_lean_library(library_dir):
+        logger.info(f"Adding Lean CLI library {library_dir} to project {project}")
+        if project_language == "CSharp":
+            library_manager.add_lean_library_to_csharp_project(project, library_dir, no_local)
+        else:
+            library_manager.add_lean_library_to_python_project(project, library_dir)
     else:
-        _add_python(project, name, version, no_local)
+        logger.info(f"Adding package {name} to project {project}")
+        if project_language == "CSharp":
+            _add_nuget_package_to_csharp_project(project, name, version, no_local)
+        else:
+            _add_pypi_package_to_python_project(project, name, version, no_local)

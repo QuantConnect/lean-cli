@@ -14,6 +14,7 @@
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Union
 
 import click
 from pkg_resources import Requirement
@@ -23,7 +24,7 @@ from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-def _remove_csharp(project_dir: Path, name: str, no_local: bool) -> None:
+def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: bool) -> None:
     """Removes a custom C# library from a C# project.
 
     Removes the library from the project's .csproj file,
@@ -57,7 +58,7 @@ def _remove_csharp(project_dir: Path, name: str, no_local: bool) -> None:
             raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
 
 
-def _remove_python(project_dir: Path, name: str) -> None:
+def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> None:
     """Removes a custom Python library from a Python project.
 
     Removes the library from the project's requirements.txt file.
@@ -99,7 +100,8 @@ def remove(project: Path, name: str, no_local: bool) -> None:
 
     PROJECT must be the path to the project directory.
 
-    NAME must be the name of the NuGet package (for C# projects) or of the PyPI package (for Python projects) to remove.
+    NAME must be either the name of the NuGet package (for C# projects), the PyPI package (for Python projects),
+    or the path to the Lean CLI library to remove.
 
     Custom C# libraries are removed from the project's .csproj file,
     which is then restored if dotnet is on your PATH and the --no-local flag has not been given.
@@ -121,7 +123,15 @@ def remove(project: Path, name: str, no_local: bool) -> None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    if project_language == "CSharp":
-        _remove_csharp(project, name, no_local)
+    library_manager = container.library_manager()
+    library_dir = Path(name).expanduser().resolve()
+    if library_manager.is_lean_library(library_dir):
+        if project_language == "CSharp":
+            library_manager.remove_lean_library_from_csharp_project(project, library_dir, no_local)
+        else:
+            library_manager.remove_lean_library_from_python_project(project, library_dir)
     else:
-        _remove_python(project, name)
+        if project_language == "CSharp":
+            _remove_package_from_csharp_project(project, name, no_local)
+        else:
+            _remove_pypi_package_from_python_project(project, name)
