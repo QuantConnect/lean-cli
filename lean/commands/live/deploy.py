@@ -28,9 +28,9 @@ from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
-from lean.models.json_module import JsonModule
+from lean.models.json_module import JsonModule, LiveCashBalanceInput
 from lean.commands.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance, get_state_json
+from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -412,16 +412,15 @@ def deploy(project: Path,
 
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
-    container.logger().info(project_config.get("id", None))
+
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     cash_balance_option = env_brokerage._initial_cash_balance
-    if cash_balance_option:
-        optional_cash_balance = cash_balance_option == "optional"
-        logger = container.logger()
+    logger = container.logger()
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
         previous_cash_state = get_latest_cash_state(container.api_client(), project_config.get("cloud-id", None), project)
-        live_cash_balance = configure_initial_cash_balance(logger, optional_cash_balance, live_cash_balance, previous_cash_state)
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":

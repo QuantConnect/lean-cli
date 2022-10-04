@@ -65,7 +65,8 @@ def test_cloud_live_deploy() -> None:
     container.cloud_runner.override(providers.Object(cloud_runner))
         
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
-                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no"])
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--live-cash-balance", "USD:100"])
     
     assert result.exit_code == 0
     
@@ -112,7 +113,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
         
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
-                                       f"--notify-{notice_method}", configs])
+                                       "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs])
     
     assert result.exit_code == 0
     

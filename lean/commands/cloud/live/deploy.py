@@ -20,6 +20,7 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
+from lean.models.json_module import LiveCashBalanceInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
@@ -286,10 +287,9 @@ def deploy(project: str,
     price_data_handler = brokerage_instance.get_price_data_handler()
 
     cash_balance_option = brokerage_instance._initial_cash_balance
-    if cash_balance_option:
-        optional_cash_balance = cash_balance_option == "optional"
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
         previous_cash_state = get_latest_cash_state(api_client, cloud_project.projectId, project)
-        live_cash_balance = configure_initial_cash_balance(logger, optional_cash_balance, live_cash_balance, previous_cash_state)
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     

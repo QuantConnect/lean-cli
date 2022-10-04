@@ -15,6 +15,7 @@ import click
 from datetime import datetime
 import json
 from pathlib import Path
+import pytz
 import os
 from typing import Any, Dict, List
 from lean.components.api.api_client import APIClient
@@ -22,6 +23,7 @@ from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
 from lean.models.data_providers import all_data_providers
+from lean.models.json_module import LiveCashBalanceInput
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 
@@ -51,12 +53,12 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
 
 def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
     cloud_deployment_list = api_client.get("live/read")
-    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S") for instance in cloud_deployment_list["live"] 
+    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(pytz.UTC) for instance in cloud_deployment_list["live"] 
                              if instance["projectId"] == project_id]
-    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else datetime.min
+    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else pytz.utc.localize(datetime.min)
     
-    local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S") for subdir in os.listdir(f"{project_name}/live")]
-    local_last_time = sorted(local_deployment_time, reverse = True)[0] if local_deployment_time else datetime.min
+    local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(f"{project_name}/live")]
+    local_last_time = sorted(local_deployment_time, reverse = True)[0] if local_deployment_time else pytz.utc.localize(datetime.min)
     
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
@@ -73,11 +75,12 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
     return previous_cash_state
 
 
-def configure_initial_cash_balance(logger: Logger, optional: bool, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBalanceInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
+    -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
-    :param optional: if the initial cash balance setting is optional
+    :param cash_input_option: if the initial cash balance setting is optional/required
     :param live_cash_balance: the initial cash balance option input
     :param previous_cash_state: the dictionary containing cash balance in previous portfolio state
     :return: the list of dictionary containing intial currency and amount information
@@ -95,7 +98,7 @@ def configure_initial_cash_balance(logger: Logger, optional: bool, live_cash_bal
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
             
-    elif (not optional and not previous_cash_balance)\
+    elif (cash_input_option == LiveCashBalanceInput.Optional and not previous_cash_balance)\
     or click.confirm(f"Do you want to set initial cash balance? {previous_cash_balance}", default=False):
         continue_adding = True
     
