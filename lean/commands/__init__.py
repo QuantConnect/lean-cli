@@ -11,9 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
-
-from lean import __version__
+from lean.commands.lean import lean
 from lean.commands.backtest import backtest
 from lean.commands.build import build
 from lean.commands.cloud import cloud
@@ -31,16 +29,6 @@ from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
 from lean.commands.whoami import whoami
-
-
-@click.group()
-@click.version_option(__version__)
-def lean() -> None:
-    """The Lean CLI by QuantConnect."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean <command>` commands
-    pass
-
 
 lean.add_command(config)
 lean.add_command(cloud)
