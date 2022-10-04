@@ -57,8 +57,12 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
                              if instance["projectId"] == project_id]
     cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else pytz.utc.localize(datetime.min)
     
-    local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(f"{project_name}/live")]
-    local_last_time = sorted(local_deployment_time, reverse = True)[0] if local_deployment_time else pytz.utc.localize(datetime.min)
+    local_last_time = pytz.utc.localize(datetime.min)
+    live_deployment_path = f"{project_name}/live"
+    if os.path.isdir(live_deployment_path):
+        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(live_deployment_path)]
+        if local_deployment_time:
+            local_last_time = sorted(local_deployment_time, reverse = True)[0]
     
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
@@ -98,18 +102,19 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBa
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
             
-    elif (cash_input_option == LiveCashBalanceInput.Optional and not previous_cash_balance)\
-    or click.confirm(f"Do you want to set initial cash balance? {previous_cash_balance}", default=False):
+    elif (cash_input_option == LiveCashBalanceInput.Required and not previous_cash_balance)\
+    or click.confirm(f"""Previous cash balance: {previous_cash_balance}
+Do you want to set a different initial cash balance?""", default=False):
         continue_adding = True
     
         while continue_adding:
-            logger.info("Adding initial cash balance...")
+            logger.info("Setting initial cash balance...")
             currency = click.prompt("Currency")
             amount = click.prompt("Amount", type=float)
             cash_list.append({"currency": currency, "amount": amount})
             logger.info(f"Cash balance: {cash_list}")
             
-            if not click.confirm("Do you want to add other currency?", default=False):
+            if not click.confirm("Do you want to add more currency?", default=False):
                 continue_adding = False
                 
     else:
