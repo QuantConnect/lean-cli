@@ -13,15 +13,11 @@
 
 import click
 
-import lean.components.util.logger
-
 
 class AliasedCommandGroup(click.Group):
     """A click.Group wrapper that implements command aliasing."""
 
     def command(self, *args, **kwargs):
-        lean.components.util.logger.Logger().info(f"{args}")
-        lean.components.util.logger.Logger().info(f"{kwargs}")
         aliases = kwargs.pop('aliases', [])
 
         if not args:

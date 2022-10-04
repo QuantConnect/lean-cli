@@ -14,7 +14,7 @@
 import click
 
 from lean import __version__
-from lean.components.click_aliased_command_group import AliasedCommandGroup
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 
 @click.group(cls=AliasedCommandGroup)
