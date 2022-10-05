@@ -102,6 +102,8 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean logout`](#lean-logout)
 - [`lean logs`](#lean-logs)
 - [`lean optimize`](#lean-optimize)
+- [`lean project-create`](#lean-project-create)
+- [`lean project-delete`](#lean-project-delete)
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
 - [`lean whoami`](#lean-whoami)
@@ -532,7 +534,7 @@ _See code: [lean/commands/config/unset.py](lean/commands/config/unset.py)_
 
 ### `lean create-project`
 
-Create a new project containing starter code.
+Alias for 'project-create'
 
 ```
 Usage: lean create-project [OPTIONS] NAME
@@ -638,7 +640,7 @@ _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
 
 ### `lean delete-project`
 
-Delete a project locally and in the cloud if it exists.
+Alias for 'project-delete'
 
 ```
 Usage: lean delete-project [OPTIONS] PROJECT
@@ -1189,6 +1191,45 @@ Options:
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
+
+### `lean project-create`
+
+Create a new project containing starter code.
+
+```
+Usage: lean project-create [OPTIONS] NAME
+
+  Create a new project containing starter code.
+
+  If NAME is a path containing subdirectories those will be created automatically.
+
+  The default language can be set using `lean config set default-language python/csharp`.
+
+Options:
+  -l, --language [python|csharp]  The language of the project to create
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/project_create.py](lean/commands/project_create.py)_
+
+### `lean project-delete`
+
+Delete a project locally and in the cloud if it exists.
+
+```
+Usage: lean project-delete [OPTIONS] PROJECT
+
+  Delete a project locally and in the cloud if it exists.
+
+  The project is selected by name or cloud id.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/project_delete.py](lean/commands/project_delete.py)_
 
 ### `lean report`
 

@@ -13,7 +13,9 @@
 
 from pathlib import Path
 import click
+
 from lean.click import LeanCommand
+from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCLanguage
 from lean.models.errors import MoreInfoError
@@ -260,7 +262,7 @@ DEFAULT_CSHARP_NOTEBOOK = """
 """.strip() + "\n"
 
 
-@click.command(cls=LeanCommand)
+@lean.command(cls=LeanCommand, name="project-create", aliases=["create-project"])
 @click.argument("name", type=str)
 @click.option("--language", "-l",
               type=click.Choice(container.cli_config_manager().default_language.allowed_values, case_sensitive=False),
