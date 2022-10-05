@@ -64,22 +64,29 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     path.write_text(config, encoding="utf-8")
 
 
-def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
-    # TODO: currently it is not using the live-paper envrionment
-    create_fake_lean_cli_directory()
-    create_fake_environment("live-paper", True)
-
+def _mock_docker_lean_runner():
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
-
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+    return lean_runner, docker_manager
 
+
+def _mock_docker_lean_runner_api():
+    lean_runner, docker_manager = _mock_docker_lean_runner()
     api_client = mock.MagicMock()
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
     container.api_client.override(providers.Object(api_client))
+    return lean_runner, api_client, docker_manager
+
+
+def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
+    # TODO: currently it is not using the live-paper envrionment
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
@@ -99,12 +106,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
 
 def test_live_aborts_when_environment_does_not_exist() -> None:
     create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
+    lean_runner, _ = _mock_docker_lean_runner()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "fake-environment"])
 
@@ -116,12 +118,7 @@ def test_live_aborts_when_environment_does_not_exist() -> None:
 def test_live_aborts_when_environment_has_live_mode_set_to_false() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("backtesting", False)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
+    lean_runner, _ = _mock_docker_lean_runner()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "backtesting"])
 
@@ -133,18 +130,7 @@ def test_live_aborts_when_environment_has_live_mode_set_to_false() -> None:
 def test_live_calls_lean_runner_with_default_output_directory() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
@@ -160,18 +146,7 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
 def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live",
                                        "Python Project",
@@ -190,18 +165,7 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
 def test_live_calls_lean_runner_with_release_mode() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper", "--release"])
 
@@ -220,18 +184,7 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
 def test_live_calls_lean_runner_with_detach() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--detach"])
 
@@ -250,12 +203,7 @@ def test_live_calls_lean_runner_with_detach() -> None:
 def test_live_aborts_when_project_does_not_exist() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
+    lean_runner, _ = _mock_docker_lean_runner()
 
     result = CliRunner().invoke(lean, ["live", "This Project Does Not Exist"])
 
@@ -267,12 +215,7 @@ def test_live_aborts_when_project_does_not_exist() -> None:
 def test_live_aborts_when_project_does_not_contain_algorithm_file() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
+    lean_runner, _ = _mock_docker_lean_runner()
 
     result = CliRunner().invoke(lean, ["live", "data"])
 
@@ -285,16 +228,11 @@ def test_live_aborts_when_project_does_not_contain_algorithm_file() -> None:
 def test_live_aborts_when_lean_config_is_missing_properties(target: str, replacement: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
+    lean_runner, _ = _mock_docker_lean_runner()
 
     config_path = Path.cwd() / "lean.json"
     config = config_path.read_text(encoding="utf-8")
     config_path.write_text(config.replace(target, replacement), encoding="utf-8")
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
@@ -441,18 +379,7 @@ data_providers_required_options = {
 def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     options = []
     for key, value in data_providers_required_options[data_provider].items():
@@ -474,7 +401,7 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
                                                  False)
 
 
-@pytest.mark.parametrize("brokerage", ["Trading Technologies"])
+@pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: str) -> None:
     create_fake_lean_cli_directory()
 
@@ -485,12 +412,8 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
         if len(list(comb)) > 1000:
             continue
         for current_options in comb:
-            docker_manager = mock.Mock()
-            container.docker_manager.override(providers.Object(docker_manager))
-
-            lean_runner = mock.Mock()
-            container.lean_runner.override(providers.Object(lean_runner))
-
+            lean_runner, _ = _mock_docker_lean_runner()
+            
             options = []
 
             for key, value in current_options:
@@ -524,11 +447,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
     required_options = data_feed_required_options[data_feed].items()
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
-            docker_manager = mock.Mock()
-            container.docker_manager.override(providers.Object(docker_manager))
-
-            lean_runner = mock.Mock()
-            container.lean_runner.override(providers.Object(lean_runner))
+            lean_runner, _ = _mock_docker_lean_runner()
 
             options = []
 
@@ -553,18 +472,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
     create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     options = []
 
@@ -599,18 +507,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
 def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
     create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     options = []
 
@@ -657,17 +554,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
         if len(list(comb)) > 1000:
             continue
         for current_options in comb:
-            docker_manager = mock.Mock()
-            container.docker_manager.override(providers.Object(docker_manager))
-
-            lean_runner = mock.Mock()
-            container.lean_runner.override(providers.Object(lean_runner))
-
-            api_client = mock.MagicMock()
-            api_client.organizations.get_all.return_value = [
-                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-            ]
-            container.api_client.override(providers.Object(api_client))
+            lean_runner, _, _ = _mock_docker_lean_runner_api()
 
             options = []
 
@@ -732,17 +619,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
         if len(list(comb)) > 1000:
             continue
         for current_options in comb:
-            docker_manager = mock.Mock()
-            container.docker_manager.override(providers.Object(docker_manager))
-
-            lean_runner = mock.Mock()
-            container.lean_runner.override(providers.Object(lean_runner))
-
-            api_client = mock.MagicMock()
-            api_client.organizations.get_all.return_value = [
-                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-            ]
-            container.api_client.override(providers.Object(api_client))
+            lean_runner, _, _ = _mock_docker_lean_runner_api()
 
             options = []
 
@@ -790,17 +667,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
         pytest.skip('computationally expensive test')
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
-            docker_manager = mock.Mock()
-            container.docker_manager.override(providers.Object(docker_manager))
-
-            lean_runner = mock.Mock()
-            container.lean_runner.override(providers.Object(lean_runner))
-
-            api_client = mock.MagicMock()
-            api_client.organizations.get_all.return_value = [
-                QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-            ]
-            container.api_client.override(providers.Object(api_client))
+            lean_runner, _, _ = _mock_docker_lean_runner_api()
 
             options = []
 
@@ -842,18 +709,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
 def test_live_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, docker_manager = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper", "--update"])
 
@@ -873,18 +729,7 @@ def test_live_forces_update_when_update_option_given() -> None:
 def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
@@ -905,18 +750,7 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
 def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
@@ -941,18 +775,7 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
 def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     result = CliRunner().invoke(lean,
                                 ["live", "Python Project", "--environment", "live-paper", "--python-venv", python_venv])
@@ -985,33 +808,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Zerodha", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
-    results_path = Path.cwd() / "Python Project" / "live" / "2020-01-01_00-00-00"
-    results_path.mkdir(parents=True, exist_ok=True)
-    with (results_path / "L-1234567890.json").open("w+", encoding="utf-8") as file:
-        file.write('''{
-  "Cash": {
-    "USD": {
-      "SecuritySymbols": [],
-      "Symbol": "USD",
-      "Amount": 5000,
-      "ConversionRate": 0.0,
-      "CurrencySymbol": "$",
-      "ValueInAccountCurrency": 0.0
-    }
-  }
-}''')
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.MagicMock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     options = []
     required_options = brokerage_required_options[brokerage].items()

@@ -179,30 +179,13 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Zerodha", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
-    (Path.cwd() / "Python Project/live").mkdir()
 
     cloud_project_manager = mock.Mock()
-    cloud_id = cloud_project_manager.get_cloud_project().projectId
     container.cloud_project_manager.override(providers.Object(cloud_project_manager))
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {
-            'live': [], 'projectId': cloud_id, 'launched': "2020-01-01 00:00:00",
-            'portfolio': {
-                'cash': {
-                    'USD': {
-                        'SecuritySymbols': [],
-                        'Symbol': 'USD',
-                        'Amount': 500,
-                        'ConversionRate': 1,
-                        'CurrencySymbol': '$',
-                        'ValueInAccountCurrency': 500
-                    }
-                }
-            },
-            'success': True
-        }
+    api_client.get.return_value = {'live': [], 'portfolio': {}}
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()
@@ -224,14 +207,11 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     assert result.exit_code == 0
     
-    if cash:
-        cash_pairs = cash.split(",")
-        if len(cash_pairs) == 2:
-            cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
-        else:
-            cash_list = [{"currency": "USD", "amount": 100}]
+    cash_pairs = cash.split(",")
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
     else:
-        cash_list = [{"currency": "USD", "amount": 500}]
+        cash_list = [{"currency": "USD", "amount": 100}]
         
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                 mock.ANY,
