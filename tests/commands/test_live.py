@@ -480,10 +480,11 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
 
     required_options = brokerage_required_options[brokerage].items()
     for length in range(len(required_options)):
+        comb = itertools.combinations(required_options, length)
         # TODO: investigate the reason of slow iterations
-        if len(required_options) >= 10 and length >= 5:
-            pytest.skip("Skipping due to very large numbers of combinations")
-        for current_options in itertools.combinations(required_options, length):
+        if len(list(comb)) > 1000:
+            continue
+        for current_options in comb:
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
@@ -651,10 +652,11 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
 
     required_options = brokerage_required_options[brokerage].items()
     for length in range(len(required_options)):
+        comb = itertools.combinations(required_options, length)
         # TODO: investigate the reason of slow iterations
-        if len(required_options) >= 10 and length >= 5:
-            pytest.skip("Skipping due to very large numbers of combinations")
-        for current_options in itertools.combinations(required_options, length):
+        if len(list(comb)) > 1000:
+            continue
+        for current_options in comb:
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
@@ -725,10 +727,11 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
 
     required_options = data_feed_required_options[data_feed].items()
     for length in range(len(required_options)):
+        comb = itertools.combinations(required_options, length)
         # TODO: investigate the reason of slow iterations
-        if len(required_options) >= 10 and length >= 5:
-            pytest.skip("Skipping due to very large numbers of combinations")
-        for current_options in itertools.combinations(required_options, length):
+        if len(list(comb)) > 1000:
+            continue
+        for current_options in comb:
             docker_manager = mock.Mock()
             container.docker_manager.override(providers.Object(docker_manager))
 
