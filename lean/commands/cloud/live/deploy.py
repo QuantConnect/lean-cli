@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import webbrowser
-from typing import Dict, List, Tuple, Optional
+from typing import List, Tuple, Optional
 import click
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
@@ -20,12 +20,14 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
+from lean.models.json_module import LiveCashBalanceInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
+from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -160,22 +162,13 @@ def _configure_auto_restart(logger: Logger) -> bool:
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
     return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
-#TODO: same duplication present in commands\live.py
-def _get_configs_for_options() -> Dict[Configuration, str]: 
-    run_options: Dict[str, Configuration] = {}
-    for module in all_cloud_brokerages:
-        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._id in run_options:
-                raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
-            run_options[config._id] = config
-    return list(run_options.values())
 
 @live.command(cls=LeanCommand, default_command=True, name="deploy")
 @click.argument("project", type=str)
 @click.option("--brokerage",
               type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@options_from_json(_get_configs_for_options())
+@options_from_json(_get_configs_for_options("cloud"))
 @click.option("--node", type=str, help="The name or id of the live node to run on")
 @click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
@@ -188,6 +181,9 @@ def _get_configs_for_options() -> Dict[Configuration, str]:
               help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications")
 @click.option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
 @click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
+@click.option("--live-cash-balance",
+              type=str,
+              help=f"A comma-separated list of currency:amount pairs of initial cash balance")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -206,6 +202,7 @@ def deploy(project: str,
          notify_webhooks: Optional[str],
          notify_sms: Optional[str],
          notify_telegram: Optional[str],
+         live_cash_balance: Optional[str],
          push: bool,
          open_browser: bool,
          **kwargs) -> None:
@@ -289,6 +286,13 @@ def deploy(project: str,
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
 
+    cash_balance_option = brokerage_instance._initial_cash_balance
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
+        previous_cash_state = get_latest_cash_state(api_client, cloud_project.projectId, project)
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+    
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Environment: {brokerage_settings['environment'].title()}")
@@ -300,6 +304,8 @@ def deploy(project: str,
     logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")
     if notify_order_events or notify_insights:
         _log_notification_methods(notify_methods)
+    if live_cash_balance:
+        logger.info(f"Initial live cash balance: {live_cash_balance}")
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:
@@ -316,7 +322,8 @@ def deploy(project: str,
                                            cloud_project.leanVersionId,
                                            notify_order_events,
                                            notify_insights,
-                                           notify_methods)
+                                           notify_methods,
+                                           live_cash_balance)
 
     logger.info(f"Live url: {live_algorithm.get_url()}")
 

@@ -15,6 +15,7 @@ import copy
 import subprocess
 import time
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import click
@@ -25,10 +26,11 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
-from lean.models.json_module import JsonModule
+from lean.models.json_module import JsonModule, LiveCashBalanceInput
 from lean.commands.live.live import live
+from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -172,7 +174,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             setattr(data_feed, '_is_installed_and_build', True)
         data_feed.build(lean_config, logger).configure(lean_config, environment_name)
 
-
 _cached_organizations = None
 
 
@@ -262,21 +263,6 @@ def _get_default_value(key: str) -> Optional[Any]:
 
     return value
 
-def _get_configs_for_options() -> List[Configuration]: 
-    run_options: Dict[str, Configuration] = {}
-    config_with_module_id: Dict[str, str] = {}
-    for module in all_local_brokerages + all_local_data_feeds + all_data_providers:
-        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._id in run_options:
-                if (config._id in config_with_module_id 
-                    and config_with_module_id[config._id] == module._id):
-                    # config of same module
-                    continue
-                else:
-                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
-            run_options[config._id] = config
-            config_with_module_id[config._id] = module._id
-    return list(run_options.values())
 
 @live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
 @click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
@@ -300,7 +286,7 @@ def _get_configs_for_options() -> List[Configuration]:
 @click.option("--data-provider",
               type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
-@options_from_json(_get_configs_for_options())
+@options_from_json(_get_configs_for_options("local"))
 @click.option("--release",
               is_flag=True,
               default=False,
@@ -311,6 +297,9 @@ def _get_configs_for_options() -> List[Configuration]:
 @click.option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
+@click.option("--live-cash-balance",
+              type=str,
+              help=f"A comma-separated list of currency:amount pairs of initial cash balance")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -325,6 +314,7 @@ def deploy(project: Path,
         release: bool,
         image: Optional[str],
         python_venv: Optional[str],
+        live_cash_balance: Optional[str],
         update: bool,
         **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -422,9 +412,19 @@ def deploy(project: Path,
 
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
-    
+
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
+    
+    cash_balance_option = env_brokerage._initial_cash_balance
+    logger = container.logger()
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
+        previous_cash_state = get_latest_cash_state(container.api_client(), project_config.get("cloud-id", None), project)
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
+        if live_cash_balance:
+            lean_config["live-cash-balance"] = live_cash_balance
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

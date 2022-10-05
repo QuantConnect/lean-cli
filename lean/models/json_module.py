@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from enum import Enum
 from typing import Any, Dict, List, Type
 from lean.components.util.logger import Logger
 from lean.container import container
@@ -35,6 +36,9 @@ class JsonModule(abc.ABC):
         self._lean_configs = self.sort_configs()
         self._is_module_installed: bool = False
         self._is_installed_and_build: bool = False
+        self._initial_cash_balance: LiveCashBalanceInput = LiveCashBalanceInput(json_module_data["live-cash-balance-state"]) \
+            if "live-cash-balance-state" in json_module_data \
+            else None
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
@@ -163,6 +167,8 @@ class JsonModule(abc.ABC):
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue
+            if self.__class__.__name__ == 'CloudBrokerage' and not configuration._is_cloud_property:
+                continue
             if configuration._log_message is not None:
                 logger.info(configuration._log_message.strip())
             if configuration.is_type_organization_id:
@@ -186,3 +192,9 @@ class JsonModule(abc.ABC):
                 configuration._id, user_choice)
 
         return self
+
+
+class LiveCashBalanceInput(str, Enum):
+    Required = "required"
+    Optional = "optional"
+    NotSupported = "not-supported"

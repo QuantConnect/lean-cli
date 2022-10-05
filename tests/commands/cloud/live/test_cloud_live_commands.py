@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from unittest import mock
 from click.testing import CliRunner
 from dependency_injector import providers
@@ -21,6 +20,7 @@ from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod
 from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes
+from tests.commands.test_live import brokerage_required_options
 
 def test_cloud_live_stop() -> None:
     create_fake_lean_cli_directory()
@@ -53,6 +53,7 @@ def test_cloud_live_deploy() -> None:
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -62,7 +63,8 @@ def test_cloud_live_deploy() -> None:
     container.cloud_runner.override(providers.Object(cloud_runner))
         
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
-                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no"])
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--live-cash-balance", "USD:100"])
     
     assert result.exit_code == 0
     
@@ -75,7 +77,8 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY,
                                                   False,
                                                   False,
-                                                  [])
+                                                  [],
+                                                  mock.ANY)
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
@@ -96,6 +99,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
     container.api_client.override(providers.Object(api_client))
 
     cloud_project_manager = mock.Mock()
@@ -106,7 +110,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
         
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
-                                       f"--notify-{notice_method}", configs])
+                                       "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs])
     
     assert result.exit_code == 0
     
@@ -151,4 +155,69 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   mock.ANY,
                                                   True,
                                                   True,
-                                                  notification)
+                                                  notification,
+                                                  mock.ANY)
+
+
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
+                                            ("Paper Trading", "USD:100,EUR:200"),
+                                            ("Atreyu", "USD:100"),
+                                            ("Trading Technologies", "USD:100"),
+                                            ("Binance", "USD:100"),
+                                            ("Bitfinex", "USD:100"),
+                                            ("FTX", "USD:100"),
+                                            ("Coinbase Pro", "USD:100"),
+                                            ("Interactive Brokers", "USD:100"),
+                                            ("Kraken", "USD:100"),
+                                            ("OANDA", "USD:100"),
+                                            ("Samco", "USD:100"),
+                                            ("Terminal Link", "USD:100"),
+                                            ("Tradier", "USD:100"),
+                                            ("Zerodha", "USD:100")])
+def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'live': [], 'portfolio': {}}
+    container.api_client.override(providers.Object(api_client))
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner.override(providers.Object(cloud_runner))
+    
+    options = []
+    for key, value in brokerage_required_options[brokerage].items():
+        if "organization" not in key:
+            options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+                                       "--notify-insights", "no", *options])
+
+    if brokerage not in ["Paper Trading", "Trading Technologies"]:
+        assert result.exit_code != 0
+        api_client.live.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+    
+    cash_pairs = cash.split(",")
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+    else:
+        cash_list = [{"currency": "USD", "amount": 100}]
+        
+    api_client.live.start.assert_called_once_with(mock.ANY,
+                                                mock.ANY,
+                                                "3",
+                                                mock.ANY,
+                                                mock.ANY,
+                                                True,
+                                                mock.ANY,
+                                                False,
+                                                False,
+                                                [],
+                                                cash_list)
