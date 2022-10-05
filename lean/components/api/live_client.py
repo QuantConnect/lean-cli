@@ -63,7 +63,8 @@ class LiveClient:
               notify_order_events: bool,
               notify_insights: bool,
               notify_methods: List[QCNotificationMethod],
-              live_cash_balance: Optional[List[Dict[str, float]]] = None) -> QCMinimalLiveAlgorithm:
+              live_cash_balance: Optional[List[Dict[str, float]]] = None,
+              live_holdings: Optional[List[Dict[str, float]]] = None) -> QCMinimalLiveAlgorithm:
         """Starts live trading for a project.
 
         :param project_id: the id of the project to start live trading for
@@ -77,11 +78,14 @@ class LiveClient:
         :param notify_insights: whether notifications should be sent on insights
         :param notify_methods: the places to send notifications to
         :param live_cash_balance: the list of initial cash balance
+        :param live_holdings: the list of initial portfolio holdings
         :return: the created live algorithm
         """
 
         if live_cash_balance:
             brokerage_settings["cash"] = live_cash_balance
+        if live_holdings:
+            brokerage_settings["holdings"] = live_holdings
 
         parameters = {
             "projectId": project_id,

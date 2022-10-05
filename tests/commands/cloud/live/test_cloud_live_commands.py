@@ -78,6 +78,7 @@ def test_cloud_live_deploy() -> None:
                                                   False,
                                                   False,
                                                   [],
+                                                  mock.ANY,
                                                   mock.ANY)
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
@@ -156,6 +157,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   True,
                                                   True,
                                                   notification,
+                                                  mock.ANY,
                                                   mock.ANY)
 
 
@@ -193,6 +195,9 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         if "organization" not in key:
             options.extend([f"--{key}", value])
 
+    if brokerage not in ["Paper Trading", "Trading Technologies"]:
+        options.extend(["--live-holdings", "A:A 2T:1:1.0"])
+
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
                                        "--notify-insights", "no", *options])
@@ -220,4 +225,74 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 False,
                                                 False,
                                                 [],
-                                                cash_list)
+                                                cash_list,
+                                                mock.ANY)
+
+
+@pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
+                                            ("Paper Trading", "A:A 2T:1:145.1"),
+                                            ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
+                                            ("Atreyu", ""),
+                                            ("Trading Technologies", ""),
+                                            ("Binance", ""),
+                                            ("Bitfinex", ""),
+                                            ("FTX", ""),
+                                            ("Coinbase Pro", ""),
+                                            ("Interactive Brokers", ""),
+                                            ("Kraken", ""),
+                                            ("OANDA", ""),
+                                            ("Samco", ""),
+                                            ("Terminal Link", ""),
+                                            ("Tradier", ""),
+                                            ("Zerodha", "")])
+def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'live': [], 'portfolio': {'cash': [], 'holdings': []}}
+    container.api_client.override(providers.Object(api_client))
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner.override(providers.Object(cloud_runner))
+    
+    options = []
+    for key, value in brokerage_required_options[brokerage].items():
+        if "organization" not in key:
+            options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings, 
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+                                       "--live-cash-balance", "USD:100", "--notify-insights", "no", *options])
+
+    if brokerage != "Paper Trading":
+        assert result.exit_code != 0
+        api_client.live.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+    
+    holding = holdings.split(",")
+    if len(holding) == 2:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}, 
+                        {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "avgPrice": 20.35}]
+    elif len(holding) == 1:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}]
+    else:
+        holding_list = []
+        
+    api_client.live.start.assert_called_once_with(mock.ANY,
+                                                mock.ANY,
+                                                "3",
+                                                mock.ANY,
+                                                mock.ANY,
+                                                True,
+                                                mock.ANY,
+                                                False,
+                                                False,
+                                                [],
+                                                mock.ANY,
+                                                holding_list)

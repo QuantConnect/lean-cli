@@ -39,6 +39,9 @@ class JsonModule(abc.ABC):
         self._initial_cash_balance: LiveCashBalanceInput = LiveCashBalanceInput(json_module_data["live-cash-balance-state"]) \
             if "live-cash-balance-state" in json_module_data \
             else None
+        self._initial_holdings_supported: bool = json_module_data["live-holdings-state"] \
+            if "live-holdings-state" in json_module_data \
+            else False
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []

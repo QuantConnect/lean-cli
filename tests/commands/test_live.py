@@ -836,3 +836,54 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     args, _ = lean_runner.run_lean.call_args
 
     assert args[0]["live-cash-balance"] == cash_list
+
+
+@pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
+                                            ("Paper Trading", "A:A 2T:1:145.1"),
+                                            ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
+                                            ("Atreyu", ""),
+                                            ("Trading Technologies", ""),
+                                            ("Binance", ""),
+                                            ("Bitfinex", ""),
+                                            ("FTX", ""),
+                                            ("Coinbase Pro", ""),
+                                            ("Interactive Brokers", ""),
+                                            ("Kraken", ""),
+                                            ("OANDA", ""),
+                                            ("Samco", ""),
+                                            ("Terminal Link", ""),
+                                            ("Tradier", ""),
+                                            ("Zerodha", "")])
+def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
+    create_fake_lean_cli_directory()
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
+
+    options = []
+    required_options = brokerage_required_options[brokerage].items()
+    for key, value in required_options:
+        options.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
+                                       "--data-feed", "Custom data only", *options])
+
+    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
+    if brokerage not in ["Paper Trading", "Atreyu"]:
+        assert result.exit_code != 0
+        lean_runner.run_lean.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+
+    holding = holdings.split(",")
+    if len(holding) == 2:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}, 
+                        {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "avgPrice": 20.35}]
+    elif len(holding) == 1:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}]
+    else:
+        holding_list = []
+
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    assert args[0]["live-holdings"] == holding_list

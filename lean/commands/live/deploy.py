@@ -30,7 +30,7 @@ from lean.models.configuration import InternalInputUserInput, OrganzationIdConfi
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule, LiveCashBalanceInput
 from lean.commands.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
+from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio, configure_initial_cash_balance, configure_initial_holdings
 from lean.models.data_providers import all_data_providers
 
 _environment_skeleton = {
@@ -300,6 +300,9 @@ def _get_default_value(key: str) -> Optional[Any]:
 @click.option("--live-cash-balance",
               type=str,
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
+@click.option("--live-holdings",
+              type=str,
+              help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -315,6 +318,7 @@ def deploy(project: Path,
         image: Optional[str],
         python_venv: Optional[str],
         live_cash_balance: Optional[str],
+        live_holdings: Optional[str],
         update: bool,
         **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -416,15 +420,30 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
-    cash_balance_option = env_brokerage._initial_cash_balance
     logger = container.logger()
-    if cash_balance_option != LiveCashBalanceInput.NotSupported:
-        previous_cash_state = get_latest_cash_state(container.api_client(), project_config.get("cloud-id", None), project)
-        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
-        if live_cash_balance:
-            lean_config["live-cash-balance"] = live_cash_balance
-    elif live_cash_balance is not None and live_cash_balance != "":
-        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
+    api_client = container.api_client()
+    cloud_id = project_config.get("cloud-id", None)
+    
+    cash_balance_option = env_brokerage._initial_cash_balance
+    holdings_supported = env_brokerage._initial_holdings_supported
+    if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
+        last_portfolio = get_last_portfolio(api_client, cloud_id, project)
+        
+        if cash_balance_option != LiveCashBalanceInput.NotSupported:
+            last_cash = last_portfolio["cash"] if last_portfolio else None
+            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+            if live_cash_balance:
+                lean_config["live-cash-balance"] = live_cash_balance
+        elif live_cash_balance is not None and live_cash_balance != "":
+            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
+    
+        if holdings_supported:
+            last_holdings = last_portfolio["holdings"] if last_portfolio else None
+            live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
+            if live_holdings:
+                lean_config["live-holdings"] = live_holdings
+        elif live_holdings != None:
+            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

@@ -51,7 +51,15 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
     return list(run_options.values())
 
 
-def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+def get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+    """Interactively obtain the portfolio state from the latest live deployment (both cloud/local)
+
+    :param property: the property that being fetched
+    :param api_client: the api instance
+    :param project_id: the cloud  id of the project
+    :param project_name: the name of the project
+    :return: the list of dictionary containing intial portfolio information
+    """
     cloud_deployment_list = api_client.get("live/read")
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(pytz.UTC) for instance in cloud_deployment_list["live"] 
                              if instance["projectId"] == project_id]
@@ -63,20 +71,19 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
         local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(live_deployment_path)]
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
-    
+
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
-        previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
+        previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
-        previous_portfolio_state = json.loads(open(previous_state_file).read())
-        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
+        previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file).read()).items()}
     else:
         return None
     
-    return previous_cash_state
+    return previous_portfolio_state
 
 
 def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBalanceInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
@@ -121,6 +128,52 @@ Do you want to set a different initial cash balance?""", default=False):
         cash_list = previous_cash_balance
             
     return cash_list
+
+
+def configure_initial_holdings(logger: Logger, live_holdings: str, previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+    """Interactively configures the intial portfolio holdings.
+
+    :param logger: the logger to use
+    :param live_holdings: the initial portfolio holdings option input
+    :param previous_holdings: the dictionary containing portfolio holdings in previous portfolio state
+    :return: the list of dictionary containing intial symbol, symbol id, quantity, and average price information
+    """
+    holdings = []
+    last_holdings = []
+    if previous_holdings:
+        for holding in previous_holdings.values():
+            symbol = holding["Symbol"]
+            quantity = int(holding["Quantity"])
+            avg_price = float(holding["AveragePrice"])
+            last_holdings.append({"symbolId": symbol["ID"], "symbol": symbol["Value"], "quantity": quantity, "avgPrice": avg_price})
+    
+    if live_holdings != None:
+        for holding in [x for x in live_holdings.split(",") if x]:
+            symbol, symbol_id, quantity, avg_price = holding.split(":")
+            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "avgPrice": float(avg_price)})
+            
+    elif click.confirm("Do you want to set the initial portfolio holdings?", default=False):
+        continue_adding = True
+    
+        while continue_adding:
+            logger.info("Setting initial portfolio holdings...")
+            symbol = click.prompt("Symbol")
+            symbol_id = click.prompt("Symbol ID")
+            quantity = click.prompt("Quantity", type=int)
+            avg_price = click.prompt("Average Price", type=float)
+            holdings.append({"symbolId": symbol, "symbol": symbol_id, "quantity": quantity, "avgPrice": avg_price})
+            logger.info(f"Portfolio Holdings: {holdings}")
+            
+            if not click.confirm("Do you want to add more holdings?", default=False):
+                continue_adding = False
+                
+    elif click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
+        return last_holdings
+    
+    else:
+        return []
+            
+    return holdings
 
 
 def _filter_json_name_backtest(file: Path) -> bool:

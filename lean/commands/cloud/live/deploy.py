@@ -27,7 +27,7 @@ from lean.models.configuration import InternalInputUserInput, OrganzationIdConfi
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
+from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio, configure_initial_cash_balance, configure_initial_holdings
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
@@ -184,6 +184,9 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--live-cash-balance",
               type=str,
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
+@click.option("--live-holdings",
+              type=str,
+              help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -203,6 +206,7 @@ def deploy(project: str,
          notify_sms: Optional[str],
          notify_telegram: Optional[str],
          live_cash_balance: Optional[str],
+         live_holdings: Optional[str],
          push: bool,
          open_browser: bool,
          **kwargs) -> None:
@@ -287,11 +291,21 @@ def deploy(project: str,
     price_data_handler = brokerage_instance.get_price_data_handler()
 
     cash_balance_option = brokerage_instance._initial_cash_balance
-    if cash_balance_option != LiveCashBalanceInput.NotSupported:
-        previous_cash_state = get_latest_cash_state(api_client, cloud_project.projectId, project)
-        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
-    elif live_cash_balance is not None and live_cash_balance != "":
-        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+    holdings_supported = brokerage_instance._initial_holdings_supported
+    if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
+        last_portfolio = get_last_portfolio(api_client, cloud_project.projectId, project)
+        
+        if cash_balance_option != LiveCashBalanceInput.NotSupported:
+            last_cash = last_portfolio["cash"] if last_portfolio else None
+            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        elif live_cash_balance is not None and live_cash_balance != "":
+            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+    
+        if holdings_supported:
+            last_holdings = last_portfolio["holdings"] if last_portfolio else None
+            live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
+        elif live_holdings is not None:
+            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
     
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")
@@ -306,6 +320,8 @@ def deploy(project: str,
         _log_notification_methods(notify_methods)
     if live_cash_balance:
         logger.info(f"Initial live cash balance: {live_cash_balance}")
+    if live_holdings:
+        logger.info(f"Initial live portfolio holdings: {live_holdings}")
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:
@@ -323,7 +339,8 @@ def deploy(project: str,
                                            notify_order_events,
                                            notify_insights,
                                            notify_methods,
-                                           live_cash_balance)
+                                           live_cash_balance,
+                                           live_holdings)
 
     logger.info(f"Live url: {live_algorithm.get_url()}")
 
