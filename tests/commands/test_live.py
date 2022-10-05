@@ -815,14 +815,6 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     for key, value in required_options:
         options.extend([f"--{key}", value])
 
-    options_config = {key: value for key, value in set(required_options)}
-    with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
-        file.write(json.dumps({
-            **options_config,
-            "data-folder": "data",
-            "job-organization-id": "abc"
-        }))
-
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--data-feed", "Custom data only", *options])
 

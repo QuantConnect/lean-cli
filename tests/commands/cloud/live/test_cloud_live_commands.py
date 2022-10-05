@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
 from unittest import mock
 from click.testing import CliRunner
 from dependency_injector import providers
@@ -51,7 +50,6 @@ def test_cloud_live_liquidate() -> None:
 
 def test_cloud_live_deploy() -> None:
     create_fake_lean_cli_directory()
-    (Path.cwd() / "Python Project/live").mkdir()
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
@@ -98,7 +96,6 @@ def test_cloud_live_deploy() -> None:
                                              ("telegram", "customId1:custom:token1,customId2:custom:token2")])
 def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) -> None:
     create_fake_lean_cli_directory()
-    (Path.cwd() / "Python Project/live").mkdir()
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
