@@ -79,12 +79,7 @@ def get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pat
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
-<<<<<<< HEAD
-        previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file).read()).items()}
-=======
-        previous_portfolio_state = json.loads(open(previous_state_file, "r", encoding="utf-8").read())
-        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
->>>>>>> 9aa3fb57677bbd27bd50f05d1f5d0298a96e3249
+        previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
     else:
         return None
     
@@ -150,12 +145,12 @@ def configure_initial_holdings(logger: Logger, live_holdings: str, previous_hold
             symbol = holding["Symbol"]
             quantity = int(holding["Quantity"])
             avg_price = float(holding["AveragePrice"])
-            last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "avgPrice": avg_price})
+            last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
     
     if live_holdings is not None:
         for holding in [x for x in live_holdings.split(",") if x]:
             symbol, symbol_id, quantity, avg_price = holding.split(":")
-            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "avgPrice": float(avg_price)})
+            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "averagePrice": float(avg_price)})
             
     elif click.confirm("Do you want to set the initial portfolio holdings?", default=False):
         continue_adding = True
@@ -166,7 +161,7 @@ def configure_initial_holdings(logger: Logger, live_holdings: str, previous_hold
             symbol_id = click.prompt("Symbol ID")
             quantity = click.prompt("Quantity", type=int)
             avg_price = click.prompt("Average Price", type=float)
-            holdings.append({"symbolId": symbol, "symbol": symbol_id, "quantity": quantity, "avgPrice": avg_price})
+            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": quantity, "averagePrice": avg_price})
             logger.info(f"Portfolio Holdings: {holdings}")
             
             if not click.confirm("Do you want to add more holdings?", default=False):

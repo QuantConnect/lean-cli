@@ -881,10 +881,10 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
 
     holding = [x for x in holdings.split(",") if x]
     if len(holding) == 2:
-        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}, 
-                        {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "avgPrice": 20.35}]
+        holding_list = [{"Symbol": {"Value": "A", "ID": "A 2T"}, "Quantity": 1, "AveragePrice": 145.1}, 
+                        {"Symbol": {"Value": "AA", "ID": "AA 2T"}, "Quantity": 2, "AveragePrice": 20.35}]
     elif len(holding) == 1:
-        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}]
+        holding_list = [{"Symbol": {"Value": "A", "ID": "A 2T"}, "Quantity": 1, "AveragePrice": 145.1}]
     else:
         assert "live-holdings" not in args[0]
         return

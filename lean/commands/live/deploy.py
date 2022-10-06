@@ -438,7 +438,14 @@ def deploy(project: Path,
         last_holdings = last_portfolio["holdings"] if last_portfolio else None
         live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
         if live_holdings:
-            lean_config["live-holdings"] = live_holdings
+            lean_config["live-holdings"] = [{
+                "Symbol": {
+                    "Value": holding["symbol"],
+                    "ID": holding["symbolId"]
+                },
+                "Quantity": holding["quantity"],
+                "AveragePrice": holding["averagePrice"]
+            } for holding in live_holdings]
     elif live_holdings != None:
         raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
     
