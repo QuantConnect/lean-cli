@@ -421,13 +421,10 @@ def deploy(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
     
     logger = container.logger()
-    api_client = container.api_client()
-    cloud_id = project_config.get("cloud-id", None)
-    
     cash_balance_option = env_brokerage._initial_cash_balance
     holdings_supported = env_brokerage._initial_holdings_supported
     if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
-        last_portfolio = get_last_portfolio(api_client, cloud_id, project)
+        last_portfolio = get_last_portfolio(container.api_client(), project_config.get("cloud-id", None), project)
         
     if cash_balance_option != LiveCashBalanceInput.NotSupported:
         last_cash = last_portfolio["cash"] if last_portfolio else None

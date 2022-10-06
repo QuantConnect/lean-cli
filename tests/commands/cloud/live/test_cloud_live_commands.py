@@ -253,7 +253,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'live': [], 'portfolio': {'cash': [], 'holdings': []}}
+    api_client.get.return_value = {'live': [], 'portfolio': {}}
     container.api_client.override(providers.Object(api_client))
 
     cloud_runner = mock.Mock()

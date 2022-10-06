@@ -842,6 +842,8 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                             ("Paper Trading", "A:A 2T:1:145.1"),
                                             ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
                                             ("Atreyu", ""),
+                                            ("Atreyu", "A:A 2T:1:145.1"),
+                                            ("Atreyu", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
                                             ("Trading Technologies", ""),
                                             ("Binance", ""),
                                             ("Bitfinex", ""),
