@@ -275,7 +275,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
 
     assert result.exit_code == 0
     
-    holding = holdings.split(",")
+    holding = [x for x in holdings.split(",") if x]
     if len(holding) == 2:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}, 
                         {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "avgPrice": 20.35}]

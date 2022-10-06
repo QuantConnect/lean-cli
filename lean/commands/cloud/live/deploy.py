@@ -295,17 +295,17 @@ def deploy(project: str,
     if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
         last_portfolio = get_last_portfolio(api_client, cloud_project.projectId, project)
         
-        if cash_balance_option != LiveCashBalanceInput.NotSupported:
-            last_cash = last_portfolio["cash"] if last_portfolio else None
-            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
-        elif live_cash_balance is not None and live_cash_balance != "":
-            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
+        last_cash = last_portfolio["cash"] if last_portfolio else None
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
-        if holdings_supported:
-            last_holdings = last_portfolio["holdings"] if last_portfolio else None
-            live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
-        elif live_holdings is not None:
-            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
+    if holdings_supported:
+        last_holdings = last_portfolio["holdings"] if last_portfolio else None
+        live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
+    elif live_holdings is not None:
+        raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
     
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")

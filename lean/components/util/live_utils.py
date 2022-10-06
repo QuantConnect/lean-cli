@@ -147,7 +147,7 @@ def configure_initial_holdings(logger: Logger, live_holdings: str, previous_hold
             avg_price = float(holding["AveragePrice"])
             last_holdings.append({"symbolId": symbol["ID"], "symbol": symbol["Value"], "quantity": quantity, "avgPrice": avg_price})
     
-    if live_holdings != None:
+    if live_holdings is not None:
         for holding in [x for x in live_holdings.split(",") if x]:
             symbol, symbol_id, quantity, avg_price = holding.split(":")
             holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "avgPrice": float(avg_price)})

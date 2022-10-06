@@ -864,7 +864,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
         options.extend([f"--{key}", value])
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
-                                       "--data-feed", "Custom data only", *options])
+                                       "--live-cash-balance", "USD:100", "--data-feed", "Custom data only", *options])
 
     # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
     if brokerage not in ["Paper Trading", "Atreyu"]:
@@ -874,16 +874,17 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
 
     assert result.exit_code == 0
 
-    holding = holdings.split(",")
+    lean_runner.run_lean.assert_called_once()
+    args, _ = lean_runner.run_lean.call_args
+
+    holding = [x for x in holdings.split(",") if x]
     if len(holding) == 2:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}, 
                         {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "avgPrice": 20.35}]
     elif len(holding) == 1:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "avgPrice": 145.1}]
     else:
-        holding_list = []
-
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+        assert "live-holdings" not in args[0]
+        return
 
     assert args[0]["live-holdings"] == holding_list

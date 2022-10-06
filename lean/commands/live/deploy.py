@@ -429,21 +429,21 @@ def deploy(project: Path,
     if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
         last_portfolio = get_last_portfolio(api_client, cloud_id, project)
         
-        if cash_balance_option != LiveCashBalanceInput.NotSupported:
-            last_cash = last_portfolio["cash"] if last_portfolio else None
-            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
-            if live_cash_balance:
-                lean_config["live-cash-balance"] = live_cash_balance
-        elif live_cash_balance is not None and live_cash_balance != "":
-            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
+    if cash_balance_option != LiveCashBalanceInput.NotSupported:
+        last_cash = last_portfolio["cash"] if last_portfolio else None
+        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        if live_cash_balance:
+            lean_config["live-cash-balance"] = live_cash_balance
+    elif live_cash_balance is not None and live_cash_balance != "":
+        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
     
-        if holdings_supported:
-            last_holdings = last_portfolio["holdings"] if last_portfolio else None
-            live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
-            if live_holdings:
-                lean_config["live-holdings"] = live_holdings
-        elif live_holdings != None:
-            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
+    if holdings_supported:
+        last_holdings = last_portfolio["holdings"] if last_portfolio else None
+        live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
+        if live_holdings:
+            lean_config["live-holdings"] = live_holdings
+    elif live_holdings != None:
+        raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
