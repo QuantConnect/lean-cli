@@ -79,7 +79,12 @@ def get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pat
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
+<<<<<<< HEAD
         previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file).read()).items()}
+=======
+        previous_portfolio_state = json.loads(open(previous_state_file, "r", encoding="utf-8").read())
+        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
+>>>>>>> 9aa3fb57677bbd27bd50f05d1f5d0298a96e3249
     else:
         return None
     
