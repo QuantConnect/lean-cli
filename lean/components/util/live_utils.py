@@ -71,7 +71,7 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
-        previous_portfolio_state = json.loads(open(previous_state_file).read())
+        previous_portfolio_state = json.loads(open(previous_state_file, "r", encoding="utf-8").read())
         previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
     else:
         return None
