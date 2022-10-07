@@ -20,15 +20,16 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
-from lean.models.json_module import LiveInitialStateInput
+from lean.models.json_module import JsonModule, LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio, configure_initial_cash_balance, configure_initial_holdings
-
+from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
+                                            _configure_initial_cash_interactively, _configure_initial_holdings_interactively
+                                            
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
     logger = container.logger()
@@ -231,7 +232,6 @@ def deploy(project: str,
     cloud_runner = container.cloud_runner()
     finished_compile = cloud_runner.compile_project(cloud_project)
 
-    interactive_mode = False
     if brokerage is not None:
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
@@ -284,32 +284,32 @@ def deploy(project: str,
                     notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
                 else:
                     notify_methods.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
+                    
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+            
+        if cash_balance_option != LiveInitialStateInput.NotSupported:
+            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        elif live_cash_balance is not None and live_cash_balance != "":
+            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+        
+        if holdings_option != LiveInitialStateInput.NotSupported:
+            live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
+        elif live_holdings is not None and live_holdings != "":
+            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
+        
     else:
         brokerage_instance = _configure_brokerage(logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
-        interactive_mode = True
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+        if cash_balance_option != LiveInitialStateInput.NotSupported:
+            live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
+        if holdings_option != LiveInitialStateInput.NotSupported:
+            live_holdings = _configure_initial_holdings_interactively(logger, holdings_option, last_holdings)
 
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
-
-    cash_balance_option = brokerage_instance._initial_cash_balance
-    holdings_option = brokerage_instance._initial_holdings
-    if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
-        last_portfolio = get_last_portfolio(api_client, cloud_project.projectId, project)
-        
-    if cash_balance_option != LiveInitialStateInput.NotSupported:
-        last_cash = last_portfolio["cash"] if last_portfolio else None
-        live_cash_balance = configure_initial_cash_balance(logger, interactive_mode, cash_balance_option, live_cash_balance, last_cash)
-    elif live_cash_balance is not None and live_cash_balance != "":
-        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
-    
-    if holdings_option != LiveInitialStateInput.NotSupported:
-        last_holdings = last_portfolio["holdings"] if last_portfolio else None
-        live_holdings = configure_initial_holdings(logger, interactive_mode, holdings_option, live_holdings, last_holdings)
-    elif live_holdings is not None and live_holdings != "":
-        raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
     
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")

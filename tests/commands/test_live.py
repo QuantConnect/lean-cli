@@ -374,7 +374,7 @@ data_providers_required_options = {
     "Terminal Link": brokerage_required_options["Terminal Link"]
 }
 
-"""
+
 @pytest.mark.parametrize("data_provider", data_providers_required_options.keys())
 def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
     create_fake_lean_cli_directory()
@@ -789,7 +789,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert args[0]["python-venv"] == "/Custom-venv"
     else:
         assert "python-venv" not in args[0]
-"""
+
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", ""),
                                             ("Paper Trading", "USD:100"),

@@ -61,13 +61,13 @@ def test_cloud_live_deploy() -> None:
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-        
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
                                        "--live-cash-balance", "USD:100"])
-    
+
     assert result.exit_code == 0
-    
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                   mock.ANY,
                                                   "3",
@@ -108,36 +108,36 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-        
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
                                        "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs])
-    
+
     assert result.exit_code == 0
-    
+
     notification = []
-    
+
     for config in configs.split(","):
         if notice_method == "emails":
             address, subject = config.split(":")
             notification.append(QCEmailNotificationMethod(address=address, subject=subject))
-            
+
         elif notice_method == "webhooks":
             address, headers = config.split(":", 1)
             headers_dict = {}
-            
+
             for header in headers.split(":"):
                 key, value = header.split("=")
                 headers_dict[key] = value
-                    
+
             notification.append(QCWebhookNotificationMethod(address=address, headers=headers_dict))
-            
+
         elif notice_method == "sms":
             notification.append(QCSMSNotificationMethod(phoneNumber=config))
-            
+
         else:
             id_token_pair = config.split(":", 1)
-            
+
             if len(id_token_pair) == 2:
                 chat_id, token = id_token_pair
                 if not token:
@@ -146,7 +146,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                     notification.append(QCTelegramNotificationMethod(id=chat_id, token=token))
             else:
                 notification.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
-    
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                   mock.ANY,
                                                   "3",
@@ -189,14 +189,14 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-    
+
     options = []
     for key, value in brokerage_required_options[brokerage].items():
         if "organization" not in key:
             options.extend([f"--{key}", value])
 
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
-                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
                                        "--notify-insights", "no", *options])
 
     if brokerage not in ["Paper Trading", "Trading Technologies"]:
@@ -205,13 +205,13 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         return
 
     assert result.exit_code == 0
-    
+
     cash_pairs = cash.split(",")
     if len(cash_pairs) == 2:
         cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
     else:
         cash_list = [{"currency": "USD", "amount": 100}]
-        
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                 mock.ANY,
                                                 "3",
@@ -268,17 +268,19 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-    
+
     options = []
     for key, value in brokerage_required_options[brokerage].items():
-        if "organization" not in key:
+        if "organization" not in key and key != "ib-enable-delayed-streaming-data":
             options.extend([f"--{key}", value])
-    
+
     if brokerage == "Trading Technologies":
         options.extend(["--live-cash-balance", "USD:100"])
+    elif brokerage == "Interactive Brokers":
+        options.extend(["--ib-data-feed", "no"])
 
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings, 
-                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
                                        "--notify-insights", "no", *options])
 
     if (brokerage != "Paper Trading" and holdings != "")\
@@ -288,17 +290,17 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
         return
 
     assert result.exit_code == 0
-    
+
     holding = [x for x in holdings.split(",") if x]
     holding_list = ""
     if len(holding) == 2:
-        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}, 
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1},
                         {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "averagePrice": 20.35}]
     elif len(holding) == 1:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}]
     elif brokerage == "Paper Trading":
         holding_list = []
-        
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                 mock.ANY,
                                                 "3",
