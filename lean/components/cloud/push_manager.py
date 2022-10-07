@@ -20,7 +20,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
-from lean.models.errors import RequestFailedError
+from lean.models.utils import LeanLibraryReference
 
 
 class PushManager:
@@ -47,17 +47,22 @@ class PushManager:
     def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
+        It will also push every library referenced by each project and add or remove references.
+
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         :param organization_id: the id of the organization where the project will be pushed to
         """
-        projects_to_push = sorted(projects_to_push)
+        projects = projects_to_push + [library
+                                       for project in projects_to_push
+                                       for library in self._project_manager.get_project_libraries(project)]
+        projects = sorted(projects)
 
         cloud_projects = self._api_client.projects.get_all()
 
-        for index, project in enumerate(projects_to_push, start=1):
+        for index, project in enumerate(projects, start=1):
             relative_path = project.relative_to(Path.cwd())
             try:
-                self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
+                self._logger.info(f"[{index}/{len(projects)}] Pushing '{relative_path}'")
                 self._push_project(project, cloud_projects, organization_id)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
@@ -65,6 +70,67 @@ class PushManager:
                     self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
                 else:
                     self._logger.warn(f"Cannot push '{relative_path}': {ex}")
+
+        self._update_cloud_library_references(projects)
+
+    def _update_cloud_library_references(self, projects: List[Path]) -> None:
+        cloud_projects = self._api_client.projects.get_all()
+
+        for project in projects:
+            cloud_project = [cloud_project for cloud_project in cloud_projects
+                             if Path(cloud_project.name).expanduser().resolve() == project][0]
+            local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(project)
+
+            self._add_new_libraries(cloud_project, local_libraries_cloud_ids, cloud_projects)
+            self._remove_outdated_libraries(cloud_project, local_libraries_cloud_ids, cloud_projects)
+
+    def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
+        content = (project_dir / "config.json").read_text(encoding="UTF-8")
+        project_config = self._project_config_manager.get_project_config(project_dir)
+
+        libraries_in_config = project_config.get("libraries", [])
+        library_paths = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
+
+        local_libraries_cloud_ids = [int(self._project_config_manager.get_project_config(path).get("cloud-id", None))
+                                     for path in library_paths]
+
+        return local_libraries_cloud_ids
+
+    @staticmethod
+    def _get_library_name(library_cloud_id: int, cloud_projects: List[QCProject]) -> str:
+        return [project.name for project in cloud_projects if project.projectId == library_cloud_id][0]
+
+    def _add_new_libraries(self,
+                           project: QCProject,
+                           local_libraries_cloud_ids: List[int],
+                           cloud_projects: List[QCProject]) -> None:
+        libraries_to_add = [library_id for library_id in local_libraries_cloud_ids if
+                            library_id not in project.libraries]
+
+        if len(libraries_to_add) > 0:
+            self._logger.info(f"Adding libraries to project {project.name} in the cloud")
+
+        for i, library_cloud_id in enumerate(libraries_to_add, start=1):
+            library_name = self._get_library_name(library_cloud_id, cloud_projects)
+            self._logger.info(f"[{i}/{len(libraries_to_add)}] "
+                        f"Adding library {library_name} to project {project.name} in the cloud")
+            self._api_client.projects.add_library(project.projectId, library_cloud_id)
+
+    def _remove_outdated_libraries(self,
+                                   project: QCProject,
+                                   local_libraries_cloud_ids: List[int],
+                                   cloud_projects: List[QCProject]) -> None:
+        libraries_to_remove = [library_id for library_id in project.libraries
+                               if library_id not in local_libraries_cloud_ids]
+
+        if len(libraries_to_remove) > 0:
+            self._logger.info(f"Removing libraries from project {project.name} in the cloud")
+
+        for i, library_cloud_id in enumerate(libraries_to_remove, start=1):
+            library_name = self._get_library_name(library_cloud_id, cloud_projects)
+            self._logger.info(f"[{i}/{len(libraries_to_remove)}] "
+                              f"Removing library {library_name} from project {project.name} in the cloud")
+            self._api_client.projects.delete_library(project.projectId, library_cloud_id)
 
     def _push_project(self, project: Path, cloud_projects: List[QCProject], organization_id: Optional[str]) -> None:
         """Pushes a single local project to the cloud.
