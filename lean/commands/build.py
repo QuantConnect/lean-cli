@@ -168,9 +168,3 @@ def build(root: Path, tag: str) -> None:
 
     logger = container.logger()
     cli_config_manager = container.cli_config_manager()
-
-    logger.info(f"Setting default engine image to '{custom_engine_image}'")
-    cli_config_manager.engine_image.set_value(str(custom_engine_image))
-
-    logger.info(f"Setting default research image to '{custom_research_image}'")
-    cli_config_manager.research_image.set_value(str(custom_research_image))

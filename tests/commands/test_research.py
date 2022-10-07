@@ -195,31 +195,11 @@ def test_research_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_research_runs_custom_image_when_set_in_config() -> None:
-    create_fake_lean_cli_directory()
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    container.cli_config_manager().research_image.set_value("custom/research:123")
-
-    result = CliRunner().invoke(lean, ["research", "Python Project"])
-
-    assert result.exit_code == 0
-
-    docker_manager.run_image.assert_called_once()
-    args, kwargs = docker_manager.run_image.call_args
-
-    assert args[0] == DockerImage(name="custom/research", tag="123")
-
-
 def test_research_runs_custom_image_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
-
-    container.cli_config_manager().research_image.set_value("custom/research:123")
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--image", "custom/research:456"])
 

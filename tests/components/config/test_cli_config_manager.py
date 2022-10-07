@@ -40,41 +40,26 @@ def test_get_option_by_key_raises_error_when_no_option_with_matching_key_exists(
         cli_config_manager.get_option_by_key("this-option-does-not-exist")
 
 
-def test_get_engine_image_returns_default_image_when_nothing_configured() -> None:
+def test_get_engine_image_returns_default_image_when_nothing_is_passed() -> None:
     cli_config_manager = CLIConfigManager(create_storage(), create_storage())
 
     assert cli_config_manager.get_engine_image() == DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
-def test_get_engine_image_returns_image_configured_via_option() -> None:
+def test_get_engine_image_returns_image_from_passed_name() -> None:
     cli_config_manager = CLIConfigManager(create_storage(), create_storage())
-    cli_config_manager.engine_image.set_value("custom/lean:3")
 
-    assert cli_config_manager.get_engine_image() == DockerImage(name="custom/lean", tag="3")
-
-
-def test_get_engine_image_returns_override_when_given() -> None:
-    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
-    cli_config_manager.engine_image.set_value("custom/lean:3")
-
-    assert cli_config_manager.get_engine_image("custom/lean:5") == DockerImage(name="custom/lean", tag="5")
+    assert cli_config_manager.get_engine_image("custom/engine:3") == DockerImage(name="custom/engine", tag="3")
 
 
-def test_get_research_image_returns_default_image_when_nothing_configured() -> None:
+def test_get_research_image_returns_default_image_when_nothing_is_passed() -> None:
     cli_config_manager = CLIConfigManager(create_storage(), create_storage())
 
     assert cli_config_manager.get_research_image() == DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
 
 
-def test_get_research_image_returns_image_configured_via_option() -> None:
+def test_get_research_image_returns_image_from_passed_name() -> None:
     cli_config_manager = CLIConfigManager(create_storage(), create_storage())
-    cli_config_manager.research_image.set_value("custom/research:3")
 
-    assert cli_config_manager.get_research_image() == DockerImage(name="custom/research", tag="3")
+    assert cli_config_manager.get_research_image("custom/research:3") == DockerImage(name="custom/research", tag="3")
 
-
-def test_get_research_image_returns_override_when_given() -> None:
-    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
-    cli_config_manager.research_image.set_value("custom/research:3")
-
-    assert cli_config_manager.get_research_image("custom/research:5") == DockerImage(name="custom/research", tag="5")
