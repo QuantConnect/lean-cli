@@ -23,7 +23,7 @@ from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
 from lean.models.data_providers import all_data_providers
-from lean.models.json_module import LiveCashBalanceInput
+from lean.models.json_module import LiveInitialStateInput
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 
@@ -86,7 +86,7 @@ def get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pat
     return previous_portfolio_state
 
 
-def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBalanceInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
+def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
@@ -104,12 +104,12 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBa
             amount = cash_state["Amount"]
             previous_cash_balance.append({"currency": currency, "amount": amount})
     
-    if live_cash_balance is not None and live_cash_balance != "":
-        for cash_pair in live_cash_balance.split(","):
+    if live_cash_balance is not None and not (cash_input_option == LiveInitialStateInput.Required and live_cash_balance == ""):
+        for cash_pair in [x for x in live_cash_balance.split(",") if x]:
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
             
-    elif (cash_input_option == LiveCashBalanceInput.Required and not previous_cash_balance)\
+    elif (cash_input_option == LiveInitialStateInput.Required and not previous_cash_balance)\
     or click.confirm(f"""Previous cash balance: {previous_cash_balance}
 Do you want to set a different initial cash balance?""", default=False):
         continue_adding = True
@@ -130,10 +130,12 @@ Do you want to set a different initial cash balance?""", default=False):
     return cash_list
 
 
-def configure_initial_holdings(logger: Logger, live_holdings: str, previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: List[Dict[str, Any]])\
+    -> List[Dict[str, float]]:
     """Interactively configures the intial portfolio holdings.
 
     :param logger: the logger to use
+    :param holdings_option: if the initial portfolio holdings setting is optional/required
     :param live_holdings: the initial portfolio holdings option input
     :param previous_holdings: the dictionary containing portfolio holdings in previous portfolio state
     :return: the list of dictionary containing intial symbol, symbol id, quantity, and average price information
@@ -147,16 +149,19 @@ def configure_initial_holdings(logger: Logger, live_holdings: str, previous_hold
             avg_price = float(holding["AveragePrice"])
             last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
     
-    if live_holdings is not None:
+    if live_holdings is not None and not (holdings_option == LiveInitialStateInput.Required and live_holdings == ""):
         for holding in [x for x in live_holdings.split(",") if x]:
             symbol, symbol_id, quantity, avg_price = holding.split(":")
             holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "averagePrice": float(avg_price)})
             
     elif click.confirm("Do you want to set the initial portfolio holdings?", default=False):
+        if click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
+            return last_holdings
+        
         continue_adding = True
     
         while continue_adding:
-            logger.info("Setting initial portfolio holdings...")
+            logger.info("Setting custom initial portfolio holdings...")
             symbol = click.prompt("Symbol")
             symbol_id = click.prompt("Symbol ID")
             quantity = click.prompt("Quantity", type=int)
@@ -167,9 +172,6 @@ def configure_initial_holdings(logger: Logger, live_holdings: str, previous_hold
             if not click.confirm("Do you want to add more holdings?", default=False):
                 continue_adding = False
                 
-    elif click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
-        return last_holdings
-    
     else:
         return []
             

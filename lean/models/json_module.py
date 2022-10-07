@@ -36,10 +36,10 @@ class JsonModule(abc.ABC):
         self._lean_configs = self.sort_configs()
         self._is_module_installed: bool = False
         self._is_installed_and_build: bool = False
-        self._initial_cash_balance: LiveCashBalanceInput = LiveCashBalanceInput(json_module_data["live-cash-balance-state"]) \
+        self._initial_cash_balance: LiveInitialStateInput = LiveInitialStateInput(json_module_data["live-cash-balance-state"]) \
             if "live-cash-balance-state" in json_module_data \
             else None
-        self._initial_holdings_supported: bool = json_module_data["live-holdings-state"] \
+        self._initial_holdings: LiveInitialStateInput = LiveInitialStateInput(json_module_data["live-holdings-state"]) \
             if "live-holdings-state" in json_module_data \
             else False
 
@@ -197,7 +197,7 @@ class JsonModule(abc.ABC):
         return self
 
 
-class LiveCashBalanceInput(str, Enum):
+class LiveInitialStateInput(str, Enum):
     Required = "required"
     Optional = "optional"
     NotSupported = "not-supported"

@@ -195,9 +195,6 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         if "organization" not in key:
             options.extend([f"--{key}", value])
 
-    if brokerage not in ["Paper Trading", "Trading Technologies"]:
-        options.extend(["--live-holdings", "A:A 2T:1:1.0"])
-
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
                                        "--notify-insights", "no", *options])
@@ -230,21 +227,34 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
 
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
-                                            ("Paper Trading", "A:A 2T:1:145.1"),
-                                            ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
-                                            ("Atreyu", ""),
-                                            ("Trading Technologies", ""),
-                                            ("Binance", ""),
-                                            ("Bitfinex", ""),
-                                            ("FTX", ""),
-                                            ("Coinbase Pro", ""),
-                                            ("Interactive Brokers", ""),
-                                            ("Kraken", ""),
-                                            ("OANDA", ""),
-                                            ("Samco", ""),
-                                            ("Terminal Link", ""),
-                                            ("Tradier", ""),
-                                            ("Zerodha", "")])
+                                                ("Paper Trading", "A:A 2T:1:145.1"),
+                                                ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
+                                                ("Atreyu", ""),
+                                                ("Atreyu", "A:A 2T:1:145.1"),
+                                                ("Trading Technologies", ""),
+                                                ("Trading Technologies", "A:A 2T:1:145.1"),
+                                                ("Binance", ""),
+                                                ("Binance", "A:A 2T:1:145.1"),
+                                                ("Bitfinex", ""),
+                                                ("Bitfinex", "A:A 2T:1:145.1"),
+                                                ("FTX", ""),
+                                                ("FTX", "A:A 2T:1:145.1"),
+                                                ("Coinbase Pro", ""),
+                                                ("Coinbase Pro", "A:A 2T:1:145.1"),
+                                                ("Interactive Brokers", ""),
+                                                ("Interactive Brokers", "A:A 2T:1:145.1"),
+                                                ("Kraken", ""),
+                                                ("Kraken", "A:A 2T:1:145.1"),
+                                                ("OANDA", ""),
+                                                ("OANDA", "A:A 2T:1:145.1"),
+                                                ("Samco", ""),
+                                                ("Samco", "A:A 2T:1:145.1"),
+                                                ("Terminal Link", ""),
+                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Tradier", ""),
+                                                ("Tradier", "A:A 2T:1:145.1"),
+                                                ("Zerodha", ""),
+                                                ("Zerodha", "A:A 2T:1:145.1")])
 def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
     create_fake_lean_cli_directory()
 
@@ -263,12 +273,16 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     for key, value in brokerage_required_options[brokerage].items():
         if "organization" not in key:
             options.extend([f"--{key}", value])
+    
+    if brokerage == "Trading Technologies":
+        options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings, 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
-                                       "--live-cash-balance", "USD:100", "--notify-insights", "no", *options])
+                                       "--notify-insights", "no", *options])
 
-    if brokerage != "Paper Trading":
+    if (brokerage != "Paper Trading" and holdings != "")\
+    or brokerage == "Atreyu" or brokerage == "Terminal Link":   # non-cloud brokerage
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
         return
@@ -276,12 +290,13 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     assert result.exit_code == 0
     
     holding = [x for x in holdings.split(",") if x]
+    holding_list = ""
     if len(holding) == 2:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}, 
                         {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "averagePrice": 20.35}]
     elif len(holding) == 1:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}]
-    else:
+    elif brokerage == "Paper Trading":
         holding_list = []
         
     api_client.live.start.assert_called_once_with(mock.ANY,

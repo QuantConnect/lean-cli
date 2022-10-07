@@ -374,7 +374,7 @@ data_providers_required_options = {
     "Terminal Link": brokerage_required_options["Terminal Link"]
 }
 
-
+"""
 @pytest.mark.parametrize("data_provider", data_providers_required_options.keys())
 def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
     create_fake_lean_cli_directory()
@@ -789,22 +789,37 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert args[0]["python-venv"] == "/Custom-venv"
     else:
         assert "python-venv" not in args[0]
+"""
 
-
-@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
+@pytest.mark.parametrize("brokerage,cash", [("Paper Trading", ""),
+                                            ("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
+                                            ("Atreyu", ""),
                                             ("Atreyu", "USD:100"),
+                                            # ("Trading Technologies", "") not tested since this will prompt to interactive panel
                                             ("Trading Technologies", "USD:100"),
+                                            ("Trading Technologies", "USD:100,EUR:200"),
+                                            ("Binance", ""),
                                             ("Binance", "USD:100"),
+                                            ("Bitfinex", ""),
                                             ("Bitfinex", "USD:100"),
+                                            ("FTX", ""),
                                             ("FTX", "USD:100"),
+                                            ("Coinbase Pro", ""),
                                             ("Coinbase Pro", "USD:100"),
+                                            ("Interactive Brokers", ""),
                                             ("Interactive Brokers", "USD:100"),
+                                            ("Kraken", ""),
                                             ("Kraken", "USD:100"),
+                                            ("OANDA", ""),
                                             ("OANDA", "USD:100"),
+                                            ("Samco", ""),
                                             ("Samco", "USD:100"),
+                                            ("Terminal Link", ""),
                                             ("Terminal Link", "USD:100"),
+                                            ("Tradier", ""),
                                             ("Tradier", "USD:100"),
+                                            ("Zerodha", ""),
                                             ("Zerodha", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
@@ -819,43 +834,57 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                        "--data-feed", "Custom data only", *options])
 
     # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"]:
+    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"] and cash != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
 
     assert result.exit_code == 0
 
-    cash_pairs = cash.split(",")
-    if len(cash_pairs) == 2:
-        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
-    else:
-        cash_list = [{"currency": "USD", "amount": 100}]
-
     lean_runner.run_lean.assert_called_once()
     args, _ = lean_runner.run_lean.call_args
+
+    cash_pairs = [x for x in cash.split(",") if x]
+    if len(cash_pairs) == 2:
+        cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
+    elif len(cash_pairs) == 1:
+        cash_list = [{"currency": "USD", "amount": 100}]
+    else:
+        assert "live-cash-balance" not in args[0]
+        return
 
     assert args[0]["live-cash-balance"] == cash_list
 
 
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
-                                            ("Paper Trading", "A:A 2T:1:145.1"),
-                                            ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
-                                            ("Atreyu", ""),
-                                            ("Atreyu", "A:A 2T:1:145.1"),
-                                            ("Atreyu", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
-                                            ("Trading Technologies", ""),
-                                            ("Binance", ""),
-                                            ("Bitfinex", ""),
-                                            ("FTX", ""),
-                                            ("Coinbase Pro", ""),
-                                            ("Interactive Brokers", ""),
-                                            ("Kraken", ""),
-                                            ("OANDA", ""),
-                                            ("Samco", ""),
-                                            ("Terminal Link", ""),
-                                            ("Tradier", ""),
-                                            ("Zerodha", "")])
+                                                ("Paper Trading", "A:A 2T:1:145.1"),
+                                                ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
+                                                ("Atreyu", ""),
+                                                ("Atreyu", "A:A 2T:1:145.1"),
+                                                ("Trading Technologies", ""),
+                                                ("Trading Technologies", "A:A 2T:1:145.1"),
+                                                ("Binance", ""),
+                                                ("Binance", "A:A 2T:1:145.1"),
+                                                ("Bitfinex", ""),
+                                                ("Bitfinex", "A:A 2T:1:145.1"),
+                                                ("FTX", ""),
+                                                ("FTX", "A:A 2T:1:145.1"),
+                                                ("Coinbase Pro", ""),
+                                                ("Coinbase Pro", "A:A 2T:1:145.1"),
+                                                ("Interactive Brokers", ""),
+                                                ("Interactive Brokers", "A:A 2T:1:145.1"),
+                                                ("Kraken", ""),
+                                                ("Kraken", "A:A 2T:1:145.1"),
+                                                ("OANDA", ""),
+                                                ("OANDA", "A:A 2T:1:145.1"),
+                                                ("Samco", ""),
+                                                ("Samco", "A:A 2T:1:145.1"),
+                                                ("Terminal Link", ""),
+                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Tradier", ""),
+                                                ("Tradier", "A:A 2T:1:145.1"),
+                                                ("Zerodha", ""),
+                                                ("Zerodha", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
     create_fake_lean_cli_directory()
     lean_runner, _, _ = _mock_docker_lean_runner_api()
@@ -864,12 +893,15 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
     required_options = brokerage_required_options[brokerage].items()
     for key, value in required_options:
         options.extend([f"--{key}", value])
+    
+    if brokerage == "Trading Technologies":
+        options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
-                                       "--live-cash-balance", "USD:100", "--data-feed", "Custom data only", *options])
+                                       "--data-feed", "Custom data only", *options])
 
     # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu"]:
+    if brokerage not in ["Paper Trading", "Atreyu"] and holdings != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return

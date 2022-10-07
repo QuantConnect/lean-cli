@@ -20,7 +20,7 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
-from lean.models.json_module import LiveCashBalanceInput
+from lean.models.json_module import LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
@@ -183,9 +183,11 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
 @click.option("--live-cash-balance",
               type=str,
+              default="",
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
 @click.option("--live-holdings",
               type=str,
+              default="",
               help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
 @click.option("--push",
               is_flag=True,
@@ -291,20 +293,20 @@ def deploy(project: str,
     price_data_handler = brokerage_instance.get_price_data_handler()
 
     cash_balance_option = brokerage_instance._initial_cash_balance
-    holdings_supported = brokerage_instance._initial_holdings_supported
-    if cash_balance_option != LiveCashBalanceInput.NotSupported or holdings_supported:
+    holdings_option = brokerage_instance._initial_holdings
+    if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = get_last_portfolio(api_client, cloud_project.projectId, project)
         
-    if cash_balance_option != LiveCashBalanceInput.NotSupported:
+    if cash_balance_option != LiveInitialStateInput.NotSupported:
         last_cash = last_portfolio["cash"] if last_portfolio else None
         live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
-    if holdings_supported:
+    if holdings_option != LiveInitialStateInput.NotSupported:
         last_holdings = last_portfolio["holdings"] if last_portfolio else None
-        live_holdings = configure_initial_holdings(logger, live_holdings, last_holdings)
-    elif live_holdings is not None:
+        live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
+    elif live_holdings is not None and live_holdings != "":
         raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
     
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
