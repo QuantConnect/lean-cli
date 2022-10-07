@@ -260,9 +260,6 @@ def _select_organization() -> QCMinimalOrganization:
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
-              type=str,
-              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
@@ -281,7 +278,6 @@ def backtest(project: Path,
              download_data: bool,
              data_purchase_limit: Optional[int],
              release: bool,
-             image: Optional[str],
              python_venv: Optional[str],
              update: bool,
              backtest_name: str) -> None:
@@ -296,8 +292,7 @@ def backtest(project: Path,
     https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
     By default the official LEAN engine image is used.
-    You can override this using the --image option.
-    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
+    You can override this by setting the image tag to the 'engine-image' project's config.json property.
     """
     logger = container.logger()
     project_manager = container.project_manager()
@@ -342,7 +337,7 @@ def backtest(project: Path,
     project_config_manager = container.project_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
+    engine_image = cli_config_manager.get_engine_image(project_config.get("engine-image", None))
 
     if engine_image != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')

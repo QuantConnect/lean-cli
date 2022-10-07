@@ -211,8 +211,11 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  False)
 
 
-def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
+def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
     create_fake_lean_cli_directory()
+
+    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
+    project_config.set("engine-image", "custom/lean:456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -220,7 +223,7 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--image", "custom/lean:456"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 

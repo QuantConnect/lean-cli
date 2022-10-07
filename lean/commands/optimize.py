@@ -62,9 +62,6 @@ from lean.models.optimizer import OptimizationTarget
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
-              type=str,
-              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -79,7 +76,6 @@ def optimize(project: Path,
              parameter: List[Tuple[str, float, float, float]],
              constraint: List[str],
              release: bool,
-             image: Optional[str],
              update: bool) -> None:
     """Optimize a project's parameters locally using Docker.
 
@@ -110,8 +106,7 @@ def optimize(project: Path,
     - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
     By default the official LEAN engine image is used.
-    You can override this using the --image option.
-    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
+    You can override this by setting the image tag to the 'engine-image' project's config.json property.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -181,7 +176,7 @@ def optimize(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
+    engine_image = cli_config_manager.get_engine_image(project_config.get("engine-image", None))
 
     logger = container.logger()
     

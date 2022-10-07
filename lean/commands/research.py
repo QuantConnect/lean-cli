@@ -55,7 +55,6 @@ def _check_docker_output(chunk: str, port: int) -> None:
               is_flag=True,
               default=False,
               help="Don't open the Jupyter Lab environment in the browser after starting it")
-@click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -67,13 +66,11 @@ def research(project: Path,
              data_purchase_limit: Optional[int],
              detach: bool,
              no_open: bool,
-             image: Optional[str],
              update: bool) -> None:
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
-    You can override this using the --image option.
-    Alternatively you can set the default research image using `lean config set research-image <image>`.
+    You can override this by setting the image tag to the 'engine-image' project's config.json property.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -148,7 +145,7 @@ def research(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
+    research_image = cli_config_manager.get_research_image(project_config.get("research-image", None))
 
     logger = container.logger()
     

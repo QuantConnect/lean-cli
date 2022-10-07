@@ -464,16 +464,18 @@ def test_optimize_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_optimize_runs_custom_image_when_given_as_option() -> None:
+def test_optimize_runs_image_from_projects_config_file() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+    config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
+    config.set("parameters", {"param1": "1"})
+    config.set("engine-image", "custom/lean:456")
 
-    result = CliRunner().invoke(lean, ["optimize", "Python Project", "--image", "custom/lean:456"])
+    result = CliRunner().invoke(lean, ["optimize", "Python Project"])
 
     assert result.exit_code == 0
 

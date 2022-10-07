@@ -726,13 +726,16 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  False)
 
 
-def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
+def test_live_passes_image_to_lean_runner_from_config_file() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
+    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
+    project_config.set("engine-image", "custom/lean:456")
+
     result = CliRunner().invoke(lean,
-                                ["live", "Python Project", "--environment", "live-paper", "--image", "custom/lean:456"])
+                                ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 

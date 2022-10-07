@@ -71,9 +71,6 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               is_flag=True,
               default=False,
               help="Overwrite --report-destination if it already contains a file")
-@click.option("--image",
-              type=str,
-              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -86,7 +83,6 @@ def report(backtest_results: Optional[Path],
            strategy_version: Optional[str],
            strategy_description: Optional[str],
            overwrite: bool,
-           image: Optional[str],
            update: bool) -> None:
     """Generate a report of a backtest.
 
@@ -101,8 +97,7 @@ def report(backtest_results: Optional[Path],
     description is the description stored in the project's config.json file.
 
     By default the official LEAN engine image is used.
-    You can override this using the --image option.
-    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
+    You can override this by setting the image tag to the 'engine-image' project's config.json property.
     """
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
@@ -215,9 +210,9 @@ def report(backtest_results: Optional[Path],
                                            read_only=True))
 
     cli_config_manager = container.cli_config_manager()
-    engine_image_override = image
 
-    if engine_image_override is None and project_directory is not None:
+    engine_image_override = None
+    if project_directory is not None:
         project_config_manager = container.project_config_manager()
         project_config = project_config_manager.get_project_config(project_directory)
         engine_image_override = project_config.get("engine-image", None)

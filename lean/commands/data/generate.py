@@ -54,9 +54,6 @@ from lean.container import container
               type=str,
               default="",
               help="The market to generate data for (defaults to standard market for the security type)")
-@click.option("--image",
-              type=str,
-              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -69,7 +66,6 @@ def generate(start: datetime,
              data_density: str,
              include_coarse: bool,
              market: str,
-             image: Optional[str],
              update: bool) -> None:
     """Generate random market data.
 
@@ -100,8 +96,7 @@ def generate(start: datetime,
     $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
 
     By default the official LEAN engine image is used.
-    You can override this using the --image option.
-    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
+    You can override this by setting the image tag to the 'engine-image' project's config.json property.
     """
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()
@@ -126,7 +121,7 @@ def generate(start: datetime,
         }
     }
 
-    engine_image = container.cli_config_manager().get_engine_image(image)
+    engine_image = container.cli_config_manager().get_engine_image()
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 

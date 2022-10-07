@@ -478,15 +478,17 @@ def test_report_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_report_runs_custom_image_when_given_as_option() -> None:
+def test_report_runs_image_from_projects_config_file() -> None:
+    config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
+    config.set("engine-image", "custom/lean:456")
+
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
-                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
-                                       "--image", "custom/lean:456"])
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json"])
 
     assert result.exit_code == 0
 
