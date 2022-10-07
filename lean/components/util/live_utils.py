@@ -86,11 +86,12 @@ def get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pat
     return previous_portfolio_state
 
 
-def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
-    -> List[Dict[str, float]]:
+def configure_initial_cash_balance(logger: Logger, interactive: bool, cash_input_option: LiveInitialStateInput, live_cash_balance: str, 
+                                   previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
     :param logger: the logger to use
+    :param interactive: if interactive mode should be called
     :param cash_input_option: if the initial cash balance setting is optional/required
     :param live_cash_balance: the initial cash balance option input
     :param previous_cash_state: the dictionary containing cash balance in previous portfolio state
@@ -104,14 +105,15 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitia
             amount = cash_state["Amount"]
             previous_cash_balance.append({"currency": currency, "amount": amount})
     
-    if live_cash_balance is not None and not (cash_input_option == LiveInitialStateInput.Required and live_cash_balance == ""):
+    if live_cash_balance or (not interactive and cash_input_option != LiveInitialStateInput.Required):
         for cash_pair in [x for x in live_cash_balance.split(",") if x]:
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
             
-    elif (cash_input_option == LiveInitialStateInput.Required and not previous_cash_balance)\
-    or click.confirm(f"""Previous cash balance: {previous_cash_balance}
-Do you want to set a different initial cash balance?""", default=False):
+    elif cash_input_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial cash balance?", default=False):
+        if click.confirm(f"Do you want to use the last portfolio cash balance? {previous_cash_balance}", default=False):
+            return previous_cash_balance
+        
         continue_adding = True
     
         while continue_adding:
@@ -130,11 +132,12 @@ Do you want to set a different initial cash balance?""", default=False):
     return cash_list
 
 
-def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: List[Dict[str, Any]])\
-    -> List[Dict[str, float]]:
+def configure_initial_holdings(logger: Logger, interactive: bool, holdings_option: LiveInitialStateInput, live_holdings: str, 
+                               previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
     """Interactively configures the intial portfolio holdings.
 
     :param logger: the logger to use
+    :param interactive: if interactive mode should be called
     :param holdings_option: if the initial portfolio holdings setting is optional/required
     :param live_holdings: the initial portfolio holdings option input
     :param previous_holdings: the dictionary containing portfolio holdings in previous portfolio state
@@ -149,12 +152,12 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
             avg_price = float(holding["AveragePrice"])
             last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
     
-    if live_holdings is not None and not (holdings_option == LiveInitialStateInput.Required and live_holdings == ""):
+    if live_holdings or (not interactive and holdings_option != LiveInitialStateInput.Required):
         for holding in [x for x in live_holdings.split(",") if x]:
             symbol, symbol_id, quantity, avg_price = holding.split(":")
             holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "averagePrice": float(avg_price)})
             
-    elif click.confirm("Do you want to set the initial portfolio holdings?", default=False):
+    elif holdings_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial portfolio holdings?", default=False):
         if click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
             return last_holdings
         

@@ -231,6 +231,7 @@ def deploy(project: str,
     cloud_runner = container.cloud_runner()
     finished_compile = cloud_runner.compile_project(cloud_project)
 
+    interactive_mode = False
     if brokerage is not None:
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
@@ -288,6 +289,7 @@ def deploy(project: str,
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
+        interactive_mode = True
 
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
@@ -299,13 +301,13 @@ def deploy(project: str,
         
     if cash_balance_option != LiveInitialStateInput.NotSupported:
         last_cash = last_portfolio["cash"] if last_portfolio else None
-        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        live_cash_balance = configure_initial_cash_balance(logger, interactive_mode, cash_balance_option, live_cash_balance, last_cash)
     elif live_cash_balance is not None and live_cash_balance != "":
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
     if holdings_option != LiveInitialStateInput.NotSupported:
         last_holdings = last_portfolio["holdings"] if last_portfolio else None
-        live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
+        live_holdings = configure_initial_holdings(logger, interactive_mode, holdings_option, live_holdings, last_holdings)
     elif live_holdings is not None and live_holdings != "":
         raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
     

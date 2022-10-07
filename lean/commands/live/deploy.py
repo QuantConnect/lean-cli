@@ -360,6 +360,7 @@ def deploy(project: Path,
     if environment is not None and (brokerage is not None or len(data_feed) > 0):
         raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
 
+    interactive_mode = False
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
@@ -384,6 +385,7 @@ def deploy(project: Path,
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name)
+        interactive_mode = True
 
     if data_provider is not None:
         [data_provider_configurer] = [_get_and_build_module(data_provider, all_data_providers, kwargs)]
@@ -430,7 +432,7 @@ def deploy(project: Path,
         
     if cash_balance_option != LiveInitialStateInput.NotSupported:
         last_cash = last_portfolio["cash"] if last_portfolio else None
-        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        live_cash_balance = configure_initial_cash_balance(logger, interactive_mode, cash_balance_option, live_cash_balance, last_cash)
         if live_cash_balance:
             lean_config["live-cash-balance"] = live_cash_balance
     elif live_cash_balance is not None and live_cash_balance != "":
@@ -438,7 +440,7 @@ def deploy(project: Path,
     
     if holdings_option != LiveInitialStateInput.NotSupported:
         last_holdings = last_portfolio["holdings"] if last_portfolio else None
-        live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
+        live_holdings = configure_initial_holdings(logger, interactive_mode, holdings_option, live_holdings, last_holdings)
         if live_holdings:
             lean_config["live-holdings"] = [{
                 "Symbol": {
