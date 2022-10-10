@@ -309,7 +309,7 @@ def create_project(name: str, language: str) -> None:
         problematic_char = _not_identifier_char(id_name)
         raise RuntimeError(
             f"""'{id_name}' is not a valid Python identifier, which is required for Python library projects to be importable.
-Remove the character '{problematic_char}' and retry""")
+Please remove the character '{problematic_char}' and retry""")
 
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")
