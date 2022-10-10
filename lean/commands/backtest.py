@@ -288,7 +288,7 @@ def backtest(project: Path,
     https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'engine-image' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     logger = container.logger()
     project_manager = container.project_manager()
@@ -333,7 +333,7 @@ def backtest(project: Path,
     project_config_manager = container.project_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image", None))
+    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine", None))
     engine_image = cli_config_manager.get_engine_image(engine_image_name)
 
     if engine_image != DEFAULT_ENGINE_IMAGE:

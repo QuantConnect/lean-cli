@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+from typing import List
 from unittest import mock
 
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
-from lean.models.api import QCLanguage
-from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
+from lean.models.api import QCLanguage, QCLeanEnvironment
+from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 
 
 def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock) -> PushManager:
@@ -180,3 +182,125 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
                                                        None)
     api_client.projects.add_library.assert_called_once_with(project_id, python_library_id)
     api_client.projects.delete_library.assert_called_once_with(project_id, csharp_library_id)
+
+
+def test_push_projects_pushes_lean_engine_version() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    project_id = 1000
+    cloud_project = create_api_project(project_id, project_path.name)
+
+    project_config_manager = container.project_config_manager()
+    project_config = project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", project_id)
+    project_config.set("description", cloud_project.description)
+    project_config.set("lean-engine", "456")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.update = mock.Mock()
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    push_manager = _create_push_manager(api_client, project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.update.assert_called_once_with(project_id, lean_engine=456)
+
+
+def test_push_projects_pushes_lean_engine_version_to_default() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    project_id = 1000
+    cloud_project = create_api_project(project_id, project_path.name)
+    cloud_project.leanPinnedToMaster = False
+
+    project_config_manager = container.project_config_manager()
+    project_config = project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", project_id)
+    project_config.set("description", cloud_project.description)
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.update = mock.Mock()
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    push_manager = _create_push_manager(api_client, project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.update.assert_called_once_with(project_id, lean_engine=-1)
+
+
+def test_push_projects_pushes_lean_environment() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    project_id = 1000
+    cloud_project = create_api_project(project_id, project_path.name)
+
+    project_config_manager = container.project_config_manager()
+    project_config = project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", project_id)
+    project_config.set("description", cloud_project.description)
+    project_config.set("lean-engine", cloud_project.leanVersionId)
+    project_config.set("python-venv", "/Foundation-Tensorforce")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.update = mock.Mock()
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    push_manager = _create_push_manager(api_client, project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.update.assert_called_once_with(project_id, python_venv=2)
+
+
+def test_push_projects_pushes_lean_environment_to_default() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    project_id = 1000
+    cloud_project = create_api_project(project_id, project_path.name)
+    cloud_project.leanEnvironment = 2
+
+    project_config_manager = container.project_config_manager()
+    project_config = project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", project_id)
+    project_config.set("description", cloud_project.description)
+    project_config.set("lean-engine", cloud_project.leanVersionId)
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.update = mock.Mock()
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    push_manager = _create_push_manager(api_client, project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.update.assert_called_once_with(project_id, python_venv=1)

@@ -94,6 +94,8 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     project_manager = container.project_manager()
     projects_to_pull = project_manager.get_projects_by_name_or_id(all_projects, project_id or project)
 
+    container.logger().info(f"{projects_to_pull}")
+
     if project is None and not pull_bootcamp:
         projects_to_pull = [p for p in projects_to_pull if not p.name.startswith("Boot Camp/")]
 

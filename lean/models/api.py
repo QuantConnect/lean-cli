@@ -86,6 +86,7 @@ class QCProject(WrappedBaseModel):
     collaborators: List[QCCollaborator]
     leanVersionId: int
     leanPinnedToMaster: bool
+    leanEnvironment: int
     parameters: List[QCParameter]
     liveResults: QCLiveResults
     libraries: List[int]
@@ -563,3 +564,11 @@ class QCTerminalNewsItem(WrappedBaseModel):
     week_deleted: Optional[Any]
     created: datetime
     date: datetime
+
+
+class QCLeanEnvironment(WrappedBaseModel):
+    id: int
+    name: str
+    path: Optional[str]
+    description: str
+    public: bool

@@ -480,7 +480,7 @@ def test_report_forces_update_when_update_option_given() -> None:
 
 def test_report_runs_image_from_projects_config_file() -> None:
     config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("engine-image", "456")
+    config.set("lean-engine", "456")
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image

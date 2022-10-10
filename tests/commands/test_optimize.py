@@ -473,7 +473,7 @@ def test_optimize_runs_image_from_projects_config_file() -> None:
 
     config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
     config.set("parameters", {"param1": "1"})
-    config.set("engine-image", "456")
+    config.set("lean-engine", "456")
 
     result = CliRunner().invoke(lean, ["optimize", "Python Project"])
 

@@ -96,7 +96,7 @@ def generate(start: datetime,
     $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'engine-image' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     lean_config_manager = container.lean_config_manager()
     data_dir = lean_config_manager.get_data_directory()

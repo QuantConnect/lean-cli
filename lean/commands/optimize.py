@@ -106,7 +106,7 @@ def optimize(project: Path,
     - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'engine-image' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -176,7 +176,7 @@ def optimize(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image", None))
+    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine", None))
     engine_image = cli_config_manager.get_engine_image(engine_image_name)
 
     logger = container.logger()

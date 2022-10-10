@@ -20,7 +20,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCProject
+from lean.models.api import QCProject, QCLeanEnvironment
 
 
 class PullManager:
@@ -53,11 +53,12 @@ class PullManager:
         :param projects_to_pull: the cloud projects that need to be pulled
         """
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
+        environments = self._api_client.lean.environments()
 
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                self._pull_project(project)
+                self._pull_project(project, environments)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
@@ -66,7 +67,7 @@ class PullManager:
                 else:
                     self._logger.warn(f"Cannot pull '{project.name}' (id {project.projectId}): {ex}")
 
-    def _pull_project(self, project: QCProject) -> None:
+    def _pull_project(self, project: QCProject, environments: List[QCLeanEnvironment]) -> None:
         """Pulls a single project from the cloud to the local drive.
 
         Raises an error with a descriptive message if the project cannot be pulled.
@@ -85,6 +86,17 @@ class PullManager:
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
+
+        if not project.leanPinnedToMaster:
+            project_config.set("lean-engine", project.leanVersionId)
+        else:
+            project_config.delete("lean-engine")
+
+        python_venv = next((env.path for env in environments if env.id == project.leanEnvironment), None)
+        if python_venv is not None:
+            project_config.set("python-venv", python_venv)
+        else:
+            project_config.delete("python-venv")
 
     def _pull_files(self, project: QCProject, local_project_path: Path) -> None:
         """Pull the files of a single project.

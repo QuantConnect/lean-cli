@@ -215,7 +215,7 @@ def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
     create_fake_lean_cli_directory()
 
     project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("engine-image", "456")
+    project_config.set("lean-engine", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

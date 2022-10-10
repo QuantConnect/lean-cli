@@ -47,11 +47,6 @@ class CLIConfigManager:
                                              general_storage,
                                              "python")
 
-        self.engine_image = Option("engine-image",
-                                   f"The Docker image used when running the LEAN engine ({DEFAULT_ENGINE_IMAGE} if not set).",
-                                   False,
-                                   general_storage)
-
         self.all_options = [
             self.user_id,
             self.api_token,

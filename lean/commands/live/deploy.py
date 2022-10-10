@@ -332,7 +332,7 @@ def deploy(project: Path,
     If a required option is not given and cannot be found in the Lean config the command aborts.
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'engine-image' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     # Reset globals so we reload everything in between tests
     global _cached_organizations
@@ -400,7 +400,7 @@ def deploy(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image", None))
+    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine", None))
     engine_image = cli_config_manager.get_engine_image(engine_image_name)
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)

@@ -732,7 +732,7 @@ def test_live_passes_image_to_lean_runner_from_config_file() -> None:
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("engine-image", "456")
+    project_config.set("lean-engine", "456")
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 

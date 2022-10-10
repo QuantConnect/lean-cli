@@ -19,7 +19,7 @@ from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCProject
+from lean.models.api import QCLanguage, QCProject, QCLeanEnvironment
 from lean.models.utils import LeanLibraryReference
 
 
@@ -58,12 +58,13 @@ class PushManager:
         projects = sorted(projects)
 
         cloud_projects = self._api_client.projects.get_all()
+        environments = self._api_client.lean.environments()
 
         for index, project in enumerate(projects, start=1):
             relative_path = project.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(projects)}] Pushing '{relative_path}'")
-                self._push_project(project, cloud_projects, organization_id)
+                self._push_project(project, cloud_projects, organization_id, environments)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
@@ -85,7 +86,6 @@ class PushManager:
             self._remove_outdated_libraries(cloud_project, local_libraries_cloud_ids, cloud_projects)
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
-        content = (project_dir / "config.json").read_text(encoding="UTF-8")
         project_config = self._project_config_manager.get_project_config(project_dir)
 
         libraries_in_config = project_config.get("libraries", [])
@@ -132,7 +132,11 @@ class PushManager:
                               f"Removing library {library_name} from project {project.name} in the cloud")
             self._api_client.projects.delete_library(project.projectId, library_cloud_id)
 
-    def _push_project(self, project: Path, cloud_projects: List[QCProject], organization_id: Optional[str]) -> None:
+    def _push_project(self,
+                      project: Path,
+                      cloud_projects: List[QCProject],
+                      organization_id: Optional[str],
+                      environments: List[QCLeanEnvironment]) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -140,6 +144,7 @@ class PushManager:
         :param project: the local project to push
         :param cloud_projects: a list containing all of the user's cloud projects
         :param organization_id: the id of the organization to push the project to
+        :param environments: list of available lean environments
         """
         project_name = project.relative_to(Path.cwd()).as_posix()
 
@@ -173,7 +178,7 @@ class PushManager:
         self._push_files(project, cloud_project)
 
         # Finalize pushing by updating locally modified metadata
-        self._push_metadata(project, cloud_project)
+        self._push_metadata(project, cloud_project, environments)
 
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
         """Pushes the files of a local project to the cloud.
@@ -214,7 +219,7 @@ class PushManager:
 
         self._last_file = None
 
-    def _push_metadata(self, project: Path, cloud_project: QCProject) -> None:
+    def _push_metadata(self, project: Path, cloud_project: QCProject, environments: List[QCLeanEnvironment]) -> None:
         """Pushes local project description and parameters to the cloud.
 
         Does nothing if the cloud is already up-to-date.
@@ -230,6 +235,23 @@ class PushManager:
         local_parameters = project_config.get("parameters", {})
         cloud_parameters = {parameter.key: parameter.value for parameter in cloud_project.parameters}
 
+        # Use latest (-1) by default
+        local_lean_version = int(project_config.get("lean-engine", "-1"))
+        cloud_lean_version = cloud_project.leanVersionId
+
+        local_lean_venv_path = project_config.get("python-venv", None)
+        if local_lean_venv_path is not None and local_lean_venv_path != "":
+            local_lean_venv_path = f'{"/" if local_lean_venv_path[0] != "/" else ""}{local_lean_venv_path}'
+            local_lean_venv = next((env.id for env in environments if env.path == local_lean_venv_path), None)
+
+            if local_lean_venv is None:
+                self._logger.warn(f"Lean environment '{local_lean_venv_path}' is not a valid environment. "
+                                  f"Using the default one")
+        else:
+            # The default environment has path=null
+            local_lean_venv = next((env.id for env in environments if env.path is None), None)
+        cloud_lean_venv = cloud_project.leanEnvironment
+
         update_args = {}
 
         if local_description != cloud_description:
@@ -237,6 +259,14 @@ class PushManager:
 
         if local_parameters != cloud_parameters:
             update_args["parameters"] = local_parameters
+
+        if (local_lean_version != cloud_lean_version and
+            (local_lean_version != -1 or not cloud_project.leanPinnedToMaster)):
+            update_args["lean_engine"] = local_lean_version
+
+        if local_lean_venv != cloud_lean_venv:
+            update_args["python_venv"] = local_lean_venv
+            self._logger.info(local_lean_venv)
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)

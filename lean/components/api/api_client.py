@@ -25,6 +25,7 @@ from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
 from lean.components.api.data_client import DataClient
 from lean.components.api.file_client import FileClient
+from lean.components.api.lean_client import LeanClient
 from lean.components.api.live_client import LiveClient
 from lean.components.api.market_client import MarketClient
 from lean.components.api.module_client import ModuleClient
@@ -71,6 +72,7 @@ class APIClient:
         self.projects = ProjectClient(self)
         self.services = ServiceClient(self)
         self.users = UserClient(self)
+        self.lean = LeanClient(self)
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.

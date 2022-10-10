@@ -97,7 +97,7 @@ def report(backtest_results: Optional[Path],
     description is the description stored in the project's config.json file.
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'engine-image' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
@@ -215,7 +215,7 @@ def report(backtest_results: Optional[Path],
     if project_directory is not None:
         project_config_manager = container.project_config_manager()
         project_config = project_config_manager.get_project_config(project_directory)
-        engine_image_override = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image",
+        engine_image_override = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine",
                                                                                                          None))
 
     engine_image = cli_config_manager.get_engine_image(engine_image_override)
