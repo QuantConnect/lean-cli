@@ -20,15 +20,16 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
-from lean.models.json_module import LiveCashBalanceInput
+from lean.models.json_module import JsonModule, LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_latest_cash_state, configure_initial_cash_balance
-
+from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
+                                            _configure_initial_cash_interactively, _configure_initial_holdings_interactively
+                                            
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
     logger = container.logger()
@@ -183,7 +184,12 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
 @click.option("--live-cash-balance",
               type=str,
+              default="",
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
+@click.option("--live-holdings",
+              type=str,
+              default="",
+              help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
 @click.option("--push",
               is_flag=True,
               default=False,
@@ -203,6 +209,7 @@ def deploy(project: str,
          notify_sms: Optional[str],
          notify_telegram: Optional[str],
          live_cash_balance: Optional[str],
+         live_holdings: Optional[str],
          push: bool,
          open_browser: bool,
          **kwargs) -> None:
@@ -277,21 +284,32 @@ def deploy(project: str,
                     notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
                 else:
                     notify_methods.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
+                    
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+            
+        if cash_balance_option != LiveInitialStateInput.NotSupported:
+            live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
+        elif live_cash_balance is not None and live_cash_balance != "":
+            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
+        
+        if holdings_option != LiveInitialStateInput.NotSupported:
+            live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
+        elif live_holdings is not None and live_holdings != "":
+            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
+        
     else:
         brokerage_instance = _configure_brokerage(logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+        if cash_balance_option != LiveInitialStateInput.NotSupported:
+            live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
+        if holdings_option != LiveInitialStateInput.NotSupported:
+            live_holdings = _configure_initial_holdings_interactively(logger, holdings_option, last_holdings)
 
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
-
-    cash_balance_option = brokerage_instance._initial_cash_balance
-    if cash_balance_option != LiveCashBalanceInput.NotSupported:
-        previous_cash_state = get_latest_cash_state(api_client, cloud_project.projectId, project)
-        live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, previous_cash_state)
-    elif live_cash_balance is not None and live_cash_balance != "":
-        raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
     
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")
@@ -306,6 +324,8 @@ def deploy(project: str,
         _log_notification_methods(notify_methods)
     if live_cash_balance:
         logger.info(f"Initial live cash balance: {live_cash_balance}")
+    if live_holdings:
+        logger.info(f"Initial live portfolio holdings: {live_holdings}")
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:
@@ -323,7 +343,8 @@ def deploy(project: str,
                                            notify_order_events,
                                            notify_insights,
                                            notify_methods,
-                                           live_cash_balance)
+                                           live_cash_balance,
+                                           live_holdings)
 
     logger.info(f"Live url: {live_algorithm.get_url()}")
 

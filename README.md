@@ -334,6 +334,8 @@ Options:
   --notify-telegram TEXT          A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-
                                   notifications
   --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
+  --live-holdings TEXT            A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio
+                                  holdings
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
   --verbose                       Enable debug logging
@@ -1008,6 +1010,8 @@ Options:
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
   --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
+  --live-holdings TEXT            A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio
+                                  holdings
   --update                        Pull the LEAN engine image before starting live trading
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging

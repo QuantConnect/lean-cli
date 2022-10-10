@@ -23,7 +23,7 @@ from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
 from lean.models.data_providers import all_data_providers
-from lean.models.json_module import LiveCashBalanceInput
+from lean.models.json_module import LiveInitialStateInput, JsonModule
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 
@@ -51,7 +51,7 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
     return list(run_options.values())
 
 
-def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
     cloud_deployment_list = api_client.get("live/read")
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(pytz.UTC) for instance in cloud_deployment_list["live"] 
                              if instance["projectId"] == project_id]
@@ -63,23 +63,71 @@ def get_latest_cash_state(api_client: APIClient, project_id: str, project_name: 
         local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(live_deployment_path)]
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
-    
+
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
-        previous_cash_state = last_state["portfolio"]["cash"] if last_state and "cash" in last_state["portfolio"] else None
+        previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
-        previous_portfolio_state = json.loads(open(previous_state_file, "r", encoding="utf-8").read())
-        previous_cash_state = previous_portfolio_state["Cash"] if previous_portfolio_state else None
+        previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
     else:
         return None
     
-    return previous_cash_state
+    return previous_portfolio_state
 
 
-def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBalanceInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
+def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: JsonModule, project_id: int, project: str):
+    """Interactively obtain the portfolio state from the latest live deployment (both cloud/local)
+
+    :param api_client: the api instance
+    :param brokerage_instance: the brokerage
+    :param project_id: the cloud id of the project
+    :param project: the name of the project
+    :return: the options of initial cash/holdings setting, and the latest portfolio cash/holdings from the last deployment
+    """
+    last_cash = []
+    last_holdings = []
+    cash_balance_option = brokerage_instance._initial_cash_balance
+    holdings_option = brokerage_instance._initial_holdings
+    if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
+        last_portfolio = _get_last_portfolio(api_client, project_id, project)
+        last_cash = last_portfolio["cash"] if last_portfolio else None
+        last_holdings = last_portfolio["holdings"] if last_portfolio else None
+    return cash_balance_option, holdings_option, last_cash, last_holdings
+
+
+def _configure_initial_cash_interactively(logger: Logger, cash_input_option: LiveInitialStateInput, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+    cash_list = []
+    previous_cash_balance = []
+    if previous_cash_state:
+        for cash_state in previous_cash_state.values():
+            currency = cash_state["Symbol"]
+            amount = cash_state["Amount"]
+            previous_cash_balance.append({"currency": currency, "amount": amount})
+    
+    if cash_input_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial cash balance?", default=False):
+        if click.confirm(f"Do you want to use the last cash balance? {previous_cash_balance}", default=False):
+            return previous_cash_balance
+        
+        continue_adding = True
+        while continue_adding:
+            logger.info("Setting initial cash balance...")
+            currency = click.prompt("Currency")
+            amount = click.prompt("Amount", type=float)
+            cash_list.append({"currency": currency, "amount": amount})
+            
+            logger.info(f"Cash balance: {cash_list}")
+            if not click.confirm("Do you want to add more currency?", default=False):
+                continue_adding = False
+        return cash_list
+                
+    else:
+        return []
+
+
+def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
@@ -90,37 +138,65 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveCashBa
     :return: the list of dictionary containing intial currency and amount information
     """
     cash_list = []
-    previous_cash_balance = []
-    if previous_cash_state:
-        for cash_state in previous_cash_state.values():
-            currency = cash_state["Symbol"]
-            amount = cash_state["Amount"]
-            previous_cash_balance.append({"currency": currency, "amount": amount})
-    
-    if live_cash_balance is not None and live_cash_balance != "":
-        for cash_pair in live_cash_balance.split(","):
+    if live_cash_balance or cash_input_option != LiveInitialStateInput.Required:
+        for cash_pair in [x for x in live_cash_balance.split(",") if x]:
             currency, amount = cash_pair.split(":")
             cash_list.append({"currency": currency, "amount": float(amount)})
-            
-    elif (cash_input_option == LiveCashBalanceInput.Required and not previous_cash_balance)\
-    or click.confirm(f"""Previous cash balance: {previous_cash_balance}
-Do you want to set a different initial cash balance?""", default=False):
-        continue_adding = True
-    
-        while continue_adding:
-            logger.info("Setting initial cash balance...")
-            currency = click.prompt("Currency")
-            amount = click.prompt("Amount", type=float)
-            cash_list.append({"currency": currency, "amount": amount})
-            logger.info(f"Cash balance: {cash_list}")
-            
-            if not click.confirm("Do you want to add more currency?", default=False):
-                continue_adding = False
-                
+        return cash_list
     else:
-        cash_list = previous_cash_balance
+        return _configure_initial_cash_interactively(logger, cash_input_option, previous_cash_state)
+
+
+def _configure_initial_holdings_interactively(logger: Logger, holdings_option: LiveInitialStateInput, previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+    holdings = []
+    last_holdings = []
+    if previous_holdings:
+        for holding in previous_holdings.values():
+            symbol = holding["Symbol"]
+            quantity = int(holding["Quantity"])
+            avg_price = float(holding["AveragePrice"])
+            last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
+    
+    if holdings_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial portfolio holdings?", default=False):
+        if click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
+            return last_holdings
+        
+        continue_adding = True
+        while continue_adding:
+            logger.info("Setting custom initial portfolio holdings...")
+            symbol = click.prompt("Symbol")
+            symbol_id = click.prompt("Symbol ID")
+            quantity = click.prompt("Quantity", type=int)
+            avg_price = click.prompt("Average Price", type=float)
+            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": quantity, "averagePrice": avg_price})
             
-    return cash_list
+            logger.info(f"Portfolio Holdings: {holdings}")
+            if not click.confirm("Do you want to add more holdings?", default=False):
+                continue_adding = False
+        return holdings
+    
+    else:
+        return []
+
+
+def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: List[Dict[str, Any]])\
+    -> List[Dict[str, float]]:
+    """Interactively configures the intial portfolio holdings.
+
+    :param logger: the logger to use
+    :param holdings_option: if the initial portfolio holdings setting is optional/required
+    :param live_holdings: the initial portfolio holdings option input
+    :param previous_holdings: the dictionary containing portfolio holdings in previous portfolio state
+    :return: the list of dictionary containing intial symbol, symbol id, quantity, and average price information
+    """
+    holdings = []
+    if live_holdings or holdings_option != LiveInitialStateInput.Required:
+        for holding in [x for x in live_holdings.split(",") if x]:
+            symbol, symbol_id, quantity, avg_price = holding.split(":")
+            holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": int(quantity), "averagePrice": float(avg_price)})
+        return holdings
+    else:
+        return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
 def _filter_json_name_backtest(file: Path) -> bool:

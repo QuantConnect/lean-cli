@@ -61,13 +61,13 @@ def test_cloud_live_deploy() -> None:
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-        
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
                                        "--live-cash-balance", "USD:100"])
-    
+
     assert result.exit_code == 0
-    
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                   mock.ANY,
                                                   "3",
@@ -78,6 +78,7 @@ def test_cloud_live_deploy() -> None:
                                                   False,
                                                   False,
                                                   [],
+                                                  mock.ANY,
                                                   mock.ANY)
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
@@ -107,36 +108,36 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-        
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live", 
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
                                        "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs])
-    
+
     assert result.exit_code == 0
-    
+
     notification = []
-    
+
     for config in configs.split(","):
         if notice_method == "emails":
             address, subject = config.split(":")
             notification.append(QCEmailNotificationMethod(address=address, subject=subject))
-            
+
         elif notice_method == "webhooks":
             address, headers = config.split(":", 1)
             headers_dict = {}
-            
+
             for header in headers.split(":"):
                 key, value = header.split("=")
                 headers_dict[key] = value
-                    
+
             notification.append(QCWebhookNotificationMethod(address=address, headers=headers_dict))
-            
+
         elif notice_method == "sms":
             notification.append(QCSMSNotificationMethod(phoneNumber=config))
-            
+
         else:
             id_token_pair = config.split(":", 1)
-            
+
             if len(id_token_pair) == 2:
                 chat_id, token = id_token_pair
                 if not token:
@@ -145,7 +146,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                     notification.append(QCTelegramNotificationMethod(id=chat_id, token=token))
             else:
                 notification.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
-    
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                   mock.ANY,
                                                   "3",
@@ -156,6 +157,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   True,
                                                   True,
                                                   notification,
+                                                  mock.ANY,
                                                   mock.ANY)
 
 
@@ -187,14 +189,14 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     cloud_runner = mock.Mock()
     container.cloud_runner.override(providers.Object(cloud_runner))
-    
+
     options = []
     for key, value in brokerage_required_options[brokerage].items():
         if "organization" not in key:
             options.extend([f"--{key}", value])
 
-    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash, 
-                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no", 
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
                                        "--notify-insights", "no", *options])
 
     if brokerage not in ["Paper Trading", "Trading Technologies"]:
@@ -203,13 +205,13 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         return
 
     assert result.exit_code == 0
-    
+
     cash_pairs = cash.split(",")
     if len(cash_pairs) == 2:
         cash_list = [{"currency": "USD", "amount": 100}, {"currency": "EUR", "amount": 200}]
     else:
         cash_list = [{"currency": "USD", "amount": 100}]
-        
+
     api_client.live.start.assert_called_once_with(mock.ANY,
                                                 mock.ANY,
                                                 "3",
@@ -220,4 +222,94 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 False,
                                                 False,
                                                 [],
-                                                cash_list)
+                                                cash_list,
+                                                mock.ANY)
+
+
+@pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
+                                                ("Paper Trading", "A:A 2T:1:145.1"),
+                                                ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
+                                                ("Atreyu", ""),
+                                                ("Atreyu", "A:A 2T:1:145.1"),
+                                                ("Trading Technologies", ""),
+                                                ("Trading Technologies", "A:A 2T:1:145.1"),
+                                                ("Binance", ""),
+                                                ("Binance", "A:A 2T:1:145.1"),
+                                                ("Bitfinex", ""),
+                                                ("Bitfinex", "A:A 2T:1:145.1"),
+                                                ("FTX", ""),
+                                                ("FTX", "A:A 2T:1:145.1"),
+                                                ("Coinbase Pro", ""),
+                                                ("Coinbase Pro", "A:A 2T:1:145.1"),
+                                                ("Interactive Brokers", ""),
+                                                ("Interactive Brokers", "A:A 2T:1:145.1"),
+                                                ("Kraken", ""),
+                                                ("Kraken", "A:A 2T:1:145.1"),
+                                                ("OANDA", ""),
+                                                ("OANDA", "A:A 2T:1:145.1"),
+                                                ("Samco", ""),
+                                                ("Samco", "A:A 2T:1:145.1"),
+                                                ("Terminal Link", ""),
+                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Tradier", ""),
+                                                ("Tradier", "A:A 2T:1:145.1"),
+                                                ("Zerodha", ""),
+                                                ("Zerodha", "A:A 2T:1:145.1")])
+def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'live': [], 'portfolio': {}}
+    container.api_client.override(providers.Object(api_client))
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner.override(providers.Object(cloud_runner))
+
+    options = []
+    for key, value in brokerage_required_options[brokerage].items():
+        if "organization" not in key and key != "ib-enable-delayed-streaming-data":
+            options.extend([f"--{key}", value])
+
+    if brokerage == "Trading Technologies":
+        options.extend(["--live-cash-balance", "USD:100"])
+    elif brokerage == "Interactive Brokers":
+        options.extend(["--ib-data-feed", "no"])
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
+                                       "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
+                                       "--notify-insights", "no", *options])
+
+    if (brokerage != "Paper Trading" and holdings != "")\
+    or brokerage == "Atreyu" or brokerage == "Terminal Link":   # non-cloud brokerage
+        assert result.exit_code != 0
+        api_client.live.start.assert_not_called()
+        return
+
+    assert result.exit_code == 0
+
+    holding = [x for x in holdings.split(",") if x]
+    holding_list = ""
+    if len(holding) == 2:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1},
+                        {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "averagePrice": 20.35}]
+    elif len(holding) == 1:
+        holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}]
+    elif brokerage == "Paper Trading":
+        holding_list = []
+
+    api_client.live.start.assert_called_once_with(mock.ANY,
+                                                mock.ANY,
+                                                "3",
+                                                mock.ANY,
+                                                mock.ANY,
+                                                True,
+                                                mock.ANY,
+                                                False,
+                                                False,
+                                                [],
+                                                mock.ANY,
+                                                holding_list)
