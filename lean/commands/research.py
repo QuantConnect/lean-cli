@@ -150,6 +150,11 @@ def research(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
+    logger = container.logger()
+    
+    if research_image != DEFAULT_RESEARCH_IMAGE:
+        logger.warn(f'A custom research image: "{research_image}" is in used!')
+
     container.update_manager().pull_docker_image_if_necessary(research_image, update)
 
     try:
@@ -167,7 +172,6 @@ def research(project: Path,
     if detach:
         temp_manager.delete_temporary_directories_when_done = False
 
-        logger = container.logger()
         relative_project_dir = algorithm_file.parent.relative_to(lean_config_manager.get_cli_root_directory())
 
         logger.info(
