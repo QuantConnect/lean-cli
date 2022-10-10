@@ -13,7 +13,6 @@
 
 from pathlib import Path
 import click
-import keyword
 
 from lean.click import LeanCommand
 from lean.commands import lean
@@ -266,7 +265,7 @@ def _not_identifier_char(text):
     problematic_char = text[-1]
     for i in range(1, len(text)):
         substring = text[:i]
-        if (not substring.isidentifier() or keyword.iskeyword(substring)):
+        if not substring.isidentifier():
             problematic_char = substring[-1]
             break
     return problematic_char
@@ -306,7 +305,7 @@ def create_project(name: str, language: str) -> None:
         pass
     
     id_name = full_path.name
-    if is_library_project and language == "python" and (not id_name.isidentifier() or keyword.iskeyword(id_name)):
+    if is_library_project and language == "python" and not id_name.isidentifier():
         problematic_char = _not_identifier_char(id_name)
         raise RuntimeError(
             f"""'{id_name}' is not a valid Python identifier, which is required for Python library projects to be importable.
