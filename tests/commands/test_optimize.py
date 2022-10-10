@@ -21,7 +21,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_ENGINE_IMAGE_BASE_NAME
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
@@ -473,7 +473,7 @@ def test_optimize_runs_image_from_projects_config_file() -> None:
 
     config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
     config.set("parameters", {"param1": "1"})
-    config.set("engine-image", "custom/lean:456")
+    config.set("engine-image", "456")
 
     result = CliRunner().invoke(lean, ["optimize", "Python Project"])
 
@@ -482,4 +482,4 @@ def test_optimize_runs_image_from_projects_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == DockerImage(name="custom/lean", tag="456")
+    assert args[0] == DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456")

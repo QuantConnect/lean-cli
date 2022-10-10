@@ -20,7 +20,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION, DEFAULT_RESEARCH_IMAGE_BASE_NAME
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -200,7 +200,7 @@ def test_research_runs_image_from_projects_config_file() -> None:
     create_fake_lean_cli_directory()
 
     config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("research-image", "custom/research:456")
+    config.set("research-image", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -212,4 +212,4 @@ def test_research_runs_image_from_projects_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == DockerImage(name="custom/research", tag="456")
+    assert args[0] == DockerImage(name=DEFAULT_RESEARCH_IMAGE_BASE_NAME, tag="456")

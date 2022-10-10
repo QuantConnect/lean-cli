@@ -145,7 +145,9 @@ def research(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(project_config.get("research-image", None))
+    research_image_name = cli_config_manager.get_research_image_name_from_version(project_config.get("research-image",
+                                                                                                     None))
+    research_image = cli_config_manager.get_research_image(research_image_name)
 
     logger = container.logger()
     

@@ -337,7 +337,8 @@ def backtest(project: Path,
     project_config_manager = container.project_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(project_config.get("engine-image", None))
+    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image", None))
+    engine_image = cli_config_manager.get_engine_image(engine_image_name)
 
     if engine_image != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')

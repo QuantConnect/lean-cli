@@ -18,7 +18,8 @@ import pytest
 
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME, \
+    DEFAULT_RESEARCH_IMAGE_BASE_NAME, DEFAULT_IMAGE_VERSION
 from lean.models.docker import DockerImage
 
 
@@ -62,4 +63,32 @@ def test_get_research_image_returns_image_from_passed_name() -> None:
     cli_config_manager = CLIConfigManager(create_storage(), create_storage())
 
     assert cli_config_manager.get_research_image("custom/research:3") == DockerImage(name="custom/research", tag="3")
+
+
+def test_get_engine_image_name_with_custom_tag() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    expected_image_name = f"{DEFAULT_ENGINE_IMAGE_BASE_NAME}:3.5.1"
+    assert cli_config_manager.get_engine_image_name_from_version("3.5.1") == expected_image_name
+
+
+def test_get_engine_image_name_with_default_tag() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    expected_image_name = f"{DEFAULT_ENGINE_IMAGE_BASE_NAME}:{DEFAULT_IMAGE_VERSION}"
+    assert cli_config_manager.get_engine_image_name_from_version() == expected_image_name
+
+
+def test_get_research_image_name_with_custom_tag() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    expected_image_name = f"{DEFAULT_RESEARCH_IMAGE_BASE_NAME}:3.5.1"
+    assert cli_config_manager.get_research_image_name_from_version("3.5.1") == expected_image_name
+
+
+def test_get_research_image_name_with_default_tag() -> None:
+    cli_config_manager = CLIConfigManager(create_storage(), create_storage())
+
+    expected_image_name = f"{DEFAULT_RESEARCH_IMAGE_BASE_NAME}:{DEFAULT_IMAGE_VERSION}"
+    assert cli_config_manager.get_research_image_name_from_version() == expected_image_name
 

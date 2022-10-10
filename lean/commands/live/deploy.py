@@ -404,7 +404,8 @@ def deploy(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(project_config.get("engine-image", None))
+    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image", None))
+    engine_image = cli_config_manager.get_engine_image(engine_image_name)
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 

@@ -22,7 +22,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
@@ -215,7 +215,7 @@ def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
     create_fake_lean_cli_directory()
 
     project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("engine-image", "custom/lean:456")
+    project_config.set("engine-image", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -231,7 +231,7 @@ def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 DockerImage(name="custom/lean", tag="456"),
+                                                 DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456"),
                                                  None,
                                                  False,
                                                  False)

@@ -215,7 +215,8 @@ def report(backtest_results: Optional[Path],
     if project_directory is not None:
         project_config_manager = container.project_config_manager()
         project_config = project_config_manager.get_project_config(project_directory)
-        engine_image_override = project_config.get("engine-image", None)
+        engine_image_override = cli_config_manager.get_engine_image_name_from_version(project_config.get("engine-image",
+                                                                                                         None))
 
     engine_image = cli_config_manager.get_engine_image(engine_image_override)
 

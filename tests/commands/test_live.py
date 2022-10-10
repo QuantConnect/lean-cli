@@ -23,7 +23,7 @@ from dependency_injector import providers
 
 import lean.models.brokerages.local
 from lean.commands import lean
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.api import QCMinimalOrganization
@@ -732,10 +732,9 @@ def test_live_passes_image_to_lean_runner_from_config_file() -> None:
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
     project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("engine-image", "custom/lean:456")
+    project_config.set("engine-image", "456")
 
-    result = CliRunner().invoke(lean,
-                                ["live", "Python Project", "--environment", "live-paper"])
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 
@@ -743,7 +742,7 @@ def test_live_passes_image_to_lean_runner_from_config_file() -> None:
                                                  "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 DockerImage(name="custom/lean", tag="456"),
+                                                 DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456"),
                                                  None,
                                                  False,
                                                  False)
