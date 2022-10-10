@@ -13,6 +13,7 @@
 
 from pathlib import Path
 import click
+import keyword
 
 from lean.click import LeanCommand
 from lean.commands import lean
@@ -261,6 +262,14 @@ DEFAULT_CSHARP_NOTEBOOK = """
 }
 """.strip() + "\n"
 
+def _not_identifier_char(text):
+    problematic_char = text[-1]
+    for i in range(1, len(text)):
+        substring = text[:i]
+        if (not substring.isidentifier() or keyword.iskeyword(substring)):
+            problematic_char = substring[-1]
+            break
+    return problematic_char
 
 @lean.command(cls=LeanCommand, name="project-create", aliases=["create-project"])
 @click.argument("name", type=str)
@@ -295,10 +304,13 @@ def create_project(name: str, language: str) -> None:
     except:
         # get_cli_root_directory() raises an error if there is no such directory
         pass
-
-    if is_library_project and language == "python" and not full_path.name.isidentifier():
+    
+    id_name = full_path.name
+    if is_library_project and language == "python" and (not id_name.isidentifier() or keyword.iskeyword(id_name)):
+        problematic_char = _not_identifier_char(id_name)
         raise RuntimeError(
-            f"'{full_path.name}' is not a valid Python identifier, which is required for Python library projects to be importable")
+            f"""'{id_name}' is not a valid Python identifier, which is required for Python library projects to be importable.
+Remove the character '{problematic_char}' and retry""")
 
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")
