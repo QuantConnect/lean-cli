@@ -427,7 +427,7 @@ def deploy(project: Path,
         raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
     
     if engine_image != DEFAULT_ENGINE_IMAGE:
-        logger.warn(f'A custom engine image: "{engine_image}" is in used!')
+        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
     
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
