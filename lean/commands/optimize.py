@@ -183,6 +183,11 @@ def optimize(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
+    logger = container.logger()
+    
+    if engine_image != DEFAULT_ENGINE_IMAGE:
+        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
+        
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
@@ -211,7 +216,6 @@ def optimize(project: Path,
 
     success = container.docker_manager().run_image(engine_image, **run_options)
 
-    logger = container.logger()
     cli_root_dir = container.lean_config_manager().get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)

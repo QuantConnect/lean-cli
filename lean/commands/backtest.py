@@ -19,7 +19,7 @@ from typing import Optional
 import click
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
-from lean.container import container
+from lean.container import container, Logger
 from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
@@ -34,7 +34,7 @@ from lean.models.data_providers import QuantConnectDataProvider, all_data_provid
 #
 # These methods checks if the project has outdated configurations, and if so, update them to keep it working.
 
-def _migrate_python_pycharm(project_dir: Path) -> None:
+def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     workspace_xml_path = project_dir / ".idea" / "workspace.xml"
     if not workspace_xml_path.is_file():
         return
@@ -125,7 +125,7 @@ def _migrate_python_vscode(project_dir: Path) -> None:
         launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
 
 
-def _migrate_csharp_rider(project_dir: Path) -> None:
+def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
     made_changes = False
     xml_manager = container.xml_manager()
 
@@ -152,7 +152,6 @@ def _migrate_csharp_rider(project_dir: Path) -> None:
     if made_changes:
         container.project_manager().generate_rider_config()
 
-        logger = container.logger()
         logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
         logger.warn("Please restart Rider and start debugging again")
         logger.warn(
@@ -300,6 +299,7 @@ def backtest(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    logger = container.logger()
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager()
@@ -310,7 +310,7 @@ def backtest(project: Path,
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
-        _migrate_python_pycharm(algorithm_file.parent)
+        _migrate_python_pycharm(logger, algorithm_file.parent)
     elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
         _migrate_python_vscode(algorithm_file.parent)
@@ -319,7 +319,7 @@ def backtest(project: Path,
         _migrate_csharp_vscode(algorithm_file.parent)
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
-        _migrate_csharp_rider(algorithm_file.parent)
+        _migrate_csharp_rider(logger, algorithm_file.parent)
 
     if debugging_method is not None and detach:
         raise RuntimeError("Running a debugging session in a detached container is not supported")
@@ -334,7 +334,7 @@ def backtest(project: Path,
 
     if data_provider is not None:
         data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
-        data_provider.build(lean_config, container.logger()).configure(lean_config, "backtesting")
+        data_provider.build(lean_config, logger).configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
@@ -343,6 +343,9 @@ def backtest(project: Path,
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
+
+    if engine_image != DEFAULT_ENGINE_IMAGE:
+        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 
