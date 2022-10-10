@@ -748,16 +748,17 @@ def test_live_passes_image_to_lean_runner_from_config_file() -> None:
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv", ["Custom-venv",
-                                        "/Custom-venv",
-                                        None])
+@pytest.mark.parametrize("python_venv", ["Custom-venv", "/Custom-venv", None])
 def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
+    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
+    project_config.set("python-venv", python_venv)
+
     result = CliRunner().invoke(lean,
-                                ["live", "Python Project", "--environment", "live-paper", "--python-venv", python_venv])
+                                ["live", "Python Project", "--environment", "live-paper"])
 
     assert result.exit_code == 0
 

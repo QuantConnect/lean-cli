@@ -260,9 +260,6 @@ def _select_organization() -> QCMinimalOrganization:
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--python-venv",
-              type=str,
-              help=f"The path of the python virtual environment to be used")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -278,7 +275,6 @@ def backtest(project: Path,
              download_data: bool,
              data_purchase_limit: Optional[int],
              release: bool,
-             python_venv: Optional[str],
              update: bool,
              backtest_name: str) -> None:
     """Backtest a project locally using Docker.
@@ -355,6 +351,7 @@ def backtest(project: Path,
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
 
+    python_venv = project_config.get("python-venv", None)
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 

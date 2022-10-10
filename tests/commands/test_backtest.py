@@ -237,11 +237,12 @@ def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv", ["Custom-venv",
-                                        "/Custom-venv",
-                                        None])
+@pytest.mark.parametrize("python_venv", ["Custom-venv", "/Custom-venv", None])
 def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
+
+    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
+    project_config.set("python-venv", python_venv)
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -255,7 +256,7 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
     ]
     container.api_client.override(providers.Object(api_client))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--python-venv", python_venv])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 

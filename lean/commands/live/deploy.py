@@ -291,9 +291,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--python-venv",
-              type=str,
-              help=f"The path of the python virtual environment to be used")
 @click.option("--live-cash-balance",
               type=str,
               default="",
@@ -314,7 +311,6 @@ def deploy(project: Path,
            data_feed: Optional[str],
            data_provider: Optional[str],
            release: bool,
-           python_venv: Optional[str],
            live_cash_balance: Optional[str],
            live_holdings: Optional[str],
            update: bool,
@@ -417,6 +413,7 @@ def deploy(project: Path,
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
+    python_venv = project_config.get("python-venv", None)
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
