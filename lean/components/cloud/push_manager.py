@@ -60,19 +60,22 @@ class PushManager:
         cloud_projects = self._api_client.projects.get_all()
         environments = self._api_client.lean.environments()
 
+        projects_not_pushed = []
+
         for index, project in enumerate(projects, start=1):
             relative_path = project.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(projects)}] Pushing '{relative_path}'")
                 self._push_project(project, cloud_projects, organization_id, environments)
             except Exception as ex:
+                projects_not_pushed.append(project)
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
                     self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
                 else:
                     self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
-        self._update_cloud_library_references(projects)
+        self._update_cloud_library_references([project for project in projects if project not in projects_not_pushed])
 
     def _update_cloud_library_references(self, projects: List[Path]) -> None:
         cloud_projects = self._api_client.projects.get_all()

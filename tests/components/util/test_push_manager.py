@@ -12,12 +12,11 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List
 from unittest import mock
 
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
-from lean.models.api import QCLanguage, QCLeanEnvironment
+from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 
 
@@ -59,6 +58,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     api_client.projects.create = mock.MagicMock(side_effect=cloud_projects)
     api_client.projects.get = mock.MagicMock(side_effect=cloud_projects)
     api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
     api_client.projects.delete_library = mock.Mock()
 
@@ -112,6 +112,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(side_effect=[cloud_projects, cloud_projects])
     api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
     api_client.projects.delete_library = mock.Mock()
 
@@ -167,6 +168,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     api_client.projects.create = mock.MagicMock(return_value=python_library_cloud_project)
     api_client.projects.get = mock.MagicMock(return_value=python_library_cloud_project)
     api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
     api_client.projects.delete_library = mock.Mock()
 

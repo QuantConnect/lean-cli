@@ -12,12 +12,10 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Optional
 
 import click
 
 from lean.click import DateParameter, LeanCommand
-from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 
 

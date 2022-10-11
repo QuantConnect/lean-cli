@@ -167,4 +167,4 @@ def build(root: Path, tag: str) -> None:
     _build_image(root, lean_dir / "DockerfileJupyter", custom_engine_image, custom_research_image)
 
     logger = container.logger()
-    cli_config_manager = container.cli_config_manager()
+    logger.info(f"Successfully built custom image '{custom_engine_image}'")

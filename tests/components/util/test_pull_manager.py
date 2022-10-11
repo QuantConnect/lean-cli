@@ -17,8 +17,7 @@ from unittest import mock
 
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.config.storage import Storage
-from lean.container import container
-from lean.models.api import QCLeanEnvironment, QCProject
+from lean.models.api import QCProject
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 
 

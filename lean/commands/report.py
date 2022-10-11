@@ -19,7 +19,7 @@ import click
 from docker.types import Mount
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.components.util.live_utils import get_state_json

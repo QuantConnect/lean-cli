@@ -200,7 +200,7 @@ def test_research_runs_image_from_projects_config_file() -> None:
     create_fake_lean_cli_directory()
 
     config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("research-image", "456")
+    config.set("lean-engine", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))

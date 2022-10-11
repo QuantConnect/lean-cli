@@ -18,7 +18,7 @@ import click
 from docker.errors import APIError
 from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
+from lean.constants import LEAN_ROOT_PATH, DEFAULT_RESEARCH_IMAGE
 from lean.container import container
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 from lean.components.util.name_extraction import convert_to_class_name
@@ -70,7 +70,7 @@ def research(project: Path,
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
-    You can override this by setting the image tag to the 'research-engine' project's config.json property.
+    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -145,12 +145,12 @@ def research(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image_name = cli_config_manager.get_research_image_name_from_version(project_config.get("research-image",
+    research_image_name = cli_config_manager.get_research_image_name_from_version(project_config.get("lean-engine",
                                                                                                      None))
     research_image = cli_config_manager.get_research_image(research_image_name)
 
     logger = container.logger()
-    
+
     if research_image != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
 

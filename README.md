@@ -1298,7 +1298,7 @@ Usage: lean research [OPTIONS] PROJECT
 
   Run a Jupyter Lab environment locally using Docker.
 
-  By default the official LEAN research image is used. You can override this by setting the image tag to the 'research-
+  By default the official LEAN research image is used. You can override this by setting the image tag to the 'lean-
   engine' project's config.json property.
 
 Options:

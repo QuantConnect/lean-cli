@@ -13,7 +13,6 @@
 
 from typing import List
 
-import lean.components.util.logger
 from lean.components.api.api_client import *
 from lean.models.api import QCLeanEnvironment
 
@@ -34,6 +33,4 @@ class LeanClient:
         :return: the available lean environments
         """
         data = self._api.get("lean/environments/read")
-        lean.components.util.logger.Logger().info(f"{data}")
-
         return [QCLeanEnvironment(**environment) for environment in data["environments"]]

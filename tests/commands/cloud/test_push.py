@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from unittest import mock
 from datetime import datetime
 
@@ -25,7 +25,7 @@ from lean.components.api.lean_client import LeanClient
 from lean.components.api.project_client import ProjectClient
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
-from lean.models.api import QCFullFile, QCLanguage, QCLeanEnvironment
+from lean.models.api import QCFullFile, QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 
 
