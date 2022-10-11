@@ -198,7 +198,7 @@ def test_push_projects_pushes_lean_engine_version() -> None:
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)
-    project_config.set("lean-engine", "456")
+    project_config.set("lean-engine", 456)
 
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
@@ -259,7 +259,7 @@ def test_push_projects_pushes_lean_environment() -> None:
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)
     project_config.set("lean-engine", cloud_project.leanVersionId)
-    project_config.set("python-venv", "/Foundation-Tensorforce")
+    project_config.set("python-venv", 2)
 
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])

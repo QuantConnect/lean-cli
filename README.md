@@ -123,8 +123,8 @@ Usage: lean backtest [OPTIONS] PROJECT
   Go to the following url to learn how to debug backtests locally using the Lean CLI:
   https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
-  By default the official LEAN engine image is used. You can override this by setting the image tag to the 'lean-engine'
-  project's config.json property.
+  By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
+  can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
@@ -138,6 +138,8 @@ Options:
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
                                   QuantConnect as data provider
   --release                       Compile C# projects in release configuration instead of debug
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --python-venv TEXT              The path of the python virtual environment to be used
   --update                        Pull the LEAN engine image before running the backtest
   --backtest-name TEXT            Backtest name
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -634,8 +636,8 @@ Usage: lean data generate [OPTIONS]
   Example which generates daily data for 100 crypto symbols since 2015-01-01:
   $ lean data generate --start=20150101 --symbol-count=100 --security-type=Crypto --resolution=Daily
 
-  By default the official LEAN engine image is used. You can override this by setting the image tag to the 'lean-engine'
-  project's config.json property.
+  By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
+  can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
@@ -649,6 +651,7 @@ Options:
                                   The density of the generated data (defaults to Dense)
   --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
   --market TEXT                   The market to generate data for (defaults to standard market for the security type)
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the generator
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
@@ -857,8 +860,8 @@ Usage: lean live deploy [OPTIONS] PROJECT
   The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required
   option is not given and cannot be found in the Lean config the command aborts.
 
-  By default the official LEAN engine image is used. You can override this by setting the image tag to the 'lean-engine'
-  project's config.json property.
+  By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
+  can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
   --environment TEXT              The environment to use
@@ -1004,6 +1007,8 @@ Options:
   --quantconnect-organization TEXT
                                   The name or id of the organization with the QuantConnect datafeed module subscription
   --release                       Compile C# projects in release configuration instead of debug
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --python-venv TEXT              The path of the python virtual environment to be used
   --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
   --live-holdings TEXT            A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio
                                   holdings
@@ -1188,8 +1193,8 @@ Usage: lean optimize [OPTIONS] PROJECT
   - --constraint "<statistic> <operator> <value>"
   - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
-  By default the official LEAN engine image is used. You can override this by setting the image tag to the 'lean-engine'
-  project's config.json property.
+  By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
+  can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
@@ -1203,6 +1208,7 @@ Options:
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
   --release                       Compile C# projects in release configuration instead of debug
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
@@ -1269,8 +1275,8 @@ Usage: lean report [OPTIONS]
   default <project>/backtests/<timestamp>), the default name is the name of the project directory and the default
   description is the description stored in the project's config.json file.
 
-  By default the official LEAN engine image is used. You can override this by setting the image tag to the 'lean-engine'
-  project's config.json property.
+  By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
+  can set the default engine image for all commands using `lean config set engine-image <image>`.
 
 Options:
   --backtest-results FILE      Path to the JSON file containing the backtest results
@@ -1281,6 +1287,7 @@ Options:
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name
   --strategy-description TEXT  Description of the strategy, will appear under the 'Strategy Description' section
   --overwrite                  Overwrite --report-destination if it already contains a file
+  --image TEXT                 The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                     Pull the LEAN engine image before running the report creator
   --lean-config FILE           The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                    Enable debug logging
@@ -1298,8 +1305,8 @@ Usage: lean research [OPTIONS] PROJECT
 
   Run a Jupyter Lab environment locally using Docker.
 
-  By default the official LEAN research image is used. You can override this by setting the image tag to the 'lean-
-  engine' project's config.json property.
+  By default the official LEAN research image is used. You can override this using the --image option. Alternatively you
+  can set the default research image using `lean config set research-image <image>`.
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
@@ -1311,6 +1318,7 @@ Options:
                                   when using QuantConnect as data provider
   -d, --detach                    Run Jupyter Lab in a detached Docker container and return immediately
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
+  --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging

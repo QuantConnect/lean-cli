@@ -94,7 +94,7 @@ class PullManager:
 
         python_venv = next((env.path for env in environments if env.id == project.leanEnvironment), None)
         if python_venv is not None:
-            project_config.set("python-venv", python_venv)
+            project_config.set("python-venv", project.leanEnvironment)
         else:
             project_config.delete("python-venv")
 

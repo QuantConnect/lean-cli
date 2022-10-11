@@ -242,17 +242,8 @@ class PushManager:
         local_lean_version = int(project_config.get("lean-engine", "-1"))
         cloud_lean_version = cloud_project.leanVersionId
 
-        local_lean_venv_path = project_config.get("python-venv", None)
-        if local_lean_venv_path is not None and local_lean_venv_path != "":
-            local_lean_venv_path = f'{"/" if local_lean_venv_path[0] != "/" else ""}{local_lean_venv_path}'
-            local_lean_venv = next((env.id for env in environments if env.path == local_lean_venv_path), None)
-
-            if local_lean_venv is None:
-                self._logger.warn(f"Lean environment '{local_lean_venv_path}' is not a valid environment. "
-                                  f"Using the default one")
-        else:
-            # The default environment has path=null
-            local_lean_venv = next((env.id for env in environments if env.path is None), None)
+        default_lean_venv = next((env.id for env in environments if env.path is None), None)
+        local_lean_venv = project_config.get("python-venv", default_lean_venv)
         cloud_lean_venv = cloud_project.leanEnvironment
 
         update_args = {}
@@ -269,7 +260,6 @@ class PushManager:
 
         if local_lean_venv != cloud_lean_venv:
             update_args["python_venv"] = local_lean_venv
-            self._logger.info(local_lean_venv)
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
