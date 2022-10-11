@@ -70,7 +70,7 @@ def research(project: Path,
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
-    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
+    You can override this by setting the image tag to the 'research-engine' project's config.json property.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
