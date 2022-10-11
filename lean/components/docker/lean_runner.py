@@ -363,7 +363,7 @@ class LeanRunner:
         source_files = self._project_manager.get_source_files(project_dir)
         source_files = [file.relative_to(
             project_dir).as_posix() for file in source_files]
-        source_files = [f'"/LeanCLI/{file}"' for file in source_files]
+        source_files = [f'"/Lean/Launcher/bin/Debug/Notebooks/{file}"' for file in source_files]
 
         run_options["commands"].append(
             f"python -m compileall {' '.join(source_files)}")
