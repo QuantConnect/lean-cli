@@ -18,7 +18,7 @@ import click
 from docker.errors import APIError
 from docker.types import Mount
 from lean.click import LeanCommand, PathParameter
-from lean.constants import LEAN_ROOT_PATH, DEFAULT_RESEARCH_IMAGE
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 from lean.components.util.name_extraction import convert_to_class_name
@@ -55,6 +55,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
               is_flag=True,
               default=False,
               help="Don't open the Jupyter Lab environment in the browser after starting it")
+@click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -66,11 +67,13 @@ def research(project: Path,
              data_purchase_limit: Optional[int],
              detach: bool,
              no_open: bool,
+             image: Optional[str],
              update: bool) -> None:
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
-    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
+    You can override this using the --image option.
+    Alternatively you can set the default research image using `lean config set research-image <image>`.
     """
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
@@ -141,13 +144,8 @@ def research(project: Path,
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
 
-    project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image_name = cli_config_manager.get_research_image_name_from_version(project_config.get("lean-engine",
-                                                                                                     None))
-    research_image = cli_config_manager.get_research_image(research_image_name)
+    research_image = cli_config_manager.get_research_image(image)
 
     logger = container.logger()
 

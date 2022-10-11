@@ -21,7 +21,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_ENGINE_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
@@ -464,16 +464,16 @@ def test_optimize_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_optimize_runs_image_from_projects_config_file() -> None:
+def test_optimize_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
 
-    config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("parameters", {"param1": "1"})
-    config.set("lean-engine", "456")
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
     result = CliRunner().invoke(lean, ["optimize", "Python Project"])
 
@@ -482,4 +482,25 @@ def test_optimize_runs_image_from_projects_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456")
+    assert args[0] == DockerImage(name="custom/lean", tag="123")
+
+
+def test_optimize_runs_custom_image_when_given_as_option() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", "Python Project", "--image", "custom/lean:456"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == DockerImage(name="custom/lean", tag="456")

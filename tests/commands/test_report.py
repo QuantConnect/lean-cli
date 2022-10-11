@@ -21,7 +21,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -478,13 +478,12 @@ def test_report_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_report_runs_image_from_projects_config_file() -> None:
-    config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("lean-engine", "456")
-
+def test_report_runs_custom_image_when_set_in_config() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
     container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -495,4 +494,24 @@ def test_report_runs_image_from_projects_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456")
+    assert args[0] == DockerImage(name="custom/lean", tag="123")
+
+
+def test_report_runs_custom_image_when_given_as_option() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/results.json",
+                                       "--image", "custom/lean:456"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == DockerImage(name="custom/lean", tag="456")

@@ -60,20 +60,11 @@ DEFAULT_DATA_DIRECTORY_NAME = "data"
 # The name of the file in containing the project configuration
 PROJECT_CONFIG_FILE_NAME = "config.json"
 
-# The default Docker image version both for Lean engine and research images
-DEFAULT_IMAGE_VERSION = "latest"
-
-# The default Docker image base name (without tag) used when running the LEAN engine locally
-DEFAULT_ENGINE_IMAGE_BASE_NAME = "quantconnect/lean"
-
 # The default Docker image used when running the LEAN engine locally
-DEFAULT_ENGINE_IMAGE = f"{DEFAULT_ENGINE_IMAGE_BASE_NAME}:{DEFAULT_IMAGE_VERSION}"
-
-# The default Docker image base name (without tag) used when running a Jupyter Lab environment locally
-DEFAULT_RESEARCH_IMAGE_BASE_NAME = "quantconnect/research"
+DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 
 # The default Docker image used when running a Jupyter Lab environment locally
-DEFAULT_RESEARCH_IMAGE = f"{DEFAULT_RESEARCH_IMAGE_BASE_NAME}:{DEFAULT_IMAGE_VERSION}"
+DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 
 # When we install custom Python libraries, we first mount a volume to the user site packages directory
 # This caches the installation and makes subsequent backtests much faster

@@ -15,6 +15,7 @@ import copy
 import subprocess
 import time
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import click
@@ -291,6 +292,12 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+@click.option("--python-venv",
+              type=str,
+              help=f"The path of the python virtual environment to be used")
 @click.option("--live-cash-balance",
               type=str,
               default="",
@@ -304,17 +311,19 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=False,
               help="Pull the LEAN engine image before starting live trading")
 def deploy(project: Path,
-           environment: Optional[str],
-           output: Optional[Path],
-           detach: bool,
-           brokerage: Optional[str],
-           data_feed: Optional[str],
-           data_provider: Optional[str],
-           release: bool,
-           live_cash_balance: Optional[str],
-           live_holdings: Optional[str],
-           update: bool,
-           **kwargs) -> None:
+        environment: Optional[str],
+        output: Optional[Path],
+        detach: bool,
+        brokerage: Optional[str],
+        data_feed: Optional[str],
+        data_provider: Optional[str],
+        release: bool,
+        image: Optional[str],
+        python_venv: Optional[str],
+        live_cash_balance: Optional[str],
+        live_holdings: Optional[str],
+        update: bool,
+        **kwargs) -> None:
     """Start live trading a project locally using Docker.
 
     \b
@@ -332,7 +341,8 @@ def deploy(project: Path,
     If a required option is not given and cannot be found in the Lean config the command aborts.
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     # Reset globals so we reload everything in between tests
     global _cached_organizations
@@ -400,8 +410,7 @@ def deploy(project: Path,
     cli_config_manager = container.cli_config_manager()
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine", None))
-    engine_image = cli_config_manager.get_engine_image(engine_image_name)
+    engine_image = cli_config_manager.get_engine_image(image)
 
     container.update_manager().pull_docker_image_if_necessary(engine_image, update)
 
@@ -413,7 +422,6 @@ def deploy(project: Path,
     output_config_manager = container.output_config_manager()
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
-    python_venv = project_config.get("python-venv", None)
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 

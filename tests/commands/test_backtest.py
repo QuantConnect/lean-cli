@@ -22,7 +22,7 @@ from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
@@ -211,17 +211,16 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  False)
 
 
-def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
+def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
-
-    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("lean-engine", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
 
     lean_runner = mock.Mock()
     container.lean_runner.override(providers.Object(lean_runner))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
@@ -231,18 +230,42 @@ def test_backtest_passes_image_to_lean_runner_from_config_file() -> None:
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456"),
+                                                 DockerImage(name="custom/lean", tag="123"),
                                                  None,
                                                  False,
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv", ["Custom-venv", "/Custom-venv", None])
-def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
+def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
-    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("python-venv", python_venv)
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    lean_runner = mock.Mock()
+    container.lean_runner.override(providers.Object(lean_runner))
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--image", "custom/lean:456"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "backtesting",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 DockerImage(name="custom/lean", tag="456"),
+                                                 None,
+                                                 False,
+                                                 False)
+
+
+@pytest.mark.parametrize("python_venv", ["Custom-venv",
+                                        "/Custom-venv",
+                                        None])
+def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
+    create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
@@ -256,7 +279,7 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
     ]
     container.api_client.override(providers.Object(api_client))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--python-venv", python_venv])
 
     assert result.exit_code == 0
 

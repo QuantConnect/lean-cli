@@ -19,8 +19,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION, DEFAULT_RESEARCH_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -196,14 +195,13 @@ def test_research_forces_update_when_update_option_given() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_research_runs_image_from_projects_config_file() -> None:
+def test_research_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
-
-    config = Storage(str(Path.cwd() / "Python Project" / "config.json"))
-    config.set("lean-engine", "456")
 
     docker_manager = mock.Mock()
     container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().research_image.set_value("custom/research:123")
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -212,4 +210,22 @@ def test_research_runs_image_from_projects_config_file() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    assert args[0] == DockerImage(name=DEFAULT_RESEARCH_IMAGE_BASE_NAME, tag="456")
+    assert args[0] == DockerImage(name="custom/research", tag="123")
+
+
+def test_research_runs_custom_image_when_given_as_option() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager.override(providers.Object(docker_manager))
+
+    container.cli_config_manager().research_image.set_value("custom/research:123")
+
+    result = CliRunner().invoke(lean, ["research", "Python Project", "--image", "custom/research:456"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == DockerImage(name="custom/research", tag="456")

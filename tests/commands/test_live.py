@@ -23,7 +23,7 @@ from dependency_injector import providers
 
 import lean.models.brokerages.local
 from lean.commands import lean
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.api import QCMinimalOrganization
@@ -413,7 +413,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
             continue
         for current_options in comb:
             lean_runner, _ = _mock_docker_lean_runner()
-
+            
             options = []
 
             for key, value in current_options:
@@ -726,13 +726,12 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  False)
 
 
-def test_live_passes_image_to_lean_runner_from_config_file() -> None:
+def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
-    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("lean-engine", "456")
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
 
@@ -742,23 +741,44 @@ def test_live_passes_image_to_lean_runner_from_config_file() -> None:
                                                  "live-paper",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
-                                                 DockerImage(name=DEFAULT_ENGINE_IMAGE_BASE_NAME, tag="456"),
+                                                 DockerImage(name="custom/lean", tag="123"),
                                                  None,
                                                  False,
                                                  False)
 
 
-@pytest.mark.parametrize("python_venv", ["Custom-venv", "/Custom-venv", None])
+def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+    lean_runner, _, _ = _mock_docker_lean_runner_api()
+
+    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+
+    result = CliRunner().invoke(lean,
+                                ["live", "Python Project", "--environment", "live-paper", "--image", "custom/lean:456"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "live-paper",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 DockerImage(name="custom/lean", tag="456"),
+                                                 None,
+                                                 False,
+                                                 False)
+
+
+@pytest.mark.parametrize("python_venv", ["Custom-venv",
+                                        "/Custom-venv",
+                                        None])
 def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
     lean_runner, _, _ = _mock_docker_lean_runner_api()
 
-    project_config = container.project_config_manager().get_project_config(Path("Python Project"))
-    project_config.set("python-venv", python_venv)
-
     result = CliRunner().invoke(lean,
-                                ["live", "Python Project", "--environment", "live-paper"])
+                                ["live", "Python Project", "--environment", "live-paper", "--python-venv", python_venv])
 
     assert result.exit_code == 0
 

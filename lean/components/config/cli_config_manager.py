@@ -14,8 +14,7 @@
 from typing import Optional
 
 from lean.components.config.storage import Storage
-from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE, DEFAULT_ENGINE_IMAGE_BASE_NAME, \
-    DEFAULT_IMAGE_VERSION, DEFAULT_RESEARCH_IMAGE_BASE_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE, DEFAULT_RESEARCH_IMAGE
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
 from lean.models.options import ChoiceOption, Option
@@ -47,10 +46,22 @@ class CLIConfigManager:
                                              general_storage,
                                              "python")
 
+        self.engine_image = Option("engine-image",
+                                   f"The Docker image used when running the LEAN engine ({DEFAULT_ENGINE_IMAGE} if not set).",
+                                   False,
+                                   general_storage)
+
+        self.research_image = Option("research-image",
+                                     f"The Docker image used when running the research environment ({DEFAULT_RESEARCH_IMAGE} if not set).",
+                                     False,
+                                     general_storage)
+
         self.all_options = [
             self.user_id,
             self.api_token,
-            self.default_language
+            self.default_language,
+            self.engine_image,
+            self.research_image
         ]
 
     def get_option_by_key(self, key: str) -> Option:
@@ -69,50 +80,23 @@ class CLIConfigManager:
 
         return option
 
-    def get_engine_image_name_from_version(self, version: Optional[str] = None) -> str:
-        """Returns the LEAN engine image name to use from the tag.
-
-        :param version: image tag to use
-        :return: the image name that should be used when running the LEAN engine
-        """
-        return self._get_image_name(DEFAULT_ENGINE_IMAGE_BASE_NAME, version)
-
-    def get_engine_image(self, image_name: Optional[str] = None) -> DockerImage:
+    def get_engine_image(self, override: Optional[str] = None) -> DockerImage:
         """Returns the LEAN engine image to use.
 
-        :param image_name: the image name to use
+        :param override: the image name to use, overriding any defaults or previously configured options
         :return: the image that should be used when running the LEAN engine
         """
-        return self._get_image(image_name, DEFAULT_ENGINE_IMAGE)
+        return self._get_image_name(self.engine_image, DEFAULT_ENGINE_IMAGE, override)
 
-    def get_research_image_name_from_version(self, version: Optional[str] = None) -> str:
-        """Returns the LEAN research image name to use from the tag.
-
-        :param version: image tag to use
-        :return: the image name that should be used when running the research environment
-        """
-        return self._get_image_name(DEFAULT_RESEARCH_IMAGE_BASE_NAME, version)
-
-    def get_research_image(self, image_name: Optional[str] = None) -> DockerImage:
+    def get_research_image(self, override: Optional[str] = None) -> DockerImage:
         """Returns the LEAN research image to use.
 
-        :param image_name: the image name to use
+        :param override: the image name to use, overriding any defaults or previously configured options
         :return: the image that should be used when running the research environment
         """
-        return self._get_image(image_name, DEFAULT_RESEARCH_IMAGE)
+        return self._get_image_name(self.research_image, DEFAULT_RESEARCH_IMAGE, override)
 
-    @staticmethod
-    def _get_image_name(base_name: str, tag: Optional[str] = None) -> str:
-        """Returns the image name given the base name and the tag.
-
-        :param base_name: base name (without tag) of the docker image
-        :param tag: the image tag to use
-        :return: the image name
-        """
-        return f"{base_name}:{tag or DEFAULT_IMAGE_VERSION}"
-
-    @staticmethod
-    def _get_image(image_name: Optional[str], default_image_name: str) -> DockerImage:
+    def _get_image_name(self, option: Option, default: str, override: Optional[str]) -> DockerImage:
         """Returns the image to use.
 
         :param option: the CLI option that configures the image type
@@ -120,4 +104,9 @@ class CLIConfigManager:
         :param default: the default image to use when the option is not set and no override is given
         :return: the image to use
         """
-        return DockerImage.parse(image_name or default_image_name)
+        if override is not None:
+            image = override
+        else:
+            image = option.get_value(default)
+
+        return DockerImage.parse(image)

@@ -260,6 +260,12 @@ def _select_organization() -> QCMinimalOrganization:
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
+@click.option("--image",
+              type=str,
+              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+@click.option("--python-venv",
+              type=str,
+              help=f"The path of the python virtual environment to be used")
 @click.option("--update",
               is_flag=True,
               default=False,
@@ -275,6 +281,8 @@ def backtest(project: Path,
              download_data: bool,
              data_purchase_limit: Optional[int],
              release: bool,
+             image: Optional[str],
+             python_venv: Optional[str],
              update: bool,
              backtest_name: str) -> None:
     """Backtest a project locally using Docker.
@@ -288,7 +296,8 @@ def backtest(project: Path,
     https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
     By default the official LEAN engine image is used.
-    You can override this by setting the image tag to the 'lean-engine' project's config.json property.
+    You can override this using the --image option.
+    Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     logger = container.logger()
     project_manager = container.project_manager()
@@ -330,11 +339,7 @@ def backtest(project: Path,
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     cli_config_manager = container.cli_config_manager()
-    project_config_manager = container.project_config_manager()
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image_name = cli_config_manager.get_engine_image_name_from_version(project_config.get("lean-engine", None))
-    engine_image = cli_config_manager.get_engine_image(engine_image_name)
+    engine_image = cli_config_manager.get_engine_image(image)
 
     if engine_image != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
@@ -351,7 +356,6 @@ def backtest(project: Path,
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
 
-    python_venv = project_config.get("python-venv", None)
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
