@@ -363,10 +363,16 @@ class LeanRunner:
         source_files = self._project_manager.get_source_files(project_dir)
         source_files = [file.relative_to(
             project_dir).as_posix() for file in source_files]
-        source_files = [f'"/Lean/Launcher/bin/Debug/Notebooks/{file}"' for file in source_files]
+        source_files = [f'"/LeanCLI/{file}"' for file in source_files]
 
+        # Only need to compile files in backtest/live (where the files were mounted in "/LeanCLI") but not research
         run_options["commands"].append(
-            f"python -m compileall {' '.join(source_files)}")
+            f"""if [ -d '/LeanCLI' ];
+            then
+                python -m compileall {' '.join(source_files)};
+            else
+                echo '/LeanCLI is not mounted, skipping compilation...';
+            fi""")
 
         # Combine the requirements from all library projects and the current project
         library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
