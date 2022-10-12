@@ -294,21 +294,21 @@ def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
         any_order=True)
     library_manager.remove_lean_library_from_project.assert_not_called()
 
-    assert mock_try_restore_csharp_project.call_count == 3
-
     test_csharp_library1_path = Path.cwd() / test_csharp_library1.name
     test_csharp_library1_csproj_file_path = (test_csharp_library1_path / f"{test_csharp_library1_path.name}.csproj")
-    assert mock_try_restore_csharp_project.call_args_list[0].args[0] == test_csharp_library1_csproj_file_path
 
     test_csharp_library2_path = Path.cwd() / test_csharp_library2.name
     test_csharp_library2_csproj_file_path = (test_csharp_library2_path / f"{test_csharp_library2_path.name}.csproj")
-    assert mock_try_restore_csharp_project.call_args_list[1].args[0] == test_csharp_library2_csproj_file_path
 
     test_project_path = Path.cwd() / test_project.name
     test_project_csproj_file_path = (test_project_path / f"{test_project_path.name}.csproj")
-    assert mock_try_restore_csharp_project.call_args_list[2].args[0] == test_project_csproj_file_path
 
-    assert all(call.args[-1] is False for call in mock_try_restore_csharp_project.call_args_list)
+    assert mock_try_restore_csharp_project.call_count == 3
+    mock_try_restore_csharp_project.assert_has_calls([
+        mock.call(test_csharp_library1_csproj_file_path, mock.ANY, False),
+        mock.call(test_csharp_library2_csproj_file_path, mock.ANY, False),
+        mock.call(test_project_csproj_file_path, mock.ANY, False)
+    ])
 
 
 def test_pull_projects_updates_lean_config() -> None:
