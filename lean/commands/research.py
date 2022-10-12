@@ -152,7 +152,7 @@ def research(project: Path,
 
     logger = container.logger()
     
-    if research_image != DEFAULT_RESEARCH_IMAGE:
+    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
 
     container.update_manager().pull_docker_image_if_necessary(research_image, update)

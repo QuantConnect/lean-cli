@@ -457,7 +457,7 @@ def deploy(project: Path,
             "AveragePrice": holding["averagePrice"]
         } for holding in live_holdings]
     
-    if engine_image != DEFAULT_ENGINE_IMAGE:
+    if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
     
     lean_runner = container.lean_runner()
