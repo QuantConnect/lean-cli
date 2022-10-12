@@ -144,11 +144,14 @@ def research(project: Path,
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
 
+    project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
-    research_image = cli_config_manager.get_research_image(image)
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
     logger = container.logger()
-
+    
     if research_image != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
 

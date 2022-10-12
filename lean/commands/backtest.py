@@ -339,7 +339,10 @@ def backtest(project: Path,
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     cli_config_manager = container.cli_config_manager()
-    engine_image = cli_config_manager.get_engine_image(image)
+    project_config_manager = container.project_config_manager()
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     if engine_image != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
