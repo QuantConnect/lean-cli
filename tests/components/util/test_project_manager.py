@@ -27,6 +27,7 @@ from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
+from lean.container import container
 from lean.models.api import QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -498,3 +499,23 @@ def test_create_new_project_does_not_update_rider_debugger_config_when_entry_alr
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     assert debugger_file.read_text(encoding="utf-8") == debugger_content
+
+
+def test_get_project_libraries() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "Python Project"
+    python_library_dir = Path.cwd() / "Library/Python Library"
+    csharp_library_dir = Path.cwd() / "Library/CSharp Library"
+
+    library_manager = container.library_manager()
+    library_manager.add_lean_library_reference_to_project(project_dir, python_library_dir)
+    library_manager.add_lean_library_reference_to_project(project_dir, csharp_library_dir)
+
+    project_manager = _create_project_manager()
+
+    libraries = project_manager.get_project_libraries(project_dir)
+
+    assert len(libraries) == 2
+    assert python_library_dir in libraries
+    assert csharp_library_dir in libraries

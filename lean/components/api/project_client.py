@@ -69,13 +69,17 @@ class ProjectClient:
                project_id: int,
                name: Optional[str] = None,
                description: Optional[str] = None,
-               parameters: Optional[Dict[str, str]] = None) -> None:
+               parameters: Optional[Dict[str, str]] = None,
+               lean_engine: Optional[int] = None,
+               python_venv: Optional[int] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
         :param name: the new name to assign to the project, or None if the name shouldn't be changed
         :param description: the new description to assign to the project, or None if the description shouldn't be changed
         :param parameters: the new parameters of the project, or None if the parameters shouldn't be changed
+        :param lean_engine: the lean engine id for the project, or None if the lean engine shouldn't be changed
+        :param python_venv: the python venv id for the project, or None if the python venv shouldn't be changed
         """
         request_parameters = {
             "projectId": project_id
@@ -96,6 +100,12 @@ class ProjectClient:
                     index += 1
             else:
                 request_parameters["parameters"] = ""
+
+        if lean_engine is not None:
+            request_parameters["versionId"] = lean_engine
+
+        if python_venv is not None:
+            request_parameters["leanEnvironment"] = python_venv
 
         self._api.post("projects/update", request_parameters, data_as_json=False)
 

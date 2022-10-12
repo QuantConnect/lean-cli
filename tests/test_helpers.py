@@ -14,12 +14,13 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
-    QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice
+    QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice, QCLeanEnvironment
 
 
 def _get_python_project_files(path: Path) -> dict:
@@ -130,6 +131,7 @@ def create_api_project(id: int, name: str) -> QCProject:
         collaborators=[],
         leanVersionId=10500,
         leanPinnedToMaster=True,
+        leanEnvironment=1,
         parameters=[],
         liveResults=QCLiveResults(eStatus="Unknown"),
         libraries=[]
@@ -192,3 +194,14 @@ def create_qc_nodes() -> QCNodeList:
     )]
 
     return QCNodeList(backtest=backtest, research=research, live=live)
+
+
+def create_lean_environments() -> List[QCLeanEnvironment]:
+    return [
+        QCLeanEnvironment(id=1, name="Foundation Default", path=None, description="", public=True),
+        QCLeanEnvironment(id=2,
+                          name="Foundation Tensorforce",
+                          path="/Foundation-Tensorforce",
+                          description="",
+                          public=True)
+    ]
