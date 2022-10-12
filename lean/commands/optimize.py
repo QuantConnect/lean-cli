@@ -185,7 +185,7 @@ def optimize(project: Path,
 
     logger = container.logger()
     
-    if engine_image != DEFAULT_ENGINE_IMAGE:
+    if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
         
     lean_config_manager = container.lean_config_manager()
