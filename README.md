@@ -873,33 +873,28 @@ Options:
                                   The data feed to use
   --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
-  --ib-organization TEXT          The name or id of the organization with the Interactive Brokers module subscription
+  --organization TEXT             The name or id of the organization
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
-  --tradier-organization TEXT     The name or id of the organization with the Tradier module subscription
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --oanda-organization TEXT       The name or id of the organization with the Oanda module subscription
   --oanda-environment [Practice|Trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --bitfinex-organization TEXT    The name or id of the organization with the Bitfinex module subscription
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-organization TEXT        The name or id of the organization with the Coinbase Pro module subscription
   --gdax-use-sandbox [live|paper]
                                   Whether the sandbox should be used
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --binance-organization TEXT     The name or id of the organization with the Binance module subscription
   --binance-exchange-name [Binance|BinanceUS]
                                   Binance exchange name [Binance, BinanceUS]
   --binance-use-testnet [live|paper]
@@ -908,7 +903,6 @@ Options:
   --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --binanceus-api-secret TEXT     Your Binance API secret
-  --zerodha-organization TEXT     The name or id of the organization with the zerodha module subscription
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [mis|cnc|nrml]
@@ -919,7 +913,6 @@ Options:
                                   commodities on MCX
   --zerodha-history-subscription [true|false]
                                   Whether you have a history API subscription for Zerodha
-  --samco-organization TEXT       The name or id of the organization with the samco module subscription
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
@@ -929,8 +922,6 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --terminal-link-organization TEXT
-                                  The name or id of the organization with the Terminal Link module subscription
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -953,7 +944,6 @@ Options:
                                   The EMSX handling to use
   --terminal-link-allow-modification BOOLEAN
                                   Whether modification is allowed
-  --atreyu-organization TEXT      The name or id of the organization with the Atreyu module subscription
   --atreyu-host TEXT              The host of the Atreyu server
   --atreyu-req-port INTEGER       The Atreyu request port
   --atreyu-sub-port INTEGER       The Atreyu subscribe port
@@ -962,7 +952,6 @@ Options:
   --atreyu-client-id TEXT         Your Atreyu client id
   --atreyu-broker-mpid TEXT       The broker MPID to use
   --atreyu-locate-rqd TEXT        The locate rqd to use
-  --tt-organization TEXT          The name or id of the organization with the Trading Technologies module subscription
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
@@ -982,12 +971,10 @@ Options:
   --tt-order-routing-host TEXT    The host of the order routing server
   --tt-order-routing-port TEXT    The port of the order routing server
   --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
-  --kraken-organization TEXT      The name or id of the organization with the kraken module subscription
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --ftx-organization TEXT         The name or id of the organization with the FTX module subscription
   --ftx-exchange-name [FTX|FTXUS]
                                   FTX exchange name [FTX, FTXUS]
   --ftx-api-key TEXT              Your FTX API key
@@ -1004,8 +991,6 @@ Options:
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --polygon-api-key TEXT          Your Polygon data feed API Key
-  --quantconnect-organization TEXT
-                                  The name or id of the organization with the QuantConnect datafeed module subscription
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
