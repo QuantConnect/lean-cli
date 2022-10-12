@@ -21,7 +21,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCProject, QCLeanEnvironment
+from lean.models.api import QCProject, QCLeanEnvironment, QCLanguage
 from lean.models.utils import LeanLibraryReference
 
 
@@ -227,8 +227,9 @@ class PullManager:
         project_dir = cwd / project.name
         for i, library in enumerate(cloud_libraries, start=1):
             self._logger.info(f"[{i}/{len(cloud_libraries)}] "
-                        f"Adding/updating local library {library.name} reference to project {project.name}")
-            self._library_manager.add_lean_library_to_project(project_dir, cwd / library.name, False)
+                              f"Adding/updating local library {library.name} reference to project {project.name}")
+            # Add library references without restoring. It will be done after all lib references have been updated
+            self._library_manager.add_lean_library_to_project(project_dir, cwd / library.name, True)
 
     def _remove_local_library_references_from_project(self,
                                                       project: QCProject,
@@ -247,10 +248,11 @@ class PullManager:
 
         for i, library_reference in enumerate(libraries_to_remove, start=1):
             self._logger.info(f"[{i}/{len(libraries_to_remove)}] "
-                        f"Removing local library {library_reference.name} reference from project {project.name}")
+                              f"Removing local library {library_reference.name} reference from project {project.name}")
+            # Remove library references without restoring. It will be done after all lib references have been updated
             self._library_manager.remove_lean_library_from_project(project_dir,
                                                                    Path.cwd() / library_reference.path,
-                                                                   False)
+                                                                   True)
 
     def _update_local_library_references(self, projects: List[QCProject]) -> None:
         for project in projects:
@@ -263,3 +265,15 @@ class PullManager:
 
             # Remove library references locally if they were removed in the cloud
             self._remove_local_library_references_from_project(project, cloud_libraries)
+
+            # Restore the project to automatically enable local auto-complete
+            self._restore_project(project)
+
+    def _restore_project(self, project: QCProject) -> None:
+        if project.language != QCLanguage.CSharp:
+            return
+
+        project_dir = Path.cwd() / project.name
+        project_csproj_file = self._project_manager.get_csproj_file_path(project_dir)
+        original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
+        self._project_manager.try_restore_csharp_project(project_csproj_file, original_csproj_content, False)

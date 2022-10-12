@@ -11,15 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
-from typing import Tuple, List
 from unittest import mock
 
 from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
-from lean.components.cloud.pull_manager import PullManager
 from lean.container import container
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 

@@ -17,8 +17,9 @@ from unittest import mock
 
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.config.storage import Storage
+from lean.components.util.project_manager import ProjectManager
 from lean.container import container
-from lean.models.api import QCProject
+from lean.models.api import QCProject, QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 
 
@@ -174,9 +175,9 @@ def test_pulls_libraries_referenced_by_the_project() -> None:
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
-        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, False)
+        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, True)
          for library in test_project_libraries] +
-        [mock.call(Path.cwd() / test_library.name, Path.cwd() / test_library_library.name, False)],
+        [mock.call(Path.cwd() / test_library.name, Path.cwd() / test_library_library.name, True)],
         any_order=True)
     library_manager.remove_lean_library_from_project.assert_not_called()
 
@@ -209,7 +210,7 @@ def test_pull_removes_library_references() -> None:
     api_client.files.get_all.assert_called_once_with(test_project.projectId)
 
     library_manager.add_lean_library_to_project.assert_not_called()
-    library_manager.remove_lean_library_from_project.assert_called_once_with(project_path, library_path, False)
+    library_manager.remove_lean_library_from_project.assert_called_once_with(project_path, library_path, True)
 
 
 def test_pull_adds_and_removes_library_references_simultaneously() -> None:
@@ -246,10 +247,68 @@ def test_pull_adds_and_removes_library_references_simultaneously() -> None:
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
-        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, False)
+        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, True)
          for library in test_project_libraries],
         any_order=True)
-    library_manager.remove_lean_library_from_project.assert_called_once_with(project_path, library_path, False)
+    library_manager.remove_lean_library_from_project.assert_called_once_with(project_path, library_path, True)
+
+
+def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_projects, libraries = _make_cloud_projects_and_libraries(3, 5)
+    cloud_projects.extend(libraries)
+
+    test_project = cloud_projects[0]
+    test_project.language = QCLanguage.CSharp
+    test_project_libraries = libraries[:3]
+    test_csharp_library1 = test_project_libraries[0]
+    test_csharp_library1.language = QCLanguage.CSharp
+    _add_libraries_to_cloud_project(test_project, test_project_libraries)
+
+    test_csharp_library2 = libraries[3]
+    test_csharp_library2.language = QCLanguage.CSharp
+    _add_libraries_to_cloud_project(test_csharp_library1, [test_csharp_library2])
+
+    api_client = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+
+    library_manager = mock.Mock()
+    library_manager.add_lean_library_to_project = mock.Mock()
+    library_manager.remove_lean_library_from_project = mock.Mock()
+
+    with mock.patch.object(ProjectManager, 'try_restore_csharp_project') as mock_try_restore_csharp_project:
+        pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+        pull_manager.pull_projects([test_project], cloud_projects)
+
+    api_client.files.get_all.assert_has_calls(
+        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries] +
+        [mock.call(library_id) for library_id in test_csharp_library1.libraries],
+        any_order=True)
+
+    library_manager.add_lean_library_to_project.assert_has_calls(
+        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, True)
+         for library in test_project_libraries] +
+        [mock.call(Path.cwd() / test_csharp_library1.name, Path.cwd() / test_csharp_library2.name, True)],
+        any_order=True)
+    library_manager.remove_lean_library_from_project.assert_not_called()
+
+    assert mock_try_restore_csharp_project.call_count == 3
+
+    test_csharp_library1_path = Path.cwd() / test_csharp_library1.name
+    test_csharp_library1_csproj_file_path = (test_csharp_library1_path / f"{test_csharp_library1_path.name}.csproj")
+    assert mock_try_restore_csharp_project.call_args_list[0].args[0] == test_csharp_library1_csproj_file_path
+
+    test_csharp_library2_path = Path.cwd() / test_csharp_library2.name
+    test_csharp_library2_csproj_file_path = (test_csharp_library2_path / f"{test_csharp_library2_path.name}.csproj")
+    assert mock_try_restore_csharp_project.call_args_list[1].args[0] == test_csharp_library2_csproj_file_path
+
+    test_project_path = Path.cwd() / test_project.name
+    test_project_csproj_file_path = (test_project_path / f"{test_project_path.name}.csproj")
+    assert mock_try_restore_csharp_project.call_args_list[2].args[0] == test_project_csproj_file_path
+
+    assert all(call.args[-1] is False for call in mock_try_restore_csharp_project.call_args_list)
 
 
 def test_pull_projects_updates_lean_config() -> None:
