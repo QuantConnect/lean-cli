@@ -314,7 +314,9 @@ def test_run_lean_compiles_python_project() -> None:
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
 
-    build_command = next((cmd for cmd in kwargs["commands"] if cmd.startswith("python -m compileall")), None)
+    build_command = next((cmd for cmd in kwargs["commands"] if cmd.startswith("""if [ -d '/LeanCLI' ];
+            then
+                python -m compileall""")), None)
     assert build_command is not None
 
 def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:
