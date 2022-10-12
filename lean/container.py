@@ -96,7 +96,13 @@ class Container(DeclarativeContainer):
                                 xml_manager)
 
     cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
-    pull_manager = Singleton(PullManager, logger, api_client, project_manager, project_config_manager, platform_manager)
+    pull_manager = Singleton(PullManager,
+                             logger,
+                             api_client,
+                             project_manager,
+                             project_config_manager,
+                             library_manager,
+                             platform_manager)
     push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
     data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
     cloud_project_manager = Singleton(CloudProjectManager,

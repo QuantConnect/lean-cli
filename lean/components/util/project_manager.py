@@ -183,12 +183,9 @@ class ProjectManager:
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.
 
-        This will also return all the libraries referenced by the project.
-
         :param cloud_projects: all projects fetched from the cloud
         :param project: the name or id of the project
-        :return: a list of all the projects in the cloud that match the given name or id,
-                 including the libraries they might reference
+        :return: a list of all the projects in the cloud that match the given name or id
         """
         search_by_id = isinstance(project, int)
 
@@ -200,8 +197,6 @@ class ProjectManager:
 
             if len(projects) == 0:
                 raise RuntimeError("No project with the given name or id exists in the cloud")
-
-            projects.extend(self._get_cloud_projects_libraries(cloud_projects, projects))
         else:
             projects = cloud_projects
 
@@ -624,10 +619,10 @@ class ProjectManager:
 
         return directories
 
-    def _get_cloud_project_libraries(self,
-                                     cloud_projects: List[QCProject],
-                                     project: QCProject,
-                                     seen_libraries: List[int] = None) -> List[QCProject]:
+    def get_cloud_project_libraries(self,
+                                    cloud_projects: List[QCProject],
+                                    project: QCProject,
+                                    seen_libraries: List[int] = None) -> List[QCProject]:
         """Gets the libraries referenced by the project and its dependencies from the given cloud projects.
 
         It recursively gets every Lean CLI library referenced by the project
@@ -651,16 +646,16 @@ class ProjectManager:
                 continue
 
             seen_libraries.append(library.projectId)
-            referenced_libraries.extend(self._get_cloud_project_libraries(cloud_projects, library, seen_libraries))
+            referenced_libraries.extend(self.get_cloud_project_libraries(cloud_projects, library, seen_libraries))
 
         libraries.extend(referenced_libraries)
 
         return list(set(libraries))
 
-    def _get_cloud_projects_libraries(self,
-                                      cloud_projects: List[QCProject],
-                                      projects: List[QCProject],
-                                      seen_projects: List[int] = None) -> List[QCProject]:
+    def get_cloud_projects_libraries(self,
+                                     cloud_projects: List[QCProject],
+                                     projects: List[QCProject],
+                                     seen_projects: List[int] = None) -> List[QCProject]:
         """Gets the libraries referenced by the passed projects and its dependencies from the given cloud projects.
 
         It recursively gets every Lean CLI library referenced by the passed projects
@@ -675,7 +670,7 @@ class ProjectManager:
 
         libraries = []
         for project in projects:
-            libraries.extend(self._get_cloud_project_libraries(cloud_projects, project, seen_projects))
+            libraries.extend(self.get_cloud_project_libraries(cloud_projects, project, seen_projects))
 
         return list(set(libraries))
 
