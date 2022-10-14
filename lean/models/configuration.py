@@ -13,7 +13,7 @@
 
 from pathlib import Path
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 import click
 import abc
 from lean.components.util.logger import Logger
@@ -376,11 +376,11 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
 
-    def factory(config_json_object) -> 'BrokerageEnvConfiguration':
+    def factory(config_json_object) -> Union[PromptUserInput, ChoiceUserInput, ConfirmUserInput]:
         """Creates an instance of the child classes.
 
         :param config_json_object: the json object dict with configuration info
-        :return: An instance of BrokerageEnvConfiguration.
+        :return: An instance of either FilterEnvConfiguration or TradingEnvConfiguration.
         """
         if config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration(config_json_object)
@@ -409,7 +409,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
                 f"Undefined input method type {self._input_method}")
 
 
-class TradingEnvConfiguration(BrokerageEnvConfiguration):
+class TradingEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
     """This class adds trading-mode/envirionment based user filters.
     
     Normalizes the value of envrionment values(live/paper) for cloud live. 
