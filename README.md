@@ -279,6 +279,8 @@ Options:
   --zerodha-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --zerodha-history-subscription [true|false]
+                                  Whether you have a history API subscription for Zerodha
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
@@ -895,6 +897,8 @@ Options:
   --zerodha-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --zerodha-history-subscription [true|false]
+                                  Whether you have a history API subscription for Zerodha
   --samco-client-id TEXT          Your Samco account Client ID
   --samco-client-password TEXT    Your Samco account password
   --samco-year-of-birth TEXT      Your year of birth (YYYY) registered with Samco
@@ -970,8 +974,6 @@ Options:
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
-  --zerodha-history-subscription [true|false]
-                                  Whether you have a history API subscription for Zerodha
   --iqfeed-iqconnect FILE         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
