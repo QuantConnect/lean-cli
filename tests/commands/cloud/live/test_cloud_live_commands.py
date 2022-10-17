@@ -34,13 +34,6 @@ brokerage_required_options = {
         "tt-rest-environment": "abc",
         "tt-order-routing-sender-comp-id": "abc",
     },
-    "Zerodha": {
-        "zerodha-api-key": "123",
-        "zerodha-access-token": "456",
-        "zerodha-product-type": "mis",
-        "zerodha-trading-segment": "equity",
-        "organization": "abc",
-    }
 }
 
 def test_cloud_live_stop() -> None:
