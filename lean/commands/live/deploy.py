@@ -137,7 +137,7 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     time.sleep(10)
 
 
-def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str) -> None:
+def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str, properties: Dict[str, Any]) -> None:
     """Interactively configures the Lean config to use.
 
     Asks the user all questions required to set up the Lean config for local live trading.
@@ -155,7 +155,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
 
-    brokerage.build(lean_config, logger).configure(lean_config, environment_name)
+    brokerage.build(lean_config, logger, properties).configure(lean_config, environment_name)
 
     data_feeds = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
@@ -173,7 +173,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
             # mark configs are updated
             #TODO: create a setter method to set the property instead.
             setattr(data_feed, '_is_installed_and_build', True)
-        data_feed.build(lean_config, logger).configure(lean_config, environment_name)
+        data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
 
 _cached_organizations = None
 
@@ -386,7 +386,7 @@ def deploy(project: Path,
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-        _configure_lean_config_interactively(lean_config, environment_name)
+        _configure_lean_config_interactively(lean_config, environment_name, kwargs)
 
     if data_provider is not None:
         [data_provider_configurer] = [_get_and_build_module(data_provider, all_data_providers, kwargs)]

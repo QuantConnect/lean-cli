@@ -334,7 +334,7 @@ def backtest(project: Path,
 
     if data_provider is not None:
         data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
-        data_provider.build(lean_config, logger).configure(lean_config, "backtesting")
+        data_provider.build(lean_config, logger, {}).configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
