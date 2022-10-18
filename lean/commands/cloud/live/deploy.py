@@ -98,14 +98,15 @@ def _prompt_notification_method() -> QCNotificationMethod:
         return QCSMSNotificationMethod(phoneNumber=phone_number)
 
 
-def _configure_brokerage(logger: Logger, properties: Dict[str, Any]) -> CloudBrokerage:
+def _configure_brokerage(logger: Logger, user_provided_options: Dict[str, Any]) -> CloudBrokerage:
     """Interactively configures the brokerage to use.
 
     :param logger: the logger to use
+    :param user_provided_options: the dictionary containing user provided options
     :return: the cloud brokerage the user configured
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
-    return logger.prompt_list("Select a brokerage", brokerage_options).build(None, logger, properties)
+    return logger.prompt_list("Select a brokerage", brokerage_options).build(None, logger, user_provided_options)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
