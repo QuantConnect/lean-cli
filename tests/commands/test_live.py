@@ -282,7 +282,8 @@ brokerage_required_options = {
         "zerodha-access-token": "456",
         "zerodha-product-type": "mis",
         "zerodha-trading-segment": "equity",
-        "zerodha-history-subscription": "false"
+        "zerodha-history-subscription": "false",
+        "organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
