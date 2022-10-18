@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import webbrowser
-from typing import List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 import click
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
@@ -98,14 +98,15 @@ def _prompt_notification_method() -> QCNotificationMethod:
         return QCSMSNotificationMethod(phoneNumber=phone_number)
 
 
-def _configure_brokerage(logger: Logger) -> CloudBrokerage:
+def _configure_brokerage(logger: Logger, user_provided_options: Dict[str, Any]) -> CloudBrokerage:
     """Interactively configures the brokerage to use.
 
     :param logger: the logger to use
+    :param user_provided_options: the dictionary containing user provided options
     :return: the cloud brokerage the user configured
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
-    return logger.prompt_list("Select a brokerage", brokerage_options).build(None,logger)
+    return logger.prompt_list("Select a brokerage", brokerage_options).build(None, logger, user_provided_options)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -298,7 +299,7 @@ def deploy(project: str,
             raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
 
     else:
-        brokerage_instance = _configure_brokerage(logger)
+        brokerage_instance = _configure_brokerage(logger, kwargs)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
