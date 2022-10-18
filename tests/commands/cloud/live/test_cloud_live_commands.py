@@ -22,6 +22,20 @@ from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMeth
 from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes
 from tests.commands.test_live import brokerage_required_options
 
+brokerage_required_options = {
+    **brokerage_required_options,
+    "Trading Technologies": {
+        "organization": "abc",
+        "tt-user-name": "abc",
+        "tt-session-password": "abc",
+        "tt-account-name": "abc",
+        "tt-rest-app-key": "abc",
+        "tt-rest-app-secret": "abc",
+        "tt-rest-environment": "abc",
+        "tt-order-routing-sender-comp-id": "abc",
+    },
+}
+
 def test_cloud_live_stop() -> None:
     create_fake_lean_cli_directory()
 

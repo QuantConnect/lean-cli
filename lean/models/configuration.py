@@ -120,8 +120,10 @@ class Configuration(abc.ABC):
             return InfoConfiguration.factory(config_json_object)
         elif config_json_object["type"] in ["input", "internal-input"]:
             return UserInputConfiguration.factory(config_json_object)
-        elif config_json_object["type"] in ["filter-env", "trading-env"]:
+        elif config_json_object["type"] == "filter-env":
             return BrokerageEnvConfiguration.factory(config_json_object)
+        elif config_json_object["type"] == "trading-env":
+            return TradingEnvConfiguration.factory(config_json_object)
         elif config_json_object["type"] == "organization-id":
             return OrganzationIdConfiguration(config_json_object)
         else:
@@ -380,11 +382,9 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         """Creates an instance of the child classes.
 
         :param config_json_object: the json object dict with configuration info
-        :return: An instance of BrokerageEnvConfiguration.
+        :return: An instance of BrokerageEnvConfiguration
         """
-        if config_json_object["type"] == "trading-env":
-            return TradingEnvConfiguration(config_json_object)
-        elif config_json_object["type"] == "filter-env":
+        if config_json_object["type"] == "filter-env":
             return FilterEnvConfiguration(config_json_object)
         else:
             raise ValueError(
@@ -409,7 +409,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
                 f"Undefined input method type {self._input_method}")
 
 
-class TradingEnvConfiguration(BrokerageEnvConfiguration):
+class TradingEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
     """This class adds trading-mode/envirionment based user filters.
     
     Normalizes the value of envrionment values(live/paper) for cloud live. 
@@ -417,6 +417,18 @@ class TradingEnvConfiguration(BrokerageEnvConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+    
+    def factory(config_json_object) -> 'TradingEnvConfiguration':
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: An instance of TradingEnvConfiguration.
+        """
+        if config_json_object["type"] == "trading-env":
+            return TradingEnvConfiguration(config_json_object)
+        else:
+            raise ValueError(
+                f'Undefined input method type {config_json_object["type"]}')
 
     def AskUserForInput(self, default_value, logger: Logger):
         """Prompts user to provide input while validating the type of input

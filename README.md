@@ -252,25 +252,25 @@ Options:
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --oanda-environment [Practice|Trade]
-                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-use-sandbox [live|paper]
-                                  Whether the sandbox should be used
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --gdax-use-sandbox [live|paper]
+                                  Whether the sandbox should be used
   --binance-exchange-name [Binance|BinanceUS]
                                   Binance exchange name [Binance, BinanceUS]
-  --binance-use-testnet [live|paper]
-                                  Whether the testnet should be used
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --binanceus-api-secret TEXT     Your Binance API secret
+  --binance-use-testnet [live|paper]
+                                  Whether the testnet should be used
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [mis|cnc|nrml]
@@ -296,19 +296,8 @@ Options:
   --tt-rest-app-key TEXT          Your Trading Technologies REST app key
   --tt-rest-app-secret TEXT       Your Trading Technologies REST app secret
   --tt-rest-environment TEXT      The REST environment to run in
-  --tt-market-data-sender-comp-id TEXT
-                                  The market data sender comp id to use
-  --tt-market-data-target-comp-id TEXT
-                                  The market data target comp id to use
-  --tt-market-data-host TEXT      The host of the market data server
-  --tt-market-data-port TEXT      The port of the market data server
   --tt-order-routing-sender-comp-id TEXT
                                   The order routing sender comp id to use
-  --tt-order-routing-target-comp-id TEXT
-                                  The order routing target comp id to use
-  --tt-order-routing-host TEXT    The host of the order routing server
-  --tt-order-routing-port TEXT    The port of the order routing server
-  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
@@ -869,7 +858,7 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|FTX|IQFeed|Polygon Data Feed|Custom data only]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|FTX|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
   --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
@@ -877,32 +866,29 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-enable-delayed-streaming-data BOOLEAN
-                                  Whether delayed data may be used when your algorithm subscribes to a security you
-                                  don't have a market data subscription for
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --oanda-environment [Practice|Trade]
-                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-use-sandbox [live|paper]
-                                  Whether the sandbox should be used
   --gdax-api-key TEXT             Your Coinbase Pro API key
   --gdax-api-secret TEXT          Your Coinbase Pro API secret
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
+  --gdax-use-sandbox [live|paper]
+                                  Whether the sandbox should be used
   --binance-exchange-name [Binance|BinanceUS]
                                   Binance exchange name [Binance, BinanceUS]
-  --binance-use-testnet [live|paper]
-                                  Whether the testnet should be used
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
   --binanceus-api-secret TEXT     Your Binance API secret
+  --binance-use-testnet [live|paper]
+                                  Whether the testnet should be used
   --zerodha-api-key TEXT          Your Kite Connect API key
   --zerodha-access-token TEXT     Your Kite Connect access token
   --zerodha-product-type [mis|cnc|nrml]
@@ -985,6 +971,9 @@ Options:
                                   Your FTX Account Tier
   --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|Tier7|Tier8|Tier9|VIP1|VIP2|MM1|MM2|MM3]
                                   Your FTX Account Tier
+  --ib-enable-delayed-streaming-data BOOLEAN
+                                  Whether delayed data may be used when your algorithm subscribes to a security you
+                                  don't have a market data subscription for
   --iqfeed-iqconnect FILE         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
