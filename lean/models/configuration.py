@@ -13,7 +13,7 @@
 
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 import click
 import abc
 from lean.components.util.logger import Logger
@@ -382,7 +382,7 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
         """Creates an instance of the child classes.
 
         :param config_json_object: the json object dict with configuration info
-        :return: An instance of either BrokerageEnvConfiguration
+        :return: An instance of BrokerageEnvConfiguration
         """
         if config_json_object["type"] == "filter-env":
             return FilterEnvConfiguration(config_json_object)
