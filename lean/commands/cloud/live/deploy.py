@@ -284,19 +284,19 @@ def deploy(project: str,
                     notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
                 else:
                     notify_methods.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
-                    
+
         cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
-            
+
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
         elif live_cash_balance is not None and live_cash_balance != "":
             raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance.get_name()}")
-        
+
         if holdings_option != LiveInitialStateInput.NotSupported:
             live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
         elif live_holdings is not None and live_holdings != "":
             raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
-        
+
     else:
         brokerage_instance = _configure_brokerage(logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
@@ -310,7 +310,7 @@ def deploy(project: str,
 
     brokerage_settings = brokerage_instance.get_settings()
     price_data_handler = brokerage_instance.get_price_data_handler()
-    
+
     logger.info(f"Brokerage: {brokerage_instance.get_name()}")
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Environment: {brokerage_settings['environment'].title()}")
