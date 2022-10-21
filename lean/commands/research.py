@@ -125,12 +125,6 @@ def research(project: Path,
         "mode": "rw"
     }
 
-    # Add references to all DLLs in QuantConnect.csx so custom C# libraries can be imported with using statements
-    run_options["commands"].append(" && ".join([
-        'find . -maxdepth 1 -iname "*.dll" | xargs -I _ echo \'#r "_"\' | cat - QuantConnect.csx > NewQuantConnect.csx',
-        "mv NewQuantConnect.csx QuantConnect.csx"
-    ]))
-
     # Allow notebooks to be embedded in iframes
     run_options["commands"].append("mkdir -p ~/.jupyter")
     run_options["commands"].append(
