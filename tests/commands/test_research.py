@@ -26,7 +26,6 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 RESEARCH_IMAGE = DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
 
-
 def test_research_runs_research_container() -> None:
     create_fake_lean_cli_directory()
 
