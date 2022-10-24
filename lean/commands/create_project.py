@@ -303,7 +303,7 @@ def create_project(name: str, language: str) -> None:
     except:
         # get_cli_root_directory() raises an error if there is no such directory
         pass
-    
+
     id_name = full_path.name
     if is_library_project and language == "python" and not id_name.isidentifier():
         problematic_char = _not_identifier_char(id_name)
@@ -331,6 +331,12 @@ Please remove the character '{problematic_char}' and retry""")
 
     with (full_path / "research.ipynb").open("w+", encoding="utf-8") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
+
+    if language == "csharp":
+        project_manager = container.project_manager()
+        project_csproj_file = project_manager.get_csproj_file_path(full_path)
+        original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
+        project_manager.try_restore_csharp_project(project_csproj_file, original_csproj_content, False)
 
     logger = container.logger()
     logger.info(f"Successfully created {'Python' if language == 'python' else 'C#'} project '{name}'")
