@@ -19,11 +19,12 @@ from pathlib import Path
 
 json_modules = {}
 file_name = "modules-1.6.json"
-dirname = os.path.dirname(__file__)
-file_path = os.path.join(dirname, f'../{file_name}')
+directory = Path(__file__).parent
+file_path = directory.parent / file_name
 
 # check if new file is available online
 url = f"https://cdn.quantconnect.com/cli/{file_name}"
+error = None
 try:
     # fetch if file not available or fetched before 1 day
     if not os.path.exists(file_path) or (time.time() - os.path.getmtime(file_path) >  86400):
@@ -32,14 +33,18 @@ try:
             new_content = res.json()
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(new_content, f, ensure_ascii=False, indent=4)
+        else:
+            res.raise_for_status()
 except Exception as e:
     # No need to do anything if file isn't available
+    error = str(e)
     pass
 
 # check if file exists
 if not Path(file_path).is_file():
+    error_message = f": {error}" if error is not None else ""
     raise FileNotFoundError(
-        f"Modules json not found in the given path {file_path}")
+        f"Modules json not found in the given path {file_path}{error_message}")
 
 with open(file_path) as f:
     data = json.load(f)
