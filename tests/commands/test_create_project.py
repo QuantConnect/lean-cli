@@ -20,6 +20,7 @@ from click.testing import CliRunner
 from dependency_injector import providers
 
 from lean.commands import lean
+from lean.components.util.project_manager import ProjectManager
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -167,3 +168,21 @@ def test_create_project_aborts_creating_python_library_project_when_name_not_ide
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "Library/My First Project"])
 
     assert result.exit_code != 0
+
+
+@pytest.mark.parametrize("language", ["python", "csharp"])
+def test_create_project_restores_csharp_project(language: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project_name = "Some CSharp Project"
+
+    with mock.patch.object(ProjectManager, "try_restore_csharp_project") as mock_try_restore:
+        result = CliRunner().invoke(lean, ["create-project", "--language", language, project_name])
+
+    assert result.exit_code == 0
+
+    if language == "csharp":
+        expected_csproj_file_path = Path(project_name).expanduser().resolve() / f'{project_name}.csproj'
+        mock_try_restore.assert_called_once_with(expected_csproj_file_path, mock.ANY, False)
+    else:
+        mock_try_restore.assert_not_called()
