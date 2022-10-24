@@ -156,9 +156,10 @@ class PushManager:
         cloud_id = project_config.get("cloud-id")
 
         cloud_project_by_id = next(iter([p for p in cloud_projects if p.projectId == cloud_id]), None)
+        is_new_project = cloud_project_by_id is None
 
         # Find the cloud project to push the files to
-        if cloud_project_by_id is not None:
+        if not is_new_project:
             # Project has cloud id which matches cloud project, update cloud project
             cloud_project = cloud_project_by_id
         else:
@@ -179,20 +180,20 @@ class PushManager:
             project_config.set("organization-id", cloud_project.organizationId)
 
         # Push local files to cloud
-        self._push_files(project, cloud_project)
+        self._push_files(project, cloud_project, is_new_project)
 
         # Finalize pushing by updating locally modified metadata
         self._push_metadata(project, cloud_project, environments)
 
         return cloud_project
 
-    def _push_files(self, project: Path, cloud_project: QCProject) -> None:
+    def _push_files(self, project: Path, cloud_project: QCProject, is_new_project: bool = False) -> None:
         """Pushes the files of a local project to the cloud.
 
         :param project: the local project to push the files of
         :param cloud_project: the cloud project to push the files to
         """
-        cloud_files = self._api_client.files.get_all(cloud_project.projectId)
+        cloud_files = self._api_client.files.get_all(cloud_project.projectId) if not is_new_project else []
         local_files = self._project_manager.get_source_files(project)
         local_file_names = [local_file.relative_to(project).as_posix() for local_file in local_files]
 
