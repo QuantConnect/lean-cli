@@ -42,5 +42,5 @@ def test_get_cloud_project_pushing_new_project():
 
     assert created_cloud_project == cloud_project
 
-    assert api_client.projects.get_all.call_count == 2
+    api_client.projects.get_all.assert_called_once()
     api_client.projects.get.assert_called_with(cloud_project.projectId)
