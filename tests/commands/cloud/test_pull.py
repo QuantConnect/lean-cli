@@ -75,19 +75,20 @@ def test_cloud_pull_pulls_project_by_id() -> None:
                       create_api_project(3, "Project 3"),
                       create_api_project(4, "Boot Camp/Project 4"),
                       create_api_project(5, "Boot Camp/Project 5")]
+    project_to_pull = cloud_projects[0]
 
     api_client = mock.Mock()
-    api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = project_to_pull
     container.api_client.override(providers.Object(api_client))
 
     pull_manager = mock.Mock()
     container.pull_manager.override(providers.Object(pull_manager))
 
-    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", "1"])
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_to_pull.projectId])
 
     assert result.exit_code == 0
 
-    pull_manager.pull_projects.assert_called_once_with([cloud_projects[0]], cloud_projects)
+    pull_manager.pull_projects.assert_called_once_with([project_to_pull], None)
 
 
 def test_cloud_pull_pulls_project_by_name() -> None:

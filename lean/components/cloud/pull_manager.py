@@ -13,7 +13,7 @@
 
 import traceback
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Optional, Tuple
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -21,7 +21,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCProject, QCLeanEnvironment, QCLanguage
+from lean.models.api import QCProject, QCLanguage
 from lean.models.utils import LeanLibraryReference
 
 
@@ -52,7 +52,22 @@ class PullManager:
         self._platform_manager = platform_manager
         self._last_file = None
 
-    def pull_projects(self, projects_to_pull: List[QCProject], all_cloud_projects: List[QCProject]) -> None:
+    def _get_libraries(self, project: QCProject, seen_projects: List[int] = None) -> List[QCProject]:
+        if seen_projects is None:
+            seen_projects = [project.projectId]
+
+        libraries = []
+        for library_id in project.libraries:
+            if library_id in seen_projects:
+                continue
+            seen_projects.append(library_id)
+            library = self._api_client.projects.get(library_id)
+            libraries.append(library)
+            libraries.extend(self._get_libraries(library, seen_projects))
+
+        return libraries
+
+    def pull_projects(self, projects_to_pull: List[QCProject], all_cloud_projects: Optional[List[QCProject]]) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
         This will also pull libraries referenced by the project.
@@ -60,19 +75,21 @@ class PullManager:
         :param projects_to_pull: the cloud projects that need to be pulled
         :param all_cloud_projects: all the projects available in the cloud
         """
-        projects_to_pull.extend(self._project_manager.get_cloud_projects_libraries(all_cloud_projects,
-                                                                                   projects_to_pull))
+        if all_cloud_projects is not None:
+            projects_to_pull.extend(self._project_manager.get_cloud_projects_libraries(all_cloud_projects,
+                                                                                       projects_to_pull))
+        else:
+            for project in projects_to_pull:
+                projects_to_pull.extend(self._get_libraries(project, [p.projectId for p in projects_to_pull]))
+
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
-        environments = self._api_client.lean.environments()
-        projects_not_pulled = []
-        project_paths = {}
+        projects_with_paths = []
 
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                project_paths[project.projectId] = self._pull_project(project, environments)
+                projects_with_paths.append((project, self._pull_project(project)))
             except Exception as ex:
-                projects_not_pulled.append(project)
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
                     self._logger.warn(
@@ -80,10 +97,9 @@ class PullManager:
                 else:
                     self._logger.warn(f"Cannot pull '{project.name}' (id {project.projectId}): {ex}")
 
-        projects_to_update = [project for project in projects_to_pull if project not in projects_not_pulled]
-        self._update_local_library_references(projects_to_update, project_paths)
+        self._update_local_library_references(projects_with_paths)
 
-    def _pull_project(self, project: QCProject, environments: List[QCLeanEnvironment]) -> Path:
+    def _pull_project(self, project: QCProject) -> Path:
         """Pulls a single project from the cloud to the local drive.
 
         Raises an error with a descriptive message if the project cannot be pulled.
@@ -103,17 +119,12 @@ class PullManager:
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
+        project_config.set("python-venv", project.leanEnvironment)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)
         else:
             project_config.delete("lean-engine")
-
-        python_venv = next((env.path for env in environments if env.id == project.leanEnvironment), None)
-        if python_venv is not None:
-            project_config.set("python-venv", project.leanEnvironment)
-        else:
-            project_config.delete("python-venv")
 
         return local_project_path
 
@@ -255,22 +266,19 @@ class PullManager:
                                                                    Path.cwd() / library_reference.path,
                                                                    True)
 
-    def _update_local_library_references(self, projects: List[QCProject], paths: Dict[int, Path]) -> None:
-        for project in projects:
-            cloud_libraries_paths = [paths[library_id]
-                                     for library_id in project.libraries
-                                     for library in projects if library.projectId == library_id]
-
-            project_path = paths[project.projectId]
+    def _update_local_library_references(self, projects: List[Tuple[QCProject, Path]]) -> None:
+        for project, path in projects:
+            cloud_libraries_paths = [library_path for library, library_path in projects
+                                     if library.projectId in project.libraries]
 
             # Add cloud library references to local config
-            self._add_local_library_references_to_project(project_path, cloud_libraries_paths)
+            self._add_local_library_references_to_project(path, cloud_libraries_paths)
 
             # Remove library references locally if they were removed in the cloud
-            self._remove_local_library_references_from_project(project_path, cloud_libraries_paths)
+            self._remove_local_library_references_from_project(path, cloud_libraries_paths)
 
             # Restore the project to automatically enable local auto-complete
-            self._restore_project(project, project_path)
+            self._restore_project(project, path)
 
     def _restore_project(self, project: QCProject, project_dir: Path) -> None:
         if project.language != QCLanguage.CSharp:
