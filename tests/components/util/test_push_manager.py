@@ -59,10 +59,16 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
         create_api_project(project_id, project_path.name),
     ]
     api_client = mock.Mock()
-    api_client.projects.create = mock.MagicMock(side_effect=cloud_projects)
-    api_client.projects.get = mock.MagicMock(side_effect=cloud_projects)
+
+    def create_project(proj_name, *args):
+        return next(iter(p for p in cloud_projects if p.name == proj_name))
+
+    def get_project(proj_id, *args):
+        return next(iter(p for p in cloud_projects if p.projectId == proj_id))
+
+    api_client.projects.create = mock.MagicMock(side_effect=create_project)
+    api_client.projects.get = mock.MagicMock(side_effect=get_project)
     api_client.files.get_all = mock.MagicMock(return_value=[])
-    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
     api_client.projects.delete_library = mock.Mock()
 
@@ -72,7 +78,8 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_has_calls([mock.call(csharp_library_path),
                                                        mock.call(python_library_path),
-                                                       mock.call(project_path)])
+                                                       mock.call(project_path)],
+                                                      any_order=True)
 
     api_client.projects.create.assert_has_calls([
         mock.call(csharp_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.CSharp, None),
@@ -177,7 +184,8 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     push_manager.push_projects([project_path])
 
     project_manager.get_project_libraries.assert_called_once_with(project_path)
-    project_manager.get_source_files.assert_has_calls([mock.call(python_library_path), mock.call(project_path)])
+    project_manager.get_source_files.assert_has_calls([mock.call(python_library_path), mock.call(project_path)],
+                                                      any_order=True)
 
     api_client.projects.create.assert_called_once_with(python_library_path.relative_to(lean_cli_root_dir).as_posix(),
                                                        QCLanguage.Python,

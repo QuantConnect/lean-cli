@@ -112,7 +112,7 @@ def test_cloud_push_removes_locally_removed_files_in_cloud() -> None:
     create_fake_lean_cli_directory()
 
     client = mock.Mock()
-    fake_cloud_files = [QCFullFile(name="removed_file.py", content="", modified=datetime.now(), isLibrary=False)]
+    fake_cloud_files = [QCFullFile(name="removed_file.py", content="SomeContent", modified=datetime.now(), isLibrary=False)]
     client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
     client.files.delete = mock.Mock()
     client.lean.environments = mock.MagicMock(return_value=create_lean_environments())

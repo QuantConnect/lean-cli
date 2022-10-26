@@ -11,18 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import multiprocessing
 import traceback
 from pathlib import Path
 from typing import List, Optional, Dict
-
-from joblib import Parallel, delayed
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCProject, QCFullFile
+from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
 
 
@@ -82,38 +79,26 @@ class PushManager:
                                              for library in self._project_manager.get_project_libraries(project)]
         projects_paths = sorted(projects_paths)
 
-        if len(projects_paths) > 1:
-            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads")
-            pushed_projects = parallel(
-                delayed(self._process_push_project)(index, project, organization_id, len(projects_paths))
-                for index, project in enumerate(projects_paths, start=1))
-            pushed_projects = {path: project
-                               for path, project in zip(projects_paths, pushed_projects) if project is not None}
-        else:
-            path = projects_paths[0]
-            project = self._process_push_project(1, path, organization_id, len(projects_paths))
-            pushed_projects = {}
-            if project is not None:
-                pushed_projects[path] = project
+        pushed_projects = {}
+        for index, path in enumerate(projects_paths, start=1):
+            relative_path = path.relative_to(Path.cwd())
+            try:
+                self._logger.info(f"[{index}/{len(projects_paths)}] Pushing '{relative_path}'")
+                pushed_projects[path] = self._push_project(path, organization_id)
+            except Exception as ex:
+                self._logger.debug(traceback.format_exc().strip())
+                if self._last_file is not None:
+                    self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
+                else:
+                    self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
         self._update_cloud_library_references(pushed_projects)
 
-    def _update_cloud_project_references(self, path: Path, project: QCProject) -> None:
-        local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(path)
-        self._add_new_libraries(project, local_libraries_cloud_ids)
-        self._remove_outdated_libraries(project, local_libraries_cloud_ids)
-
     def _update_cloud_library_references(self, projects: Dict[Path, QCProject]) -> None:
-        if len(projects) == 0:
-            return
-
-        if len(projects) > 1:
-            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads")
-            parallel(delayed(self._update_cloud_project_references)(path, project)
-                     for path, project in projects.items())
-        else:
-            path, project = list(projects.items())[0]
-            self._update_cloud_project_references(path, project)
+        for path, project in projects.items():
+            local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(path)
+            self._add_new_libraries(project, local_libraries_cloud_ids)
+            self._remove_outdated_libraries(project, local_libraries_cloud_ids)
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -198,38 +183,6 @@ class PushManager:
 
         return cloud_project
 
-    def _push_file(self,
-                   local_file_path: Path,
-                   local_file_name: str,
-                   cloud_files: List[QCFullFile],
-                   cloud_project: QCProject) -> None:
-        try:
-            if "bin/" in local_file_name or "obj/" in local_file_name or ".ipynb_checkpoints/" in local_file_name:
-                return
-
-            file_content = local_file_path.read_text(encoding="utf-8")
-            cloud_file = next(iter([f for f in cloud_files if f.name == local_file_name]), None)
-
-            if cloud_file is None:
-                new_file = self._api_client.files.create(cloud_project.projectId, local_file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file_path, new_file.modified)
-                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{local_file_name}'")
-            elif cloud_file.content.strip() != file_content.strip():
-                new_file = self._api_client.files.update(cloud_project.projectId, local_file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file_path, new_file.modified)
-                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{local_file_name}'")
-        except Exception as e:
-            self._last_file = local_file_path
-            raise e
-
-    def _remove_file(self, file: QCFullFile, cloud_project: QCProject) -> None:
-        try:
-            self._api_client.files.delete(cloud_project.projectId, file.name)
-            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
-        except Exception as e:
-            self._last_file = Path(file.name)
-            raise e
-
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
         """Pushes the files of a local project to the cloud.
 
@@ -240,15 +193,32 @@ class PushManager:
         local_files = self._project_manager.get_source_files(project)
         local_file_names = [local_file.relative_to(project).as_posix() for local_file in local_files]
 
-        with Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads") as parallel:
-            parallel(delayed(self._push_file)(local_file, file_name, cloud_files, cloud_project)
-                     for local_file, file_name in zip(local_files, local_file_names))
+        for local_file, file_name in zip(local_files, local_file_names):
+            self._last_file = local_file
 
-            # Delete locally removed files in cloud
-            files_to_remove = [cloud_file for cloud_file in cloud_files
-                               if (not cloud_file.isLibrary and
-                                   not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
-            parallel(delayed(self._remove_file)(file, cloud_project) for file in files_to_remove)
+            if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
+                return
+
+            file_content = local_file.read_text(encoding="utf-8")
+            cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
+
+            if cloud_file is None:
+                new_file = self._api_client.files.create(cloud_project.projectId, file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file, new_file.modified)
+                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
+            elif cloud_file.content.strip() != file_content.strip():
+                new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file, new_file.modified)
+                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
+
+        # Delete locally removed files in cloud
+        files_to_remove = [cloud_file for cloud_file in cloud_files
+                           if (not cloud_file.isLibrary and
+                               not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
+        for file in files_to_remove:
+            self._last_file = Path(file.name)
+            self._api_client.files.delete(cloud_project.projectId, file.name)
+            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
 
         self._last_file = None
 
