@@ -113,21 +113,6 @@ def test_pull_manager_removes_lean_engine_from_config_when_lean_pinned_to_master
     _assert_pull_manager_removes_property_from_project_config("lean-engine", [cloud_project])
 
 
-def test_pull_manager_removes_python_venv_from_config_when_set_to_default() -> None:
-    create_fake_lean_cli_directory()
-
-    project_path = Path.cwd() / "Python Project"
-    config = Storage(str(project_path / "config.json"))
-    environments = create_lean_environments()
-    config.set("python-venv", next(env.path for env in environments if env.path is not None))
-
-    project_id = 1000
-    cloud_project = create_api_project(project_id, project_path.name)
-    cloud_project.leanPinnedToMaster = True
-
-    _assert_pull_manager_removes_property_from_project_config("python-venv", [cloud_project])
-
-
 def _make_cloud_projects_and_libraries(project_count: int,
                                        library_count: int) -> Tuple[List[QCProject], List[QCProject]]:
     cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, project_count + 1)]
@@ -328,6 +313,7 @@ def test_pull_projects_updates_lean_config() -> None:
     api_client.files.get_all = mock.MagicMock(return_value=[])
 
     project_config = mock.Mock()
+    project_config.get = mock.MagicMock(return_value=[])    # get("libraries")
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
@@ -337,7 +323,8 @@ def test_pull_projects_updates_lean_config() -> None:
     pull_manager = _create_pull_manager(api_client, project_config_manager, library_manager)
     pull_manager.pull_projects(cloud_projects, cloud_projects)
 
-    project_config.set.assert_called_with("organization-id", "123")
+    project_config.set.assert_has_calls([mock.call("python-venv", 1), mock.call("organization-id", "123")],
+                                        any_order=True)
 
 
 @pytest.mark.parametrize("test_platform, unsupported_character", [

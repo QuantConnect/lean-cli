@@ -13,7 +13,7 @@
 
 import traceback
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -21,7 +21,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCProject, QCLeanEnvironment, QCLanguage
+from lean.models.api import QCProject, QCLanguage
 from lean.models.utils import LeanLibraryReference
 
 
@@ -83,13 +83,12 @@ class PullManager:
                 projects_to_pull.extend(self._get_libraries(project, [p.projectId for p in projects_to_pull]))
 
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
-        environments = self._api_client.lean.environments()
         projects_with_paths = []
 
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                projects_with_paths.append((project, self._pull_project(project, environments)))
+                projects_with_paths.append((project, self._pull_project(project)))
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
                 if self._last_file is not None:
@@ -100,7 +99,7 @@ class PullManager:
 
         self._update_local_library_references(projects_with_paths)
 
-    def _pull_project(self, project: QCProject, environments: List[QCLeanEnvironment]) -> Path:
+    def _pull_project(self, project: QCProject) -> Path:
         """Pulls a single project from the cloud to the local drive.
 
         Raises an error with a descriptive message if the project cannot be pulled.
@@ -120,17 +119,12 @@ class PullManager:
         project_config.set("parameters", {parameter.key: parameter.value for parameter in project.parameters})
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
+        project_config.set("python-venv", project.leanEnvironment)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)
         else:
             project_config.delete("lean-engine")
-
-        python_venv = next((env.path for env in environments if env.id == project.leanEnvironment), None)
-        if python_venv is not None:
-            project_config.set("python-venv", project.leanEnvironment)
-        else:
-            project_config.delete("python-venv")
 
         return local_project_path
 
@@ -272,7 +266,7 @@ class PullManager:
                                                                    Path.cwd() / library_reference.path,
                                                                    True)
 
-    def _update_local_library_references(self, projects: Tuple[QCProject, Path]) -> None:
+    def _update_local_library_references(self, projects: List[Tuple[QCProject, Path]]) -> None:
         for project, path in projects:
             cloud_libraries_paths = [library_path for library, library_path in projects
                                      if library.projectId in project.libraries]
