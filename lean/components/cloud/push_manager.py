@@ -11,15 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import multiprocessing
 import traceback
 from pathlib import Path
 from typing import List, Optional, Dict
+
+from joblib import Parallel, delayed
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCProject, QCLeanEnvironment
+from lean.models.api import QCLanguage, QCProject, QCFullFile
 from lean.models.utils import LeanLibraryReference
 
 
@@ -44,7 +47,24 @@ class PushManager:
         self._project_config_manager = project_config_manager
         self._last_file = None
         self._cloud_projects = []
-        self._lean_environments = None
+
+    def _process_push_project(self,
+                              index: int,
+                              project: Path,
+                              organization_id: Optional[str],
+                              total_projects: int) -> Optional[QCProject]:
+        relative_path = project.relative_to(Path.cwd())
+        try:
+            self._logger.info(f"[{index}/{total_projects}] Pushing '{relative_path}'")
+            return self._push_project(project, organization_id)
+        except Exception as ex:
+            self._logger.debug(traceback.format_exc().strip())
+            if self._last_file is not None:
+                self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
+            else:
+                self._logger.warn(f"Cannot push '{relative_path}': {ex}")
+
+            return None
 
     def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
         """Pushes the given projects from the local drive to the cloud.
@@ -54,33 +74,46 @@ class PushManager:
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         :param organization_id: the id of the organization where the project will be pushed to
         """
-        projects = projects_to_push + [library
-                                       for project in projects_to_push
-                                       for library in self._project_manager.get_project_libraries(project)]
-        projects = sorted(projects)
-        pushed_projects = {}
+        if len(projects_to_push) == 0:
+            return
 
-        for index, project in enumerate(projects, start=1):
-            relative_path = project.relative_to(Path.cwd())
-            try:
-                self._logger.info(f"[{index}/{len(projects)}] Pushing '{relative_path}'")
-                pushed_project = self._push_project(project, organization_id)
-                pushed_projects[project] = pushed_project
-            except Exception as ex:
-                self._logger.debug(traceback.format_exc().strip())
-                if self._last_file is not None:
-                    self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
-                else:
-                    self._logger.warn(f"Cannot push '{relative_path}': {ex}")
+        projects_paths = projects_to_push + [library
+                                             for project in projects_to_push
+                                             for library in self._project_manager.get_project_libraries(project)]
+        projects_paths = sorted(projects_paths)
+
+        if len(projects_paths) > 1:
+            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads")
+            pushed_projects = parallel(
+                delayed(self._process_push_project)(index, project, organization_id, len(projects_paths))
+                for index, project in enumerate(projects_paths, start=1))
+            pushed_projects = {path: project
+                               for path, project in zip(projects_paths, pushed_projects) if project is not None}
+        else:
+            path = projects_paths[0]
+            project = self._process_push_project(1, path, organization_id, len(projects_paths))
+            pushed_projects = {}
+            if project is not None:
+                pushed_projects[path] = project
 
         self._update_cloud_library_references(pushed_projects)
 
-    def _update_cloud_library_references(self, projects: Dict[Path, QCProject]) -> None:
-        for path, project in projects.items():
-            local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(path)
+    def _update_cloud_project_references(self, path: Path, project: QCProject) -> None:
+        local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(path)
+        self._add_new_libraries(project, local_libraries_cloud_ids)
+        self._remove_outdated_libraries(project, local_libraries_cloud_ids)
 
-            self._add_new_libraries(project, local_libraries_cloud_ids)
-            self._remove_outdated_libraries(project, local_libraries_cloud_ids)
+    def _update_cloud_library_references(self, projects: Dict[Path, QCProject]) -> None:
+        if len(projects) == 0:
+            return
+
+        if len(projects) > 1:
+            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads")
+            parallel(delayed(self._update_cloud_project_references)(path, project)
+                     for path, project in projects.items())
+        else:
+            path, project = list(projects.items())[0]
+            self._update_cloud_project_references(path, project)
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -165,6 +198,38 @@ class PushManager:
 
         return cloud_project
 
+    def _push_file(self,
+                   local_file_path: Path,
+                   local_file_name: str,
+                   cloud_files: List[QCFullFile],
+                   cloud_project: QCProject) -> None:
+        try:
+            if "bin/" in local_file_name or "obj/" in local_file_name or ".ipynb_checkpoints/" in local_file_name:
+                return
+
+            file_content = local_file_path.read_text(encoding="utf-8")
+            cloud_file = next(iter([f for f in cloud_files if f.name == local_file_name]), None)
+
+            if cloud_file is None:
+                new_file = self._api_client.files.create(cloud_project.projectId, local_file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file_path, new_file.modified)
+                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{local_file_name}'")
+            elif cloud_file.content.strip() != file_content.strip():
+                new_file = self._api_client.files.update(cloud_project.projectId, local_file_name, file_content)
+                self._project_manager.update_last_modified_time(local_file_path, new_file.modified)
+                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{local_file_name}'")
+        except Exception as e:
+            self._last_file = local_file_path
+            raise e
+
+    def _remove_file(self, file: QCFullFile, cloud_project: QCProject) -> None:
+        try:
+            self._api_client.files.delete(cloud_project.projectId, file.name)
+            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
+        except Exception as e:
+            self._last_file = Path(file.name)
+            raise e
+
     def _push_files(self, project: Path, cloud_project: QCProject) -> None:
         """Pushes the files of a local project to the cloud.
 
@@ -175,32 +240,15 @@ class PushManager:
         local_files = self._project_manager.get_source_files(project)
         local_file_names = [local_file.relative_to(project).as_posix() for local_file in local_files]
 
-        for local_file, file_name in zip(local_files, local_file_names):
-            self._last_file = local_file
+        with Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), prefer="threads") as parallel:
+            parallel(delayed(self._push_file)(local_file, file_name, cloud_files, cloud_project)
+                     for local_file, file_name in zip(local_files, local_file_names))
 
-            if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
-                continue
-
-            file_content = local_file.read_text(encoding="utf-8")
-            cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
-
-            if cloud_file is None:
-                new_file = self._api_client.files.create(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file.modified)
-                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
-            elif cloud_file.content.strip() != file_content.strip():
-                new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file.modified)
-                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
-
-        # Delete locally removed files in cloud
-        files_to_remove = [cloud_file for cloud_file in cloud_files
-                           if (not cloud_file.isLibrary and
-                               not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
-        for file in files_to_remove:
-            self._last_file = Path(file.name)
-            self._api_client.files.delete(cloud_project.projectId, file.name)
-            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
+            # Delete locally removed files in cloud
+            files_to_remove = [cloud_file for cloud_file in cloud_files
+                               if (not cloud_file.isLibrary and
+                                   not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
+            parallel(delayed(self._remove_file)(file, cloud_project) for file in files_to_remove)
 
         self._last_file = None
 
@@ -224,8 +272,7 @@ class PushManager:
         local_lean_version = int(project_config.get("lean-engine", "-1"))
         cloud_lean_version = cloud_project.leanVersionId
 
-        default_lean_venv = self._default_environment
-        local_lean_venv = project_config.get("python-venv", default_lean_venv)
+        local_lean_venv = project_config.get("python-venv", None)
         cloud_lean_venv = cloud_project.leanEnvironment
 
         update_args = {}
@@ -237,10 +284,13 @@ class PushManager:
             update_args["parameters"] = local_parameters
 
         if (local_lean_version != cloud_lean_version and
-            (local_lean_version != -1 or not cloud_project.leanPinnedToMaster)):
+           (local_lean_version != -1 or not cloud_project.leanPinnedToMaster)):
             update_args["lean_engine"] = local_lean_version
 
-        if local_lean_venv != cloud_lean_venv:
+        # Initially, python-venv is not defined in the config and the default one will be used.
+        # After it is changed, in order to use the default one again, it must not be removed from the config,
+        # but it should be set to the default env id explicitly instead.
+        if local_lean_venv is not None and local_lean_venv != cloud_lean_venv:
             update_args["python_venv"] = local_lean_venv
 
         if update_args != {}:
@@ -254,10 +304,3 @@ class PushManager:
             self._cloud_projects.append(project)
 
         return project
-
-    @property
-    def _default_environment(self) -> List[QCLeanEnvironment]:
-        if self._lean_environments is None:
-            self._lean_environments = self._api_client.lean.environments()
-
-        return next((env.id for env in self._lean_environments if env.path is None), None)

@@ -117,11 +117,11 @@ def test_cloud_push_removes_locally_removed_files_in_cloud() -> None:
     client.files.delete = mock.Mock()
     client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
 
-    cloud_projects = [create_api_project(1, "Python Project")]
-    client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
+    cloud_project = create_api_project(1, "Python Project")
+    client.projects.get = mock.MagicMock(return_value=cloud_project)
 
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(side_effect=[1, "", {}, cloud_projects[0].leanVersionId, None, []])
+    project_config.get = mock.MagicMock(side_effect=[1, "", {}, cloud_project.leanVersionId, None, []])
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
@@ -139,7 +139,7 @@ def test_cloud_push_removes_locally_removed_files_in_cloud() -> None:
     assert result.exit_code == 0
 
     project_config.get.assert_called()
-    client.projects.get_all.assert_called()
+    client.projects.get.assert_called_once_with(cloud_project.projectId)
     project_manager.get_source_files.assert_called_once()
     project_config_manager.get_project_config.assert_called()
     client.files.get_all.assert_called_once()
@@ -154,16 +154,14 @@ def test_cloud_push_creates_project_with_optional_organization_id(organization_i
     cloud_project = create_api_project(1, path)
 
     with mock.patch.object(ProjectClient, 'create', return_value=create_api_project(1, path)) as mock_create_project,\
-         mock.patch.object(ProjectClient, 'get_all', side_effect=[[], [cloud_project]]) as mock_get_all_projects,\
-         mock.patch.object(LeanClient, 'environments', return_value=create_lean_environments()) as mock_get_environments:
+         mock.patch.object(ProjectClient, 'get', return_value=cloud_project) as mock_get_project:
         organization_id_option = ["--organization-id", organization_id] if organization_id is not None else []
         result = CliRunner().invoke(lean, ["cloud", "push", "--project", path, *organization_id_option])
 
     assert result.exit_code == 0
 
-    mock_get_all_projects.assert_called()
+    mock_get_project.assert_called_once_with(cloud_project.projectId)
     mock_create_project.assert_called_once_with(path, QCLanguage.Python, organization_id)
-    mock_get_environments.assert_called_once()
 
 
 def test_cloud_push_updates_lean_config() -> None:
