@@ -45,24 +45,6 @@ class PushManager:
         self._last_file = None
         self._cloud_projects = []
 
-    def _process_push_project(self,
-                              index: int,
-                              project: Path,
-                              organization_id: Optional[str],
-                              total_projects: int) -> Optional[QCProject]:
-        relative_path = project.relative_to(Path.cwd())
-        try:
-            self._logger.info(f"[{index}/{total_projects}] Pushing '{relative_path}'")
-            return self._push_project(project, organization_id)
-        except Exception as ex:
-            self._logger.debug(traceback.format_exc().strip())
-            if self._last_file is not None:
-                self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
-            else:
-                self._logger.warn(f"Cannot push '{relative_path}': {ex}")
-
-            return None
-
     def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
@@ -159,21 +141,15 @@ class PushManager:
             cloud_project = self._get_cloud_project(cloud_id)
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
-            new_project = self._api_client.projects.create(project_name,
-                                                           QCLanguage[project_config.get("algorithm-language")],
-                                                           organization_id)
+            cloud_project = self._api_client.projects.create(project_name,
+                                                             QCLanguage[project_config.get("algorithm-language")],
+                                                             organization_id)
+            self._cloud_projects.append(cloud_project)
+            project_config.set("cloud-id", cloud_project.projectId)
+            project_config.set("organization-id", cloud_project.organizationId)
 
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
             self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")
-
-            project_config.set("cloud-id", new_project.projectId)
-
-            # We need to retrieve the created project again to get all project details
-            cloud_project = self._api_client.projects.get(new_project.projectId)
-            self._cloud_projects.append(cloud_project)
-
-            # set organization-id in project config
-            project_config.set("organization-id", cloud_project.organizationId)
 
         # Push local files to cloud
         self._push_files(project, cloud_project)
@@ -197,7 +173,7 @@ class PushManager:
             self._last_file = local_file
 
             if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
-                return
+                continue
 
             file_content = local_file.read_text(encoding="utf-8")
             cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)

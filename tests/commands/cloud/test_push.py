@@ -153,14 +153,12 @@ def test_cloud_push_creates_project_with_optional_organization_id(organization_i
     path = "Python Project"
     cloud_project = create_api_project(1, path)
 
-    with mock.patch.object(ProjectClient, 'create', return_value=create_api_project(1, path)) as mock_create_project,\
-         mock.patch.object(ProjectClient, 'get', return_value=cloud_project) as mock_get_project:
+    with mock.patch.object(ProjectClient, 'create', return_value=create_api_project(1, path)) as mock_create_project:
         organization_id_option = ["--organization-id", organization_id] if organization_id is not None else []
         result = CliRunner().invoke(lean, ["cloud", "push", "--project", path, *organization_id_option])
 
     assert result.exit_code == 0
 
-    mock_get_project.assert_called_once_with(cloud_project.projectId)
     mock_create_project.assert_called_once_with(path, QCLanguage.Python, organization_id)
 
 
