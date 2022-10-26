@@ -29,6 +29,7 @@ def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock) -> P
 def _get_base_cloud_projects() -> List[QCProject]:
     return [create_api_project(i, f"Project: number {i}") for i in range(1, 6)]
 
+
 def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     create_fake_lean_cli_directory()
 
@@ -58,11 +59,16 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
         create_api_project(project_id, project_path.name),
     ]
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=_get_base_cloud_projects())
-    api_client.projects.create = mock.MagicMock(side_effect=cloud_projects)
-    api_client.projects.get = mock.MagicMock(side_effect=cloud_projects)
+
+    def create_project(proj_name, *args):
+        return next(iter(p for p in cloud_projects if p.name == proj_name))
+
+    def get_project(proj_id, *args):
+        return next(iter(p for p in cloud_projects if p.projectId == proj_id))
+
+    api_client.projects.create = mock.MagicMock(side_effect=create_project)
+    api_client.projects.get = mock.MagicMock(side_effect=get_project)
     api_client.files.get_all = mock.MagicMock(return_value=[])
-    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
     api_client.projects.delete_library = mock.Mock()
 
@@ -72,14 +78,14 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_has_calls([mock.call(csharp_library_path),
                                                        mock.call(python_library_path),
-                                                       mock.call(project_path)])
+                                                       mock.call(project_path)],
+                                                      any_order=True)
 
-    api_client.projects.get_all.assert_called_once()
     api_client.projects.create.assert_has_calls([
         mock.call(csharp_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.CSharp, None),
         mock.call(python_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None),
         mock.call(project_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None)
-    ])
+    ], any_order=True)
     api_client.projects.add_library.assert_has_calls([mock.call(python_library_id, csharp_library_id),
                                                       mock.call(project_id, python_library_id)])
     api_client.projects.delete_library.assert_not_called()
@@ -101,11 +107,9 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
 
     project_id = 1000
     python_library_id = 1001
-    cloud_projects = [
-        create_api_project(python_library_id, python_library_relative_path),
-        create_api_project(project_id, project_path.name),
-    ]
-    cloud_projects[-1].libraries = [python_library_id]
+    cloud_project = create_api_project(project_id, project_path.name)
+    cloud_library = create_api_project(python_library_id, python_library_relative_path)
+    cloud_project.libraries = [cloud_library.projectId]
 
     project_config_manager = container.project_config_manager()
     project_config = project_config_manager.get_project_config(project_path)
@@ -114,7 +118,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     library_config.set("cloud-id", python_library_id)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=_get_base_cloud_projects() + cloud_projects)
+    api_client.projects.get = mock.MagicMock(side_effect=[cloud_project, cloud_library])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
@@ -126,7 +130,6 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_called_once_with(project_path)
 
-    api_client.projects.get_all.assert_called_once()
     api_client.projects.add_library.assert_not_called()
     api_client.projects.delete_library.assert_called_once_with(project_id, python_library_id)
 
@@ -165,10 +168,13 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     csharp_library_config.set("cloud-id", csharp_library_id)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=(_get_base_cloud_projects() +
-                                                               [csharp_library_cloud_project, cloud_project]))
+
+    def projects_get_side_effect(proj_id: int) -> QCProject:
+        return [p for p in [cloud_project, python_library_cloud_project, csharp_library_cloud_project]
+                if proj_id == p.projectId][0]
+
+    api_client.projects.get = mock.MagicMock(side_effect=projects_get_side_effect)
     api_client.projects.create = mock.MagicMock(return_value=python_library_cloud_project)
-    api_client.projects.get = mock.MagicMock(return_value=python_library_cloud_project)
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.projects.add_library = mock.Mock()
@@ -178,9 +184,9 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     push_manager.push_projects([project_path])
 
     project_manager.get_project_libraries.assert_called_once_with(project_path)
-    project_manager.get_source_files.assert_has_calls([mock.call(python_library_path), mock.call(project_path)])
+    project_manager.get_source_files.assert_has_calls([mock.call(python_library_path), mock.call(project_path)],
+                                                      any_order=True)
 
-    api_client.projects.get_all.assert_called_once()
     api_client.projects.create.assert_called_once_with(python_library_path.relative_to(lean_cli_root_dir).as_posix(),
                                                        QCLanguage.Python,
                                                        None)
@@ -203,9 +209,9 @@ def test_push_projects_pushes_lean_engine_version() -> None:
     project_config.set("lean-engine", 456)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=_get_base_cloud_projects() + [cloud_project])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
     api_client.projects.update = mock.Mock()
 
     project_manager = mock.Mock()
@@ -233,9 +239,9 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
     project_config.set("description", cloud_project.description)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
     api_client.projects.update = mock.Mock()
 
     project_manager = mock.Mock()
@@ -264,9 +270,9 @@ def test_push_projects_pushes_lean_environment() -> None:
     project_config.set("python-venv", 2)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
     api_client.projects.update = mock.Mock()
 
     project_manager = mock.Mock()
@@ -279,7 +285,7 @@ def test_push_projects_pushes_lean_environment() -> None:
     api_client.projects.update.assert_called_once_with(project_id, python_venv=2)
 
 
-def test_push_projects_pushes_lean_environment_to_default() -> None:
+def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
@@ -295,9 +301,9 @@ def test_push_projects_pushes_lean_environment_to_default() -> None:
     project_config.set("lean-engine", cloud_project.leanVersionId)
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
     api_client.projects.update = mock.Mock()
 
     project_manager = mock.Mock()
@@ -307,4 +313,4 @@ def test_push_projects_pushes_lean_environment_to_default() -> None:
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_called_once_with(project_id, python_venv=1)
+    api_client.projects.update.assert_not_called()

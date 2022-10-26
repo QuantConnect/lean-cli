@@ -24,12 +24,10 @@ from tests.test_helpers import create_api_project, create_fake_lean_cli_director
 def test_get_cloud_project_pushing_new_project():
     create_fake_lean_cli_directory()
 
-    cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, 11)]
     cloud_project = create_api_project(20, "Python Project")
     cloud_project.description = ""
 
     api_client = mock.Mock()
-    api_client.projects.get_all = mock.MagicMock(side_effect=[cloud_projects, [*cloud_projects, cloud_project]])
     api_client.projects.get.return_value = cloud_project
     api_client.projects.create.return_value = cloud_project
     api_client.files.get_all.return_value = []
@@ -42,5 +40,4 @@ def test_get_cloud_project_pushing_new_project():
 
     assert created_cloud_project == cloud_project
 
-    api_client.projects.get_all.assert_called_once()
     api_client.projects.get.assert_called_with(cloud_project.projectId)

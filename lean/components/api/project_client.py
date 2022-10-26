@@ -14,7 +14,7 @@
 from typing import List, Optional
 
 from lean.components.api.api_client import *
-from lean.models.api import QCCreatedProject, QCLanguage, QCProject
+from lean.models.api import QCLanguage, QCProject
 
 
 class ProjectClient:
@@ -47,7 +47,7 @@ class ProjectClient:
         data = self._api.get("projects/read")
         return [self._process_project(QCProject(**project)) for project in data["projects"]]
 
-    def create(self, name: str, language: QCLanguage, organization_id: Optional[str]) -> QCCreatedProject:
+    def create(self, name: str, language: QCLanguage, organization_id: Optional[str]) -> QCProject:
         """Creates a new project.
 
         :param name: the name of the project to create
@@ -63,7 +63,7 @@ class ProjectClient:
             parameters["organizationId"] = organization_id
         data = self._api.post("projects/create", parameters)
 
-        return self._process_project(QCCreatedProject(**data["projects"][0]))
+        return self._process_project(QCProject(**data["projects"][0]))
 
     def update(self,
                project_id: int,
