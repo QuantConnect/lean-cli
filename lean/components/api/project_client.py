@@ -71,7 +71,9 @@ class ProjectClient:
                description: Optional[str] = None,
                parameters: Optional[Dict[str, str]] = None,
                lean_engine: Optional[int] = None,
-               python_venv: Optional[int] = None) -> None:
+               python_venv: Optional[int] = None,
+               files: Optional[List[Dict[str, str]]] = None,
+               libraries: Optional[List[int]] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
@@ -80,6 +82,8 @@ class ProjectClient:
         :param parameters: the new parameters of the project, or None if the parameters shouldn't be changed
         :param lean_engine: the lean engine id for the project, or None if the lean engine shouldn't be changed
         :param python_venv: the python venv id for the project, or None if the python venv shouldn't be changed
+        :param files: the list of files for the project
+        :param libraries: the list of libraries referenced by the project
         """
         request_parameters = {
             "projectId": project_id
@@ -93,11 +97,9 @@ class ProjectClient:
 
         if parameters is not None:
             if len(parameters) > 0:
-                index = 0
-                for key, value in parameters.items():
+                for index, (key, value) in enumerate(parameters.items()):
                     request_parameters[f"parameters[{index}][key]"] = key
                     request_parameters[f"parameters[{index}][value]"] = value
-                    index += 1
             else:
                 request_parameters["parameters"] = ""
 
@@ -106,6 +108,21 @@ class ProjectClient:
 
         if python_venv is not None:
             request_parameters["leanEnvironment"] = python_venv
+
+        if files is not None:
+            if len(files) > 0:
+                for index, file in enumerate(files):
+                    request_parameters[f"files[{index}][name]"] = file["name"]
+                    request_parameters[f"files[{index}][content]"] = file["content"]
+            else:
+                request_parameters["files"] = []
+
+        if libraries is not None:
+            if len(libraries) > 0:
+                for index, library in enumerate(libraries):
+                    request_parameters[f"libraries[{index}]"] = library
+            else:
+                request_parameters["libraries"] = []
 
         self._api.post("projects/update", request_parameters, data_as_json=False)
 

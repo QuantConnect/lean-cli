@@ -42,8 +42,18 @@ class PushManager:
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
-        self._last_file = None
         self._cloud_projects = []
+
+    def push_project(self, project: Path, organization_id: Optional[str] = None) -> None:
+        """Pushes the given project from the local drive to the cloud.
+
+        It will also push every library referenced by the project and add or remove references.
+
+        :param project: path to the directory containing the local project that needs to be pushed
+        :param organization_id: the id of the organization where the project will be pushed to
+        """
+        libraries = self._project_manager.get_project_libraries(project)
+        self.push_projects(libraries + [project], organization_id)
 
     def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
         """Pushes the given projects from the local drive to the cloud.
@@ -56,31 +66,15 @@ class PushManager:
         if len(projects_to_push) == 0:
             return
 
-        projects_paths = projects_to_push + [library
-                                             for project in projects_to_push
-                                             for library in self._project_manager.get_project_libraries(project)]
-        projects_paths = sorted(projects_paths)
-
         pushed_projects = {}
-        for index, path in enumerate(projects_paths, start=1):
+        for index, path in enumerate(projects_to_push, start=1):
             relative_path = path.relative_to(Path.cwd())
             try:
-                self._logger.info(f"[{index}/{len(projects_paths)}] Pushing '{relative_path}'")
-                pushed_projects[path] = self._push_project(path, organization_id)
+                self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
+                self._push_project(path, organization_id)
             except Exception as ex:
                 self._logger.debug(traceback.format_exc().strip())
-                if self._last_file is not None:
-                    self._logger.warn(f"Cannot push '{relative_path}' (failed on {self._last_file}): {ex}")
-                else:
-                    self._logger.warn(f"Cannot push '{relative_path}': {ex}")
-
-        self._update_cloud_library_references(pushed_projects)
-
-    def _update_cloud_library_references(self, projects: Dict[Path, QCProject]) -> None:
-        for path, project in projects.items():
-            local_libraries_cloud_ids = self._get_local_libraries_cloud_ids(path)
-            self._add_new_libraries(project, local_libraries_cloud_ids)
-            self._remove_outdated_libraries(project, local_libraries_cloud_ids)
+                self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -93,36 +87,7 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _get_library_name(self, library_cloud_id: int) -> str:
-        return self._get_cloud_project(library_cloud_id).name
-
-    def _add_new_libraries(self, project: QCProject, local_libraries_cloud_ids: List[int]) -> None:
-        libraries_to_add = [library_id for library_id in local_libraries_cloud_ids if
-                            library_id not in project.libraries]
-
-        if len(libraries_to_add) > 0:
-            self._logger.info(f"Adding libraries to project {project.name} in the cloud")
-
-        for i, library_cloud_id in enumerate(libraries_to_add, start=1):
-            library_name = self._get_library_name(library_cloud_id)
-            self._logger.info(f"[{i}/{len(libraries_to_add)}] "
-                              f"Adding library {library_name} to project {project.name} in the cloud")
-            self._api_client.projects.add_library(project.projectId, library_cloud_id)
-
-    def _remove_outdated_libraries(self, project: QCProject, local_libraries_cloud_ids: List[int]) -> None:
-        libraries_to_remove = [library_id for library_id in project.libraries
-                               if library_id not in local_libraries_cloud_ids]
-
-        if len(libraries_to_remove) > 0:
-            self._logger.info(f"Removing libraries from project {project.name} in the cloud")
-
-        for i, library_cloud_id in enumerate(libraries_to_remove, start=1):
-            library_name = self._get_library_name(library_cloud_id)
-            self._logger.info(f"[{i}/{len(libraries_to_remove)}] "
-                              f"Removing library {library_name} from project {project.name} in the cloud")
-            self._api_client.projects.delete_library(project.projectId, library_cloud_id)
-
-    def _push_project(self, project: Path, organization_id: Optional[str]) -> QCProject:
+    def _push_project(self, project: Path, organization_id: Optional[str]) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -151,52 +116,28 @@ class PushManager:
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
             self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")
 
-        # Push local files to cloud
-        self._push_files(project, cloud_project)
-
-        # Finalize pushing by updating locally modified metadata
+        # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project, cloud_project)
 
-        return cloud_project
-
-    def _push_files(self, project: Path, cloud_project: QCProject) -> None:
+    def _get_files(self, project: Path) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.
 
         :param project: the local project to push the files of
-        :param cloud_project: the cloud project to push the files to
         """
-        cloud_files = self._api_client.files.get_all(cloud_project.projectId)
-        local_files = self._project_manager.get_source_files(project)
-        local_file_names = [local_file.relative_to(project).as_posix() for local_file in local_files]
+        paths = self._project_manager.get_source_files(project)
+        files = []
 
-        for local_file, file_name in zip(local_files, local_file_names):
-            self._last_file = local_file
-
-            if "bin/" in file_name or "obj/" in file_name or ".ipynb_checkpoints/" in file_name:
+        for path in paths:
+            relative_path = path.relative_to(project).as_posix()
+            if "bin/" in relative_path and "obj/" in relative_path and ".ipynb_checkpoints/" in relative_path:
                 continue
 
-            file_content = local_file.read_text(encoding="utf-8")
-            cloud_file = next(iter([f for f in cloud_files if f.name == file_name]), None)
+            files.append({
+                'name': relative_path,
+                'content': path.read_text(encoding="utf-8")
+            })
 
-            if cloud_file is None:
-                new_file = self._api_client.files.create(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file.modified)
-                self._logger.info(f"Successfully created cloud file '{cloud_project.name}/{file_name}'")
-            elif cloud_file.content.strip() != file_content.strip():
-                new_file = self._api_client.files.update(cloud_project.projectId, file_name, file_content)
-                self._project_manager.update_last_modified_time(local_file, new_file.modified)
-                self._logger.info(f"Successfully updated cloud file '{cloud_project.name}/{file_name}'")
-
-        # Delete locally removed files in cloud
-        files_to_remove = [cloud_file for cloud_file in cloud_files
-                           if (not cloud_file.isLibrary and
-                               not any(local_file_name == cloud_file.name for local_file_name in local_file_names))]
-        for file in files_to_remove:
-            self._last_file = Path(file.name)
-            self._api_client.files.delete(cloud_project.projectId, file.name)
-            self._logger.info(f"Successfully removed cloud file '{cloud_project.name}/{file.name}'")
-
-        self._last_file = None
+        return files
 
     def _push_metadata(self, project: Path, cloud_project: QCProject) -> None:
         """Pushes local project description and parameters to the cloud.
@@ -238,6 +179,9 @@ class PushManager:
         # but it should be set to the default env id explicitly instead.
         if local_lean_venv is not None and local_lean_venv != cloud_lean_venv:
             update_args["python_venv"] = local_lean_venv
+
+        update_args["files"] = self._get_files(project)
+        update_args["libraries"] = self._get_local_libraries_cloud_ids(project)
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
