@@ -47,7 +47,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     library_manager.add_lean_library_reference_to_project(python_library_path, csharp_library_path)
 
     project_manager = mock.Mock()
-    project_manager.get_project_libraries = mock.MagicMock(return_value=[python_library_path, csharp_library_path])
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[csharp_library_path, python_library_path])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
 
     project_id = 1000
@@ -68,12 +68,11 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
 
     api_client.projects.create = mock.MagicMock(side_effect=create_project)
     api_client.projects.get = mock.MagicMock(side_effect=get_project)
+    api_client.projects.update = mock.Mock()
     api_client.files.get_all = mock.MagicMock(return_value=[])
-    api_client.projects.add_library = mock.Mock()
-    api_client.projects.delete_library = mock.Mock()
 
     push_manager = _create_push_manager(api_client, project_manager)
-    push_manager.push_projects([project_path])
+    push_manager.push_project(project_path)
 
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_has_calls([mock.call(csharp_library_path),
@@ -86,9 +85,18 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
         mock.call(python_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None),
         mock.call(project_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None)
     ], any_order=True)
-    api_client.projects.add_library.assert_has_calls([mock.call(python_library_id, csharp_library_id),
-                                                      mock.call(project_id, python_library_id)])
-    api_client.projects.delete_library.assert_not_called()
+
+    expected_update_call_arguments = [
+        {'project_id': csharp_library_id, 'libraries': []},
+        {'project_id': python_library_id, 'libraries': [csharp_library_id]},
+        {'project_id': project_id, 'libraries': [python_library_id]}
+    ]
+    update_call_args_list = api_client.projects.update.call_args_list
+    assert len(update_call_args_list) == len(expected_update_call_arguments)
+
+    for i, (args, kwargs) in enumerate(update_call_args_list):
+        assert args[0] == expected_update_call_arguments[i]["project_id"]
+        assert "libraries" in kwargs and kwargs["libraries"] == expected_update_call_arguments[i]["libraries"]
 
 
 def test_push_projects_removes_libraries_in_the_cloud() -> None:
@@ -119,19 +127,20 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get = mock.MagicMock(side_effect=[cloud_project, cloud_library])
+    api_client.projects.update = mock.Mock()
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
-    api_client.projects.add_library = mock.Mock()
-    api_client.projects.delete_library = mock.Mock()
 
     push_manager = _create_push_manager(api_client, project_manager)
-    push_manager.push_projects([project_path])
+    push_manager.push_project(project_path)
 
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_called_once_with(project_path)
 
-    api_client.projects.add_library.assert_not_called()
-    api_client.projects.delete_library.assert_called_once_with(project_id, python_library_id)
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == project_id
+    assert "libraries" in kwargs and kwargs["libraries"] == []
 
 
 def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
@@ -175,13 +184,12 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
 
     api_client.projects.get = mock.MagicMock(side_effect=projects_get_side_effect)
     api_client.projects.create = mock.MagicMock(return_value=python_library_cloud_project)
+    api_client.projects.update = mock.Mock()
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
-    api_client.projects.add_library = mock.Mock()
-    api_client.projects.delete_library = mock.Mock()
 
     push_manager = _create_push_manager(api_client, project_manager)
-    push_manager.push_projects([project_path])
+    push_manager.push_project(project_path)
 
     project_manager.get_project_libraries.assert_called_once_with(project_path)
     project_manager.get_source_files.assert_has_calls([mock.call(python_library_path), mock.call(project_path)],
@@ -190,8 +198,17 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     api_client.projects.create.assert_called_once_with(python_library_path.relative_to(lean_cli_root_dir).as_posix(),
                                                        QCLanguage.Python,
                                                        None)
-    api_client.projects.add_library.assert_called_once_with(project_id, python_library_id)
-    api_client.projects.delete_library.assert_called_once_with(project_id, csharp_library_id)
+
+    expected_update_call_arguments = [
+        {'project_id': python_library_id, 'libraries': []},
+        {'project_id': project_id, 'libraries': [python_library_id]}
+    ]
+    update_call_args_list = api_client.projects.update.call_args_list
+    assert len(update_call_args_list) == len(expected_update_call_arguments)
+
+    for i, (args, kwargs) in enumerate(update_call_args_list):
+        assert args[0] == expected_update_call_arguments[i]["project_id"]
+        assert "libraries" in kwargs and kwargs["libraries"] == expected_update_call_arguments[i]["libraries"]
 
 
 def test_push_projects_pushes_lean_engine_version() -> None:
@@ -221,7 +238,10 @@ def test_push_projects_pushes_lean_engine_version() -> None:
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_called_once_with(project_id, lean_engine=456)
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == project_id
+    assert "lean_engine" in kwargs and kwargs["lean_engine"] == 456
 
 
 def test_push_projects_pushes_lean_engine_version_to_default() -> None:
@@ -251,7 +271,10 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_called_once_with(project_id, lean_engine=-1)
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == project_id
+    assert "lean_engine" in kwargs and kwargs["lean_engine"] == -1
 
 
 def test_push_projects_pushes_lean_environment() -> None:
@@ -282,7 +305,10 @@ def test_push_projects_pushes_lean_environment() -> None:
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_called_once_with(project_id, python_venv=2)
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == project_id
+    assert "python_venv" in kwargs and kwargs["python_venv"] == 2
 
 
 def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
@@ -313,4 +339,7 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_not_called()
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == project_id
+    assert "python_venv" not in kwargs

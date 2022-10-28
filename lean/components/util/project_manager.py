@@ -227,8 +227,8 @@ class ProjectManager:
         project_config = self._project_config_manager.get_project_config(project_dir)
         libraries_in_config = project_config.get("libraries", [])
         libraries = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
-
         referenced_libraries = []
+
         for library_path in libraries:
             # Avoid infinite recursion
             if library_path in seen_projects:
@@ -236,10 +236,9 @@ class ProjectManager:
 
             seen_projects.append(library_path)
             referenced_libraries.extend(self._get_project_libraries(library_path, seen_projects))
+            referenced_libraries.append(library_path)
 
-        libraries.extend(referenced_libraries)
-
-        return list(dict.fromkeys(libraries))
+        return referenced_libraries
 
     def restore_csharp_project(self, csproj_file: Path, no_local: bool) -> None:
         """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
