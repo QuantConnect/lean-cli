@@ -108,7 +108,9 @@ class JsonModule(abc.ABC):
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
         [idx] = [i for i in range(len(self._lean_configs))
                  if self._lean_configs[i]._id == target_name]
-        self._lean_configs[idx]._value = value
+        config = self._lean_configs[idx]
+        config._value = value
+        config._updated = True
 
     def get_config_value_from_name(self, target_name: str) -> str:
         [idx] = [i for i in range(len(self._lean_configs))
@@ -167,7 +169,7 @@ class JsonModule(abc.ABC):
         for configuration in self._lean_configs:
             if not self.check_if_config_passes_filters(configuration):
                 continue
-            if not configuration._is_required_from_user:
+            if not configuration._is_required_from_user or configuration._updated:
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue

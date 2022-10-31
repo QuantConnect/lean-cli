@@ -75,8 +75,7 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             value = option._value
                             break
                     if not value:
-                        raise ValueError(
-                            f'No condtion matched among present options for {configuration._id}')
+                        raise ValueError(f'No condition matched among present options for {configuration._id}')
             else:
                 value = configuration._value
             if type(value) == pathlib.WindowsPath or type(value) == pathlib.PosixPath:

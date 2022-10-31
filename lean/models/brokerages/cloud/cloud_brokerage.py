@@ -50,8 +50,7 @@ class CloudBrokerage(JsonModule):
                             value = option._value
                             break
                     if not value:
-                        raise ValueError(
-                            f'No condtion matched among present options for {config._cloud_id}')
+                        raise ValueError(f'No condition matched among present options for {config._cloud_id}')
             else:
                 value = config._value
             settings[config._cloud_id] = value
