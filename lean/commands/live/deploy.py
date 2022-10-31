@@ -164,11 +164,11 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         if brokerage._id == data_feed._id:
             # update essential properties, so that other dependent values can be fetched.
             essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
-            data_feed.update_configs(essential_properties_value)
+            properties.update(essential_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): essential_properties_value: {brokerage._id} {essential_properties_value}")
             # now required properties can be fetched as per data/filter provider from essential properties
             required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
-            data_feed.update_configs(required_properties_value)
+            properties.update(required_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): required_properties_value: {required_properties_value}")
         data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
 

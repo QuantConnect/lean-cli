@@ -100,7 +100,6 @@ class Configuration(abc.ABC):
         self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
         self.is_type_organization_id: bool = type(
             self) is OrganzationIdConfiguration
-        self._updated: bool = False
         self._log_message: str = ""
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]

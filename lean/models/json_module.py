@@ -108,9 +108,7 @@ class JsonModule(abc.ABC):
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
         [idx] = [i for i in range(len(self._lean_configs))
                  if self._lean_configs[i]._id == target_name]
-        config = self._lean_configs[idx]
-        config._value = value
-        config._updated = True
+        self._lean_configs[idx]._value = value
 
     def get_config_value_from_name(self, target_name: str) -> str:
         [idx] = [i for i in range(len(self._lean_configs))
@@ -169,7 +167,7 @@ class JsonModule(abc.ABC):
         for configuration in self._lean_configs:
             if not self.check_if_config_passes_filters(configuration):
                 continue
-            if not configuration._is_required_from_user or configuration._updated:
+            if not configuration._is_required_from_user:
                 continue
             if type(configuration) is InternalInputUserInput:
                 continue
@@ -177,30 +175,31 @@ class JsonModule(abc.ABC):
                 continue
             if configuration._log_message is not None:
                 logger.info(configuration._log_message.strip())
-            if configuration.is_type_organization_id:
-                api_client = container.api_client()
-                organizations = api_client.organizations.get_all()
-                options = [Option(id=organization.id, label=organization.name)
-                           for organization in organizations]
-                organization_id = logger.prompt_list(
-                    "Select the organization with the {} module subscription".format(
-                        self.get_name()),
-                    options
-                )
-                user_choice = organization_id
+
+            property_name = self._convert_lean_key_to_variable(configuration._id)
+            # Only ask for user input if the config wasn't given as an option
+            if property_name in properties and properties[property_name]:
+                user_choice = properties[property_name]
             else:
-                default_value = None
-                # TODO: use type(class) equality instead of class name (str)
-                if self.__class__.__name__ != 'CloudBrokerage':
-                    default_value = self._get_default(lean_config, configuration._id)
-                property_name = self._convert_lean_key_to_variable(configuration._id)
-                # Only ask for user input if the config wasn't given as an option
-                if property_name in properties and properties[property_name]:
-                    user_choice = properties[property_name]
+                if configuration.is_type_organization_id:
+                    api_client = container.api_client()
+                    organizations = api_client.organizations.get_all()
+                    options = [Option(id=organization.id, label=organization.name)
+                               for organization in organizations]
+                    organization_id = logger.prompt_list(
+                        "Select the organization with the {} module subscription".format(
+                            self.get_name()),
+                        options
+                    )
+                    user_choice = organization_id
                 else:
+                    default_value = None
+                    # TODO: use type(class) equality instead of class name (str)
+                    if self.__class__.__name__ != 'CloudBrokerage':
+                        default_value = self._get_default(lean_config, configuration._id)
                     user_choice = configuration.AskUserForInput(default_value, logger)
-            self.update_value_for_given_config(
-                configuration._id, user_choice)
+
+            self.update_value_for_given_config(configuration._id, user_choice)
 
         return self
 
