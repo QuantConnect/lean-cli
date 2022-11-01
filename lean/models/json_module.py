@@ -184,8 +184,8 @@ class JsonModule(abc.ABC):
                     options = [Option(id=organization.id, label=organization.name)
                                for organization in organizations]
                     organization_id = logger.prompt_list(
-                        "Select the organization with the {} module subscription".format(
-                            self.get_name()),
+                        "Select the organization with access to the {} feature (requires a Researcher seat or higher)"
+                        .format(self.get_name()),
                         options
                     )
                     user_choice = organization_id
