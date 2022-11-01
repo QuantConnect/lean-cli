@@ -41,6 +41,7 @@ class JsonModule(abc.ABC):
         self._initial_holdings: LiveInitialStateInput = LiveInitialStateInput(json_module_data["live-holdings-state"]) \
             if "live-holdings-state" in json_module_data \
             else False
+        self._minimum_seat = json_module_data["minimum-seat"] if "minimum-seat" in json_module_data else None
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
@@ -184,8 +185,8 @@ class JsonModule(abc.ABC):
                     options = [Option(id=organization.id, label=organization.name)
                                for organization in organizations]
                     organization_id = logger.prompt_list(
-                        "Select the organization with the {} module subscription".format(
-                            self.get_name()),
+                        "Select the organization with access to the {} feature (requires a {} seat or higher)"
+                        .format(self.get_name(), self._minimum_seat),
                         options
                     )
                     user_choice = organization_id
