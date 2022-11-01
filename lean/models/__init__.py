@@ -18,7 +18,7 @@ import requests
 from pathlib import Path
 
 json_modules = {}
-file_name = "modules-1.6.json"
+file_name = "modules-1.7.json"
 directory = Path(__file__).parent
 file_path = directory.parent / file_name
 
