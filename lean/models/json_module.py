@@ -138,14 +138,14 @@ class JsonModule(abc.ABC):
                 if type(config) not in filters
                 and self.check_if_config_passes_module_filter(config)]
 
-    def _convert_lean_key_to_variable(self, lean_key: str) -> str:
+    def convert_lean_key_to_variable(self, lean_key: str) -> str:
         """Replaces hyphens with underscore to follow python naming convention.
 
         :param lean_key: string that uses hyphnes as separator. Used in lean config
         """
         return lean_key.replace('-', '_')
 
-    def _convert_variable_to_lean_key(self, variable_key: str) -> str:
+    def convert_variable_to_lean_key(self, variable_key: str) -> str:
         """Replaces underscore with hyphens to follow lean config naming convention.
 
         :param variable_key: string that uses underscore as separator as per python convention.
@@ -173,7 +173,7 @@ class JsonModule(abc.ABC):
             if configuration._log_message is not None:
                 logger.info(configuration._log_message.strip())
 
-            property_name = self._convert_lean_key_to_variable(configuration._id)
+            property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
             if property_name in properties and properties[property_name]:
                 user_choice = properties[property_name]

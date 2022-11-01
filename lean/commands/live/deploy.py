@@ -163,11 +163,13 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     for data_feed in data_feeds:
         if brokerage._id == data_feed._id:
             # update essential properties, so that other dependent values can be fetched.
-            essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
+            essential_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
+                                          for config in brokerage.get_essential_configs()}
             properties.update(essential_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): essential_properties_value: {brokerage._id} {essential_properties_value}")
             # now required properties can be fetched as per data/filter provider from essential properties
-            required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
+            required_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
+                                         for config in brokerage.get_required_configs([InternalInputUserInput])}
             properties.update(required_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): required_properties_value: {required_properties_value}")
         data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
@@ -210,16 +212,16 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
 
 def _get_non_interactive_organization_id(module: LeanConfigConfigurer,
                                         organization_config: OrganzationIdConfiguration, user_kwargs: Dict[str, Any]) -> str:
-    return _get_organization_id(user_kwargs[module._convert_lean_key_to_variable(organization_config._id)], module._id)
+    return _get_organization_id(user_kwargs[module.convert_lean_key_to_variable(organization_config._id)], module._id)
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
     logger = container.logger()
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
     # needs to be updated before fetching required properties
-    essential_properties = [target_module._convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
+    essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
     ensure_options(essential_properties)
-    essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
+    essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
     target_module.update_configs(essential_properties_value)
     logger.debug(f"live.deploy._get_and_build_module(): non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
     # now required properties can be fetched as per data/filter provider from essential properties
@@ -228,12 +230,12 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     for config in target_module.get_required_configs([InternalInputUserInput]):
         if config.is_type_organization_id:
             organization_info[config._id] = _get_non_interactive_organization_id(target_module, config, properties)
-            properties[target_module._convert_lean_key_to_variable(config._id)] = organization_info[config._id]
+            properties[target_module.convert_lean_key_to_variable(config._id)] = organization_info[config._id]
             # skip organization id from ensure_options() because it is fetched using _get_organization_id()
             continue
-        required_properties.append(target_module._convert_lean_key_to_variable(config._id))
+        required_properties.append(target_module.convert_lean_key_to_variable(config._id))
     ensure_options(required_properties)
-    required_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
+    required_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
     required_properties_value.update(organization_info)
     target_module.update_configs(required_properties_value)
     logger.debug(f"live.deploy._get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
