@@ -171,7 +171,8 @@ class APIClient:
             if data["errors"][0].startswith("Hash doesn't match."):
                 raise AuthenticationError()
             if data["errors"][0].startswith('UserID not valid'):
-                data["errors"].append('Please login to your account. https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-login')
+                data["errors"].append('Please login to your account with "lean login". '
+                                      'https://www.quantconnect.com/docs/v2/lean-cli/api-reference/lean-login')
             raise RequestFailedError(response, "\n".join(data["errors"]))
 
         if "messages" in data and len(data["messages"]) > 0:

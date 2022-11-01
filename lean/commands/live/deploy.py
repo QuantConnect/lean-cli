@@ -163,17 +163,17 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     for data_feed in data_feeds:
         if brokerage._id == data_feed._id:
             # update essential properties, so that other dependent values can be fetched.
-            essential_properties_value = {config._id : config._value for config in brokerage.get_essential_configs()}
-            data_feed.update_configs(essential_properties_value)
+            essential_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
+                                          for config in brokerage.get_essential_configs()}
+            properties.update(essential_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): essential_properties_value: {brokerage._id} {essential_properties_value}")
             # now required properties can be fetched as per data/filter provider from essential properties
-            required_properties_value = {config._id : config._value for config in brokerage.get_required_configs([InternalInputUserInput])}
-            data_feed.update_configs(required_properties_value)
+            required_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
+                                         for config in brokerage.get_required_configs([InternalInputUserInput])}
+            properties.update(required_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): required_properties_value: {required_properties_value}")
-            # mark configs are updated
-            #TODO: create a setter method to set the property instead.
-            setattr(data_feed, '_is_installed_and_build', True)
         data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
+
 
 _cached_organizations = None
 
@@ -203,25 +203,25 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
         if organization is None:
             raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
     else:
-        
+
         options = [Option(id=organization, label=organization.name) for organization in _cached_organizations]
         organization = logger.prompt_list(f"Select the organization with the {label} module subscription", options)
 
     logger.debug(f"live.deploy._get_organization_id(): user selected organization id: {organization.id}")
     return organization.id
 
-def _get_non_interactive_organization_id(module: LeanConfigConfigurer, 
+def _get_non_interactive_organization_id(module: LeanConfigConfigurer,
                                         organization_config: OrganzationIdConfiguration, user_kwargs: Dict[str, Any]) -> str:
-    return _get_organization_id(user_kwargs[module._convert_lean_key_to_variable(organization_config._id)], module._id)
+    return _get_organization_id(user_kwargs[module.convert_lean_key_to_variable(organization_config._id)], module._id)
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
     logger = container.logger()
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
     # needs to be updated before fetching required properties
-    essential_properties = [target_module._convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
+    essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
     ensure_options(essential_properties)
-    essential_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
+    essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
     target_module.update_configs(essential_properties_value)
     logger.debug(f"live.deploy._get_and_build_module(): non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
     # now required properties can be fetched as per data/filter provider from essential properties
@@ -230,15 +230,15 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     for config in target_module.get_required_configs([InternalInputUserInput]):
         if config.is_type_organization_id:
             organization_info[config._id] = _get_non_interactive_organization_id(target_module, config, properties)
-            properties[target_module._convert_lean_key_to_variable(config._id)] = organization_info[config._id]
+            properties[target_module.convert_lean_key_to_variable(config._id)] = organization_info[config._id]
             # skip organization id from ensure_options() because it is fetched using _get_organization_id()
             continue
-        required_properties.append(target_module._convert_lean_key_to_variable(config._id)) 
+        required_properties.append(target_module.convert_lean_key_to_variable(config._id))
     ensure_options(required_properties)
-    required_properties_value = {target_module._convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
+    required_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
     required_properties_value.update(organization_info)
     target_module.update_configs(required_properties_value)
-    logger.debug(f"live.deploy._get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")    
+    logger.debug(f"live.deploy._get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
     return target_module
 
 _cached_lean_config = None
@@ -351,7 +351,7 @@ def deploy(project: Path,
     _cached_lean_config = None
 
     logger = container.logger()
-    
+
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 
@@ -424,14 +424,14 @@ def deploy(project: Path,
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
-    
-    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client(), env_brokerage, 
+
+    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client(), env_brokerage,
                                                                                                       project_config.get("cloud-id", None), project)
-    
+
     if environment is None and brokerage is None and len(data_feed) == 0:   # condition for using interactive panel
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
-            
+
         if holdings_option != LiveInitialStateInput.NotSupported:
             live_holdings = _configure_initial_holdings_interactively(logger, holdings_option, last_holdings)
     else:
@@ -439,12 +439,12 @@ def deploy(project: Path,
             live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
         elif live_cash_balance is not None and live_cash_balance != "":
             raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
-        
+
         if holdings_option != LiveInitialStateInput.NotSupported:
             live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
         elif live_holdings is not None and live_holdings != "":
             raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
-    
+
     if live_cash_balance:
         lean_config["live-cash-balance"] = live_cash_balance
     if live_holdings:
@@ -456,9 +456,9 @@ def deploy(project: Path,
             "Quantity": holding["quantity"],
             "AveragePrice": holding["averagePrice"]
         } for holding in live_holdings]
-    
+
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
-    
+
     lean_runner = container.lean_runner()
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

@@ -35,7 +35,6 @@ class JsonModule(abc.ABC):
             self._lean_configs.append(Configuration.factory(config))
         self._lean_configs = self.sort_configs()
         self._is_module_installed: bool = False
-        self._is_installed_and_build: bool = False
         self._initial_cash_balance: LiveInitialStateInput = LiveInitialStateInput(json_module_data["live-cash-balance-state"]) \
             if "live-cash-balance-state" in json_module_data \
             else None
@@ -139,14 +138,14 @@ class JsonModule(abc.ABC):
                 if type(config) not in filters
                 and self.check_if_config_passes_module_filter(config)]
 
-    def _convert_lean_key_to_variable(self, lean_key: str) -> str:
+    def convert_lean_key_to_variable(self, lean_key: str) -> str:
         """Replaces hyphens with underscore to follow python naming convention.
 
         :param lean_key: string that uses hyphnes as separator. Used in lean config
         """
         return lean_key.replace('-', '_')
 
-    def _convert_variable_to_lean_key(self, variable_key: str) -> str:
+    def convert_variable_to_lean_key(self, variable_key: str) -> str:
         """Replaces underscore with hyphens to follow lean config naming convention.
 
         :param variable_key: string that uses underscore as separator as per python convention.
@@ -161,8 +160,6 @@ class JsonModule(abc.ABC):
         :param properties: the properties that passed as options
         :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
         """
-        if self._is_installed_and_build:
-            return self
         logger.info(f'Configure credentials for {self._display_name}')
         for configuration in self._lean_configs:
             if not self.check_if_config_passes_filters(configuration):
@@ -175,30 +172,31 @@ class JsonModule(abc.ABC):
                 continue
             if configuration._log_message is not None:
                 logger.info(configuration._log_message.strip())
-            if configuration.is_type_organization_id:
-                api_client = container.api_client()
-                organizations = api_client.organizations.get_all()
-                options = [Option(id=organization.id, label=organization.name)
-                           for organization in organizations]
-                organization_id = logger.prompt_list(
-                    "Select the organization with the {} module subscription".format(
-                        self.get_name()),
-                    options
-                )
-                user_choice = organization_id
+
+            property_name = self.convert_lean_key_to_variable(configuration._id)
+            # Only ask for user input if the config wasn't given as an option
+            if property_name in properties and properties[property_name]:
+                user_choice = properties[property_name]
             else:
-                default_value = None
-                # TODO: use type(class) equality instead of class name (str)
-                if self.__class__.__name__ != 'CloudBrokerage':
-                    default_value = self._get_default(lean_config, configuration._id)
-                property_name = self._convert_lean_key_to_variable(configuration._id)
-                # Only ask for user input if the config wasn't given as an option
-                if property_name in properties and properties[property_name]:
-                    user_choice = properties[property_name]
+                if configuration.is_type_organization_id:
+                    api_client = container.api_client()
+                    organizations = api_client.organizations.get_all()
+                    options = [Option(id=organization.id, label=organization.name)
+                               for organization in organizations]
+                    organization_id = logger.prompt_list(
+                        "Select the organization with the {} module subscription".format(
+                            self.get_name()),
+                        options
+                    )
+                    user_choice = organization_id
                 else:
+                    default_value = None
+                    # TODO: use type(class) equality instead of class name (str)
+                    if self.__class__.__name__ != 'CloudBrokerage':
+                        default_value = self._get_default(lean_config, configuration._id)
                     user_choice = configuration.AskUserForInput(default_value, logger)
-            self.update_value_for_given_config(
-                configuration._id, user_choice)
+
+            self.update_value_for_given_config(configuration._id, user_choice)
 
         return self
 

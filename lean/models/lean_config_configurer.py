@@ -75,8 +75,15 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             value = option._value
                             break
                     if not value:
+                        options_to_log = set([(opt._condition._dependent_config_id,
+                                               self.get_config_value_from_name(opt._condition._dependent_config_id))
+                                              for opt in configuration._value_options])
                         raise ValueError(
-                            f'No condtion matched among present options for {configuration._id}')
+                            f'No condition matched among present options for "{configuration._cloud_id}". '
+                            f'Please review ' +
+                            ', '.join([f'"{x[0]}"' for x in options_to_log]) +
+                            f' given value{"s" if len(options_to_log) > 1 else ""} ' +
+                            ', '.join([f'"{x[1]}"' for x in options_to_log]))
             else:
                 value = configuration._value
             if type(value) == pathlib.WindowsPath or type(value) == pathlib.PosixPath:
