@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 from typing import Callable, List, Optional, TypeVar
 
 from lean.components.util.logger import Logger
@@ -96,7 +95,8 @@ class TaskManager:
                         progress.stop()
                     return data
 
-                time.sleep(intervals[current_interval_index].interval_seconds)
+                from time import sleep
+                sleep(intervals[current_interval_index].interval_seconds)
 
                 poll_counter += 1
                 if poll_counter == intervals[current_interval_index].interval_uses:

@@ -13,19 +13,19 @@
 
 
 from pathlib import Path
-import uuid
-import click
+from click import command, argument
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 def stop(project: Path) -> None:
     """
     Stop an already running local live trading project.
     """
-    command_id = uuid.uuid4().hex
+    from uuid import uuid4
+    command_id = uuid4().hex
 
     data = {
         "$type": "QuantConnect.Commands.AlgorithmStatusCommand, QuantConnect.Common",

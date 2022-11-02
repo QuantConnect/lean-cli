@@ -11,15 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import re
-import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, List
-
-from docker.types import Mount
-from pkg_resources import Requirement
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -34,7 +28,6 @@ from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROO
 from lean.constants import DOCKER_PYTHON_SITE_PACKAGES_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
-
 
 class LeanRunner:
     """The LeanRunner class contains the code that runs the LEAN engine locally."""
@@ -180,6 +173,10 @@ class LeanRunner:
         :param detach: whether LEAN should run in a detached container
         :return: the Docker configuration containing basic configuration to run Lean
         """
+        from docker.types import Mount
+        from uuid import uuid4
+        from json import dumps
+
         project_dir = algorithm_file.parent
         project_config = self._project_config_manager.get_project_config(project_dir)
         docker_project_config = project_config.get("docker", {})
@@ -330,7 +327,7 @@ class LeanRunner:
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
-            file.write(json.dumps(lean_config, indent=4))
+            file.write(dumps(lean_config, indent=4))
 
         # Mount the Lean config
         run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/config.json",
@@ -339,7 +336,7 @@ class LeanRunner:
                                            read_only=True))
 
         # Assign the container a name and store it in the output directory's configuration
-        run_options["name"] = f"lean_cli_{str(uuid.uuid4()).replace('-', '')}"
+        run_options["name"] = f"lean_cli_{str(uuid4()).replace('-', '')}"
         output_config = self._output_config_manager.get_output_config(output_dir)
         output_config.set("container", run_options["name"])
         if "backtest-name" in lean_config:
@@ -359,6 +356,7 @@ class LeanRunner:
         :param run_options: the dictionary to append run options to
         """
 
+        from docker.types import Mount
         # Compile python files
         source_files = self._project_manager.get_source_files(project_dir)
         source_files = [file.relative_to(
@@ -431,6 +429,7 @@ class LeanRunner:
         :param requirements_files: the paths to the requirements.txt files
         :return: the normalized requirements from all given requirements.txt files
         """
+        from pkg_resources import Requirement
         requirements = []
         for file in requirements_files:
             for line in file.read_text(encoding="utf-8").splitlines():
@@ -480,6 +479,7 @@ class LeanRunner:
         # Inherit NoWarn from the user's .csproj
         csproj = self._xml_manager.parse(project_file.read_text(encoding="utf-8"))
         existing_no_warn = csproj.find(".//NoWarn")
+        import re
         if existing_no_warn is not None:
             codes = [c for c in re.split(r"[^a-zA-Z0-9]", existing_no_warn.text) if c != ""]
             msbuild_properties["NoWarn"] += codes
@@ -511,6 +511,7 @@ class LeanRunner:
 
         :param run_options: the dictionary to append run options to
         """
+        from docker.types import Mount
         # Mount a volume to NuGet's cache directory so we only download packages once
         self._docker_manager.create_volume("lean_cli_nuget")
         run_options["volumes"]["lean_cli_nuget"] = {
@@ -640,6 +641,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         :param temp_dir: the temporary directory in which temporary .csproj files should be placed
         :param run_options: the dictionary to append run options to
         """
+        from docker.types import Mount
         csproj = self._xml_manager.parse(csproj_path.read_text(encoding="utf-8"))
         include_added = False
 
@@ -685,6 +687,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         :param disk_provider: the fully classified name of the disk provider for this property
         :param zip_dir: the directory where the zip provider looks for zip files
         """
+        import re
         if lean_config.get(config_key, None) != zip_provider:
             return
 
@@ -710,16 +713,17 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
     def format_error_before_logging(self, chunk: str):
         from lean.components.util import compiler
+        from json import loads
         errors = []
 
         # As we don't have algorithm type information. We can check errors for both
         # Python
         jsonString = compiler.get_errors("python", chunk)
-        jsonData = json.loads(jsonString)
+        jsonData = loads(jsonString)
         errors.extend(jsonData["aErrors"])
         # CSharp
         jsonString = compiler.get_errors("csharp", chunk)
-        jsonData = json.loads(jsonString)
+        jsonData = loads(jsonString)
         errors.extend(jsonData["aErrors"])
 
         for error in errors:

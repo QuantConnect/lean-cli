@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil
-import subprocess
 from pathlib import Path
-from typing import Union
 
-import click
-from pkg_resources import Requirement
+from click import command, argument, option
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
@@ -34,6 +30,8 @@ def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: 
     :param name: the name of the library to remove
     :param no_local:
     """
+    from shutil import which
+    from subprocess import run
     logger = container.logger()
     path_manager = container.path_manager()
 
@@ -49,10 +47,10 @@ def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: 
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
-    if not no_local and shutil.which("dotnet") is not None:
+    if not no_local and which("dotnet") is not None:
         logger.info(f"Restoring packages in '{path_manager.get_relative_path(project_dir)}'")
 
-        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+        process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
 
         if process.returncode != 0:
             raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
@@ -66,6 +64,8 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     :param project_dir: the path to the project directory
     :param name: the name of the library to remove
     """
+    from pkg_resources import Requirement
+
     logger = container.logger()
     path_manager = container.path_manager()
 
@@ -91,10 +91,10 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     requirements_file.write_text(new_content, encoding="utf-8")
 
 
-@click.command(cls=LeanCommand, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.argument("name", type=str)
-@click.option("--no-local", is_flag=True, default=False, help="Skip making changes to your local environment")
+@command(cls=LeanCommand, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+@argument("name", type=str)
+@option("--no-local", is_flag=True, default=False, help="Skip making changes to your local environment")
 def remove(project: Path, name: str, no_local: bool) -> None:
     """Remove a custom library from a project.
 

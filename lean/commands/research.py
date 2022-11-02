@@ -11,12 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from pathlib import Path
 from typing import Optional
-import click
-from docker.errors import APIError
-from docker.types import Mount
+from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
@@ -30,33 +27,34 @@ def _check_docker_output(chunk: str, port: int) -> None:
     :param chunk: the output chunk
     :param port: the port Jupyter Lab will be running on
     """
+    from webbrowser import open
     if "is running at:" in chunk:
-        webbrowser.open(f"http://localhost:{port}/")
+        open(f"http://localhost:{port}/")
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
-@click.option("--data-provider",
-              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+@option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
-@click.option("--download-data",
+@option("--download-data",
               is_flag=True,
               default=False,
               help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
-@click.option("--data-purchase-limit",
+@option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run Jupyter Lab in a detached Docker container and return immediately")
-@click.option("--no-open",
+@option("--no-open",
               is_flag=True,
               default=False,
               help="Don't open the Jupyter Lab environment in the browser after starting it")
-@click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
-@click.option("--update",
+@option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN research image before starting the research environment")
@@ -75,6 +73,9 @@ def research(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default research image using `lean config set research-image <image>`.
     """
+    from docker.types import Mount
+    from docker.errors import APIError
+
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
     algorithm_name = convert_to_class_name(project)
@@ -145,7 +146,7 @@ def research(project: Path,
     research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
     logger = container.logger()
-    
+
     if str(research_image) != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
 

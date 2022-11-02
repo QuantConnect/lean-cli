@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -73,7 +72,8 @@ class PushManager:
                 self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
                 self._push_project(path, organization_id)
             except Exception as ex:
-                self._logger.debug(traceback.format_exc().strip())
+                from traceback import format_exc
+                self._logger.debug(format_exc().strip())
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:

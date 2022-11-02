@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from random import choice
-
 
 class NameGenerator:
     """The NameGenerator generates random names."""
@@ -46,4 +44,5 @@ class NameGenerator:
 
         :return: a random name containing multiple words
         """
+        from random import choice
         return f"{choice(self._verbs)} {choice(self._colors)} {choice(self._animals)}"

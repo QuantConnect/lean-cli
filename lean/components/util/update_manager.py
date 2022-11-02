@@ -11,18 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
-import os
 from datetime import datetime, timedelta, timezone
-from distutils.version import StrictVersion
 
-import requests
-from docker.errors import APIError
-from rich import box
-from rich.panel import Panel
-from rich.table import Table
-
-import lean
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.http_client import HTTPClient
@@ -59,7 +49,8 @@ class UpdateManager:
 
         :param force: whether the update check interval should be bypassed (defaults to False)
         """
-        current_version = lean.__version__
+        from lean import __version__
+        current_version = __version__
 
         # A development version is never considered outdated
         if current_version == "dev":
@@ -68,9 +59,10 @@ class UpdateManager:
         if not force and not self._should_check_for_updates("cli", UPDATE_CHECK_INTERVAL_CLI):
             return
 
+        from requests import exceptions
         try:
             response = self._http_client.get("https://pypi.org/pypi/lean/json", raise_for_status=False)
-        except requests.exceptions.ConnectionError:
+        except exceptions.ConnectionError:
             # The user may be offline, do nothing
             return
 
@@ -78,6 +70,7 @@ class UpdateManager:
             return
 
         latest_version = response.json()["info"]["version"]
+        from distutils.version import StrictVersion
 
         if StrictVersion(latest_version) > StrictVersion(current_version):
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
@@ -92,6 +85,7 @@ class UpdateManager:
         :param image: the image to pull
         :param force: skip the interval check to force a pull
         """
+        from docker.errors import APIError
         if not force and self._docker_manager.image_installed(image):
             if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):
                 return
@@ -122,12 +116,13 @@ class UpdateManager:
         if not self._should_check_for_updates("announcements", UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS):
             return
 
+        from requests import exceptions
         try:
             response = self._http_client.get(
                 "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
                 raise_for_status=False
             )
-        except requests.exceptions.ConnectionError:
+        except exceptions.ConnectionError:
             # The user may be offline, do nothing
             return
 
@@ -136,6 +131,10 @@ class UpdateManager:
 
         hash_cache_key = "last-announcements-hash"
 
+        import hashlib
+        from rich import box
+        from rich.panel import Panel
+        from rich.table import Table
         remote_hash = hashlib.md5(response.content).hexdigest()
         local_hash = self._cache_storage.get(hash_cache_key, None)
 

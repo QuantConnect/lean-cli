@@ -11,22 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from typing import Optional
-import click
+from click import command, argument, option
 from lean.click import LeanCommand
 from lean.container import container
 from pathlib import Path
-from lean.models.errors import RequestFailedError
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
-@click.option("--name", type=str, help="The name of the backtest (a random one is generated if not specified)")
-@click.option("--push",
+@command(cls=LeanCommand)
+@argument("project", type=str)
+@option("--name", type=str, help="The name of the backtest (a random one is generated if not specified)")
+@option("--push",
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before running the backtest")
-@click.option("--open", "open_browser",
+@option("--open", "open_browser",
               is_flag=True,
               default=False,
               help="Automatically open the results in the browser when the backtest is finished")
@@ -79,4 +77,5 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
             open_browser = False
 
     if open_browser:
-        webbrowser.open(finished_backtest.get_url())
+        from webbrowser import open
+        open(finished_backtest.get_url())

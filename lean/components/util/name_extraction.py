@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
 
 def _capitalize(word: str) -> str:
@@ -31,4 +30,5 @@ def convert_to_class_name(file_path: Path):
     :param file_path: Path to the root project
     :return: returns a valid class name
     """
+    import re
     return re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))

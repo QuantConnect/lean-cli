@@ -11,14 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-import subprocess
-import time
 from datetime import datetime
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import click
+from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -115,6 +111,8 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     :param lean_config: the LEAN configuration that should be used
     :param environment_name: the name of the environment
     """
+    from subprocess import Popen
+
     environment = lean_config["environments"][environment_name]
     if environment["data-queue-handler"] != "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler":
         return
@@ -131,10 +129,11 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     if password != "":
         args.extend(["-password", password])
 
-    subprocess.Popen(args)
+    Popen(args)
 
     container.logger().info("Waiting 10 seconds for IQFeed to start")
-    time.sleep(10)
+    from time import sleep
+    sleep(10)
 
 
 def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str, properties: Dict[str, Any]) -> None:
@@ -266,47 +265,47 @@ def _get_default_value(key: str) -> Optional[Any]:
 
 
 @live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--environment",
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--environment",
               type=str,
               help="The environment to use")
-@click.option("--output",
+@option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
-@click.option("--brokerage",
-              type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
+@option("--brokerage",
+              type=Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@click.option("--data-feed",
-              type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
+@option("--data-feed",
+              type=Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               multiple=True,
               help="The data feed to use")
-@click.option("--data-provider",
-              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
 @options_from_json(_get_configs_for_options("local"))
-@click.option("--release",
+@option("--release",
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--python-venv",
+@option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
-@click.option("--live-cash-balance",
+@option("--live-cash-balance",
               type=str,
               default="",
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
-@click.option("--live-holdings",
+@option("--live-holdings",
               type=str,
               default="",
               help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
@@ -344,6 +343,7 @@ def deploy(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    from copy import copy
     # Reset globals so we reload everything in between tests
     global _cached_organizations
     _cached_organizations = None
@@ -373,7 +373,7 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
         lean_config["environments"] = {
-            environment_name: copy.copy(_environment_skeleton)
+            environment_name: copy(_environment_skeleton)
         }
 
         [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]

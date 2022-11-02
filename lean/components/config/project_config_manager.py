@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
 from pathlib import Path
 from typing import List
 
@@ -66,6 +65,7 @@ class ProjectConfigManager:
         if project_config.has("local-id"):
             return project_config.get("local-id")
 
+        import random
         project_id = random.randint(100_000_000, 999_999_999)
         project_config.set("local-id", project_id)
 
@@ -85,10 +85,10 @@ class ProjectConfigManager:
             if not (live_dir / "log.txt").is_file():
                 continue
             return live_dir
-        
+
         raise ValueError("live directory with log.txt not found")
 
-        
+
     def get_csharp_libraries(self, project_directory: Path) -> List[CSharpLibrary]:
         """Returns the custom C# libraries in a project.
 

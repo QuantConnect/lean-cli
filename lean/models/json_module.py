@@ -17,11 +17,11 @@ from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.logger import Option
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
-import copy
-import abc
+from copy import copy
+from abc import ABC
 
 
-class JsonModule(abc.ABC):
+class JsonModule(ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
     def __init__(self, json_module_data: Dict[str, Any]) -> None:
@@ -97,7 +97,7 @@ class JsonModule(abc.ABC):
         return env_config_values
 
     def get_config_from_type(self, config_type: Configuration) -> str:
-        return [copy.copy(config) for config in self._lean_configs if type(config) is config_type]
+        return [copy(config) for config in self._lean_configs if type(config) is config_type]
 
     def get_organzation_id(self) -> str:
         [organization_id] = [
@@ -123,7 +123,7 @@ class JsonModule(abc.ABC):
         return [config._id for config in self.get_required_configs(filters)]
 
     def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
-        required_configs = [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
+        required_configs = [copy(config) for config in self._lean_configs if config._is_required_from_user
                             and type(config) not in filters
                             and self.check_if_config_passes_filters(config)]
         return required_configs
@@ -132,10 +132,10 @@ class JsonModule(abc.ABC):
         return [config._id for config in self.get_essential_configs()]
 
     def get_essential_configs(self) -> List[Configuration]:
-        return [copy.copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
+        return [copy(config) for config in self._lean_configs if isinstance(config, BrokerageEnvConfiguration)]
 
     def get_all_input_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
-        return [copy.copy(config) for config in self._lean_configs if config._is_required_from_user
+        return [copy(config) for config in self._lean_configs if config._is_required_from_user
                 if type(config) not in filters
                 and self.check_if_config_passes_module_filter(config)]
 

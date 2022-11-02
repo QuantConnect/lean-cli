@@ -13,16 +13,16 @@
 
 from typing import Optional
 
-import click
+from click import command, option, prompt
 
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-@click.command(cls=LeanCommand)
-@click.option("--user-id", "-u", type=str, help="QuantConnect user id")
-@click.option("--api-token", "-t", type=str, help="QuantConnect API token")
+@command(cls=LeanCommand)
+@option("--user-id", "-u", type=str, help="QuantConnect user id")
+@option("--api-token", "-t", type=str, help="QuantConnect API token")
 def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     """Log in with a QuantConnect account.
 
@@ -39,7 +39,7 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
         logger.info(f"Both will be saved in {credentials_storage.file}")
 
     if user_id is None:
-        user_id = click.prompt("User id")
+        user_id = prompt("User id")
 
     if api_token is None:
         api_token = logger.prompt_password("API token")

@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+from json import dumps
 from typing import Dict, Any
 from lean.container import container
-import sys
-import io
-from contextlib import redirect_stdout
-import re
 
 docker_manager = container.docker_manager()
 project_manager = container.project_manager()
@@ -33,7 +29,7 @@ def get_success() -> Dict[str, Any]:
 
     :return: success object as json dump.
     """
-    return json.dumps({
+    return dumps({
         "eType": "BuildSuccess",
     })
 
@@ -52,7 +48,7 @@ def get_errors(algorithm_type: str, message: str, color_coding_required: bool = 
     elif algorithm_type == "python":
         errors.extend(_parse_python_errors(message, color_coding_required))
 
-    return json.dumps({
+    return dumps({
         "eType": "BuildError",
         "aErrors": errors,
     })
@@ -64,6 +60,8 @@ def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
     :param method_name_to_run: name of the method to run
     :return: result of the method and the stdout of the process
     """
+    import io
+    from contextlib import redirect_stdout
     f = io.StringIO()
     with redirect_stdout(f):
         result = method_name_to_run(*args, **kwargs)
@@ -76,7 +74,7 @@ def compile() -> None:
     """
 
     # We need to print the stdout of the docker run command from here,
-    # so that it can be picked up by the subprocess that is being 
+    # so that it can be picked up by the subprocess that is being
     # called by the vscode plugin.
     compile_result, stdout = redirect_stdout_of_subprocess(_compile)
     if compile_result["result"]:
@@ -95,6 +93,7 @@ def _compile() -> Dict[str, Any]:
         "algorithmType": "",
     }
 
+    import sys
     project_id = int(sys.argv[-1])
     project_dir = project_manager.get_project_by_id(project_id)
     algorithm_file = project_manager.find_algorithm_file(project_dir)
@@ -120,6 +119,7 @@ def _compile() -> Dict[str, Any]:
     return message
 
 def _parse_csharp_errors(csharp_output: str, color_coding_required: bool, warning_required: bool) -> list:
+    import re
     errors = []
 
     try:
@@ -140,6 +140,7 @@ def _parse_csharp_errors(csharp_output: str, color_coding_required: bool, warnin
     return errors
 
 def _parse_python_errors(python_output: str, color_coding_required: bool) -> list:
+    import re
     errors = []
 
     try:
@@ -156,7 +157,7 @@ def _parse_python_errors(python_output: str, color_coding_required: bool) -> lis
                 errors.append(f"Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}\n")
     except Exception:
         pass
-    
+
     return errors
 
 

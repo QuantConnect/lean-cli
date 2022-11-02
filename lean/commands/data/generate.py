@@ -14,50 +14,50 @@
 from datetime import datetime
 from typing import Optional
 
-import click
+from click import command, option, Choice, IntRange
 
 from lean.click import DateParameter, LeanCommand
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.option("--start",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@option("--start",
               type=DateParameter(),
               required=True,
               help="Start date for the data to generate in yyyyMMdd format")
-@click.option("--end",
+@option("--end",
               type=DateParameter(),
               default=datetime.today().strftime("%Y%m%d"),
               help="End date for the data to generate in yyyyMMdd format (defaults to today)")
-@click.option("--symbol-count",
-              type=click.IntRange(min=0),
+@option("--symbol-count",
+              type=IntRange(min=0),
               required=True,
               help="The number of symbols to generate data for")
-@click.option("--security-type",
-              type=click.Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
+@option("--security-type",
+              type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
               default="Equity",
               help="The security type to generate data for (defaults to Equity)")
-@click.option("--resolution",
-              type=click.Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
+@option("--resolution",
+              type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
               default="Minute",
               help="The resolution of the generated data (defaults to Minute)")
-@click.option("--data-density",
-              type=click.Choice(["Dense", "Sparse", "VerySparse"], case_sensitive=False),
+@option("--data-density",
+              type=Choice(["Dense", "Sparse", "VerySparse"], case_sensitive=False),
               default="Dense",
               help="The density of the generated data (defaults to Dense)")
-@click.option("--include-coarse",
+@option("--include-coarse",
               type=bool,
               default=True,
               help="Whether coarse universe data should be generated for Equity data (defaults to True)")
-@click.option("--market",
+@option("--market",
               type=str,
               default="",
               help="The market to generate data for (defaults to standard market for the security type)")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the generator")

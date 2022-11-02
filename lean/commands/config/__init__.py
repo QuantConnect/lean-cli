@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group
 
 from lean.commands.config.get import get
 from lean.commands.config.list import list
@@ -19,7 +19,7 @@ from lean.commands.config.set import set
 from lean.commands.config.unset import unset
 
 
-@click.group()
+@group()
 def config() -> None:
     """Configure Lean CLI options."""
     # This method is intentionally empty

@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group, version_option
 
 from lean import __version__
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 
-@click.group(cls=AliasedCommandGroup)
-@click.version_option(__version__)
+@group(cls=AliasedCommandGroup)
+@version_option(__version__)
 def lean() -> None:
     """The Lean CLI by QuantConnect."""
     # This method is intentionally empty

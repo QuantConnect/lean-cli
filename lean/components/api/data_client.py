@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-from shutil import move
-from tempfile import NamedTemporaryFile
 from lean.components.api.api_client import *
 from lean.models.api import QCDataInformation
 from typing import List, Callable
@@ -42,6 +39,9 @@ class DataClient:
         :param local_filename: the final local path where the data file will be stored
         :param progress_callback: the download progress callback
         """
+        from tempfile import NamedTemporaryFile
+        from shutil import move
+        import os
         data = self._api.post("data/read", {
             "format": "link",
             "filePath": relative_file_path,

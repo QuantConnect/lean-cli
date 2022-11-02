@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group
 
 from lean.commands.cloud.backtest import backtest
 from lean.commands.cloud.live.live import live
@@ -21,7 +21,7 @@ from lean.commands.cloud.push import push
 from lean.commands.cloud.status import status
 
 
-@click.group()
+@group()
 def cloud() -> None:
     """Interact with the QuantConnect cloud."""
     # This method is intentionally empty

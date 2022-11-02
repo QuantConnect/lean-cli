@@ -11,15 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Tuple
 
-import click
-import json5
-from docker.types import Mount
+from click import command, argument, option, Choice
 
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -29,43 +25,43 @@ from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--output",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the optimization in a detached Docker container and return immediately")
-@click.option("--optimizer-config",
+@option("--optimizer-config",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help=f"The optimizer configuration file that should be used")
-@click.option("--strategy",
-              type=click.Choice(["Grid Search", "Euler Search"], case_sensitive=False),
+@option("--strategy",
+              type=Choice(["Grid Search", "Euler Search"], case_sensitive=False),
               help="The optimization strategy to use")
-@click.option("--target",
+@option("--target",
               type=str,
               help="The target statistic of the optimization")
-@click.option("--target-direction",
-              type=click.Choice(["min", "max"], case_sensitive=False),
+@option("--target-direction",
+              type=Choice(["min", "max"], case_sensitive=False),
               help="Whether the target must be minimized or maximized")
-@click.option("--parameter",
+@option("--parameter",
               type=(str, float, float, float),
               multiple=True,
               help="The 'parameter min max step' pairs configuring the parameters to optimize")
-@click.option("--constraint",
+@option("--constraint",
               type=str,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
-@click.option("--release",
+@option("--release",
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the optimizer")
@@ -113,6 +109,11 @@ def optimize(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    from json import dumps, loads
+    from json5 import loads
+    from docker.types import Mount
+    from re import findall
+
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(project)
 
@@ -126,7 +127,7 @@ def optimize(project: Path,
         raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
 
     if optimizer_config is not None:
-        config = json5.loads(optimizer_config.read_text(encoding="utf-8"))
+        config = loads(optimizer_config.read_text(encoding="utf-8"))
 
         # Remove keys which are configured in the Lean config
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
@@ -175,7 +176,7 @@ def optimize(project: Path,
     config_path = output / "optimizer-config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w+", encoding="utf-8") as file:
-        file.write(json.dumps(config, indent=4) + "\n")
+        file.write(dumps(config, indent=4) + "\n")
 
     project_config_manager = container.project_config_manager()
     cli_config_manager = container.cli_config_manager()
@@ -184,10 +185,10 @@ def optimize(project: Path,
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     logger = container.logger()
-    
+
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
-        
+
     lean_config_manager = container.lean_config_manager()
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
@@ -230,12 +231,12 @@ def optimize(project: Path,
         logger.info("You can use Docker's own commands to manage the detached container")
     elif success:
         optimizer_logs = (output / "log.txt").read_text(encoding="utf-8")
-        groups = re.findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
+        groups = findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 
         if len(groups) > 0:
             optimal_parameters, optimal_id = groups[0]
 
-            optimal_results = json.loads((output / optimal_id / f"{optimal_id}.json").read_text(encoding="utf-8"))
+            optimal_results = loads((output / optimal_id / f"{optimal_id}.json").read_text(encoding="utf-8"))
             optimal_backtest = QCBacktest(backtestId=optimal_id,
                                           projectId=1,
                                           status="",

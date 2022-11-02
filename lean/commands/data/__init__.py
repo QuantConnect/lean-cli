@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group
 
 from lean.commands.data.download import download
 from lean.commands.data.generate import generate
 
 
-@click.group()
+@group()
 def data() -> None:
     """Download or generate data for local use."""
     # This method is intentionally empty

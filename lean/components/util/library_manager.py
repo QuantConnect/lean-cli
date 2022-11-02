@@ -11,12 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import shutil
-import subprocess
 from pathlib import Path
-
-from lxml import etree
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -127,7 +122,8 @@ class LibraryManager:
             raise RuntimeError("Circular dependency detected between "
                                f"{project_relative_path} and {library_relative_path}")
 
-        project_libraries.append(json.loads(LeanLibraryReference(
+        from json import load
+        project_libraries.append(loads(LeanLibraryReference(
             name=library_dir.name,
             path=library_relative_path
         ).json()))
@@ -268,6 +264,7 @@ class LibraryManager:
         :param csproj_file: the path to the .csproj file
         :param library_csproj_path: the path to the library's .csproj file
         """
+        from lxml import etree
         csproj_tree = self._xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
         existing_project_reference = csproj_tree.find(f".//ProjectReference[@Include='{library_csproj_path}']")
@@ -290,6 +287,8 @@ class LibraryManager:
         :param name: the path to the Lean CLI library to remove
         :param no_local: Whether restoring the packages locally must be skipped
         """
+        import shutil
+        import subprocess
         csproj_file = self._project_manager.get_csproj_file_path(project_dir)
         self._logger.info(f"Removing {name} from '{self._path_manager.get_relative_path(csproj_file)}'")
 

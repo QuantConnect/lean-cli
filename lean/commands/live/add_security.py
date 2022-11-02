@@ -14,30 +14,29 @@
 
 from pathlib import Path
 from typing import Optional
-import uuid
-import click
+from click import command, argument, option
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
 from lean.components.util.click_custom_parameters import DECIMAL
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to add")
-@click.option("--market", type=str, required=True, help="The market of the symbol to add")
-@click.option("--security-type", type=str, required=True, help="The security type of the symbol to add")
-@click.option("--resolution",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--ticker", type=str, required=True, help="The ticker of the symbol to add")
+@option("--market", type=str, required=True, help="The market of the symbol to add")
+@option("--security-type", type=str, required=True, help="The security type of the symbol to add")
+@option("--resolution",
               type=str,
               default="Minute",
               help="The resolution of the symbol to add")
-@click.option("--fill-data-forward",
+@option("--fill-data-forward",
               is_flag=True,
               default=True,
               help="The fill forward behavior, true to fill forward, false otherwise - defaults to true")
-@click.option("--leverage",
+@option("--leverage",
               type=DECIMAL,
               default=0.0,
               help="The leverage for the security, defaults to 2 for equity, 50 for forex, and 1 for everything else")
-@click.option("--extended-market-hours",
+@option("--extended-market-hours",
               is_flag=True,
               default=False,
               help="The extended market hours flag, true to allow pre/post market data, false for only in market data")
@@ -52,7 +51,8 @@ def add_security(project: Path,
     """
     Represents a command to add a security to the algorithm.
     """
-    command_id = uuid.uuid4().hex
+    from uuid import uuid4
+    command_id = uuid4().hex
 
     data = {
         "$type": "QuantConnect.Commands.AddSecurityCommand, QuantConnect.Common",

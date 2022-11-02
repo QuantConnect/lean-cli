@@ -11,12 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import os
-from datetime import datetime
+from json import dumps, loads
+
 from pathlib import Path
 from typing import Optional
-import click
+from click import command, option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
@@ -35,6 +34,9 @@ from lean.models.data_providers import QuantConnectDataProvider, all_data_provid
 # These methods checks if the project has outdated configurations, and if so, update them to keep it working.
 
 def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
+    from os import path
+    from click import Abort
+
     workspace_xml_path = project_dir / ".idea" / "workspace.xml"
     if not workspace_xml_path.is_file():
         return
@@ -54,8 +56,9 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     has_library_mapping = False
 
     library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+
     if library_dir.is_dir():
-        library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}".replace("\\", "/")
+        library_dir = f"$PROJECT_DIR$/{path.relpath(library_dir, project_dir)}".replace("\\", "/")
     else:
         library_dir = None
 
@@ -83,7 +86,7 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
         logger.warn("Your run configuration has been updated to work with the latest version of LEAN")
         logger.warn("Please restart the debugger in PyCharm and run this command again")
 
-        raise click.Abort()
+        raise Abort()
 
 
 def _migrate_python_vscode(project_dir: Path) -> None:
@@ -91,7 +94,7 @@ def _migrate_python_vscode(project_dir: Path) -> None:
     if not launch_json_path.is_file():
         return
 
-    current_content = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    current_content = loads(launch_json_path.read_text(encoding="utf-8"))
     if "configurations" not in current_content or not isinstance(current_content["configurations"], list):
         return
 
@@ -122,10 +125,12 @@ def _migrate_python_vscode(project_dir: Path) -> None:
         made_changes = True
 
     if made_changes:
-        launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
+        launch_json_path.write_text(dumps(current_content, indent=4), encoding="utf-8")
 
 
 def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
+    from click import Abort
+
     made_changes = False
     xml_manager = container.xml_manager()
 
@@ -157,7 +162,7 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
         logger.warn(
             "See https://www.lean.io/docs/v2/lean-cli/backtesting/debugging#05-C-and-Rider for the updated instructions")
 
-        raise click.Abort()
+        raise Abort()
 
 
 def _migrate_csharp_vscode(project_dir: Path) -> None:
@@ -165,7 +170,7 @@ def _migrate_csharp_vscode(project_dir: Path) -> None:
     if not launch_json_path.is_file():
         return
 
-    current_content = json.loads(launch_json_path.read_text(encoding="utf-8"))
+    current_content = loads(launch_json_path.read_text(encoding="utf-8"))
     if "configurations" not in current_content or not isinstance(current_content["configurations"], list):
         return
 
@@ -194,7 +199,7 @@ def _migrate_csharp_vscode(project_dir: Path) -> None:
         "moduleLoad": False
     }
 
-    launch_json_path.write_text(json.dumps(current_content, indent=4), encoding="utf-8")
+    launch_json_path.write_text(dumps(current_content, indent=4), encoding="utf-8")
 
 
 def _migrate_csharp_csproj(project_dir: Path) -> None:
@@ -234,43 +239,43 @@ def _select_organization() -> QCMinimalOrganization:
     return logger.prompt_list("Select the organization to purchase and download data with", options)
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--output",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
-@click.option("--debug",
-              type=click.Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
+@option("--debug",
+              type=Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
-@click.option("--data-provider",
-              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
-@click.option("--download-data",
+@option("--download-data",
               is_flag=True,
               default=False,
               help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
-@click.option("--data-purchase-limit",
+@option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider")
-@click.option("--release",
+@option("--release",
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--python-venv",
+@option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the backtest")
-@click.option("--backtest-name",
+@option("--backtest-name",
               type=str,
               help="Backtest name")
 def backtest(project: Path,
@@ -303,7 +308,7 @@ def backtest(project: Path,
     project_manager = container.project_manager()
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager()
-
+    from datetime import datetime
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 

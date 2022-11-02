@@ -11,11 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
-import json5
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
@@ -142,6 +140,8 @@ class LeanConfigManager:
         config_path = self.get_lean_config_path()
         config_text = config_path.read_text(encoding="utf-8")
 
+        import json5
+        import re
         for key, value in reversed(list(updates.items())):
             json_value = json5.dumps(value)
 
@@ -186,6 +186,7 @@ class LeanConfigManager:
                           "algorithm-type-name", "algorithm-language", "algorithm-location",
                           "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow"]
 
+        import re
         # This function is implemented by doing string manipulation because the config contains comments
         # If we were to parse it as JSON, we would have to remove the comments, which we don't want to do
         sections = re.split(r"\n\s*\n", config)
@@ -254,6 +255,7 @@ class LeanConfigManager:
             config["algorithm-language"] = "Python"
             config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
         else:
+            import re
             algorithm_text = algorithm_file.read_text(encoding="utf-8")
             config["algorithm-type-name"] = re.findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
@@ -303,4 +305,5 @@ class LeanConfigManager:
 
         :return: a dict containing the contents of the Lean config file
         """
+        import json5
         return json5.loads(self.get_lean_config_path().read_text(encoding="utf-8"))

@@ -11,10 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil
-import tempfile
 from pathlib import Path
-
 
 class TempManager:
     """The TempManager class provides access to temporary directories."""
@@ -29,6 +26,7 @@ class TempManager:
 
         :return: a path to an empty temporary directory
         """
+        import tempfile
         path = Path(tempfile.mkdtemp(prefix="lean-cli-"))
         self._temporary_directories.append(path)
         return path
@@ -38,5 +36,6 @@ class TempManager:
 
         Only the files that the user can delete are deleted, any permission errors are ignored.
         """
+        import shutil
         for path in self._temporary_directories:
             shutil.rmtree(path, ignore_errors=True)

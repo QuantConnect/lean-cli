@@ -11,15 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import validator
-from rich import box
-from rich.table import Table
-from rich.text import Text
 
 from lean.constants import EQUITY_SECURITY_MASTER_PRODUCT_ID, BULK_EQUITY_SECURITY_MASTER_PRODUCT_ID
 from lean.models.pydantic import WrappedBaseModel
@@ -199,11 +195,15 @@ class QCBacktest(WrappedBaseModel):
         """
         return f"https://www.quantconnect.com/project/{self.projectId}/{self.backtestId}"
 
-    def get_statistics_table(self) -> Table:
+    def get_statistics_table(self):
         """Converts the statistics into a pretty table.
 
         :return: a table containing all statistics
         """
+        from rich import box
+        from rich.table import Table
+        from rich.text import Text
+
         stats = []
 
         for key, value in self.runtimeStatistics.items():
@@ -517,6 +517,7 @@ class QCDataVendor(WrappedBaseModel):
 
     @validator("regex", pre=True)
     def parse_regex(cls, value: Any) -> Any:
+        import re
         if isinstance(value, str):
             return re.compile(value[value.index("/") + 1:value.rindex("/")])
         return value

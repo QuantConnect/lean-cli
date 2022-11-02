@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+from os import environ
 from pathlib import Path
 
 # Due to the way the filesystem is mocked in unit tests, values should not be Path instances.
@@ -74,7 +74,7 @@ SITE_PACKAGES_VOLUME_LIMIT = 10
 
 # The base url of the QuantConnect API
 # This url should end with a forward slash
-_qc_api = os.environ.get("QC_API", "")
+_qc_api = environ.get("QC_API", "")
 if _qc_api == "local":
     API_BASE_URL = "http://localhost:5612/api/v2/"
 elif _qc_api == "beta":

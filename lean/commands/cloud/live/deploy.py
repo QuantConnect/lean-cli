@@ -11,16 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from typing import Any, Dict, List, Tuple, Optional
-import click
+from click import prompt, option, argument, Choice, confirm
 from lean.click import LeanCommand, ensure_options
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.container import container
 from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMethod, QCSMSNotificationMethod,
                              QCWebhookNotificationMethod, QCTelegramNotificationMethod, QCProject)
-from lean.models.json_module import JsonModule, LiveInitialStateInput
+from lean.models.json_module import LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
@@ -64,37 +63,37 @@ def _prompt_notification_method() -> QCNotificationMethod:
                                                                           Option(id="telegram", label="Telegram")])
 
     if selected_method == "email":
-        address = click.prompt("Email address")
-        subject = click.prompt("Subject")
+        address = prompt("Email address")
+        subject = prompt("Subject")
         return QCEmailNotificationMethod(address=address, subject=subject)
     elif selected_method == "webhook":
-        address = click.prompt("URL")
+        address = prompt("URL")
         headers = {}
 
         while True:
             headers_str = "None" if headers == {} else ", ".join(f"{key}={headers[key]}" for key in headers)
             logger.info(f"Headers: {headers_str}")
 
-            if not click.confirm("Do you want to add a header?", default=False):
+            if not confirm("Do you want to add a header?", default=False):
                 break
 
-            key = click.prompt("Header key")
-            value = click.prompt("Header value")
+            key = prompt("Header key")
+            value = prompt("Header value")
             headers[key] = value
 
         return QCWebhookNotificationMethod(address=address, headers=headers)
     elif selected_method == "telegram":
-        chat_id = click.prompt("User Id/Group Id")
+        chat_id = prompt("User Id/Group Id")
 
-        custom_bot = click.confirm("Is a custom bot being used?", default=False)
+        custom_bot = confirm("Is a custom bot being used?", default=False)
         if custom_bot:
-            token = click.prompt("Token (optional)")
+            token = prompt("Token (optional)")
         else:
             token = None
 
         return QCTelegramNotificationMethod(id=chat_id, token=token)
     else:
-        phone_number = click.prompt("Phone number")
+        phone_number = prompt("Phone number")
         return QCSMSNotificationMethod(phoneNumber=phone_number)
 
 
@@ -137,8 +136,8 @@ def _configure_notifications(logger: Logger) -> Tuple[bool, bool, List[QCNotific
     logger.info(
         "You can optionally request for your strategy to send notifications when it generates an order or emits an insight")
     logger.info("You can use any combination of email notifications, webhook notifications, SMS notifications, and telegram notifications")
-    notify_order_events = click.confirm("Do you want to send notifications on order events?", default=False)
-    notify_insights = click.confirm("Do you want to send notifications on insights?", default=False)
+    notify_order_events = confirm("Do you want to send notifications on order events?", default=False)
+    notify_insights = confirm("Do you want to send notifications on insights?", default=False)
     notify_methods = []
 
     if notify_order_events or notify_insights:
@@ -162,40 +161,40 @@ def _configure_auto_restart(logger: Logger) -> bool:
     """
     logger.info("Automatic restarting uses best efforts to restart the algorithm if it fails due to a runtime error")
     logger.info("This can help improve its resilience to temporary errors such as a brokerage API disconnection")
-    return click.confirm("Do you want to enable automatic algorithm restarting?", default=True)
+    return confirm("Do you want to enable automatic algorithm restarting?", default=True)
 
 
 @live.command(cls=LeanCommand, default_command=True, name="deploy")
-@click.argument("project", type=str)
-@click.option("--brokerage",
-              type=click.Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
+@argument("project", type=str)
+@option("--brokerage",
+              type=Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
 @options_from_json(_get_configs_for_options("cloud"))
-@click.option("--node", type=str, help="The name or id of the live node to run on")
-@click.option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
-@click.option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
-@click.option("--notify-insights", type=bool, help="Whether notifications must be sent for emitted insights")
-@click.option("--notify-emails",
+@option("--node", type=str, help="The name or id of the live node to run on")
+@option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
+@option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")
+@option("--notify-insights", type=bool, help="Whether notifications must be sent for emitted insights")
+@option("--notify-emails",
               type=str,
               help="A comma-separated list of 'email:subject' pairs configuring email-notifications")
-@click.option("--notify-webhooks",
+@option("--notify-webhooks",
               type=str,
               help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications")
-@click.option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
-@click.option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
-@click.option("--live-cash-balance",
+@option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
+@option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
+@option("--live-cash-balance",
               type=str,
               default="",
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
-@click.option("--live-holdings",
+@option("--live-holdings",
               type=str,
               default="",
               help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
-@click.option("--push",
+@option("--push",
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before starting live trading")
-@click.option("--open", "open_browser",
+@option("--open", "open_browser",
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
@@ -330,7 +329,7 @@ def deploy(project: str,
     logger.info(f"Automatic algorithm restarting: {'Yes' if auto_restart else 'No'}")
 
     if brokerage is None:
-        click.confirm(f"Are you sure you want to start live trading for project '{cloud_project.name}'?",
+        confirm(f"Are you sure you want to start live trading for project '{cloud_project.name}'?",
                       default=False,
                       abort=True)
 
@@ -350,4 +349,5 @@ def deploy(project: str,
     logger.info(f"Live url: {live_algorithm.get_url()}")
 
     if open_browser:
-        webbrowser.open(live_algorithm.get_url())
+        from webbrowser import open
+        open(live_algorithm.get_url())

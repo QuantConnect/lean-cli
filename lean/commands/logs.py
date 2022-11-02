@@ -14,7 +14,7 @@
 from pathlib import Path
 from typing import Optional, List
 
-import click
+from click import option, command
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import PROJECT_CONFIG_FILE_NAME
@@ -37,11 +37,11 @@ def _get_project_directories() -> List[Path]:
     return project_directories
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True)
-@click.option("--backtest", is_flag=True, default=False, help="Display the most recent backtest logs (default)")
-@click.option("--live", is_flag=True, default=False, help="Display the most recent live logs")
-@click.option("--optimization", is_flag=True, default=False, help="Display the most recent optimization logs")
-@click.option("--project",
+@command(cls=LeanCommand, requires_lean_config=True)
+@option("--backtest", is_flag=True, default=False, help="Display the most recent backtest logs (default)")
+@option("--live", is_flag=True, default=False, help="Display the most recent live logs")
+@option("--optimization", is_flag=True, default=False, help="Display the most recent optimization logs")
+@option("--project",
               type=PathParameter(exists=True, file_okay=False, dir_okay=True),
               help="The project to get the most recent logs from")
 def logs(backtest: bool, live: bool, optimization: bool, project: Optional[Path]) -> None:

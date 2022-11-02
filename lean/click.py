@@ -11,10 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
-import os
-import shutil
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
@@ -79,13 +75,16 @@ class LeanCommand(click.Command):
                         "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors"
                     )
 
+        import sys
         if self._requires_docker and "pytest" not in sys.modules:
+            import os
             is_system_linux = container.platform_manager().is_system_linux()
 
             # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root
             # These files cannot be deleted by the CLI itself, so we rely on the OS to empty /tmp on reboot
             # The Snap version of Docker does not provide access to files outside $HOME, so we can't support it
             if is_system_linux:
+                import shutil
                 docker_path = shutil.which("docker")
                 if docker_path is not None and docker_path.startswith("/snap"):
                     raise MoreInfoError(
@@ -102,6 +101,7 @@ class LeanCommand(click.Command):
                 os.execlp(args[0], *args)
 
         if self._allow_unknown_options:
+            import itertools
             # Unknown options are passed to ctx.args and need to be parsed manually
             # We parse them to ctx.params so they're available like normal options
             # Because of this all commands with allow_unknown_options=True must have a **kwargs argument

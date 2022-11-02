@@ -13,7 +13,7 @@
 
 
 from typing import Any, List
-import click
+from click import option, Choice
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
 
@@ -26,7 +26,7 @@ def get_click_option_type(configuration: Configuration):
     if configuration._input_method == "confirm":
         return bool
     elif configuration._input_method == "choice":
-        return click.Choice(configuration._choices, case_sensitive=False)
+        return Choice(configuration._choices, case_sensitive=False)
     elif configuration._input_method == "prompt":
         return configuration.get_input_type()
     elif configuration._input_method == "prompt-password":
@@ -96,6 +96,6 @@ def options_from_json(configurations: List[Configuration]):
                 name)
             attrs = get_options_attributes(
                 configuration, get_default_key(configuration))
-            click.option(*param_decls, **attrs)(f)
+            option(*param_decls, **attrs)(f)
         return f
     return decorator

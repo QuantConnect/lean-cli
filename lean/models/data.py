@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-import multiprocessing
-import re
+from abc import ABC
 from datetime import datetime
 from enum import Enum
 from typing import List, Any, Optional, Dict, Set, Tuple, Pattern
 
-import click
-from dateutil.rrule import rrule, DAILY
-from joblib import Parallel, delayed
+from click import prompt
 from pydantic import validator
 
 from lean.click import DateParameter
@@ -36,7 +32,7 @@ class OptionResult(WrappedBaseModel):
     label: str
 
 
-class DatasetCondition(WrappedBaseModel, abc.ABC):
+class DatasetCondition(WrappedBaseModel, ABC):
     def check(self, option_results: Dict[str, OptionResult]) -> bool:
         """Evaluates the condition against a set of options.
 
@@ -67,7 +63,7 @@ class DatasetOrCondition(DatasetCondition):
         for option in self.options:
             if option.check(option_results):
                 return True
-        
+
         return False
 
 class DatasetAndCondition(DatasetCondition):
@@ -81,7 +77,7 @@ class DatasetAndCondition(DatasetCondition):
 
         return True
 
-class DatasetOption(WrappedBaseModel, abc.ABC):
+class DatasetOption(WrappedBaseModel, ABC):
     id: str
     label: str
     description: str
@@ -155,7 +151,7 @@ class DatasetTextOption(DatasetOption):
         if self.multiple:
             prompt += " (comma-separated)"
 
-        user_input = click.prompt(prompt)
+        user_input = prompt(prompt)
         return self.configure_non_interactive(user_input)
 
     def configure_non_interactive(self, user_input: str) -> OptionResult:
@@ -191,7 +187,7 @@ class DatasetSelectOption(DatasetOption):
             key = logger.prompt_list(self.label, [Option(id=key, label=key) for key in keys])
         else:
             while True:
-                user_input = click.prompt(f"{self.label} (example: {min(keys, key=len)})")
+                user_input = prompt(f"{self.label} (example: {min(keys, key=len)})")
 
                 key = next((key for key in keys if key.lower() == user_input.lower()), None)
                 if key is not None:
@@ -229,7 +225,7 @@ class DatasetDateOption(DatasetOption):
     start_end: bool = False
 
     def configure_interactive(self) -> OptionResult:
-        date = click.prompt(f"{self.label} (yyyyMMdd)", type=DateParameter())
+        date = prompt(f"{self.label} (yyyyMMdd)", type=DateParameter())
         return OptionResult(value=date, label=date.strftime("%Y-%m-%d"))
 
     def configure_non_interactive(self, user_input: str) -> OptionResult:
@@ -337,7 +333,7 @@ class DataFile(WrappedBaseModel):
     vendor: QCDataVendor
 
 
-class DataFileGroup(WrappedBaseModel, abc.ABC):
+class DataFileGroup(WrappedBaseModel, ABC):
     prefix: str
 
     def get_valid_files(self, files_with_prefix: Optional[List[str]]) -> Set[str]:
@@ -375,6 +371,9 @@ class Product(WrappedBaseModel):
 
         :return: the list of files that need to be downloaded for this product
         """
+        from multiprocessing import cpu_count
+        from joblib import Parallel, delayed
+
         groups = []
         variables = {option_id: result.value for option_id, result in self.option_results.items()}
 
@@ -394,7 +393,7 @@ class Product(WrappedBaseModel):
         prefixes = set(group.prefix for group in groups)
         prefixes_to_files = {}
 
-        parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), backend="threading")
+        parallel = Parallel(n_jobs=max(1, cpu_count() - 1), backend="threading")
         for prefix, files_with_prefix in parallel(delayed(self._list_files)(prefix) for prefix in prefixes):
             prefixes_to_files[prefix] = files_with_prefix
 
@@ -405,6 +404,9 @@ class Product(WrappedBaseModel):
         return sorted(list(data_files))
 
     def _get_data_file_groups(self, variables: Dict[str, Any]) -> List[DataFileGroup]:
+        from dateutil.rrule import rrule, DAILY
+        from re import split, compile
+
         groups = []
 
         for path in self.dataset.paths:
@@ -439,8 +441,8 @@ class Product(WrappedBaseModel):
         for regex_template in path_to_use.templates.latest:
             rendered_regex = self._render_template(regex_template, variables)
 
-            prefix = re.split(r"[\\[\]()]", rendered_regex)[0]
-            compiled_regex = re.compile(rendered_regex)
+            prefix = split(r"[\\[\]()]", rendered_regex)[0]
+            compiled_regex = compile(rendered_regex)
 
             groups.append(DataFileLatestGroup(prefix=prefix, regex=compiled_regex))
 

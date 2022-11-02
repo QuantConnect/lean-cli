@@ -14,17 +14,16 @@
 
 from pathlib import Path
 from typing import Optional
-import uuid
-import click
+from click import command, argument, option
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, help="The ticker of the symbol to liquidate")
-@click.option("--market", type=str, help="The market of the symbol to liquidate")
-@click.option("--security-type", type=str, default=0, help="The security type of the symbol to liquidate")
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--ticker", type=str, help="The ticker of the symbol to liquidate")
+@option("--market", type=str, help="The market of the symbol to liquidate")
+@option("--security-type", type=str, default=0, help="The security type of the symbol to liquidate")
 def liquidate(project: Path,
               ticker: Optional[str],
               market: Optional[str],
@@ -32,8 +31,8 @@ def liquidate(project: Path,
     """
     Liquidate the given symbol from the latest deployment of the given project.
     """
-
-    command_id = uuid.uuid4().hex
+    from uuid import uuid4
+    command_id = uuid4().hex
 
     data = {
         "$type": "QuantConnect.Commands.LiquidateCommand, QuantConnect.Common",

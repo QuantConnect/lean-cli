@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import platform
-import sys
 from typing import Any, List, Optional
 
-import click
-import maskpass
+from click import prompt
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TextColumn
 
@@ -104,13 +100,13 @@ class Logger:
 
         while True:
             if not multiple:
-                user_input = click.prompt("Enter an option", type=str, default=default, show_default=True)
+                user_input = prompt("Enter an option", type=str, default=default, show_default=True)
                 user_selected_value = validate_option(user_input)
                 if user_selected_value is not None:
                     return user_selected_value
             else:
                 user_selected_values = []
-                user_inputs = click.prompt("To enter multiple options, separate them with comma.", type=str, default=default, show_default=True)
+                user_inputs = prompt("To enter multiple options, separate them with comma.", type=str, default=default, show_default=True)
                 user_inputs = str(user_inputs).strip(",").split(",")
                 expected_outputs = len(user_inputs)
                 for user_input in user_inputs:
@@ -127,12 +123,16 @@ class Logger:
         :param default: the default value if no input is given
         :return: the given input
         """
+        import platform
+        import sys
+        import maskpass
+
         if default is not None:
             text = f"{text} [{'*' * len(default)}]"
 
         # Masking does not work properly in WSL2 and when the input is not coming from a keyboard
         if "microsoft" in platform.uname().release.lower() or not sys.stdin.isatty():
-            return click.prompt(text, default=default, show_default=False)
+            return prompt(text, default=default, show_default=False)
 
         while True:
             user_input = maskpass.askpass(f"{text}: ")

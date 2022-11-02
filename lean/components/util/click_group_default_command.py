@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import Group, UsageError
 
-class DefaultCommandGroup(click.Group):
+class DefaultCommandGroup(Group):
     """allow a default command for a group"""
 
     def command(self, *args, **kwargs):
@@ -38,7 +38,7 @@ class DefaultCommandGroup(click.Group):
             # test if the command parses
             return super(
                 DefaultCommandGroup, self).resolve_command(ctx, args)
-        except click.UsageError:
+        except UsageError:
             # command did not parse, assume it is the default command
             args.insert(0, self.default_command)
             return super(

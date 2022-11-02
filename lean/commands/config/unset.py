@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import command, argument
 
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.argument("key", type=str)
+@command(cls=LeanCommand)
+@argument("key", type=str)
 def unset(key: str) -> None:
     """Unset a configurable option.
 

@@ -11,15 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
-from hashlib import sha256
 from time import time
 from typing import Any, Dict
-from urllib.parse import urljoin
 
-import requests
+from requests import Response
 
-import lean
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -107,7 +103,8 @@ class APIClient:
             self.get("authenticate")
             return True
         except (RequestFailedError, AuthenticationError):
-            self._logger.debug(traceback.format_exc().strip())
+            from traceback import format_exc
+            self._logger.debug(format_exc().strip())
             return False
 
     def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}, retry_http_5xx: bool = True) -> Any:
@@ -119,6 +116,10 @@ class APIClient:
         :param retry_http_5xx: True if the request should be retried on an HTTP 5xx response, False if not
         :return: the parsed response of the request
         """
+        from hashlib import sha256
+        from urllib.parse import urljoin
+        from lean import __version__
+
         full_url = urljoin(API_BASE_URL, endpoint)
 
         # Create the hash which is used to authenticate the user to the API
@@ -129,8 +130,8 @@ class APIClient:
             "Timestamp": timestamp
         }
 
-        version = lean.__version__
-        if lean.__version__ == 'dev':
+        version = __version__
+        if __version__ == 'dev':
             version = 99999999
         headers["User-Agent"] = f"Lean CLI {version}"
 
@@ -152,7 +153,7 @@ class APIClient:
 
         return self._parse_response(response)
 
-    def _parse_response(self, response: requests.Response) -> Any:
+    def _parse_response(self, response: Response) -> Any:
         """Parses the data in a response.
 
         Raises an error if the data in the response indicates something went wrong.

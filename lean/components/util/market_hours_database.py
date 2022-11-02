@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import re
 from typing import Dict, Optional, Any
 
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -56,6 +54,8 @@ class MarketHoursDatabase:
 
         :return: a dict containing all unparsed market hours database entries by name
         """
+        from re import sub, DOTALL
+        from json import loads
         if self._entries is not None:
             return self._entries
 
@@ -63,8 +63,8 @@ class MarketHoursDatabase:
         market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
 
         market_hours_database = market_hours_database_path.read_text(encoding="utf-8")
-        market_hours_database = re.sub(r"(/\*.*\*/)", "", market_hours_database, flags=re.DOTALL)
-        market_hours_database = json.loads(market_hours_database)
+        market_hours_database = sub(r"(/\*.*\*/)", "", market_hours_database, flags=DOTALL)
+        market_hours_database = loads(market_hours_database)
 
         self._entries = market_hours_database["entries"]
         return self._entries

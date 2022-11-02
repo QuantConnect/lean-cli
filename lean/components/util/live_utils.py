@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import prompt, confirm
 from datetime import datetime
-import json
+
 from pathlib import Path
-import pytz
-import os
 from typing import Any, Dict, List
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
@@ -25,22 +23,21 @@ from lean.models.brokerages.local import all_local_brokerages, all_local_data_fe
 from lean.models.data_providers import all_data_providers
 from lean.models.json_module import LiveInitialStateInput, JsonModule
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
-from lean.models.lean_config_configurer import LeanConfigConfigurer
 
 def _get_configs_for_options(env: str) -> List[Configuration]:
-    if env == "cloud": 
+    if env == "cloud":
         brokerage = all_cloud_brokerages
     elif env == "local":
         brokerage = all_local_brokerages + all_local_data_feeds + all_data_providers
     else:
         raise ValueError("Only 'cloud' and 'local' are accepted for the argument 'env'")
-    
+
     run_options: Dict[str, Configuration] = {}
     config_with_module_id: Dict[str, str] = {}
     for module in brokerage:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._id in run_options:
-                if (config._id in config_with_module_id 
+                if (config._id in config_with_module_id
                     and config_with_module_id[config._id] == module._id)\
                     or config.is_type_organization_id:      # Allow only 1 organization for brokerage, data feeds and provider at an instance
                     # config of same module
@@ -53,15 +50,18 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
 
 
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+    from pytz import utc, UTC
+    from os import listdir, path
+    from json import loads
     cloud_deployment_list = api_client.get("live/read")
-    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(pytz.UTC) for instance in cloud_deployment_list["live"] 
+    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
                              if instance["projectId"] == project_id]
-    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else pytz.utc.localize(datetime.min)
-    
-    local_last_time = pytz.utc.localize(datetime.min)
+    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else utc.localize(datetime.min)
+
+    local_last_time = utc.localize(datetime.min)
     live_deployment_path = f"{project_name}/live"
-    if os.path.isdir(live_deployment_path):
-        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(pytz.UTC) for subdir in os.listdir(live_deployment_path)]
+    if path.isdir(live_deployment_path):
+        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(UTC) for subdir in listdir(live_deployment_path)]
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
@@ -72,10 +72,10 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
         previous_state_file = get_state_json("live")
         if not previous_state_file:
             return None
-        previous_portfolio_state = {x.lower(): y for x, y in json.loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
+        previous_portfolio_state = {x.lower(): y for x, y in loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
     else:
         return None
-    
+
     return previous_portfolio_state
 
 
@@ -107,23 +107,23 @@ def _configure_initial_cash_interactively(logger: Logger, cash_input_option: Liv
             currency = cash_state["Symbol"]
             amount = cash_state["Amount"]
             previous_cash_balance.append({"currency": currency, "amount": amount})
-    
-    if cash_input_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial cash balance?", default=False):
-        if click.confirm(f"Do you want to use the last cash balance? {previous_cash_balance}", default=False):
+
+    if cash_input_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial cash balance?", default=False):
+        if confirm(f"Do you want to use the last cash balance? {previous_cash_balance}", default=False):
             return previous_cash_balance
-        
+
         continue_adding = True
         while continue_adding:
             logger.info("Setting initial cash balance...")
-            currency = click.prompt("Currency")
-            amount = click.prompt("Amount", type=float)
+            currency = prompt("Currency")
+            amount = prompt("Amount", type=float)
             cash_list.append({"currency": currency, "amount": amount})
-            
+
             logger.info(f"Cash balance: {cash_list}")
-            if not click.confirm("Do you want to add more currency?", default=False):
+            if not confirm("Do you want to add more currency?", default=False):
                 continue_adding = False
         return cash_list
-                
+
     else:
         return []
 
@@ -157,25 +157,25 @@ def _configure_initial_holdings_interactively(logger: Logger, holdings_option: L
             quantity = int(holding["Quantity"])
             avg_price = float(holding["AveragePrice"])
             last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
-    
-    if holdings_option == LiveInitialStateInput.Required or click.confirm("Do you want to set the initial portfolio holdings?", default=False):
-        if click.confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
+
+    if holdings_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial portfolio holdings?", default=False):
+        if confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
             return last_holdings
-        
+
         continue_adding = True
         while continue_adding:
             logger.info("Setting custom initial portfolio holdings...")
-            symbol = click.prompt("Symbol")
-            symbol_id = click.prompt("Symbol ID")
-            quantity = click.prompt("Quantity", type=int)
-            avg_price = click.prompt("Average Price", type=float)
+            symbol = prompt("Symbol")
+            symbol_id = prompt("Symbol ID")
+            quantity = prompt("Quantity", type=int)
+            avg_price = prompt("Average Price", type=float)
             holdings.append({"symbol": symbol, "symbolId": symbol_id, "quantity": quantity, "averagePrice": avg_price})
-            
+
             logger.info(f"Portfolio Holdings: {holdings}")
-            if not click.confirm("Do you want to add more holdings?", default=False):
+            if not confirm("Do you want to add more holdings?", default=False):
                 continue_adding = False
         return holdings
-    
+
     else:
         return []
 

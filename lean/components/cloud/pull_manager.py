@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -90,7 +89,8 @@ class PullManager:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
                 projects_with_paths.append((project, self._pull_project(project)))
             except Exception as ex:
-                self._logger.debug(traceback.format_exc().strip())
+                from traceback import format_exc
+                self._logger.debug(format_exc().strip())
                 if self._last_file is not None:
                     self._logger.warn(
                         f"Cannot pull '{project.name}' (id {project.projectId}, failed on {self._last_file}): {ex}")

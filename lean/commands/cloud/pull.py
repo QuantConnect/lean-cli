@@ -13,15 +13,15 @@
 
 from typing import Optional
 
-import click
+from click import command, option
 
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.option("--project", type=str, help="Name or id of the project to pull (all cloud projects if not specified)")
-@click.option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
+@command(cls=LeanCommand)
+@option("--project", type=str, help="Name or id of the project to pull (all cloud projects if not specified)")
+@option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
 def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     """Pull projects from QuantConnect to the local drive.
 

@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 from pathlib import Path
 from typing import Optional
 
-import click
+from click import option, command, argument
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
@@ -93,6 +92,8 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
     :param base_image: the base image to use, or None if the default should be used
     :param target_image: the name of the new image
     """
+    from re import MULTILINE, sub
+
     logger = container.logger()
     if base_image is not None:
         logger.info(f"Building '{target_image}' from '{dockerfile}' using '{base_image}' as base image")
@@ -105,7 +106,7 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
     current_content = dockerfile.read_text(encoding="utf-8")
 
     if base_image is not None:
-        new_content = re.sub(r"^FROM.*$", f"FROM {base_image}", current_content, flags=re.MULTILINE)
+        new_content = sub(r"^FROM.*$", f"FROM {base_image}", current_content, flags=MULTILINE)
         dockerfile.write_text(new_content, encoding="utf-8")
 
     try:
@@ -116,9 +117,9 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
             dockerfile.write_text(current_content, encoding="utf-8")
 
 
-@click.command(cls=LeanCommand, requires_docker=True)
-@click.argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
-@click.option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
+@command(cls=LeanCommand, requires_docker=True)
+@argument("root", type=PathParameter(exists=True, file_okay=False, dir_okay=True), default=lambda: Path.cwd())
+@option("--tag", type=str, default="latest", help="The tag to apply to custom images (defaults to latest)")
 def build(root: Path, tag: str) -> None:
     """Build Docker images of your own version of LEAN.
 

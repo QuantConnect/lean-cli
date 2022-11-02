@@ -12,14 +12,13 @@
 # limitations under the License.
 
 
-
-import click
+from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
+@command(cls=LeanCommand)
+@argument("project", type=str)
 def stop(project: str) -> None:
     """
     Stops live trading for a certain project without liquidating existing positions.

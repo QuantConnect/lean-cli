@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import command
 
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.errors import AuthenticationError
 
 
-@click.command(cls=LeanCommand)
+@command(cls=LeanCommand)
 def whoami() -> None:
     """Display who is logged in."""
     logger = container.logger()

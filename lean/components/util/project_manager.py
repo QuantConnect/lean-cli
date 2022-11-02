@@ -11,17 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import os
-import shutil
-import site
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Union
-
-import pkg_resources
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -127,6 +119,7 @@ class ProjectManager:
         :param local_file_path: the path to the local file to update the last modified time of
         :param cloud_timestamp: the last modified time of the counterpart of the local file in the cloud
         """
+        import os
         # Timestamps are stored in UTC in the cloud, but utime() requires them in the local timezone
         time = cloud_timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None)
         time = round(time.timestamp() * 1e9)
@@ -138,6 +131,8 @@ class ProjectManager:
         :param project_dir: the directory of the project
         :param output_dir: the directory to copy the code to
         """
+        import shutil
+
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for source_file in self.get_source_files(project_dir):
@@ -174,6 +169,7 @@ class ProjectManager:
 
         :param project_dir: the directory of the project to delete
         """
+        import shutil
         try:
             shutil.rmtree(project_dir)
         except FileNotFoundError:
@@ -246,6 +242,8 @@ class ProjectManager:
         :param csproj_file: Path to the project's csproj file
         :param no_local: Whether restoring the packages locally must be skipped
         """
+        import shutil
+        import subprocess
         if no_local:
             return
 
@@ -278,6 +276,7 @@ class ProjectManager:
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
+        import site
         try:
             cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         except:
@@ -299,8 +298,11 @@ class ProjectManager:
 
         :param project_dir: the directory of the new project
         """
-        self._generate_file(project_dir / ".vscode" / "settings.json", json.dumps({
-            "python.pythonPath": sys.executable,
+        from sys import executable
+        from json import dumps
+
+        self._generate_file(project_dir / ".vscode" / "settings.json", dumps({
+            "python.pythonPath": executable,
             "python.languageServer": "Pylance"
         }, indent=4))
 
@@ -334,13 +336,15 @@ class ProjectManager:
         except:
             pass
 
-        self._generate_file(project_dir / ".vscode" / "launch.json", json.dumps(launch_config, indent=4))
+        self._generate_file(project_dir / ".vscode" / "launch.json", dumps(launch_config, indent=4))
 
     def _generate_pycharm_config(self, project_dir: Path) -> None:
         """Generates Python interpreter configuration and Python debugging configuration for PyCharm.
 
         :param project_dir: the directory of the new project
         """
+
+        import os
         # Generate Python JDK entry for PyCharm Professional and PyCharm Community
         for editor in ["PyCharm", "PyCharmCE"]:
             for directory in self._get_jetbrains_config_dirs(editor):
@@ -420,6 +424,7 @@ class ProjectManager:
 
         :param pycharm_config_dir: the path to the global configuration directory of a PyCharm edition
         """
+        import sys
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
         if jdk_table_file.exists():
@@ -507,6 +512,7 @@ class ProjectManager:
 
     def generate_rider_config(self) -> None:
         """Generates C# debugging configuration for Rider."""
+        import pkg_resources
         ssh_dir = Path("~/.lean/ssh").expanduser()
 
         # Add SSH keys to .lean/ssh if necessary

@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import platform
 
 
 class PlatformManager:
@@ -20,6 +18,8 @@ class PlatformManager:
 
     def __init__(self) -> None:
         """Creates a new PlatformManager instance."""
+        import os
+        import platform
         self._system = platform.system()
         self._machine = platform.machine()
         self._host_system = os.environ.get("QC_DOCKER_HOST_SYSTEM", None)

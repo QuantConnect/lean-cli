@@ -12,15 +12,14 @@
 # limitations under the License.
 
 from pathlib import Path
-import re
 from typing import Any, Dict, List
-import click
-import abc
+from click import prompt, Choice
+from abc import ABC, abstractmethod
 from lean.components.util.logger import Logger
 from lean.click import PathParameter
 
 
-class BaseCondition(abc.ABC):
+class BaseCondition(ABC):
     """Base condition class extended to all types of conditions"""
 
     def __init__(self, condition_object: Dict[str, str]):
@@ -43,7 +42,7 @@ class BaseCondition(abc.ABC):
             raise ValueError(
                 f'Undefined condition type {condition_object["type"]}')
 
-    @abc.abstractmethod
+    @abstractmethod
     def check(self, target_value: str) -> bool:
         """validates the condition against the provided values
 
@@ -74,6 +73,7 @@ class RegexCondition(BaseCondition):
         :param target_value: value to validate the condition against
         :return: True if the condition is valid otherwise False
         """
+        import re
         return len(re.findall(self._pattern, target_value, re.I)) > 0
 
 
@@ -86,7 +86,7 @@ class ConditionalValueOption():
             option_object["condition"])
 
 
-class Configuration(abc.ABC):
+class Configuration(ABC):
     """Base configuration class extended to all types of configurations"""
 
     def __init__(self, config_json_object):
@@ -176,7 +176,7 @@ class ConfigurationsEnvConfiguration(InfoConfiguration):
             env_obj["name"]: env_obj["value"] for env_obj in self._value}
 
 
-class UserInputConfiguration(Configuration, abc.ABC):
+class UserInputConfiguration(Configuration, ABC):
     """Base class extended to all confiugration class than store values in Lean config.
 
     Values are expected from the user via prompts.
@@ -200,7 +200,7 @@ class UserInputConfiguration(Configuration, abc.ABC):
         if "cloud-id" in config_json_object.keys():
             self._cloud_id = config_json_object["cloud-id"]
 
-    @abc.abstractmethod
+    @abstractmethod
     def AskUserForInput(self, default_value: Any, logger: Logger):
         """Prompts user to provide input while validating the type of input
         against the expected type
@@ -279,7 +279,7 @@ class PromptUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return click.prompt(self._prompt_info, default_value, type=self.get_input_type())
+        return prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
         return self.map_to_types.get(self._input_type, self._input_type)
@@ -300,10 +300,10 @@ class ChoiceUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return click.prompt(
+        return prompt(
             self._prompt_info,
             default_value,
-            type=click.Choice(self._choices, case_sensitive=False)
+            type=Choice(self._choices, case_sensitive=False)
         )
 
 
@@ -327,7 +327,7 @@ class PathParameterUserInput(UserInputConfiguration):
             default_binary = Path(self._input_default)
         else:
             default_binary = ""
-        value = click.prompt(self._prompt_info,
+        value = prompt(self._prompt_info,
                              default=default_binary,
                              type=PathParameter(
                                  exists=False, file_okay=True, dir_okay=False)
@@ -347,7 +347,7 @@ class ConfirmUserInput(UserInputConfiguration):
         :param logger: The instance of logger class.
         :return: The value provided by the user.
         """
-        return click.prompt(self._prompt_info, default_value, type=bool)
+        return prompt(self._prompt_info, default_value, type=bool)
 
 
 class PromptPasswordUserInput(UserInputConfiguration):

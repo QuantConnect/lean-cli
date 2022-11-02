@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import json
-import time
-import requests
+from os import path
+from json import dump, load
 from pathlib import Path
+from time import time
 
 json_modules = {}
 file_name = "modules-1.7.json"
@@ -27,12 +26,13 @@ url = f"https://cdn.quantconnect.com/cli/{file_name}"
 error = None
 try:
     # fetch if file not available or fetched before 1 day
-    if not os.path.exists(file_path) or (time.time() - os.path.getmtime(file_path) >  86400):
-        res = requests.get(url, timeout=5)
+    if not path.exists(file_path) or (time() - path.getmtime(file_path) > 86400):
+        from requests import get
+        res = get(url, timeout=5)
         if res.ok:
             new_content = res.json()
             with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(new_content, f, ensure_ascii=False, indent=4)
+                dump(new_content, f, ensure_ascii=False, indent=4)
         else:
             res.raise_for_status()
 except Exception as e:
@@ -47,5 +47,5 @@ if not Path(file_path).is_file():
         f"Modules json not found in the given path {file_path}{error_message}")
 
 with open(file_path) as f:
-    data = json.load(f)
+    data = load(f)
     json_modules = data['modules']

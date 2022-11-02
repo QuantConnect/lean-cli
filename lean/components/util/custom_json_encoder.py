@@ -13,10 +13,10 @@
 
 
 from decimal import Decimal
-import json
+from json import JSONEncoder
 
-class DecimalEncoder(json.JSONEncoder):
+class DecimalEncoder(JSONEncoder):
   def default(self, obj):
     if isinstance(obj, Decimal):
       return str(obj)
-    return json.JSONEncoder.default(self, obj)
+    return JSONEncoder.default(self, obj)
