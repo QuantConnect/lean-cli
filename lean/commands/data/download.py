@@ -210,9 +210,9 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
             continue
 
         option_results = OrderedDict()
-        for option in dataset.options:
-            if option.condition is None or option.condition.check(option_results):
-                option_results[option.id] = option.configure_interactive()
+        for dataset_option in dataset.options:
+            if dataset_option.condition is None or dataset_option.condition.check(option_results):
+                option_results[dataset_option.id] = dataset_option.configure_interactive()
 
         products.append(Product(dataset=dataset, option_results=option_results))
 

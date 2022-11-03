@@ -55,6 +55,7 @@ class DatasetOneOfCondition(DatasetCondition):
 
         return option_results[self.option].value in self.values
 
+
 class DatasetOrCondition(DatasetCondition):
     options: List[DatasetCondition]
 
@@ -66,6 +67,7 @@ class DatasetOrCondition(DatasetCondition):
 
         return False
 
+
 class DatasetAndCondition(DatasetCondition):
     options: List[DatasetCondition]
 
@@ -76,6 +78,7 @@ class DatasetAndCondition(DatasetCondition):
                 return False
 
         return True
+
 
 class DatasetOption(WrappedBaseModel, ABC):
     id: str
@@ -147,11 +150,11 @@ class DatasetTextOption(DatasetOption):
     multiple: bool = False
 
     def configure_interactive(self) -> OptionResult:
-        prompt = self.label
+        prompt_to_show = self.label
         if self.multiple:
-            prompt += " (comma-separated)"
+            prompt_to_show += " (comma-separated)"
 
-        user_input = prompt(prompt)
+        user_input = prompt(prompt_to_show)
         return self.configure_non_interactive(user_input)
 
     def configure_non_interactive(self, user_input: str) -> OptionResult:
@@ -220,6 +223,7 @@ class DatasetSelectOption(DatasetOption):
             return "|".join(keys)
         else:
             return f"value (example: {min(keys, key=len)})"
+
 
 class DatasetDateOption(DatasetOption):
     start_end: bool = False
