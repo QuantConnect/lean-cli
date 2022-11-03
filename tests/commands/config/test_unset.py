@@ -18,13 +18,13 @@ from lean.container import container
 
 
 def test_config_unset_removes_the_value_of_the_option() -> None:
-    container.cli_config_manager().user_id.set_value("12345")
+    container.cli_config_manager.user_id.set_value("12345")
 
     result = CliRunner().invoke(lean, ["config", "unset", "user-id"])
 
     assert result.exit_code == 0
 
-    assert container.cli_config_manager().user_id.get_value() is None
+    assert container.cli_config_manager.user_id.get_value() is None
 
 
 def test_config_unset_aborts_when_no_option_with_given_key_exists() -> None:

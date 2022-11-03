@@ -13,7 +13,7 @@
 
 from pathlib import Path
 
-import click
+from click import argument
 
 from lean.click import LeanCommand
 from lean.commands import lean
@@ -21,17 +21,17 @@ from lean.container import container
 
 
 @lean.command(cls=LeanCommand, name="project-delete", aliases=["delete-project"])
-@click.argument("project", type=str)
+@argument("project", type=str)
 def delete_project(project: str) -> None:
     """Delete a project locally and in the cloud if it exists.
 
     The project is selected by name or cloud id.
     """
     # Remove project from cloud
-    api_client = container.api_client()
+    api_client = container.api_client
     all_projects = api_client.projects.get_all()
-    project_manager = container.project_manager()
-    logger = container.logger()
+    project_manager = container.project_manager
+    logger = container.logger
 
     project_id = None
     try:

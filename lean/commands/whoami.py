@@ -11,19 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import command
 
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.errors import AuthenticationError
 
 
-@click.command(cls=LeanCommand)
+@command(cls=LeanCommand)
 def whoami() -> None:
     """Display who is logged in."""
-    logger = container.logger()
-    api_client = container.api_client()
-    cli_config_manager = container.cli_config_manager()
+    logger = container.logger
+    api_client = container.api_client
+    cli_config_manager = container.cli_config_manager
 
     if cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None:
         try:

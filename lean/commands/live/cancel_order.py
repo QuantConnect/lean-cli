@@ -13,15 +13,14 @@
 
 
 from pathlib import Path
-import uuid
-import click
+from click import command, argument, option
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--order-id",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--order-id",
               type=int,
               required=True,
               help="The order id to be cancelled")
@@ -30,8 +29,8 @@ def cancel_order(project: Path,
     """
     Represents a command to cancel a specific order by id.
     """
-
-    command_id = uuid.uuid4().hex
+    from uuid import uuid4
+    command_id = uuid4().hex
 
     data = {
         "$type": "QuantConnect.Commands.CancelOrderCommand, QuantConnect.Common",

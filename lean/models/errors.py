@@ -13,13 +13,11 @@
 
 from typing import Optional
 
-import requests
-
 
 class RequestFailedError(Exception):
     """A RequestFailedError indicates that an HTTP request has failed."""
 
-    def __init__(self, response: requests.Response, message: Optional[str] = None) -> None:
+    def __init__(self, response, message: Optional[str] = None) -> None:
         """Creates a new RequestFailedError instance.
 
         :param response: the data of the failed response

@@ -11,14 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ctypes
-import os
-import platform
-import site
-import sys
-import time
-from pathlib import Path
-
+from platform import system
 
 # Docker's pywin32 dependency on Windows is a common source of issues
 # In a lot of cases you'd have to manually run pywin32's post-install script as admin after pip installing the library
@@ -41,7 +34,12 @@ def _ensure_win32_available() -> None:
     if _is_win32_available():
         return
 
-    possible_paths = sys.path + [sys.prefix] + site.getsitepackages() + [site.getusersitepackages()]
+    from site import getsitepackages, getusersitepackages
+    from sys import executable, path, exit, prefix
+    from os import environ
+    from pathlib import Path
+
+    possible_paths = path + [prefix] + getsitepackages() + [getusersitepackages()]
     possible_paths = [Path(p) for p in possible_paths]
     possible_directories = set(p for p in possible_paths if p.is_dir())
 
@@ -50,7 +48,7 @@ def _ensure_win32_available() -> None:
         if not target_directory.is_dir():
             continue
 
-        os.environ["PATH"] += ";" + str(target_directory)
+        environ["PATH"] += ";" + str(target_directory)
 
         if _is_win32_available():
             return
@@ -60,41 +58,34 @@ def _ensure_win32_available() -> None:
         if not target_file.is_file():
             continue
 
+        from ctypes import windll
         print(f"Running pywin32's post-install script at {target_file}")
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{target_file}" -install', None, 1)
+        windll.shell32.ShellExecuteW(None, "runas", executable, f'"{target_file}" -install', None, 1)
 
         # ShellExecuteW returns immediately after the UAC dialog, we wait a second to give the script some time to run
-        time.sleep(1)
+        from time import sleep
+        sleep(1)
 
         if _is_win32_available():
             return
 
-    if any("AppData\\Local\\Packages\\PythonSoftwareFoundation.Python" in p for p in sys.path):
+    if any("AppData\\Local\\Packages\\PythonSoftwareFoundation.Python" in p for p in path):
         print("It looks like you're using the Python distribution from the Microsoft Store")
         print("This distribution is not supported by the CLI, we recommend using the Anaconda distribution instead")
         print(
             "See https://www.lean.io/docs/v2/lean-cli/installation/installing-pip#02-Install-on-Windows for more information")
-        sys.exit(1)
+        exit(1)
 
     print("pywin32 has not been installed completely, which may lead to errors")
     print("You can fix this issue by running pywin32's post-install script")
     print(f"Run the following command in an elevated terminal from your Python environment's Scripts directory:")
     print("python pywin32_postinstall.py -install")
 
-
-if platform.system() == "Windows":
+if system() == "Windows":
     _ensure_win32_available()
-
-import traceback
-from io import StringIO
-
-import click
-import requests
-from pydantic import ValidationError
 
 from lean.commands import lean
 from lean.container import container
-from lean.models.errors import MoreInfoError
 
 
 def main() -> None:
@@ -102,12 +93,19 @@ def main() -> None:
     try:
         lean.main(standalone_mode=False)
 
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
     except Exception as exception:
-        logger = container.logger()
-        logger.debug(traceback.format_exc().strip())
+        from traceback import format_exc, print_exc
+        from click import UsageError, Abort
+        from requests import exceptions
+        from io import StringIO
+        from pydantic import ValidationError
+        from lean.models.errors import MoreInfoError
+
+        logger = container.logger
+        logger.debug(format_exc().strip())
 
         if isinstance(exception, ValidationError) and hasattr(exception, "input_value"):
             logger.debug("Value that failed validation:")
@@ -116,7 +114,7 @@ def main() -> None:
         elif isinstance(exception, MoreInfoError):
             logger.error(f"Error: {exception}")
             logger.error(f"Visit {exception.link} for more information")
-        elif isinstance(exception, click.UsageError):
+        elif isinstance(exception, UsageError):
             io = StringIO()
             exception.show(file=io)
 
@@ -125,19 +123,19 @@ def main() -> None:
             exception_str = exception_str.replace("for help.",
                                                   "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
-            container.update_manager().warn_if_cli_outdated(force=True)
+            container.update_manager.warn_if_cli_outdated(force=True)
 
             logger.info(exception_str)
-        elif isinstance(exception, click.Abort):
+        elif isinstance(exception, Abort):
             logger.info("Aborted!")
-        elif isinstance(exception, requests.exceptions.ConnectionError):
+        elif isinstance(exception, exceptions.ConnectionError):
             logger.error(f"Error: {exception}")
             logger.error("It looks like you don't have an internet connection, please check your system settings")
         else:
             logger.error(f"Error: {exception}")
 
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
 
-        sys.exit(1)
+        exit(1)

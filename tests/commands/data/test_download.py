@@ -1,6 +1,7 @@
 import json
 import pytest
 import os
+import re
 from pathlib import Path
 
 from lean.commands.data.download import *
@@ -19,7 +20,7 @@ def test_bulk_extraction(setup):
     fakeTar = Path(os.path.join(test_files, "20220222_coinapi_crypto_ftx_price_aggregation.tar"))
     out = Path("/tmp/out")
 
-    container.data_downloader()._process_bulk(fakeTar, out)
+    container.data_downloader._process_bulk(fakeTar, out)
     assert os.path.exists(out)
 
     # Empty file in fake tar
@@ -42,7 +43,7 @@ def test_interactive_bulk_select():
                         options=datasource["options"],
                         paths=datasource["paths"],
                         requires_security_master=datasource["requiresSecurityMaster"])]
-                                          
+
     products = _select_products_interactive(organization, testSets)
     # No assertion, since interactive has multiple results
 
@@ -233,7 +234,7 @@ bulk_datasource="""
 def test_validate_datafile() -> None:
 
 	try:
-		value = "/^equity\\/usa\\/(factor_files|map_files)\\/[^\\/]+.zip$/m"	
+		value = "/^equity\\/usa\\/(factor_files|map_files)\\/[^\\/]+.zip$/m"
 		target = re.compile(value[value.index("/") + 1:value.rindex("/")])
 		vendor = QCDataVendor(vendorName="Algoseek", regex=target)
 		DataFile(file='equity/usa/daily/aal.zip', vendor=vendor)

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -24,10 +23,15 @@ class Storage:
 
         :param file: the path to the file this Storage instance should manage
         """
+        from json import loads
         self.file = Path(file)
 
         if self.file.exists():
-            self._data = json.loads(self.file.read_text(encoding="utf-8"))
+            content = self.file.read_text(encoding="utf-8")
+            if content:
+                self._data = loads(content)
+            else:
+                self._data = {}
         else:
             self._data = {}
 
@@ -78,12 +82,13 @@ class Storage:
         self._save()
 
     def _save(self) -> None:
+        from json import dumps
         """Saves the data to the underlying file, deleting the file if there is no data."""
         if len(self._data) > 0:
             self.file.parent.mkdir(parents=True, exist_ok=True)
 
             with self.file.open("w+", encoding="utf-8") as file:
-                file.write(json.dumps(self._data, indent=4) + "\n")
+                file.write(dumps(self._data, indent=4) + "\n")
         else:
             if self.file.exists():
                 self.file.unlink()

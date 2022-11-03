@@ -11,25 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
-import json
-import os
-import platform
-import shutil
-import signal
-import subprocess
-import sys
-import threading
-import time
-import types
 from pathlib import Path
 from typing import Optional, Set, Any, Dict
-from subprocess import Popen, PIPE
-import docker
-from dateutil.parser import isoparse
-from docker.errors import APIError
-from docker.models.containers import Container
-from docker.types import Mount
 
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
@@ -60,6 +43,9 @@ class DockerManager:
 
         :param image: the image to pull
         """
+        from shutil import which
+        from subprocess import run
+
         if image.name == CUSTOM_RESEARCH or image.name == CUSTOM_ENGINE or image.name == CUSTOM_FOUNDATION:
             self._logger.info(f"Skip pulling local image {image}...")
             return
@@ -68,8 +54,8 @@ class DockerManager:
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
-        if shutil.which("docker") is not None:
-            process = subprocess.run(["docker", "image", "pull", str(image)])
+        if which("docker") is not None:
+            process = run(["docker", "image", "pull", str(image)])
             if process.returncode != 0:
                 raise RuntimeError(
                     f"Something went wrong while pulling {image}, see the logs above for more information")
@@ -98,6 +84,14 @@ class DockerManager:
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
+        from signal import signal, SIGINT, Signals
+        from platform import node
+        from sys import stdout, exit
+        from threading import Thread
+        from types import FrameType
+        from docker.errors import APIError
+        from docker.types import Mount
+
         if not self.image_installed(image):
             self.pull_image(image)
 
@@ -135,10 +129,10 @@ class DockerManager:
                 kwargs["volumes"][new_key] = kwargs["volumes"].pop(key)
 
         detach = kwargs.pop("detach", False)
-        is_tty = sys.stdout.isatty()
+        is_tty = stdout.isatty()
 
         kwargs["detach"] = True
-        kwargs["hostname"] = platform.node()
+        kwargs["hostname"] = node()
         kwargs["tty"] = is_tty and not detach
         kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
@@ -189,10 +183,10 @@ class DockerManager:
                 pass
             finally:
                 self._temp_manager.delete_temporary_directories()
-                sys.exit(1)
+                exit(1)
 
         # Kill the container on Ctrl+C
-        def signal_handler(sig: signal.Signals, frame: types.FrameType) -> None:
+        def signal_handler(sig: Signals, frame: FrameType) -> None:
             nonlocal force_kill_next
             if not is_tty or force_kill_next or kwargs["stop_signal"] == "SIGKILL":
                 force_kill_current = True
@@ -202,11 +196,11 @@ class DockerManager:
                 force_kill_current = False
 
             # If we run this code on the current thread, a second Ctrl+C won't be detected on Windows
-            kill_thread = threading.Thread(target=kill_container, args=[force_kill_current])
+            kill_thread = Thread(target=kill_container, args=[force_kill_current])
             kill_thread.daemon = True
             kill_thread.start()
 
-        signal.signal(signal.SIGINT, signal_handler)
+        signal(SIGINT, signal_handler)
 
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
@@ -264,7 +258,7 @@ class DockerManager:
             if format_output is not None:
                 format_output(log_dump)
 
-        logs_thread = threading.Thread(target=print_and_format_logs)
+        logs_thread = Thread(target=print_and_format_logs)
         logs_thread.daemon = True
         logs_thread.start()
 
@@ -277,7 +271,7 @@ class DockerManager:
             except APIError:
                 pass
             finally:
-                sys.exit(1)
+                exit(1)
 
         container.wait()
 
@@ -294,10 +288,11 @@ class DockerManager:
         :param dockerfile: the path to the Dockerfile to build
         :param target: the target name and tag
         """
+        from subprocess import run
         # We cannot really use docker_client.images.build() here as it doesn't let us log the progress
         # Building images without showing progress does not provide good developer experience
         # Since the build command is the same on Windows, macOS and Linux we can safely use a system call
-        process = subprocess.run(["docker", "build", "-t", str(target), "-f", str(dockerfile), "."], cwd=root)
+        process = run(["docker", "build", "-t", str(target), "-f", str(dockerfile), "."], cwd=root)
 
         if process.returncode != 0:
             raise RuntimeError(
@@ -362,7 +357,10 @@ class DockerManager:
         :param requirements_file: the path to the requirements file that will be pip installed in the container
         :return: the name of the Docker volume to use
         """
-        requirements_hash = hashlib.md5(requirements_file.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        from hashlib import md5
+        from dateutil.parser import isoparse
+
+        requirements_hash = md5(requirements_file.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
         volume_name = f"lean_cli_python_{requirements_hash}"
 
         docker_client = self._get_docker_client()
@@ -386,7 +384,7 @@ class DockerManager:
         containers = self._get_docker_client().containers.list()
         return {c.name.lstrip("/") for c in containers if c.status == "running"}
 
-    def get_container_by_name(self, container_name: str) -> Optional[Container]:
+    def get_container_by_name(self, container_name: str):
         """Finds a container with a given name.
 
         :param container_name: the name of the container to find
@@ -404,6 +402,7 @@ class DockerManager:
         :param container_name: the name of the container to show the logs of
         :param follow: whether the logs should be streamed in real-time if the container is running (defaults to False)
         """
+        from subprocess import run
         if self.get_container_by_name(container_name) is None:
             return
 
@@ -414,7 +413,7 @@ class DockerManager:
             command.append("-f")
         command.append(container_name)
 
-        subprocess.run(command)
+        run(command)
 
     def is_missing_permission(self) -> bool:
         """Returns whether we cannot connect to the Docker client because of a permissions issue.
@@ -424,7 +423,8 @@ class DockerManager:
         :return: True if we cannot connect to the Docker client because of a permissions issue, False if that's not
         """
         try:
-            docker.from_env()
+            from docker import from_env
+            from_env()
         except Exception as exception:
             return "Permission denied" in str(exception)
         return False
@@ -437,18 +437,21 @@ class DockerManager:
             docker_file: The Dockerfile to write to.
             data: The data to write to the Dockerfile.
         """
+        from subprocess import run, CalledProcessError
+        from json import dumps
+
         docker_container = self.get_container_by_name(docker_container_name)
         if docker_container is None:
             raise ValueError(f"Container {docker_container_name} does not exist")
         if docker_container.status != "running":
             raise ValueError(f"Container {docker_container_name} is not running")
 
-        data = json.dumps(data, cls=DecimalEncoder)
+        data = dumps(data, cls=DecimalEncoder)
         data = data.replace('"','\\"')
         command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
         try:
-            subprocess.run(command, shell=True, check=True)
-        except subprocess.CalledProcessError as exception:
+            run(command, shell=True, check=True)
+        except CalledProcessError as exception:
             raise ValueError(f"Failed to write to {docker_file.name}: {exception.output.decode('utf-8')}")
         except Exception as e:
             raise ValueError(f"Failed to write to {docker_file.name}: {e}")
@@ -462,12 +465,16 @@ class DockerManager:
             interval: The interval to sleep before checking again.
             timeout: The timeout to wait for the file.
         """
+        from json import loads
+        from subprocess import Popen, PIPE, CalledProcessError
+        from time import sleep, time
+
         command = f'docker exec {docker_container_name} bash -c "cat {docker_file.as_posix()}"'
-        start = time.time()
+        start = time()
         success = False
         error_message = None
         container_running = True
-        while time.time() - start < timeout:
+        while time() - start < timeout:
             try:
                 docker_container = self.get_container_by_name(docker_container_name)
                 if docker_container is None:
@@ -479,15 +486,15 @@ class DockerManager:
                 if output is not None and output != "":
                     success = True
                     break
-            except subprocess.CalledProcessError as exception:
+            except CalledProcessError as exception:
                 error_message = f"Failed to read result from docker file {docker_file.name}: {exception.output.decode('utf-8')} {p.stderr.read().decode('utf-8')}"
-                time.sleep(interval)
+                sleep(interval)
             except Exception as e:
                 error_message = f"Failed to read result from docker file {docker_file.name}: {e} {p.stderr.read().decode('utf-8')}"
-                time.sleep(interval)
+                sleep(interval)
 
         if success:
-            result = json.loads(output)
+            result = loads(output)
             success = result["Success"]
             if not success:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
@@ -501,7 +508,7 @@ class DockerManager:
         }
 
 
-    def _get_docker_client(self) -> docker.DockerClient:
+    def _get_docker_client(self):
         """Creates a DockerClient instance.
 
         Raises an error if Docker is not running.
@@ -512,7 +519,8 @@ class DockerManager:
                               "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
         try:
-            docker_client = docker.from_env()
+            from docker import from_env
+            docker_client = from_env()
         except Exception:
             raise error
 
@@ -534,9 +542,12 @@ class DockerManager:
         :param path: the original path
         :return: the original path formatted in such a way that Docker can understand it
         """
+        from os import environ
+        from json import loads
+
         # Docker Toolbox modifications
         is_windows = self._platform_manager.is_system_windows()
-        is_docker_toolbox = "machine/machines" in os.environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
+        is_docker_toolbox = "machine/machines" in environ.get("DOCKER_CERT_PATH", "").replace("\\", "/")
         if is_windows and is_docker_toolbox:
             # Backward slashes to forward slashes
             path = path.replace('\\', '/')
@@ -545,7 +556,7 @@ class DockerManager:
             path = f"/{path[0].lower()}/{path[3:]}"
 
         # Docker in Docker modifications
-        path_mappings = json.loads(os.environ.get("DOCKER_PATH_MAPPINGS", "{}"))
+        path_mappings = loads(environ.get("DOCKER_PATH_MAPPINGS", "{}"))
         for container_path, host_path in path_mappings.items():
             if path.startswith(container_path):
                 path = host_path + path[len(container_path):]

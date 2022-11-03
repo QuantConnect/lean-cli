@@ -14,18 +14,18 @@
 from pathlib import Path
 from typing import Optional
 
-import click
+from click import command, option
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.option("--project",
+@command(cls=LeanCommand)
+@option("--project",
               type=PathParameter(exists=True, file_okay=False, dir_okay=True),
               help="Path to the local project to push (all local projects if not specified)")
-@click.option("--organization-id",
+@option("--organization-id",
               type=str,
               help="ID of the organization where the project will be created in. This is ignored if the project has "
                    "already been created in the cloud")
@@ -36,11 +36,11 @@ def push(project: Optional[Path], organization_id: Optional[str]) -> None:
 
     This command will delete cloud files which don't have a local counterpart.
     """
-    push_manager = container.push_manager()
+    push_manager = container.push_manager
 
     # Parse which projects need to be pushed
     if project is not None:
-        project_config_manager = container.project_config_manager()
+        project_config_manager = container.project_config_manager
         project_config = project_config_manager.get_project_config(project)
         if not project_config.file.exists():
             raise RuntimeError(f"'{project}' is not a Lean project")

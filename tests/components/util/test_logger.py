@@ -75,7 +75,7 @@ def test_progress_creates_started_progress_instance(capsys: CaptureFixture) -> N
     capsys.readouterr()
 
 
-@mock.patch("click.prompt")
+@mock.patch("lean.components.util.logger.prompt")
 def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock, capsys: CaptureFixture) -> None:
     logger = Logger()
     options = [Option(id=1, label="Option 1"), Option(id=2, label="Option 2"), Option(id=3, label="Option 3")]
@@ -88,7 +88,7 @@ def test_prompt_list_returns_id_of_selected_option(prompt: mock.Mock, capsys: Ca
     capsys.readouterr()
 
 
-@mock.patch("click.prompt")
+@mock.patch("lean.components.util.logger.prompt")
 def test_prompt_list_displays_all_options(prompt: mock.Mock, capsys: CaptureFixture) -> None:
     logger = Logger()
     options = [Option(id=1, label="Option 1"), Option(id=2, label="Option 2"), Option(id=3, label="Option 3")]

@@ -14,11 +14,10 @@
 from datetime import datetime
 from unittest import mock
 
-from dependency_injector import providers
-
 from lean.container import container
-from lean.models.api import QCBacktest, QCMinimalFile
+from lean.models.api import QCMinimalFile
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory, create_lean_environments
+from tests.conftest import initialize_container
 
 
 def test_get_cloud_project_pushing_new_project():
@@ -33,9 +32,10 @@ def test_get_cloud_project_pushing_new_project():
     api_client.files.get_all.return_value = []
     api_client.files.create.return_value = QCMinimalFile(name="file.py", content="", modified=datetime.now())
     api_client.lean.environments.return_value = create_lean_environments()
-    container.api_client.override(providers.Object(api_client))
 
-    cloud_project_manager = container.cloud_project_manager()
+    initialize_container(api_client_to_use=api_client)
+
+    cloud_project_manager = container.cloud_project_manager
     created_cloud_project = cloud_project_manager.get_cloud_project("Python Project", push=True)
 
     assert created_cloud_project == cloud_project

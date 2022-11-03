@@ -12,7 +12,6 @@
 # limitations under the License.
 
 from datetime import datetime
-from math import floor
 from typing import List, Optional
 
 from lean.components.api.api_client import *
@@ -41,6 +40,7 @@ class LiveClient:
         :param end: the latest launch time the returned algorithms should have
         :return: a list of live algorithms which match the given filters
         """
+        from math import floor
         parameters = {
             "start": floor(start.timestamp()),
             "end": floor(end.timestamp())

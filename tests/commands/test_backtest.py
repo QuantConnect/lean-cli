@@ -18,15 +18,14 @@ from unittest import mock
 import json5
 import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
+from tests.conftest import initialize_container
 from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
@@ -46,17 +45,11 @@ def _generate_file(file: Path, content: str) -> None:
 def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -69,18 +62,12 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
 
     # This will raise an error if the output directory is not relative to Python Project/backtests
     args[3].relative_to(Path("Python Project/backtests").resolve())
@@ -89,17 +76,11 @@ def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
 def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", "Python Project/custom"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  Path.cwd() / "Python Project" / "custom",
@@ -112,17 +93,11 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
 def test_backtest_calls_lean_runner_with_release_mode() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--release"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("CSharp Project/Main.cs").resolve(),
                                                  mock.ANY,
@@ -135,17 +110,11 @@ def test_backtest_calls_lean_runner_with_release_mode() -> None:
 def test_backtest_calls_lean_runner_with_detach() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--detach"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -158,50 +127,35 @@ def test_backtest_calls_lean_runner_with_detach() -> None:
 def test_backtest_aborts_when_project_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "This Project Does Not Exist"])
 
     assert result.exit_code != 0
 
-    lean_runner.run_lean.assert_not_called()
+    container.lean_runner.run_lean.assert_not_called()
 
 
 def test_backtest_aborts_when_project_does_not_contain_algorithm_file() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "data"])
 
     assert result.exit_code != 0
 
-    lean_runner.run_lean.assert_not_called()
+    container.lean_runner.run_lean.assert_not_called()
 
 
 def test_backtest_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
-
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
+    # refresh so we assert we are called once
+    initialize_container(docker_manager)
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--update"])
 
     assert result.exit_code == 0
 
     docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -214,19 +168,13 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -239,19 +187,13 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
 def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--image", "custom/lean:456"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -267,24 +209,12 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
 def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.Mock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--python-venv", python_venv])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
 
     if python_venv:
         assert args[0]["python-venv"] == "/Custom-venv"
@@ -303,17 +233,11 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--debug", value])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
                                                  "backtesting",
                                                  Path("Python Project/main.py").resolve(),
                                                  mock.ANY,
@@ -353,12 +277,6 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
 </project>
         """)
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", "pycharm"])
 
     assert result.exit_code == 1
@@ -371,7 +289,7 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
 def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
     create_fake_lean_cli_directory()
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
     launch_json_path = Path.cwd() / "Python Project" / ".vscode" / "launch.json"
@@ -399,12 +317,6 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
             }
         ]
     }))
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", "ptvsd"])
 
@@ -478,12 +390,6 @@ def test_backtest_auto_updates_outdated_csharp_vscode_debug_config(config: str) 
     launch_json_path = Path.cwd() / "CSharp Project" / ".vscode" / "launch.json"
     _generate_file(launch_json_path, config)
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--debug", "vsdbg"])
 
     assert result.exit_code == 0
@@ -528,12 +434,6 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
 </project>
         """)
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "CSharp Project", "--debug", "rider"])
 
     assert result.exit_code == 1
@@ -564,12 +464,6 @@ def test_backtest_auto_updates_outdated_csharp_csproj() -> None:
 </Project>
     """)
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "CSharp Project"])
 
     assert result.exit_code == 0
@@ -588,18 +482,6 @@ def test_backtest_updates_lean_config_when_download_data_flag_given() -> None:
     "data-provider": "not api data provider"
 }
         """)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
-    api_client = mock.Mock()
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
-    container.api_client.override(providers.Object(api_client))
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--download-data"])
 
@@ -622,18 +504,12 @@ def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
 }
         """)
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
 
     assert args[0]["data-purchase-limit"] == 1000
 
@@ -641,18 +517,12 @@ def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
 def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
-
     result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-purchase-limit", "1000"])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
 
     assert "data-purchase-limit" not in args[0]
 
@@ -660,26 +530,20 @@ def test_backtest_ignores_data_purchase_limit_when_not_using_api_data_provider()
 def test_backtest_adds_python_libraries_path_to_lean_config() -> None:
     create_fake_lean_cli_directory()
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
     project_path = lean_cli_root_dir / "Python Project"
     library_path = lean_cli_root_dir / "Library/Python Library"
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_to_project(project_path, library_path, False)
-
-    docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
-
-    lean_runner = mock.Mock()
-    container.lean_runner.override(providers.Object(lean_runner))
 
     result = CliRunner().invoke(lean, ["backtest", str(project_path)])
 
     assert result.exit_code == 0
 
-    lean_runner.run_lean.assert_called_once()
-    args, _ = lean_runner.run_lean.call_args
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
 
     lean_config = args[0]
     expected_library_path = (Path("/") / library_path.relative_to(lean_cli_root_dir)).as_posix()

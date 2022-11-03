@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
-import operator
-from datetime import timedelta
-from math import ceil
 from typing import List, Optional, Tuple
 
-import click
+from click import command, option, Choice, argument, confirm
 
 from lean.click import LeanCommand, ensure_options
 from lean.components.config.optimizer_config_manager import NodeType, available_nodes
@@ -33,8 +29,10 @@ def _calculate_backtest_count(parameters: List[OptimizationParameter]) -> int:
     :param parameters: the parameters to optimize
     :return: the number of backtests a grid search on the parameters would require
     """
+    from operator import mul
+    from functools import reduce
     steps_per_parameter = [round((p.max - p.min) / p.step) + 1 for p in parameters]
-    return int(functools.reduce(operator.mul, steps_per_parameter, 1))
+    return int(reduce(mul, steps_per_parameter, 1))
 
 
 def _calculate_hours(backtest_time: int, backtest_count: int) -> float:
@@ -43,6 +41,7 @@ def _calculate_hours(backtest_time: int, backtest_count: int) -> float:
     :param backtest_time: the number of seconds one backtest is expected to take
     :param backtest_count: the number of backtests that need to be ran
     """
+    from math import ceil
     deploy_time = 30
     backtest_cpu_factor = 1.5
     seconds = (deploy_time + backtest_time * backtest_cpu_factor) * backtest_count
@@ -59,6 +58,8 @@ def _format_hours(hours: float) -> str:
     :param hours: the number of hours
     :return: the formatted number of hours
     """
+    from datetime import timedelta
+
     seconds = timedelta(hours=hours).total_seconds()
 
     if seconds < 60 * 60:
@@ -98,7 +99,7 @@ def _backtest_meets_constraints(backtest: QCOptimizationBacktest, constraints: L
     :param constraints: the constraints the backtest has to meet
     :return: True if the backtest meets all constraints, False if not
     """
-    optimizer_config_manager = container.optimizer_config_manager()
+    optimizer_config_manager = container.optimizer_config_manager
 
     for constraint in constraints:
         expression = str(constraint)
@@ -123,7 +124,8 @@ def _display_estimate(cloud_project: QCProject,
                       node: NodeType,
                       parallel_nodes: int) -> None:
     """Displays the estimated optimization time and cost."""
-    api_client = container.api_client()
+    from math import ceil
+    api_client = container.api_client
     estimate = api_client.optimizations.estimate(cloud_project.projectId,
                                                  finished_compile.compileId,
                                                  name,
@@ -140,7 +142,7 @@ def _display_estimate(cloud_project: QCProject,
     batch_time = ceil((hours * 100) / parallel_nodes) / 100
     batch_cost = max(0.01, ceil(node.price * hours * 100) / 100)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Estimated number of backtests: {backtest_count:,}")
     logger.info(f"Estimated batch time: {_format_hours(batch_time)}")
     logger.info(f"Estimated batch cost: ${batch_cost:,.2f}")
@@ -148,30 +150,30 @@ def _display_estimate(cloud_project: QCProject,
         f"Organization balance: {organization.credit.balance:,.0f} QCC (${organization.credit.balance / 100:,.2f})")
 
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
-@click.option("--target",
+@command(cls=LeanCommand)
+@argument("project", type=str)
+@option("--target",
               type=str,
               help="The target statistic of the optimization")
-@click.option("--target-direction",
-              type=click.Choice(["min", "max"], case_sensitive=False),
+@option("--target-direction",
+              type=Choice(["min", "max"], case_sensitive=False),
               help="Whether the target must be minimized or maximized")
-@click.option("--parameter",
+@option("--parameter",
               type=(str, float, float, float),
               multiple=True,
               help="The 'parameter min max step' pairs configuring the parameters to optimize")
-@click.option("--constraint",
+@option("--constraint",
               type=str,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
-@click.option("--node",
-              type=click.Choice([node.name for node in available_nodes], case_sensitive=False),
+@option("--node",
+              type=Choice([node.name for node in available_nodes], case_sensitive=False),
               help="The node type to run the optimization on")
-@click.option("--parallel-nodes",
+@option("--parallel-nodes",
               type=int,
               help="The number of nodes that may be run in parallel")
-@click.option("--name", type=str, help="The name of the optimization (a random one is generated if not specified)")
-@click.option("--push",
+@option("--name", type=str, help="The name of the optimization (a random one is generated if not specified)")
+@option("--push",
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before starting the optimization")
@@ -207,19 +209,19 @@ def optimize(project: str,
     with `lean cloud pull` it is possible to use the --push option to push local
     modifications to the cloud before running the optimization.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, push)
 
     if name is None:
-        name = container.name_generator().generate_name()
+        name = container.name_generator.generate_name()
 
-    cloud_runner = container.cloud_runner()
+    cloud_runner = container.cloud_runner
     finished_compile = cloud_runner.compile_project(cloud_project)
 
-    optimizer_config_manager = container.optimizer_config_manager()
+    optimizer_config_manager = container.optimizer_config_manager
     organization = api_client.organizations.get(cloud_project.organizationId)
 
     if target is not None:
@@ -267,7 +269,7 @@ def optimize(project: str,
                               node,
                               parallel_nodes)
 
-            if click.confirm("Do you want to start the optimization on the selected node type?", default=True):
+            if confirm("Do you want to start the optimization on the selected node type?", default=True):
                 break
 
     optimization = cloud_runner.run_optimization(cloud_project,

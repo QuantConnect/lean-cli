@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+from os import environ
 from typing import Dict, Type, List
 from lean.container import container
 from lean.models.brokerages.local.local_brokerage import LocalBrokerage
@@ -30,7 +30,7 @@ for json_module in json_modules:
         all_local_data_feeds.append(DataFeed(json_module))
 
 # Remove IQFeed DataFeed for other than windows machines
-if not [container.platform_manager().is_host_windows() or os.environ.get("__README__", "false") == "true"]:
+if not [container.platform_manager.is_host_windows() or environ.get("__README__", "false") == "true"]:
     all_local_data_feeds = [
         data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
 

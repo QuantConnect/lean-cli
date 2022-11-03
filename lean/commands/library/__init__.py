@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group
 
 from lean.commands.library.add import add
 from lean.commands.library.remove import remove
 
 
-@click.group()
+@group()
 def library() -> None:
     """Manage custom libraries in a project."""
     # This method is intentionally empty

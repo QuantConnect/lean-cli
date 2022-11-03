@@ -14,22 +14,22 @@
 
 from pathlib import Path
 from typing import Optional
-import uuid
-import click
+
+from click import command, argument, option
 from lean.click import LeanCommand, PathParameter
 from lean.commands.live.live import get_result, send_command
 from lean.components.util.click_custom_parameters import DECIMAL
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--ticker", type=str, required=True, help="The ticker of the symbol to be submitted")
-@click.option("--market", type=str, required=True, help="The market of the symbol to be submitted")
-@click.option("--security-type", required=True, type=str, help="The security type of the symbol to be submitted")
-@click.option("--order-type", type=str, required=True, help="The order type to be submitted")
-@click.option("--quantity", type=DECIMAL, required=True, help="The number of units to be ordered (directional)")
-@click.option("--limit-price", type=DECIMAL, default=0.0, help="The limit price of the order be submitted")
-@click.option("--stop-price", type=DECIMAL, default=0.0, help="The stop price of the order to be submitted")
-@click.option("--tag", type=str, help="The tag to be attached to the order")
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--ticker", type=str, required=True, help="The ticker of the symbol to be submitted")
+@option("--market", type=str, required=True, help="The market of the symbol to be submitted")
+@option("--security-type", required=True, type=str, help="The security type of the symbol to be submitted")
+@option("--order-type", type=str, required=True, help="The order type to be submitted")
+@option("--quantity", type=DECIMAL, required=True, help="The number of units to be ordered (directional)")
+@option("--limit-price", type=DECIMAL, default=0.0, help="The limit price of the order be submitted")
+@option("--stop-price", type=DECIMAL, default=0.0, help="The stop price of the order to be submitted")
+@option("--tag", type=str, help="The tag to be attached to the order")
 def submit_order(project: Path,
                  ticker: str,
                  market: str,
@@ -42,8 +42,8 @@ def submit_order(project: Path,
     """
     Represents a command to submit an order to the algorithm.
     """
-
-    command_id = uuid.uuid4().hex
+    from uuid import uuid4
+    command_id = uuid4().hex
 
     data = {
         "$type": "QuantConnect.Commands.OrderCommand, QuantConnect.Common",

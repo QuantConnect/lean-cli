@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import click
-from docker.types import Mount
+from click import command, option
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
@@ -43,38 +41,38 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
     return None
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.option("--backtest-results",
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@option("--backtest-results",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the JSON file containing the backtest results")
-@click.option("--live-results",
+@option("--live-results",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the JSON file containing the live trading results")
-@click.option("--report-destination",
+@option("--report-destination",
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the report creator in a detached Docker container and return immediately")
-@click.option("--strategy-name",
+@option("--strategy-name",
               type=str,
               help="Name of the strategy, will appear at the top-right corner of each page")
-@click.option("--strategy-version",
+@option("--strategy-version",
               type=str,
               help="Version number of the strategy, will appear next to the project name")
-@click.option("--strategy-description",
+@option("--strategy-description",
               type=str,
               help="Description of the strategy, will appear under the 'Strategy Description' section")
-@click.option("--overwrite",
+@option("--overwrite",
               is_flag=True,
               default=False,
               help="Overwrite --report-destination if it already contains a file")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the report creator")
@@ -104,6 +102,9 @@ def report(backtest_results: Optional[Path],
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    from json import dump
+    from docker.types import Mount
+
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
@@ -115,7 +116,7 @@ def report(backtest_results: Optional[Path],
             "https://www.lean.io/docs/v2/lean-cli/reports#02-Generate-Reports"
             )
 
-    logger = container.logger()
+    logger = container.logger
 
     if live_results is None:
         logger.info(f"Generating a report from '{backtest_results}'")
@@ -129,7 +130,7 @@ def report(backtest_results: Optional[Path],
             strategy_name = project_directory.name
 
         if strategy_description is None:
-            project_config_manager = container.project_config_manager()
+            project_config_manager = container.project_config_manager
             project_config = project_config_manager.get_project_config(project_directory)
             strategy_description = project_config.get("description", "")
 
@@ -170,13 +171,13 @@ def report(backtest_results: Optional[Path],
         }
     }
 
-    config_path = container.temp_manager().create_temporary_directory() / "config.json"
+    config_path = container.temp_manager.create_temporary_directory() / "config.json"
     with config_path.open("w+", encoding="utf-8") as file:
-        json.dump(report_config, file)
+        dump(report_config, file)
 
-    backtest_id = container.output_config_manager().get_backtest_id(backtest_results.parent)
+    backtest_id = container.output_config_manager.get_backtest_id(backtest_results.parent)
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
     report_destination.parent.mkdir(parents=True, exist_ok=True)
@@ -214,25 +215,25 @@ def report(backtest_results: Optional[Path],
                                            type="bind",
                                            read_only=True))
 
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
     engine_image_override = image
 
     if engine_image_override is None and project_directory is not None:
-        project_config_manager = container.project_config_manager()
+        project_config_manager = container.project_config_manager
         project_config = project_config_manager.get_project_config(project_directory)
         engine_image_override = project_config.get("engine-image", None)
 
     engine_image = cli_config_manager.get_engine_image(engine_image_override)
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
-    success = container.docker_manager().run_image(engine_image, **run_options)
+    success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
 
     if detach:
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         temp_manager.delete_temporary_directories_when_done = False
 
         logger.info(f"Successfully started the report creator in the '{run_options['name']}' container")

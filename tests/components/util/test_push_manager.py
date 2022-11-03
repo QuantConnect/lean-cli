@@ -23,7 +23,7 @@ from tests.test_helpers import create_fake_lean_cli_directory, create_api_projec
 
 def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock) -> PushManager:
     logger = mock.Mock()
-    return PushManager(logger, api_client, project_manager, container.project_config_manager())
+    return PushManager(logger, api_client, project_manager, container.project_config_manager)
 
 
 def _get_base_cloud_projects() -> List[QCProject]:
@@ -33,7 +33,7 @@ def _get_base_cloud_projects() -> List[QCProject]:
 def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     create_fake_lean_cli_directory()
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -42,7 +42,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     python_library_path = lean_cli_root_dir / python_library_relative_path
     csharp_library_path = lean_cli_root_dir / csharp_library_relative_path
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_reference_to_project(project_path, python_library_path)
     library_manager.add_lean_library_reference_to_project(python_library_path, csharp_library_path)
 
@@ -102,7 +102,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
 def test_push_projects_removes_libraries_in_the_cloud() -> None:
     create_fake_lean_cli_directory()
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -119,7 +119,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     cloud_library = create_api_project(python_library_id, python_library_relative_path)
     cloud_project.libraries = [cloud_library.projectId]
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     library_config = project_config_manager.get_project_config(python_library_path)
@@ -146,7 +146,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
 def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     create_fake_lean_cli_directory()
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -155,7 +155,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     python_library_path = lean_cli_root_dir / python_library_relative_path
     csharp_library_path = lean_cli_root_dir / csharp_library_relative_path
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_reference_to_project(project_path, python_library_path)
 
     project_manager = mock.Mock()
@@ -170,7 +170,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     csharp_library_cloud_project = create_api_project(csharp_library_id, csharp_library_relative_path)
     cloud_project.libraries = [csharp_library_id]
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     csharp_library_config = project_config_manager.get_project_config(csharp_library_path)
@@ -219,7 +219,7 @@ def test_push_projects_pushes_lean_engine_version() -> None:
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)
@@ -253,7 +253,7 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
     cloud_project = create_api_project(project_id, project_path.name)
     cloud_project.leanPinnedToMaster = False
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)
@@ -285,7 +285,7 @@ def test_push_projects_pushes_lean_environment() -> None:
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)
@@ -320,7 +320,7 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     cloud_project = create_api_project(project_id, project_path.name)
     cloud_project.leanEnvironment = 2
 
-    project_config_manager = container.project_config_manager()
+    project_config_manager = container.project_config_manager
     project_config = project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", project_id)
     project_config.set("description", cloud_project.description)

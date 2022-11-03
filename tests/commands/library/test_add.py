@@ -23,7 +23,7 @@ from tests.test_helpers import create_fake_lean_cli_directory, create_fake_lean_
 
 
 def _assert_library_reference_was_added_to_project_config_file(project_dir: Path, library_dir: Path) -> None:
-    project_config = container.project_config_manager().get_project_config(project_dir)
+    project_config = container.project_config_manager.get_project_config(project_dir)
     project_libraries = project_config.get("libraries")
 
     assert len(project_libraries) == 1
@@ -35,11 +35,11 @@ def _assert_library_reference_was_added_to_project_config_file(project_dir: Path
 
 
 def _assert_library_reference_was_added_to_csharp_project_csproj_file(project_dir: Path, library_dir: Path) -> None:
-    project_csproj_file = container.project_manager().get_csproj_file_path(project_dir)
-    library_reference = container.library_manager().get_csharp_lean_library_path_for_csproj_file(project_dir,
+    project_csproj_file = container.project_manager.get_csproj_file_path(project_dir)
+    library_reference = container.library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir,
                                                                                                  library_dir)
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
     assert any(project_reference.get("Include") == library_reference
@@ -47,9 +47,9 @@ def _assert_library_reference_was_added_to_csharp_project_csproj_file(project_di
 
 
 def _assert_library_reference_was_not_added_to_csharp_project_csproj_file(project_dir: Path, library_dir: Path) -> None:
-    project_csproj_file = container.project_manager().get_csproj_file_path(project_dir)
+    project_csproj_file = container.project_manager.get_csproj_file_path(project_dir)
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
     assert not any(str(library_dir) in project_reference.get("Include", "")

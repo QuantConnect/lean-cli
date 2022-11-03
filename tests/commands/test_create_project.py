@@ -17,7 +17,6 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.util.project_manager import ProjectManager
@@ -91,7 +90,7 @@ def test_create_project_creates_csharp_project_when_language_csharp(path: str) -
 def test_create_project_creates_python_project_when_default_language_set_to_python() -> None:
     create_fake_lean_cli_directory()
 
-    container.cli_config_manager().default_language.set_value("python")
+    container.cli_config_manager.default_language.set_value("python")
 
     result = CliRunner().invoke(lean, ["create-project", "My First Project"])
 
@@ -155,7 +154,7 @@ def test_create_project_aborts_when_path_invalid() -> None:
 
     path_manager = mock.Mock()
     path_manager.is_path_valid.return_value = False
-    container.path_manager.override(providers.Object(path_manager))
+    container.path_manager= path_manager
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])
 

@@ -13,15 +13,15 @@
 
 from typing import Optional
 
-import click
+from click import command, option
 
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.option("--project", type=str, help="Name or id of the project to pull (all cloud projects if not specified)")
-@click.option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
+@command(cls=LeanCommand)
+@option("--project", type=str, help="Name or id of the project to pull (all cloud projects if not specified)")
+@option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
 def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     """Pull projects from QuantConnect to the local drive.
 
@@ -39,7 +39,7 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
             # We treat it as a name rather than an id
             project_name = project
 
-    api_client = container.api_client()
+    api_client = container.api_client
     projects_to_pull = []
     all_projects = None
 
@@ -47,11 +47,11 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
         projects_to_pull.append(api_client.projects.get(project_id))
     else:
         all_projects = api_client.projects.get_all()
-        project_manager = container.project_manager()
+        project_manager = container.project_manager
         projects_to_pull = project_manager.get_projects_by_name_or_id(all_projects, project_name)
 
     if project is None and not pull_bootcamp:
         projects_to_pull = [p for p in projects_to_pull if not p.name.startswith("Boot Camp/")]
 
-    pull_manager = container.pull_manager()
+    pull_manager = container.pull_manager
     pull_manager.pull_projects(projects_to_pull, all_projects)

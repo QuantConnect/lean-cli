@@ -11,11 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
-import re
 from typing import List, Tuple
 
-import click
+from click import prompt, confirm, FLOAT, FloatRange, IntRange
 
 from lean.components.util.logger import Logger
 from lean.models.api import QCParameter
@@ -102,8 +100,9 @@ class OptimizerConfigManager:
 
         :return: the chosen optimization target
         """
+        from itertools import product
         # Create a list of options containing a "<target> (min)" and "<target> (max)" option for every target
-        options = list(itertools.product(self.available_targets,
+        options = list(product(self.available_targets,
                                          [OptimizationExtremum.Minimum, OptimizationExtremum.Maximum]))
         options = [Option(id=OptimizationTarget(target=option[0][0], extremum=option[1]),
                           label=f"{option[0][1]} ({option[1]})") for option in options]
@@ -124,12 +123,12 @@ class OptimizerConfigManager:
                 self._logger.warn(f"You can optimize up to 2 parameters in the cloud, skipping '{parameter.key}'")
                 continue
 
-            if not click.confirm(f"Should the '{parameter.key}' parameter be optimized?", default=True):
+            if not confirm(f"Should the '{parameter.key}' parameter be optimized?", default=True):
                 continue
 
-            minimum = click.prompt(f"Minimum value for '{parameter.key}'", type=click.FLOAT)
-            maximum = click.prompt(f"Maximum value for '{parameter.key}'", type=click.FloatRange(min=minimum))
-            step_size = click.prompt(f"Step size for '{parameter.key}'", type=click.FloatRange(min=0.0), default=1.0)
+            minimum = prompt(f"Minimum value for '{parameter.key}'", type=FLOAT)
+            maximum = prompt(f"Maximum value for '{parameter.key}'", type=FloatRange(min=minimum))
+            step_size = prompt(f"Step size for '{parameter.key}'", type=FloatRange(min=0.0), default=1.0)
 
             results.append(OptimizationParameter(name=parameter.key, min=minimum, max=maximum, step=step_size))
 
@@ -151,7 +150,7 @@ class OptimizerConfigManager:
             results_str = results_str or "None"
             self._logger.info(f"Current constraints: {results_str}")
 
-            if not click.confirm("Do you want to add a constraint?", default=False):
+            if not confirm("Do you want to add a constraint?", default=False):
                 return results
 
             target_options = [Option(id=target[0], label=target[1]) for target in self.available_targets]
@@ -166,7 +165,7 @@ class OptimizerConfigManager:
                 Option(id=OptimizationConstraintOperator.NotEqual, label="Not equal to <value>")
             ])
 
-            value = click.prompt("Set the <value> for the selected operator", type=click.FLOAT)
+            value = prompt("Set the <value> for the selected operator", type=FLOAT)
 
             results.append(OptimizationConstraint(**{"target": target, "operator": operator, "target-value": value}))
 
@@ -181,8 +180,8 @@ class OptimizerConfigManager:
         ]
 
         node = self._logger.prompt_list("Select the optimization node type", node_options)
-        parallel_nodes = click.prompt(f"How many nodes should run in parallel ({node.min_nodes}-{node.max_nodes})",
-                                      type=click.IntRange(min=node.min_nodes, max=node.max_nodes),
+        parallel_nodes = prompt(f"How many nodes should run in parallel ({node.min_nodes}-{node.max_nodes})",
+                                      type=IntRange(min=node.min_nodes, max=node.max_nodes),
                                       default=node.default_nodes)
 
         return node, parallel_nodes
@@ -197,9 +196,10 @@ class OptimizerConfigManager:
         """
         if "." in target:
             return target
+        from re import sub
 
         # Turn "SharpeRatio" into "Sharpe Ratio" so the title() call doesn't lowercase the R
-        target = re.sub(r"([A-Z])", r" \1", target)
+        target = sub(r"([A-Z])", r" \1", target)
 
         return f"TotalPerformance.PortfolioStatistics.{target.title().replace(' ', '')}"
 

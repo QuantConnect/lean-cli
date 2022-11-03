@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import command, argument
 
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-@click.command(cls=LeanCommand)
-@click.argument("key", type=str)
+@command(cls=LeanCommand)
+@argument("key", type=str)
 def get(key: str) -> None:
     """Get the current value of a configurable option.
 
@@ -28,7 +28,7 @@ def get(key: str) -> None:
 
     Run `lean config list` to show all available options.
     """
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
 
     option = cli_config_manager.get_option_by_key(key)
     if option.is_sensitive:
@@ -40,5 +40,5 @@ def get(key: str) -> None:
         raise MoreInfoError(f"The option with key '{key}' doesn't have a value set",
                             "https://www.lean.io/docs/v2/lean-cli/api-reference/lean-config-set")
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(value)

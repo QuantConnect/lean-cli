@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil
-import subprocess
 from pathlib import Path
-from typing import Union
 
-import click
-from pkg_resources import Requirement
+from click import command, argument, option
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
@@ -34,13 +30,15 @@ def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: 
     :param name: the name of the library to remove
     :param no_local:
     """
-    logger = container.logger()
-    path_manager = container.path_manager()
+    from shutil import which
+    from subprocess import run
+    logger = container.logger
+    path_manager = container.path_manager
 
     csproj_file = next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(csproj_file)}'")
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
     for package_reference in csproj_tree.findall(".//PackageReference"):
@@ -49,10 +47,10 @@ def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: 
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 
-    if not no_local and shutil.which("dotnet") is not None:
+    if not no_local and which("dotnet") is not None:
         logger.info(f"Restoring packages in '{path_manager.get_relative_path(project_dir)}'")
 
-        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+        process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
 
         if process.returncode != 0:
             raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
@@ -66,8 +64,10 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     :param project_dir: the path to the project directory
     :param name: the name of the library to remove
     """
-    logger = container.logger()
-    path_manager = container.path_manager()
+    from pkg_resources import Requirement
+
+    logger = container.logger
+    path_manager = container.path_manager
 
     requirements_file = project_dir / "requirements.txt"
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(requirements_file)}'")
@@ -91,10 +91,10 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     requirements_file.write_text(new_content, encoding="utf-8")
 
 
-@click.command(cls=LeanCommand, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.argument("name", type=str)
-@click.option("--no-local", is_flag=True, default=False, help="Skip making changes to your local environment")
+@command(cls=LeanCommand, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+@argument("name", type=str)
+@option("--no-local", is_flag=True, default=False, help="Skip making changes to your local environment")
 def remove(project: Path, name: str, no_local: bool) -> None:
     """Remove a custom library from a project.
 
@@ -116,14 +116,14 @@ def remove(project: Path, name: str, no_local: bool) -> None:
     Python example usage:
     $ lean library remove "My Python Project" tensorflow
     """
-    project_config = container.project_config_manager().get_project_config(project)
+    project_config = container.project_config_manager.get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
 
     if project_language is None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_dir = Path(name).expanduser().resolve()
     if library_manager.is_lean_library(library_dir):
         if project_language == "CSharp":

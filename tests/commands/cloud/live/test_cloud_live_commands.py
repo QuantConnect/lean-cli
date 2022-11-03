@@ -13,7 +13,6 @@
 
 from unittest import mock
 from click.testing import CliRunner
-from dependency_injector import providers
 import pytest
 import lean.models.brokerages.local
 from lean.commands import lean
@@ -40,10 +39,10 @@ def test_cloud_live_stop() -> None:
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     result = CliRunner().invoke(lean, ["cloud", "live", "stop", "Python Project"])
 
@@ -53,10 +52,10 @@ def test_cloud_live_liquidate() -> None:
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     result = CliRunner().invoke(lean, ["cloud", "live", "liquidate", "Python Project"])
 
@@ -68,13 +67,13 @@ def test_cloud_live_deploy() -> None:
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
@@ -115,13 +114,13 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
@@ -194,15 +193,15 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {'live': [], 'portfolio': {}}
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     options = []
     for key, value in brokerage_required_options[brokerage].items():
@@ -273,15 +272,15 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()
-    container.cloud_project_manager.override(providers.Object(cloud_project_manager))
+    container.cloud_project_manager = cloud_project_manager
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {'live': [], 'portfolio': {}}
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     options = []
     for key, value in brokerage_required_options[brokerage].items():

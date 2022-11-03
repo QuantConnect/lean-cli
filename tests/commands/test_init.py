@@ -18,7 +18,6 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dependency_injector.providers import Object
 from responses import RequestsMock
 
 from lean.commands import lean
@@ -56,7 +55,7 @@ def create_fake_archive(requests_mock: RequestsMock) -> None:
 def set_unauthenticated() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = False
-    container.api_client.override(Object(api_client))
+    container.api_client = api_client
 
 
 def test_init_aborts_when_config_file_already_exists() -> None:
@@ -89,7 +88,7 @@ def test_init_prompts_for_default_language_when_not_set_yet() -> None:
 
     assert result.exit_code == 0
 
-    assert container.cli_config_manager().default_language.get_value() == "csharp"
+    assert container.cli_config_manager.default_language.get_value() == "csharp"
 
 
 def test_init_creates_data_directory_from_repo() -> None:

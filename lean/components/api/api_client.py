@@ -11,15 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
-from hashlib import sha256
-from time import time
 from typing import Any, Dict
-from urllib.parse import urljoin
 
-import requests
-
-import lean
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -54,8 +47,7 @@ class APIClient:
         """
         self._logger = logger
         self._http_client = http_client
-        self._user_id = user_id
-        self._api_token = api_token
+        self.set_user_token(user_id, api_token)
 
         # Create the clients containing the methods to send requests to the various API endpoints
         self.accounts = AccountClient(self)
@@ -73,6 +65,10 @@ class APIClient:
         self.services = ServiceClient(self)
         self.users = UserClient(self)
         self.lean = LeanClient(self)
+
+    def set_user_token(self, user_id: str, api_token: str):
+        self._user_id = user_id
+        self._api_token = api_token
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.
@@ -107,7 +103,8 @@ class APIClient:
             self.get("authenticate")
             return True
         except (RequestFailedError, AuthenticationError):
-            self._logger.debug(traceback.format_exc().strip())
+            from traceback import format_exc
+            self._logger.debug(format_exc().strip())
             return False
 
     def _request(self, method: str, endpoint: str, options: Dict[str, Any] = {}, retry_http_5xx: bool = True) -> Any:
@@ -119,6 +116,11 @@ class APIClient:
         :param retry_http_5xx: True if the request should be retried on an HTTP 5xx response, False if not
         :return: the parsed response of the request
         """
+        from hashlib import sha256
+        from urllib.parse import urljoin
+        from lean import __version__
+        from time import time
+
         full_url = urljoin(API_BASE_URL, endpoint)
 
         # Create the hash which is used to authenticate the user to the API
@@ -129,8 +131,8 @@ class APIClient:
             "Timestamp": timestamp
         }
 
-        version = lean.__version__
-        if lean.__version__ == 'dev':
+        version = __version__
+        if __version__ == 'dev':
             version = 99999999
         headers["User-Agent"] = f"Lean CLI {version}"
 
@@ -152,7 +154,7 @@ class APIClient:
 
         return self._parse_response(response)
 
-    def _parse_response(self, response: requests.Response) -> Any:
+    def _parse_response(self, response) -> Any:
         """Parses the data in a response.
 
         Raises an error if the data in the response indicates something went wrong.

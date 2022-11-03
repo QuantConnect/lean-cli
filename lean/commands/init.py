@@ -11,11 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil
-import zipfile
 from pathlib import Path
 
-import click
+from click import command, option, Choice, confirm, prompt
 
 from lean.click import LeanCommand
 from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
@@ -28,13 +26,13 @@ def _download_repository(output_path: Path) -> None:
 
     :param output_path: the path to the zip file where the LEAN repository must be saved to
     """
-    logger = container.logger()
+    logger = container.logger
     logger.info("Downloading latest sample data from the Lean repository...")
 
     # We download the entire Lean repository and extract the data and the launcher's config file
     # GitHub doesn't allow downloading a specific directory
     # Since we need ~80% of the total repository in terms of file size this shouldn't be too big of a problem
-    response = container.http_client().get("https://github.com/QuantConnect/Lean/archive/master.zip", stream=True)
+    response = container.http_client.get("https://github.com/QuantConnect/Lean/archive/master.zip", stream=True)
 
     total_size_bytes = int(response.headers.get("content-length", 0))
     print_file_size_at_mb = 10
@@ -53,10 +51,10 @@ def _download_repository(output_path: Path) -> None:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
                 written_bytes += len(chunk)
-                
+
                 if progress is not None:
                     progress.update(progress_task, completed=(written_bytes / total_size_bytes) * 100)
-                
+
                 file_size_mb = round(written_bytes / 1024 / 1024, 2)
                 if file_size_mb >= print_file_size_at_mb:
                     print_file_size_at_mb += 20
@@ -70,12 +68,16 @@ def _download_repository(output_path: Path) -> None:
         progress.stop()
 
 
-@click.command(cls=LeanCommand)
-@click.option("--language", "-l",
-              type=click.Choice(container.cli_config_manager().default_language.allowed_values, case_sensitive=False),
+@command(cls=LeanCommand)
+@option("--language", "-l",
+              type=Choice(container.cli_config_manager.default_language.allowed_values, case_sensitive=False),
               help="The default language to use for new projects")
 def init(language: str) -> None:
     """Scaffold a Lean configuration file and data directory."""
+
+    from shutil import copytree
+    from zipfile import ZipFile
+
     current_dir = Path.cwd()
     data_dir = current_dir / DEFAULT_DATA_DIRECTORY_NAME
     lean_config_path = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
@@ -87,26 +89,26 @@ def init(language: str) -> None:
             raise MoreInfoError(f"{relative_path} already exists, please run this command in an empty directory",
                                 "https://www.lean.io/docs/v2/lean-cli/initialization/directory-structure#02-lean-init")
 
-    logger = container.logger()
+    logger = container.logger
 
     # Warn the user if the current directory is not empty
     if next(current_dir.iterdir(), None) is not None:
         logger.info("This command will create a Lean configuration file and data directory in the current directory")
-        click.confirm("The current directory is not empty, continue?", default=False, abort=True)
+        confirm("The current directory is not empty, continue?", default=False, abort=True)
 
     # Download the Lean repository
-    tmp_directory = container.temp_manager().create_temporary_directory()
+    tmp_directory = container.temp_manager.create_temporary_directory()
     _download_repository(tmp_directory / "master.zip")
 
     # Extract the downloaded repository
-    with zipfile.ZipFile(tmp_directory / "master.zip") as zip_file:
+    with ZipFile(tmp_directory / "master.zip") as zip_file:
         zip_file.extractall(tmp_directory / "master")
 
     # Copy the data directory
-    shutil.copytree(tmp_directory / "master" / "Lean-master" / "Data", data_dir)
+    copytree(tmp_directory / "master" / "Lean-master" / "Data", data_dir)
 
     # Create the config file
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")
     config = lean_config_manager.clean_lean_config(config)
     lean_config_manager.store_known_lean_config_path(lean_config_path)
@@ -118,11 +120,11 @@ def init(language: str) -> None:
         file.write(config)
 
     # Prompt for some general configuration if not set yet
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
     if cli_config_manager.default_language.get_value() is None:
-        default_language = language if language is not None else click.prompt("What should the default language for new projects be?",
+        default_language = language if language is not None else prompt("What should the default language for new projects be?",
                                         default=cli_config_manager.default_language.default_value,
-                                        type=click.Choice(cli_config_manager.default_language.allowed_values))
+                                        type=Choice(cli_config_manager.default_language.allowed_values))
         cli_config_manager.default_language.set_value(default_language)
 
     logger.info(f"""

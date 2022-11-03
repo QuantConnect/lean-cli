@@ -11,24 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
-from rich import box
-from rich.table import Table
+from click import command
 
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
+@command(cls=LeanCommand)
 def list() -> None:
     """List the configurable options and their current values."""
+    from rich import box
+    from rich.table import Table
     table = Table(box=box.SQUARE)
     table.add_column("Key", overflow="fold")
     table.add_column("Value", overflow="fold")
     table.add_column("Location", overflow="fold")
     table.add_column("Description", overflow="fold")
 
-    for option in container.cli_config_manager().all_options:
+    for option in container.cli_config_manager.all_options:
         value = option.get_value(default="<not set>")
 
         # Mask values of sensitive options
@@ -40,5 +40,5 @@ def list() -> None:
                       str(option.location),
                       option.description)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(table)

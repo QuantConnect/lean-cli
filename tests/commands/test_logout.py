@@ -20,7 +20,7 @@ from lean.container import container
 
 
 def test_logout_deletes_credentials_storage_file() -> None:
-    container.cli_config_manager().user_id.set_value("123")
+    container.cli_config_manager.user_id.set_value("123")
     assert Path("~/.lean/credentials").expanduser().exists()
 
     result = CliRunner().invoke(lean, ["logout"])

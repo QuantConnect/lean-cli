@@ -11,10 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 
 from lean.models.pydantic import WrappedBaseModel
-
 
 class NuGetPackage(WrappedBaseModel):
     name: str
@@ -34,7 +32,8 @@ class NuGetPackage(WrappedBaseModel):
         :param file_name: the file name of the NuGet package
         :return: the NuGetPackage instance containing the name and version of the package with the given file name
         """
-        name = re.search(r"([^\d]+)\.\d", file_name).group(1)
+        from re import search
+        name = search(r"([^\d]+)\.\d", file_name).group(1)
         version = file_name.replace(f"{name}.", "").replace(".nupkg", "")
 
         return NuGetPackage(name=name, version=version)

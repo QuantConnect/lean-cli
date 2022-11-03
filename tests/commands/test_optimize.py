@@ -15,9 +15,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
-import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
@@ -31,8 +29,7 @@ from tests.test_helpers import create_fake_lean_cli_directory
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
 
-@pytest.fixture(autouse=True)
-def optimizer_config_manager_mock() -> mock.Mock:
+def _get_optimizer_config_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the optimizer config manager before every test."""
     optimizer_config_manager = mock.Mock()
     optimizer_config_manager.configure_strategy.return_value = "QuantConnect.Optimizer.Strategies.GridSearchOptimizationStrategy"
@@ -52,7 +49,6 @@ def optimizer_config_manager_mock() -> mock.Mock:
         })
     ]
 
-    container.optimizer_config_manager.override(providers.Object(optimizer_config_manager))
     return optimizer_config_manager
 
 
@@ -65,9 +61,10 @@ def run_image(image: DockerImage, **kwargs) -> bool:
 def test_optimize_runs_lean_container() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -84,9 +81,10 @@ def test_optimize_runs_lean_container() -> None:
 def test_optimize_runs_optimizer() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -104,9 +102,10 @@ def test_optimize_runs_optimizer() -> None:
 def test_optimize_mounts_optimizer_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -123,9 +122,10 @@ def test_optimize_mounts_optimizer_config() -> None:
 def test_optimize_mounts_lean_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -142,9 +142,10 @@ def test_optimize_mounts_lean_config() -> None:
 def test_optimize_mounts_data_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -164,9 +165,10 @@ def test_optimize_mounts_data_directory() -> None:
 def test_optimize_mounts_output_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -188,7 +190,8 @@ def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -202,14 +205,15 @@ def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
 def test_optimize_copies_code_to_output_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    project_manager = mock.Mock()
+    project_manager = mock.MagicMock()
     project_manager.find_algorithm_file.return_value = Path.cwd() / "Python Project" / "main.py"
     project_manager.get_source_files.return_value = [Path.cwd() / "Python Project" / "main.py"]
-    container.project_manager.override(providers.Object(project_manager))
+    container.project_manager = project_manager
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -224,9 +228,10 @@ def test_optimize_copies_code_to_output_directory() -> None:
 def test_optimize_creates_correct_config_from_optimizer_config_manager_output() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -269,9 +274,10 @@ def test_optimize_creates_correct_config_from_optimizer_config_manager_output() 
 def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -376,9 +382,10 @@ def test_optimize_creates_correct_config_from_given_optimizer_config() -> None:
 def test_optimize_writes_config_to_output_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -418,9 +425,10 @@ def test_optimize_writes_config_to_output_directory() -> None:
 def test_optimize_aborts_when_project_has_no_parameters() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {})
 
@@ -436,7 +444,8 @@ def test_optimize_aborts_when_run_image_fails() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -452,7 +461,8 @@ def test_optimize_forces_update_when_update_option_given() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -467,11 +477,12 @@ def test_optimize_forces_update_when_update_option_given() -> None:
 def test_optimize_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
+    docker_manager = mock.MagicMock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 
@@ -490,9 +501,10 @@ def test_optimize_runs_custom_image_when_given_as_option() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
 

@@ -11,13 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import multiprocessing
-import tarfile
 from pathlib import Path
-from datetime import *
+from datetime import datetime, timedelta
 from typing import Any, List, Callable
-
-from joblib import delayed, Parallel
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -79,11 +75,13 @@ class DataDownloader:
         :param overwrite: whether existing files may be overwritten
         :param organization_id: the id of the organization that should be billed
         """
+        from joblib import delayed, Parallel
+        from multiprocessing import cpu_count
         progress = self._logger.progress(suffix="{task.percentage:0.0f}% ({task.completed:,.0f}/{task.total:,.0f})")
         progress_task = progress.add_task("", total=len(data_files))
 
         try:
-            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), backend="threading")
+            parallel = Parallel(n_jobs=max(1, cpu_count() - 1), backend="threading")
 
             data_dir = self._lean_config_manager.get_data_directory()
             parallel(delayed(self._download_file)(data_file.file, overwrite, data_dir, organization_id,
@@ -108,7 +106,8 @@ class DataDownloader:
             raise e
 
     def _process_bulk(self, file: Path, destination: Path):
-        tar = tarfile.open(file)
+        from tarfile import open
+        tar = open(file)
         tar.errorlevel = 0
         tar.extractall(destination)
         tar.close()

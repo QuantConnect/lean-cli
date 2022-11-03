@@ -13,7 +13,7 @@
 
 from typing import List
 
-import click
+from click import confirm
 
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
@@ -57,7 +57,7 @@ class CloudRunner:
                 get_progress=lambda data: data.progress
             )
         except KeyboardInterrupt as e:
-            if click.confirm("Do you want to cancel and delete the running backtest?", True):
+            if confirm("Do you want to cancel and delete the running backtest?", True):
                 self._api_client.backtests.delete(project.projectId, created_backtest.backtestId)
                 self._logger.info(f"Successfully cancelled and deleted backtest '{name}'")
             raise e
@@ -105,7 +105,7 @@ class CloudRunner:
                 get_progress=lambda data: data.get_progress()
             )
         except KeyboardInterrupt as e:
-            if click.confirm("Do you want to cancel and delete the running optimization?", True):
+            if confirm("Do you want to cancel and delete the running optimization?", True):
                 try:
                     self._api_client.optimizations.abort(created_optimization.optimizationId)
                 except RequestFailedError:

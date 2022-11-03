@@ -508,7 +508,7 @@ def test_get_project_libraries() -> None:
     python_library_dir = Path.cwd() / "Library/Python Library"
     csharp_library_dir = Path.cwd() / "Library/CSharp Library"
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_reference_to_project(project_dir, python_library_dir)
     library_manager.add_lean_library_reference_to_project(project_dir, csharp_library_dir)
 

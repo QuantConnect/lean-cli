@@ -18,7 +18,7 @@ from lean.container import container
 
 
 def test_config_get_prints_the_value_of_the_option_with_the_given_key() -> None:
-    container.cli_config_manager().default_language.set_value("python")
+    container.cli_config_manager.default_language.set_value("python")
 
     result = CliRunner().invoke(lean, ["config", "get", "default-language"])
 
@@ -39,7 +39,7 @@ def test_config_get_aborts_when_option_has_no_value() -> None:
 
 
 def test_config_get_aborts_when_option_is_sensitive() -> None:
-    container.cli_config_manager().user_id.set_value("123")
+    container.cli_config_manager.user_id.set_value("123")
 
     result = CliRunner().invoke(lean, ["config", "get", "user-id"])
 

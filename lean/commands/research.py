@@ -11,12 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from pathlib import Path
 from typing import Optional
-import click
-from docker.errors import APIError
-from docker.types import Mount
+from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
@@ -30,33 +27,34 @@ def _check_docker_output(chunk: str, port: int) -> None:
     :param chunk: the output chunk
     :param port: the port Jupyter Lab will be running on
     """
+    from webbrowser import open
     if "is running at:" in chunk:
-        webbrowser.open(f"http://localhost:{port}/")
+        open(f"http://localhost:{port}/")
 
 
-@click.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@click.argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
-@click.option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
-@click.option("--data-provider",
-              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
+@argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
+@option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
-@click.option("--download-data",
+@option("--download-data",
               is_flag=True,
               default=False,
               help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
-@click.option("--data-purchase-limit",
+@option("--data-purchase-limit",
               type=int,
               help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run Jupyter Lab in a detached Docker container and return immediately")
-@click.option("--no-open",
+@option("--no-open",
               is_flag=True,
               default=False,
               help="Don't open the Jupyter Lab environment in the browser after starting it")
-@click.option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
-@click.option("--update",
+@option("--image", type=str, help=f"The LEAN research image to use (defaults to {DEFAULT_RESEARCH_IMAGE})")
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN research image before starting the research environment")
@@ -75,11 +73,14 @@ def research(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default research image using `lean config set research-image <image>`.
     """
-    project_manager = container.project_manager()
+    from docker.types import Mount
+    from docker.errors import APIError
+
+    project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
     algorithm_name = convert_to_class_name(project)
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
     lean_config["composer-dll-directory"] = LEAN_ROOT_PATH
     lean_config["research-object-store-name"] = algorithm_name
@@ -89,12 +90,12 @@ def research(project: Path,
 
     if data_provider is not None:
         data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
-        data_provider.build(lean_config, container.logger()).configure(lean_config, "backtesting")
+        data_provider.build(lean_config, container.logger).configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
-    lean_runner = container.lean_runner()
-    temp_manager = container.temp_manager()
+    lean_runner = container.lean_runner
+    temp_manager = container.temp_manager
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
@@ -138,21 +139,21 @@ def research(project: Path,
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
 
-    project_config_manager = container.project_config_manager()
-    cli_config_manager = container.cli_config_manager()
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
 
-    logger = container.logger()
-    
+    logger = container.logger
+
     if str(research_image) != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
 
-    container.update_manager().pull_docker_image_if_necessary(research_image, update)
+    container.update_manager.pull_docker_image_if_necessary(research_image, update)
 
     try:
-        container.docker_manager().run_image(research_image, **run_options)
+        container.docker_manager.run_image(research_image, **run_options)
     except APIError as error:
         msg = error.explanation
         if isinstance(msg, str) and any(m in msg.lower() for m in [

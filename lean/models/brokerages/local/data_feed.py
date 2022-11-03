@@ -13,7 +13,6 @@
 
 from typing import Any, Dict
 from lean.models.lean_config_configurer import LeanConfigConfigurer
-from lean.models.configuration import Configuration
 
 
 class DataFeed(LeanConfigConfigurer):

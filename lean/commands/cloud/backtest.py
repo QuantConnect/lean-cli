@@ -11,22 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from typing import Optional
-import click
+from click import command, argument, option
 from lean.click import LeanCommand
 from lean.container import container
-from pathlib import Path
-from lean.models.errors import RequestFailedError
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
-@click.option("--name", type=str, help="The name of the backtest (a random one is generated if not specified)")
-@click.option("--push",
+@command(cls=LeanCommand)
+@argument("project", type=str)
+@option("--name", type=str, help="The name of the backtest (a random one is generated if not specified)")
+@option("--push",
               is_flag=True,
               default=False,
               help="Push local modifications to the cloud before running the backtest")
-@click.option("--open", "open_browser",
+@option("--open", "open_browser",
               is_flag=True,
               default=False,
               help="Automatically open the results in the browser when the backtest is finished")
@@ -39,9 +36,11 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     with `lean cloud pull` it is possible to use the --push option to push local
     modifications to the cloud before running the backtest.
     """
-    logger = container.logger()
+    from pathlib import Path
 
-    cloud_project_manager = container.cloud_project_manager()
+    logger = container.logger
+
+    cloud_project_manager = container.cloud_project_manager
     try:
         cloud_project = cloud_project_manager.get_cloud_project(project, push)
     except RuntimeError as e:
@@ -54,9 +53,9 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
         raise RuntimeError(error_message)
 
     if name is None:
-        name = container.name_generator().generate_name()
+        name = container.name_generator.generate_name()
 
-    cloud_runner = container.cloud_runner()
+    cloud_runner = container.cloud_runner
     finished_backtest = cloud_runner.run_backtest(cloud_project, name)
 
     if finished_backtest.error is None and finished_backtest.stacktrace is None:
@@ -79,4 +78,5 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
             open_browser = False
 
     if open_browser:
-        webbrowser.open(finished_backtest.get_url())
+        from webbrowser import open
+        open(finished_backtest.get_url())

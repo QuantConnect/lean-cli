@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import ParamType
 from decimal import Decimal, DecimalException
 
-class DecimalParamType(click.ParamType):
+class DecimalParamType(ParamType):
     name = "decimal"
 
     def convert(self, value, param, ctx):

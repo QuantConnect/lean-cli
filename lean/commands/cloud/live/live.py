@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import group
 from lean.components.util.click_group_default_command import DefaultCommandGroup
 
-@click.group(cls=DefaultCommandGroup)
+@group(cls=DefaultCommandGroup)
 def live() -> None:
     """Interact with the QuantConnect cloud live deployments."""
     # This method is intentionally empty

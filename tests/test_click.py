@@ -20,7 +20,6 @@ from unittest import mock
 import click
 import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.click import DateParameter, LeanCommand, PathParameter
 from lean.container import container
@@ -32,7 +31,7 @@ def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> Non
         pass
 
     logger = mock.Mock()
-    container.logger.override(providers.Object(logger))
+    container.logger = logger
 
     result = CliRunner().invoke(command, ["--verbose"])
 
@@ -47,7 +46,7 @@ def test_lean_command_sets_default_lean_config_path_when_lean_config_option_give
         pass
 
     lean_config_manager = mock.Mock()
-    container.lean_config_manager.override(providers.Object(lean_config_manager))
+    container.lean_config_manager = lean_config_manager
 
     with (Path.cwd() / "custom-config.json").open("w+", encoding="utf-8") as file:
         file.write("{}")
@@ -98,7 +97,7 @@ def test_lean_command_checks_for_cli_updates() -> None:
         pass
 
     update_manager = mock.Mock()
-    container.update_manager.override(providers.Object(update_manager))
+    container.update_manager = update_manager
 
     result = CliRunner().invoke(command)
 
@@ -113,7 +112,7 @@ def test_lean_command_does_not_check_for_cli_updates_when_command_raises() -> No
         raise RuntimeError("Oops")
 
     update_manager = mock.Mock()
-    container.update_manager.override(providers.Object(update_manager))
+    container.update_manager = update_manager
 
     result = CliRunner().invoke(command)
 
@@ -130,7 +129,7 @@ def test_path_parameter_fails_when_input_not_valid_path() -> None:
 
     path_manager = mock.Mock()
     path_manager.is_path_valid.return_value = False
-    container.path_manager.override(providers.Object(path_manager))
+    container.path_manager = path_manager
 
     result = CliRunner().invoke(command, ["invalid-path.txt"])
 

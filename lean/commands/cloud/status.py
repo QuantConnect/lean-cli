@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import command, argument
 
 from lean.click import LeanCommand
 from lean.container import container
@@ -19,17 +19,17 @@ from lean.models.api import QCLiveAlgorithmStatus
 from lean.models.brokerages.cloud import all_cloud_brokerages, PaperTradingBrokerage
 
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
+@command(cls=LeanCommand)
+@argument("project", type=str)
 def status(project: str) -> None:
     """Show the live trading status of a project in the cloud.
 
     PROJECT must be the name or the id of the project to show the status for.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
 
     live_algorithm = next((d for d in api_client.live.get_all() if d.projectId == cloud_project.projectId), None)

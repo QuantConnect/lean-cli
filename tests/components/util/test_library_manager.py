@@ -57,7 +57,7 @@ def _create_library_manager() -> LibraryManager:
 
 
 def _project_has_library_reference_in_config(project_dir: Path, library_dir: Path) -> bool:
-    project_config = container.project_config_manager().get_project_config(project_dir)
+    project_config = container.project_config_manager.get_project_config(project_dir)
     libraries = project_config.get("libraries", [])
 
     return any(LeanLibraryReference(**library).path == library_dir.relative_to(Path.cwd()) for library in libraries)

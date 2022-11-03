@@ -13,13 +13,50 @@
 
 import os
 from pathlib import Path
+from unittest import mock
 
 import certifi
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
+from lean.models.api import QCMinimalOrganization
 
 from lean.container import container
+
+
+def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, api_client_to_use=None,
+                         cloud_runner_to_use=None, push_manager_to_use=None):
+    api_client = mock.MagicMock()
+    api_client.is_authenticated.return_value = True
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    if api_client_to_use:
+        api_client = api_client_to_use
+
+    docker_manager = mock.Mock()
+    if docker_manager_to_use:
+        docker_manager = docker_manager_to_use
+
+    lean_runner = mock.Mock()
+    if lean_runner_to_use:
+        lean_runner = lean_runner_to_use
+
+    cloud_runner = mock.Mock()
+    if cloud_runner_to_use:
+        cloud_runner = cloud_runner_to_use
+
+    push_manager = None
+    if push_manager_to_use:
+        push_manager = push_manager_to_use
+
+    # Reset all singletons so Path instances get recreated
+    # Path instances are bound to the filesystem that was active at the time of their creation
+    # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
+
+    container.initialize(docker_manager, api_client, lean_runner, cloud_runner, push_manager)
+
+    return container
 
 
 # conftest.py is ran by pytest before loading each testing module
@@ -43,10 +80,7 @@ def fake_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
 
-    # Reset all singletons so Path instances get recreated
-    # Path instances are bound to the filesystem that was active at the time of their creation
-    # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
-    container.reset_singletons()
+    initialize_container()
 
     return fs
 
@@ -64,7 +98,4 @@ def requests_mock() -> RequestsMock:
 @pytest.fixture(autouse=True)
 def reset_container_overrides() -> None:
     """A pytest fixture which makes sure all container and provider overrides are reset before each test."""
-    for provider in container.traverse():
-        provider.reset_override()
-
-    container.reset_override()
+    initialize_container()

@@ -11,24 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
-
+from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.argument("key", type=str)
-@click.argument("value", type=str)
+@command(cls=LeanCommand)
+@argument("key", type=str)
+@argument("value", type=str)
 def set(key: str, value: str) -> None:
     """Set a configurable option.
 
     Run `lean config list` to show all available options.
     """
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
 
     option = cli_config_manager.get_option_by_key(key)
     option.set_value(value)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Successfully updated the value of '{key}' to '{option.get_value()}'")

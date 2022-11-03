@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dependency_injector.containers import DeclarativeContainer
-from dependency_injector.providers import Factory, Singleton
-
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
@@ -44,90 +41,103 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
 
 
-class Container(DeclarativeContainer):
-    """The Container class wires all reusable components together."""
-    logger = Singleton(Logger)
+class Container:
 
-    platform_manager = Singleton(PlatformManager)
-    task_manager = Singleton(TaskManager, logger)
-    name_generator = Singleton(NameGenerator)
-    path_manager = Singleton(PathManager, platform_manager)
-    temp_manager = Singleton(TempManager)
-    xml_manager = Singleton(XMLManager)
-    http_client = Singleton(HTTPClient, logger)
+    def __init__(self):
+        self.initialize()
 
-    general_storage = Singleton(Storage, file=GENERAL_CONFIG_PATH)
-    credentials_storage = Singleton(Storage, file=CREDENTIALS_CONFIG_PATH)
-    cache_storage = Singleton(Storage, file=CACHE_PATH)
+    def initialize(self, docker_manager=None, api_client=None, lean_runner=None, cloud_runner=None, push_manager=None):
+        """The Container class wires all reusable components together."""
+        self.logger = Logger()
 
-    cli_config_manager = Singleton(CLIConfigManager, general_storage, credentials_storage)
+        self.platform_manager = PlatformManager()
+        self.task_manager = TaskManager(self.logger)
+        self.name_generator = NameGenerator()
+        self.path_manager = PathManager(self.platform_manager)
+        self.temp_manager = TempManager()
+        self.xml_manager = XMLManager()
+        self.http_client = HTTPClient(self.logger)
 
-    api_client = Factory(APIClient,
-                         logger,
-                         http_client,
-                         user_id=cli_config_manager.provided.user_id.get_value()(),
-                         api_token=cli_config_manager.provided.api_token.get_value()())
+        self.general_storage = Storage(file=GENERAL_CONFIG_PATH)
+        self.credentials_storage = Storage(file=CREDENTIALS_CONFIG_PATH)
+        self.cache_storage = Storage(file=CACHE_PATH)
 
-    module_manager = Singleton(ModuleManager, logger, api_client, http_client)
+        self.cli_config_manager = CLIConfigManager(self.general_storage, self.credentials_storage)
 
-    project_config_manager = Singleton(ProjectConfigManager, xml_manager)
-    lean_config_manager = Singleton(LeanConfigManager,
-                                    logger,
-                                    cli_config_manager,
-                                    project_config_manager,
-                                    module_manager,
-                                    cache_storage)
-    output_config_manager = Singleton(OutputConfigManager, lean_config_manager)
-    optimizer_config_manager = Singleton(OptimizerConfigManager, logger)
+        self.api_client = api_client
+        if not self.api_client:
+            self.api_client = APIClient(self.logger,
+                                 self.http_client,
+                                 user_id=self.cli_config_manager.user_id.get_value(),
+                                 api_token=self.cli_config_manager.api_token.get_value())
 
-    project_manager = Singleton(ProjectManager,
-                                logger,
-                                project_config_manager,
-                                lean_config_manager,
-                                path_manager,
-                                xml_manager,
-                                platform_manager)
-    library_manager = Singleton(LibraryManager,
-                                logger,
-                                project_manager,
-                                project_config_manager,
-                                lean_config_manager,
-                                path_manager,
-                                xml_manager)
+        self.module_manager = ModuleManager(self.logger, self.api_client, self.http_client)
 
-    cloud_runner = Singleton(CloudRunner, logger, api_client, task_manager)
-    pull_manager = Singleton(PullManager,
-                             logger,
-                             api_client,
-                             project_manager,
-                             project_config_manager,
-                             library_manager,
-                             platform_manager)
-    push_manager = Singleton(PushManager, logger, api_client, project_manager, project_config_manager)
-    data_downloader = Singleton(DataDownloader, logger, api_client, lean_config_manager)
-    cloud_project_manager = Singleton(CloudProjectManager,
-                                      api_client,
-                                      project_config_manager,
-                                      pull_manager,
-                                      push_manager,
-                                      path_manager)
+        self.project_config_manager = ProjectConfigManager(self.xml_manager)
+        self.lean_config_manager = LeanConfigManager(self.logger,
+                                        self.cli_config_manager,
+                                        self.project_config_manager,
+                                        self.module_manager,
+                                        self.cache_storage)
+        self.output_config_manager = OutputConfigManager(self.lean_config_manager)
+        self.optimizer_config_manager = OptimizerConfigManager(self.logger)
 
-    docker_manager = Singleton(DockerManager, logger, temp_manager, platform_manager)
-    lean_runner = Singleton(LeanRunner,
-                            logger,
-                            project_config_manager,
-                            lean_config_manager,
-                            output_config_manager,
-                            docker_manager,
-                            module_manager,
-                            project_manager,
-                            temp_manager,
-                            xml_manager)
+        self.project_manager = ProjectManager(self.logger,
+                                    self.project_config_manager,
+                                    self.lean_config_manager,
+                                    self.path_manager,
+                                    self.xml_manager,
+                                    self.platform_manager)
+        self.library_manager = LibraryManager(self.logger,
+                                    self.project_manager,
+                                    self.project_config_manager,
+                                    self.lean_config_manager,
+                                    self.path_manager,
+                                    self.xml_manager)
 
-    market_hours_database = Singleton(MarketHoursDatabase, lean_config_manager)
+        self.cloud_runner = cloud_runner
+        if not cloud_runner:
+            self.cloud_runner = CloudRunner(self.logger, self.api_client, self.task_manager)
+        self.pull_manager = PullManager(self.logger,
+                                 self.api_client,
+                                 self.project_manager,
+                                 self.project_config_manager,
+                                 self.library_manager,
+                                 self.platform_manager)
 
-    update_manager = Singleton(UpdateManager, logger, http_client, cache_storage, docker_manager)
+        self.push_manager = push_manager
+        if not push_manager:
+            self.push_manager = PushManager(self.logger,
+                                            self.api_client,
+                                            self.project_manager,
+                                            self.project_config_manager)
+        self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
+        self.cloud_project_manager = CloudProjectManager(self.api_client,
+                                          self.project_config_manager,
+                                          self.pull_manager,
+                                          self.push_manager,
+                                          self.path_manager)
+
+        self.docker_manager = docker_manager
+        if not self.docker_manager:
+            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager)
+
+        self.lean_runner = lean_runner
+        if not self.lean_runner:
+            self.lean_runner = LeanRunner(self.logger,
+                                    self.project_config_manager,
+                                    self.lean_config_manager,
+                                    self.output_config_manager,
+                                    self.docker_manager,
+                                    self.module_manager,
+                                    self.project_manager,
+                                    self.temp_manager,
+                                    self.xml_manager)
+
+        self.market_hours_database = MarketHoursDatabase(self.lean_config_manager)
+
+        self.update_manager = UpdateManager(self.logger, self.http_client, self.cache_storage, self.docker_manager)
 
 
 container = Container()
-container.data_downloader().update_database_files()
+container.data_downloader.update_database_files()

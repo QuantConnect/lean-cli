@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
+from click import Group
 
 
-class AliasedCommandGroup(click.Group):
+class AliasedCommandGroup(Group):
     """A click.Group wrapper that implements command aliasing."""
 
     def command(self, *args, **kwargs):

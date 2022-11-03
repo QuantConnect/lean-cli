@@ -11,15 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import platform
-import sys
 from typing import Any, List, Optional
 
-import click
-import maskpass
-from rich.console import Console
-from rich.progress import BarColumn, Progress, TextColumn
+from click import prompt
 
 from lean.models.logger import Option
 
@@ -29,6 +23,7 @@ class Logger:
 
     def __init__(self) -> None:
         """Creates a new Logger instance."""
+        from rich.console import Console
         self._console = Console(markup=False, highlight=False, emoji=False, width=None)
         self.debug_logging_enabled = False
 
@@ -61,13 +56,14 @@ class Logger:
         """
         self._console.print(message, style="red")
 
-    def progress(self, prefix: str = "", suffix: str = "{task.percentage:0.0f}%") -> Progress:
+    def progress(self, prefix: str = "", suffix: str = "{task.percentage:0.0f}%"):
         """Creates a Progress instance.
 
         :param prefix: the text to show before the bar (defaults to a blank string)
         :param suffix: the text to show after the bar (defaults to the task's percentage)
         :return: a Progress instance which can be used to display progress bars
         """
+        from rich.progress import BarColumn, Progress, TextColumn
         progress = Progress(TextColumn(prefix), BarColumn(), TextColumn(suffix), console=self._console)
         progress.start()
         return progress
@@ -104,13 +100,13 @@ class Logger:
 
         while True:
             if not multiple:
-                user_input = click.prompt("Enter an option", type=str, default=default, show_default=True)
+                user_input = prompt("Enter an option", type=str, default=default, show_default=True)
                 user_selected_value = validate_option(user_input)
                 if user_selected_value is not None:
                     return user_selected_value
             else:
                 user_selected_values = []
-                user_inputs = click.prompt("To enter multiple options, separate them with comma.", type=str, default=default, show_default=True)
+                user_inputs = prompt("To enter multiple options, separate them with comma.", type=str, default=default, show_default=True)
                 user_inputs = str(user_inputs).strip(",").split(",")
                 expected_outputs = len(user_inputs)
                 for user_input in user_inputs:
@@ -127,15 +123,19 @@ class Logger:
         :param default: the default value if no input is given
         :return: the given input
         """
+        from platform import uname
+        from sys import stdin
+        from maskpass import askpass
+
         if default is not None:
             text = f"{text} [{'*' * len(default)}]"
 
         # Masking does not work properly in WSL2 and when the input is not coming from a keyboard
-        if "microsoft" in platform.uname().release.lower() or not sys.stdin.isatty():
-            return click.prompt(text, default=default, show_default=False)
+        if "microsoft" in uname().release.lower() or not stdin.isatty():
+            return prompt(text, default=default, show_default=False)
 
         while True:
-            user_input = maskpass.askpass(f"{text}: ")
+            user_input = askpass(f"{text}: ")
 
             if len(user_input) == 0 and default is not None:
                 return default

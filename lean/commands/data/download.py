@@ -11,17 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
-import itertools
-import re
-from time import sleep
-import webbrowser
-from collections import OrderedDict
 from typing import Iterable, List, Optional
-
-import click
-from rich import box
-from rich.table import Table
+from click import command, option, confirm, pass_context, Context
 
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
@@ -35,7 +26,7 @@ Data Terms of Use has been signed previously.
 Find full agreement at: {link}
 ==========================================================================
 CLI API Access Agreement: On {signed_time} You Agreed:
-- Display or distribution of data obtained through CLI API Access is not permitted. 
+- Display or distribution of data obtained through CLI API Access is not permitted.
 - Data and Third Party Data obtained via CLI API Access can only be used for individual or internal employee's use.
 - Data is provided in LEAN format can not be manipulated for transmission or use in other applications.
 - QuantConnect is not liable for the quality of data received and is not responsible for trading losses.
@@ -51,7 +42,7 @@ def _get_data_information(organization: QCFullOrganization) -> QCDataInformation
     global _data_information
 
     if _data_information is None:
-        _data_information = container.api_client().data.get_info(organization.id)
+        _data_information = container.api_client.data.get_info(organization.id)
 
     return _data_information
 
@@ -100,7 +91,8 @@ def _get_data_files(organization: QCFullOrganization, products: List[Product]) -
     :param products: the list of products to get the data files from
     :return: the list of unique data files containing the file and vendor for each file for each product
     """
-    unique_data_files = sorted(list(set(itertools.chain(*[product.get_data_files() for product in products]))))
+    from itertools import chain
+    unique_data_files = sorted(list(set(chain(*[product.get_data_files() for product in products]))))
     return _map_data_files_to_vendors(organization, unique_data_files)
 
 
@@ -110,7 +102,10 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     :param organization: the organization the user selected
     :param products: the products to display
     """
-    logger = container.logger()
+    from rich import box
+    from rich.table import Table
+
+    logger = container.logger
     table = Table(box=box.SQUARE)
 
     for column in ["Dataset", "Vendor", "Details", "File count", "Price"]:
@@ -163,12 +158,12 @@ def _select_organization() -> QCFullOrganization:
 
     :return: the selected organization
     """
-    api_client = container.api_client()
+    api_client = container.api_client
 
     organizations = api_client.organizations.get_all()
     options = [Option(id=organization.id, label=organization.name) for organization in organizations]
 
-    logger = container.logger()
+    logger = container.logger
     organization_id = logger.prompt_list("Select the organization to purchase and download data with", options)
 
     return api_client.organizations.get(organization_id)
@@ -181,8 +176,10 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
     :param datasets: the available datasets
     :return: the list of products selected by the user
     """
+    from collections import OrderedDict
+
     products = []
-    logger = container.logger()
+    logger = container.logger
 
     category_options = {}
     for dataset in datasets:
@@ -213,16 +210,16 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
             continue
 
         option_results = OrderedDict()
-        for option in dataset.options:
-            if option.condition is None or option.condition.check(option_results):
-                option_results[option.id] = option.configure_interactive()
+        for dataset_option in dataset.options:
+            if dataset_option.condition is None or dataset_option.condition.check(option_results):
+                option_results[dataset_option.id] = dataset_option.configure_interactive()
 
         products.append(Product(dataset=dataset, option_results=option_results))
 
         logger.info("Selected data:")
         _display_products(organization, products)
 
-        if not click.confirm("Do you want to download more data?"):
+        if not confirm("Do you want to download more data?"):
             break
 
     return products
@@ -257,8 +254,12 @@ def _verify_accept_agreement(organization: QCFullOrganization, open_browser: boo
     :param organization: the organization that the user selected
     :param open_browser: whether the CLI should automatically open the agreement in the browser
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    from webbrowser import open
+    from time import sleep
+    from datetime import datetime
+
+    logger = container.logger
+    api_client = container.api_client
 
     info = api_client.data.get_info(organization.id)
 
@@ -268,13 +269,13 @@ def _verify_accept_agreement(organization: QCFullOrganization, open_browser: boo
         sleep(1)
     else:
         if open_browser:
-            webbrowser.open(info.agreement)
+            open(info.agreement)
 
         logger.info(f"Go to the following url to accept the CLI API Access and Data Agreement:")
         logger.info(info.agreement)
         logger.info("Waiting until the CLI API Access and Data Agreement has been accepted...")
 
-        container.task_manager().poll(
+        container.task_manager.poll(
             make_request=lambda: api_client.organizations.get(organization.id),
             is_done=lambda data: data.data.current != False
         )
@@ -293,12 +294,12 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
     organization_qcc = organization.credit.balance
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"You will be charged {total_price:,.0f} QCC from your organization's QCC balance")
     logger.info(
         f"After downloading all files your organization will have {organization_qcc - total_price:,.0f} QCC left")
 
-    click.confirm("Continue?", abort=True)
+    confirm("Continue?", abort=True)
 
 
 def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
@@ -309,9 +310,10 @@ def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
     :param user_input: the input given by the user
     :return: the first organization with the given name or id
     """
-    api_client = container.api_client()
+    from re import match
+    api_client = container.api_client
 
-    if re.match("^[a-f0-9]{32}$", user_input) is not None:
+    if match("^[a-f0-9]{32}$", user_input) is not None:
         try:
             return api_client.organizations.get(user_input)
         except:
@@ -328,7 +330,7 @@ def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
 
 def _select_products_non_interactive(organization: QCFullOrganization,
                                      datasets: List[Dataset],
-                                     ctx: click.Context) -> List[Product]:
+                                     ctx: Context) -> List[Product]:
     """Asks the user for the products that should be purchased and downloaded.
 
     :param organization: the organization that will be charged
@@ -336,6 +338,8 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     :param ctx: the click context of the invocation
     :return: the list of products selected by the user
     """
+    from collections import OrderedDict
+
     dataset = next((d for d in datasets if d.name.lower() == ctx.params["dataset"].lower()), None)
     if dataset is None:
         raise RuntimeError(f"There is no dataset named '{ctx.params['dataset']}'")
@@ -376,7 +380,7 @@ def _select_products_non_interactive(organization: QCFullOrganization,
 
     products = [Product(dataset=dataset, option_results=option_results)]
 
-    container.logger().info("Data that will be purchased and downloaded:")
+    container.logger.info("Data that will be purchased and downloaded:")
     _display_products(organization, products)
 
     return products
@@ -388,7 +392,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     :param organization: the organization that will be charged
     :return: the datasets which data can be downloaded from
     """
-    cloud_datasets = container.api_client().market.list_datasets()
+    cloud_datasets = container.api_client.market.list_datasets()
     data_information = _get_data_information(organization)
 
     available_datasets = []
@@ -401,7 +405,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
             if cloud_dataset.name != "Template Data Source Product":
                 name = cloud_dataset.name.strip()
                 vendor = cloud_dataset.vendorName.strip()
-                container.logger().debug(
+                container.logger.debug(
                     f"There is no datasources entry for {name} by {vendor} (id {cloud_dataset.id})")
             continue
 
@@ -414,12 +418,12 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     return available_datasets
 
-@click.command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
-@click.option("--dataset", type=str, help="The name of the dataset to download non-interactively")
-@click.option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
-@click.option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
-@click.pass_context
-def download(ctx: click.Context,
+@command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
+@option("--dataset", type=str, help="The name of the dataset to download non-interactively")
+@option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
+@option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
+@pass_context
+def download(ctx: Context,
              dataset: Optional[str],
              organization: Optional[str],
              overwrite: bool,
@@ -457,4 +461,4 @@ def download(ctx: click.Context,
         _confirm_payment(selected_organization, products)
 
     all_data_files = _get_data_files(selected_organization, products)
-    container.data_downloader().download_files(all_data_files, overwrite, selected_organization.id)
+    container.data_downloader.download_files(all_data_files, overwrite, selected_organization.id)

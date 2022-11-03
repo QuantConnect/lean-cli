@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-import pathlib
+from abc import ABC
+
 from typing import Any, Dict, List, Optional
 from lean.container import container
 from lean.models.json_module import JsonModule
 from lean.models.configuration import InternalInputUserInput
-import copy
+from copy import copy
 
-class LeanConfigConfigurer(JsonModule, abc.ABC):
+class LeanConfigConfigurer(JsonModule, ABC):
     """The LeanConfigConfigurer class is the base class extended by all classes that update the Lean config."""
 
     def configure(self, lean_config: Dict[str, Any], environment_name: str) -> None:
@@ -45,9 +45,9 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                 if environment_config_name == "data-queue-handler":
                     previous_value = []
                     if "data-queue-handler" in lean_config["environments"][environment_name]:
-                        previous_value = copy.copy(lean_config["environments"][environment_name][environment_config_name])
+                        previous_value = copy(lean_config["environments"][environment_name][environment_config_name])
                     previous_value.append(environment_config["value"])
-                    lean_config["environments"][environment_name][environment_config_name] = copy.copy(previous_value)
+                    lean_config["environments"][environment_name][environment_config_name] = copy(previous_value)
             elif self.__class__.__name__ == 'LocalBrokerage':
                 if environment_config_name != "data-queue-handler":
                     lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
@@ -86,16 +86,17 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
                             ', '.join([f'"{x[1]}"' for x in options_to_log]))
             else:
                 value = configuration._value
-            if type(value) == pathlib.WindowsPath or type(value) == pathlib.PosixPath:
+            from pathlib import WindowsPath, PosixPath
+            if type(value) == WindowsPath or type(value) == PosixPath:
                 value = str(value).replace("\\", "/")
             lean_config[configuration._id] = value
-        container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
+        container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
         self._save_properties(lean_config, self.get_required_properties())
 
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:
-            container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
-            container.module_manager().install_module(
+            container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
+            container.module_manager.install_module(
                 self._product_id, organization_id)
             self._is_module_installed = True
 
@@ -118,5 +119,5 @@ class LeanConfigConfigurer(JsonModule, abc.ABC):
         :param properties: the names of the properties to save persistently
         """
         from lean.container import container
-        container.lean_config_manager().set_properties(
+        container.lean_config_manager.set_properties(
             {key: lean_config[key] for key in properties})

@@ -11,14 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-import subprocess
-import time
-from datetime import datetime
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import click
+from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -115,6 +110,8 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     :param lean_config: the LEAN configuration that should be used
     :param environment_name: the name of the environment
     """
+    from subprocess import Popen
+
     environment = lean_config["environments"][environment_name]
     if environment["data-queue-handler"] != "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler":
         return
@@ -131,10 +128,11 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     if password != "":
         args.extend(["-password", password])
 
-    subprocess.Popen(args)
+    Popen(args)
 
-    container.logger().info("Waiting 10 seconds for IQFeed to start")
-    time.sleep(10)
+    container.logger.info("Waiting 10 seconds for IQFeed to start")
+    from time import sleep
+    sleep(10)
 
 
 def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str, properties: Dict[str, Any]) -> None:
@@ -145,7 +143,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     :param lean_config: the base lean config to use
     :param environment_name: the name of the environment to configure
     """
-    logger = container.logger()
+    logger = container.logger
 
     lean_config["environments"] = {
         environment_name: _environment_skeleton
@@ -191,10 +189,10 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
     """
     global _cached_organizations
 
-    logger = container.logger()
+    logger = container.logger
 
     if _cached_organizations is None:
-        api_client = container.api_client()
+        api_client = container.api_client
         _cached_organizations = api_client.organizations.get_all()
 
     if given_input is not None:
@@ -215,7 +213,7 @@ def _get_non_interactive_organization_id(module: LeanConfigConfigurer,
     return _get_organization_id(user_kwargs[module.convert_lean_key_to_variable(organization_config._id)], module._id)
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
-    logger = container.logger()
+    logger = container.logger
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
     # needs to be updated before fetching required properties
@@ -253,7 +251,7 @@ def _get_default_value(key: str) -> Optional[Any]:
     """
     global _cached_lean_config
     if _cached_lean_config is None:
-        _cached_lean_config = container.lean_config_manager().get_lean_config()
+        _cached_lean_config = container.lean_config_manager.get_lean_config()
 
     if key not in _cached_lean_config:
         return None
@@ -266,47 +264,47 @@ def _get_default_value(key: str) -> Optional[Any]:
 
 
 @live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
-@click.argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
-@click.option("--environment",
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@option("--environment",
               type=str,
               help="The environment to use")
-@click.option("--output",
+@option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/live/TIMESTAMP)")
-@click.option("--detach", "-d",
+@option("--detach", "-d",
               is_flag=True,
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
-@click.option("--brokerage",
-              type=click.Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
+@option("--brokerage",
+              type=Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@click.option("--data-feed",
-              type=click.Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
+@option("--data-feed",
+              type=Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               multiple=True,
               help="The data feed to use")
-@click.option("--data-provider",
-              type=click.Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given provider")
 @options_from_json(_get_configs_for_options("local"))
-@click.option("--release",
+@option("--release",
               is_flag=True,
               default=False,
               help="Compile C# projects in release configuration instead of debug")
-@click.option("--image",
+@option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
-@click.option("--python-venv",
+@option("--python-venv",
               type=str,
               help=f"The path of the python virtual environment to be used")
-@click.option("--live-cash-balance",
+@option("--live-cash-balance",
               type=str,
               default="",
               help=f"A comma-separated list of currency:amount pairs of initial cash balance")
-@click.option("--live-holdings",
+@option("--live-holdings",
               type=str,
               default="",
               help=f"A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio holdings")
-@click.option("--update",
+@option("--update",
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
@@ -344,21 +342,23 @@ def deploy(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    from copy import copy
+    from datetime import datetime
     # Reset globals so we reload everything in between tests
     global _cached_organizations
     _cached_organizations = None
     global _cached_lean_config
     _cached_lean_config = None
 
-    logger = container.logger()
+    logger = container.logger
 
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
 
     if environment is not None and (brokerage is not None or len(data_feed) > 0):
         raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
@@ -373,7 +373,7 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
         lean_config["environments"] = {
-            environment_name: copy.copy(_environment_skeleton)
+            environment_name: copy(_environment_skeleton)
         }
 
         [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
@@ -406,26 +406,26 @@ def deploy(project: Path,
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
-    project_config_manager = container.project_config_manager()
-    cli_config_manager = container.cli_config_manager()
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager()
+    output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client(), env_brokerage,
+    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, env_brokerage,
                                                                                                       project_config.get("cloud-id", None), project)
 
     if environment is None and brokerage is None and len(data_feed) == 0:   # condition for using interactive panel
@@ -460,5 +460,5 @@ def deploy(project: Path,
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    lean_runner = container.lean_runner()
+    lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

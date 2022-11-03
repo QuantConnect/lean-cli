@@ -12,21 +12,21 @@
 # limitations under the License.
 
 
-import click
+from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@click.command(cls=LeanCommand)
-@click.argument("project", type=str)
+@command(cls=LeanCommand)
+@argument("project", type=str)
 def liquidate(project: str) -> None:
     """
     Stops live trading and liquidates existing positions for a certain project.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
     logger.info(f"cloud.live.liquidate(): sending command.")
     response = api_client.live.liquidate_and_stop(cloud_project.projectId)
