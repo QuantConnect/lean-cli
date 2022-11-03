@@ -44,14 +44,13 @@ def send_command(project: Path, data: Dict[str, Any]) -> str:
     :return: the name of the running docker container of the given project
     """
     from inspect import stack
-    logger = container.logger()
-    live_dir = container.project_config_manager().get_latest_live_directory(project)
-    docker_container_name = container.output_config_manager(
-    ).get_container_name(Path(live_dir))
+    logger = container.logger
+    live_dir = container.project_config_manager.get_latest_live_directory(project)
+    docker_container_name = container.output_config_manager.get_container_name(Path(live_dir))
     file_name = get_command_file_name()
     logger.info(
         f"live.send_command(): {stack()[1].function} - sending command.")
-    container.docker_manager().write_to_file(
+    container.docker_manager.write_to_file(
         docker_container_name, file_name, data)
     return docker_container_name
 
@@ -68,11 +67,11 @@ def get_result(command_id: str, docker_container_name: str, container_running_re
     :raises Exception: When the command is not executed successfully
     """
     from inspect import stack
-    logger = container.logger()
+    logger = container.logger
     logger.info(
         f"live.get_result(): {stack()[1].function} -  waiting for results...")
     result_file_path = get_result_file_name(command_id)
-    result = container.docker_manager().read_from_file(
+    result = container.docker_manager.read_from_file(
         docker_container_name, result_file_path, interval, timeout)
     if "success" in result and result["success"]:
         logger.info(

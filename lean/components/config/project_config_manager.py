@@ -65,8 +65,8 @@ class ProjectConfigManager:
         if project_config.has("local-id"):
             return project_config.get("local-id")
 
-        import random
-        project_id = random.randint(100_000_000, 999_999_999)
+        from random import randint
+        project_id = randint(100_000_000, 999_999_999)
         project_config.set("local-id", project_id)
 
         return project_id

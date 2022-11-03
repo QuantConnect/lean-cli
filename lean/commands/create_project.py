@@ -273,7 +273,7 @@ def _not_identifier_char(text):
 @lean.command(cls=LeanCommand, name="project-create", aliases=["create-project"])
 @argument("name", type=str)
 @option("--language", "-l",
-              type=Choice(container.cli_config_manager().default_language.allowed_values, case_sensitive=False),
+              type=Choice(container.cli_config_manager.default_language.allowed_values, case_sensitive=False),
               help="The language of the project to create")
 def create_project(name: str, language: str) -> None:
     """Create a new project containing starter code.
@@ -282,7 +282,7 @@ def create_project(name: str, language: str) -> None:
 
     The default language can be set using `lean config set default-language python/csharp`.
     """
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
 
     language = language if language is not None else cli_config_manager.default_language.get_value()
     if language is None:
@@ -292,13 +292,13 @@ def create_project(name: str, language: str) -> None:
 
     full_path = Path.cwd() / name
 
-    if not container.path_manager().is_path_valid(full_path):
+    if not container.path_manager.is_path_valid(full_path):
         raise MoreInfoError(f"'{name}' is not a valid path",
                             "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
     is_library_project = False
     try:
-        library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+        library_dir = container.lean_config_manager.get_cli_root_directory() / "Library"
         is_library_project = library_dir in full_path.parents
     except:
         # get_cli_root_directory() raises an error if there is no such directory
@@ -314,7 +314,7 @@ Please remove the character '{problematic_char}' and retry""")
     if full_path.exists():
         raise RuntimeError(f"A project named '{name}' already exists, please choose a different name")
     else:
-        project_manager = container.project_manager()
+        project_manager = container.project_manager
         project_manager.create_new_project(full_path, QCLanguage.Python if language == "python" else QCLanguage.CSharp)
 
     class_name = convert_to_class_name(full_path)
@@ -333,10 +333,10 @@ Please remove the character '{problematic_char}' and retry""")
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
     if language == "csharp":
-        project_manager = container.project_manager()
+        project_manager = container.project_manager
         project_csproj_file = project_manager.get_csproj_file_path(full_path)
         original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
         project_manager.try_restore_csharp_project(project_csproj_file, original_csproj_content, False)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Successfully created {'Python' if language == 'python' else 'C#'} project '{name}'")

@@ -26,8 +26,8 @@ class TempManager:
 
         :return: a path to an empty temporary directory
         """
-        import tempfile
-        path = Path(tempfile.mkdtemp(prefix="lean-cli-"))
+        from tempfile import mkdtemp
+        path = Path(mkdtemp(prefix="lean-cli-"))
         self._temporary_directories.append(path)
         return path
 
@@ -36,6 +36,6 @@ class TempManager:
 
         Only the files that the user can delete are deleted, any permission errors are ignored.
         """
-        import shutil
+        from shutil import rmtree
         for path in self._temporary_directories:
-            shutil.rmtree(path, ignore_errors=True)
+            rmtree(path, ignore_errors=True)

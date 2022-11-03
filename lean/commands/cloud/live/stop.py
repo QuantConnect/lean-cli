@@ -23,10 +23,10 @@ def stop(project: str) -> None:
     """
     Stops live trading for a certain project without liquidating existing positions.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
     logger.info(f"cloud.live.stop(): sending command.")
     response = api_client.live.stop(cloud_project.projectId)

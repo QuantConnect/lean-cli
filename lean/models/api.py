@@ -517,9 +517,9 @@ class QCDataVendor(WrappedBaseModel):
 
     @validator("regex", pre=True)
     def parse_regex(cls, value: Any) -> Any:
-        import re
+        from re import compile
         if isinstance(value, str):
-            return re.compile(value[value.index("/") + 1:value.rindex("/")])
+            return compile(value[value.index("/") + 1:value.rindex("/")])
         return value
 
 

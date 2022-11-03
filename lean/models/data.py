@@ -179,7 +179,7 @@ class DatasetSelectOption(DatasetOption):
     choices: Dict[str, str]
 
     def configure_interactive(self) -> OptionResult:
-        logger = container.logger()
+        logger = container.logger
 
         keys = list(self.choices.keys())
 
@@ -453,7 +453,7 @@ class Product(WrappedBaseModel):
             # Cannot get cloud directory listing less than 3 levels deep
             return prefix, None
         else:
-            return prefix, container.api_client().data.list_files(prefix)
+            return prefix, container.api_client.data.list_files(prefix)
 
     def _get_common_prefix(self, values: List[str]) -> str:
         """Finds the common prefix in a list of strings.

@@ -102,7 +102,7 @@ class JsonModule(ABC):
     def get_organzation_id(self) -> str:
         [organization_id] = [
             config._value for config in self._lean_configs if config.is_type_organization_id]
-        container.logger().debug(f"JsonModule.get_organzation_id: organization id being used: {organization_id}")
+        container.logger.debug(f"JsonModule.get_organzation_id: organization id being used: {organization_id}")
         return organization_id
 
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
@@ -180,7 +180,7 @@ class JsonModule(ABC):
                 user_choice = properties[property_name]
             else:
                 if configuration.is_type_organization_id:
-                    api_client = container.api_client()
+                    api_client = container.api_client
                     organizations = api_client.organizations.get_all()
                     options = [Option(id=organization.id, label=organization.name)
                                for organization in organizations]

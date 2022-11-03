@@ -15,13 +15,13 @@ from json import dumps
 from typing import Dict, Any
 from lean.container import container
 
-docker_manager = container.docker_manager()
-project_manager = container.project_manager()
-lean_runner = container.lean_runner()
-temp_manager = container.temp_manager()
-project_config_manager = container.project_config_manager()
-cli_config_manager = container.cli_config_manager()
-logger = container.logger()
+docker_manager = container.docker_manager
+project_manager = container.project_manager
+lean_runner = container.lean_runner
+temp_manager = container.temp_manager
+project_config_manager = container.project_config_manager
+cli_config_manager = container.cli_config_manager
+logger = container.logger
 
 
 def get_success() -> Dict[str, Any]:
@@ -60,9 +60,9 @@ def redirect_stdout_of_subprocess(method_name_to_run, *args, **kwargs) -> tuple:
     :param method_name_to_run: name of the method to run
     :return: result of the method and the stdout of the process
     """
-    import io
+    from io import StringIO
     from contextlib import redirect_stdout
-    f = io.StringIO()
+    f = StringIO()
     with redirect_stdout(f):
         result = method_name_to_run(*args, **kwargs)
     stdout = f.getvalue()
@@ -88,13 +88,14 @@ def _compile() -> Dict[str, Any]:
     """
     This function compile c# and python project files.
     """
+    from sys import argv
+
     message = {
         "result": False,
         "algorithmType": "",
     }
 
-    import sys
-    project_id = int(sys.argv[-1])
+    project_id = int(argv[-1])
     project_dir = project_manager.get_project_by_id(project_id)
     algorithm_file = project_manager.find_algorithm_file(project_dir)
     message["algorithmType"] = "python" if algorithm_file.name.endswith(".py") else "csharp"
@@ -119,12 +120,12 @@ def _compile() -> Dict[str, Any]:
     return message
 
 def _parse_csharp_errors(csharp_output: str, color_coding_required: bool, warning_required: bool) -> list:
-    import re
+    from re import findall
     errors = []
 
     try:
         relevant_output = csharp_output[csharp_output.index("Build FAILED."):]
-        for match in re.findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
+        for match in findall(r"(.*)\((\d+),(\d+)\): (error|warning) ([a-zA-Z0-9]+): ([^[]+) ", relevant_output):
             if color_coding_required:
                 if match[3] == "error":
                     errors.append(f'{bcolors.FAIL}{match[3]} File: {match[0].split("/")[-1]} Line {match[1]} Column {match[2]} - {match[5]}{bcolors.ENDC}\n')
@@ -140,11 +141,11 @@ def _parse_csharp_errors(csharp_output: str, color_coding_required: bool, warnin
     return errors
 
 def _parse_python_errors(python_output: str, color_coding_required: bool) -> list:
-    import re
+    from re import findall
     errors = []
 
     try:
-        for match in re.findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
+        for match in findall(r'\*\*\*   File "/LeanCLI/([^"]+)", line (\d+)\n.*\n(.*)\^.*\n(.*)', python_output):
             if color_coding_required:
                 errors.append(f"{bcolors.FAIL}Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}{bcolors.ENDC}\n")
             else:

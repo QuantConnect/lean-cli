@@ -11,10 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from time import time
 from typing import Any, Dict
-
-from requests import Response
 
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
@@ -119,6 +116,7 @@ class APIClient:
         from hashlib import sha256
         from urllib.parse import urljoin
         from lean import __version__
+        from time import time
 
         full_url = urljoin(API_BASE_URL, endpoint)
 
@@ -153,7 +151,7 @@ class APIClient:
 
         return self._parse_response(response)
 
-    def _parse_response(self, response: Response) -> Any:
+    def _parse_response(self, response) -> Any:
         """Parses the data in a response.
 
         Raises an error if the data in the response indicates something went wrong.

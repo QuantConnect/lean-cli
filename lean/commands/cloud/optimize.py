@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import timedelta
 from typing import List, Optional, Tuple
 
 from click import command, option, Choice, argument, confirm
@@ -59,6 +58,8 @@ def _format_hours(hours: float) -> str:
     :param hours: the number of hours
     :return: the formatted number of hours
     """
+    from datetime import timedelta
+
     seconds = timedelta(hours=hours).total_seconds()
 
     if seconds < 60 * 60:
@@ -98,7 +99,7 @@ def _backtest_meets_constraints(backtest: QCOptimizationBacktest, constraints: L
     :param constraints: the constraints the backtest has to meet
     :return: True if the backtest meets all constraints, False if not
     """
-    optimizer_config_manager = container.optimizer_config_manager()
+    optimizer_config_manager = container.optimizer_config_manager
 
     for constraint in constraints:
         expression = str(constraint)
@@ -124,7 +125,7 @@ def _display_estimate(cloud_project: QCProject,
                       parallel_nodes: int) -> None:
     """Displays the estimated optimization time and cost."""
     from math import ceil
-    api_client = container.api_client()
+    api_client = container.api_client
     estimate = api_client.optimizations.estimate(cloud_project.projectId,
                                                  finished_compile.compileId,
                                                  name,
@@ -141,7 +142,7 @@ def _display_estimate(cloud_project: QCProject,
     batch_time = ceil((hours * 100) / parallel_nodes) / 100
     batch_cost = max(0.01, ceil(node.price * hours * 100) / 100)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Estimated number of backtests: {backtest_count:,}")
     logger.info(f"Estimated batch time: {_format_hours(batch_time)}")
     logger.info(f"Estimated batch cost: ${batch_cost:,.2f}")
@@ -208,19 +209,19 @@ def optimize(project: str,
     with `lean cloud pull` it is possible to use the --push option to push local
     modifications to the cloud before running the optimization.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, push)
 
     if name is None:
-        name = container.name_generator().generate_name()
+        name = container.name_generator.generate_name()
 
-    cloud_runner = container.cloud_runner()
+    cloud_runner = container.cloud_runner
     finished_compile = cloud_runner.compile_project(cloud_project)
 
-    optimizer_config_manager = container.optimizer_config_manager()
+    optimizer_config_manager = container.optimizer_config_manager
     organization = api_client.organizations.get(cloud_project.organizationId)
 
     if target is not None:

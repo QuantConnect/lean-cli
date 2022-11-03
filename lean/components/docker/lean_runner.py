@@ -479,9 +479,9 @@ class LeanRunner:
         # Inherit NoWarn from the user's .csproj
         csproj = self._xml_manager.parse(project_file.read_text(encoding="utf-8"))
         existing_no_warn = csproj.find(".//NoWarn")
-        import re
+        from re import split
         if existing_no_warn is not None:
-            codes = [c for c in re.split(r"[^a-zA-Z0-9]", existing_no_warn.text) if c != ""]
+            codes = [c for c in split(r"[^a-zA-Z0-9]", existing_no_warn.text) if c != ""]
             msbuild_properties["NoWarn"] += codes
 
         # Turn the NoWarn property into a string
@@ -687,7 +687,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         :param disk_provider: the fully classified name of the disk provider for this property
         :param zip_dir: the directory where the zip provider looks for zip files
         """
-        import re
+        from re import sub
         if lean_config.get(config_key, None) != zip_provider:
             return
 
@@ -696,7 +696,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             return
 
         zip_names = sorted([f.name for f in zip_dir.iterdir() if f.name.endswith(".zip")], reverse=True)
-        zip_names = [re.sub(r"[^\d]", "", name) for name in zip_names]
+        zip_names = [sub(r"[^\d]", "", name) for name in zip_names]
 
         if len(zip_names) == 0 or (datetime.now() - datetime.strptime(zip_names[0], "%Y%m%d")).days > 7:
             lean_config[config_key] = disk_provider

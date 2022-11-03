@@ -119,8 +119,8 @@ class OutputConfigManager:
         if config.has("id"):
             return config.get("id")
 
-        import random
-        new_id = int(str(prefix) + str(random.randint(100_000_000, 999_999_999)))
+        from random import randint
+        new_id = int(str(prefix) + str(randint(100_000_000, 999_999_999)))
         config.set("id", new_id)
 
         return new_id

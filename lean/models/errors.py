@@ -12,13 +12,12 @@
 # limitations under the License.
 
 from typing import Optional
-from requests import Response
 
 
 class RequestFailedError(Exception):
     """A RequestFailedError indicates that an HTTP request has failed."""
 
-    def __init__(self, response: Response, message: Optional[str] = None) -> None:
+    def __init__(self, response, message: Optional[str] = None) -> None:
         """Creates a new RequestFailedError instance.
 
         :param response: the data of the failed response

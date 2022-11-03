@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils.version import StrictVersion
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 from lean.constants import LEAN_STRICT_PYTHON_VERSION
@@ -29,7 +28,7 @@ def _get_nuget_package(name: str) -> Tuple[str, str]:
     :return: a tuple containing the proper name and latest version of the package, excluding pre-release versions
     """
     from json import loads
-    http_client = container.http_client()
+    http_client = container.http_client
     generic_error = RuntimeError(f"The NuGet API is not responding")
 
     service_index_response = http_client.get("https://api.nuget.org/v3/index.json", raise_for_status=False)
@@ -62,7 +61,7 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     :param version: the version of the package
     """
     from lxml import etree
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
     existing_package_reference = csproj_tree.find(f".//PackageReference[@Include='{name}']")
@@ -88,15 +87,15 @@ def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: 
     :param version: the version of the library to use, or None to pin to the latest version
     :param no_local: whether restoring the packages locally must be skipped
     """
-    logger = container.logger()
+    logger = container.logger
 
     if version is None:
         logger.info("Retrieving latest available version from NuGet")
         name, version = _get_nuget_package(name)
 
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     csproj_file = project_manager.get_csproj_file_path(project_dir)
-    path_manager = container.path_manager()
+    path_manager = container.path_manager
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(csproj_file)}'")
 
     original_csproj_content = csproj_file.read_text(encoding="utf-8")
@@ -104,7 +103,7 @@ def _add_nuget_package_to_csharp_project(project_dir: Path, name: str, version: 
     project_manager.try_restore_csharp_project(csproj_file, original_csproj_content, no_local)
 
 
-def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version: StrictVersion) -> bool:
+def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version) -> bool:
     """Checks whether a file on PyPI is compatible with the Python version in the Docker images.
 
     :param file: the data of a file on PyPI, as returned by its JSON API
@@ -136,8 +135,9 @@ def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
     """
     from json import loads
     from dateutil.parser import isoparse
+    from distutils.version import StrictVersion
 
-    response = container.http_client().get(f"https://pypi.org/pypi/{name}/json", raise_for_status=False)
+    response = container.http_client.get(f"https://pypi.org/pypi/{name}/json", raise_for_status=False)
 
     if response.status_code == 404:
         raise RuntimeError(f"PyPI does not have a package named {name}")
@@ -229,8 +229,8 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
     """
     from subprocess import run
     from shutil import which
-    logger = container.logger()
-    path_manager = container.path_manager()
+    logger = container.logger
+    path_manager = container.path_manager
 
     if version is not None:
         logger.info(f"Checking compatibility of {name} {version} with the Python version used in the Docker images")
@@ -291,15 +291,15 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     $ lean library add "My Python Project" tensorflow --version 2.5.0
     $ lean library add "My Python Project" "Library/My Python Library"
     """
-    logger = container.logger()
-    project_config = container.project_config_manager().get_project_config(project)
+    logger = container.logger
+    project_config = container.project_config_manager.get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
 
     if project_language is None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_dir = Path(name).expanduser().resolve()
 
     if library_manager.is_lean_library(library_dir):

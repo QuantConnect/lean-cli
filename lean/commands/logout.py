@@ -20,4 +20,4 @@ from lean.container import container
 @command(cls=LeanCommand)
 def logout() -> None:
     """Log out and remove stored credentials."""
-    container.credentials_storage().clear()
+    container.credentials_storage.clear()

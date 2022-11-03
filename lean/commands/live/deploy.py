@@ -131,7 +131,7 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
 
     Popen(args)
 
-    container.logger().info("Waiting 10 seconds for IQFeed to start")
+    container.logger.info("Waiting 10 seconds for IQFeed to start")
     from time import sleep
     sleep(10)
 
@@ -144,7 +144,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
     :param lean_config: the base lean config to use
     :param environment_name: the name of the environment to configure
     """
-    logger = container.logger()
+    logger = container.logger
 
     lean_config["environments"] = {
         environment_name: _environment_skeleton
@@ -190,10 +190,10 @@ def _get_organization_id(given_input: Optional[str], label: str) -> str:
     """
     global _cached_organizations
 
-    logger = container.logger()
+    logger = container.logger
 
     if _cached_organizations is None:
-        api_client = container.api_client()
+        api_client = container.api_client
         _cached_organizations = api_client.organizations.get_all()
 
     if given_input is not None:
@@ -214,7 +214,7 @@ def _get_non_interactive_organization_id(module: LeanConfigConfigurer,
     return _get_organization_id(user_kwargs[module.convert_lean_key_to_variable(organization_config._id)], module._id)
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
-    logger = container.logger()
+    logger = container.logger
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
     # needs to be updated before fetching required properties
@@ -252,7 +252,7 @@ def _get_default_value(key: str) -> Optional[Any]:
     """
     global _cached_lean_config
     if _cached_lean_config is None:
-        _cached_lean_config = container.lean_config_manager().get_lean_config()
+        _cached_lean_config = container.lean_config_manager.get_lean_config()
 
     if key not in _cached_lean_config:
         return None
@@ -350,15 +350,15 @@ def deploy(project: Path,
     global _cached_lean_config
     _cached_lean_config = None
 
-    logger = container.logger()
+    logger = container.logger
 
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
 
     if environment is not None and (brokerage is not None or len(data_feed) > 0):
         raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
@@ -406,26 +406,26 @@ def deploy(project: Path,
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
-    project_config_manager = container.project_config_manager()
-    cli_config_manager = container.cli_config_manager()
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager()
+    output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client(), env_brokerage,
+    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, env_brokerage,
                                                                                                       project_config.get("cloud-id", None), project)
 
     if environment is None and brokerage is None and len(data_feed) == 0:   # condition for using interactive panel
@@ -460,5 +460,5 @@ def deploy(project: Path,
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    lean_runner = container.lean_runner()
+    lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

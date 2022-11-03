@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, LEAN_PYTHON_VERSION
@@ -30,7 +29,7 @@ def test_research_runs_research_container() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -46,7 +45,7 @@ def test_research_mounts_lean_config_to_notebooks_directory_as_well() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -64,10 +63,10 @@ def test_research_adds_credentials_to_project_config() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
-    container.cli_config_manager().user_id.set_value("123")
-    container.cli_config_manager().api_token.set_value("456")
+    container.cli_config_manager.user_id.set_value("123")
+    container.cli_config_manager.api_token.set_value("456")
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -89,7 +88,7 @@ def test_research_mounts_data_directory() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -105,7 +104,7 @@ def test_research_mounts_project_directory() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -121,7 +120,7 @@ def test_research_exposes_8888_when_no_port_given() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -137,7 +136,7 @@ def test_research_exposes_custom_port_when_given() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--port", "1234"])
 
@@ -154,7 +153,7 @@ def test_research_opens_browser_when_container_started(open) -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -184,7 +183,7 @@ def test_research_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--update"])
 
@@ -198,9 +197,9 @@ def test_research_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
-    container.cli_config_manager().research_image.set_value("custom/research:123")
+    container.cli_config_manager.research_image.set_value("custom/research:123")
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -216,9 +215,9 @@ def test_research_runs_custom_image_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
-    container.cli_config_manager().research_image.set_value("custom/research:123")
+    container.cli_config_manager.research_image.set_value("custom/research:123")
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--image", "custom/research:456"])
 

@@ -109,25 +109,28 @@ def optimize(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    from json import dumps, loads
+    from json import dumps
     from json5 import loads
     from docker.types import Mount
     from re import findall
 
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
 
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    optimizer_config_manager = container.optimizer_config_manager()
+    optimizer_config_manager = container.optimizer_config_manager
     config = None
 
     if optimizer_config is not None and strategy is not None:
         raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
 
     if optimizer_config is not None:
+        from time import time
+        start = time()
         config = loads(optimizer_config.read_text(encoding="utf-8"))
+        print("optimizer_config: " + str(time() - start))
 
         # Remove keys which are configured in the Lean config
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
@@ -141,7 +144,7 @@ def optimize(project: Path,
         optimization_parameters = optimizer_config_manager.parse_parameters(parameter)
         optimization_constraints = optimizer_config_manager.parse_constraints(constraint)
     else:
-        project_config_manager = container.project_config_manager()
+        project_config_manager = container.project_config_manager
         project_config = project_config_manager.get_project_config(algorithm_file.parent)
         project_parameters = [QCParameter(key=k, value=v) for k, v in project_config.get("parameters", {}).items()]
 
@@ -178,28 +181,28 @@ def optimize(project: Path,
     with config_path.open("w+", encoding="utf-8") as file:
         file.write(dumps(config, indent=4) + "\n")
 
-    project_config_manager = container.project_config_manager()
-    cli_config_manager = container.cli_config_manager()
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    logger = container.logger()
+    logger = container.logger
 
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
 
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager()
+    output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
-    lean_runner = container.lean_runner()
+    lean_runner = container.lean_runner
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
@@ -211,18 +214,18 @@ def optimize(project: Path,
               read_only=True)
     )
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
-    success = container.docker_manager().run_image(engine_image, **run_options)
+    success = container.docker_manager.run_image(engine_image, **run_options)
 
-    cli_root_dir = container.lean_config_manager().get_cli_root_directory()
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
 
     if detach:
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         temp_manager.delete_temporary_directories_when_done = False
 
         logger.info(

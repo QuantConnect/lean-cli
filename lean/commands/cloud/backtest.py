@@ -15,7 +15,6 @@ from typing import Optional
 from click import command, argument, option
 from lean.click import LeanCommand
 from lean.container import container
-from pathlib import Path
 
 @command(cls=LeanCommand)
 @argument("project", type=str)
@@ -37,9 +36,11 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     with `lean cloud pull` it is possible to use the --push option to push local
     modifications to the cloud before running the backtest.
     """
-    logger = container.logger()
+    from pathlib import Path
 
-    cloud_project_manager = container.cloud_project_manager()
+    logger = container.logger
+
+    cloud_project_manager = container.cloud_project_manager
     try:
         cloud_project = cloud_project_manager.get_cloud_project(project, push)
     except RuntimeError as e:
@@ -52,9 +53,9 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
         raise RuntimeError(error_message)
 
     if name is None:
-        name = container.name_generator().generate_name()
+        name = container.name_generator.generate_name()
 
-    cloud_runner = container.cloud_runner()
+    cloud_runner = container.cloud_runner
     finished_backtest = cloud_runner.run_backtest(cloud_project, name)
 
     if finished_backtest.error is None and finished_backtest.stacktrace is None:

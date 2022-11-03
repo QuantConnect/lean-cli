@@ -36,11 +36,11 @@ def push(project: Optional[Path], organization_id: Optional[str]) -> None:
 
     This command will delete cloud files which don't have a local counterpart.
     """
-    push_manager = container.push_manager()
+    push_manager = container.push_manager
 
     # Parse which projects need to be pushed
     if project is not None:
-        project_config_manager = container.project_config_manager()
+        project_config_manager = container.project_config_manager
         project_config = project_config_manager.get_project_config(project)
         if not project_config.file.exists():
             raise RuntimeError(f"'{project}' is not a Lean project")

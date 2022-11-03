@@ -30,5 +30,5 @@ def convert_to_class_name(file_path: Path):
     :param file_path: Path to the root project
     :return: returns a valid class name
     """
-    import re
-    return re.sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))
+    from re import sub
+    return sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))

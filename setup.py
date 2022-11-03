@@ -51,7 +51,6 @@ install_requires = [
     "json5>=0.9.8",
     "docker>=6.0.0",
     "rich>=9.10.0",
-    "dependency-injector>=4.39.1",
     "pydantic>=1.8.2",
     "python-dateutil>=2.8.2",
     "lxml>=4.9.0",

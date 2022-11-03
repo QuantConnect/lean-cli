@@ -122,7 +122,7 @@ class LibraryManager:
             raise RuntimeError("Circular dependency detected between "
                                f"{project_relative_path} and {library_relative_path}")
 
-        from json import load
+        from json import loads
         project_libraries.append(loads(LeanLibraryReference(
             name=library_dir.name,
             path=library_relative_path
@@ -287,8 +287,9 @@ class LibraryManager:
         :param name: the path to the Lean CLI library to remove
         :param no_local: Whether restoring the packages locally must be skipped
         """
-        import shutil
-        import subprocess
+        from shutil import which
+        from subprocess import run
+
         csproj_file = self._project_manager.get_csproj_file_path(project_dir)
         self._logger.info(f"Removing {name} from '{self._path_manager.get_relative_path(csproj_file)}'")
 
@@ -302,10 +303,10 @@ class LibraryManager:
 
         csproj_file.write_text(self._xml_manager.to_string(csproj_tree), encoding="utf-8")
 
-        if not no_local and shutil.which("dotnet") is not None:
+        if not no_local and which("dotnet") is not None:
             self._logger.info(f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}'")
 
-            process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+            process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
 
             if process.returncode != 0:
                 raise RuntimeError(

@@ -13,13 +13,38 @@
 
 import os
 from pathlib import Path
+from unittest import mock
 
 import certifi
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
+from lean.models.api import QCMinimalOrganization
 
 from lean.container import container
+
+
+def initialize_container(given_docker_manager=None, given_lean_runner=None):
+    lean_runner = mock.Mock()
+    docker_manager = mock.Mock()
+    api_client = mock.MagicMock()
+
+    docker_manager_to_use = docker_manager
+    if given_docker_manager:
+        docker_manager_to_use = given_docker_manager
+    lean_runner_to_use = lean_runner
+    if given_lean_runner:
+        lean_runner_to_use = given_lean_runner
+
+    # Reset all singletons so Path instances get recreated
+    # Path instances are bound to the filesystem that was active at the time of their creation
+    # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
+
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+
+    container.initialize(docker_manager_to_use, api_client, lean_runner_to_use)
 
 
 # conftest.py is ran by pytest before loading each testing module
@@ -43,10 +68,7 @@ def fake_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     fs.create_dir(Path.home() / "testing")
     os.chdir(Path.home() / "testing")
 
-    # Reset all singletons so Path instances get recreated
-    # Path instances are bound to the filesystem that was active at the time of their creation
-    # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
-    container.reset_singletons()
+    initialize_container()
 
     return fs
 
@@ -64,7 +86,4 @@ def requests_mock() -> RequestsMock:
 @pytest.fixture(autouse=True)
 def reset_container_overrides() -> None:
     """A pytest fixture which makes sure all container and provider overrides are reset before each test."""
-    for provider in container.traverse():
-        provider.reset_override()
-
-    container.reset_override()
+    initialize_container()

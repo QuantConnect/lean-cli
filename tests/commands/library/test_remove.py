@@ -25,40 +25,40 @@ from tests.test_helpers import create_fake_lean_cli_directory, create_fake_lean_
 
 
 def _assert_project_config_file_has_library_reference(project_dir: Path, library_dir: Path) -> None:
-    project_config = container.project_config_manager().get_project_config(project_dir)
+    project_config = container.project_config_manager.get_project_config(project_dir)
     project_libraries = project_config.get("libraries")
 
     assert len([library for library in project_libraries if LeanLibraryReference(**library).path == library_dir]) == 1
 
 
 def _add_library_to_project_config(project_dir: Path, library_dir: Path) -> None:
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
 
     assert not library_manager.add_lean_library_reference_to_project(project_dir, library_dir)
     _assert_project_config_file_has_library_reference(project_dir, library_dir)
 
 
 def _assert_library_reference_was_removed_from_project_config_file(project_dir: Path, library_dir: Path) -> None:
-    project_config = container.project_config_manager().get_project_config(project_dir)
+    project_config = container.project_config_manager.get_project_config(project_dir)
     project_libraries = project_config.get("libraries")
 
     assert len([library for library in project_libraries if LeanLibraryReference(**library).path == library_dir]) == 0
 
 
 def _assert_csharp_project_csproj_file_has_library_reference(project_dir: Path, library_dir: Path) -> None:
-    project_csproj_file = container.project_manager().get_csproj_file_path(project_dir)
+    project_csproj_file = container.project_manager.get_csproj_file_path(project_dir)
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
-    library_config = container.project_config_manager().get_project_config(library_dir)
+    library_config = container.project_config_manager.get_project_config(library_dir)
     library_language = library_config.get("algorithm-language")
 
     if library_language == "Python":
         assert not any(str(library_dir) in project_reference.get("Include")
                        for project_reference in csproj_tree.findall('.//ProjectReference'))
     else:
-        library_reference = container.library_manager().get_csharp_lean_library_path_for_csproj_file(project_dir,
+        library_reference = container.library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir,
                                                                                                      library_dir)
 
         assert any(project_reference.get("Include") == library_reference
@@ -66,13 +66,13 @@ def _assert_csharp_project_csproj_file_has_library_reference(project_dir: Path, 
 
 
 def _add_library_to_csharp_project_csproj_file(project_dir: Path, library_dir: Path) -> None:
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_reference = library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
 
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     project_csproj_file = project_manager.get_csproj_file_path(project_dir)
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
     last_item_group = csproj_tree.find(".//ItemGroup[last()]")
@@ -86,19 +86,19 @@ def _add_library_to_csharp_project_csproj_file(project_dir: Path, library_dir: P
 
 
 def _assert_library_reference_was_removed_from_csharp_project_csproj_file(project_dir: Path, library_dir: Path) -> None:
-    project_csproj_file = container.project_manager().get_csproj_file_path(project_dir)
+    project_csproj_file = container.project_manager.get_csproj_file_path(project_dir)
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
 
-    library_config = container.project_config_manager().get_project_config(library_dir)
+    library_config = container.project_config_manager.get_project_config(library_dir)
     library_language = library_config.get("algorithm-language")
 
     if library_language == "Python":
         assert not any(str(library_dir) in project_reference.get("Include")
                        for project_reference in csproj_tree.findall('.//ProjectReference'))
     else:
-        library_reference = container.library_manager().get_csharp_lean_library_path_for_csproj_file(project_dir,
+        library_reference = container.library_manager.get_csharp_lean_library_path_for_csproj_file(project_dir,
                                                                                                      library_dir)
         assert not any(project_reference.get("Include") == library_reference
                        for project_reference in csproj_tree.findall('.//ProjectReference'))

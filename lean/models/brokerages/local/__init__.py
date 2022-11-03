@@ -30,7 +30,7 @@ for json_module in json_modules:
         all_local_data_feeds.append(DataFeed(json_module))
 
 # Remove IQFeed DataFeed for other than windows machines
-if not [container.platform_manager().is_host_windows() or environ.get("__README__", "false") == "true"]:
+if not [container.platform_manager.is_host_windows() or environ.get("__README__", "false") == "true"]:
     all_local_data_feeds = [
         data_feed for data_feed in all_local_data_feeds if data_feed._id != "IQFeed"]
 

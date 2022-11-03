@@ -76,12 +76,12 @@ class DataDownloader:
         :param organization_id: the id of the organization that should be billed
         """
         from joblib import delayed, Parallel
-        import multiprocessing
+        from multiprocessing import cpu_count
         progress = self._logger.progress(suffix="{task.percentage:0.0f}% ({task.completed:,.0f}/{task.total:,.0f})")
         progress_task = progress.add_task("", total=len(data_files))
 
         try:
-            parallel = Parallel(n_jobs=max(1, multiprocessing.cpu_count() - 1), backend="threading")
+            parallel = Parallel(n_jobs=max(1, cpu_count() - 1), backend="threading")
 
             data_dir = self._lean_config_manager.get_data_directory()
             parallel(delayed(self._download_file)(data_file.file, overwrite, data_dir, organization_id,
@@ -106,8 +106,8 @@ class DataDownloader:
             raise e
 
     def _process_bulk(self, file: Path, destination: Path):
-        import tarfile
-        tar = tarfile.open(file)
+        from tarfile import open
+        tar = open(file)
         tar.errorlevel = 0
         tar.extractall(destination)
         tar.close()

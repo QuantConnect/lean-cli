@@ -100,9 +100,9 @@ class OptimizerConfigManager:
 
         :return: the chosen optimization target
         """
-        import itertools
+        from itertools import product
         # Create a list of options containing a "<target> (min)" and "<target> (max)" option for every target
-        options = list(itertools.product(self.available_targets,
+        options = list(product(self.available_targets,
                                          [OptimizationExtremum.Minimum, OptimizationExtremum.Maximum]))
         options = [Option(id=OptimizationTarget(target=option[0][0], extremum=option[1]),
                           label=f"{option[0][1]} ({option[1]})") for option in options]
@@ -196,10 +196,10 @@ class OptimizerConfigManager:
         """
         if "." in target:
             return target
-        import re
+        from re import split
 
         # Turn "SharpeRatio" into "Sharpe Ratio" so the title() call doesn't lowercase the R
-        target = re.sub(r"([A-Z])", r" \1", target)
+        target = sub(r"([A-Z])", r" \1", target)
 
         return f"TotalPerformance.PortfolioStatistics.{target.title().replace(' ', '')}"
 

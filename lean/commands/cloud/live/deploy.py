@@ -31,7 +31,7 @@ from lean.components.util.live_utils import _get_configs_for_options, get_last_p
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
     """Logs a list of notification methods."""
-    logger = container.logger()
+    logger = container.logger
 
     email_methods = [method for method in methods if isinstance(method, QCEmailNotificationMethod)]
     email_methods = "None" if len(email_methods) == 0 else ", ".join(method.address for method in email_methods)
@@ -56,7 +56,7 @@ def _prompt_notification_method() -> QCNotificationMethod:
 
     :return: the notification method configured by the user
     """
-    logger = container.logger()
+    logger = container.logger
     selected_method = logger.prompt_list("Select a notification method", [Option(id="email", label="Email"),
                                                                           Option(id="webhook", label="Webhook"),
                                                                           Option(id="sms", label="SMS"),
@@ -223,13 +223,13 @@ def deploy(project: str,
     In non-interactive mode the options specific to the given brokerage are required,
     as well as --node, --auto-restart, --notify-order-events and --notify-insights.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, push)
 
-    cloud_runner = container.cloud_runner()
+    cloud_runner = container.cloud_runner
     finished_compile = cloud_runner.compile_project(cloud_project)
 
     if brokerage is not None:

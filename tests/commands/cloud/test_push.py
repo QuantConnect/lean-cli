@@ -18,10 +18,8 @@ from datetime import datetime
 
 import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
-from lean.components.api.lean_client import LeanClient
 from lean.components.api.project_client import ProjectClient
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
@@ -40,10 +38,10 @@ def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
     ]
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
+    container.push_manager = push_manager
 
     result = CliRunner().invoke(lean, ["cloud", "push"])
 
@@ -68,10 +66,10 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
     cloud_projects = [create_api_project(1, "Python Project")]
     api_client = mock.Mock()
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
+    container.push_manager = push_manager
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
 
@@ -84,7 +82,7 @@ def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
     create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
+    container.push_manager = push_manager
 
     (Path.cwd() / "Empty Project").mkdir()
 
@@ -99,7 +97,7 @@ def test_cloud_push_aborts_when_given_directory_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
+    container.push_manager = push_manager
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Empty Project"])
 
@@ -149,8 +147,8 @@ def test_cloud_push_updates_lean_config() -> None:
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
 
     push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager)
-    container.push_manager.override(providers.Object(push_manager))
-    container.api_client.override(providers.Object(api_client))
+    container.push_manager = push_manager
+    container.api_client = api_client
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
 

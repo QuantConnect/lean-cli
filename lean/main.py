@@ -37,7 +37,6 @@ def _ensure_win32_available() -> None:
     from site import getsitepackages, getusersitepackages
     from sys import executable, path, exit, prefix
     from os import environ
-    from time import sleep
     from pathlib import Path
 
     possible_paths = path + [prefix] + getsitepackages() + [getusersitepackages()]
@@ -64,6 +63,7 @@ def _ensure_win32_available() -> None:
         windll.shell32.ShellExecuteW(None, "runas", executable, f'"{target_file}" -install', None, 1)
 
         # ShellExecuteW returns immediately after the UAC dialog, we wait a second to give the script some time to run
+        from time import sleep
         sleep(1)
 
         if _is_win32_available():
@@ -93,7 +93,7 @@ def main() -> None:
     try:
         lean.main(standalone_mode=False)
 
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
     except Exception as exception:
@@ -104,7 +104,7 @@ def main() -> None:
         from pydantic import ValidationError
         from lean.models.errors import MoreInfoError
 
-        logger = container.logger()
+        logger = container.logger
         logger.debug(format_exc().strip())
         # printing stack trace
         print_exc()
@@ -127,7 +127,7 @@ def main() -> None:
             exception_str = exception_str.replace("for help.",
                                                   "for help or go to the following url for a list of common errors:\nhttps://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
-            container.update_manager().warn_if_cli_outdated(force=True)
+            container.update_manager.warn_if_cli_outdated(force=True)
 
             logger.info(exception_str)
         elif isinstance(exception, Abort):
@@ -138,7 +138,7 @@ def main() -> None:
         else:
             logger.error(f"Error: {exception}")
 
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
 

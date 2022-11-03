@@ -119,11 +119,11 @@ class ProjectManager:
         :param local_file_path: the path to the local file to update the last modified time of
         :param cloud_timestamp: the last modified time of the counterpart of the local file in the cloud
         """
-        import os
+        from os import  utime
         # Timestamps are stored in UTC in the cloud, but utime() requires them in the local timezone
         time = cloud_timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None)
         time = round(time.timestamp() * 1e9)
-        os.utime(local_file_path, ns=(time, time))
+        utime(local_file_path, ns=(time, time))
 
     def copy_code(self, project_dir: Path, output_dir: Path) -> None:
         """Copies the source code of a project to another directory.
@@ -131,14 +131,14 @@ class ProjectManager:
         :param project_dir: the directory of the project
         :param output_dir: the directory to copy the code to
         """
-        import shutil
+        from shutil import copyfile
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for source_file in self.get_source_files(project_dir):
             target_file = output_dir / source_file.relative_to(project_dir)
             target_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source_file, target_file)
+            copyfile(source_file, target_file)
 
     def create_new_project(self, project_dir: Path, language: QCLanguage) -> None:
         """Creates a new project directory and fills it with some useful files.
@@ -169,9 +169,9 @@ class ProjectManager:
 
         :param project_dir: the directory of the project to delete
         """
-        import shutil
+        from shutil import rmtree
         try:
-            shutil.rmtree(project_dir)
+            rmtree(project_dir)
         except FileNotFoundError:
             raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
 
@@ -242,12 +242,12 @@ class ProjectManager:
         :param csproj_file: Path to the project's csproj file
         :param no_local: Whether restoring the packages locally must be skipped
         """
-        import shutil
-        import subprocess
+        from shutil import which
+        from subprocess import run
         if no_local:
             return
 
-        if shutil.which("dotnet") is None:
+        if which("dotnet") is None:
             self._logger.info(f"Project {csproj_file.parent} will not be restored because dotnet was not found in PATH")
             return
 
@@ -255,7 +255,7 @@ class ProjectManager:
         self._logger.info(
             f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}' to provide local autocomplete: {project_dir}, {csproj_file}, {Path.cwd()}")
 
-        process = subprocess.run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+        process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
 
         if process.returncode != 0:
             raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
@@ -276,20 +276,20 @@ class ProjectManager:
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
-        import site
         try:
             cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         except:
             return
+        from site import ENABLE_USER_SITE, getusersitepackages, getsitepackages
 
         library_dir = cli_root_dir / "Library"
         if not library_dir.is_dir():
             return
 
-        if site.ENABLE_USER_SITE:
-            site_packages_dir = site.getusersitepackages()
+        if ENABLE_USER_SITE:
+            site_packages_dir = getusersitepackages()
         else:
-            site_packages_dir = site.getsitepackages()[0]
+            site_packages_dir = getsitepackages()[0]
 
         self._generate_file(Path(site_packages_dir) / "lean-cli.pth", str(library_dir))
 
@@ -343,8 +343,8 @@ class ProjectManager:
 
         :param project_dir: the directory of the new project
         """
+        from os import path
 
-        import os
         # Generate Python JDK entry for PyCharm Professional and PyCharm Community
         for editor in ["PyCharm", "PyCharmCE"]:
             for directory in self._get_jetbrains_config_dirs(editor):
@@ -381,7 +381,7 @@ class ProjectManager:
 
         try:
             library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
-            library_dir = f"$PROJECT_DIR$/{os.path.relpath(library_dir, project_dir)}".replace("\\", "/")
+            library_dir = f"$PROJECT_DIR$/{path.relpath(library_dir, project_dir)}".replace("\\", "/")
             library_mapping = f'<mapping local-root="{library_dir}" remote-root="/Library" />'
         except:
             library_mapping = ""
@@ -424,7 +424,7 @@ class ProjectManager:
 
         :param pycharm_config_dir: the path to the global configuration directory of a PyCharm edition
         """
-        import sys
+        from sys import path, executable, version_info
         # Parse the file containing PyCharm's internal table of Python interpreters
         jdk_table_file = pycharm_config_dir / "options" / "jdk.table.xml"
         if jdk_table_file.exists():
@@ -442,7 +442,7 @@ class ProjectManager:
             return
 
         # Add the new JDK entry to the XML tree
-        classpath_entries = [Path(p).as_posix() for p in sys.path if p != "" and not p.endswith(".zip")]
+        classpath_entries = [Path(p).as_posix() for p in path if p != "" and not p.endswith(".zip")]
         classpath_entries = [f'<root url="{p}" type="simple" />' for p in classpath_entries]
         classpath_entries = "\n".join(classpath_entries)
 
@@ -451,8 +451,8 @@ class ProjectManager:
 <jdk version="2">
   <name value="Lean CLI" />
   <type value="Python SDK" />
-  <version value="Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}" />
-  <homePath value="{Path(sys.executable).as_posix()}" />
+  <version value="Python {version_info.major}.{version_info.minor}.{version_info.micro}" />
+  <homePath value="{Path(executable).as_posix()}" />
   <roots>
     <classPath>
       <root type="composite">
@@ -512,7 +512,8 @@ class ProjectManager:
 
     def generate_rider_config(self) -> None:
         """Generates C# debugging configuration for Rider."""
-        import pkg_resources
+        from pkg_resources import resource_string
+
         ssh_dir = Path("~/.lean/ssh").expanduser()
 
         # Add SSH keys to .lean/ssh if necessary
@@ -520,7 +521,7 @@ class ProjectManager:
             ssh_dir.mkdir(parents=True)
             for name in ["key", "key.pub", "README.md"]:
                 with (ssh_dir / name).open("wb+") as file:
-                    file.write(pkg_resources.resource_string("lean", f"ssh/{name}"))
+                    file.write(resource_string("lean", f"ssh/{name}"))
 
         # Find Rider's global configuration directory
         for directory in self._get_jetbrains_config_dirs("Rider"):

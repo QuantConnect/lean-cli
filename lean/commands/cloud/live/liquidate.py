@@ -23,10 +23,10 @@ def liquidate(project: str) -> None:
     """
     Stops live trading and liquidates existing positions for a certain project.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
     logger.info(f"cloud.live.liquidate(): sending command.")
     response = api_client.live.liquidate_and_stop(cloud_project.projectId)

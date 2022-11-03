@@ -41,7 +41,8 @@ class DataClient:
         """
         from tempfile import NamedTemporaryFile
         from shutil import move
-        import os
+        from os import path, makedirs
+
         data = self._api.post("data/read", {
             "format": "link",
             "filePath": relative_file_path,
@@ -72,8 +73,8 @@ class DataClient:
                 # if total size not available update progress at the end
                 progress_callback(1)
 
-            directory = os.path.dirname(local_filename)
-            os.makedirs(directory, exist_ok=True)
+            directory = path.dirname(local_filename)
+            makedirs(directory, exist_ok=True)
             move(temp_file_name, local_filename)
 
     def download_public_file(self, data_endpoint: str) -> bytes:

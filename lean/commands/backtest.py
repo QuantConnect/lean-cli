@@ -16,6 +16,7 @@ from json import dumps, loads
 from pathlib import Path
 from typing import Optional
 from click import command, option, argument, Choice
+
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
@@ -41,7 +42,7 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     if not workspace_xml_path.is_file():
         return
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     current_content = xml_manager.parse(workspace_xml_path.read_text(encoding="utf-8"))
 
     config = current_content.find('.//configuration[@name="Debug with Lean CLI"]')
@@ -55,7 +56,7 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     made_changes = False
     has_library_mapping = False
 
-    library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+    library_dir = container.lean_config_manager.get_cli_root_directory() / "Library"
 
     if library_dir.is_dir():
         library_dir = f"$PROJECT_DIR$/{path.relpath(library_dir, project_dir)}".replace("\\", "/")
@@ -82,7 +83,7 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     if made_changes:
         workspace_xml_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
 
-        logger = container.logger()
+        logger = container.logger
         logger.warn("Your run configuration has been updated to work with the latest version of LEAN")
         logger.warn("Please restart the debugger in PyCharm and run this command again")
 
@@ -105,7 +106,7 @@ def _migrate_python_vscode(project_dir: Path) -> None:
     made_changes = False
     has_library_mapping = False
 
-    library_dir = container.lean_config_manager().get_cli_root_directory() / "Library"
+    library_dir = container.lean_config_manager.get_cli_root_directory() / "Library"
     if not library_dir.is_dir():
         library_dir = None
 
@@ -132,7 +133,7 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
     from click import Abort
 
     made_changes = False
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
 
     for dir_name in [f".idea.{project_dir.stem}", f".idea.{project_dir.stem}.dir"]:
         workspace_xml_path = project_dir / ".idea" / dir_name / ".idea" / "workspace.xml"
@@ -155,7 +156,7 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
         made_changes = True
 
     if made_changes:
-        container.project_manager().generate_rider_config()
+        container.project_manager.generate_rider_config()
 
         logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
         logger.warn("Please restart Rider and start debugging again")
@@ -207,7 +208,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
     if csproj_path is None:
         return
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
 
     current_content = xml_manager.parse(csproj_path.read_text(encoding="utf-8"))
     if current_content.find(".//PropertyGroup/DefaultItemExcludes") is not None:
@@ -230,12 +231,12 @@ def _select_organization() -> QCMinimalOrganization:
 
     :return: the selected organization
     """
-    api_client = container.api_client()
+    api_client = container.api_client
 
     organizations = api_client.organizations.get_all()
     options = [Option(id=organization, label=organization.name) for organization in organizations]
 
-    logger = container.logger()
+    logger = container.logger
     return logger.prompt_list("Select the organization to purchase and download data with", options)
 
 
@@ -304,10 +305,10 @@ def backtest(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    logger = container.logger()
-    project_manager = container.project_manager()
+    logger = container.logger
+    project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     from datetime import datetime
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -343,8 +344,8 @@ def backtest(project: Path,
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
-    cli_config_manager = container.cli_config_manager()
-    project_config_manager = container.project_config_manager()
+    cli_config_manager = container.cli_config_manager
+    project_config_manager = container.project_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
@@ -352,12 +353,12 @@ def backtest(project: Path,
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager()
+    output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
 
     # Set backtest name
@@ -367,7 +368,7 @@ def backtest(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    lean_runner = container.lean_runner()
+    lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
                          "backtesting",
                          algorithm_file,

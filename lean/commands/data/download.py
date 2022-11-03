@@ -43,7 +43,7 @@ def _get_data_information(organization: QCFullOrganization) -> QCDataInformation
     global _data_information
 
     if _data_information is None:
-        _data_information = container.api_client().data.get_info(organization.id)
+        _data_information = container.api_client.data.get_info(organization.id)
 
     return _data_information
 
@@ -106,7 +106,7 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     from rich import box
     from rich.table import Table
 
-    logger = container.logger()
+    logger = container.logger
     table = Table(box=box.SQUARE)
 
     for column in ["Dataset", "Vendor", "Details", "File count", "Price"]:
@@ -159,12 +159,12 @@ def _select_organization() -> QCFullOrganization:
 
     :return: the selected organization
     """
-    api_client = container.api_client()
+    api_client = container.api_client
 
     organizations = api_client.organizations.get_all()
     options = [Option(id=organization.id, label=organization.name) for organization in organizations]
 
-    logger = container.logger()
+    logger = container.logger
     organization_id = logger.prompt_list("Select the organization to purchase and download data with", options)
 
     return api_client.organizations.get(organization_id)
@@ -180,7 +180,7 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
     from collections import OrderedDict
 
     products = []
-    logger = container.logger()
+    logger = container.logger
 
     category_options = {}
     for dataset in datasets:
@@ -258,8 +258,8 @@ def _verify_accept_agreement(organization: QCFullOrganization, open_browser: boo
     from webbrowser import open
     from time import sleep
 
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
     info = api_client.data.get_info(organization.id)
 
@@ -275,7 +275,7 @@ def _verify_accept_agreement(organization: QCFullOrganization, open_browser: boo
         logger.info(info.agreement)
         logger.info("Waiting until the CLI API Access and Data Agreement has been accepted...")
 
-        container.task_manager().poll(
+        container.task_manager.poll(
             make_request=lambda: api_client.organizations.get(organization.id),
             is_done=lambda data: data.data.current != False
         )
@@ -294,7 +294,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
     organization_qcc = organization.credit.balance
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"You will be charged {total_price:,.0f} QCC from your organization's QCC balance")
     logger.info(
         f"After downloading all files your organization will have {organization_qcc - total_price:,.0f} QCC left")
@@ -311,7 +311,7 @@ def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
     :return: the first organization with the given name or id
     """
     from re import match
-    api_client = container.api_client()
+    api_client = container.api_client
 
     if match("^[a-f0-9]{32}$", user_input) is not None:
         try:
@@ -380,7 +380,7 @@ def _select_products_non_interactive(organization: QCFullOrganization,
 
     products = [Product(dataset=dataset, option_results=option_results)]
 
-    container.logger().info("Data that will be purchased and downloaded:")
+    container.logger.info("Data that will be purchased and downloaded:")
     _display_products(organization, products)
 
     return products
@@ -392,7 +392,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     :param organization: the organization that will be charged
     :return: the datasets which data can be downloaded from
     """
-    cloud_datasets = container.api_client().market.list_datasets()
+    cloud_datasets = container.api_client.market.list_datasets()
     data_information = _get_data_information(organization)
 
     available_datasets = []
@@ -405,7 +405,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
             if cloud_dataset.name != "Template Data Source Product":
                 name = cloud_dataset.name.strip()
                 vendor = cloud_dataset.vendorName.strip()
-                container.logger().debug(
+                container.logger.debug(
                     f"There is no datasources entry for {name} by {vendor} (id {cloud_dataset.id})")
             continue
 
@@ -461,4 +461,4 @@ def download(ctx: Context,
         _confirm_payment(selected_organization, products)
 
     all_data_files = _get_data_files(selected_organization, products)
-    container.data_downloader().download_files(all_data_files, overwrite, selected_organization.id)
+    container.data_downloader.download_files(all_data_files, overwrite, selected_organization.id)

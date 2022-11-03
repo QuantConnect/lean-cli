@@ -15,7 +15,6 @@ from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -30,7 +29,7 @@ def test_data_generate_runs_engine_container() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "1"])
 
@@ -46,7 +45,7 @@ def test_data_generate_adds_destination_dir_pointing_to_data_directory_to_entryp
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "1"])
 
@@ -66,7 +65,7 @@ def test_data_generate_adds_parameters_to_entrypoint() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["data", "generate",
                                        "--start", "20200101",
@@ -95,7 +94,7 @@ def test_data_generate_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "1", "--update"])
 
@@ -109,9 +108,9 @@ def test_data_generate_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean,
                                 ["data", "generate", "--start", "20200101", "--symbol-count", "1"])
@@ -128,9 +127,9 @@ def test_data_generate_runs_custom_image_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
-    container.cli_config_manager().engine_image.set_value("custom/lean:123")
+    container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
     result = CliRunner().invoke(lean,
                                 ["data", "generate",
@@ -151,7 +150,7 @@ def test_data_generate_aborts_when_run_image_fails() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "1"])
 

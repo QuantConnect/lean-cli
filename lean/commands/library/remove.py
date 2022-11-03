@@ -32,13 +32,13 @@ def _remove_package_from_csharp_project(project_dir: Path, name: str, no_local: 
     """
     from shutil import which
     from subprocess import run
-    logger = container.logger()
-    path_manager = container.path_manager()
+    logger = container.logger
+    path_manager = container.path_manager
 
     csproj_file = next(p for p in project_dir.iterdir() if p.name.endswith(".csproj"))
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(csproj_file)}'")
 
-    xml_manager = container.xml_manager()
+    xml_manager = container.xml_manager
     csproj_tree = xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
 
     for package_reference in csproj_tree.findall(".//PackageReference"):
@@ -66,8 +66,8 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     """
     from pkg_resources import Requirement
 
-    logger = container.logger()
-    path_manager = container.path_manager()
+    logger = container.logger
+    path_manager = container.path_manager
 
     requirements_file = project_dir / "requirements.txt"
     logger.info(f"Removing {name} from '{path_manager.get_relative_path(requirements_file)}'")
@@ -116,14 +116,14 @@ def remove(project: Path, name: str, no_local: bool) -> None:
     Python example usage:
     $ lean library remove "My Python Project" tensorflow
     """
-    project_config = container.project_config_manager().get_project_config(project)
+    project_config = container.project_config_manager.get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
 
     if project_language is None:
         raise MoreInfoError(f"{project} is not a Lean CLI project",
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_dir = Path(name).expanduser().resolve()
     if library_manager.is_lean_library(library_dir):
         if project_language == "CSharp":

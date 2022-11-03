@@ -18,12 +18,12 @@ class PlatformManager:
 
     def __init__(self) -> None:
         """Creates a new PlatformManager instance."""
-        import os
-        import platform
-        self._system = platform.system()
-        self._machine = platform.machine()
-        self._host_system = os.environ.get("QC_DOCKER_HOST_SYSTEM", None)
-        self._host_machine = os.environ.get("QC_DOCKER_HOST_MACHINE", None)
+        from os import environ
+        from platform import system, machine
+        self._system = system()
+        self._machine = machine()
+        self._host_system = environ.get("QC_DOCKER_HOST_SYSTEM", None)
+        self._host_machine = environ.get("QC_DOCKER_HOST_MACHINE", None)
 
     def is_system_windows(self) -> bool:
         """Returns whether the current system is running Windows.

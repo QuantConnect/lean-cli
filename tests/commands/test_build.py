@@ -16,12 +16,12 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.constants import CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
+from tests.conftest import initialize_container
 
 CUSTOM_FOUNDATION_IMAGE = DockerImage(name=CUSTOM_FOUNDATION, tag="latest")
 CUSTOM_ENGINE_IMAGE = DockerImage(name=CUSTOM_ENGINE, tag="latest")
@@ -52,7 +52,7 @@ def test_build_compiles_lean() -> None:
     create_fake_repositories()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["build", "."])
 
@@ -71,7 +71,7 @@ def test_build_builds_foundation_image(machine: mock.Mock, architecture: str, fi
     machine.return_value = architecture
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    initialize_container(docker_manager)
 
     result = CliRunner().invoke(lean, ["build", "."])
 
@@ -91,7 +91,7 @@ def test_build_builds_engine_image_based_on_custom_foundation_image() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.build_image.side_effect = build_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["build", "."])
 
@@ -111,7 +111,7 @@ def test_build_builds_research_image_based_on_custom_engine_image() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.build_image.side_effect = build_image
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["build", "."])
 
@@ -130,7 +130,7 @@ def test_build_uses_current_directory_as_root_directory_when_root_not_given() ->
     create_fake_repositories()
 
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["build"])
 
@@ -141,7 +141,7 @@ def test_build_uses_current_directory_as_root_directory_when_root_not_given() ->
 
 def test_build_aborts_when_invalid_root_directory_passed() -> None:
     docker_manager = mock.Mock()
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["build", "."])
 
@@ -158,8 +158,8 @@ def test_build_uses_custom_tag_when_given(machine: mock.Mock, architecture: str,
     machine.return_value = architecture
 
     docker_manager = mock.Mock()
+    initialize_container(docker_manager)
     docker_manager.build_image.side_effect = build_image
-    container.docker_manager.override(providers.Object(docker_manager))
 
     result = CliRunner().invoke(lean, ["build", ".", "--tag", "my-tag"])
 

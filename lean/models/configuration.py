@@ -73,8 +73,8 @@ class RegexCondition(BaseCondition):
         :param target_value: value to validate the condition against
         :return: True if the condition is valid otherwise False
         """
-        import re
-        return len(re.findall(self._pattern, target_value, re.I)) > 0
+        from re import findall, I
+        return len(findall(self._pattern, target_value, I)) > 0
 
 
 class ConditionalValueOption():

@@ -28,7 +28,7 @@ def list() -> None:
     table.add_column("Location", overflow="fold")
     table.add_column("Description", overflow="fold")
 
-    for option in container.cli_config_manager().all_options:
+    for option in container.cli_config_manager.all_options:
         value = option.get_value(default="<not set>")
 
         # Mask values of sensitive options
@@ -40,5 +40,5 @@ def list() -> None:
                       str(option.location),
                       option.description)
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(table)

@@ -72,6 +72,7 @@ class LeanConfigManager:
             target_file = current_dir / DEFAULT_LEAN_CONFIG_FILE_NAME
             if target_file.exists():
                 self._lean_config_path = target_file
+
                 self.store_known_lean_config_path(self._lean_config_path)
                 return self._lean_config_path
 
@@ -135,19 +136,20 @@ class LeanConfigManager:
 
         :param updates: the key -> new value updates to apply to the current config
         """
+        from json5 import dumps
+        from re import sub
+
         config = self.get_lean_config()
 
         config_path = self.get_lean_config_path()
         config_text = config_path.read_text(encoding="utf-8")
 
-        import json5
-        import re
         for key, value in reversed(list(updates.items())):
-            json_value = json5.dumps(value)
+            json_value = dumps(value)
 
             # We can only use regex to set the property because converting the config back to JSON drops all comments
             if key in config:
-                config_text = re.sub(fr'"{key}":\s*("?[^",]*"?)', f'"{key}": {json_value}', config_text)
+                config_text = sub(fr'"{key}":\s*("?[^",]*"?)', f'"{key}": {json_value}', config_text)
             else:
                 config_text = config_text.replace("{", f'{{\n  "{key}": {json_value},', 1)
 
@@ -178,6 +180,8 @@ class LeanConfigManager:
         :param config: the configuration to remove the auto-configurable keys from
         :return: the same config as passed in with the config argument, but without the auto-configurable keys
         """
+        from re import split
+
         # The keys that we can set automatically based on the command that is ran
         keys_to_remove = ["environment",
                           "composer-dll-directory",
@@ -186,10 +190,9 @@ class LeanConfigManager:
                           "algorithm-type-name", "algorithm-language", "algorithm-location",
                           "parameters", "intrinio-username", "intrinio-password", "ema-fast", "ema-slow"]
 
-        import re
         # This function is implemented by doing string manipulation because the config contains comments
         # If we were to parse it as JSON, we would have to remove the comments, which we don't want to do
-        sections = re.split(r"\n\s*\n", config)
+        sections = split(r"\n\s*\n", config)
         for key in keys_to_remove:
             sections = [section for section in sections if f"\"{key}\": " not in section]
         config = "\n\n".join(sections)
@@ -255,9 +258,9 @@ class LeanConfigManager:
             config["algorithm-language"] = "Python"
             config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
         else:
-            import re
+            from re import findall
             algorithm_text = algorithm_file.read_text(encoding="utf-8")
-            config["algorithm-type-name"] = re.findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
+            config["algorithm-type-name"] = findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
             config["algorithm-language"] = "CSharp"
             config["algorithm-location"] = f"{algorithm_file.parent.name}.dll"
 
@@ -305,5 +308,39 @@ class LeanConfigManager:
 
         :return: a dict containing the contents of the Lean config file
         """
-        import json5
-        return json5.loads(self.get_lean_config_path().read_text(encoding="utf-8"))
+        path = self.get_lean_config_path()
+        content = path.read_text(encoding="utf-8")
+        return self.parse_json(content)
+
+    def parse_json(self, content) -> Dict[str, Any]:
+        try:
+            from json import loads
+            from re import sub
+
+            # remove multi line or single line comments without double quotes
+            config = sub(r'/\*.*?\*/|//[^\r\n"]*[\r\n]', '', content)
+
+            # let's handle single line comments with double quotes in them
+            new_config = ''
+            for line in config.split('\n'):
+                double_quotes_count = 0
+                previous_element = ''
+                for current_element in line:
+                    if current_element == '/' and double_quotes_count % 2 == 0:
+                        if previous_element == '/':
+                            break
+                    else:
+                        # count not escaped double quotes
+                        if current_element == '"' and previous_element != '\\':
+                            double_quotes_count = double_quotes_count + 1
+                        new_config += current_element
+                    previous_element = current_element
+            result = loads(new_config)
+            return result
+
+        except Exception as e:
+            self._logger.error(str(e))
+
+            # just in case slower fallback
+            from json5 import loads
+            return loads(content)

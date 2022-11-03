@@ -31,7 +31,7 @@ def _create_pull_manager(api_client: mock.Mock,
                          library_manager: mock.Mock = mock.Mock()) -> PullManager:
     logger = mock.Mock()
     platform_manager = mock.Mock()
-    project_manager = container.project_manager()
+    project_manager = container.project_manager
     return PullManager(logger, api_client, project_manager, project_config_manager, library_manager, platform_manager)
 
 
@@ -128,7 +128,7 @@ def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProjec
 
 
 def _add_local_library_to_local_project(project_path: Path, library_path: Path) -> None:
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_to_project(project_path, library_path, False)
 
 
@@ -154,7 +154,7 @@ def test_pulls_libraries_referenced_by_the_project() -> None:
     library_manager.add_lean_library_to_project = mock.Mock()
     library_manager.remove_lean_library_from_project = mock.Mock()
 
-    pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+    pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
@@ -181,7 +181,7 @@ def test_pull_removes_library_references() -> None:
 
     # Add library reference to local project to test its removal
     project_path = Path.cwd() / "Python Project"
-    project_config = container.project_config_manager().get_project_config(project_path)
+    project_config = container.project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", test_project.projectId)
     library_path = Path.cwd() / "Library" / "Python Library"
     _add_local_library_to_local_project(project_path, library_path)
@@ -194,7 +194,7 @@ def test_pull_removes_library_references() -> None:
     library_manager.add_lean_library_to_project = mock.Mock()
     library_manager.remove_lean_library_from_project = mock.Mock()
 
-    pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+    pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_called_once_with(test_project.projectId)
@@ -218,7 +218,7 @@ def test_pull_adds_and_removes_library_references_simultaneously() -> None:
 
     # Add library reference to local project to test removal
     project_path = Path.cwd() / "Python Project"
-    project_config = container.project_config_manager().get_project_config(project_path)
+    project_config = container.project_config_manager.get_project_config(project_path)
     project_config.set("cloud-id", test_project.projectId)
     library_path = Path.cwd() / "Library" / "Python Library"
     _add_local_library_to_local_project(project_path, library_path)
@@ -231,7 +231,7 @@ def test_pull_adds_and_removes_library_references_simultaneously() -> None:
     library_manager.add_lean_library_to_project = mock.Mock()
     library_manager.remove_lean_library_from_project = mock.Mock()
 
-    pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+    pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
@@ -271,7 +271,7 @@ def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
     library_manager.remove_lean_library_from_project = mock.Mock()
 
     with mock.patch.object(ProjectManager, 'try_restore_csharp_project') as mock_try_restore_csharp_project:
-        pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+        pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
         pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
@@ -362,7 +362,7 @@ def test_pull_projects_detects_unsupported_paths(test_platform: str, unsupported
     library_manager.add_lean_library_to_project = mock.Mock()
     library_manager.remove_lean_library_from_project = mock.Mock()
 
-    pull_manager = _create_pull_manager(api_client, container.project_config_manager(), library_manager)
+    pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(

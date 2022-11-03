@@ -113,10 +113,15 @@ class UpdateManager:
 
         We check for new announcements once every UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS hours.
         """
+        from requests import exceptions
+        from hashlib import md5
+        from rich import box
+        from rich.panel import Panel
+        from rich.table import Table
+
         if not self._should_check_for_updates("announcements", UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS):
             return
 
-        from requests import exceptions
         try:
             response = self._http_client.get(
                 "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
@@ -131,11 +136,7 @@ class UpdateManager:
 
         hash_cache_key = "last-announcements-hash"
 
-        import hashlib
-        from rich import box
-        from rich.panel import Panel
-        from rich.table import Table
-        remote_hash = hashlib.md5(response.content).hexdigest()
+        remote_hash = md5(response.content).hexdigest()
         local_hash = self._cache_storage.get(hash_cache_key, None)
 
         if local_hash == remote_hash:

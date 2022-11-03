@@ -28,10 +28,10 @@ def delete_project(project: str) -> None:
     The project is selected by name or cloud id.
     """
     # Remove project from cloud
-    api_client = container.api_client()
+    api_client = container.api_client
     all_projects = api_client.projects.get_all()
-    project_manager = container.project_manager()
-    logger = container.logger()
+    project_manager = container.project_manager
+    logger = container.logger
 
     project_id = None
     try:

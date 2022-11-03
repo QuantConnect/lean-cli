@@ -103,7 +103,7 @@ def generate(start: datetime,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
     run_options = {
@@ -126,11 +126,11 @@ def generate(start: datetime,
         }
     }
 
-    engine_image = container.cli_config_manager().get_engine_image(image)
+    engine_image = container.cli_config_manager.get_engine_image(image)
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
-    success = container.docker_manager().run_image(engine_image, **run_options)
+    success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the random data generator, see the logs above for more information")

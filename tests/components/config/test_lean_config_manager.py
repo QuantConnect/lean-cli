@@ -562,7 +562,7 @@ def test_get_complete_lean_config_sets_python_additional_paths_when_there_are_li
     relative_library_dir = Path("Library/Python Library")
     library_dir = Path.cwd() / relative_library_dir
 
-    library_manager = container.library_manager()
+    library_manager = container.library_manager
     library_manager.add_lean_library_to_project(project_dir, library_dir, False)
 
     manager = _create_lean_config_manager()

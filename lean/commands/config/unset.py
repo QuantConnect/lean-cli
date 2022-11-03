@@ -24,10 +24,10 @@ def unset(key: str) -> None:
 
     Run `lean config list` to show all available options.
     """
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
 
     option = cli_config_manager.get_option_by_key(key)
     option.unset()
 
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Successfully unset '{key}'")

@@ -11,19 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
 
-import click
+from click import Command, Context, Parameter, ParamType, Option as ClickOption
 
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
 
-
-class LeanCommand(click.Command):
+class LeanCommand(Command):
     """A click.Command wrapper with some Lean CLI customization."""
 
     def __init__(self,
@@ -54,9 +52,13 @@ class LeanCommand(click.Command):
         self.context_settings["ignore_unknown_options"] = allow_unknown_options
         self.context_settings["allow_extra_args"] = allow_unknown_options
 
-    def invoke(self, ctx: click.Context):
+    def invoke(self, ctx: Context):
         if self._requires_lean_config:
-            lean_config_manager = container.lean_config_manager()
+
+            from time import time
+            start = time()
+
+            lean_config_manager = container.lean_config_manager
             try:
                 # This method will raise an error if the directory cannot be found
                 lean_config_manager.get_cli_root_directory()
@@ -64,7 +66,7 @@ class LeanCommand(click.Command):
                 # Use one of the cached Lean config locations to avoid having to abort the command
                 lean_config_paths = lean_config_manager.get_known_lean_config_paths()
                 if len(lean_config_paths) > 0:
-                    lean_config_path = container.logger().prompt_list("Select the Lean configuration file to use", [
+                    lean_config_path = container.logger.prompt_list("Select the Lean configuration file to use", [
                         Option(id=p, label=str(p)) for p in lean_config_paths
                     ])
                     lean_config_manager.set_default_lean_config_path(lean_config_path)
@@ -75,37 +77,36 @@ class LeanCommand(click.Command):
                         "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors"
                     )
 
-        import sys
-        if self._requires_docker and "pytest" not in sys.modules:
-            import os
-            is_system_linux = container.platform_manager().is_system_linux()
+        if self._requires_docker:
+            from sys import modules, executable, argv
+            if "pytest" not in modules and container.platform_manager.is_system_linux():
+                from shutil import which
+                from os import getuid, execlp
+                # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root
+                # These files cannot be deleted by the CLI itself, so we rely on the OS to empty /tmp on reboot
+                # The Snap version of Docker does not provide access to files outside $HOME, so we can't support it
 
-            # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root
-            # These files cannot be deleted by the CLI itself, so we rely on the OS to empty /tmp on reboot
-            # The Snap version of Docker does not provide access to files outside $HOME, so we can't support it
-            if is_system_linux:
-                import shutil
-                docker_path = shutil.which("docker")
+                docker_path = which("docker")
                 if docker_path is not None and docker_path.startswith("/snap"):
                     raise MoreInfoError(
                         "The Lean CLI does not work with the Snap version of Docker, please re-install Docker via the official installation instructions",
                         "https://docs.docker.com/engine/install/")
 
-            # A usual Docker installation on Linux requires the user to use sudo to run Docker
-            # If we detect that this is the case and the CLI was started without sudo we elevate automatically
-            if is_system_linux and os.getuid() != 0 and container.docker_manager().is_missing_permission():
-                container.logger().info(
-                    "This command requires access to Docker, you may be asked to enter your password")
+                # A usual Docker installation on Linux requires the user to use sudo to run Docker
+                # If we detect that this is the case and the CLI was started without sudo we elevate automatically
+                if getuid() != 0 and container.docker_manager.is_missing_permission():
+                    container.logger.info(
+                        "This command requires access to Docker, you may be asked to enter your password")
 
-                args = ["sudo", "--preserve-env=HOME", sys.executable, *sys.argv]
-                os.execlp(args[0], *args)
+                    args = ["sudo", "--preserve-env=HOME", executable, *argv]
+                    execlp(args[0], *args)
 
         if self._allow_unknown_options:
-            import itertools
+            from itertools import chain
             # Unknown options are passed to ctx.args and need to be parsed manually
             # We parse them to ctx.params so they're available like normal options
             # Because of this all commands with allow_unknown_options=True must have a **kwargs argument
-            arguments = list(itertools.chain(*[arg.split("=") for arg in ctx.args]))
+            arguments = list(chain(*[arg.split("=") for arg in ctx.args]))
 
             skip_next = False
             for index in range(len(arguments) - 1):
@@ -119,7 +120,7 @@ class LeanCommand(click.Command):
                     ctx.params[option] = value
                     skip_next = True
 
-        update_manager = container.update_manager()
+        update_manager = container.update_manager
         update_manager.show_announcements()
 
         result = super().invoke(ctx)
@@ -128,12 +129,12 @@ class LeanCommand(click.Command):
 
         return result
 
-    def get_params(self, ctx: click.Context):
+    def get_params(self, ctx: Context):
         params = super().get_params(ctx)
 
         # Add --lean-config option if the command requires a Lean config
         if self._requires_lean_config:
-            params.insert(len(params) - 1, click.Option(["--lean-config"],
+            params.insert(len(params) - 1, ClickOption(["--lean-config"],
                                                         type=PathParameter(exists=True, file_okay=True, dir_okay=False),
                                                         help=f"The Lean configuration file that should be used (defaults to the nearest {DEFAULT_LEAN_CONFIG_FILE_NAME})",
                                                         expose_value=False,
@@ -141,7 +142,7 @@ class LeanCommand(click.Command):
                                                         callback=self._parse_config_option))
 
         # Add --verbose option
-        params.insert(len(params) - 1, click.Option(["--verbose"],
+        params.insert(len(params) - 1, ClickOption(["--verbose"],
                                                     help="Enable debug logging",
                                                     is_flag=True,
                                                     default=False,
@@ -151,20 +152,20 @@ class LeanCommand(click.Command):
 
         return params
 
-    def _parse_config_option(self, ctx: click.Context, param: click.Parameter, value: Optional[Path]) -> None:
+    def _parse_config_option(self, ctx: Context, param: Parameter, value: Optional[Path]) -> None:
         """Parses the --config option."""
         if value is not None:
-            lean_config_manager = container.lean_config_manager()
+            lean_config_manager = container.lean_config_manager
             lean_config_manager.set_default_lean_config_path(value)
 
-    def _parse_verbose_option(self, ctx: click.Context, param: click.Parameter, value: Optional[bool]) -> None:
+    def _parse_verbose_option(self, ctx: Context, param: Parameter, value: Optional[bool]) -> None:
         """Parses the --verbose option."""
         if value:
-            logger = container.logger()
+            logger = container.logger
             logger.debug_logging_enabled = True
 
 
-class PathParameter(click.ParamType):
+class PathParameter(ParamType):
     """A limited version of click.Path which uses pathlib.Path."""
 
     def __init__(self, exists: bool = False, file_okay: bool = True, dir_okay: bool = True):
@@ -188,10 +189,10 @@ class PathParameter(click.ParamType):
             self.name = "path"
             self._path_type = "Path"
 
-    def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> Path:
+    def convert(self, value: str, param: Parameter, ctx: Context) -> Path:
         path = Path(value).expanduser().resolve()
 
-        if not container.path_manager().is_path_valid(path):
+        if not container.path_manager.is_path_valid(path):
             self.fail(f"{self._path_type} '{value}' is not a valid path.", param, ctx)
 
         if self._exists and not path.exists():
@@ -206,15 +207,16 @@ class PathParameter(click.ParamType):
         return path
 
 
-class DateParameter(click.ParamType):
+class DateParameter(ParamType):
     """A click parameter which returns datetime.datetime objects and requires yyyyMMdd input."""
 
     name = "date"
 
-    def get_metavar(self, param: click.Parameter) -> str:
+    def get_metavar(self, param: Parameter) -> str:
         return "[yyyyMMdd]"
 
-    def convert(self, value: str, param: click.Parameter, ctx: click.Context) -> datetime:
+    def convert(self, value: str, param: Parameter, ctx: Context):
+        from datetime import datetime
         for date_format in ["%Y%m%d", "%Y-%m-%d"]:
             try:
                 return datetime.strptime(value, date_format)
@@ -229,7 +231,9 @@ def ensure_options(options: List[str]) -> None:
 
     :param options: the Python names of the options that must have values
     """
-    ctx = click.get_current_context()
+    from click import get_current_context
+
+    ctx = get_current_context()
 
     missing_options = []
     for key, value in ctx.params.items():
@@ -251,7 +255,9 @@ def ensure_options(options: List[str]) -> None:
         option = next(param for param in ctx.command.params if param.name == name)
         help_records.append(option.get_help_record(ctx))
 
-    help_formatter = click.HelpFormatter(max_width=120)
+    from click import HelpFormatter
+
+    help_formatter = HelpFormatter(max_width=120)
     help_formatter.write_dl(help_records)
 
     raise RuntimeError(f"""

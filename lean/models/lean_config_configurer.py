@@ -90,13 +90,13 @@ class LeanConfigConfigurer(JsonModule, ABC):
             if type(value) == WindowsPath or type(value) == PosixPath:
                 value = str(value).replace("\\", "/")
             lean_config[configuration._id] = value
-        container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
+        container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
         self._save_properties(lean_config, self.get_required_properties())
 
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:
-            container.logger().debug(f"LeanConfigConfigurer.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
-            container.module_manager().install_module(
+            container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
+            container.module_manager.install_module(
                 self._product_id, organization_id)
             self._is_module_installed = True
 
@@ -119,5 +119,5 @@ class LeanConfigConfigurer(JsonModule, ABC):
         :param properties: the names of the properties to save persistently
         """
         from lean.container import container
-        container.lean_config_manager().set_properties(
+        container.lean_config_manager.set_properties(
             {key: lean_config[key] for key in properties})

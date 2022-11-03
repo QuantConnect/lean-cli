@@ -116,7 +116,7 @@ def report(backtest_results: Optional[Path],
             "https://www.lean.io/docs/v2/lean-cli/reports#02-Generate-Reports"
             )
 
-    logger = container.logger()
+    logger = container.logger
 
     if live_results is None:
         logger.info(f"Generating a report from '{backtest_results}'")
@@ -130,7 +130,7 @@ def report(backtest_results: Optional[Path],
             strategy_name = project_directory.name
 
         if strategy_description is None:
-            project_config_manager = container.project_config_manager()
+            project_config_manager = container.project_config_manager
             project_config = project_config_manager.get_project_config(project_directory)
             strategy_description = project_config.get("description", "")
 
@@ -171,13 +171,13 @@ def report(backtest_results: Optional[Path],
         }
     }
 
-    config_path = container.temp_manager().create_temporary_directory() / "config.json"
+    config_path = container.temp_manager.create_temporary_directory() / "config.json"
     with config_path.open("w+", encoding="utf-8") as file:
         dumps(report_config, file)
 
-    backtest_id = container.output_config_manager().get_backtest_id(backtest_results.parent)
+    backtest_id = container.output_config_manager.get_backtest_id(backtest_results.parent)
 
-    lean_config_manager = container.lean_config_manager()
+    lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
     report_destination.parent.mkdir(parents=True, exist_ok=True)
@@ -215,25 +215,25 @@ def report(backtest_results: Optional[Path],
                                            type="bind",
                                            read_only=True))
 
-    cli_config_manager = container.cli_config_manager()
+    cli_config_manager = container.cli_config_manager
     engine_image_override = image
 
     if engine_image_override is None and project_directory is not None:
-        project_config_manager = container.project_config_manager()
+        project_config_manager = container.project_config_manager
         project_config = project_config_manager.get_project_config(project_directory)
         engine_image_override = project_config.get("engine-image", None)
 
     engine_image = cli_config_manager.get_engine_image(engine_image_override)
 
-    container.update_manager().pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
-    success = container.docker_manager().run_image(engine_image, **run_options)
+    success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:
         raise RuntimeError(
             "Something went wrong while running the LEAN Report Creator, see the logs above for more information")
 
     if detach:
-        temp_manager = container.temp_manager()
+        temp_manager = container.temp_manager
         temp_manager.delete_temporary_directories_when_done = False
 
         logger.info(f"Successfully started the report creator in the '{run_options['name']}' container")

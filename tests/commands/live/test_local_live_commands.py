@@ -14,7 +14,6 @@
 
 from unittest import mock
 from click.testing import CliRunner
-from dependency_injector import providers
 import lean.models.brokerages.local
 from lean.commands import lean
 from lean.container import container
@@ -27,14 +26,14 @@ def test_local_live_add_security() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "add-security", "Python Project",
                                         *symbol_options])
@@ -47,14 +46,14 @@ def test_local_live_add_security_fails_without_symbol_arguments() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "add-security", "Python Project"])
 
@@ -66,14 +65,14 @@ def test_local_live_cancel_order() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "cancel-order", "Python Project",
                                             "--order-id", "1"])
@@ -86,14 +85,14 @@ def test_local_live_cancel_order_fails_without_order_id() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "cancel-order", "Python Project"])
 
@@ -105,14 +104,14 @@ def test_local_live_liquidate_all_symbols() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "liquidate", "Python Project"])
 
@@ -124,14 +123,14 @@ def test_local_live_liquidate_one_symbol() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "liquidate", "Python Project",
                                         *symbol_options])
@@ -144,14 +143,14 @@ def test_local_live_stop() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "stop", "Python Project"])
 
@@ -163,14 +162,14 @@ def test_local_live_submit_order() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "submit-order", "Python Project",
                                         "--order-type", "market", "--quantity", 10,
@@ -184,14 +183,14 @@ def test_local_live_submit_order_fails_without_order_type_and_quantity() -> None
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "submit-order", "Python Project",
                                         *symbol_options])
@@ -204,14 +203,14 @@ def test_local_live_update_order() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "update-order", "Python Project",
                                             "--order-id", "1"])
@@ -223,14 +222,14 @@ def test_local_live_update_order_fails_without_order_id() -> None:
 
     project_config_manager = mock.MagicMock()
     project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
-    container.project_config_manager.override(providers.Object(project_config_manager))
+    container.project_config_manager = project_config_manager
 
     output_config_manager = mock.Mock()
-    container.output_config_manager.override(providers.Object(output_config_manager))
+    container.output_config_manager = output_config_manager
 
     docker_manager = mock.MagicMock()
     docker_manager.read_from_file.return_value = {"success": True}
-    container.docker_manager.override(providers.Object(docker_manager))
+    container.docker_manager = docker_manager
 
     result = CliRunner().invoke(lean, ["live", "update-order", "Python Project"])
 

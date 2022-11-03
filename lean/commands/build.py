@@ -40,7 +40,7 @@ def _is_foundation_dockerfile_same_as_cloud(dockerfile: Path) -> bool:
 
     try:
         cloud_url = f"https://raw.githubusercontent.com/QuantConnect/Lean/master/{dockerfile.name}"
-        cloud_dockerfile = container.http_client().get(cloud_url)
+        cloud_dockerfile = container.http_client.get(cloud_url)
         cloud_dockerfile = cloud_dockerfile.text.strip()
     except:
         # We build a new image if for whatever reason we can't check the Dockerfile used for the official image
@@ -56,12 +56,12 @@ def _compile_csharp(root: Path, csharp_dir: Path, docker_image: DockerImage) -> 
     :param csharp_dir: the directory containing the C# code
     :param docker_image: the Docker image to compile in
     """
-    logger = container.logger()
+    logger = container.logger
     logger.info(f"Compiling the C# code in '{csharp_dir}'")
 
     build_path = Path("/LeanCLI") / csharp_dir.relative_to(root)
 
-    docker_manager = container.docker_manager()
+    docker_manager = container.docker_manager
     docker_manager.create_volume("lean_cli_nuget")
     success = docker_manager.run_image(docker_image,
                                        entrypoint=["dotnet", "build", str(build_path)],
@@ -94,7 +94,7 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
     """
     from re import MULTILINE, sub
 
-    logger = container.logger()
+    logger = container.logger
     if base_image is not None:
         logger.info(f"Building '{target_image}' from '{dockerfile}' using '{base_image}' as base image")
     else:
@@ -110,7 +110,7 @@ def _build_image(root: Path, dockerfile: Path, base_image: Optional[DockerImage]
         dockerfile.write_text(new_content, encoding="utf-8")
 
     try:
-        docker_manager = container.docker_manager()
+        docker_manager = container.docker_manager
         docker_manager.build_image(root, dockerfile, target_image)
     finally:
         if base_image is not None:
@@ -147,14 +147,14 @@ def build(root: Path, tag: str) -> None:
 
     (root / "DataLibraries").mkdir(exist_ok=True)
 
-    if container.platform_manager().is_host_arm():
+    if container.platform_manager.is_host_arm():
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundationARM"
     else:
         foundation_dockerfile = lean_dir / "DockerfileLeanFoundation"
 
     if _is_foundation_dockerfile_same_as_cloud(foundation_dockerfile):
         foundation_image = DockerImage(name="quantconnect/lean", tag="foundation")
-        container.docker_manager().pull_image(foundation_image)
+        container.docker_manager.pull_image(foundation_image)
     else:
         foundation_image = DockerImage(name=CUSTOM_FOUNDATION, tag=tag)
         _build_image(root, foundation_dockerfile, None, foundation_image)
@@ -167,8 +167,8 @@ def build(root: Path, tag: str) -> None:
     custom_research_image = DockerImage(name=CUSTOM_RESEARCH, tag=tag)
     _build_image(root, lean_dir / "DockerfileJupyter", custom_engine_image, custom_research_image)
 
-    logger = container.logger()
-    cli_config_manager = container.cli_config_manager()
+    logger = container.logger
+    cli_config_manager = container.cli_config_manager
 
     logger.info(f"Setting default engine image to '{custom_engine_image}'")
     cli_config_manager.engine_image.set_value(str(custom_engine_image))

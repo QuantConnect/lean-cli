@@ -15,7 +15,6 @@ from datetime import datetime
 from unittest import mock
 
 from click.testing import CliRunner
-from dependency_injector import providers
 
 from lean.commands import lean
 from lean.container import container
@@ -45,11 +44,11 @@ def test_cloud_backtest_runs_project_by_id() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "1"])
 
@@ -66,11 +65,11 @@ def test_cloud_backtest_runs_project_by_name() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner =  cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project"])
 
@@ -87,11 +86,11 @@ def test_cloud_backtest_uses_given_name() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project", "--name", "My Name"])
 
@@ -123,11 +122,11 @@ def test_cloud_backtest_logs_statistics() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project"])
 
@@ -146,11 +145,11 @@ def test_cloud_backtest_opens_browser_when_open_option_given(open) -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project", "--open"])
 
@@ -169,11 +168,11 @@ def test_cloud_backtest_does_not_open_browser_when_init_error_happens(open) -> N
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project", "--open"])
 
@@ -190,14 +189,14 @@ def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> 
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     push_manager = mock.Mock()
-    container.push_manager.override(providers.Object(push_manager))
+    container.push_manager = push_manager
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project", "--push"])
 
@@ -216,11 +215,11 @@ def test_cloud_backtest_aborts_when_backtest_fails() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.side_effect = run_backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project"])
 
@@ -237,11 +236,11 @@ def test_cloud_backtest_aborts_when_input_matches_no_cloud_project() -> None:
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = [project]
-    container.api_client.override(providers.Object(api_client))
+    container.api_client = api_client
 
     cloud_runner = mock.Mock()
     cloud_runner.run_backtest.return_value = backtest
-    container.cloud_runner.override(providers.Object(cloud_runner))
+    container.cloud_runner = cloud_runner
 
     result = CliRunner().invoke(lean, ["cloud", "backtest", "Fake Project"])
 

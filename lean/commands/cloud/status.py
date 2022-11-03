@@ -26,10 +26,10 @@ def status(project: str) -> None:
 
     PROJECT must be the name or the id of the project to show the status for.
     """
-    logger = container.logger()
-    api_client = container.api_client()
+    logger = container.logger
+    api_client = container.api_client
 
-    cloud_project_manager = container.cloud_project_manager()
+    cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
 
     live_algorithm = next((d for d in api_client.live.get_all() if d.projectId == cloud_project.projectId), None)

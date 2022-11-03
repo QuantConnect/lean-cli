@@ -22,7 +22,7 @@ from lean.container import container
 
 
 def _get_project_directories() -> List[Path]:
-    directories_to_check = [container.lean_config_manager().get_cli_root_directory()]
+    directories_to_check = [container.lean_config_manager.get_cli_root_directory()]
     project_directories = []
 
     while len(directories_to_check) > 0:

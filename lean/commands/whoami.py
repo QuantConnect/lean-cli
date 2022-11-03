@@ -21,9 +21,9 @@ from lean.models.errors import AuthenticationError
 @command(cls=LeanCommand)
 def whoami() -> None:
     """Display who is logged in."""
-    logger = container.logger()
-    api_client = container.api_client()
-    cli_config_manager = container.cli_config_manager()
+    logger = container.logger
+    api_client = container.api_client
+    cli_config_manager = container.cli_config_manager
 
     if cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None:
         try:

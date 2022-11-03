@@ -22,7 +22,7 @@ def test_config_set_updates_the_value_of_the_option() -> None:
 
     assert result.exit_code == 0
 
-    assert container.cli_config_manager().user_id.get_value() == "12345"
+    assert container.cli_config_manager.user_id.get_value() == "12345"
 
 
 def test_config_set_aborts_when_no_option_with_given_key_exists() -> None:
