@@ -194,11 +194,9 @@ class OptimizerConfigManager:
         :param target: the target given by the user
         :return: the target in a way it can be passed to the optimizer
         """
-        from re import sub
-
         if "." in target:
             return target
-        from re import split
+        from re import sub
 
         # Turn "SharpeRatio" into "Sharpe Ratio" so the title() call doesn't lowercase the R
         target = sub(r"([A-Z])", r" \1", target)

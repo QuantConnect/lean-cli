@@ -127,10 +127,7 @@ def optimize(project: Path,
         raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
 
     if optimizer_config is not None:
-        from time import time
-        start = time()
         config = loads(optimizer_config.read_text(encoding="utf-8"))
-        print("optimizer_config: " + str(time() - start))
 
         # Remove keys which are configured in the Lean config
         for key in ["algorithm-type-name", "algorithm-language", "algorithm-location"]:
