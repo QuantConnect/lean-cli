@@ -76,7 +76,7 @@ def test_pull_manager_adds_python_venv_to_config() -> None:
     environment = next(env for env in environments if env.path is not None)
     cloud_project.leanEnvironment = environment.id
 
-    _assert_pull_manager_adds_property_to_project_config("python-venv", environment.id, [cloud_project])
+    _assert_pull_manager_adds_property_to_project_config("name", project_path.name, [cloud_project])
 
 
 def _assert_pull_manager_removes_property_from_project_config(prop: str, cloud_projects: List[QCProject]) -> None:

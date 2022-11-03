@@ -112,6 +112,7 @@ class PushManager:
             self._cloud_projects.append(cloud_project)
             project_config.set("cloud-id", cloud_project.projectId)
             project_config.set("organization-id", cloud_project.organizationId)
+            project_config.set("name", cloud_project.name)
 
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
             self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")

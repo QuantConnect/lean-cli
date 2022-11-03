@@ -152,4 +152,4 @@ def test_cloud_push_updates_lean_config() -> None:
 
     assert result.exit_code == 0
 
-    project_config.set.assert_called_with("organization-id", "123")
+    project_config.set.assert_called_with("name", "Python Project")

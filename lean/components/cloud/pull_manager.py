@@ -120,6 +120,7 @@ class PullManager:
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
         project_config.set("python-venv", project.leanEnvironment)
+        project_config.set("name", project.name)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)

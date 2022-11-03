@@ -151,6 +151,7 @@ class ProjectManager:
         project_dir.mkdir(parents=True, exist_ok=True)
 
         project_config = self._project_config_manager.get_project_config(project_dir)
+        project_config.set("name", project_dir.name)
         project_config.set("algorithm-language", language.name)
         project_config.set("parameters", {})
         project_config.set("description", "")
