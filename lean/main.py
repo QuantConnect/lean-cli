@@ -106,10 +106,6 @@ def main() -> None:
 
         logger = container.logger
         logger.debug(format_exc().strip())
-        # printing stack trace
-        print_exc()
-
-        logger.error(f"exception: {exception}")
 
         if isinstance(exception, ValidationError) and hasattr(exception, "input_value"):
             logger.debug("Value that failed validation:")

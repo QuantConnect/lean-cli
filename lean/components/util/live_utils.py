@@ -12,7 +12,6 @@
 # limitations under the License.
 
 from click import prompt, confirm
-from datetime import datetime
 
 from pathlib import Path
 from typing import Any, Dict, List
@@ -53,6 +52,8 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from pytz import utc, UTC
     from os import listdir, path
     from json import loads
+    from datetime import datetime
+
     cloud_deployment_list = api_client.get("live/read")
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
                              if instance["projectId"] == project_id]

@@ -23,6 +23,7 @@ from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizati
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory, create_api_organization
+from tests.conftest import initialize_container
 
 
 def create_api_optimization() -> QCOptimization:
@@ -51,8 +52,7 @@ def create_api_optimization_backtest(id: int,
                                   statistics=statistics)
 
 
-@pytest.fixture(autouse=True)
-def optimizer_config_manager_mock() -> mock.Mock:
+def _get_optimizer_config_manager_mock() -> mock.Mock:
     """A pytest fixture which mocks the optimizer config manager before every test."""
     optimizer_config_manager = mock.Mock()
 
@@ -81,7 +81,6 @@ def optimizer_config_manager_mock() -> mock.Mock:
                                                                     max_nodes=6,
                                                                     default_nodes=3), 3
 
-    container.optimizer_config_manager = optimizer_config_manager
     return optimizer_config_manager
 
 
@@ -91,15 +90,15 @@ def test_cloud_optimize_runs_optimization_by_project_id() -> None:
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "1"])
 
@@ -117,15 +116,15 @@ def test_cloud_optimize_runs_optimization_by_project_name() -> None:
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=1000, balance=10)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client= api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
 
@@ -143,15 +142,16 @@ def test_cloud_optimize_uses_given_name() -> None:
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
 
@@ -169,18 +169,18 @@ def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> 
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
 
-    push_manager = mock.Mock()
-    container.push_manager = push_manager
+    push_manager = mock.MagicMock()
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client,
+                         push_manager_to_use=push_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--push"])
 
@@ -195,15 +195,15 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
 
@@ -229,8 +229,7 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
                                              ("ProbabilisticSharpeRatio", OptimizationExtremum.Maximum),
                                              ("Drawdown", OptimizationExtremum.Minimum),
                                              ("Drawdown", OptimizationExtremum.Maximum)])
-def test_cloud_optimize_displays_optimal_backtest_results(optimizer_config_manager_mock: mock.Mock,
-                                                          target: str,
+def test_cloud_optimize_displays_optimal_backtest_results(target: str,
                                                           extremum: OptimizationExtremum) -> None:
     create_fake_lean_cli_directory()
 
@@ -239,17 +238,17 @@ def test_cloud_optimize_displays_optimal_backtest_results(optimizer_config_manag
     optimization.backtests["1"] = create_api_optimization_backtest(1, True, True, True)
     optimization.backtests["2"] = create_api_optimization_backtest(2, True, True, False)
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    optimizer_config_manager_mock.configure_target.return_value = OptimizationTarget(
+    container.optimizer_config_manager.configure_target.return_value = OptimizationTarget(
         target=f"TotalPerformance.PortfolioStatistics.{target}",
         extremum=extremum,
     )
@@ -272,15 +271,15 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_succeed() ->
     optimization.backtests["1"] = create_api_optimization_backtest(1, False, True, True)
     optimization.backtests["2"] = create_api_optimization_backtest(2, False, True, False)
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
 
@@ -298,15 +297,15 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_meet_constra
     optimization.backtests["1"] = create_api_optimization_backtest(1, True, False, True)
     optimization.backtests["2"] = create_api_optimization_backtest(2, True, False, False)
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
 
@@ -324,15 +323,15 @@ def test_cloud_optimize_aborts_when_optimization_fails() -> None:
     def run_optimization(*args, **kwargs):
         raise RuntimeError("Oops")
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.side_effect = run_optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
 
@@ -347,15 +346,15 @@ def test_cloud_optimize_aborts_when_input_matches_no_cloud_project() -> None:
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
 
-    api_client = mock.Mock()
+    api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
     api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
     api_client.organizations.get.return_value = create_api_organization()
-    container.api_client = api_client
 
-    cloud_runner = mock.Mock()
+    cloud_runner = mock.MagicMock()
     cloud_runner.run_optimization.return_value = optimization
-    container.cloud_runner = cloud_runner
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
     result = CliRunner().invoke(lean, ["cloud", "optimize", "Fake Project"])
 

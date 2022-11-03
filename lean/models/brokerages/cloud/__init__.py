@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from time import time
-start = time()
-
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models import json_modules
 from typing import List
@@ -26,5 +23,3 @@ for json_module in json_modules:
 
 [PaperTradingBrokerage] = [
     cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]
-
-print('cloud ini: ' + str(time() - start))

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from json import dumps, loads
 
 from pathlib import Path
 from typing import Optional
@@ -91,6 +90,7 @@ def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
 
 
 def _migrate_python_vscode(project_dir: Path) -> None:
+    from json import dumps, loads
     launch_json_path = project_dir / ".vscode" / "launch.json"
     if not launch_json_path.is_file():
         return
@@ -167,6 +167,7 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
 
 
 def _migrate_csharp_vscode(project_dir: Path) -> None:
+    from json import dumps, loads
     launch_json_path = project_dir / ".vscode" / "launch.json"
     if not launch_json_path.is_file():
         return
@@ -305,11 +306,11 @@ def backtest(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
+    from datetime import datetime
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager
-    from datetime import datetime
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 

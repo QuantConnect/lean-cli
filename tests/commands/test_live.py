@@ -423,11 +423,11 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
 def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: str) -> None:
     create_fake_lean_cli_directory()
 
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock())
+
     required_options = data_feed_required_options[data_feed].items()
     for length in range(len(required_options)):
         for current_options in itertools.combinations(required_options, length):
-            lean_runner = container.lean_runner
-
             options = []
 
             for key, value in current_options:
@@ -443,7 +443,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 
             assert result.exit_code != 0
 
-            lean_runner.run_lean.assert_not_called()
+            container.lean_runner.run_lean.assert_not_called()
 
 
 

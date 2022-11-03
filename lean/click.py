@@ -54,10 +54,6 @@ class LeanCommand(Command):
 
     def invoke(self, ctx: Context):
         if self._requires_lean_config:
-
-            from time import time
-            start = time()
-
             lean_config_manager = container.lean_config_manager
             try:
                 # This method will raise an error if the directory cannot be found
@@ -77,9 +73,9 @@ class LeanCommand(Command):
                         "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors"
                     )
 
-        if self._requires_docker:
+        if self._requires_docker and container.platform_manager.is_system_linux():
             from sys import modules, executable, argv
-            if "pytest" not in modules and container.platform_manager.is_system_linux():
+            if "pytest" not in modules:
                 from shutil import which
                 from os import getuid, execlp
                 # The CLI uses temporary directories in /tmp because sometimes it may leave behind files owned by root

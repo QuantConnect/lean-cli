@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime, timedelta, timezone
-
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.http_client import HTTPClient
@@ -166,6 +164,8 @@ class UpdateManager:
         :param interval_hours: the amount of hours between update checks for the given key
         :return: True if an update check should be performed, False if not
         """
+        from datetime import datetime, timedelta, timezone
+
         storage_key = f"last-update-check-{key}"
         should_check = False
 

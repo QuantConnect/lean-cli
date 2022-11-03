@@ -24,27 +24,39 @@ from lean.models.api import QCMinimalOrganization
 from lean.container import container
 
 
-def initialize_container(given_docker_manager=None, given_lean_runner=None):
-    lean_runner = mock.Mock()
-    docker_manager = mock.Mock()
+def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, api_client_to_use=None,
+                         cloud_runner_to_use=None, push_manager_to_use=None):
     api_client = mock.MagicMock()
+    api_client.is_authenticated.return_value = True
+    api_client.organizations.get_all.return_value = [
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ]
+    if api_client_to_use:
+        api_client = api_client_to_use
 
-    docker_manager_to_use = docker_manager
-    if given_docker_manager:
-        docker_manager_to_use = given_docker_manager
-    lean_runner_to_use = lean_runner
-    if given_lean_runner:
-        lean_runner_to_use = given_lean_runner
+    docker_manager = mock.Mock()
+    if docker_manager_to_use:
+        docker_manager = docker_manager_to_use
+
+    lean_runner = mock.Mock()
+    if lean_runner_to_use:
+        lean_runner = lean_runner_to_use
+
+    cloud_runner = mock.Mock()
+    if cloud_runner_to_use:
+        cloud_runner = cloud_runner_to_use
+
+    push_manager = None
+    if push_manager_to_use:
+        push_manager = push_manager_to_use
 
     # Reset all singletons so Path instances get recreated
     # Path instances are bound to the filesystem that was active at the time of their creation
     # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
 
-    api_client.organizations.get_all.return_value = [
-        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
-    ]
+    container.initialize(docker_manager, api_client, lean_runner, cloud_runner, push_manager)
 
-    container.initialize(docker_manager_to_use, api_client, lean_runner_to_use)
+    return container
 
 
 # conftest.py is ran by pytest before loading each testing module

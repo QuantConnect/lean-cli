@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -119,7 +119,9 @@ class ProjectManager:
         :param local_file_path: the path to the local file to update the last modified time of
         :param cloud_timestamp: the last modified time of the counterpart of the local file in the cloud
         """
-        from os import  utime
+        from os import utime
+        from datetime import timezone
+
         # Timestamps are stored in UTC in the cloud, but utime() requires them in the local timezone
         time = cloud_timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None)
         time = round(time.timestamp() * 1e9)

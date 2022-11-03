@@ -15,7 +15,6 @@ from typing import Any, Dict
 from click import group
 from lean.components.util.click_group_default_command import DefaultCommandGroup
 from lean.constants import COMMAND_FILE_BASENAME, COMMAND_RESULT_FILE_BASENAME
-from time import time
 from pathlib import Path
 from lean.container import container
 
@@ -29,6 +28,8 @@ def live() -> None:
 
 
 def get_command_file_name() -> str:
+    from time import time
+
     return Path(f'{COMMAND_FILE_BASENAME}-{int(time())}.json')
 
 

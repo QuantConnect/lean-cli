@@ -47,8 +47,7 @@ class APIClient:
         """
         self._logger = logger
         self._http_client = http_client
-        self._user_id = user_id
-        self._api_token = api_token
+        self.set_user_token(user_id, api_token)
 
         # Create the clients containing the methods to send requests to the various API endpoints
         self.accounts = AccountClient(self)
@@ -66,6 +65,10 @@ class APIClient:
         self.services = ServiceClient(self)
         self.users = UserClient(self)
         self.lean = LeanClient(self)
+
+    def set_user_token(self, user_id: str, api_token: str):
+        self._user_id = user_id
+        self._api_token = api_token
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
         """Makes an authenticated GET request to the given endpoint with the given parameters.

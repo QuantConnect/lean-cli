@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from typing import Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context
 
@@ -257,6 +256,7 @@ def _verify_accept_agreement(organization: QCFullOrganization, open_browser: boo
     """
     from webbrowser import open
     from time import sleep
+    from datetime import datetime
 
     logger = container.logger
     api_client = container.api_client

@@ -25,11 +25,12 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 RESEARCH_IMAGE = DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
 
+
 def test_research_runs_research_container() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -44,8 +45,8 @@ def test_research_runs_research_container() -> None:
 def test_research_mounts_lean_config_to_notebooks_directory_as_well() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -62,8 +63,8 @@ def test_research_mounts_lean_config_to_notebooks_directory_as_well() -> None:
 def test_research_adds_credentials_to_project_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     container.cli_config_manager.user_id.set_value("123")
     container.cli_config_manager.api_token.set_value("456")
@@ -87,8 +88,8 @@ def test_research_adds_credentials_to_project_config() -> None:
 def test_research_mounts_data_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -103,8 +104,8 @@ def test_research_mounts_data_directory() -> None:
 def test_research_mounts_project_directory() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -119,8 +120,8 @@ def test_research_mounts_project_directory() -> None:
 def test_research_exposes_8888_when_no_port_given() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -135,8 +136,8 @@ def test_research_exposes_8888_when_no_port_given() -> None:
 def test_research_exposes_custom_port_when_given() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--port", "1234"])
 
@@ -152,8 +153,8 @@ def test_research_exposes_custom_port_when_given() -> None:
 def test_research_opens_browser_when_container_started(open) -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project"])
 
@@ -182,8 +183,8 @@ def test_research_opens_browser_when_container_started(open) -> None:
 def test_research_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     result = CliRunner().invoke(lean, ["research", "Python Project", "--update"])
 
@@ -196,8 +197,8 @@ def test_research_forces_update_when_update_option_given() -> None:
 def test_research_runs_custom_image_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     container.cli_config_manager.research_image.set_value("custom/research:123")
 
@@ -214,8 +215,8 @@ def test_research_runs_custom_image_when_set_in_config() -> None:
 def test_research_runs_custom_image_when_given_as_option() -> None:
     create_fake_lean_cli_directory()
 
-    docker_manager = mock.Mock()
-    container.docker_manager = docker_manager
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
 
     container.cli_config_manager.research_image.set_value("custom/research:123")
 

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Tuple
 
@@ -113,6 +112,7 @@ def optimize(project: Path,
     from json5 import loads
     from docker.types import Mount
     from re import findall
+    from datetime import datetime
 
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)

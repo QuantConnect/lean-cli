@@ -46,7 +46,7 @@ class Container:
     def __init__(self):
         self.initialize()
 
-    def initialize(self, docker_manager=None, api_client=None, lean_runner=None):
+    def initialize(self, docker_manager=None, api_client=None, lean_runner=None, cloud_runner=None, push_manager=None):
         """The Container class wires all reusable components together."""
         self.logger = Logger()
 
@@ -95,14 +95,22 @@ class Container:
                                     self.path_manager,
                                     self.xml_manager)
 
-        self.cloud_runner = CloudRunner(self.logger, self.api_client, self.task_manager)
+        self.cloud_runner = cloud_runner
+        if not cloud_runner:
+            self.cloud_runner = CloudRunner(self.logger, self.api_client, self.task_manager)
         self.pull_manager = PullManager(self.logger,
                                  self.api_client,
                                  self.project_manager,
                                  self.project_config_manager,
                                  self.library_manager,
                                  self.platform_manager)
-        self.push_manager = PushManager(self.logger, self.api_client, self.project_manager, self.project_config_manager)
+
+        self.push_manager = push_manager
+        if not push_manager:
+            self.push_manager = PushManager(self.logger,
+                                            self.api_client,
+                                            self.project_manager,
+                                            self.project_config_manager)
         self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
         self.cloud_project_manager = CloudProjectManager(self.api_client,
                                           self.project_config_manager,

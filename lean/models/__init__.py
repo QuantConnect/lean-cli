@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from os import path
-from json import dump, load
+from json import load
 from pathlib import Path
 from time import time
 
@@ -31,6 +31,7 @@ try:
         res = get(url, timeout=5)
         if res.ok:
             new_content = res.json()
+            from json import dump
             with open(file_path, 'w', encoding='utf-8') as f:
                 dump(new_content, f, ensure_ascii=False, indent=4)
         else:

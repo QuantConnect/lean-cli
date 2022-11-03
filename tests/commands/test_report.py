@@ -24,6 +24,7 @@ from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
 from tests.test_helpers import create_fake_lean_cli_directory
+from tests.conftest import initialize_container
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
@@ -56,7 +57,7 @@ def run_image(image: DockerImage, **kwargs) -> bool:
 def test_report_runs_lean_container() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -73,7 +74,7 @@ def test_report_runs_lean_container() -> None:
 def test_report_runs_report_creator() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -91,7 +92,7 @@ def test_report_runs_report_creator() -> None:
 def test_report_sets_container_name() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     output_config_manager = mock.Mock()
     output_config_manager.get_backtest_id.return_value = 123
@@ -112,7 +113,7 @@ def test_report_sets_container_name() -> None:
 def test_report_runs_detached_container() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -130,7 +131,7 @@ def test_report_runs_detached_container() -> None:
 def test_report_mounts_report_config() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -147,7 +148,7 @@ def test_report_mounts_report_config() -> None:
 def test_report_mounts_data_directory() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -167,7 +168,7 @@ def test_report_mounts_data_directory() -> None:
 def test_report_mounts_output_directory() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -184,7 +185,7 @@ def test_report_mounts_output_directory() -> None:
 def test_report_mounts_given_backtest_data_source_file() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -202,7 +203,7 @@ def test_report_mounts_given_backtest_data_source_file() -> None:
 def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report"])
 
@@ -218,7 +219,7 @@ def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
 def test_report_aborts_when_backtest_data_source_file_not_given_and_cannot_be_found() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     (Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "results.json").unlink()
 
@@ -232,7 +233,7 @@ def test_report_aborts_when_backtest_data_source_file_not_given_and_cannot_be_fo
 def test_report_mounts_live_data_source_file_when_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -252,7 +253,7 @@ def test_report_mounts_live_data_source_file_when_given() -> None:
 def test_report_uses_project_directory_as_strategy_name_when_strategy_name_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -272,7 +273,7 @@ def test_report_uses_project_directory_as_strategy_name_when_strategy_name_not_g
 def test_report_uses_given_strategy_name() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -293,7 +294,7 @@ def test_report_uses_given_strategy_name() -> None:
 def test_report_uses_description_from_config_when_strategy_description_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     Storage(str(Path.cwd() / "Python Project" / "config.json")).set("description", "My description")
 
@@ -315,7 +316,7 @@ def test_report_uses_description_from_config_when_strategy_description_not_given
 def test_report_uses_given_strategy_description() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -336,7 +337,7 @@ def test_report_uses_given_strategy_description() -> None:
 def test_report_uses_given_strategy_version() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -357,7 +358,7 @@ def test_report_uses_given_strategy_version() -> None:
 def test_report_uses_given_blank_name_version_description_when_not_given_and_backtest_not_stored_in_project() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     with (Path.cwd() / "results.json").open("w+", encoding="utf-8") as file:
         file.write("{}")
@@ -380,7 +381,7 @@ def test_report_uses_given_blank_name_version_description_when_not_given_and_bac
 def test_report_writes_to_report_html_when_no_report_destination_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -394,7 +395,7 @@ def test_report_writes_to_report_html_when_no_report_destination_given() -> None
 def test_report_writes_to_given_report_destination() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -409,7 +410,7 @@ def test_report_writes_to_given_report_destination() -> None:
 def test_report_aborts_when_report_destination_already_exists() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     output_path = Path.cwd() / "path" / "to" / "report.html"
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -429,7 +430,7 @@ def test_report_aborts_when_report_destination_already_exists() -> None:
 def test_report_overwrites_report_destination_when_overwrite_flag_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     output_path = Path.cwd() / "path" / "to" / "report.html"
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -450,7 +451,7 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
 def test_report_aborts_when_run_image_fails() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean, ["report",
                                        "--backtest-results",
@@ -464,7 +465,7 @@ def test_report_aborts_when_run_image_fails() -> None:
 def test_report_forces_update_when_update_option_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     result = CliRunner().invoke(lean,
                                 ["report",
@@ -480,7 +481,7 @@ def test_report_forces_update_when_update_option_given() -> None:
 def test_report_runs_custom_image_when_set_in_config() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     container.cli_config_manager.engine_image.set_value("custom/lean:123")
 
@@ -499,7 +500,7 @@ def test_report_runs_custom_image_when_set_in_config() -> None:
 def test_report_runs_custom_image_when_given_as_option() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
-    container.docker_manager = docker_manager
+    initialize_container(docker_manager_to_use=docker_manager)
 
     container.cli_config_manager.engine_image.set_value("custom/lean:123")
 

@@ -1,6 +1,7 @@
 import json
 import pytest
 import os
+import re
 from pathlib import Path
 
 from lean.commands.data.download import *

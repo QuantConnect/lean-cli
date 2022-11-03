@@ -150,7 +150,7 @@ class OptimizerConfigManager:
             results_str = results_str or "None"
             self._logger.info(f"Current constraints: {results_str}")
 
-            if not click.confirm("Do you want to add a constraint?", default=False):
+            if not confirm("Do you want to add a constraint?", default=False):
                 return results
 
             target_options = [Option(id=target[0], label=target[1]) for target in self.available_targets]
@@ -194,6 +194,8 @@ class OptimizerConfigManager:
         :param target: the target given by the user
         :return: the target in a way it can be passed to the optimizer
         """
+        from re import sub
+
         if "." in target:
             return target
         from re import split

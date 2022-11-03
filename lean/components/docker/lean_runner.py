@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -688,6 +687,8 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         :param zip_dir: the directory where the zip provider looks for zip files
         """
         from re import sub
+        from datetime import datetime
+
         if lean_config.get(config_key, None) != zip_provider:
             return
 

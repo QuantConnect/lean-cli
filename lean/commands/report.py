@@ -102,7 +102,7 @@ def report(backtest_results: Optional[Path],
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    from json import dumps
+    from json import dump
     from docker.types import Mount
 
     if report_destination.exists() and not overwrite:
@@ -173,7 +173,7 @@ def report(backtest_results: Optional[Path],
 
     config_path = container.temp_manager.create_temporary_directory() / "config.json"
     with config_path.open("w+", encoding="utf-8") as file:
-        dumps(report_config, file)
+        dump(report_config, file)
 
     backtest_id = container.output_config_manager.get_backtest_id(backtest_results.parent)
 

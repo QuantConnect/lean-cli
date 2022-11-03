@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
@@ -344,6 +343,7 @@ def deploy(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from copy import copy
+    from datetime import datetime
     # Reset globals so we reload everything in between tests
     global _cached_organizations
     _cached_organizations = None

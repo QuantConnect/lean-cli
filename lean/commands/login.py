@@ -45,8 +45,8 @@ def login(user_id: Optional[str], api_token: Optional[str]) -> None:
     if api_token is None:
         api_token = logger.prompt_password("API token")
 
-    api_client = container.api_client = APIClient(logger, container.http_client, user_id=user_id, api_token=api_token)
-    if not api_client.is_authenticated():
+    container.api_client.set_user_token(user_id=user_id, api_token=api_token)
+    if not container.api_client.is_authenticated():
         raise MoreInfoError("Credentials are invalid. Please ensure your computer clock is correct, or try using another terminal, or enter API token manually instead of copy-pasting.",
                             "https://www.lean.io/docs/v2/lean-cli")
 
