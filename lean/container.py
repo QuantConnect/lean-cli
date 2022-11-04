@@ -31,6 +31,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
+from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
@@ -138,6 +139,8 @@ class Container:
         self.market_hours_database = MarketHoursDatabase(self.lean_config_manager)
 
         self.update_manager = UpdateManager(self.logger, self.http_client, self.cache_storage, self.docker_manager)
+
+        self.organization_manager = OrganizationManager(self.logger, self.lean_config_manager)
 
 
 container = Container()
