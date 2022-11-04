@@ -179,7 +179,8 @@ def init(organization: Optional[str], language: Optional[str]) -> None:
         file.write(config)
 
     # Add the organization id to the lean config
-    lean_config_manager.set_properties({'organization-id': organization_id})
+    organization_manager = container.organization_manager
+    organization_manager.configure_working_organization_id(organization_id)
 
     # Prompt for some general configuration if not set yet
     cli_config_manager = container.cli_config_manager

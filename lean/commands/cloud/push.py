@@ -19,23 +19,25 @@ from click import command, option
 from lean.click import LeanCommand, PathParameter
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
+from lean.models.errors import AbortOperation
 
 
 @command(cls=LeanCommand)
 @option("--project",
-              type=PathParameter(exists=True, file_okay=False, dir_okay=True),
-              help="Path to the local project to push (all local projects if not specified)")
-@option("--organization-id",
-              type=str,
-              help="ID of the organization where the project will be created in. This is ignored if the project has "
-                   "already been created in the cloud")
-def push(project: Optional[Path], organization_id: Optional[str]) -> None:
+        type=PathParameter(exists=True, file_okay=False, dir_okay=True),
+        help="Path to the local project to push (all local projects if not specified)")
+def push(project: Optional[Path]) -> None:
     """Push local projects to QuantConnect.
 
     This command overrides the content of cloud files with the content of their respective local counterparts.
 
     This command will delete cloud files which don't have a local counterpart.
     """
+    try:
+        organization_id = container.organization_manager.get_working_organization_id()
+    except AbortOperation:
+        return
+
     push_manager = container.push_manager
 
     # Parse which projects need to be pushed

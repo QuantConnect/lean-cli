@@ -65,3 +65,32 @@ def test_organization_manager_prompts_user_if_lean_config_does_not_have_the_orga
 
     mock_click_confirm.assert_called_once()
     assert "continue?" in mock_click_confirm.call_args.args[0]
+
+
+def test_organization_manager_sets_working_organization_to_given_config():
+    organization_id = "abc123"
+    lean_config = {}
+
+    lean_config_manager = mock.Mock()
+    lean_config_manager.set_properties = mock.Mock()
+
+    organization_manager = _create_organization_manager(lean_config_manager)
+
+    organization_manager.configure_working_organization_id(organization_id, lean_config)
+
+    assert "organization-id" in lean_config and lean_config["organization-id"] == organization_id
+    lean_config_manager.set_properties.assert_not_called()
+
+
+def test_organization_manager_sets_working_organization_using_lean_config_manager():
+    organization_id = "abc123"
+    lean_config_updates = {"organization-id": organization_id}
+
+    lean_config_manager = mock.Mock()
+    lean_config_manager.set_properties = mock.Mock()
+
+    organization_manager = _create_organization_manager(lean_config_manager)
+
+    organization_manager.configure_working_organization_id(organization_id)
+
+    lean_config_manager.set_properties.assert_called_once_with(lean_config_updates)

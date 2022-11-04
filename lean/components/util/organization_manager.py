@@ -59,3 +59,19 @@ class OrganizationManager:
             raise AbortOperation()
 
         return None
+
+    def configure_working_organization_id(self, organization_id: str,
+                                          lean_config: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Configures the working organization id in the Lean config
+
+        It will save the organization id either in the given Lean config or using the lean config manager.
+
+        :param organization_id: the working organization di
+        :param lean_config: the optional lean config where the organization should be saved to
+        """
+        if lean_config is not None:
+            lean_config["organization-id"] = organization_id
+            return
+
+        self._lean_config_manager.set_properties({"organization-id": organization_id})
