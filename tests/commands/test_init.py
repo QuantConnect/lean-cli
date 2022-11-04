@@ -14,6 +14,7 @@
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import List
 from unittest import mock
 
 import pytest
@@ -21,7 +22,9 @@ from click.testing import CliRunner
 from responses import RequestsMock
 
 from lean.commands import lean
+from lean.components.util.logger import Logger
 from lean.container import container
+from lean.models.api import QCFullOrganization, QCMinimalOrganization
 
 
 @pytest.fixture(autouse=True)
@@ -51,11 +54,33 @@ def create_fake_archive(requests_mock: RequestsMock) -> None:
         requests_mock.add(requests_mock.GET, "https://github.com/QuantConnect/Lean/archive/master.zip", archive.read())
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 def set_unauthenticated() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = False
     container.api_client = api_client
+
+
+def _get_all_organizations() -> List[QCMinimalOrganization]:
+    return [
+        QCMinimalOrganization(id="abcd1234abcd1234abcd1234abcd1234", name="Organization1", type="type",
+                              ownerName="You", members=1, preferred=True),
+    ]
+
+
+def _get_test_organization() -> QCMinimalOrganization:
+    return _get_all_organizations()[0]
+
+
+@pytest.fixture(autouse=True, scope="function")
+def set_mock_organizations(set_unauthenticated) -> None:
+    def mock_get_organization(org_id: str) -> QCFullOrganization:
+        return next(iter(o for o in _get_all_organizations() if o.id == org_id), None)
+
+    # container.api_client is already a mock from set_unauthenticated()
+    api_client = container.api_client
+    api_client.organizations.get_all.side_effect = _get_all_organizations
+    api_client.organizations.get.side_effect = mock_get_organization
 
 
 def test_init_aborts_when_config_file_already_exists() -> None:
@@ -111,7 +136,8 @@ def test_init_creates_clean_config_file_from_repo() -> None:
     config_path = Path.cwd() / "lean.json"
     assert config_path.exists()
     assert config_path.read_text(encoding="utf-8") == """
-{
+{{
+  "organization-id": "{0}",
   // this configuration file works by first loading all top-level
   // configuration items and then will load the specified environment
   // on top, this provides a layering affect. environment names can be
@@ -121,5 +147,41 @@ def test_init_creates_clean_config_file_from_repo() -> None:
 
   // data documentation
   "data-folder": "data"
-}
-    """.strip()
+}}
+    """.format(_get_test_organization().id).strip()
+
+
+def assert_organization_id_is_in_lean_config(organization_id: str) -> None:
+    lean_config_manager = container.lean_config_manager
+    config = lean_config_manager.get_lean_config()
+
+    assert "organization-id" in config and config["organization-id"] == organization_id
+
+
+def test_init_prompts_for_organization_if_option_not_passed() -> None:
+    organization = _get_test_organization()
+
+    with mock.patch.object(Logger, 'prompt_list', return_value=organization.id) as mock_prompt_list:
+        result = CliRunner().invoke(lean, ["init"])
+
+    assert result.exit_code == 0
+
+    mock_prompt_list.assert_called()
+    assert any("Select the organization" in call.args[0] for call in mock_prompt_list.call_args_list)
+
+    assert_organization_id_is_in_lean_config(organization.id)
+
+
+@pytest.mark.parametrize("use_name", [False, True])
+def test_init_uses_organization_given_as_option(use_name: bool) -> None:
+    organization = _get_test_organization()
+
+    with mock.patch.object(Logger, 'prompt_list', return_value=None) as mock_prompt_list:
+        result = CliRunner().invoke(lean,
+                                    ["init", "--organization", organization.name if use_name else organization.id])
+
+    assert result.exit_code == 0
+
+    assert not any("Select the organization" in call.args[0] for call in mock_prompt_list.call_args_list)
+
+    assert_organization_id_is_in_lean_config(organization.id)
