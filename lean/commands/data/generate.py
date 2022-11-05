@@ -12,13 +12,26 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
-from click import command, option, Choice, IntRange
+from click import command, option, Choice, IntRange, BadParameter
+import re
 
 from lean.click import DateParameter, LeanCommand
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+
+
+def ticker_list_check(ctx, param, tickers_csv: str) -> List[str]:
+    if tickers_csv == "":
+        return []
+    tickers = tickers_csv.split(",")
+    for sym in tickers:
+        if not re.match("[A-Z]{1,5}", sym):
+            raise BadParameter(
+                f"need comma separated ALLCAPS symbol(s), not '{sym}'"
+            )
+    return tickers
 
 
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -36,6 +49,7 @@ from lean.container import container
               help="The number of symbols to generate data for")
 @option("--tickers",
               type=str,
+              callback=ticker_list_check,
               required=False,
               default="",
               help="Comma separated list of tickers to use for genrated data")
@@ -112,10 +126,15 @@ def generate(start: datetime,
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
-    if tickers != "":
-        tickers_options = [f"--tickers={tickers}"]
+    if tickers:
+        tickers_options = ["--tickers=" + ",".join(tickers)]
     else:
         tickers_options = []
+
+    if tickers and symbol_count != len(tickers):
+        raise BadParameter(
+                f"--symbol-count ({symbol_count}) != number of tickers ({len(tickers)})"
+                )
 
     run_options = {
         "entrypoint": ["dotnet", "QuantConnect.ToolBox.dll",
