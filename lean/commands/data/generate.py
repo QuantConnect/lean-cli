@@ -34,6 +34,11 @@ from lean.container import container
               type=IntRange(min=0),
               required=True,
               help="The number of symbols to generate data for")
+@option("--tickers",
+              type=str,
+              required=False,
+              default="",
+              help="Comma separated list of tickers to use for genrated data")
 @option("--security-type",
               type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
               default="Equity",
@@ -64,6 +69,7 @@ from lean.container import container
 def generate(start: datetime,
              end: datetime,
              symbol_count: int,
+             tickers: str,
              security_type: str,
              resolution: str,
              data_density: str,
@@ -106,6 +112,11 @@ def generate(start: datetime,
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
+    if tickers != "":
+        tickers_options = [f"--tickers={tickers}"]
+    else:
+        tickers_options = []
+
     run_options = {
         "entrypoint": ["dotnet", "QuantConnect.ToolBox.dll",
                        "--destination-dir", "/Lean/Data",
@@ -113,6 +124,7 @@ def generate(start: datetime,
                        "--start", start.strftime("%Y%m%d"),
                        "--end", end.strftime("%Y%m%d"),
                        "--symbol-count", str(symbol_count),
+                       *tickers_options,
                        "--security-type", security_type,
                        "--resolution", resolution,
                        "--data-density", data_density,
