@@ -22,13 +22,54 @@ from lean.models.api import QCLanguage, QCProject
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
 
-def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock) -> PushManager:
+def _create_organization_manager() -> mock.Mock:
+    organization_manager = mock.Mock()
+    organization_manager.get_working_organization_id = mock.MagicMock(return_value=None)
+    return organization_manager
+
+
+def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock,
+                         organization_manager: mock.Mock() = None) -> PushManager:
     logger = mock.Mock()
-    return PushManager(logger, api_client, project_manager, container.project_config_manager)
+    if organization_manager is None:
+        organization_manager = _create_organization_manager()
+
+    return PushManager(logger, api_client, project_manager, container.project_config_manager, organization_manager)
 
 
 def _get_base_cloud_projects() -> List[QCProject]:
     return [create_api_project(i, f"Project: number {i}") for i in range(1, 6)]
+
+
+def test_push_project_uses_gets_organization_id_from_organization_manager() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+
+    project_id = 1000
+    cloud_projects = [create_api_project(project_id, project_path.name)]
+    api_client = mock.Mock()
+
+    def create_project(proj_name, *args):
+        return next(iter(p for p in cloud_projects if p.name == proj_name))
+
+    def get_project(proj_id, *args):
+        return next(iter(p for p in cloud_projects if p.projectId == proj_id))
+
+    api_client.projects.create = mock.MagicMock(side_effect=create_project)
+    api_client.projects.get = mock.MagicMock(side_effect=get_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    organization_manager = _create_organization_manager()
+
+    push_manager = _create_push_manager(api_client, project_manager, organization_manager)
+    push_manager.push_project(project_path)
+
+    organization_manager.get_working_organization_id.assert_called_once()
 
 
 def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:

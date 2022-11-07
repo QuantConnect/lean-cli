@@ -49,8 +49,14 @@ class Container:
     def __init__(self):
         self.initialize()
 
-    def initialize(self, docker_manager=None, api_client=None, lean_runner=None, cloud_runner=None, push_manager=None,
-                   organization_manager:Union[OrganizationManager, Any]=None):
+    def initialize(self,
+                   docker_manager: Union[DockerManager, Any] = None,
+                   api_client: Union[APIClient, Any] = None,
+                   lean_runner: Union[LeanRunner, Any] = None,
+                   cloud_runner: Union[CloudRunner, Any] = None,
+                   push_manager: Union[PushManager, Any] = None,
+                   organization_manager: Union[OrganizationManager, Any] = None,
+                   project_config_manager: Union[ProjectConfigManager, Any] = None):
         """The Container class wires all reusable components together."""
         self.logger = Logger()
 
@@ -77,7 +83,10 @@ class Container:
 
         self.module_manager = ModuleManager(self.logger, self.api_client, self.http_client)
 
-        self.project_config_manager = ProjectConfigManager(self.xml_manager)
+        self.project_config_manager = project_config_manager
+        if not self.project_config_manager:
+            self.project_config_manager = ProjectConfigManager(self.xml_manager)
+
         self.lean_config_manager = LeanConfigManager(self.logger,
                                                      self.cli_config_manager,
                                                      self.project_config_manager,
@@ -99,6 +108,10 @@ class Container:
                                               self.path_manager,
                                               self.xml_manager)
 
+        self.organization_manager = organization_manager
+        if not self.organization_manager:
+            self.organization_manager = OrganizationManager(self.logger, self.lean_config_manager)
+
         self.cloud_runner = cloud_runner
         if not cloud_runner:
             self.cloud_runner = CloudRunner(self.logger, self.api_client, self.task_manager)
@@ -114,7 +127,8 @@ class Container:
             self.push_manager = PushManager(self.logger,
                                             self.api_client,
                                             self.project_manager,
-                                            self.project_config_manager)
+                                            self.project_config_manager,
+                                            self.organization_manager)
         self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
         self.cloud_project_manager = CloudProjectManager(self.api_client,
                                           self.project_config_manager,
@@ -142,10 +156,6 @@ class Container:
         self.market_hours_database = MarketHoursDatabase(self.lean_config_manager)
 
         self.update_manager = UpdateManager(self.logger, self.http_client, self.cache_storage, self.docker_manager)
-
-        self.organization_manager = organization_manager
-        if not self.organization_manager:
-            self.organization_manager = OrganizationManager(self.logger, self.lean_config_manager)
 
 
 container = Container()

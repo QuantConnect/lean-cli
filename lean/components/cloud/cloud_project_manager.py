@@ -62,7 +62,7 @@ class CloudProjectManager:
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path, self._path_manager):
             if push:
-                self._push_manager.push_projects([local_path])
+                self._push_manager.push_project([local_path])
 
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is None:

@@ -83,7 +83,7 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
 
     assert result.exit_code == 0
 
-    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None)
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project")
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
@@ -138,7 +138,7 @@ def test_cloud_push_updates_lean_config() -> None:
     project_manager.get_source_files = mock.MagicMock(return_value=[])
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
 
-    push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager)
+    push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager, mock.Mock())
 
     init_container(push_manager_to_use=push_manager, api_client_to_use=api_client)
 
