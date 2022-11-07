@@ -110,7 +110,7 @@ class Container:
 
         self.organization_manager = organization_manager
         if not self.organization_manager:
-            self.organization_manager = OrganizationManager(self.logger, self.api_client, self.lean_config_manager)
+            self.organization_manager = OrganizationManager(self.logger, self.lean_config_manager)
 
         self.cloud_runner = cloud_runner
         if not cloud_runner:

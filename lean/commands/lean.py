@@ -15,12 +15,32 @@ from click import group, version_option
 
 from lean import __version__
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
+from lean.container import container
+from lean.models.errors import MoreInfoError
 
 
 @group(cls=AliasedCommandGroup)
 @version_option(__version__)
 def lean() -> None:
     """The Lean CLI by QuantConnect."""
-    # This method is intentionally empty
-    # It is used as the command group for all `lean <command>` commands
-    pass
+    # This method is used as the command group for all `lean <command>` commands
+
+    # Here we check whether `lean init` has already been called and this is an old CLI folder
+    # before passing through the actual invoked command, to make sure this is not an old CLI folder.
+    # TODO: This check is to be removed once some time has passed after
+    #  the "one cli folder per organization" change is settled
+
+    lean_config_manager = container.lean_config_manager
+    try:
+        lean_config_manager.get_lean_config()
+    except MoreInfoError:
+        # There is no config, proceed in case `lean init` is being invoked
+        return
+
+    # `lean init` was already called. Let's check whether this is an old Lean CLI directory
+    organization_manager = container.organization_manager
+    if organization_manager.get_working_organization_id() is None:
+        raise RuntimeError(
+            "This is an old Lean CLI root folder.\n"
+            "From now on, a Lean CLI root folder must be created for each organization for improved organization.\n"
+            "Please create a new folder for each organization you are a member of and run `lean init` in it.")

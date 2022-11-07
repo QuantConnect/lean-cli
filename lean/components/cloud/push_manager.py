@@ -67,10 +67,7 @@ class PushManager:
         if len(projects_to_push) == 0:
             return
 
-        try:
-            organization_id = self._organization_manager.get_working_organization_id()
-        except Abort:
-            return
+        organization_id = self._organization_manager.try_get_working_organization_id()
 
         for index, path in enumerate(projects_to_push, start=1):
             relative_path = path.relative_to(Path.cwd())

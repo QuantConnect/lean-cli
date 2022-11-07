@@ -12,24 +12,21 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 from datetime import datetime
 
-import pytest
 from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.cloud.push_manager import PushManager
-from lean.container import container
-from lean.models.api import QCFullFile, QCLanguage
+from lean.models.api import QCFullFile
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 from tests.conftest import initialize_container
 
 
 def init_container(**kwargs) -> None:
     organization_manager = mock.Mock()
-    organization_manager.get_working_organization_id = mock.MagicMock(return_value=None)
+    organization_manager.get_working_organization_id = mock.MagicMock(return_value="abc")
 
     if "organization_manager_to_use" not in kwargs:
         kwargs["organization_manager_to_use"] = organization_manager

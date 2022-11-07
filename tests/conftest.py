@@ -51,9 +51,12 @@ def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, ap
     if push_manager_to_use:
         push_manager = push_manager_to_use
 
-    organization_manager = None
     if organization_manager_to_use:
         organization_manager = organization_manager_to_use
+    else:
+        organization_manager = mock.Mock()
+        organization_manager.get_working_organization_id = mock.MagicMock(return_value="abc")
+        organization_manager.try_get_working_organization_id = mock.MagicMock(return_value="abc")
 
     project_config_manager = None
     if project_config_manager_to_use:

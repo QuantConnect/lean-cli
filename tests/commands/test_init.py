@@ -23,8 +23,9 @@ from responses import RequestsMock
 
 from lean.commands import lean
 from lean.components.util.logger import Logger
+from lean.components.util.organization_manager import OrganizationManager
 from lean.container import container
-from lean.models.api import QCFullOrganization, QCMinimalOrganization
+from lean.models.api import QCMinimalOrganization
 
 
 @pytest.fixture(autouse=True)
@@ -74,13 +75,18 @@ def _get_test_organization() -> QCMinimalOrganization:
 
 @pytest.fixture(autouse=True, scope="function")
 def set_mock_organizations(set_unauthenticated) -> None:
-    def mock_get_organization(org_id: str) -> QCFullOrganization:
+    def mock_get_organization(org_id: str) -> QCMinimalOrganization:
         return next(iter(o for o in _get_all_organizations() if o.id == org_id), None)
 
     # container.api_client is already a mock from set_unauthenticated()
     api_client = container.api_client
     api_client.organizations.get_all.side_effect = _get_all_organizations
     api_client.organizations.get.side_effect = mock_get_organization
+
+
+@pytest.fixture(autouse=True, scope="function")
+def reset_organization_manager() -> None:
+    container.organization_manager = OrganizationManager(mock.Mock(), container.lean_config_manager)
 
 
 def test_init_aborts_when_config_file_already_exists() -> None:

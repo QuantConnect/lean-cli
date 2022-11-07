@@ -24,7 +24,7 @@ from tests.test_helpers import create_fake_lean_cli_project
 
 def _create_organization_manager() -> mock.Mock:
     organization_manager = mock.Mock()
-    organization_manager.get_working_organization_id = mock.MagicMock(return_value=None)
+    organization_manager.try_get_working_organization_id = mock.MagicMock(return_value=None)
     return organization_manager
 
 
@@ -69,7 +69,7 @@ def test_push_project_uses_gets_organization_id_from_organization_manager() -> N
     push_manager = _create_push_manager(api_client, project_manager, organization_manager)
     push_manager.push_project(project_path)
 
-    organization_manager.get_working_organization_id.assert_called_once()
+    organization_manager.try_get_working_organization_id.assert_called_once()
 
 
 def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:

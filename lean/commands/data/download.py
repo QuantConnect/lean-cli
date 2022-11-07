@@ -153,22 +153,6 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     logger.info(f"Organization balance: {organization.credit.balance:,.0f} QCC")
 
 
-def _select_organization() -> QCFullOrganization:
-    """Asks the user for the organization that should be used.
-
-    :return: the selected organization
-    """
-    api_client = container.api_client
-
-    organizations = api_client.organizations.get_all()
-    options = [Option(id=organization.id, label=organization.name) for organization in organizations]
-
-    logger = container.logger
-    organization_id = logger.prompt_list("Select the organization to purchase and download data with", options)
-
-    return api_client.organizations.get(organization_id)
-
-
 def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset]) -> List[Product]:
     """Asks the user for the products that should be purchased and downloaded.
 
@@ -308,7 +292,7 @@ def _get_organization() -> QCFullOrganization:
     :return: The working organization in the current Lean CLI folder
     """
     organization_manager = container.organization_manager
-    organization_id = organization_manager.get_working_organization_id()
+    organization_id = organization_manager.try_get_working_organization_id()
 
     api_client = container.api_client
     return api_client.organizations.get(organization_id)
@@ -403,6 +387,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
                                           requires_security_master=datasource["requiresSecurityMaster"]))
 
     return available_datasets
+
 
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
