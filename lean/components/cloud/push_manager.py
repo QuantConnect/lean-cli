@@ -13,14 +13,12 @@
 
 from pathlib import Path
 from typing import List, Optional, Dict
-
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
-
 
 class PushManager:
     """The PushManager class is responsible for synchronizing local projects to the cloud."""
@@ -65,7 +63,6 @@ class PushManager:
         if len(projects_to_push) == 0:
             return
 
-        pushed_projects = {}
         for index, path in enumerate(projects_to_push, start=1):
             relative_path = path.relative_to(Path.cwd())
             try:
@@ -87,7 +84,7 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project: Path, organization_id: Optional[str]) -> None:
+    def _push_project(self, project_path: Path, organization_id: Optional[str]) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -95,15 +92,33 @@ class PushManager:
         :param project: the local project to push
         :param organization_id: the id of the organization to push the project to
         """
-        project_name = project.relative_to(Path.cwd()).as_posix()
+        project_name = project_path.relative_to(Path.cwd()).as_posix()
 
-        project_config = self._project_config_manager.get_project_config(project)
+        project_config = self._project_config_manager.get_project_config(project_path)
         cloud_id = project_config.get("cloud-id")
+
+        # check if project name is valid or if rename is required
+        if cloud_id is not None:
+            expected_correct_project_path = self._project_manager.get_local_project_path(project_name, cloud_id)
+        else:
+            local_id = self._project_config_manager.get_local_id(project_path)
+            expected_correct_project_path = self._project_manager.get_local_project_path(project_name, None, local_id)
+        if expected_correct_project_path != project_path:
+            # rename project
+            valid_project_name = expected_correct_project_path.relative_to(Path.cwd()).as_posix()
+            self._logger.info(f"Renaming '{project_name}' to '{valid_project_name}'")
+            self._project_manager.rename_project_and_contents(project_path, expected_correct_project_path)
+            project_path = expected_correct_project_path
+            project_name = valid_project_name
 
         # Find the cloud project to push the files to
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project
             cloud_project = self._get_cloud_project(cloud_id)
+            if cloud_project.name != project_name:
+                # update project name in cloud
+                self._api_client.projects.update(cloud_project.projectId, **{"name": project_name})
+                self._logger.info(f"Renamed project in cloud from '{cloud_project.name}' to '{project_name}'")
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             cloud_project = self._api_client.projects.create(project_name,
@@ -117,7 +132,7 @@ class PushManager:
             self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")
 
         # Finalize pushing by updating locally modified metadata, files and libraries
-        self._push_metadata(project, cloud_project)
+        self._push_metadata(project_path, cloud_project)
 
     def _get_files(self, project: Path) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.

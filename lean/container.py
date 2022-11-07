@@ -116,7 +116,8 @@ class Container:
                                           self.project_config_manager,
                                           self.pull_manager,
                                           self.push_manager,
-                                          self.path_manager)
+                                          self.path_manager,
+                                          self.project_manager)
 
         self.docker_manager = docker_manager
         if not self.docker_manager:
