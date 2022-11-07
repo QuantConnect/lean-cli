@@ -82,7 +82,7 @@ def get_options_attributes(configuration: Configuration, default_lean_config_key
 
 
 def get_default_key(configuration: Configuration):
-    return "job-organization-id" if configuration.is_type_organization_id else configuration._id
+    return configuration._id
 
 
 def options_from_json(configurations: List[Configuration]):

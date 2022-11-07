@@ -36,10 +36,7 @@ def _get_configs_for_options(env: str) -> List[Configuration]:
     for module in brokerage:
         for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
             if config._id in run_options:
-                if (config._id in config_with_module_id
-                    and config_with_module_id[config._id] == module._id)\
-                    or config.is_type_organization_id:      # Allow only 1 organization for brokerage, data feeds and provider at an instance
-                    # config of same module
+                if config._id in config_with_module_id and config_with_module_id[config._id] == module._id:
                     continue
                 else:
                     raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')

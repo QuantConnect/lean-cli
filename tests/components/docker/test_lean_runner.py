@@ -34,7 +34,6 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
-
 def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     logger = mock.Mock()
     logger.debug_logging_enabled = False

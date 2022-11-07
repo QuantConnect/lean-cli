@@ -46,15 +46,12 @@ class JsonModule(ABC):
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
         brokerage_configs = []
-        organization_config = []
         for config in self._lean_configs:
             if isinstance(config, BrokerageEnvConfiguration):
                 brokerage_configs.append(config)
-            elif config.is_type_organization_id:
-                organization_config.append(config)
             else:
                 sorted_configs.append(config)
-        return organization_config + brokerage_configs + sorted_configs
+        return brokerage_configs + sorted_configs
 
     def get_name(self) -> str:
         """Returns the user-friendly name which users can identify this object by.
@@ -99,12 +96,6 @@ class JsonModule(ABC):
     def get_config_from_type(self, config_type: Configuration) -> str:
         return [copy(config) for config in self._lean_configs if type(config) is config_type]
 
-    def get_organzation_id(self) -> str:
-        [organization_id] = [
-            config._value for config in self._lean_configs if config.is_type_organization_id]
-        container.logger.debug(f"JsonModule.get_organzation_id: organization id being used: {organization_id}")
-        return organization_id
-
     def update_value_for_given_config(self, target_name: str, value: Any) -> None:
         [idx] = [i for i in range(len(self._lean_configs))
                  if self._lean_configs[i]._id == target_name]
@@ -115,7 +106,7 @@ class JsonModule(ABC):
                  if self._lean_configs[i]._id == target_name]
         return self._lean_configs[idx]._value
 
-    def get_non_user_required_properties(self) -> List[Configuration]:
+    def get_non_user_required_properties(self) -> List[str]:
         return [config._id for config in self._lean_configs if not config._is_required_from_user and not
                 config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
@@ -179,23 +170,11 @@ class JsonModule(ABC):
             if property_name in properties and properties[property_name]:
                 user_choice = properties[property_name]
             else:
-                if configuration.is_type_organization_id:
-                    api_client = container.api_client
-                    organizations = api_client.organizations.get_all()
-                    options = [Option(id=organization.id, label=organization.name)
-                               for organization in organizations]
-                    organization_id = logger.prompt_list(
-                        "Select the organization with access to the {} feature (requires a {} seat or higher)"
-                        .format(self.get_name(), self._minimum_seat),
-                        options
-                    )
-                    user_choice = organization_id
-                else:
-                    default_value = None
-                    # TODO: use type(class) equality instead of class name (str)
-                    if self.__class__.__name__ != 'CloudBrokerage':
-                        default_value = self._get_default(lean_config, configuration._id)
-                    user_choice = configuration.AskUserForInput(default_value, logger)
+                default_value = None
+                # TODO: use type(class) equality instead of class name (str)
+                if self.__class__.__name__ != 'CloudBrokerage':
+                    default_value = self._get_default(lean_config, configuration._id)
+                user_choice = configuration.AskUserForInput(default_value, logger)
 
             self.update_value_for_given_config(configuration._id, user_choice)
 

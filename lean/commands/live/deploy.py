@@ -21,7 +21,7 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
-from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput
 from lean.models.click_options import options_from_json
 from lean.models.json_module import JsonModule, LiveInitialStateInput
 from lean.commands.live.live import live
@@ -66,10 +66,7 @@ def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str,
     for module in modules:
         if not module._installs:
             continue
-        organization_id = module.get_organzation_id()
-        if organization_id is None or organization_id == "":
-            [organization_config] = module.get_config_from_type(OrganzationIdConfiguration)
-            organization_id = _get_non_interactive_organization_id(module, organization_config, user_kwargs)
+        organization_id = container.organization_manager.try_get_working_organization_id()
         module.ensure_module_installed(organization_id)
 
 
@@ -173,45 +170,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
 
 
-_cached_organizations = None
-
-
-def _get_organization_id(given_input: Optional[str], label: str) -> str:
-    """Converts the organization name or id given by the user to an organization id.
-
-    Shows an interactive wizard if no input is given.
-
-    Raises an error if the user is not a member of an organization with the given name or id.
-
-    :param given_input: the input given by the user
-    :param label: the name of the module the organization id is needed for
-    :return: the id of the organization given by the user
-    """
-    global _cached_organizations
-
-    logger = container.logger
-
-    if _cached_organizations is None:
-        api_client = container.api_client
-        _cached_organizations = api_client.organizations.get_all()
-
-    if given_input is not None:
-        logger.debug(f"live.deploy._get_organization_id(): non-interactive input organization id: {given_input}")
-        organization = next((o for o in _cached_organizations if o.id == given_input or o.name == given_input), None)
-        if organization is None:
-            raise RuntimeError(f"You are not a member of an organization with name or id '{given_input}'")
-    else:
-
-        options = [Option(id=organization, label=organization.name) for organization in _cached_organizations]
-        organization = logger.prompt_list(f"Select the organization with the {label} module subscription", options)
-
-    logger.debug(f"live.deploy._get_organization_id(): user selected organization id: {organization.id}")
-    return organization.id
-
-def _get_non_interactive_organization_id(module: LeanConfigConfigurer,
-                                        organization_config: OrganzationIdConfiguration, user_kwargs: Dict[str, Any]) -> str:
-    return _get_organization_id(user_kwargs[module.convert_lean_key_to_variable(organization_config._id)], module._id)
-
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
     logger = container.logger
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
@@ -224,20 +182,14 @@ def _get_and_build_module(target_module_name: str, module_list: List[JsonModule]
     logger.debug(f"live.deploy._get_and_build_module(): non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
     # now required properties can be fetched as per data/filter provider from essential properties
     required_properties: List[str] = []
-    organization_info: Dict[str,str] = {}
     for config in target_module.get_required_configs([InternalInputUserInput]):
-        if config.is_type_organization_id:
-            organization_info[config._id] = _get_non_interactive_organization_id(target_module, config, properties)
-            properties[target_module.convert_lean_key_to_variable(config._id)] = organization_info[config._id]
-            # skip organization id from ensure_options() because it is fetched using _get_organization_id()
-            continue
         required_properties.append(target_module.convert_lean_key_to_variable(config._id))
     ensure_options(required_properties)
     required_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
-    required_properties_value.update(organization_info)
     target_module.update_configs(required_properties_value)
     logger.debug(f"live.deploy._get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
     return target_module
+
 
 _cached_lean_config = None
 
@@ -345,8 +297,6 @@ def deploy(project: Path,
     from copy import copy
     from datetime import datetime
     # Reset globals so we reload everything in between tests
-    global _cached_organizations
-    _cached_organizations = None
     global _cached_lean_config
     _cached_lean_config = None
 

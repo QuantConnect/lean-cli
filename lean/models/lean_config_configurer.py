@@ -58,8 +58,6 @@ class LeanConfigConfigurer(JsonModule, ABC):
         """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.
         :param lean_config: the Lean configuration dict to write to
         """
-        if self._installs:
-            lean_config["job-organization-id"] = self.get_organzation_id()
         for configuration in self._lean_configs:
             value = None
             if configuration._is_type_configurations_env:
