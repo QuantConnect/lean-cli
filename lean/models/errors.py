@@ -53,9 +53,3 @@ class AuthenticationError(MoreInfoError):
         """Creates a new AuthenticationError instance."""
         super().__init__("Invalid credentials, please log in using `lean login`",
                          "https://www.lean.io/docs/v2/lean-cli/initialization/authenticating-accounts#02-Log-In")
-
-
-class AbortOperation(Exception):
-    """An error to signal that an operation should be aborted."""
-    pass
-

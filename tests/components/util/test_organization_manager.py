@@ -10,19 +10,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import itertools
-from typing import Optional, Dict, Any
+
 from unittest import mock
 
+import click
 import pytest
 
 from lean.components.util.organization_manager import OrganizationManager
-from lean.models.errors import AbortOperation
+from lean.models.api import QCMinimalOrganization
 
 
-def _create_organization_manager(lean_config_manager: mock.Mock = mock.Mock()) -> OrganizationManager:
+def _create_organization_manager(api_client: mock.Mock = mock.Mock(),
+                                 lean_config_manager: mock.Mock = mock.Mock()) -> OrganizationManager:
     logger = mock.Mock()
-    return OrganizationManager(logger, lean_config_manager)
+    return OrganizationManager(logger, api_client, lean_config_manager)
 
 
 @pytest.mark.parametrize("use_lean_config_manager", [True, False])
@@ -33,7 +34,7 @@ def test_organization_manager_gets_organization_id_from_lean_config(use_lean_con
     lean_config_manager = mock.Mock()
     lean_config_manager.get_lean_config = mock.MagicMock(return_value=lean_config)
 
-    organization_manager = _create_organization_manager(lean_config_manager)
+    organization_manager = _create_organization_manager(lean_config_manager=lean_config_manager)
 
     if use_lean_config_manager:
         lean_config = None
@@ -48,19 +49,24 @@ def test_organization_manager_gets_organization_id_from_lean_config(use_lean_con
 
 @pytest.mark.parametrize("proceed", [True, False])
 def test_organization_manager_prompts_user_if_lean_config_does_not_have_the_organization_id(proceed: bool) -> None:
+    api_client = mock.Mock()
+    api_client.organizations.get_all = mock.MagicMock(return_value=[
+        QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
+    ])
+
     lean_config_manager = mock.Mock()
     lean_config_manager.get_lean_config = mock.MagicMock(return_value={})
 
-    organization_manager = _create_organization_manager(lean_config_manager)
+    organization_manager = _create_organization_manager(api_client=api_client, lean_config_manager=lean_config_manager)
 
     def get_organization_id():
         return organization_manager.get_working_organization_id()
 
     with mock.patch('click.confirm', return_value=proceed) as mock_click_confirm:
         if proceed:
-            assert get_organization_id() is None
+            assert get_organization_id() == "abc"
         else:
-            with pytest.raises(AbortOperation):
+            with pytest.raises(click.Abort):
                 get_organization_id()
 
     mock_click_confirm.assert_called_once()
@@ -74,7 +80,7 @@ def test_organization_manager_sets_working_organization_to_given_config():
     lean_config_manager = mock.Mock()
     lean_config_manager.set_properties = mock.Mock()
 
-    organization_manager = _create_organization_manager(lean_config_manager)
+    organization_manager = _create_organization_manager(lean_config_manager=lean_config_manager)
 
     organization_manager.configure_working_organization_id(organization_id, lean_config)
 
@@ -89,7 +95,7 @@ def test_organization_manager_sets_working_organization_using_lean_config_manage
     lean_config_manager = mock.Mock()
     lean_config_manager.set_properties = mock.Mock()
 
-    organization_manager = _create_organization_manager(lean_config_manager)
+    organization_manager = _create_organization_manager(lean_config_manager=lean_config_manager)
 
     organization_manager.configure_working_organization_id(organization_id)
 

@@ -13,13 +13,15 @@
 
 from pathlib import Path
 from typing import List, Optional, Dict
+
+from click import Abort
+
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
 from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
-from lean.models.errors import AbortOperation
 from lean.models.utils import LeanLibraryReference
 
 class PushManager:
@@ -67,7 +69,7 @@ class PushManager:
 
         try:
             organization_id = self._organization_manager.get_working_organization_id()
-        except AbortOperation:
+        except Abort:
             return
 
         for index, path in enumerate(projects_to_push, start=1):
@@ -91,12 +93,12 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: Optional[str]) -> None:
+    def _push_project(self, project_path: Path, organization_id: str) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
 
-        :param project: the local project to push
+        :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
         """
         project_name = project_path.relative_to(Path.cwd()).as_posix()

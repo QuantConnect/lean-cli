@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from typing import Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context
+from click import command, option, confirm, pass_context, Context, Abort
 
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
@@ -302,30 +302,16 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
     confirm("Continue?", abort=True)
 
 
-def _get_organization_by_name_or_id(user_input: str) -> QCFullOrganization:
-    """Finds an organization by name or id.
+def _get_organization() -> QCFullOrganization:
+    """Gets the working organization/
 
-    Raises an error if no organization with a matching name or id can be found.
-
-    :param user_input: the input given by the user
-    :return: the first organization with the given name or id
+    :return: The working organization in the current Lean CLI folder
     """
-    from re import match
+    organization_manager = container.organization_manager
+    organization_id = organization_manager.get_working_organization_id()
+
     api_client = container.api_client
-
-    if match("^[a-f0-9]{32}$", user_input) is not None:
-        try:
-            return api_client.organizations.get(user_input)
-        except:
-            pass
-
-    all_organizations = api_client.organizations.get_all()
-    selected_organization = next((o for o in all_organizations if o.id == user_input or o.name == user_input), None)
-
-    if selected_organization is None:
-        raise RuntimeError(f"You are not a member of an organization with name or id '{user_input}'")
-
-    return api_client.organizations.get(selected_organization.id)
+    return api_client.organizations.get(organization_id)
 
 
 def _select_products_non_interactive(organization: QCFullOrganization,
@@ -420,14 +406,9 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
-@option("--organization", type=str, help="The name or id of the organization to purchase and download data with")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @pass_context
-def download(ctx: Context,
-             dataset: Optional[str],
-             organization: Optional[str],
-             overwrite: bool,
-             **kwargs) -> None:
+def download(ctx: Context, dataset: Optional[str], overwrite: bool, **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
     An interactive wizard will show to walk you through the process of selecting data,
@@ -436,29 +417,31 @@ def download(ctx: Context,
 
     If --dataset is given the command runs in non-interactive mode.
     In this mode the CLI does not prompt for input or confirmation but only halts when the agreement must be accepted.
-    In non-interactive mode all options specific to the selected dataset as well as --organization are required.
+    In non-interactive mode all options specific to the selected dataset are required.
 
     \b
     See the following url for the data that can be purchased and downloaded with this command:
     https://www.quantconnect.com/datasets
     """
-    is_interactive = dataset is None and organization is None
+    try:
+        organization = _get_organization()
+    except Abort:
+        return
 
+    is_interactive = dataset is None
     if not is_interactive:
-        ensure_options(["dataset", "organization"])
-        selected_organization = _get_organization_by_name_or_id(organization)
-        datasets = _get_available_datasets(selected_organization)
-        products = _select_products_non_interactive(selected_organization, datasets, ctx)
+        ensure_options(["dataset"])
+        datasets = _get_available_datasets(organization)
+        products = _select_products_non_interactive(organization, datasets, ctx)
     else:
-        selected_organization = _select_organization()
-        datasets = _get_available_datasets(selected_organization)
-        products = _select_products_interactive(selected_organization, datasets)
+        datasets = _get_available_datasets(organization)
+        products = _select_products_interactive(organization, datasets)
 
-    _confirm_organization_balance(selected_organization, products)
-    _verify_accept_agreement(selected_organization, is_interactive)
+    _confirm_organization_balance(organization, products)
+    _verify_accept_agreement(organization, is_interactive)
 
     if is_interactive:
-        _confirm_payment(selected_organization, products)
+        _confirm_payment(organization, products)
 
-    all_data_files = _get_data_files(selected_organization, products)
-    container.data_downloader.download_files(all_data_files, overwrite, selected_organization.id)
+    all_data_files = _get_data_files(organization, products)
+    container.data_downloader.download_files(all_data_files, overwrite, organization.id)

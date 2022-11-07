@@ -19,7 +19,6 @@ from click import command, option
 from lean.click import LeanCommand, PathParameter
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
-from lean.models.errors import AbortOperation
 
 
 @command(cls=LeanCommand)
