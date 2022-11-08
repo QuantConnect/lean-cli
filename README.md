@@ -632,6 +632,7 @@ Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
   --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0; required]
+  --tickers TEXT                  Comma separated list of tickers to use for generated data
   --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
                                   The security type to generate data for (defaults to Equity)
   --resolution [Tick|Second|Minute|Hour|Daily]
