@@ -43,7 +43,7 @@ class PathManager:
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        import platform
+        from platform import system
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -54,7 +54,7 @@ class PathManager:
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
         components = path.as_posix().split("/")
-        if platform.system() == "Windows":
+        if system() == "Windows":
             # Skip the first component, which contains the drive name
             components =  components[1:]
         for component in components:

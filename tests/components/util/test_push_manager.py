@@ -419,10 +419,12 @@ def test_push_projects_renames_project_if_required(test_platform: str, unsupport
     assert (project_path).exists()
 
     api_client = mock.Mock()
+    cloud_project = create_api_project(100, expected_correct_project_name)
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
 
     push_manager = _create_push_manager(api_client, container.project_manager)
     push_manager.push_projects([project_path])
-
+    assert not (Path.cwd() / project_path).exists()
     assert (Path.cwd() / expected_correct_project_name).exists()
 
 @pytest.mark.parametrize("test_platform, unsupported_character", [
@@ -459,4 +461,6 @@ def test_push_projects_updates_name_in_cloud_if_required(test_platform: str, uns
     push_manager = _create_push_manager(api_client, container.project_manager)
     push_manager.push_projects([project_path])
 
-    api_client.projects.update.assert_has_calls([mock.call(project_id, name=expected_correct_project_name)], any_order=True)
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert kwargs['name'] == expected_correct_project_name

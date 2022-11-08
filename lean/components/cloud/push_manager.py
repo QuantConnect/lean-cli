@@ -178,7 +178,7 @@ class PushManager:
         expected_correct_project_name = project.relative_to(Path.cwd()).as_posix()
         if cloud_project.name != expected_correct_project_name:
                 # update project name in cloud
-                update_args["name"] = local_description
+                update_args["name"] = expected_correct_project_name
                 self._logger.info(f"Renaming project in cloud from '{cloud_project.name}' to '{expected_correct_project_name}'")
 
         if local_description != cloud_description:

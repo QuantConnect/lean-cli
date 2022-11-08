@@ -239,57 +239,18 @@ class ProjectManager:
 
             current_index += 1
 
-    def _format_local_path(self, cloud_path: str) -> str:
-        """Converts the given cloud path into a local path which is valid for the current operating system.
-
-        :param cloud_path: the path of the project in the cloud
-        :return: the converted cloud_path so that it is valid locally
-        """
-        # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
-        # Windows, \":*?"<>| are forbidden
-        # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
-        # We follow the rules of windows for every OS
-        forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
-
-        for forbidden_character in forbidden_characters:
-            cloud_path = cloud_path.replace(forbidden_character, " ")
-
-        # On Windows we need to ensure each path component is valid
-        # We follow the rules of windows for every OS
-        new_components = []
-
-        for component in cloud_path.split("/"):
-            # Some names are reserved
-            for reserved_name in reserved_names:
-                # If the component is a reserved name, we add an underscore to it so it can be used
-                if component.upper() == reserved_name:
-                    component += "_"
-
-            # Components cannot start or end with a space
-            component = component.strip(" ")
-
-            # Components cannot end with a period
-            component = component.rstrip(".")
-
-            new_components.append(component)
-
-        cloud_path = "/".join(new_components)
-
-        return cloud_path
-        
-
     def rename_project_and_contents(self, old_path: Path, new_path: Path,) -> None:
         """Renames a project and updates the project config.
 
         :param old_path: the local project to rename
         :param new_path: the new path of the project
         """
-        import os
+        from shutil import move
         if not old_path.exists():
             raise RuntimeError(f"Failed to rename project. Could not find the specified path {old_path}.")
         if old_path == new_path:
             return
-        os.rename(old_path, new_path)
+        move(old_path, new_path)
         self._rename_csproj_file(new_path)
 
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
@@ -390,6 +351,46 @@ class ProjectManager:
             self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
             csproj_file.write_text(original_csproj_content, encoding="utf-8")
             raise e
+
+
+    def _format_local_path(self, cloud_path: str) -> str:
+        """Converts the given cloud path into a local path which is valid for the current operating system.
+
+        :param cloud_path: the path of the project in the cloud
+        :return: the converted cloud_path so that it is valid locally
+        """
+        # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
+        # Windows, \":*?"<>| are forbidden
+        # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
+        # We follow the rules of windows for every OS
+        forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
+
+        for forbidden_character in forbidden_characters:
+            cloud_path = cloud_path.replace(forbidden_character, " ")
+
+        # On Windows we need to ensure each path component is valid
+        # We follow the rules of windows for every OS
+        new_components = []
+
+        for component in cloud_path.split("/"):
+            # Some names are reserved
+            for reserved_name in reserved_names:
+                # If the component is a reserved name, we add an underscore to it so it can be used
+                if component.upper() == reserved_name:
+                    component += "_"
+
+            # Components cannot start or end with a space
+            component = component.strip(" ")
+
+            # Components cannot end with a period
+            component = component.rstrip(".")
+
+            new_components.append(component)
+
+        cloud_path = "/".join(new_components)
+
+        return cloud_path
+
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
@@ -701,16 +702,14 @@ class ProjectManager:
 
         :param project_path: the local project path
         """
-        import os
-        import glob
-        csproj_files = glob.glob("*.csproj")
-        if not len(csproj_files):
+        from shutil import move
+        csproj_file = next(project_path.glob("*.csproj"), None)
+        if not csproj_file:
             return
-        csproj_file = Path(csproj_files[0])
         new_csproj_file = project_path / f'{project_path.name}.csproj'
         if new_csproj_file.exists():
             return
-        os.rename(csproj_file, new_csproj_file)
+        move(csproj_file, new_csproj_file)
 
     def _generate_file(self, file: Path, content: str) -> None:
         """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.

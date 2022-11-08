@@ -414,9 +414,10 @@ def test_pull_projects_renames_project_if_required(test_platform: str, unsupport
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = cloud_projects
     api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.projects.create = mock.MagicMock(return_value=cloud_projects[0])
 
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=[])    # get("libraries")
+    project_config.get = mock.MagicMock(return_value=[])
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
