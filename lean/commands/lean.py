@@ -42,5 +42,5 @@ def lean() -> None:
     if organization_manager.get_working_organization_id() is None:
         raise RuntimeError(
             "This is an old Lean CLI root folder.\n"
-            "From now on, a Lean CLI root folder must be created for each organization for improved organization.\n"
-            "Please create a new folder for each organization you are a member of and run `lean init` in it.")
+            "From now on, a Lean CLI root folder must be created for each organization for improved usability.\n"
+            "For each organization you'd like to use with the CLI, please create a new folder and run `lean init`.")

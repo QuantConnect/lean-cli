@@ -536,7 +536,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                 file.write(json.dumps({
                     **missing_options_config,
                     "data-folder": "data",
-                    "organization-id": "abc"
+                    "job-organization-id": "abc"
                 }))
 
             if brokerage == "Binance":
@@ -601,7 +601,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                 file.write(json.dumps({
                     **missing_options_config,
                     "data-folder": "data",
-                    "organization-id": "abc"
+                    "job-organization-id": "abc"
                 }))
 
             if data_feed == "FTX":
@@ -651,7 +651,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                 file.write(json.dumps({
                     **missing_options_config,
                     "data-folder": "data",
-                    "organization-id": "abc"
+                    "job-organization-id": "abc"
                 }))
 
             if data_feed1 == "FTX" or data_feed2 == "FTX":

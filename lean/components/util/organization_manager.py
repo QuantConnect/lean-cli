@@ -52,7 +52,9 @@ class OrganizationManager:
         organization_id = self.get_working_organization_id()
 
         if organization_id is None:
-            raise RuntimeError("The working organization for this Lean CLI folder could not be determined.")
+            raise RuntimeError(
+                "The working organization for this Lean CLI folder could not be determined.\n"
+                "Make sure you run `lean init` on an empty folder for each organization you are a member of")
 
         return organization_id
 

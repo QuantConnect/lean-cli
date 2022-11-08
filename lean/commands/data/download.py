@@ -287,7 +287,7 @@ def _confirm_payment(organization: QCFullOrganization, products: List[Product]) 
 
 
 def _get_organization() -> QCFullOrganization:
-    """Gets the working organization/
+    """Gets the working organization
 
     :return: The working organization in the current Lean CLI folder
     """
