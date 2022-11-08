@@ -443,11 +443,9 @@ Usage: lean cloud push [OPTIONS]
   This command will delete cloud files which don't have a local counterpart.
 
 Options:
-  --project DIRECTORY     Path to the local project to push (all local projects if not specified)
-  --organization-id TEXT  ID of the organization where the project will be created in. This is ignored if the project
-                          has already been created in the cloud
-  --verbose               Enable debug logging
-  --help                  Show this message and exit.
+  --project DIRECTORY  Path to the local project to push (all local projects if not specified)
+  --verbose            Enable debug logging
+  --help               Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/push.py](lean/commands/cloud/push.py)_
@@ -578,18 +576,17 @@ Usage: lean data download [OPTIONS]
 
   If --dataset is given the command runs in non-interactive mode. In this mode the CLI does not prompt for input or
   confirmation but only halts when the agreement must be accepted. In non-interactive mode all options specific to the
-  selected dataset as well as --organization are required.
+  selected dataset are required.
 
   See the following url for the data that can be purchased and downloaded with this command:
   https://www.quantconnect.com/datasets
 
 Options:
-  --dataset TEXT       The name of the dataset to download non-interactively
-  --organization TEXT  The name or id of the organization to purchase and download data with
-  --overwrite          Overwrite existing local data
-  --lean-config FILE   The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose            Enable debug logging
-  --help               Show this message and exit.
+  --dataset TEXT      The name of the dataset to download non-interactively
+  --overwrite         Overwrite existing local data
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
 ```
 
 _See code: [lean/commands/data/download.py](lean/commands/data/download.py)_
@@ -677,6 +674,7 @@ Usage: lean init [OPTIONS]
   Scaffold a Lean configuration file and data directory.
 
 Options:
+  --organization TEXT             The name or id of the organization the Lean CLI will be scaffolded for
   -l, --language [python|csharp]  The default language to use for new projects
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -862,7 +860,6 @@ Options:
                                   The data feed to use
   --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
-  --organization TEXT             The name or id of the organization
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
