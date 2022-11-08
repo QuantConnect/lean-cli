@@ -408,7 +408,9 @@ def test_pull_projects_renames_project_if_required(test_platform: str, unsupport
     unsupported_name  = project_name + unsupported_character
     cloud_projects = [create_api_project(1, unsupported_name)]
     create_fake_lean_cli_project(unsupported_name, "csharp")
-
+    project_path = Path.cwd() / unsupported_name
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", cloud_projects[0].projectId)
     assert (Path.cwd() / unsupported_name).exists()
 
     api_client = mock.Mock()

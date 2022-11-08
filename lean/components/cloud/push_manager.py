@@ -110,7 +110,8 @@ class PushManager:
             self._project_manager.rename_project_and_contents(project_path, expected_correct_project_path)
             project_path = expected_correct_project_path
             project_name = valid_project_name
-
+            project_config = self._project_config_manager.get_project_config(project_path)
+        
         # Find the cloud project to push the files to
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project

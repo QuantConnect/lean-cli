@@ -103,7 +103,10 @@ class ProjectManager:
         while len(directories) > 0:
             directory = directories.pop(0)
 
-            project_config = self._project_config_manager.try_get_project_config(directory, self._path_manager)
+            try:
+                project_config = self._project_config_manager.get_project_config(directory)
+            except:
+                continue
             if project_config and project_config.get("cloud-id", None) == cloud_id:
                 return directory
             else:
