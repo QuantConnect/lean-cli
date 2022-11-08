@@ -66,7 +66,7 @@ def _select_organization() -> Tuple[str, str]:
 
     logger = container.logger
     organization_id = logger.prompt_list("Select the organization to use for this Lean CLI instance", options)
-    return organization_id, next(iter(o.name for o in organizations))
+    return organization_id, next(iter(o.name for o in organizations if o.id == organization_id))
 
 
 def _download_repository(output_path: Path) -> None:
