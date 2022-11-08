@@ -13,7 +13,6 @@
 
 from pathlib import Path
 from typing import List, Optional, Tuple
-
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.library_manager import LibraryManager
@@ -22,7 +21,6 @@ from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject, QCLanguage
 from lean.models.utils import LeanLibraryReference
-
 
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
@@ -107,7 +105,21 @@ class PullManager:
         :param project: the cloud project to pull
         :return the actual local path of the project
         """
-        local_project_path = self.get_local_project_path(project)
+        local_project_path = self._project_manager.get_local_project_path(project.name, project.projectId)
+        local_project_name = local_project_path.relative_to(Path.cwd()).as_posix()
+        # Check if cloud project has invalid name, if so update it and inform user.
+        if local_project_name != project.name:
+            # update project name in cloud
+            self._api_client.projects.update(project.projectId, **{"name": local_project_name})
+            self._logger.info(f"Renamed project in cloud from '{project.name}' to '{local_project_name}'")
+            project.name = local_project_name
+        
+        # rename project on disk if we find a directory with the old name (invalid/renamed name)
+        project_path_on_disk = self._project_manager.try_get_project_path_by_cloud_id(project.projectId)
+        if project_path_on_disk:
+            project_name_on_disk = project_path_on_disk.relative_to(Path.cwd()).as_posix()
+            if project_name_on_disk != project.name:
+                self._project_manager.rename_project_and_contents(project_path_on_disk, Path.cwd() / project.name)
 
         # Pull the cloud files to the local drive
         self._pull_files(project, local_project_path)
@@ -163,76 +175,6 @@ class PullManager:
 
         self._last_file = None
         self._project_manager.update_last_modified_time(local_project_path, project.modified)
-
-    def get_local_project_path(self, project: QCProject) -> Path:
-        """Returns the local path where a certain cloud project should be stored.
-
-        If two cloud projects are named "Project", they are pulled to ./Project and ./Project 2.
-
-        :param project: the cloud project to get the project path of
-        :return: the path to the local project directory
-        """
-        local_path = self._format_local_path(project.name)
-
-        current_index = 1
-        while True:
-            path_suffix = "" if current_index == 1 else f" {current_index}"
-            current_path = Path.cwd() / (local_path + path_suffix)
-
-            if not current_path.exists():
-                return current_path
-
-            current_project_config = self._project_config_manager.get_project_config(current_path)
-            if current_project_config.get("cloud-id") == project.projectId:
-                return current_path
-
-            current_index += 1
-
-    def _format_local_path(self, cloud_path: str) -> str:
-        """Converts the given cloud path into a local path which is valid for the current operating system.
-
-        :param cloud_path: the path of the project in the cloud
-        :return: the converted cloud_path so that it is valid locally
-        """
-        # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
-        if self._platform_manager.is_host_windows():
-            # Windows, \":*?"<>| are forbidden
-            # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
-            forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
-        elif self._platform_manager.is_host_macos():
-            # macOS, : is a path separator, but : is not a path separator on QuantConnect
-            forbidden_characters = [":"]
-        else:
-            # Linux, no forbidden characters
-            forbidden_characters = []
-
-        for forbidden_character in forbidden_characters:
-            cloud_path = cloud_path.replace(forbidden_character, " ")
-
-        # On Windows we need to ensure each path component is valid
-        if self._platform_manager.is_host_windows():
-            new_components = []
-
-            for component in cloud_path.split("/"):
-                # Some names are reserved
-                for reserved_name in ["CON", "PRN", "AUX", "NUL",
-                                      "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-                                      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
-                    # If the component is a reserved name, we add an underscore to it so it can be used
-                    if component.upper() == reserved_name:
-                        component += "_"
-
-                # Components cannot start or end with a space
-                component = component.strip(" ")
-
-                # Components cannot end with a period
-                component = component.rstrip(".")
-
-                new_components.append(component)
-
-            cloud_path = "/".join(new_components)
-
-        return cloud_path
 
     def _add_local_library_references_to_project(self, project_dir: Path, cloud_libraries_paths: List[Path]) -> None:
         if len(cloud_libraries_paths) > 0:

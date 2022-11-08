@@ -18,6 +18,7 @@ from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
+from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject
 
 
@@ -29,7 +30,8 @@ class CloudProjectManager:
                  project_config_manager: ProjectConfigManager,
                  pull_manager: PullManager,
                  push_manager: PushManager,
-                 path_manager: PathManager) -> None:
+                 path_manager: PathManager,
+                 project_manager: ProjectManager) -> None:
         """Creates a new PullManager instance.
 
         :param api_client: the APIClient instance to use when communicating with the cloud
@@ -43,6 +45,7 @@ class CloudProjectManager:
         self._pull_manager = pull_manager
         self._push_manager = push_manager
         self._path_manager = path_manager
+        self._project_manager = project_manager
 
     def get_cloud_project(self, input: str, push: bool) -> QCProject:
         """Retrieves the cloud project to use given a certain input and whether the local project needs to be pushed.
@@ -81,7 +84,7 @@ class CloudProjectManager:
             # This may happen if the input is an id instead of a name
             # If the local directory exists, we push it and return the updated cloud project
             if push:
-                local_path = self._pull_manager.get_local_project_path(cloud_project)
+                local_path = self._project_manager.get_local_project_path(cloud_project.name, cloud_project.projectId)
                 if local_path.exists():
                     self._push_manager.push_projects([local_path])
                     return self._api_client.projects.get(cloud_project.projectId)

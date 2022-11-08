@@ -93,6 +93,22 @@ def create_fake_lean_cli_directory() -> None:
 
     _write_fake_directory(files)
 
+def create_fake_lean_cli_project(name: str, language: str) -> None:
+    """Creates a directory structure similar to the one created by `lean init` with a given project info"""
+    (Path.cwd() / "data").mkdir()
+
+    files = {
+        (Path.cwd() / "lean.json"): """
+{
+    // data-folder documentation
+    "data-folder": "data"
+}
+        """,
+    }
+    project_data = _get_python_project_files(Path.cwd() / name) if language.lower() == "python" else _get_csharp_project_files(Path.cwd() / name)
+    files.update(project_data)
+
+    _write_fake_directory(files)
 
 def create_fake_lean_cli_directory_with_subdirectories(depth: int) -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project,

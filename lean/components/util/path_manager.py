@@ -12,9 +12,8 @@
 # limitations under the License.
 
 from pathlib import Path
-
+from lean.components import reserved_names
 from lean.components.util.platform_manager import PlatformManager
-
 
 class PathManager:
     """The PathManager class provides utilities for working with paths."""
@@ -44,6 +43,7 @@ class PathManager:
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
+        from platform import system
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -52,20 +52,20 @@ class PathManager:
 
         # On Windows path.exists() doesn't throw for paths like CON/file.txt
         # Trying to create them does raise errors, so we manually validate path components
-        if self._platform_manager.is_system_windows():
+        # We follow the rules of windows for every OS
+        components = path.as_posix().split("/")
+        if system() == "Windows":
             # Skip the first component, which contains the drive name
-            for component in path.as_posix().split("/")[1:]:
-                if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
+            components =  components[1:]
+        for component in components:
+            if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
+                return False
+
+            for reserved_name in reserved_names:
+                if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
                     return False
 
-                for reserved_name in ["CON", "PRN", "AUX", "NUL",
-                                      "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-                                      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]:
-                    if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
-                        return False
-
-                for forbidden_character in [":", "*", "?", '"', "<", ">", "|"]:
-                    if forbidden_character in component:
-                        return False
-
+            for forbidden_character in [":", "*", "?", '"', "<", ">", "|"]:
+                if forbidden_character in component:
+                    return False
         return True

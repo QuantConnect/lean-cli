@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 from pathlib import Path
 from typing import List, Any, Tuple
 from unittest import mock
-
+import platform
 import pytest
 
 from lean.components.cloud.pull_manager import PullManager
@@ -24,7 +23,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.container import container
 from lean.models.api import QCProject, QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
-
+from tests.test_helpers import create_fake_lean_cli_project
 
 def _create_pull_manager(api_client: mock.Mock,
                          project_config_manager: mock.Mock,
@@ -35,6 +34,25 @@ def _create_pull_manager(api_client: mock.Mock,
     return PullManager(logger, api_client, project_manager, project_config_manager, library_manager, platform_manager)
 
 
+def _make_cloud_projects_and_libraries(project_count: int,
+                                       library_count: int) -> Tuple[List[QCProject], List[QCProject]]:
+    cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, project_count + 1)]
+    libraries = [create_api_project(i, f"Library/Library {i - project_count}")
+                 for i in range(project_count + 1, project_count + library_count + 1)]
+
+    return cloud_projects, libraries
+
+
+def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject]) -> None:
+    libraries_ids = [library.projectId for library in libraries]
+    project.libraries.extend(libraries_ids)
+
+
+def _add_local_library_to_local_project(project_path: Path, library_path: Path) -> None:
+    library_manager = container.library_manager
+    library_manager.add_lean_library_to_project(project_path, library_path, False)
+
+    
 def _assert_pull_manager_adds_property_to_project_config(prop: str,
                                                          expected_value: Any,
                                                          cloud_projects: List[QCProject]) -> None:
@@ -111,25 +129,6 @@ def test_pull_manager_removes_lean_engine_from_config_when_lean_pinned_to_master
     cloud_project.leanPinnedToMaster = True
 
     _assert_pull_manager_removes_property_from_project_config("lean-engine", [cloud_project])
-
-
-def _make_cloud_projects_and_libraries(project_count: int,
-                                       library_count: int) -> Tuple[List[QCProject], List[QCProject]]:
-    cloud_projects = [create_api_project(i, f"Project {i}") for i in range(1, project_count + 1)]
-    libraries = [create_api_project(i, f"Library/Library {i - project_count}")
-                 for i in range(project_count + 1, project_count + library_count + 1)]
-
-    return cloud_projects, libraries
-
-
-def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject]) -> None:
-    libraries_ids = [library.projectId for library in libraries]
-    project.libraries.extend(libraries_ids)
-
-
-def _add_local_library_to_local_project(project_path: Path, library_path: Path) -> None:
-    library_manager = container.library_manager
-    library_manager.add_lean_library_to_project(project_path, library_path, False)
 
 
 def test_pulls_libraries_referenced_by_the_project() -> None:
@@ -327,16 +326,8 @@ def test_pull_projects_updates_lean_config() -> None:
                                         any_order=True)
 
 
-@pytest.mark.parametrize("test_platform, unsupported_character", [
-    *[("windows", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
-    ("macos", ":")
-])
-def test_pull_projects_detects_unsupported_paths(test_platform: str, unsupported_character: str) -> None:
-    if test_platform == "windows" and platform.system() != "Windows":
-        pytest.skip("This test requires Windows")
-
-    if test_platform == "macos" and platform.system() != "Darwin":
-        pytest.skip("This test requires MacOS")
+@pytest.mark.parametrize("unsupported_character", ["\\", ":", "*", "?", '"', "<", ">", "|"])
+def test_pull_projects_detects_unsupported_paths(unsupported_character: str) -> None:
 
     create_fake_lean_cli_directory()
 
@@ -374,3 +365,69 @@ def test_pull_projects_detects_unsupported_paths(test_platform: str, unsupported
          for library_name in expected_library_names_in_paths],
         any_order=True)
     library_manager.remove_lean_library_from_project.assert_not_called()
+
+
+@pytest.mark.parametrize("unsupported_character", ["\\", ":", "*", "?", '"', "<", ">", "|"])
+def test_push_projects_updates_name_in_cloud_if_required(unsupported_character: str) -> None:
+    create_fake_lean_cli_directory()
+    project_name = "Project 1"
+    cloud_projects = [create_api_project(1, project_name + unsupported_character)]
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    project_config = mock.Mock()
+    project_config.get = mock.MagicMock(return_value=[])    # get("libraries")
+
+    project_config_manager = mock.Mock()
+    project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
+
+    library_manager = mock.Mock()
+
+    pull_manager = _create_pull_manager(api_client, project_config_manager, library_manager)
+    pull_manager.pull_projects(cloud_projects, cloud_projects)
+
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert "name" in kwargs and kwargs['name'] == project_name
+
+@pytest.mark.parametrize("test_platform, unsupported_character", [
+    *[("linux", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
+    ("macos", ":")
+])
+def test_pull_projects_renames_project_if_required(test_platform: str, unsupported_character: str) -> None:
+    
+    if test_platform == "linux" and platform.system() != "Linux":
+        pytest.skip("This test requires Linux")
+
+    if test_platform == "macos" and platform.system() != "Darwin":
+        pytest.skip("This test requires MacOS")
+
+    project_name = "Project 1"
+    unsupported_name  = project_name + unsupported_character
+    cloud_projects = [create_api_project(1, unsupported_name)]
+    create_fake_lean_cli_project(unsupported_name, "csharp")
+    project_path = Path.cwd() / unsupported_name
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", cloud_projects[0].projectId)
+    assert (Path.cwd() / unsupported_name).exists()
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = cloud_projects
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.projects.create = mock.MagicMock(return_value=cloud_projects[0])
+
+    project_config = mock.Mock()
+    project_config.get = mock.MagicMock(return_value=[])
+
+    project_config_manager = mock.Mock()
+    project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
+
+    library_manager = mock.Mock()
+
+    pull_manager = _create_pull_manager(api_client, project_config_manager, library_manager)
+    pull_manager.pull_projects(cloud_projects, cloud_projects)
+
+    assert not (Path.cwd() / unsupported_name).exists()
+    assert (Path.cwd() / project_name).exists()

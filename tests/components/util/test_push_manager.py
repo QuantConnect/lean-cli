@@ -14,12 +14,13 @@
 from pathlib import Path
 from typing import List
 from unittest import mock
-
+import pytest
+import platform
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
 from lean.models.api import QCLanguage, QCProject
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
-
+from tests.test_helpers import create_fake_lean_cli_project
 
 def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock) -> PushManager:
     logger = mock.Mock()
@@ -36,6 +37,9 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
+    def get_local_project_path(project_name, *args):
+        return lean_cli_root_dir / project_name
+
     project_path = lean_cli_root_dir / "Python Project"
     python_library_relative_path = "Library/Python Library"
     csharp_library_relative_path = "Library/CSharp Library"
@@ -49,6 +53,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[csharp_library_path, python_library_path])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     project_id = 1000
     python_library_id = 1001
@@ -105,6 +110,9 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
+    def get_local_project_path(project_name, *args):
+        return lean_cli_root_dir / project_name
+
     project_path = lean_cli_root_dir / "Python Project"
     python_library_relative_path = "Library/Python Library"
     python_library_path = lean_cli_root_dir / python_library_relative_path
@@ -112,7 +120,8 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
-
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
+    
     project_id = 1000
     python_library_id = 1001
     cloud_project = create_api_project(project_id, project_path.name)
@@ -149,6 +158,9 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
+    def get_local_project_path(project_name, *args):
+        return lean_cli_root_dir / project_name
+
     project_path = lean_cli_root_dir / "Python Project"
     python_library_relative_path = "Library/Python Library"
     csharp_library_relative_path = "Library/CSharp Library"
@@ -161,6 +173,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[python_library_path])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     project_id = 1000
     python_library_id = 1001
@@ -216,6 +229,9 @@ def test_push_projects_pushes_lean_engine_version() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
+    def get_local_project_path(project_name, *args):
+        return Path.cwd() / project_name
+
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
 
@@ -234,6 +250,7 @@ def test_push_projects_pushes_lean_engine_version() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
@@ -248,6 +265,9 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
+
+    def get_local_project_path(project_name, *args):
+        return Path.cwd() / project_name
 
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
@@ -267,6 +287,7 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
@@ -281,6 +302,9 @@ def test_push_projects_pushes_lean_environment() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
+
+    def get_local_project_path(project_name, *args):
+        return Path.cwd() / project_name
 
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
@@ -301,6 +325,7 @@ def test_push_projects_pushes_lean_environment() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
@@ -315,6 +340,9 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
+
+    def get_local_project_path(project_name, *args):
+        return Path.cwd() / project_name
 
     project_id = 1000
     cloud_project = create_api_project(project_id, project_path.name)
@@ -335,6 +363,7 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     project_manager = mock.Mock()
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
     project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=get_local_project_path)
 
     push_manager = _create_push_manager(api_client, project_manager)
     push_manager.push_projects([project_path])
@@ -343,3 +372,95 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     args, kwargs = api_client.projects.update.call_args
     assert args[0] == project_id
     assert "python_venv" not in kwargs
+
+
+@pytest.mark.parametrize("test_platform, unsupported_character", [
+    *[("linux", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
+    ("macos", ":")
+])
+def test_push_projects_detects_unsupported_paths(test_platform: str, unsupported_character: str) -> None:
+    
+    if test_platform == "linux" and platform.system() != "Linux":
+        pytest.skip("This test requires Linux")
+
+    if test_platform == "macos" and platform.system() != "Darwin":
+        pytest.skip("This test requires MacOS")
+
+    expected_correct_project_name = "Python Project"
+    project_name  = expected_correct_project_name + unsupported_character
+    project_path = Path.cwd() / project_name
+    create_fake_lean_cli_project(project_name, "python")
+
+    api_client = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.create.assert_called_once()
+
+
+@pytest.mark.parametrize("test_platform, unsupported_character", [
+    *[("linux", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
+    ("macos", ":")
+])
+def test_push_projects_renames_project_if_required(test_platform: str, unsupported_character: str) -> None:
+    
+    if test_platform == "linux" and platform.system() != "Linux":
+        pytest.skip("This test requires Linux")
+
+    if test_platform == "macos" and platform.system() != "Darwin":
+        pytest.skip("This test requires MacOS")
+
+    expected_correct_project_name = "Python Project"
+    project_name  = expected_correct_project_name + unsupported_character
+    project_path = Path.cwd() / project_name
+    create_fake_lean_cli_project(project_name, "python")
+
+    assert (project_path).exists()
+
+    api_client = mock.Mock()
+    cloud_project = create_api_project(100, expected_correct_project_name)
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_projects([project_path])
+    assert not (Path.cwd() / project_path).exists()
+    assert (Path.cwd() / expected_correct_project_name).exists()
+
+@pytest.mark.parametrize("test_platform, unsupported_character", [
+    *[("linux", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
+    ("macos", ":")
+])
+def test_push_projects_updates_name_in_cloud_if_required(test_platform: str, unsupported_character: str) -> None:
+    
+    if test_platform == "linux" and platform.system() != "Linux":
+        pytest.skip("This test requires Linux")
+
+    if test_platform == "macos" and platform.system() != "Darwin":
+        pytest.skip("This test requires MacOS")
+
+    expected_correct_project_name = "Python Project"
+    project_name  = expected_correct_project_name + unsupported_character
+    project_path = Path.cwd() / project_name
+    create_fake_lean_cli_project(project_name, "python")
+
+    project_id = 1000
+    cloud_project = create_api_project(project_id, project_name)
+
+    project_config_manager = container.project_config_manager
+    project_config = project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", project_id)
+    project_config.set("description", cloud_project.description)
+
+    api_client = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_projects([project_path])
+
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert kwargs['name'] == expected_correct_project_name

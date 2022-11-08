@@ -14,7 +14,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
-
+from lean.components import reserved_names
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
@@ -90,6 +90,29 @@ class ProjectManager:
                 directories.extend(d for d in directory.iterdir() if d.is_dir())
 
         raise RuntimeError(f"Project with local id '{local_id}' does not exist")
+    
+    def try_get_project_path_by_cloud_id(self, cloud_id: int) -> Path:
+        """Finds a project by its cloud id.
+
+        Raises an error if a project with the given cloud id cannot be found.
+
+        :param cloud_id: the cloud id of the project
+        :return: the path to the directory containing the project with the given cloud id
+        """
+        directories = [self._lean_config_manager.get_cli_root_directory()]
+        while len(directories) > 0:
+            directory = directories.pop(0)
+
+            try:
+                project_config = self._project_config_manager.get_project_config(directory)
+            except:
+                continue
+            if project_config and project_config.get("cloud-id", None) == cloud_id:
+                return directory
+            else:
+                directories.extend(d for d in directory.iterdir() if d.is_dir())
+
+        return False
 
     def get_source_files(self, directory: Path) -> List[Path]:
         """Returns the paths of all the source files in a directory.
@@ -176,6 +199,62 @@ class ProjectManager:
             rmtree(project_dir)
         except FileNotFoundError:
             raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
+
+
+    def get_local_project_path(self, project_name: str, cloud_id: Optional[int] = None, local_id: Optional[int] = None) -> Path:
+        """Returns the local path where a certain cloud project should be stored.
+
+        If two cloud projects are named "Project", they are pulled to ./Project and ./Project 2.
+
+        If you push a project with unsupported cloud name, a supported project name would be assigned.
+
+        :param project_name: the cloud project to get the project path of
+        :param cloud_id: the cloud project to get the project path of
+        :param local_id: the cloud project to get the project path of
+        :return: the path to the local project directory
+        """
+
+        if cloud_id is not None and local_id is not None:
+            raise ValueError("Cannot specify both cloud_id and local_id")
+        
+        if cloud_id is None and local_id is None:
+            raise ValueError("Must specify either cloud_id or local_id")
+
+        local_path = self._format_local_path(project_name)
+
+        current_index = 1
+        while True:
+            path_suffix = "" if current_index == 1 else f" {current_index}"
+            current_path = Path.cwd() / (local_path + path_suffix)
+
+            if not current_path.exists():
+                return current_path
+
+            if cloud_id is not None:
+                current_project_config = self._project_config_manager.get_project_config(current_path)
+                if current_project_config.get("cloud-id") == cloud_id:
+                    return current_path
+
+            if local_id is not None:
+                current_project_config = self._project_config_manager.get_project_config(current_path)
+                if current_project_config.get("local-id") == local_id:
+                    return current_path
+
+            current_index += 1
+
+    def rename_project_and_contents(self, old_path: Path, new_path: Path,) -> None:
+        """Renames a project and updates the project config.
+
+        :param old_path: the local project to rename
+        :param new_path: the new path of the project
+        """
+        from shutil import move
+        if not old_path.exists():
+            raise RuntimeError(f"Failed to rename project. Could not find the specified path {old_path}.")
+        if old_path == new_path:
+            return
+        move(old_path, new_path)
+        self._rename_csproj_file(new_path)
 
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
@@ -275,6 +354,46 @@ class ProjectManager:
             self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
             csproj_file.write_text(original_csproj_content, encoding="utf-8")
             raise e
+
+
+    def _format_local_path(self, cloud_path: str) -> str:
+        """Converts the given cloud path into a local path which is valid for the current operating system.
+
+        :param cloud_path: the path of the project in the cloud
+        :return: the converted cloud_path so that it is valid locally
+        """
+        # Remove forbidden characters and OS-specific path separator that are not path separators on QuantConnect
+        # Windows, \":*?"<>| are forbidden
+        # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
+        # We follow the rules of windows for every OS
+        forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
+
+        for forbidden_character in forbidden_characters:
+            cloud_path = cloud_path.replace(forbidden_character, " ")
+
+        # On Windows we need to ensure each path component is valid
+        # We follow the rules of windows for every OS
+        new_components = []
+
+        for component in cloud_path.split("/"):
+            # Some names are reserved
+            for reserved_name in reserved_names:
+                # If the component is a reserved name, we add an underscore to it so it can be used
+                if component.upper() == reserved_name:
+                    component += "_"
+
+            # Components cannot start or end with a space
+            component = component.strip(" ")
+
+            # Components cannot end with a period
+            component = component.rstrip(".")
+
+            new_components.append(component)
+
+        cloud_path = "/".join(new_components)
+
+        return cloud_path
+
 
     def _generate_python_library_projects_config(self) -> None:
         """Generates the required configuration to enable autocomplete on Python library projects."""
@@ -580,6 +699,20 @@ class ProjectManager:
 
         # Save the modified XML tree
         self._generate_file(debugger_file, self._xml_manager.to_string(root))
+
+    def _rename_csproj_file(self, project_path: Path) -> None:
+        """Renames the csproj file in the project to name the project name.
+
+        :param project_path: the local project path
+        """
+        from shutil import move
+        csproj_file = next(project_path.glob("*.csproj"), None)
+        if not csproj_file:
+            return
+        new_csproj_file = project_path / f'{project_path.name}.csproj'
+        if new_csproj_file.exists():
+            return
+        move(csproj_file, new_csproj_file)
 
     def _generate_file(self, file: Path, content: str) -> None:
         """Writes to a file, which is created if it doesn't exist yet, and normalized the content before doing so.
