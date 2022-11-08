@@ -115,10 +115,6 @@ class PushManager:
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project
             cloud_project = self._get_cloud_project(cloud_id)
-            if cloud_project.name != project_name:
-                # update project name in cloud
-                self._api_client.projects.update(cloud_project.projectId, **{"name": project_name})
-                self._logger.info(f"Renamed project in cloud from '{cloud_project.name}' to '{project_name}'")
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             cloud_project = self._api_client.projects.create(project_name,
@@ -178,6 +174,12 @@ class PushManager:
         cloud_lean_venv = cloud_project.leanEnvironment
 
         update_args = {}
+
+        expected_correct_project_name = project.relative_to(Path.cwd()).as_posix()
+        if cloud_project.name != expected_correct_project_name:
+                # update project name in cloud
+                update_args["name"] = local_description
+                self._logger.info(f"Renaming project in cloud from '{cloud_project.name}' to '{expected_correct_project_name}'")
 
         if local_description != cloud_description:
             update_args["description"] = local_description

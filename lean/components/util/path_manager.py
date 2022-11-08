@@ -14,7 +14,6 @@
 from pathlib import Path
 from lean.components import reserved_names
 from lean.components.util.platform_manager import PlatformManager
-import platform
 
 class PathManager:
     """The PathManager class provides utilities for working with paths."""
@@ -44,6 +43,7 @@ class PathManager:
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
+        import platform
         try:
             # This call fails if the path contains invalid characters
             path.exists()

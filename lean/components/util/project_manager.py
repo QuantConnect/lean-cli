@@ -14,8 +14,6 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
-import os
-import glob
 from lean.components import reserved_names
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -92,6 +90,26 @@ class ProjectManager:
                 directories.extend(d for d in directory.iterdir() if d.is_dir())
 
         raise RuntimeError(f"Project with local id '{local_id}' does not exist")
+    
+    def try_get_project_path_by_cloud_id(self, cloud_id: int) -> Path:
+        """Finds a project by its cloud id.
+
+        Raises an error if a project with the given cloud id cannot be found.
+
+        :param cloud_id: the cloud id of the project
+        :return: the path to the directory containing the project with the given cloud id
+        """
+        directories = [self._lean_config_manager.get_cli_root_directory()]
+        while len(directories) > 0:
+            directory = directories.pop(0)
+
+            project_config = self._project_config_manager.try_get_project_config(directory, self._path_manager)
+            if project_config and project_config.get("cloud-id", None) == cloud_id:
+                return directory
+            else:
+                directories.extend(d for d in directory.iterdir() if d.is_dir())
+
+        return False
 
     def get_source_files(self, directory: Path) -> List[Path]:
         """Returns the paths of all the source files in a directory.
@@ -266,8 +284,11 @@ class ProjectManager:
         :param old_path: the local project to rename
         :param new_path: the new path of the project
         """
+        import os
         if not old_path.exists():
             raise RuntimeError(f"Failed to rename project. Could not find the specified path {old_path}.")
+        if old_path == new_path:
+            return
         os.rename(old_path, new_path)
         self._rename_csproj_file(new_path)
 
@@ -680,6 +701,8 @@ class ProjectManager:
 
         :param project_path: the local project path
         """
+        import os
+        import glob
         csproj_files = glob.glob("*.csproj")
         if not len(csproj_files):
             return
