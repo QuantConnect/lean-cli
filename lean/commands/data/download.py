@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from typing import Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context, Abort
+from click import command, option, confirm, pass_context, Context
 
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
@@ -408,10 +408,7 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, **kwargs) ->
     See the following url for the data that can be purchased and downloaded with this command:
     https://www.quantconnect.com/datasets
     """
-    try:
-        organization = _get_organization()
-    except Abort:
-        return
+    organization = _get_organization()
 
     is_interactive = dataset is None
     if not is_interactive:

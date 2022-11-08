@@ -48,5 +48,5 @@ def test_get_cloud_project_pushing_new_project():
 
     assert created_cloud_project == cloud_project
 
-    api_client.projects.get.assert_called_with(cloud_project.projectId)
+    api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
     push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])

@@ -43,10 +43,12 @@ def pull(project: Optional[str], pull_bootcamp: bool) -> None:
     projects_to_pull = []
     all_projects = None
 
+    organization_id = container.organization_manager.try_get_working_organization_id()
+
     if project_id is not None:
-        projects_to_pull.append(api_client.projects.get(project_id))
+        projects_to_pull.append(api_client.projects.get(project_id, organization_id))
     else:
-        all_projects = api_client.projects.get_all()
+        all_projects = api_client.projects.get_all(organization_id)
         project_manager = container.project_manager
         projects_to_pull = project_manager.get_projects_by_name_or_id(all_projects, project_name)
 

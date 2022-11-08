@@ -58,7 +58,7 @@ class PullManager:
             if library_id in seen_projects:
                 continue
             seen_projects.append(library_id)
-            library = self._api_client.projects.get(library_id)
+            library = self._api_client.projects.get(library_id, project.organizationId)
             libraries.append(library)
             libraries.extend(self._get_libraries(library, seen_projects))
 

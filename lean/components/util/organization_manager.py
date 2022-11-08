@@ -30,13 +30,18 @@ class OrganizationManager:
         self._logger = logger
         self._lean_config_manager = lean_config_manager
 
+        self._working_organization_id = None
+
     def get_working_organization_id(self) -> Optional[str]:
         """Gets the id of the working organization in the current Lean CLI directory.
 
         :return: the id of the working organization. None if the organization id was not found in the lean config
         """
-        lean_config = self._lean_config_manager.get_lean_config()
-        return lean_config.get("organization-id")
+        if self._working_organization_id is None:
+            lean_config = self._lean_config_manager.get_lean_config()
+            self._working_organization_id = lean_config.get("organization-id")
+
+        return self._working_organization_id
 
     def try_get_working_organization_id(self) -> Optional[str]:
         """Gets the id of the working organization in the current Lean CLI directory.
@@ -58,3 +63,4 @@ class OrganizationManager:
         :param organization_id: the working organization di
         """
         self._lean_config_manager.set_properties({"organization-id": organization_id})
+        self._working_organization_id = organization_id

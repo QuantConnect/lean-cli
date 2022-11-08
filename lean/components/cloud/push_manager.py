@@ -12,9 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List, Optional, Dict
-
-from click import Abort
+from typing import List, Dict
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -121,7 +119,7 @@ class PushManager:
         # Find the cloud project to push the files to
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project
-            cloud_project = self._get_cloud_project(cloud_id)
+            cloud_project = self._get_cloud_project(cloud_id, organization_id)
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             cloud_project = self._api_client.projects.create(project_name,
@@ -211,10 +209,10 @@ class PushManager:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
             self._logger.info(f"Successfully updated {' and '.join(update_args.keys())} for '{cloud_project.name}'")
 
-    def _get_cloud_project(self, project_id: int) -> QCProject:
+    def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
         if project is None:
-            project = self._api_client.projects.get(project_id)
+            project = self._api_client.projects.get(project_id, organization_id)
             self._cloud_projects.append(project)
 
         return project

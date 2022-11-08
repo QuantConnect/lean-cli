@@ -24,7 +24,7 @@ from tests.test_helpers import create_fake_lean_cli_project
 
 def _create_organization_manager() -> mock.Mock:
     organization_manager = mock.Mock()
-    organization_manager.try_get_working_organization_id = mock.MagicMock(return_value=None)
+    organization_manager.try_get_working_organization_id = mock.MagicMock(return_value="abc")
     return organization_manager
 
 
@@ -127,9 +127,9 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
                                                       any_order=True)
 
     api_client.projects.create.assert_has_calls([
-        mock.call(csharp_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.CSharp, None),
-        mock.call(python_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None),
-        mock.call(project_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, None)
+        mock.call(csharp_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.CSharp, "abc"),
+        mock.call(python_library_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, "abc"),
+        mock.call(project_path.relative_to(lean_cli_root_dir).as_posix(), QCLanguage.Python, "abc")
     ], any_order=True)
 
     expected_update_call_arguments = [
@@ -232,7 +232,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
 
     api_client = mock.Mock()
 
-    def projects_get_side_effect(proj_id: int) -> QCProject:
+    def projects_get_side_effect(proj_id: int, organization_id: int) -> QCProject:
         return [p for p in [cloud_project, python_library_cloud_project, csharp_library_cloud_project]
                 if proj_id == p.projectId][0]
 
@@ -251,7 +251,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
 
     api_client.projects.create.assert_called_once_with(python_library_path.relative_to(lean_cli_root_dir).as_posix(),
                                                        QCLanguage.Python,
-                                                       None)
+                                                       "abc")
 
     expected_update_call_arguments = [
         {'project_id': python_library_id, 'libraries': []},

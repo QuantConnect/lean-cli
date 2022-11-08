@@ -131,11 +131,12 @@ class Container:
                                             self.organization_manager)
         self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
         self.cloud_project_manager = CloudProjectManager(self.api_client,
-                                          self.project_config_manager,
-                                          self.pull_manager,
-                                          self.push_manager,
-                                          self.path_manager,
-                                          self.project_manager)
+                                                         self.project_config_manager,
+                                                         self.pull_manager,
+                                                         self.push_manager,
+                                                         self.path_manager,
+                                                         self.project_manager,
+                                                         self.organization_manager)
 
         self.docker_manager = docker_manager
         if not self.docker_manager:

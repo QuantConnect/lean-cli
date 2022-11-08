@@ -172,9 +172,7 @@ def test_init_prompts_for_organization_if_option_not_passed() -> None:
 
     assert result.exit_code == 0
 
-    mock_prompt_list.assert_called()
-    assert any("Select the organization" in call.args[0] for call in mock_prompt_list.call_args_list)
-
+    mock_prompt_list.assert_called_with("Select the organization to use for this Lean CLI instance", mock.ANY)
     assert_organization_id_is_in_lean_config(organization.id)
 
 

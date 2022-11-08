@@ -31,7 +31,7 @@ def _get_organization_id(user_input: str) -> Tuple[str, str]:
     If the user_input is an id (and it exists), it will be returned.
 
     :param user_input: the input given by the user
-    :return: the organization id and name
+    :return the organization id and name
     """
     from re import match
     api_client = container.api_client
