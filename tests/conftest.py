@@ -25,7 +25,8 @@ from lean.container import container
 
 
 def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, api_client_to_use=None,
-                         cloud_runner_to_use=None, push_manager_to_use=None):
+                         cloud_runner_to_use=None, push_manager_to_use=None, organization_manager_to_use=None,
+                         project_config_manager_to_use=None):
     api_client = mock.MagicMock()
     api_client.is_authenticated.return_value = True
     api_client.organizations.get_all.return_value = [
@@ -50,11 +51,23 @@ def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, ap
     if push_manager_to_use:
         push_manager = push_manager_to_use
 
+    if organization_manager_to_use:
+        organization_manager = organization_manager_to_use
+    else:
+        organization_manager = mock.Mock()
+        organization_manager.get_working_organization_id = mock.MagicMock(return_value="abc")
+        organization_manager.try_get_working_organization_id = mock.MagicMock(return_value="abc")
+
+    project_config_manager = None
+    if project_config_manager_to_use:
+        project_config_manager = project_config_manager_to_use
+
     # Reset all singletons so Path instances get recreated
     # Path instances are bound to the filesystem that was active at the time of their creation
     # When the filesystem changes, old Path instances bound to previous filesystems may cause weird behavior
 
-    container.initialize(docker_manager, api_client, lean_runner, cloud_runner, push_manager)
+    container.initialize(docker_manager, api_client, lean_runner, cloud_runner, push_manager, organization_manager,
+                         project_config_manager)
 
     return container
 

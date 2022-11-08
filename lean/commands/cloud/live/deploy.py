@@ -22,7 +22,7 @@ from lean.models.api import (QCEmailNotificationMethod, QCNode, QCNotificationMe
 from lean.models.json_module import LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
-from lean.models.configuration import InternalInputUserInput, OrganzationIdConfiguration
+from lean.models.configuration import InternalInputUserInput
 from lean.models.click_options import options_from_json
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
@@ -146,7 +146,7 @@ def _configure_notifications(logger: Logger) -> Tuple[bool, bool, List[QCNotific
 
         while True:
             _log_notification_methods(notify_methods)
-            if not click.confirm("Do you want to add another notification method?", default=False):
+            if not confirm("Do you want to add another notification method?", default=False):
                 break
             notify_methods.append(_prompt_notification_method())
 
@@ -244,7 +244,7 @@ def deploy(project: str,
         essential_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_instance.update_configs(essential_properties_value)
         # now required properties can be fetched as per data provider from esssential properties
-        required_properties = [brokerage_instance.convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([OrganzationIdConfiguration, InternalInputUserInput])]
+        required_properties = [brokerage_instance.convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
         brokerage_instance.update_configs(required_properties_value)

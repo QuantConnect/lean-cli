@@ -98,8 +98,6 @@ class Configuration(ABC):
         self._is_type_configurations_env: bool = type(
             self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
-        self.is_type_organization_id: bool = type(
-            self) is OrganzationIdConfiguration
         self._log_message: str = ""
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]
@@ -124,8 +122,6 @@ class Configuration(ABC):
             return BrokerageEnvConfiguration.factory(config_json_object)
         elif config_json_object["type"] == "trading-env":
             return TradingEnvConfiguration.factory(config_json_object)
-        elif config_json_object["type"] == "organization-id":
-            return OrganzationIdConfiguration(config_json_object)
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
@@ -363,13 +359,6 @@ class PromptPasswordUserInput(UserInputConfiguration):
         :return: The value provided by the user.
         """
         return logger.prompt_password(self._prompt_info, default_value)
-
-
-class OrganzationIdConfiguration(PromptUserInput):
-    """This class is used for job-organzation-id configurations"""
-
-    def __init__(self, config_json_object):
-        super().__init__(config_json_object)
 
 
 class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):

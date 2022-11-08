@@ -12,10 +12,12 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Dict
+
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
@@ -27,7 +29,8 @@ class PushManager:
                  logger: Logger,
                  api_client: APIClient,
                  project_manager: ProjectManager,
-                 project_config_manager: ProjectConfigManager) -> None:
+                 project_config_manager: ProjectConfigManager,
+                 organization_manager: OrganizationManager) -> None:
         """Creates a new PushManager instance.
 
         :param logger: the logger to use when printing messages
@@ -39,29 +42,30 @@ class PushManager:
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._organization_manager = organization_manager
         self._cloud_projects = []
 
-    def push_project(self, project: Path, organization_id: Optional[str] = None) -> None:
+    def push_project(self, project: Path) -> None:
         """Pushes the given project from the local drive to the cloud.
 
         It will also push every library referenced by the project and add or remove references.
 
         :param project: path to the directory containing the local project that needs to be pushed
-        :param organization_id: the id of the organization where the project will be pushed to
         """
         libraries = self._project_manager.get_project_libraries(project)
-        self.push_projects(libraries + [project], organization_id)
+        self.push_projects(libraries + [project])
 
-    def push_projects(self, projects_to_push: List[Path], organization_id: Optional[str] = None) -> None:
+    def push_projects(self, projects_to_push: List[Path]) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
-        :param organization_id: the id of the organization where the project will be pushed to
         """
         if len(projects_to_push) == 0:
             return
+
+        organization_id = self._organization_manager.try_get_working_organization_id()
 
         for index, path in enumerate(projects_to_push, start=1):
             relative_path = path.relative_to(Path.cwd())
@@ -84,12 +88,12 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: Optional[str]) -> None:
+    def _push_project(self, project_path: Path, organization_id: str) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
 
-        :param project: the local project to push
+        :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
         """
         project_name = project_path.relative_to(Path.cwd()).as_posix()
@@ -111,11 +115,11 @@ class PushManager:
             project_path = expected_correct_project_path
             project_name = valid_project_name
             project_config = self._project_config_manager.get_project_config(project_path)
-        
+
         # Find the cloud project to push the files to
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project
-            cloud_project = self._get_cloud_project(cloud_id)
+            cloud_project = self._get_cloud_project(cloud_id, organization_id)
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             cloud_project = self._api_client.projects.create(project_name,
@@ -205,10 +209,10 @@ class PushManager:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
             self._logger.info(f"Successfully updated {' and '.join(update_args.keys())} for '{cloud_project.name}'")
 
-    def _get_cloud_project(self, project_id: int) -> QCProject:
+    def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
         if project is None:
-            project = self._api_client.projects.get(project_id)
+            project = self._api_client.projects.get(project_id, organization_id)
             self._cloud_projects.append(project)
 
         return project

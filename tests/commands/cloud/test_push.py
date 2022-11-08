@@ -12,19 +12,26 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional
 from unittest import mock
 from datetime import datetime
 
-import pytest
 from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.cloud.push_manager import PushManager
-from lean.container import container
-from lean.models.api import QCFullFile, QCLanguage
+from lean.models.api import QCFullFile
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 from tests.conftest import initialize_container
+
+
+def init_container(**kwargs) -> None:
+    organization_manager = mock.Mock()
+    organization_manager.get_working_organization_id = mock.MagicMock(return_value="abc")
+
+    if "organization_manager_to_use" not in kwargs:
+        kwargs["organization_manager_to_use"] = organization_manager
+
+    initialize_container(**kwargs)
 
 
 def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
@@ -40,7 +47,7 @@ def test_cloud_push_pushes_all_projects_when_no_options_given() -> None:
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
 
     push_manager = mock.Mock()
-    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    init_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
 
     result = CliRunner().invoke(lean, ["cloud", "push"])
 
@@ -67,20 +74,20 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
     api_client.projects.get_all = mock.MagicMock(return_value=cloud_projects)
 
     push_manager = mock.Mock()
-    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    init_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
 
     assert result.exit_code == 0
 
-    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None)
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project")
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
     create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
-    initialize_container(push_manager_to_use=push_manager)
+    init_container(push_manager_to_use=push_manager)
 
     (Path.cwd() / "Empty Project").mkdir()
 
@@ -95,29 +102,13 @@ def test_cloud_push_aborts_when_given_directory_does_not_exist() -> None:
     create_fake_lean_cli_directory()
 
     push_manager = mock.Mock()
-    initialize_container(push_manager_to_use=push_manager)
+    init_container(push_manager_to_use=push_manager)
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Empty Project"])
 
     assert result.exit_code != 0
 
     push_manager.push_projects.assert_not_called()
-
-
-@pytest.mark.parametrize("organization_id", ["d6e62db42593c72e67a534513413b692", None])
-def test_cloud_push_creates_project_with_optional_organization_id(organization_id: Optional[str]) -> None:
-    create_fake_lean_cli_directory()
-
-    path = "Python Project"
-    cloud_project = create_api_project(1, path)
-
-    with mock.patch.object(container.api_client.projects, 'create', return_value=create_api_project(1, path)) as mock_create_project:
-        organization_id_option = ["--organization-id", organization_id] if organization_id is not None else []
-        result = CliRunner().invoke(lean, ["cloud", "push", "--project", path, *organization_id_option])
-
-    assert result.exit_code == 0
-
-    mock_create_project.assert_called_once_with(path, QCLanguage.Python, organization_id)
 
 
 def test_cloud_push_updates_lean_config() -> None:
@@ -144,9 +135,9 @@ def test_cloud_push_updates_lean_config() -> None:
     project_manager.get_source_files = mock.MagicMock(return_value=[])
     project_manager.get_project_libraries = mock.MagicMock(return_value=[])
 
-    push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager)
+    push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager, mock.Mock())
 
-    initialize_container(push_manager_to_use=push_manager, api_client_to_use=api_client)
+    init_container(push_manager_to_use=push_manager, api_client_to_use=api_client)
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
 

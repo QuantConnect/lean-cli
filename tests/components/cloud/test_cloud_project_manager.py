@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from datetime import datetime
+from pathlib import Path
 from unittest import mock
 
 from lean.container import container
@@ -27,17 +28,25 @@ def test_get_cloud_project_pushing_new_project():
     cloud_project.description = ""
 
     api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
     api_client.projects.get.return_value = cloud_project
-    api_client.projects.create.return_value = cloud_project
-    api_client.files.get_all.return_value = []
-    api_client.files.create.return_value = QCMinimalFile(name="file.py", content="", modified=datetime.now())
-    api_client.lean.environments.return_value = create_lean_environments()
 
-    initialize_container(api_client_to_use=api_client)
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock()
+
+    project_config = mock.Mock()
+    project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
+    project_config_manager = mock.Mock()
+    project_config_manager.try_get_project_config = mock.MagicMock(return_value=None)
+    project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager,
+                         project_config_manager_to_use=project_config_manager)
 
     cloud_project_manager = container.cloud_project_manager
     created_cloud_project = cloud_project_manager.get_cloud_project("Python Project", push=True)
 
     assert created_cloud_project == cloud_project
 
-    api_client.projects.get.assert_called_with(cloud_project.projectId)
+    api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])

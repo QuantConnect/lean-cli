@@ -42,7 +42,7 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": "no",
-    "organization": "abc",
+    "organization-id": "abc",
 
     "environments": {{
         "{name}": {{
@@ -227,7 +227,6 @@ brokerage_required_options = {
         "ib-account": "DU1234567",
         "ib-password": "hunter2",
         "ib-enable-delayed-streaming-data": "no",
-        "organization": "abc",
     },
     "Tradier": {
         "tradier-account-id": "123",
@@ -254,7 +253,6 @@ brokerage_required_options = {
         "binance-api-key": "123",
         "binance-api-secret": "456",
         "binance-use-testnet": "paper",
-        "organization": "abc",
     },
     "Zerodha": {
         "zerodha-api-key": "123",
@@ -262,7 +260,6 @@ brokerage_required_options = {
         "zerodha-product-type": "mis",
         "zerodha-trading-segment": "equity",
         "zerodha-history-subscription": "false",
-        "organization": "abc",
     },
     "Samco": {
         "samco-client-id": "123",
@@ -270,7 +267,6 @@ brokerage_required_options = {
         "samco-year-of-birth": "2000",
         "samco-product-type": "mis",
         "samco-trading-segment": "equity",
-        "organization": "abc",
     },
     "Atreyu": {
         "atreyu-host": "abc",
@@ -281,7 +277,6 @@ brokerage_required_options = {
         "atreyu-client-id": "abc",
         "atreyu-broker-mpid": "abc",
         "atreyu-locate-rqd": "abc",
-        "organization": "abc",
     },
     "Terminal Link": {
         "terminal-link-environment": "Beta",
@@ -294,13 +289,11 @@ brokerage_required_options = {
         "terminal-link-emsx-notes": "abc",
         "terminal-link-emsx-handling": "abc",
         "terminal-link-emsx-user-time-zone": "abc",
-        "organization": "abc",
     },
     "Kraken": {
         "kraken-api-key": "abc",
         "kraken-api-secret": "abc",
         "kraken-verification-tier": "starter",
-        "organization": "abc",
     },
     "FTX": {
         "ftxus-api-key": "abc",
@@ -310,10 +303,8 @@ brokerage_required_options = {
         "ftx-api-secret": "abc",
         "ftx-account-tier": "tier1",
         "ftx-exchange-name": "FTX",
-        "organization": "abc",
     },
     "Trading Technologies": {
-        "organization": "abc",
         "tt-user-name": "abc",
         "tt-session-password": "abc",
         "tt-account-name": "abc",

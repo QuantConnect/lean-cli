@@ -74,18 +74,25 @@ def _write_fake_directory(files: dict) -> None:
             file.write(content)
 
 
+def _get_lean_config_file_content() -> str:
+    return """
+{
+    // data-folder documentation
+    "data-folder": "data",
+
+    // organization-id documentation
+    "organization-id": "abc"
+}
+"""
+
+
 def create_fake_lean_cli_directory() -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project,
     and a Python and a C# library"""
     (Path.cwd() / "data").mkdir()
 
     files = {
-        (Path.cwd() / "lean.json"): """
-{
-    // data-folder documentation
-    "data-folder": "data"
-}
-        """,
+        (Path.cwd() / "lean.json"): _get_lean_config_file_content(),
         **_get_python_project_files(Path.cwd() / "Python Project"),
         **_get_csharp_project_files(Path.cwd() / "CSharp Project"),
         **_get_fake_libraries()
@@ -120,12 +127,7 @@ def create_fake_lean_cli_directory_with_subdirectories(depth: int) -> None:
     csharp_project_dir = Path.cwd() / sub_dirs / "CSharp Project"
 
     files = {
-        (Path.cwd() / "lean.json"): """
-{
-    // data-folder documentation
-    "data-folder": "data"
-}
-        """,
+        (Path.cwd() / "lean.json"): _get_lean_config_file_content(),
         **_get_python_project_files(python_project_dir),
         **_get_csharp_project_files(csharp_project_dir),
         **_get_fake_libraries()

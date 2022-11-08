@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union, Any
+
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
@@ -31,6 +33,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
+from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
@@ -46,7 +49,14 @@ class Container:
     def __init__(self):
         self.initialize()
 
-    def initialize(self, docker_manager=None, api_client=None, lean_runner=None, cloud_runner=None, push_manager=None):
+    def initialize(self,
+                   docker_manager: Union[DockerManager, Any] = None,
+                   api_client: Union[APIClient, Any] = None,
+                   lean_runner: Union[LeanRunner, Any] = None,
+                   cloud_runner: Union[CloudRunner, Any] = None,
+                   push_manager: Union[PushManager, Any] = None,
+                   organization_manager: Union[OrganizationManager, Any] = None,
+                   project_config_manager: Union[ProjectConfigManager, Any] = None):
         """The Container class wires all reusable components together."""
         self.logger = Logger()
 
@@ -67,57 +77,66 @@ class Container:
         self.api_client = api_client
         if not self.api_client:
             self.api_client = APIClient(self.logger,
-                                 self.http_client,
-                                 user_id=self.cli_config_manager.user_id.get_value(),
-                                 api_token=self.cli_config_manager.api_token.get_value())
+                                        self.http_client,
+                                        user_id=self.cli_config_manager.user_id.get_value(),
+                                        api_token=self.cli_config_manager.api_token.get_value())
 
         self.module_manager = ModuleManager(self.logger, self.api_client, self.http_client)
 
-        self.project_config_manager = ProjectConfigManager(self.xml_manager)
+        self.project_config_manager = project_config_manager
+        if not self.project_config_manager:
+            self.project_config_manager = ProjectConfigManager(self.xml_manager)
+
         self.lean_config_manager = LeanConfigManager(self.logger,
-                                        self.cli_config_manager,
-                                        self.project_config_manager,
-                                        self.module_manager,
-                                        self.cache_storage)
+                                                     self.cli_config_manager,
+                                                     self.project_config_manager,
+                                                     self.module_manager,
+                                                     self.cache_storage)
         self.output_config_manager = OutputConfigManager(self.lean_config_manager)
         self.optimizer_config_manager = OptimizerConfigManager(self.logger)
 
         self.project_manager = ProjectManager(self.logger,
-                                    self.project_config_manager,
-                                    self.lean_config_manager,
-                                    self.path_manager,
-                                    self.xml_manager,
-                                    self.platform_manager)
+                                              self.project_config_manager,
+                                              self.lean_config_manager,
+                                              self.path_manager,
+                                              self.xml_manager,
+                                              self.platform_manager)
         self.library_manager = LibraryManager(self.logger,
-                                    self.project_manager,
-                                    self.project_config_manager,
-                                    self.lean_config_manager,
-                                    self.path_manager,
-                                    self.xml_manager)
+                                              self.project_manager,
+                                              self.project_config_manager,
+                                              self.lean_config_manager,
+                                              self.path_manager,
+                                              self.xml_manager)
+
+        self.organization_manager = organization_manager
+        if not self.organization_manager:
+            self.organization_manager = OrganizationManager(self.logger, self.lean_config_manager)
 
         self.cloud_runner = cloud_runner
         if not cloud_runner:
             self.cloud_runner = CloudRunner(self.logger, self.api_client, self.task_manager)
         self.pull_manager = PullManager(self.logger,
-                                 self.api_client,
-                                 self.project_manager,
-                                 self.project_config_manager,
-                                 self.library_manager,
-                                 self.platform_manager)
+                                        self.api_client,
+                                        self.project_manager,
+                                        self.project_config_manager,
+                                        self.library_manager,
+                                        self.platform_manager)
 
         self.push_manager = push_manager
         if not push_manager:
             self.push_manager = PushManager(self.logger,
                                             self.api_client,
                                             self.project_manager,
-                                            self.project_config_manager)
+                                            self.project_config_manager,
+                                            self.organization_manager)
         self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
         self.cloud_project_manager = CloudProjectManager(self.api_client,
-                                          self.project_config_manager,
-                                          self.pull_manager,
-                                          self.push_manager,
-                                          self.path_manager,
-                                          self.project_manager)
+                                                         self.project_config_manager,
+                                                         self.pull_manager,
+                                                         self.push_manager,
+                                                         self.path_manager,
+                                                         self.project_manager,
+                                                         self.organization_manager)
 
         self.docker_manager = docker_manager
         if not self.docker_manager:
@@ -126,14 +145,14 @@ class Container:
         self.lean_runner = lean_runner
         if not self.lean_runner:
             self.lean_runner = LeanRunner(self.logger,
-                                    self.project_config_manager,
-                                    self.lean_config_manager,
-                                    self.output_config_manager,
-                                    self.docker_manager,
-                                    self.module_manager,
-                                    self.project_manager,
-                                    self.temp_manager,
-                                    self.xml_manager)
+                                          self.project_config_manager,
+                                          self.lean_config_manager,
+                                          self.output_config_manager,
+                                          self.docker_manager,
+                                          self.module_manager,
+                                          self.project_manager,
+                                          self.temp_manager,
+                                          self.xml_manager)
 
         self.market_hours_database = MarketHoursDatabase(self.lean_config_manager)
 

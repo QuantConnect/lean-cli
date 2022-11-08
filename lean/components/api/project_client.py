@@ -27,24 +27,33 @@ class ProjectClient:
         """
         self._api = api_client
 
-    def get(self, project_id: int) -> QCProject:
+    def get(self, project_id: int, organization_id: Optional[str]) -> QCProject:
         """Returns the details of a project.
 
         :param project_id: the id of the project to retrieve the details of
+        :param organization_id: the id of the organization where the project is located
         :return: the details of the specified project
         """
-        data = self._api.get("projects/read", {
-            "projectId": project_id
-        })
+        payload = {"projectId": project_id}
+        if organization_id is not None:
+            payload["organizationId"] = organization_id
+
+        data = self._api.get("projects/read", payload)
 
         return self._process_project(QCProject(**data["projects"][0]))
 
-    def get_all(self) -> List[QCProject]:
+    def get_all(self, organization_id: Optional[str]) -> List[QCProject]:
         """Returns all the projects the user has access to.
 
         :return: a list containing all the projects the user has access to
+        :param organization_id: the id of the organization where the projects are located
         """
-        data = self._api.get("projects/read")
+        payload = {}
+        if organization_id is not None:
+            payload["organizationId"] = organization_id
+
+        data = self._api.get("projects/read", payload)
+
         return [self._process_project(QCProject(**project)) for project in data["projects"]]
 
     def create(self, name: str, language: QCLanguage, organization_id: Optional[str]) -> QCProject:

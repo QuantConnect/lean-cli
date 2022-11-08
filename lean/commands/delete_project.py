@@ -27,9 +27,11 @@ def delete_project(project: str) -> None:
 
     The project is selected by name or cloud id.
     """
+    organization_id = container.organization_manager.try_get_working_organization_id()
+
     # Remove project from cloud
     api_client = container.api_client
-    all_projects = api_client.projects.get_all()
+    all_projects = api_client.projects.get_all(organization_id)
     project_manager = container.project_manager
     logger = container.logger
 

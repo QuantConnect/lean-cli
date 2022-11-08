@@ -59,7 +59,7 @@ class LeanConfigConfigurer(JsonModule, ABC):
         :param lean_config: the Lean configuration dict to write to
         """
         if self._installs:
-            lean_config["job-organization-id"] = self.get_organzation_id()
+            lean_config["job-organization-id"] = container.organization_manager.try_get_working_organization_id()
         for configuration in self._lean_configs:
             value = None
             if configuration._is_type_configurations_env:
