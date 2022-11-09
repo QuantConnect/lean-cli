@@ -184,7 +184,8 @@ class PushManager:
 
         # update project name in cloud in case it was incorrect and renamed locally otherwise update the same name
         update_args["name"] = expected_correct_project_name
-        self._logger.info(f"Renaming project in cloud from '{cloud_project.name}' to '{expected_correct_project_name}'")
+        if cloud_project.name != expected_correct_project_name:
+            self._logger.info(f"Renaming project in cloud from '{cloud_project.name}' to '{expected_correct_project_name}'")
 
         if local_description != cloud_description:
             update_args["description"] = local_description
