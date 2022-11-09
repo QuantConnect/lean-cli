@@ -34,6 +34,11 @@ from lean.container import container
               type=IntRange(min=0),
               required=True,
               help="The number of symbols to generate data for")
+@option("--tickers",
+              type=str,
+              required=False,
+              default="",
+              help="Comma separated list of tickers to use for generated data")
 @option("--security-type",
               type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
               default="Equity",
@@ -64,6 +69,7 @@ from lean.container import container
 def generate(start: datetime,
              end: datetime,
              symbol_count: int,
+             tickers: str,
              security_type: str,
              resolution: str,
              data_density: str,
@@ -106,18 +112,24 @@ def generate(start: datetime,
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
+    entrypoint = ["dotnet", "QuantConnect.ToolBox.dll",
+                  "--destination-dir", "/Lean/Data",
+                  "--app", "randomdatagenerator",
+                  "--start", start.strftime("%Y%m%d"),
+                  "--end", end.strftime("%Y%m%d"),
+                  "--symbol-count", str(symbol_count),
+                  "--security-type", security_type,
+                  "--resolution", resolution,
+                  "--data-density", data_density,
+                  "--include-coarse", str(include_coarse).lower(),
+                  "--market", market.lower()]
+
+    # Toolbox uses '--opt=val' as single argument
+    if tickers:
+        entrypoint.append("--tickers=" + tickers)
+
     run_options = {
-        "entrypoint": ["dotnet", "QuantConnect.ToolBox.dll",
-                       "--destination-dir", "/Lean/Data",
-                       "--app", "randomdatagenerator",
-                       "--start", start.strftime("%Y%m%d"),
-                       "--end", end.strftime("%Y%m%d"),
-                       "--symbol-count", str(symbol_count),
-                       "--security-type", security_type,
-                       "--resolution", resolution,
-                       "--data-density", data_density,
-                       "--include-coarse", str(include_coarse).lower(),
-                       "--market", market.lower()],
+        "entrypoint": entrypoint,
         "volumes": {
             str(data_dir): {
                 "bind": "/Lean/Data",

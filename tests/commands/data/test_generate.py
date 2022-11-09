@@ -158,3 +158,15 @@ def test_data_generate_aborts_when_run_image_fails() -> None:
     assert result.exit_code != 0
 
     docker_manager.run_image.assert_called_once()
+
+
+def test_data_generate_tickers() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager = docker_manager
+
+    result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "2", "--tickers",
+                                       "SPY,AAPL"])
+
+    assert result.exit_code == 0
