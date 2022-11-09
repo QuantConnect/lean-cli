@@ -24,6 +24,7 @@ from lean.container import container
 from lean.models.api import QCProject, QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
+from lean.components import forbidden_characters
 
 def _create_pull_manager(api_client: mock.Mock,
                          project_config_manager: mock.Mock,
@@ -326,7 +327,7 @@ def test_pull_projects_updates_lean_config() -> None:
                                         any_order=True)
 
 
-@pytest.mark.parametrize("unsupported_character", ["\\", ":", "*", "?", '"', "<", ">", "|"])
+@pytest.mark.parametrize("unsupported_character", forbidden_characters)
 def test_pull_projects_detects_unsupported_paths(unsupported_character: str) -> None:
 
     create_fake_lean_cli_directory()
@@ -367,7 +368,7 @@ def test_pull_projects_detects_unsupported_paths(unsupported_character: str) -> 
     library_manager.remove_lean_library_from_project.assert_not_called()
 
 
-@pytest.mark.parametrize("unsupported_character", ["\\", ":", "*", "?", '"', "<", ">", "|"])
+@pytest.mark.parametrize("unsupported_character", forbidden_characters)
 def test_push_projects_updates_name_in_cloud_if_required(unsupported_character: str) -> None:
     create_fake_lean_cli_directory()
     project_name = "Project 1"
@@ -393,7 +394,7 @@ def test_push_projects_updates_name_in_cloud_if_required(unsupported_character: 
     assert "name" in kwargs and kwargs['name'] == project_name
 
 @pytest.mark.parametrize("test_platform, unsupported_character", [
-    *[("linux", char) for char in ["\\", ":", "*", "?", '"', "<", ">", "|"]],
+    *[("linux", char) for char in forbidden_characters],
     ("macos", ":")
 ])
 def test_pull_projects_renames_project_if_required(test_platform: str, unsupported_character: str) -> None:
