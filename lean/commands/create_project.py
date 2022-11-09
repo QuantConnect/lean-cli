@@ -294,7 +294,8 @@ def create_project(name: str, language: str) -> None:
     full_path = Path.cwd() / name
 
     if not container.path_manager.is_path_valid(full_path):
-        raise ValueError(f"'{name}' is not a valid path, can not contain [ {', '.join(forbidden_characters)} ], start with dot '.' or empty char ' '")
+        raise MoreInfoError(f"'{name}' is not a valid path, can not contain [ {', '.join(forbidden_characters)} ], start with dot '.' or empty char ' '",
+                         "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
     is_library_project = False
     try:
