@@ -115,11 +115,13 @@ class PullManager:
             project.name = local_project_name
         
         # rename project on disk if we find a directory with the old name (invalid/renamed name)
-        project_path_on_disk = self._project_manager.try_get_project_path_by_cloud_id(project.projectId)
-        if project_path_on_disk:
-            project_name_on_disk = project_path_on_disk.relative_to(Path.cwd()).as_posix()
-            if project_name_on_disk != project.name:
-                self._project_manager.rename_project_and_contents(project_path_on_disk, Path.cwd() / project.name)
+        # only check for old directory if expected directory does not exist
+        if not local_project_path.exists():
+            project_path_on_disk = self._project_manager.try_get_project_path_by_cloud_id(project.projectId)
+            if project_path_on_disk:
+                project_name_on_disk = project_path_on_disk.relative_to(Path.cwd()).as_posix()
+                if project_name_on_disk != project.name:
+                    self._project_manager.rename_project_and_contents(project_path_on_disk, Path.cwd() / project.name)
 
         # Pull the cloud files to the local drive
         self._pull_files(project, local_project_path)

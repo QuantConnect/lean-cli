@@ -248,11 +248,11 @@ class ProjectManager:
         :param old_path: the local project to rename
         :param new_path: the new path of the project
         """
-        from shutil import move
         if not old_path.exists():
             raise RuntimeError(f"Failed to rename project. Could not find the specified path {old_path}.")
         if old_path == new_path:
             return
+        from shutil import move
         move(old_path, new_path)
         self._rename_csproj_file(new_path)
 
@@ -704,13 +704,13 @@ class ProjectManager:
 
         :param project_path: the local project path
         """
-        from shutil import move
         csproj_file = next(project_path.glob("*.csproj"), None)
         if not csproj_file:
             return
         new_csproj_file = project_path / f'{project_path.name}.csproj'
         if new_csproj_file.exists():
             return
+        from shutil import move
         move(csproj_file, new_csproj_file)
 
     def _generate_file(self, file: Path, content: str) -> None:
