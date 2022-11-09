@@ -12,15 +12,13 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from click import command, option, Choice, IntRange
 
 from lean.click import DateParameter, LeanCommand
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-
-
 
 
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -114,23 +112,24 @@ def generate(start: datetime,
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
 
+    entrypoint = ["dotnet", "QuantConnect.ToolBox.dll",
+                  "--destination-dir", "/Lean/Data",
+                  "--app", "randomdatagenerator",
+                  "--start", start.strftime("%Y%m%d"),
+                  "--end", end.strftime("%Y%m%d"),
+                  "--symbol-count", str(symbol_count),
+                  "--security-type", security_type,
+                  "--resolution", resolution,
+                  "--data-density", data_density,
+                  "--include-coarse", str(include_coarse).lower(),
+                  "--market", market.lower()]
+
     # Toolbox uses '--opt=val' as single argument
     if tickers:
-        tickers = "--tickers=" + tickers
+        entrypoint.append("--tickers=" + tickers)
 
     run_options = {
-        "entrypoint": ["dotnet", "QuantConnect.ToolBox.dll",
-                       "--destination-dir", "/Lean/Data",
-                       "--app", "randomdatagenerator",
-                       "--start", start.strftime("%Y%m%d"),
-                       "--end", end.strftime("%Y%m%d"),
-                       "--symbol-count", str(symbol_count),
-                       tickers,
-                       "--security-type", security_type,
-                       "--resolution", resolution,
-                       "--data-density", data_density,
-                       "--include-coarse", str(include_coarse).lower(),
-                       "--market", market.lower()],
+        "entrypoint": entrypoint,
         "volumes": {
             str(data_dir): {
                 "bind": "/Lean/Data",

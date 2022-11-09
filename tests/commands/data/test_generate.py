@@ -166,6 +166,7 @@ def test_data_generate_tickers() -> None:
     docker_manager = mock.Mock()
     container.docker_manager = docker_manager
 
-    result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "2", "--tickers", "SPY,AAPL"])
+    result = CliRunner().invoke(lean, ["data", "generate", "--start", "20200101", "--symbol-count", "2", "--tickers",
+                                       "SPY,AAPL"])
 
     assert result.exit_code == 0
