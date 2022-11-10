@@ -64,7 +64,7 @@ class LibraryManager:
 
         return (
             len(path_parts) > 0 and
-            path_parts[0] == "Library" and
+            path_parts[0].lower() == "library" and
             relative_path.is_dir() and
             library_language is not None
         )
