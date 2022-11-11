@@ -208,7 +208,15 @@ class PushManager:
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
-            self._logger.info(f"Successfully updated {' and '.join(update_args.keys())} for '{cloud_project.name}'")
+
+            updated_keys = list(update_args)
+            if len(updated_keys) == 1:
+                updated_keys_str = updated_keys[0]
+            elif len(updated_keys) == 2:
+                updated_keys_str = " and ".join(updated_keys)
+            else:
+                updated_keys_str = ", ".join(updated_keys[:-1]) + f", and {updated_keys[-1]}"
+            self._logger.info(f"Successfully updated {updated_keys_str} for '{cloud_project.name}'")
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
