@@ -301,6 +301,9 @@ def create_project(name: str, language: str) -> None:
     try:
         library_dir = container.lean_config_manager.get_cli_root_directory() / "Library"
         is_library_project = library_dir in full_path.parents
+        if is_library_project:
+            # Make sure we always use the same casing 'Library' for the library directory
+            full_path = library_dir / full_path.relative_to(library_dir)
     except:
         # get_cli_root_directory() raises an error if there is no such directory
         pass
