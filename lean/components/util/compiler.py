@@ -14,6 +14,7 @@
 from json import dumps
 from typing import Dict, Any
 from lean.container import container
+from pathlib import Path
 
 docker_manager = container.docker_manager
 project_manager = container.project_manager
@@ -95,8 +96,10 @@ def _compile() -> Dict[str, Any]:
         "algorithmType": "",
     }
 
-    project_id = int(argv[-1])
-    project_dir = project_manager.get_project_by_id(project_id)
+    project_dir = Path(argv[-1])
+    if not project_dir.exists():
+        raise(f"Project directory {project_dir} does not exist")
+
     algorithm_file = project_manager.find_algorithm_file(project_dir)
     message["algorithmType"] = "python" if algorithm_file.name.endswith(".py") else "csharp"
 
@@ -108,7 +111,7 @@ def _compile() -> Dict[str, Any]:
         "mounts": [],
         "volumes": {}
     }
-
+    lean_runner.mount_project_and_library_directories(project_dir, run_options)
     lean_runner.setup_language_specific_run_options(run_options, project_dir, algorithm_file, False, False)
 
     project_config = project_config_manager.get_project_config(project_dir)

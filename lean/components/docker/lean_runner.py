@@ -225,20 +225,8 @@ class LeanRunner:
             "ports": docker_project_config.get("ports", {})
         }
 
-        # Mount the project directory
-        run_options["volumes"][str(project_dir)] = {
-            "bind": "/LeanCLI",
-            "mode": "rw"
-        }
-
-        # Check if the user has library projects and mount the Library directory
-        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
-        if library_dir.is_dir():
-            # Mount the library projects
-            run_options["volumes"][str(library_dir)] = {
-                "bind": "/Library",
-                "mode": "rw"
-            }
+        # mount the project and library directories
+        self.mount_project_and_library_directories(project_dir, run_options)
 
         # Mount the data directory
         run_options["volumes"][str(data_dir)] = {
@@ -729,3 +717,19 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
         for error in errors:
             self._logger.info(error)
+
+    def mount_project_and_library_directories(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+        # Mount the project directory
+        run_options["volumes"][str(project_dir)] = {
+            "bind": "/LeanCLI",
+            "mode": "rw"
+        }
+
+        # Check if the user has library projects and mount the Library directory
+        library_dir = self._lean_config_manager.get_cli_root_directory() / "Library"
+        if library_dir.is_dir():
+            # Mount the library projects
+            run_options["volumes"][str(library_dir)] = {
+                "bind": "/Library",
+                "mode": "rw"
+            }
