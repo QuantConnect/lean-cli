@@ -108,7 +108,7 @@ def _compile() -> Dict[str, Any]:
         "mounts": [],
         "volumes": {}
     }
-
+    lean_runner.mount_project_and_library_directories(project_dir, run_options)
     lean_runner.setup_language_specific_run_options(run_options, project_dir, algorithm_file, False, False)
 
     project_config = project_config_manager.get_project_config(project_dir)
