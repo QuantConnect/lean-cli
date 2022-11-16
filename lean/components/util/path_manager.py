@@ -53,10 +53,7 @@ class PathManager:
         # On Windows path.exists() doesn't throw for paths like CON/file.txt
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
-        components = path.as_posix().split("/")
-        if system() == "Windows":
-            # Skip the first component, which contains the drive name
-            components =  components[1:]
+        components = path.relative_to(Path.cwd()).as_posix().split("/")
         for component in components:
             if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                 return False
