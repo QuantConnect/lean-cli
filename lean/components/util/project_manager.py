@@ -14,7 +14,6 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
-from lean.components import reserved_names
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
@@ -24,7 +23,7 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
-from lean.components import forbidden_characters
+from lean.components import is_valid_name, reserved_names
 
 class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
@@ -367,8 +366,10 @@ class ProjectManager:
         # Windows, \ is a path separator, but \ is not a path separator on QuantConnect
         # We follow the rules of windows for every OS
 
-        for forbidden_character in forbidden_characters:
-            cloud_path = cloud_path.replace(forbidden_character, " ")
+        for character in cloud_path:
+            if is_valid_name(character):
+                continue
+            cloud_path = cloud_path.replace(character, " ")
 
         # On Windows we need to ensure each path component is valid
         # We follow the rules of windows for every OS

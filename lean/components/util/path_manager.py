@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from lean.components import reserved_names, forbidden_characters
+from lean.components import reserved_names, is_valid_name
 from lean.components.util.platform_manager import PlatformManager
 
 class PathManager:
@@ -65,7 +65,7 @@ class PathManager:
                 if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
                     return False
 
-            for forbidden_character in forbidden_characters:
-                if forbidden_character in component:
-                    return False
+            if not is_valid_name(component):
+                return False
+                
         return True

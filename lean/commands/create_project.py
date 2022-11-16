@@ -20,7 +20,7 @@ from lean.container import container
 from lean.models.api import QCLanguage
 from lean.models.errors import MoreInfoError
 from lean.components.util.name_extraction import convert_to_class_name
-from lean.components import forbidden_characters
+from lean.components import reserved_names
 
 DEFAULT_PYTHON_MAIN = '''
 from AlgorithmImports import *
@@ -294,7 +294,7 @@ def create_project(name: str, language: str) -> None:
     full_path = Path.cwd() / name
 
     if not container.path_manager.is_path_valid(full_path):
-        raise MoreInfoError(f"'{name}' is not a valid path, can not contain [ {', '.join(forbidden_characters)} ], start with dot '.' or empty char ' '",
+        raise MoreInfoError(f"Invalid project name. Can only contain letters, numbers & spaces. Can not start with empty char ' ' or be a reserved name [ {', '.join(reserved_names)} ]",
                          "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
     is_library_project = False
