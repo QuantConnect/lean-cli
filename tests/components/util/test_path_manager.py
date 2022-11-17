@@ -53,7 +53,7 @@ def test_get_relative_path_uses_cwd_as_source_when_not_given() -> None:
 def test_is_path_valid_returns_true_for_valid_path() -> None:
     path_manager = PathManager(PlatformManager())
 
-    assert path_manager.is_path_valid(Path.cwd() / "My Path/file.txt")
+    assert path_manager.is_file_or_directory_path_valid(Path.cwd() / "My Path/file.txt")
 
 
 @pytest.mark.parametrize("path,valid", [("My Path/file.txt", True),
@@ -97,4 +97,4 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
 
     path_manager = PathManager(PlatformManager())
 
-    assert path_manager.is_path_valid(Path.cwd() / path) == valid
+    assert path_manager.is_file_or_directory_path_valid(Path.cwd() / path) == valid

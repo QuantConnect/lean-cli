@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from lean.components import reserved_names, is_valid_name
+from lean.components import reserved_names, is_valid_name, valid_file_pattern, valid_directory_pattern
 from lean.components.util.platform_manager import PlatformManager
 
 class PathManager:
@@ -37,13 +37,21 @@ class PathManager:
         except ValueError:
             return destination
 
-    def is_path_valid(self, path: Path) -> bool:
-        """Returns whether a path is valid on the current operating system.
 
-        :param path: the path to validate
+    def is_file_or_directory_path_valid(self, path: Path) -> bool:
+        """Returns whether a file or directory path is valid on the current operating system.
+
+        :param path: the path to a file or directory to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        from platform import system
+        return self.is_path_valid(path, valid_file_pattern)
+
+    def is_path_valid(self, path: Path, pattern: str = valid_directory_pattern) -> bool:
+        """Returns whether a directory path is valid on the current operating system.
+
+        :param path: the directory path to validate
+        :return: True if the path is valid on the current operating system, False if not
+        """
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -54,6 +62,9 @@ class PathManager:
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
         components = path.relative_to(Path.cwd()).as_posix().split("/")
+        # Allow relative path
+        if len(components) == 1 and components[0] == ".":
+            return True
         for component in components:
             if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                 return False
@@ -62,7 +73,7 @@ class PathManager:
                 if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
                     return False
 
-            if not is_valid_name(component):
+            if not is_valid_name(component, pattern):
                 return False
                 
         return True

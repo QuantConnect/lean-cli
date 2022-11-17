@@ -15,11 +15,14 @@ reserved_names = ["CON", "PRN", "AUX", "NUL",
                     "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
                     "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
 
-def is_valid_name(name: str) -> bool:
+valid_directory_pattern = '^[a-zA-Z0-9\\s/]*$'
+valid_file_pattern = '^[a-zA-Z0-9\\s/.\-_]*$'
+
+def is_valid_name(name: str, pattern: str = valid_directory_pattern) -> bool:
     """Returns whether a name is valid on Windows operating system.
 
     :param name: the name to validate
     :return: True if the name is valid on Windows operating system, False if not
     """
     import re
-    return re.match('^[a-zA-Z0-9\\s/]*$', name)
+    return re.match(pattern, name)

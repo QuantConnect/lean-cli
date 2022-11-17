@@ -24,7 +24,9 @@ from lean.container import container
 from lean.models.api import QCProject, QCLanguage
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
-from lean.components import forbidden_characters
+
+# sample of characters that can not be used as per the file system rules
+forbidden_characters = ["\\", ":", "*", "?", '"', "<", ">", "|"]
 
 def _create_pull_manager(api_client: mock.Mock,
                          project_config_manager: mock.Mock,
