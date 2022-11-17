@@ -63,15 +63,15 @@ class PullManager:
         libraries = []
         inaccessible_libraries = []
         for library in project.libraries:
-            if library.id in seen_projects:
+            if library.projectId in seen_projects:
                 continue
 
-            if not library.hasAccess:
+            if not library.access:
                 inaccessible_libraries.append(library)
                 continue
 
-            seen_projects.append(library.id)
-            library = self._api_client.projects.get(library.id, project.organizationId)
+            seen_projects.append(library.projectId)
+            library = self._api_client.projects.get(library.projectId, project.organizationId)
             libraries.append(library)
             libs, inaccessible_libs = self._get_libraries(library, seen_projects)
             libraries.extend(libs)
@@ -100,8 +100,9 @@ class PullManager:
                 inaccessible_libraries.extend(libs_not_found)
 
         for library in inaccessible_libraries:
-            self._logger.warn(f"Cannot pull library {library.name} because you don't have access it. Please ask "
-                              f"{library.owner} to add you as a collaborator to the project in order to pull it.")
+            self._logger.warn(f"Cannot pull library '{library.libraryName}' because you don't have access it. "
+                              f"Please ask '{library.ownerName}' to add you as a collaborator to the project "
+                              f"in order to pull it.")
 
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
         projects_with_paths = []
@@ -236,7 +237,7 @@ class PullManager:
 
     def _update_local_library_references(self, projects: List[Tuple[QCProject, Path]]) -> None:
         for project, path in projects:
-            libraries = [library.id for library in project.libraries]
+            libraries = [library.projectId for library in project.libraries]
             cloud_libraries_paths = [library_path for library, library_path in projects
                                      if library.projectId in libraries]
 

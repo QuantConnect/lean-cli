@@ -536,15 +536,18 @@ def test_get_cloud_projects_libraries_filters_libraries_that_cannot_be_accessed(
     for i, project in enumerate(projects):
         start = 3 * i
         own_project_libs = cloud_libraries[start:start + 3]
-        own_libraries = [QCProjectLibrary(id=library.projectId, name=library.name, owner="Owner", hasAccess=True)
+        own_libraries = [QCProjectLibrary(projectId=library.projectId,
+                                          libraryName=library.name,
+                                          ownerName="Owner",
+                                          access=True)
                          for library in own_project_libs]
         project.libraries.extend(own_libraries)
         own_project_libraries.extend(own_project_libs)
 
-        collab_libs = [QCProjectLibrary(id=1000 + start + j,
-                                        name=f"Library/Library{1000 + start + j}",
-                                        owner="Another Owner",
-                                        hasAccess=False)
+        collab_libs = [QCProjectLibrary(projectId=1000 + start + j,
+                                        libraryName=f"Library/Library{1000 + start + j}",
+                                        ownerName="Another Owner",
+                                        access=False)
                        for j in range(3)]
         project.libraries.extend(collab_libs)
         collab_libraries.extend(collab_libs)

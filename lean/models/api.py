@@ -72,18 +72,18 @@ class QCLanguage(str, Enum):
 
 
 class QCProjectLibrary(WrappedBaseModel):
-    id: int
-    name: str
-    owner: str
-    hasAccess: bool
+    projectId: int
+    libraryName: str
+    ownerName: str
+    access: bool
 
     def __hash__(self):
-        return hash(self.id)
+        return hash(self.projectId)
 
     def __eq__(self, other: Any):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.id == other.id
+        return self.projectId == other.projectId
 
 
 class QCProject(WrappedBaseModel):

@@ -781,10 +781,10 @@ class ProjectManager:
 
         libraries = [cloud_project
                      for library in project.libraries
-                     for cloud_project in cloud_projects if cloud_project.projectId == library.id]
+                     for cloud_project in cloud_projects if cloud_project.projectId == library.projectId]
 
         libraries_ids = [library.projectId for library in libraries]
-        libraries_not_found = [library for library in project.libraries if library.id not in libraries_ids]
+        libraries_not_found = [library for library in project.libraries if library.projectId not in libraries_ids]
 
         referenced_libraries = []
         for library in libraries:

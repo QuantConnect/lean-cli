@@ -45,7 +45,10 @@ def _make_cloud_projects_and_libraries(project_count: int,
 
 
 def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject], withAccess: bool = True) -> None:
-    libraries = [QCProjectLibrary(id=library.projectId, name=library.name, owner="Owner", hasAccess=withAccess)
+    libraries = [QCProjectLibrary(projectId=library.projectId,
+                                  libraryName=library.name,
+                                  ownerName="Owner",
+                                  access=withAccess)
                  for library in libraries]
     project.libraries.extend(libraries)
 
@@ -159,8 +162,8 @@ def test_pulls_libraries_referenced_by_the_project() -> None:
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library.id) for library in test_project.libraries] +
-        [mock.call(library.id) for library in test_library.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries] +
+        [mock.call(library.projectId) for library in test_library.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -236,7 +239,7 @@ def test_pull_adds_and_removes_library_references_simultaneously() -> None:
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library.id) for library in test_project.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -276,8 +279,8 @@ def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
         pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library.id) for library in test_project.libraries] +
-        [mock.call(library.id) for library in test_csharp_library1.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries] +
+        [mock.call(library.projectId) for library in test_csharp_library1.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -359,7 +362,7 @@ def test_pull_projects_detects_unsupported_paths(unsupported_character: str) -> 
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library.id) for library in test_project.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
