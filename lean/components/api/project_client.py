@@ -40,6 +40,9 @@ class ProjectClient:
 
         data = self._api.get("projects/read", payload)
 
+        data["projects"][0]["libraries"] = [{"id": library, "name": "SomeName", "owner": "Some Owner", "hasAccess": "false"}
+                                            for library in data["projects"][0]["libraries"]]
+
         return self._process_project(QCProject(**data["projects"][0]))
 
     def get_all(self, organization_id: Optional[str]) -> List[QCProject]:

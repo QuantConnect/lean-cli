@@ -14,7 +14,7 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, List, Any
 from unittest import mock
 
 import pytest
@@ -28,8 +28,8 @@ from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
 from lean.container import container
-from lean.models.api import QCLanguage
-from tests.test_helpers import create_fake_lean_cli_directory
+from lean.models.api import QCLanguage, QCProjectLibrary, QCProject
+from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 
 
 def _create_project_manager() -> ProjectManager:
@@ -50,6 +50,10 @@ def _create_project_manager() -> ProjectManager:
                           path_manager,
                           xml_manager,
                           platform_manager)
+
+
+def _lists_are_equal(list1: List[Any], list2: List[Any]) -> bool:
+    return len(list1) == len(list2) and all(x in list1 for x in list2)
 
 
 def test_find_algorithm_file_returns_input_when_input_is_file() -> None:
@@ -519,3 +523,36 @@ def test_get_project_libraries() -> None:
     assert len(libraries) == 2
     assert python_library_dir in libraries
     assert csharp_library_dir in libraries
+
+
+def test_get_cloud_projects_libraries_filters_libraries_that_cannot_be_accessed() -> None:
+    cloud_projects = [create_api_project(i, f"Project{i}") for i in range(1, 16)]
+    cloud_libraries = [create_api_project(i, f"Library/Library{i}") for i in range(1, 16)]
+
+    projects = cloud_projects[:3]
+    own_project_libraries = []
+    collab_libraries = []
+
+    for i, project in enumerate(projects):
+        start = 3 * i
+        own_project_libs = cloud_libraries[start:start + 3]
+        own_libraries = [QCProjectLibrary(id=library.projectId, name=library.name, owner="Owner", hasAccess=True)
+                         for library in own_project_libs]
+        project.libraries.extend(own_libraries)
+        own_project_libraries.extend(own_project_libs)
+
+        collab_libs = [QCProjectLibrary(id=1000 + start + j,
+                                        name=f"Library/Library{1000 + start + j}",
+                                        owner="Another Owner",
+                                        hasAccess=False)
+                       for j in range(3)]
+        project.libraries.extend(collab_libs)
+        collab_libraries.extend(collab_libs)
+
+    cloud_projects.extend(cloud_libraries)
+
+    project_manager = _create_project_manager()
+    libraries, libraries_not_found = project_manager.get_cloud_projects_libraries(cloud_projects, projects)
+
+    assert _lists_are_equal(libraries, own_project_libraries)
+    assert _lists_are_equal(libraries_not_found, collab_libraries)

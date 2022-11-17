@@ -13,7 +13,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 from lean.components import reserved_names
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -22,7 +22,7 @@ from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
-from lean.models.api import QCLanguage, QCProject
+from lean.models.api import QCLanguage, QCProject, QCProjectLibrary
 from lean.models.utils import LeanLibraryReference
 from lean.components import forbidden_characters
 
@@ -90,7 +90,7 @@ class ProjectManager:
                 directories.extend(d for d in directory.iterdir() if d.is_dir())
 
         raise RuntimeError(f"Project with local id '{local_id}' does not exist")
-    
+
     def try_get_project_path_by_cloud_id(self, cloud_id: int) -> Path:
         """Finds a project by its cloud id.
 
@@ -216,7 +216,7 @@ class ProjectManager:
 
         if cloud_id is not None and local_id is not None:
             raise ValueError("Cannot specify both cloud_id and local_id")
-        
+
         if cloud_id is None and local_id is None:
             raise ValueError("Must specify either cloud_id or local_id")
 
@@ -762,7 +762,7 @@ class ProjectManager:
     def get_cloud_project_libraries(self,
                                     cloud_projects: List[QCProject],
                                     project: QCProject,
-                                    seen_libraries: List[int] = None) -> List[QCProject]:
+                                    seen_libraries: List[int] = None) -> Tuple[List[QCProject], List[QCProjectLibrary]]:
         """Gets the libraries referenced by the project and its dependencies from the given cloud projects.
 
         It recursively gets every Lean CLI library referenced by the project
@@ -771,13 +771,20 @@ class ProjectManager:
         :param cloud_projects: the cloud projects list to search in.
         :param project: the starting point for the libraries gathering.
         :param seen_libraries: list of seen library IDs to avoid infinite recursion.
+
+        :return: two lists including the libraries referenced by the project.
+            The first one containing the library projects that could be fetched and
+            the second list containing the libraries that could not be fetched because the user has no access to them.
         """
         if seen_libraries is None:
             seen_libraries = []
 
         libraries = [cloud_project
-                     for library_id in project.libraries
-                     for cloud_project in cloud_projects if cloud_project.projectId == library_id]
+                     for library in project.libraries
+                     for cloud_project in cloud_projects if cloud_project.projectId == library.id]
+
+        libraries_ids = [library.projectId for library in libraries]
+        libraries_not_found = [library for library in project.libraries if library.id not in libraries_ids]
 
         referenced_libraries = []
         for library in libraries:
@@ -786,16 +793,18 @@ class ProjectManager:
                 continue
 
             seen_libraries.append(library.projectId)
-            referenced_libraries.extend(self.get_cloud_project_libraries(cloud_projects, library, seen_libraries))
+            libs, libs_not_found = self.get_cloud_project_libraries(cloud_projects, library, seen_libraries)
+            referenced_libraries.extend(libs)
+            libraries_not_found.extend(libs_not_found)
 
         libraries.extend(referenced_libraries)
 
-        return list(set(libraries))
+        return list(set(libraries)), list(set(libraries_not_found))
 
     def get_cloud_projects_libraries(self,
                                      cloud_projects: List[QCProject],
                                      projects: List[QCProject],
-                                     seen_projects: List[int] = None) -> List[QCProject]:
+                                     seen_projects: List[int] = None) -> Tuple[List[QCProject], List[QCProjectLibrary]]:
         """Gets the libraries referenced by the passed projects and its dependencies from the given cloud projects.
 
         It recursively gets every Lean CLI library referenced by the passed projects
@@ -804,15 +813,22 @@ class ProjectManager:
         :param cloud_projects: the cloud projects list to search in.
         :param projects: the starting point list of projects for the libraries gathering.
         :param seen_projects: list of seen project IDs to avoid infinite recursion.
+
+        :return: two lists including the libraries referenced by the projects.
+            The first one containing the library projects that could be fetched and
+            the second list containing the libraries that could not be fetched because the user has no access to them.
         """
         if seen_projects is None:
             seen_projects = [project.projectId for project in projects]
 
         libraries = []
+        libraries_not_found = []
         for project in projects:
-            libraries.extend(self.get_cloud_project_libraries(cloud_projects, project, seen_projects))
+            libs, libs_not_found = self.get_cloud_project_libraries(cloud_projects, project, seen_projects)
+            libraries.extend(libs)
+            libraries_not_found.extend(libs_not_found)
 
-        return list(set(libraries))
+        return list(set(libraries)), list(set(libraries_not_found))
 
     @staticmethod
     def get_csproj_file_default_content() -> str:
