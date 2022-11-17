@@ -71,6 +71,21 @@ class QCLanguage(str, Enum):
     Python = "Py"
 
 
+class QCProjectLibrary(WrappedBaseModel):
+    projectId: int
+    libraryName: str
+    ownerName: str
+    access: bool
+
+    def __hash__(self):
+        return hash(self.projectId)
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.projectId == other.projectId
+
+
 class QCProject(WrappedBaseModel):
     projectId: int
     organizationId: str
@@ -85,7 +100,7 @@ class QCProject(WrappedBaseModel):
     leanEnvironment: int
     parameters: List[QCParameter]
     liveResults: QCLiveResults
-    libraries: List[int]
+    libraries: List[QCProjectLibrary]
 
     @validator("parameters", pre=True)
     def process_parameters_dict(cls, value: Any) -> Any:

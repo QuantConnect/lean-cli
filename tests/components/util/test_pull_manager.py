@@ -21,7 +21,7 @@ from lean.components.cloud.pull_manager import PullManager
 from lean.components.config.storage import Storage
 from lean.components.util.project_manager import ProjectManager
 from lean.container import container
-from lean.models.api import QCProject, QCLanguage
+from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
 from lean.components import forbidden_characters
@@ -44,16 +44,20 @@ def _make_cloud_projects_and_libraries(project_count: int,
     return cloud_projects, libraries
 
 
-def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject]) -> None:
-    libraries_ids = [library.projectId for library in libraries]
-    project.libraries.extend(libraries_ids)
+def _add_libraries_to_cloud_project(project: QCProject, libraries: List[QCProject], withAccess: bool = True) -> None:
+    libraries = [QCProjectLibrary(projectId=library.projectId,
+                                  libraryName=library.name,
+                                  ownerName="Owner",
+                                  access=withAccess)
+                 for library in libraries]
+    project.libraries.extend(libraries)
 
 
 def _add_local_library_to_local_project(project_path: Path, library_path: Path) -> None:
     library_manager = container.library_manager
     library_manager.add_lean_library_to_project(project_path, library_path, False)
 
-    
+
 def _assert_pull_manager_adds_property_to_project_config(prop: str,
                                                          expected_value: Any,
                                                          cloud_projects: List[QCProject]) -> None:
@@ -158,8 +162,8 @@ def test_pulls_libraries_referenced_by_the_project() -> None:
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries] +
-        [mock.call(library_id) for library_id in test_library.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries] +
+        [mock.call(library.projectId) for library in test_library.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -235,7 +239,7 @@ def test_pull_adds_and_removes_library_references_simultaneously() -> None:
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -275,8 +279,8 @@ def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
         pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries] +
-        [mock.call(library_id) for library_id in test_csharp_library1.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries] +
+        [mock.call(library.projectId) for library in test_csharp_library1.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -358,7 +362,7 @@ def test_pull_projects_detects_unsupported_paths(unsupported_character: str) -> 
     pull_manager.pull_projects([test_project], cloud_projects)
 
     api_client.files.get_all.assert_has_calls(
-        [mock.call(test_project.projectId)] + [mock.call(library_id) for library_id in test_project.libraries],
+        [mock.call(test_project.projectId)] + [mock.call(library.projectId) for library in test_project.libraries],
         any_order=True)
 
     library_manager.add_lean_library_to_project.assert_has_calls(
@@ -398,7 +402,7 @@ def test_push_projects_updates_name_in_cloud_if_required(unsupported_character: 
     ("macos", ":")
 ])
 def test_pull_projects_renames_project_if_required(test_platform: str, unsupported_character: str) -> None:
-    
+
     if test_platform == "linux" and platform.system() != "Linux":
         pytest.skip("This test requires Linux")
 
@@ -432,3 +436,45 @@ def test_pull_projects_renames_project_if_required(test_platform: str, unsupport
 
     assert not (Path.cwd() / unsupported_name).exists()
     assert (Path.cwd() / project_name).exists()
+
+
+def test_pull_project_doesnt_pull_libraries_the_user_doesnt_have_access_to() -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_projects, libraries = _make_cloud_projects_and_libraries(5, 15)
+    cloud_projects.extend(libraries)
+
+    test_project = cloud_projects[0]
+    test_project_own_libraries = libraries[:2]
+    _add_libraries_to_cloud_project(test_project, test_project_own_libraries)
+    test_project_collab_libraries = libraries[2:4]
+    _add_libraries_to_cloud_project(test_project, test_project_collab_libraries, False)
+
+    test_library = test_project_own_libraries[0]
+    test_library_own_libraries = libraries[4:6]
+    _add_libraries_to_cloud_project(test_library, test_library_own_libraries)
+    test_library_collab_libraries = libraries[4:6]
+    _add_libraries_to_cloud_project(test_library, test_library_collab_libraries, False)
+
+    def api_client_projects_get_side_effect(project_id: int, *args):
+        return next(iter(x for x in cloud_projects if x.projectId == project_id))
+
+    api_client = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.projects.get = mock.MagicMock(side_effect=api_client_projects_get_side_effect)
+
+    library_manager = mock.Mock()
+    library_manager.add_lean_library_to_project = mock.Mock()
+    library_manager.remove_lean_library_from_project = mock.Mock()
+
+    pull_manager = _create_pull_manager(api_client, container.project_config_manager, library_manager)
+    pull_manager.pull_projects([test_project])
+
+    api_client.files.get_all.assert_called()
+    library_manager.add_lean_library_to_project.assert_has_calls(
+        [mock.call(Path.cwd() / test_project.name, Path.cwd() / library.name, True)
+         for library in test_project_own_libraries] +
+        [mock.call(Path.cwd() / test_library.name, Path.cwd() / library.name, True)
+         for library in test_library_own_libraries],
+        any_order=True)
+    library_manager.remove_lean_library_from_project.assert_not_called()

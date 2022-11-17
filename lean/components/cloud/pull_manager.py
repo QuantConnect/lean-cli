@@ -19,7 +19,7 @@ from lean.components.util.library_manager import LibraryManager
 from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCProject, QCLanguage
+from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
 from lean.models.utils import LeanLibraryReference
 
 class PullManager:
@@ -49,22 +49,38 @@ class PullManager:
         self._platform_manager = platform_manager
         self._last_file = None
 
-    def _get_libraries(self, project: QCProject, seen_projects: List[int] = None) -> List[QCProject]:
+    def _get_libraries(self, project: QCProject,
+                       seen_projects: List[int] = None) -> Tuple[List[QCProject], List[QCProjectLibrary]]:
+        """Gets the libraries referenced by the given project.
+
+        :return: two lists including the libraries referenced by the project.
+            The first one containing the library projects that could be fetched and
+            the second list containing the libraries that could not be fetched because the user has no access to them.
+        """
         if seen_projects is None:
             seen_projects = [project.projectId]
 
         libraries = []
-        for library_id in project.libraries:
-            if library_id in seen_projects:
+        inaccessible_libraries = []
+        for library in project.libraries:
+            if library.projectId in seen_projects:
                 continue
-            seen_projects.append(library_id)
-            library = self._api_client.projects.get(library_id, project.organizationId)
+
+            if not library.access:
+                inaccessible_libraries.append(library)
+                continue
+
+            seen_projects.append(library.projectId)
+            library = self._api_client.projects.get(library.projectId, project.organizationId)
             libraries.append(library)
-            libraries.extend(self._get_libraries(library, seen_projects))
+            libs, inaccessible_libs = self._get_libraries(library, seen_projects)
+            libraries.extend(libs)
+            inaccessible_libraries.extend(inaccessible_libs)
 
-        return libraries
+        return libraries, inaccessible_libraries
 
-    def pull_projects(self, projects_to_pull: List[QCProject], all_cloud_projects: Optional[List[QCProject]]) -> None:
+    def pull_projects(self, projects_to_pull: List[QCProject],
+                      all_cloud_projects: Optional[List[QCProject]] = None) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
         This will also pull libraries referenced by the project.
@@ -73,11 +89,20 @@ class PullManager:
         :param all_cloud_projects: all the projects available in the cloud
         """
         if all_cloud_projects is not None:
-            projects_to_pull.extend(self._project_manager.get_cloud_projects_libraries(all_cloud_projects,
-                                                                                       projects_to_pull))
+            projects, inaccessible_libraries = self._project_manager.get_cloud_projects_libraries(all_cloud_projects,
+                                                                                               projects_to_pull)
+            projects_to_pull.extend(projects)
         else:
+            inaccessible_libraries = []
             for project in projects_to_pull:
-                projects_to_pull.extend(self._get_libraries(project, [p.projectId for p in projects_to_pull]))
+                projects, libs_not_found = self._get_libraries(project, [p.projectId for p in projects_to_pull])
+                projects_to_pull.extend(projects)
+                inaccessible_libraries.extend(libs_not_found)
+
+        for library in inaccessible_libraries:
+            self._logger.warn(f"Cannot pull library '{library.libraryName}' because you don't have access it. "
+                              f"Please ask '{library.ownerName}' to add you as a collaborator to the project "
+                              f"in order to pull it.")
 
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
         projects_with_paths = []
@@ -113,7 +138,7 @@ class PullManager:
             self._api_client.projects.update(project.projectId, **{"name": local_project_name})
             self._logger.info(f"Renamed project in cloud from '{project.name}' to '{local_project_name}'")
             project.name = local_project_name
-        
+
         # rename project on disk if we find a directory with the old name (invalid/renamed name)
         # only check for old directory if expected directory does not exist
         if not local_project_path.exists():
@@ -212,8 +237,9 @@ class PullManager:
 
     def _update_local_library_references(self, projects: List[Tuple[QCProject, Path]]) -> None:
         for project, path in projects:
+            libraries = [library.projectId for library in project.libraries]
             cloud_libraries_paths = [library_path for library, library_path in projects
-                                     if library.projectId in project.libraries]
+                                     if library.projectId in libraries]
 
             # Add cloud library references to local config
             self._add_local_library_references_to_project(path, cloud_libraries_paths)

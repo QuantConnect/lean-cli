@@ -125,7 +125,8 @@ def test_projects_crud() -> None:
         project_client.add_library(created_project.projectId, library_project.projectId)
         retrieved_project = project_client.get(created_project.projectId)
 
-        assert retrieved_project.libraries == [library_project.projectId]
+        assert len(retrieved_project.libraries) == 1
+        assert retrieved_project.libraries[0].projectId == library_project.projectId
 
         # Test libraries can be deleted
         project_client.delete_library(created_project.projectId, library_project.projectId)
