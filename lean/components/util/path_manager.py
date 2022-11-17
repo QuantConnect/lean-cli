@@ -37,6 +37,15 @@ class PathManager:
         except ValueError:
             return destination
 
+    def is_name_valid(self, name: str) -> bool:
+        """Returns whether a name is valid on Windows operating system.
+
+        :param name: the name to validate
+        :return: True if the name is valid on Windows operating system, False if not
+        """
+        import re
+        return re.match('^[a-zA-Z0-9\\s/]*$', name)
+
     def is_path_valid(self, path: Path) -> bool:
         """Returns whether a path is valid on the current operating system.
 
