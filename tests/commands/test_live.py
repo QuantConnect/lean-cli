@@ -295,15 +295,6 @@ brokerage_required_options = {
         "kraken-api-secret": "abc",
         "kraken-verification-tier": "starter",
     },
-    "FTX": {
-        "ftxus-api-key": "abc",
-        "ftxus-api-secret": "abc",
-        "ftxus-account-tier": "tier1",
-        "ftx-api-key": "abc",
-        "ftx-api-secret": "abc",
-        "ftx-account-tier": "tier1",
-        "ftx-exchange-name": "FTX",
-    },
     "Trading Technologies": {
         "tt-user-name": "abc",
         "tt-session-password": "abc",
@@ -334,7 +325,6 @@ data_feed_required_options = {
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": brokerage_required_options["Terminal Link"],
     "Kraken": brokerage_required_options["Kraken"],
-    "FTX": brokerage_required_options["FTX"],
 }
 
 
@@ -542,13 +532,6 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
             if brokerage == "Binance":
                 data_feed = "Bitfinex"
                 options.extend(["--bitfinex-api-key", "123", "--bitfinex-api-secret", "456"])
-            elif brokerage == "FTX":
-                data_feed = "Binance"
-                options.extend(["--ftx-exchange-name", "FTXUS",
-                                "--binance-exchange-name", "binance",
-                                "--binance-api-key", "123",
-                                "--binance-api-secret", "456",
-                                "--binance-use-testnet", "live"])
             else:
                 data_feed = "Binance"
                 options.extend(["--binance-exchange-name", "binance",
@@ -604,9 +587,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                     "job-organization-id": "abc"
                 }))
 
-            if data_feed == "FTX":
-                options.extend(["--ftx-exchange-name", "FTX"])
-            elif data_feed == "Binance":
+            if data_feed == "Binance":
                 options.extend(["--binance-exchange-name", "binance"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -654,9 +635,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                     "job-organization-id": "abc"
                 }))
 
-            if data_feed1 == "FTX" or data_feed2 == "FTX":
-                options.extend(["--ftx-exchange-name", "FTX"])
-            elif data_feed1 == "Binance" or data_feed2 == "Binance":
+            if data_feed1 == "Binance" or data_feed2 == "Binance":
                 options.extend(["--binance-exchange-name", "binance"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -772,8 +751,6 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Binance", "USD:100"),
                                             ("Bitfinex", ""),
                                             ("Bitfinex", "USD:100"),
-                                            ("FTX", ""),
-                                            ("FTX", "USD:100"),
                                             ("Coinbase Pro", ""),
                                             ("Coinbase Pro", "USD:100"),
                                             ("Interactive Brokers", ""),
@@ -836,8 +813,6 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("Binance", "A:A 2T:1:145.1"),
                                                 ("Bitfinex", ""),
                                                 ("Bitfinex", "A:A 2T:1:145.1"),
-                                                ("FTX", ""),
-                                                ("FTX", "A:A 2T:1:145.1"),
                                                 ("Coinbase Pro", ""),
                                                 ("Coinbase Pro", "A:A 2T:1:145.1"),
                                                 ("Interactive Brokers", ""),
