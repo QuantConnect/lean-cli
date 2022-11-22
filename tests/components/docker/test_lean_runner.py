@@ -57,7 +57,7 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
 
     xml_manager = XMLManager()
     platform_manager = PlatformManager()
-    path_manager = PathManager(platform_manager)
+    path_manager = PathManager(lean_config_manager, platform_manager)
     project_manager = ProjectManager(logger,
                                      project_config_manager,
                                      lean_config_manager,

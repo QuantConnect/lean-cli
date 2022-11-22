@@ -14,6 +14,9 @@
 from typing import Union, Any
 
 from lean.components.api.api_client import APIClient
+from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.util.path_manager import PathManager
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
 from lean.components.cloud.data_downloader import DataDownloader
@@ -21,10 +24,8 @@ from lean.components.cloud.module_manager import ModuleManager
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
 from lean.components.config.cli_config_manager import CLIConfigManager
-from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.optimizer_config_manager import OptimizerConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
-from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
 from lean.components.docker.docker_manager import DockerManager
 from lean.components.docker.lean_runner import LeanRunner
@@ -34,7 +35,6 @@ from lean.components.util.logger import Logger
 from lean.components.util.market_hours_database import MarketHoursDatabase
 from lean.components.util.name_generator import NameGenerator
 from lean.components.util.organization_manager import OrganizationManager
-from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.task_manager import TaskManager
@@ -63,7 +63,6 @@ class Container:
         self.platform_manager = PlatformManager()
         self.task_manager = TaskManager(self.logger)
         self.name_generator = NameGenerator()
-        self.path_manager = PathManager(self.platform_manager)
         self.temp_manager = TempManager()
         self.xml_manager = XMLManager()
         self.http_client = HTTPClient(self.logger)
@@ -92,6 +91,7 @@ class Container:
                                                      self.project_config_manager,
                                                      self.module_manager,
                                                      self.cache_storage)
+        self.path_manager = PathManager(self.lean_config_manager, self.platform_manager)
         self.output_config_manager = OutputConfigManager(self.lean_config_manager)
         self.optimizer_config_manager = OptimizerConfigManager(self.logger)
 

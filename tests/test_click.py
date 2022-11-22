@@ -23,6 +23,7 @@ from click.testing import CliRunner
 
 from lean.click import DateParameter, LeanCommand, PathParameter
 from lean.container import container
+from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> None:
@@ -41,11 +42,14 @@ def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> Non
 
 
 def test_lean_command_sets_default_lean_config_path_when_lean_config_option_given() -> None:
+    create_fake_lean_cli_directory()
+
     @click.command(cls=LeanCommand, requires_lean_config=True)
     def command() -> None:
         pass
 
     lean_config_manager = mock.Mock()
+    lean_config_manager.get_cli_root_directory = mock.MagicMock(return_value=Path.cwd())
     container.lean_config_manager = lean_config_manager
 
     with (Path.cwd() / "custom-config.json").open("w+", encoding="utf-8") as file:
@@ -128,7 +132,7 @@ def test_path_parameter_fails_when_input_not_valid_path() -> None:
         pass
 
     path_manager = mock.Mock()
-    path_manager.is_path_valid.return_value = False
+    path_manager.is_cli_path_valid.return_value = False
     container.path_manager = path_manager
 
     result = CliRunner().invoke(command, ["invalid-path.txt"])

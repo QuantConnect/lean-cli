@@ -16,7 +16,6 @@ from typing import List
 
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
-from lean.components.util.path_manager import PathManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.utils import CSharpLibrary
 
@@ -31,15 +30,13 @@ class ProjectConfigManager:
         """
         self._xml_manager = xml_manager
 
-    def try_get_project_config(self, project_directory: Path, path_manager: PathManager) -> Storage:
+    def try_get_project_config(self, project_directory: Path) -> Storage:
         """Returns a Storage instance to get/set the configuration for a project.
 
         :param project_directory: the path to the project to retrieve the configuration of
         :return: the Storage instance containing the project-specific configuration of the given project
         """
-        if path_manager.is_path_valid(project_directory) \
-                and project_directory.is_dir() \
-                and self.get_project_config(project_directory).file.exists():
+        if self.get_project_config(project_directory).file.exists():
             return Storage(str(project_directory / PROJECT_CONFIG_FILE_NAME))
         else:
             return False

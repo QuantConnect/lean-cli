@@ -13,9 +13,11 @@
 
 import platform
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 
@@ -26,8 +28,15 @@ def fake_filesystem() -> None:
     return None
 
 
+def _get_path_manager() -> PathManager:
+    lean_config_manager = mock.Mock()
+    lean_config_manager.get_cli_root_directory = mock.MagicMock(return_value=Path.cwd())
+
+    return PathManager(lean_config_manager, PlatformManager())
+
+
 def test_get_relative_path_returns_relative_path_when_destination_is_relative_to_source() -> None:
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
     source = Path.cwd()
     destination = Path.cwd() / "path" / "to" / "file.txt"
@@ -36,7 +45,7 @@ def test_get_relative_path_returns_relative_path_when_destination_is_relative_to
 
 
 def test_get_relative_path_returns_full_destination_path_when_destination_is_not_relative_to_source() -> None:
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
     source = Path.cwd()
     destination = Path.cwd().parent
@@ -45,15 +54,15 @@ def test_get_relative_path_returns_full_destination_path_when_destination_is_not
 
 
 def test_get_relative_path_uses_cwd_as_source_when_not_given() -> None:
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
     assert path_manager.get_relative_path(Path.cwd() / "path" / "to" / "file.txt") == Path("path/to/file.txt")
 
 
 def test_is_path_valid_returns_true_for_valid_path() -> None:
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
-    assert path_manager.is_path_valid(Path.cwd() / "My Path/file.txt")
+    assert path_manager.is_cli_path_valid(Path.cwd() / "My Path/file.txt")
 
 
 @pytest.mark.parametrize("path,valid", [("My Path/file.txt", True),
@@ -95,21 +104,21 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
     if platform.system() != "Windows":
         pytest.skip("This test requires Windows")
 
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
-    assert path_manager.is_path_valid(Path.cwd() / path) == valid
+    assert path_manager.is_cli_path_valid(Path.cwd() / path) == valid
 
 
 @pytest.mark.parametrize("name, valid", [("123", True),
                                          ("abc", True),
                                          ("1a2b3c", True),
                                          ("a-1_b-2", True),
-                                         ("1-a 2_b 3-c", True),
+                                         ("/1-a/2_b 3 c/xyz", True),
                                          ("1 a/2_b/3-c", True),
                                          ("1a2b3c$", False),
                                          ("abc:123", False),
                                          ("abc.def", False)])
 def test_is_name_valid(name: str, valid: bool) -> None:
-    path_manager = PathManager(PlatformManager())
+    path_manager = _get_path_manager()
 
     assert path_manager.is_name_valid(name) == valid

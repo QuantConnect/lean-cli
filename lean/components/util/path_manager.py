@@ -12,17 +12,21 @@
 # limitations under the License.
 
 from pathlib import Path
+
 from lean.components import reserved_names, forbidden_characters
+from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.platform_manager import PlatformManager
+
 
 class PathManager:
     """The PathManager class provides utilities for working with paths."""
 
-    def __init__(self, platform_manager: PlatformManager) -> None:
+    def __init__(self, lean_config_manager: LeanConfigManager, platform_manager: PlatformManager) -> None:
         """Creates a new PathManager instance.
 
         :param platform_manager: the PlatformManager used when checking which operating system is in use
         """
+        self._lean_config_manager = lean_config_manager
         self._platform_manager = platform_manager
 
     def get_relative_path(self, destination: Path, source: Path = Path.cwd()) -> Path:
@@ -44,15 +48,18 @@ class PathManager:
         :return: True if the name is valid on Windows operating system, False if not
         """
         import re
-        return re.match('^[-_a-zA-Z0-9\\s/]*$', name) is not None
+        return re.match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None
 
     def is_path_valid(self, path: Path) -> bool:
-        """Returns whether a path is valid on the current operating system.
+        """Returns whether the given path is a valid project path in the current operating system.
+
+        This method should only be used to check paths relative to the current lean init folder.
+        Passing an absolute path might result in false being returned since especial cases for root directories
+        for each operating system (like devices in Windows) are not validated.
 
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        from platform import system
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -63,9 +70,6 @@ class PathManager:
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
         components = path.as_posix().split("/")
-        if system() == "Windows":
-            # Skip the first component, which contains the drive name
-            components =  components[1:]
         for component in components:
             if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                 return False
@@ -78,3 +82,23 @@ class PathManager:
                 if forbidden_character in component:
                     return False
         return True
+
+    def is_cli_path_valid(self, path: Path) -> bool:
+        """Returns whether the given path is a valid project path in the current operating system.
+
+        :param path: the path to validate
+        :return: True if the path is valid on the current operating system, False if not
+        """
+        from lean.models.errors import MoreInfoError
+
+        try:
+            cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+            relative_path = path.relative_to(cli_root_dir)
+        except MoreInfoError:
+            from platform import system
+            if system() == "Windows":
+                # Skip the first component, which contains the drive name
+                posix_path = path.as_posix()
+                relative_path = Path(posix_path[posix_path.index('/'):])
+
+        return relative_path == Path(".") or self.is_path_valid(relative_path)
