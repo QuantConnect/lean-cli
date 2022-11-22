@@ -89,7 +89,16 @@ class PathManager:
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        relative_path = path.relative_to(cli_root_dir)
+        from lean.models.errors import MoreInfoError
+
+        try:
+            cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+            relative_path = path.relative_to(cli_root_dir)
+        except MoreInfoError:
+            from platform import system
+            if system() == "Windows":
+                # Skip the first component, which contains the drive name
+                posix_path = path.as_posix()
+                relative_path = Path(posix_path[posix_path.index('/'):])
 
         return relative_path == Path(".") or self.is_path_valid(relative_path)

@@ -292,8 +292,13 @@ def create_project(name: str, language: str) -> None:
             "https://www.lean.io/docs/v2/lean-cli/projects/project-management")
 
     full_path = Path.cwd() / name
+    try:
+        cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+        relative_path = full_path.relative_to(cli_root_dir).as_posix()
+    except MoreInfoError:
+        relative_path = name
 
-    if not container.path_manager.is_cli_path_valid(full_path) or not container.path_manager.is_name_valid(name):
+    if not container.path_manager.is_cli_path_valid(full_path) or not container.path_manager.is_name_valid(relative_path):
         raise MoreInfoError(f"Invalid project name. Can only contain letters, numbers & spaces. Can not start with empty char ' ' or be a reserved name [ {', '.join(reserved_names)} ]",
                          "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
