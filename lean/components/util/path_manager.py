@@ -47,12 +47,15 @@ class PathManager:
         return re.match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None
 
     def is_path_valid(self, path: Path) -> bool:
-        """Returns whether a path is valid on the current operating system.
+        """Returns whether the given path is a valid project path in the current operating system.
+
+        This method should only be used to check paths relative to the current lean init folder.
+        Passing an absolute path might result in false being returned since especial cases for root directories
+        for each operating system (like devices in Windows) are not validated.
 
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        from platform import system
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -63,9 +66,6 @@ class PathManager:
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
         components = path.as_posix().split("/")
-        if system() == "Windows":
-            # Skip the first component, which contains the drive name
-            components =  components[1:]
         for component in components:
             if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                 return False
