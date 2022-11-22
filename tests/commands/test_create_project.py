@@ -153,7 +153,7 @@ def test_create_project_aborts_when_path_invalid() -> None:
     create_fake_lean_cli_directory()
 
     path_manager = mock.Mock()
-    path_manager.is_path_valid.return_value = False
+    path_manager.is_cli_path_valid.return_value = False
     container.path_manager= path_manager
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", "My First Project"])

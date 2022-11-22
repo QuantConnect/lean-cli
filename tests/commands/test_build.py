@@ -22,10 +22,16 @@ from lean.container import container
 from lean.models.docker import DockerImage
 from lean.constants import CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
 from tests.conftest import initialize_container
+from tests.test_helpers import create_fake_lean_cli_directory
 
 CUSTOM_FOUNDATION_IMAGE = DockerImage(name=CUSTOM_FOUNDATION, tag="latest")
 CUSTOM_ENGINE_IMAGE = DockerImage(name=CUSTOM_ENGINE, tag="latest")
 CUSTOM_RESEARCH_IMAGE = DockerImage(name=CUSTOM_RESEARCH, tag="latest")
+
+
+@pytest.fixture(autouse=True)
+def create_fake_cli_directory() -> None:
+    create_fake_lean_cli_directory()
 
 
 def create_fake_repositories() -> None:

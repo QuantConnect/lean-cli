@@ -38,15 +38,16 @@ def _create_project_manager() -> ProjectManager:
     project_config_manager = ProjectConfigManager(xml_manager)
     cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
     platform_manager = PlatformManager()
-    path_manager = PathManager(platform_manager)
-
-    return ProjectManager(logger,
-                          project_config_manager,
-                          LeanConfigManager(mock.Mock(),
+    lean_config_manager = LeanConfigManager(mock.Mock(),
                                             mock.Mock(),
                                             project_config_manager,
                                             mock.Mock(),
-                                            cache_storage),
+                                            cache_storage)
+    path_manager = PathManager(lean_config_manager, platform_manager)
+
+    return ProjectManager(logger,
+                          project_config_manager,
+                          lean_config_manager,
                           path_manager,
                           xml_manager,
                           platform_manager)

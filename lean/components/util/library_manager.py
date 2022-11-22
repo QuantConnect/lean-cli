@@ -54,7 +54,7 @@ class LibraryManager:
         :param path: path to check whether it is a Lean library
         :return: true if the path is a Lean library path
         """
-        if not self._path_manager.is_path_valid(path):
+        if not self._path_manager.is_cli_path_valid(path):
             return False
 
         relative_path = self._path_manager.get_relative_path(path, self._lean_config_manager.get_cli_root_directory())

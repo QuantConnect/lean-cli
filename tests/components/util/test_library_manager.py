@@ -37,7 +37,7 @@ def _create_library_manager() -> LibraryManager:
                                             mock.Mock(),
                                             cache_storage)
     platform_manager = PlatformManager()
-    path_manager = PathManager(platform_manager)
+    path_manager = PathManager(lean_config_manager, platform_manager)
     xml_manager = XMLManager()
     project_config_manager = ProjectConfigManager(xml_manager)
     logger = mock.Mock()
