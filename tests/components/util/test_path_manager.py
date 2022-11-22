@@ -104,7 +104,7 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
                                          ("abc", True),
                                          ("1a2b3c", True),
                                          ("a-1_b-2", True),
-                                         ("1-a 2_b 3-c", True),
+                                         ("/1-a/2_b 3 c/xyz", True),
                                          ("1 a/2_b/3-c", True),
                                          ("1a2b3c$", False),
                                          ("abc:123", False),

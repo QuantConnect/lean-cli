@@ -44,7 +44,7 @@ class PathManager:
         :return: True if the name is valid on Windows operating system, False if not
         """
         import re
-        return re.match('^[-_a-zA-Z0-9\\s/]*$', name) is not None
+        return re.match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None
 
     def is_path_valid(self, path: Path) -> bool:
         """Returns whether a path is valid on the current operating system.
