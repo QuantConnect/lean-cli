@@ -13,8 +13,9 @@
 
 from pathlib import Path
 from typing import Optional, List, Tuple
+from datetime import datetime, timedelta
 
-from click import command, argument, option, Choice
+from click import command, argument, option, Choice, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -22,6 +23,45 @@ from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
+
+
+def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
+    from re import findall
+    from dateutil.parser import isoparse
+
+    missing_backtest_error = RuntimeError(
+        "Please run at least one backtest for this project in order to run an optimization estimate");
+    backtests_directory = algorithm_directory / "backtests"
+
+    if not backtests_directory.exists():
+        raise missing_backtest_error
+
+    def is_backtest_output_directory(path: Path) -> bool:
+        try:
+            datetime.strptime(path.name, "%Y-%m-%d_%H-%M-%S")
+        except ValueError:
+            return False
+        else:
+            return path.is_dir()
+
+    def get_filename_timestamp(path: Path) -> datetime:
+        return datetime.strptime(path.name, "%Y-%m-%d_%H-%M-%S")
+
+    backtests_directories = [f for f in backtests_directory.iterdir() if is_backtest_output_directory(f)]
+    latest_backtest_directory = max(backtests_directories, key=get_filename_timestamp, default=None)
+
+    if latest_backtest_directory is None:
+        raise missing_backtest_error
+
+    latest_backtest_log_file = latest_backtest_directory / "log.txt"
+
+    if not latest_backtest_log_file.exists():
+        raise missing_backtest_error
+
+    latest_backtest_logs = latest_backtest_log_file.read_text(encoding="utf-8")
+    timestamps = findall(r"(.+) TRACE:: .*\n", latest_backtest_logs)
+
+    return isoparse(timestamps[-1]) - isoparse(timestamps[0])
 
 
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
@@ -64,6 +104,13 @@ from lean.models.optimizer import OptimizationTarget
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the optimizer")
+@option("--estimate",
+              is_flag=True,
+              default=False,
+              help="Estimate optimization runtime without running it")
+@option("--max-concurrent-backtests",
+              type=IntRange(min=1),
+              help="Maximum number of concurrent backtests to run")
 def optimize(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -75,7 +122,9 @@ def optimize(project: Path,
              constraint: List[str],
              release: bool,
              image: Optional[str],
-             update: bool) -> None:
+             update: bool,
+             estimate: bool,
+             max_concurrent_backtests: Optional[int]) -> None:
     """Optimize a project's parameters locally using Docker.
 
     \b
@@ -104,6 +153,10 @@ def optimize(project: Path,
     - --constraint "<statistic> <operator> <value>"
     - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
+    \b
+    If --estimate is given, the optimization will not be executed.
+    The runtime estimate for the optimization will be calculated and outputted.
+
     By default the official LEAN engine image is used.
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
@@ -111,11 +164,18 @@ def optimize(project: Path,
     from json import dumps
     from json5 import loads
     from docker.types import Mount
-    from re import findall
-    from datetime import datetime
+    from re import findall, search
+    from os import cpu_count
+    from math import floor
+
+    should_detach = detach and not estimate
 
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
+
+    latest_backtest_runtime = timedelta(0)
+    if estimate:
+        latest_backtest_runtime = _get_latest_backtest_runtime(algorithm_file.parent)
 
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -170,6 +230,13 @@ def optimize(project: Path,
             "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
         }
 
+    if max_concurrent_backtests is not None:
+        config["maximum-concurrent-backtests"] = max_concurrent_backtests
+    elif "maximum-concurrent-backtests" in config:
+        max_concurrent_backtests = config["maximum-concurrent-backtests"]
+    else:
+        max_concurrent_backtests = max(1, floor(cpu_count() / 2))
+
     config["optimizer-close-automatically"] = True
     config["results-destination-folder"] = "/Results"
 
@@ -200,17 +267,16 @@ def optimize(project: Path,
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, detach)
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
-    run_options["commands"].append("dotnet QuantConnect.Optimizer.Launcher.dll")
+    run_options["commands"].append(f"dotnet QuantConnect.Optimizer.Launcher.dll{' --estimate' if estimate else ''}")
     run_options["mounts"].append(
         Mount(target="/Lean/Optimizer.Launcher/bin/Debug/config.json",
               source=str(config_path),
               type="bind",
               read_only=True)
     )
-
     container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
@@ -221,7 +287,7 @@ def optimize(project: Path,
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
 
-    if detach:
+    if should_detach:
         temp_manager = container.temp_manager
         temp_manager.delete_temporary_directories_when_done = False
 
@@ -231,27 +297,41 @@ def optimize(project: Path,
         logger.info("You can use Docker's own commands to manage the detached container")
     elif success:
         optimizer_logs = (output / "log.txt").read_text(encoding="utf-8")
-        groups = findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 
-        if len(groups) > 0:
-            optimal_parameters, optimal_id = groups[0]
+        if estimate:
+            match = search(r"Optimization estimate: (\d+)", optimizer_logs)
 
-            optimal_results = loads((output / optimal_id / f"{optimal_id}.json").read_text(encoding="utf-8"))
-            optimal_backtest = QCBacktest(backtestId=optimal_id,
-                                          projectId=1,
-                                          status="",
-                                          name=optimal_id,
-                                          created=datetime.now(),
-                                          completed=True,
-                                          progress=1.0,
-                                          runtimeStatistics=optimal_results["RuntimeStatistics"],
-                                          statistics=optimal_results["Statistics"])
+            if match is None:
+                raise RuntimeError(f"Something went wrong while running the optimization estimate, "
+                                   f"the output is stored in '{relative_output_dir}'")
 
-            logger.info(f"Optimal parameters: {optimal_parameters.replace(':', ': ').replace(',', ', ')}")
-            logger.info(f"Optimal backtest results:")
-            logger.info(optimal_backtest.get_statistics_table())
+            backtestsCount = int(match[1])
+            logger.info(f"Optimization estimate: \n"
+                        f"  Total backtests: {backtestsCount}\n"
+                        f"  Estimated runtime: {backtestsCount * latest_backtest_runtime / max_concurrent_backtests}")
+        else:
+            groups = findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 
-        logger.info(f"Successfully optimized '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
+            if len(groups) > 0:
+                optimal_parameters, optimal_id = groups[0]
+
+                optimal_results = loads((output / optimal_id / f"{optimal_id}.json").read_text(encoding="utf-8"))
+                optimal_backtest = QCBacktest(backtestId=optimal_id,
+                                              projectId=1,
+                                              status="",
+                                              name=optimal_id,
+                                              created=datetime.now(),
+                                              completed=True,
+                                              progress=1.0,
+                                              runtimeStatistics=optimal_results["RuntimeStatistics"],
+                                              statistics=optimal_results["Statistics"])
+
+                logger.info(f"Optimal parameters: {optimal_parameters.replace(':', ': ').replace(',', ', ')}")
+                logger.info(f"Optimal backtest results:")
+                logger.info(optimal_backtest.get_statistics_table())
+
+            logger.info(
+                f"Successfully optimized '{relative_project_dir}' and stored the output in '{relative_output_dir}'")
     else:
         raise RuntimeError(
             f"Something went wrong while running the optimization, the output is stored in '{relative_output_dir}'")

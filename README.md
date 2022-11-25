@@ -241,7 +241,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -302,16 +302,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --ftx-exchange-name [FTX|FTXUS]
-                                  FTX exchange name [FTX, FTXUS]
-  --ftx-api-key TEXT              Your FTX API key
-  --ftxus-api-key TEXT            Your FTX API key
-  --ftx-api-secret TEXT           Your FTX API secret
-  --ftxus-api-secret TEXT         Your FTX API secret
-  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|VIP1|VIP2|VIP3|MM1|MM2|MM3]
-                                  Your FTX Account Tier
-  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|Tier7|Tier8|Tier9|VIP1|VIP2|MM1|MM2|MM3]
-                                  Your FTX Account Tier
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -855,9 +845,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|FTX]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|FTX|IQFeed|Polygon Data Feed|Custom data only]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
   --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
@@ -959,20 +949,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --ftx-exchange-name [FTX|FTXUS]
-                                  FTX exchange name [FTX, FTXUS]
-  --ftx-api-key TEXT              Your FTX API key
-  --ftxus-api-key TEXT            Your FTX API key
-  --ftx-api-secret TEXT           Your FTX API secret
-  --ftxus-api-secret TEXT         Your FTX API secret
-  --ftx-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|VIP1|VIP2|VIP3|MM1|MM2|MM3]
-                                  Your FTX Account Tier
-  --ftxus-account-tier [Tier1|Tier2|Tier3|Tier4|Tier5|Tier6|Tier7|Tier8|Tier9|VIP1|VIP2|MM1|MM2|MM3]
-                                  Your FTX Account Tier
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
-  --iqfeed-iqconnect FILE         The path to the IQConnect binary
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
@@ -1165,6 +1145,9 @@ Usage: lean optimize [OPTIONS] PROJECT
   - --constraint "<statistic> <operator> <value>"
   - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
+  If --estimate is given, the optimization will not be executed.
+  The runtime estimate for the optimization will be calculated and outputted.
+
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
 
@@ -1182,6 +1165,9 @@ Options:
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer
+  --estimate                      Estimate optimization runtime without running it
+  --max-concurrent-backtests INTEGER RANGE
+                                  Maximum number of concurrent backtests to run  [x>=1]
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
