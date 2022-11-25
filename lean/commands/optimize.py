@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from datetime import datetime, timedelta
 
-from click import command, argument, option, Choice
+from click import command, argument, option, Choice, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -30,7 +30,7 @@ def get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     from dateutil.parser import isoparse
 
     missing_backtest_error = RuntimeError(
-        "Please, run at least on backtest for this project in order to run an optimization estimate");
+        "Please run at least one backtest for this project in order to run an optimization estimate");
     backtests_directory = algorithm_directory / "backtests"
 
     if not backtests_directory.exists():
@@ -108,7 +108,10 @@ def get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 @option("--estimate",
               is_flag=True,
               default=False,
-              help="Only estimate optimization runtime without running it")
+              help="Estimate optimization runtime without running it")
+@option("--max-concurrent-backtests",
+              type=IntRange(min=1),
+              help="Maximum number of concurrent backtests to run")
 def optimize(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -121,7 +124,8 @@ def optimize(project: Path,
              release: bool,
              image: Optional[str],
              update: bool,
-             estimate: bool) -> None:
+             estimate: bool,
+             max_concurrent_backtests: Optional[int]) -> None:
     """Optimize a project's parameters locally using Docker.
 
     \b
@@ -151,7 +155,7 @@ def optimize(project: Path,
     - --constraint "Sharpe Ratio >= 0.5" --constraint "Drawdown < 0.25"
 
     \b
-    If --estimate is given, the optimization will nbot be executed.
+    If --estimate is given, the optimization will not be executed.
     The runtime estimate for the optimization will be calculated and outputted.
 
     By default the official LEAN engine image is used.
@@ -162,6 +166,8 @@ def optimize(project: Path,
     from json5 import loads
     from docker.types import Mount
     from re import findall, search
+    from os import cpu_count
+    from math import floor
 
     should_detach = detach and not estimate
 
@@ -224,6 +230,13 @@ def optimize(project: Path,
             "parameters": [parameter.dict() for parameter in optimization_parameters],
             "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
         }
+
+    if max_concurrent_backtests is not None:
+        config["maximum-concurrent-backtests"] = max_concurrent_backtests
+    elif "maximum-concurrent-backtests" in config:
+        max_concurrent_backtests = config["maximum-concurrent-backtests"]
+    else:
+        max_concurrent_backtests = max(1, floor(cpu_count() / 2))
 
     config["optimizer-close-automatically"] = True
     config["results-destination-folder"] = "/Results"
@@ -296,7 +309,7 @@ def optimize(project: Path,
             backtestsCount = int(match[1])
             logger.info(f"Optimization estimate: \n"
                         f"  Total backtests: {backtestsCount}\n"
-                        f"  Estimated runtime: {backtestsCount * latest_backtest_runtime}")
+                        f"  Estimated runtime: {backtestsCount * latest_backtest_runtime / max_concurrent_backtests}")
         else:
             groups = findall(r"ParameterSet: \(([^)]+)\) backtestId '([^']+)'", optimizer_logs)
 
