@@ -25,7 +25,7 @@ from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
 
 
-def get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
+def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     from re import findall
     from dateutil.parser import isoparse
 
@@ -61,7 +61,6 @@ def get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     latest_backtest_logs = latest_backtest_log_file.read_text(encoding="utf-8")
     timestamps = findall(r"(.+) TRACE:: .*\n", latest_backtest_logs)
 
-    # return datetime.strptime(timestamps[-1]) - datetime.strptime(timestamps[0])
     return isoparse(timestamps[-1]) - isoparse(timestamps[0])
 
 
@@ -176,7 +175,7 @@ def optimize(project: Path,
 
     latest_backtest_runtime = timedelta(0)
     if estimate:
-        latest_backtest_runtime = get_latest_backtest_runtime(algorithm_file.parent)
+        latest_backtest_runtime = _get_latest_backtest_runtime(algorithm_file.parent)
 
     if output is None:
         output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
