@@ -506,3 +506,25 @@ def test_push_projects_updates_name_in_cloud_if_required(test_platform: str, uns
     api_client.projects.update.assert_called_once()
     args, kwargs = api_client.projects.update.call_args
     assert kwargs['name'] == expected_correct_project_name
+
+def test_push_projects_updates_name_locally_if_updated_by_cloud() -> None:
+    
+    project_name = "Python Project"
+    project_path = Path.cwd() / project_name
+    create_fake_lean_cli_project(project_name, "python")
+
+    project_id = 1000
+    project_name_renamed_by_cloud = "Python Project Renamed By Cloud"
+    cloud_project = create_api_project(project_id, project_name_renamed_by_cloud)
+
+    api_client = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_projects([project_path])
+
+    assert not (Path.cwd() / project_path).exists()
+    assert (Path.cwd() / project_name_renamed_by_cloud).exists()

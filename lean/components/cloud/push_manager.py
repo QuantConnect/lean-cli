@@ -88,25 +88,32 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: str) -> None:
+    def _push_project(self, project_path: Path, organization_id: str, suggested_rename_path: Path = None) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
 
         :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
+        :param suggested_rename_path: the path to move the project to.
         """
+        
         project_name = project_path.relative_to(Path.cwd()).as_posix()
+
+        potential_new_name = project_name
+        if suggested_rename_path and suggested_rename_path != project_path:
+            potential_new_name = suggested_rename_path.relative_to(Path.cwd()).as_posix()
+            
 
         project_config = self._project_config_manager.get_project_config(project_path)
         cloud_id = project_config.get("cloud-id")
 
         # check if project name is valid or if rename is required
         if cloud_id is not None:
-            expected_correct_project_path = self._project_manager.get_local_project_path(project_name, cloud_id)
+            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, cloud_id)
         else:
             local_id = self._project_config_manager.get_local_id(project_path)
-            expected_correct_project_path = self._project_manager.get_local_project_path(project_name, None, local_id)
+            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, None, local_id)
         if expected_correct_project_path != project_path:
             # rename project
             valid_project_name = expected_correct_project_path.relative_to(Path.cwd()).as_posix()
@@ -125,12 +132,18 @@ class PushManager:
             cloud_project = self._api_client.projects.create(project_name,
                                                              QCLanguage[project_config.get("algorithm-language")],
                                                              organization_id)
-            self._cloud_projects.append(cloud_project)
             project_config.set("cloud-id", cloud_project.projectId)
             project_config.set("organization-id", cloud_project.organizationId)
 
+            if cloud_project.name != project_name:
+                # cloud project name was changed. Repeat steps to validate the new name locally.
+                self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
+                self._push_project(project_path, organization_id, Path.cwd() / cloud_project.name)
+                return
+
+            self._cloud_projects.append(cloud_project)
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
-            self._logger.info(f"Successfully created cloud project '{project_name}'{organization_message_part}")
+            self._logger.info(f"Successfully created cloud project '{cloud_project.name}'{organization_message_part}")
 
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project)
