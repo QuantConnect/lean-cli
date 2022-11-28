@@ -91,14 +91,17 @@ class PathManager:
         """
         from lean.models.errors import MoreInfoError
 
+        relative_path = path
+
         try:
             cli_root_dir = self._lean_config_manager.get_cli_root_directory()
             relative_path = path.relative_to(cli_root_dir)
-        except MoreInfoError:
+        except (MoreInfoError, ValueError):
             from platform import system
             if system() == "Windows":
                 # Skip the first component, which contains the drive name
                 posix_path = path.as_posix()
-                relative_path = Path(posix_path[posix_path.index('/'):])
+                first_separator_index = posix_path.find('/')
+                relative_path = Path(posix_path[first_separator_index:] if first_separator_index != -1 else path)
 
         return relative_path == Path(".") or self.is_path_valid(relative_path)
