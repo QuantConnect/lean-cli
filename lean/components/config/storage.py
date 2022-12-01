@@ -27,10 +27,15 @@ class Storage:
         self.file = Path(file)
 
         if self.file.exists():
-            content = self.file.read_text(encoding="utf-8")
-            if content:
-                self._data = loads(content)
-            else:
+            try:
+                content = self.file.read_text(encoding="utf-8")
+                if content:
+                    self._data = loads(content)
+                else:
+                    self._data = {}
+            except:
+                # Could happen rarely due to concurrency or unexpected failures, so if it does let's recover
+                self.file.unlink()
                 self._data = {}
         else:
             self._data = {}
