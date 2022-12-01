@@ -143,6 +143,9 @@ class APIClient:
                                              raise_for_status=False,
                                              **options)
 
+        if self._logger.debug_logging_enabled:
+            self._logger.debug(f"Request response: {response.text}")
+
         if 500 <= response.status_code < 600 and retry_http_5xx:
             return self._request(method, endpoint, options, False)
 
