@@ -323,7 +323,9 @@ class ProjectManager:
         :param no_local: Whether restoring the packages locally must be skipped
         """
         from shutil import which
-        from subprocess import run
+        from subprocess import run, STDOUT, PIPE
+        from lean.models.errors import MoreInfoError
+
         if no_local:
             return
 
@@ -332,15 +334,22 @@ class ProjectManager:
             return
 
         project_dir = csproj_file.parent
-        self._logger.info(
-            f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}' to provide local autocomplete: {project_dir}, {csproj_file}, {Path.cwd()}")
+        self._logger.info(f"Restoring packages in '{self._path_manager.get_relative_path(project_dir)}' "
+                          f"to provide local autocomplete")
 
-        process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir)
+        process = run(["dotnet", "restore", str(csproj_file)], cwd=project_dir, stdout=PIPE, stderr=STDOUT, text=True)
+        self._logger.debug(process.stdout)
 
         if process.returncode != 0:
-            raise RuntimeError("Something went wrong while restoring packages, see the logs above for more information")
+            raise RuntimeWarning("Something went wrong while restoring packages. "
+                                 "You might be missing the .NET Core SDK in your dotnet installation. "
+                                 "Local autocomplete functionality might be limited.")
 
-    def try_restore_csharp_project(self, csproj_file: Path, original_csproj_content: str, no_local: bool) -> None:
+        self._logger.info("Restored successfully")
+
+    def try_restore_csharp_project(self, csproj_file: Path,
+                                   original_csproj_content: Optional[str] = None,
+                                   no_local: bool = False) -> None:
         """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
 
         :param csproj_file: Path to the project's csproj file
@@ -349,9 +358,10 @@ class ProjectManager:
         """
         try:
             self.restore_csharp_project(csproj_file, no_local)
-        except RuntimeError as e:
-            self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
-            csproj_file.write_text(original_csproj_content, encoding="utf-8")
+        except RuntimeWarning as e:
+            if original_csproj_content is not None:
+                self._logger.info(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
+                csproj_file.write_text(original_csproj_content, encoding="utf-8")
             raise e
 
 

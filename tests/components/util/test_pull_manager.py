@@ -301,9 +301,9 @@ def test_pull_projects_restores_csharp_projects_and_its_libraries() -> None:
 
     assert mock_try_restore_csharp_project.call_count == 3
     mock_try_restore_csharp_project.assert_has_calls([
-        mock.call(test_csharp_library1_csproj_file_path, mock.ANY, False),
-        mock.call(test_csharp_library2_csproj_file_path, mock.ANY, False),
-        mock.call(test_project_csproj_file_path, mock.ANY, False)
+        mock.call(test_csharp_library1_csproj_file_path),
+        mock.call(test_csharp_library2_csproj_file_path),
+        mock.call(test_project_csproj_file_path)
     ])
 
 
