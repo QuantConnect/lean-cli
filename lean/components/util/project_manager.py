@@ -341,12 +341,15 @@ class ProjectManager:
         self._logger.debug(process.stdout)
 
         if process.returncode != 0:
-            raise RuntimeError("Something went wrong while restoring packages. "
-                               "You might be missing the .NET Core SDK in your dotnet installation.")
+            raise RuntimeWarning("Something went wrong while restoring packages. "
+                                 "You might be missing the .NET Core SDK in your dotnet installation. "
+                                 "Local autocomplete functionality might be limited.")
 
         self._logger.info("Restored successfully")
 
-    def try_restore_csharp_project(self, csproj_file: Path, original_csproj_content: str, no_local: bool) -> None:
+    def try_restore_csharp_project(self, csproj_file: Path,
+                                   original_csproj_content: Optional[str] = None,
+                                   no_local: bool = False) -> None:
         """Restores a C# project if requested with the no_local flag and if dotnet is on the user's PATH.
 
         :param csproj_file: Path to the project's csproj file
@@ -355,9 +358,10 @@ class ProjectManager:
         """
         try:
             self.restore_csharp_project(csproj_file, no_local)
-        except RuntimeError as e:
-            self._logger.warn(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
-            csproj_file.write_text(original_csproj_content, encoding="utf-8")
+        except RuntimeWarning as e:
+            if original_csproj_content is not None:
+                self._logger.info(f"Reverting the changes to '{self._path_manager.get_relative_path(csproj_file)}'")
+                csproj_file.write_text(original_csproj_content, encoding="utf-8")
             raise e
 
 

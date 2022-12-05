@@ -248,12 +248,14 @@ class PullManager:
             self._remove_local_library_references_from_project(path, cloud_libraries_paths)
 
             # Restore the project to automatically enable local auto-complete
-            self._restore_project(project, path)
+            try:
+                self._restore_project(project, path)
+            except RuntimeWarning as e:
+                self._logger.info(e)
 
     def _restore_project(self, project: QCProject, project_dir: Path) -> None:
         if project.language != QCLanguage.CSharp:
             return
 
         project_csproj_file = self._project_manager.get_csproj_file_path(project_dir)
-        original_csproj_content = project_csproj_file.read_text(encoding="utf-8")
-        self._project_manager.try_restore_csharp_project(project_csproj_file, original_csproj_content, False)
+        self._project_manager.try_restore_csharp_project(project_csproj_file)
