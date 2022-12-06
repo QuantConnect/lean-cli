@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional, List
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.components.config.storage import Storage
+from lean.components.config.storage import Storage, safe_save
 from lean.components.util.logger import Logger
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.models.errors import MoreInfoError
@@ -153,7 +153,7 @@ class LeanConfigManager:
             else:
                 config_text = config_text.replace("{", f'{{\n  "{key}": {json_value},', 1)
 
-        config_path.write_text(config_text, encoding="utf-8")
+        safe_save(path=config_path, data=config_text)
 
     def clean_lean_config(self, config: str) -> str:
         """Removes the properties from a Lean config file which can be set in get_complete_lean_config().

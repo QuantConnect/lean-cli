@@ -15,6 +15,37 @@ from pathlib import Path
 from typing import Any
 
 
+def safe_save(data: str, path: str, _retry: int = 0):
+    from uuid import uuid4
+    from shutil import move
+    from os import unlink, path as os_path
+    from time import time, sleep
+
+    lock_file = Path(str(path) + '.lock').resolve()
+    try:
+        with open(lock_file, 'x') as _:
+            # we create a tmp file we will use to write to. This was we avoid concurrency issues corrupting the file
+            tmp_file = Path(str(path) + '.' + str(uuid4())).resolve()
+            with open(tmp_file, "w+", encoding="utf-8") as targetFile:
+                targetFile.write(data)
+
+            # atomic move when on the same filesystem which is this case, they are side by side
+            move(tmp_file, path)
+        unlink(lock_file)
+    except FileExistsError:
+        try:
+            # lock is taken, delete if old, else wait and retry
+            if time() - os_path.getmtime(lock_file) >= 2:
+                unlink(lock_file)
+            else:
+                sleep(0.250)
+        except:
+            # some else might have deleted it
+            pass
+        if _retry < 10:
+            safe_save(data, path, ++_retry)
+
+
 class Storage:
     """A Storage instance manages the data in a single JSON file."""
 
@@ -24,6 +55,7 @@ class Storage:
         :param file: the path to the file this Storage instance should manage
         """
         from json import loads
+
         self.file = Path(file)
 
         if self.file.exists():
@@ -88,12 +120,12 @@ class Storage:
 
     def _save(self) -> None:
         from json import dumps
+
         """Saves the data to the underlying file, deleting the file if there is no data."""
         if len(self._data) > 0:
             self.file.parent.mkdir(parents=True, exist_ok=True)
 
-            with self.file.open("w+", encoding="utf-8") as file:
-                file.write(dumps(self._data, indent=4) + "\n")
+            safe_save(data=dumps(self._data, indent=4) + "\n", path=self.file.resolve())
         else:
             if self.file.exists():
                 self.file.unlink()

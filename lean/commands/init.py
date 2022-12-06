@@ -21,6 +21,7 @@ from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
+from lean.components.config.storage import safe_save
 
 
 def _get_organization_id(user_input: str) -> Tuple[str, str]:
@@ -175,8 +176,7 @@ def init(organization: Optional[str], language: Optional[str]) -> None:
     # Update the data-folder configuration
     config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
 
-    with lean_config_path.open("w+", encoding="utf-8") as file:
-        file.write(config)
+    safe_save(path=lean_config_path, data=config)
 
     # Add the organization id to the lean config
     organization_manager = container.organization_manager
