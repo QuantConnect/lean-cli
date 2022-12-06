@@ -142,6 +142,7 @@ Options:
   --python-venv TEXT              The path of the python virtual environment to be used
   --update                        Pull the LEAN engine image before running the backtest
   --backtest-name TEXT            Backtest name
+  --vscode                        Setup vscode extension related configurations.
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.

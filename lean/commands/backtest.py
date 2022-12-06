@@ -13,7 +13,7 @@
 
 
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from click import command, option, argument, Choice
 
 from lean.click import LeanCommand, PathParameter
@@ -23,7 +23,8 @@ from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
-
+from lean.models.addon_modules import all_addon_modules
+from lean.models.addon_modules.addon_module import AddonModule
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -280,6 +281,10 @@ def _select_organization() -> QCMinimalOrganization:
 @option("--backtest-name",
               type=str,
               help="Backtest name")
+@option("--vscode",
+              is_flag=True,
+              default=False,
+              help="Setup vscode extension related configurations.")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -291,7 +296,8 @@ def backtest(project: Path,
              image: Optional[str],
              python_venv: Optional[str],
              update: bool,
-             backtest_name: str) -> None:
+             backtest_name: str,
+             vscode: bool,) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -307,6 +313,7 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
+    addon_modules: List[AddonModule] = []
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -368,6 +375,17 @@ def backtest(project: Path,
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
+
+    # prepare for vscode settings
+    if vscode:
+        cloud_messaging_handler = next((module for module in all_addon_modules if module.get_name() == "Cloud Messaging Handler"), None)
+        if cloud_messaging_handler:
+            addon_modules.append(cloud_messaging_handler)
+
+    # build and configure addon modules
+    for module in addon_modules:
+        module.build(lean_config, logger).configure(lean_config, "backtesting")
+        module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
