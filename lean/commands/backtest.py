@@ -281,10 +281,10 @@ def _select_organization() -> QCMinimalOrganization:
 @option("--backtest-name",
               type=str,
               help="Backtest name")
-@option("--vscode",
-              is_flag=True,
-              default=False,
-              help="Setup vscode extension related configurations.")
+@option("--addon-module",
+              type=str,
+              multiple=True,
+              hidden=True)
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -297,7 +297,7 @@ def backtest(project: Path,
              python_venv: Optional[str],
              update: bool,
              backtest_name: str,
-             vscode: bool,) -> None:
+             addon_module: Optional[List[str]]) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -313,7 +313,7 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
-    addon_modules: List[AddonModule] = []
+    addon_modules_to_build: List[AddonModule] = []
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -377,13 +377,16 @@ def backtest(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     # prepare for vscode settings
-    if vscode:
-        cloud_messaging_handler = next((module for module in all_addon_modules if module.get_name() == "Cloud Messaging Handler"), None)
-        if cloud_messaging_handler:
-            addon_modules.append(cloud_messaging_handler)
+    if len(addon_module) > 0:
+        for given_module in addon_module:
+            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
+            if found_module:
+                addon_modules_to_build.append(found_module)
+            else:
+                logger.error(f"Addon module '{given_module}' not found")
 
     # build and configure addon modules
-    for module in addon_modules:
+    for module in addon_modules_to_build:
         module.build(lean_config, logger).configure(lean_config, "backtesting")
         module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
 
