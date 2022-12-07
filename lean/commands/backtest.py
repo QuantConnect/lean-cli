@@ -376,14 +376,12 @@ def backtest(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    # prepare for vscode settings
-    if len(addon_module) > 0:
-        for given_module in addon_module:
-            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-            if found_module:
-                addon_modules_to_build.append(found_module)
-            else:
-                logger.error(f"Addon module '{given_module}' not found")
+    for given_module in addon_module:
+        found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
+        if found_module:
+            addon_modules_to_build.append(found_module)
+        else:
+            logger.error(f"Addon module '{given_module}' not found")
 
     # build and configure addon modules
     for module in addon_modules_to_build:
