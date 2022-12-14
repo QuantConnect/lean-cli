@@ -42,6 +42,8 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-agent-description": "Individual",
     "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": "no",
+    "ib-enable-delayed-streaming-data": "no",
+    "ib-weekly-restart-utc-time": "21:00:00",
     "organization-id": "abc",
 
     "environments": {{
