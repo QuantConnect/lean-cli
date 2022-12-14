@@ -246,6 +246,10 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
   --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
                                   QuantConnect price data feed
   --tradier-account-id TEXT       Your Tradier account id
@@ -854,6 +858,10 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
