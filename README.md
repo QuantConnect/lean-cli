@@ -241,7 +241,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken|TDAmeritrade]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -306,6 +306,11 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --tdameritrade-api-key TEXT     Your TDAmeritrade API key
+  --tdameritrade-access-token TEXT
+                                  Your TDAmeritrade OAuth Access Token
+  --tdameritrade-account-number TEXT
+                                  Your TDAmeritrade account number
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -849,9 +854,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|TDAmeritrade]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|IQFeed|Polygon Data Feed|Custom data only]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
   --data-provider [Terminal Link|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
@@ -957,6 +962,11 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --tdameritrade-api-key TEXT     Your TDAmeritrade API key
+  --tdameritrade-access-token TEXT
+                                  Your TDAmeritrade OAuth Access Token
+  --tdameritrade-account-number TEXT
+                                  Your TDAmeritrade account number
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
