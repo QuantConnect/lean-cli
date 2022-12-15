@@ -313,6 +313,11 @@ brokerage_required_options = {
         "tt-order-routing-host": "abc",
         "tt-order-routing-port": "abc",
         "tt-log-fix-messages": "no"
+    },
+    "TDAmeritrade": {
+        "tdameritrade-account-number": "123",
+        "tdameritrade-api-key": "abc",
+        "tdameritrade-access-token": "abc",
     }
 }
 
@@ -327,6 +332,7 @@ data_feed_required_options = {
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": brokerage_required_options["Terminal Link"],
     "Kraken": brokerage_required_options["Kraken"],
+    "TDAmeritrade": brokerage_required_options["TDAmeritrade"]
 }
 
 
@@ -768,7 +774,9 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Tradier", ""),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", ""),
-                                            ("Zerodha", "USD:100")])
+                                            ("Zerodha", "USD:100"),
+                                            ("TDAmeritrade", ""),
+                                            ("TDAmeritrade", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
@@ -830,7 +838,9 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("Tradier", ""),
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
-                                                ("Zerodha", "A:A 2T:1:145.1")])
+                                                ("Zerodha", "A:A 2T:1:145.1"),
+                                                ("TDAmeritrade", ""),
+                                                ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner

@@ -187,7 +187,8 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Samco", "USD:100"),
                                             ("Terminal Link", "USD:100"),
                                             ("Tradier", "USD:100"),
-                                            ("Zerodha", "USD:100")])
+                                            ("Zerodha", "USD:100"),
+                                            ("TDAmeritrade", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
     create_fake_lean_cli_directory()
 
@@ -264,7 +265,9 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("Tradier", ""),
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
-                                                ("Zerodha", "A:A 2T:1:145.1")])
+                                                ("Zerodha", "A:A 2T:1:145.1"),
+                                                ("TDAmeritrade", ""),
+                                                ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
     create_fake_lean_cli_directory()
 
