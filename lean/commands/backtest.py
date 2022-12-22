@@ -13,7 +13,7 @@
 
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
 
 from lean.click import LeanCommand, PathParameter
@@ -285,6 +285,10 @@ def _select_organization() -> QCMinimalOrganization:
               type=str,
               multiple=True,
               hidden=True)
+@option("--extra-config",
+              type=(str, str),
+              multiple=True,
+              hidden=True)
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -297,7 +301,8 @@ def backtest(project: Path,
              python_venv: Optional[str],
              update: bool,
              backtest_name: str,
-             addon_module: Optional[List[str]]) -> None:
+             addon_module: Optional[List[str]],
+             extra_config: Optional[Tuple[str, str]]) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -372,6 +377,10 @@ def backtest(project: Path,
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
+
+    # Set extra config
+    for key, value in extra_config:
+        lean_config[key] = value
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
