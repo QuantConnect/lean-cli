@@ -95,6 +95,7 @@ class Configuration(ABC):
         self._value: str = config_json_object["value"]
         self._is_cloud_property: bool = "cloud-id" in config_json_object
         self._is_required_from_user = False
+        self._save_persistently_in_lean = False
         self._is_type_configurations_env: bool = type(
             self) is ConfigurationsEnvConfiguration
         self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
@@ -173,7 +174,7 @@ class ConfigurationsEnvConfiguration(InfoConfiguration):
 
 
 class UserInputConfiguration(Configuration, ABC):
-    """Base class extended to all confiugration class than store values in Lean config.
+    """Base class extended to all configuration class that requires input from user.
 
     Values are expected from the user via prompts.
     Values of this configuration is persistently saved in the Lean configuration,
@@ -183,6 +184,7 @@ class UserInputConfiguration(Configuration, ABC):
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._is_required_from_user = True
+        self._save_persistently_in_lean = True
         self._input_method = self._prompt_info = self._help = ""
         self._input_default = self._cloud_id = None
         if "input-method" in config_json_object.keys():
@@ -195,6 +197,8 @@ class UserInputConfiguration(Configuration, ABC):
             self._input_default = config_json_object["input-default"]
         if "cloud-id" in config_json_object.keys():
             self._cloud_id = config_json_object["cloud-id"]
+        if "save-persistently-in-lean" in config_json_object.keys():
+            self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
 
     @abstractmethod
     def AskUserForInput(self, default_value: Any, logger: Logger):
