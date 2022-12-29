@@ -90,8 +90,8 @@ class LeanConfigConfigurer(JsonModule, ABC):
             if type(value) == WindowsPath or type(value) == PosixPath:
                 value = str(value).replace("\\", "/")
             lean_config[configuration._id] = value
-        container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_required_properties()}")
-        self._save_properties(lean_config, self.get_required_properties())
+        container.logger.debug(f"LeanConfigConfigurer.ensure_module_installed(): _save_properties for module {self._id}: {self.get_persistent_save_properties()}")
+        self._save_properties(lean_config, self.get_persistent_save_properties())
 
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:

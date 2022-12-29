@@ -321,6 +321,10 @@ brokerage_required_options = {
     }
 }
 
+brokerage_required_options_not_persistently_save_in_lean_config = {
+    "TDAmeritrade": ["tdameritrade-access-token"]
+}
+
 data_feed_required_options = {
     "Interactive Brokers": brokerage_required_options["Interactive Brokers"],
     "Tradier": brokerage_required_options["Tradier"],
@@ -435,7 +439,47 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             container.lean_runner.run_lean.assert_not_called()
 
 
+@pytest.mark.parametrize("brokerage,data_feed",
+                         itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
+def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_config(brokerage: str, data_feed: str) -> None:
+    create_fake_lean_cli_directory()
+    lean_runner = container.lean_runner
 
+    options = []
+
+    for key, value in brokerage_required_options[brokerage].items():
+        options.extend([f"--{key}", value])
+
+    for key, value in data_feed_required_options[data_feed].items():
+        options.extend([f"--{key}", value])
+
+    if brokerage == "Trading Technologies" or brokerage == "Paper Trading":
+        options.extend(["--live-cash-balance", "USD:100"])
+
+    result = CliRunner().invoke(lean, ["live", "Python Project",
+                                       "--brokerage", brokerage,
+                                       "--data-feed", data_feed,
+                                       *options])
+
+    traceback.print_exception(*result.exc_info)
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                 "lean-cli",
+                                                 Path("Python Project/main.py").resolve(),
+                                                 mock.ANY,
+                                                 ENGINE_IMAGE,
+                                                 None,
+                                                 False,
+                                                 False)
+
+    config = container.lean_config_manager.get_lean_config()
+    if brokerage in brokerage_required_options_not_persistently_save_in_lean_config:
+        for key in brokerage_required_options_not_persistently_save_in_lean_config[brokerage]:
+            assert key not in config
+
+            
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:

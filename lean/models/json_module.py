@@ -117,6 +117,9 @@ class JsonModule(ABC):
                             and self.check_if_config_passes_filters(config)]
         return required_configs
 
+    def get_persistent_save_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
+        return [config._id for config in self.get_required_configs(filters) if config._save_persistently_in_lean]
+
     def get_essential_properties(self) -> List[str]:
         return [config._id for config in self.get_essential_configs()]
 
