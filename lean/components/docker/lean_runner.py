@@ -328,6 +328,10 @@ class LeanRunner:
         else:
             run_options["name"] = f"lean_cli_{str(uuid4()).replace('-', '')}"
         
+        # set the hostname
+        if "hostname" in lean_config:
+            run_options["hostname"] = lean_config["hostname"]
+
         output_config = self._output_config_manager.get_output_config(output_dir)
         output_config.set("container", run_options["name"])
         if "backtest-name" in lean_config:

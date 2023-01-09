@@ -132,7 +132,7 @@ class DockerManager:
         is_tty = stdout.isatty()
 
         kwargs["detach"] = True
-        kwargs["hostname"] = node()
+        kwargs["hostname"] = kwargs["hostname"] if "hostname" in kwargs else node()
         kwargs["tty"] = is_tty and not detach
         kwargs["stdin_open"] = is_tty and not detach
         kwargs["stop_signal"] = kwargs.get("stop_signal", "SIGKILL")
