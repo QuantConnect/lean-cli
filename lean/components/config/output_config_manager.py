@@ -113,19 +113,21 @@ class OutputConfigManager:
         """
         return self._get_by_id("Live deployment", live_deployment_id, ["live/*"], root_directory)
 
-    def get_latest_output_directory(self, environment: str) -> Path:
+    def get_latest_output_directory(self, environment: str) -> Optional[Path]:
         """Finds the latest output directory for the given environment (live or backtests)
 
         :param environment: The environment to find the latest output directory for (live or backtests)
         :return: The path to the latest output directory for the given environment
         :raises RuntimeError: If no output directory is found for the given environment
         """
-        output_directories = sorted(Path.cwd().rglob(f"{environment}/*"), key=lambda d: d.stat().st_mtime, reverse=True)
-        if len(output_directories) == 0:
-            raise ValueError(f"No output {environment} directories were found. "
-                             f"Make sure you run a backtest or live deployment first.")
+        output_json_files = sorted(Path.cwd().rglob(f"{environment}/*/*.json"),
+                                   key=lambda d: d.stat().st_mtime,
+                                   reverse=True)
 
-        return output_directories[0]
+        if len(output_json_files) == 0:
+            return None
+
+        return output_json_files[0].parent
 
     def get_output_id(self, output_directory: Path) -> Optional[int]:
         """Returns the id of an output, regardless of whether it is a backtest or a live deployment.

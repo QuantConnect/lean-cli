@@ -34,10 +34,17 @@ def setup_backtest_results() -> None:
     """A pytest fixture which creates a backtest results file before every test."""
     create_fake_lean_cli_directory()
 
-    results_path = Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "1459804915.json"
+    results_dir = Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00"
+
+    results_id = 1459804915
+    results_path = results_dir / f"{results_id}.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)
     with results_path.open("w+", encoding="utf-8") as file:
         file.write("{}")
+
+    results_config_path = results_dir / "config"
+    with results_config_path.open("w+", encoding="utf-8") as file:
+        file.write(json.dumps({'id': results_id}))
 
 
 def run_image(image: DockerImage, **kwargs) -> bool:

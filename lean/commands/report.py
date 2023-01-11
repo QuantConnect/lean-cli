@@ -112,6 +112,10 @@ def report(backtest_results: Optional[Path],
     output_config_manager = container.output_config_manager
     output_directory = output_config_manager.get_latest_output_directory(environment)
 
+    if output_directory is None:
+        raise ValueError(f"No output {environment} directories were found. "
+                         f"Make sure you run a backtest or live deployment first.")
+
     if backtest_results is None:
         backtest_results = get_latest_result_json_file(output_directory)
         if not backtest_results:

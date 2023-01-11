@@ -69,6 +69,8 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     elif cloud_last_time < local_last_time:
         from lean.container import container
         output_directory = container.output_config_manager.get_latest_output_directory("live")
+        if not output_directory:
+            return None
         previous_state_file = get_latest_result_json_file(output_directory)
         if not previous_state_file:
             return None
@@ -198,20 +200,6 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return holdings
     else:
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
-
-
-def _is_result_file(file_name: str) -> bool:
-    return file_name.replace(".json", "", 1).isdigit()
-
-
-def _filter_json_name_backtest(file: Path) -> bool:
-    # The json should have name like "1234567890.json"
-    return _is_result_file(file.name)
-
-
-def _filter_json_name_live(file: Path) -> bool:
-    # The json should have name like "L-1234567890.json"
-    return file.name.startswith("L-") and _is_result_file(file.name.replace("L-", "", 1))
 
 
 def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
