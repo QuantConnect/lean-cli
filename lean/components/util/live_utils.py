@@ -14,7 +14,7 @@
 from click import prompt, confirm
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
@@ -67,7 +67,11 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
         last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
         previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
-        previous_state_file = get_state_json("live")
+        from lean.container import container
+        output_directory = container.output_config_manager.get_latest_output_directory("live")
+        if not output_directory:
+            return None
+        previous_state_file = get_latest_result_json_file(output_directory)
         if not previous_state_file:
             return None
         previous_portfolio_state = {x.lower(): y for x, y in loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
@@ -198,20 +202,17 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
-def _filter_json_name_backtest(file: Path) -> bool:
-    return not file.name.endswith("-order-events.json") and not file.name.endswith("alpha-results.json")
+def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
+    from lean.container import container
 
+    output_config_manager = container.output_config_manager
+    output_id = output_config_manager.get_output_id(output_directory)
 
-def _filter_json_name_live(file: Path) -> bool:
-    return file.name.replace("L-", "", 1).replace(".json", "").isdigit()    # The json should have name like "L-1234567890.json"
-
-
-def get_state_json(environment: str) -> str:
-    json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
-    name_filter = _filter_json_name_backtest if environment == "backtests" else _filter_json_name_live
-    filtered_json_files = [f for f in json_files if name_filter(f)]
-
-    if len(filtered_json_files) == 0:
+    if output_id is None:
         return None
 
-    return sorted(filtered_json_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
+    result_file = output_directory / f"{output_id}.json"
+    if not result_file.exists():
+        return None
+
+    return result_file

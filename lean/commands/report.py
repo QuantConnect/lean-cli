@@ -20,7 +20,7 @@ from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, PROJECT_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
-from lean.components.util.live_utils import get_state_json
+from lean.components.util.live_utils import get_latest_result_json_file
 
 
 def _find_project_directory(backtest_file: Path) -> Optional[Path]:
@@ -108,8 +108,16 @@ def report(backtest_results: Optional[Path],
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
 
+    environment = "backtests"
+    output_config_manager = container.output_config_manager
+    output_directory = output_config_manager.get_latest_output_directory(environment)
+
+    if output_directory is None:
+        raise ValueError(f"No output {environment} directories were found. "
+                         f"Make sure you run a backtest or live deployment first.")
+
     if backtest_results is None:
-        backtest_results = get_state_json("backtests")
+        backtest_results = get_latest_result_json_file(output_directory)
         if not backtest_results:
             raise MoreInfoError(
             "Could not find a recent backtest result file, please use the --backtest-results option",
@@ -175,7 +183,7 @@ def report(backtest_results: Optional[Path],
     with config_path.open("w+", encoding="utf-8") as file:
         dump(report_config, file)
 
-    backtest_id = container.output_config_manager.get_backtest_id(backtest_results.parent)
+    backtest_id = container.output_config_manager.get_backtest_id(output_directory)
 
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
