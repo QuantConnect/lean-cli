@@ -198,14 +198,30 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
+def _is_result_file(file_name: str) -> bool:
+    from re import match
+    from datetime import datetime
+
+    found_match = match(r"^(\d+)\.json$", file_name)
+    if found_match:
+        try:
+            datetime.fromtimestamp(int(found_match[1]))
+            return True
+        except (OverflowError, OSError):
+            # if the digits in the file name are not a valid epoch timestamp, this is not a result file
+            pass
+
+    return False
+
+
 def _filter_json_name_backtest(file: Path) -> bool:
-    return not file.name.endswith("-order-events.json") and \
-           not file.name.endswith("alpha-results.json") and \
-           not file.name.startswith("data-monitor-report-")
+    # The json should have name like "1234567890.json" where "1234567890" is a valid epoch timestamp
+    return _is_result_file(file.name)
 
 
 def _filter_json_name_live(file: Path) -> bool:
-    return file.name.replace("L-", "", 1).replace(".json", "").isdigit()    # The json should have name like "L-1234567890.json"
+    # The json should have name like "L-1234567890.json" where "1234567890" is a valid epoch timestamp
+    return file.name.startswith("L-") and _is_result_file(file.name.replace("L-", "", 1))
 
 
 def get_state_json(environment: str) -> Optional[Path]:
