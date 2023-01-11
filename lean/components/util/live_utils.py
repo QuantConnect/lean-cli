@@ -14,7 +14,7 @@
 from click import prompt, confirm
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.brokerages.cloud import all_cloud_brokerages
@@ -199,14 +199,16 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
 
 
 def _filter_json_name_backtest(file: Path) -> bool:
-    return not file.name.endswith("-order-events.json") and not file.name.endswith("alpha-results.json")
+    return not file.name.endswith("-order-events.json") and \
+           not file.name.endswith("alpha-results.json") and \
+           not file.name.startswith("data-monitor-report-")
 
 
 def _filter_json_name_live(file: Path) -> bool:
     return file.name.replace("L-", "", 1).replace(".json", "").isdigit()    # The json should have name like "L-1234567890.json"
 
 
-def get_state_json(environment: str) -> str:
+def get_state_json(environment: str) -> Optional[Path]:
     json_files = list(Path.cwd().rglob(f"{environment}/*/*.json"))
     name_filter = _filter_json_name_backtest if environment == "backtests" else _filter_json_name_live
     filtered_json_files = [f for f in json_files if name_filter(f)]
