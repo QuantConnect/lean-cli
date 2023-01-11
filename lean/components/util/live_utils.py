@@ -199,28 +199,16 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
 
 
 def _is_result_file(file_name: str) -> bool:
-    from re import match
-    from datetime import datetime
-
-    found_match = match(r"^(\d+)\.json$", file_name)
-    if found_match:
-        try:
-            datetime.fromtimestamp(int(found_match[1]))
-            return True
-        except (OverflowError, OSError):
-            # if the digits in the file name are not a valid epoch timestamp, this is not a result file
-            pass
-
-    return False
+    return file_name.replace(".json", "", 1).isdigit()
 
 
 def _filter_json_name_backtest(file: Path) -> bool:
-    # The json should have name like "1234567890.json" where "1234567890" is a valid epoch timestamp
+    # The json should have name like "1234567890.json"
     return _is_result_file(file.name)
 
 
 def _filter_json_name_live(file: Path) -> bool:
-    # The json should have name like "L-1234567890.json" where "1234567890" is a valid epoch timestamp
+    # The json should have name like "L-1234567890.json"
     return file.name.startswith("L-") and _is_result_file(file.name.replace("L-", "", 1))
 
 
