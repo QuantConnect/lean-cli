@@ -113,6 +113,36 @@ class OutputConfigManager:
         """
         return self._get_by_id("Live deployment", live_deployment_id, ["live/*"], root_directory)
 
+    def get_latest_output_directory(self, environment: str) -> Path:
+        """Finds the latest output directory for the given environment (live or backtests)
+
+        :param environment: The environment to find the latest output directory for (live or backtests)
+        :return: The path to the latest output directory for the given environment
+        :raises RuntimeError: If no output directory is found for the given environment
+        """
+        output_directories = sorted(Path.cwd().rglob(f"{environment}/*"), key=lambda d: d.stat().st_mtime, reverse=True)
+        if len(output_directories) == 0:
+            raise ValueError(f"No output {environment} directories were found. "
+                             f"Make sure you run a backtest or live deployment first.")
+
+        return output_directories[0]
+
+    def get_output_id(self, output_directory: Path) -> Optional[int]:
+        """Returns the id of an output, regardless of whether it is a backtest or a live deployment.
+
+        It will return None if the output directory does not contain any output with an existing id.
+
+        :param output_directory: the path to the output to retrieve the id of
+        :return: the id of the given output
+        """
+        output_id = self._get_id(output_directory, 9)
+
+        if str(output_id)[0] == '9':
+            # no existing id was found
+            return None
+
+        return output_id
+
     def _get_id(self, output_directory: Path, prefix: int) -> int:
         config = self.get_output_config(output_directory)
 
