@@ -20,6 +20,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
+from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
 
 class PullManager:
@@ -71,11 +72,19 @@ class PullManager:
                 continue
 
             seen_projects.append(library.projectId)
-            library = self._api_client.projects.get(library.projectId, project.organizationId)
-            libraries.append(library)
-            libs, inaccessible_libs = self._get_libraries(library, seen_projects)
-            libraries.extend(libs)
-            inaccessible_libraries.extend(inaccessible_libs)
+
+            try:
+                library_project = self._api_client.projects.get(library.projectId, project.organizationId)
+            except RequestFailedError:
+                # the library could not be fetched, probably because it was deleted
+                inaccessible_libraries.append(library)
+                continue
+
+            libraries.append(library_project)
+
+            libraries_for_library, inaccessible_libs_for_library = self._get_libraries(library_project, seen_projects)
+            libraries.extend(libraries_for_library)
+            inaccessible_libraries.extend(inaccessible_libs_for_library)
 
         return libraries, inaccessible_libraries
 
@@ -100,9 +109,23 @@ class PullManager:
                 inaccessible_libraries.extend(libs_not_found)
 
         for library in inaccessible_libraries:
-            self._logger.warn(f"Cannot pull library '{library.libraryName}' because you don't have access it. "
-                              f"Please ask '{library.ownerName}' to add you as a collaborator to the project "
-                              f"in order to pull it.")
+            # let's build the right message, either the user has no access to the library or it may have been deleted
+            projects_referencing_library = [p for p in projects_to_pull
+                                            if any(lib.projectId == library.projectId for lib in p.libraries)]
+            if len(projects_referencing_library) == 1:
+                projects_str = f"project '{projects_referencing_library[0].name}'"
+            else:
+                joined_projects = ", ".join([f"''{p.name}''" for p in projects_referencing_library])
+                projects_str = f"projects {joined_projects}"
+
+            if library.access:
+                reason = "The library might haven been deleted but the project still references it."
+            else:
+                reason = f"You don't have access to the library. " \
+                         f"Please ask '{library.ownerName}' to add you as a collaborator to the project "\
+                         f"in order to pull it."
+            self._logger.warn(f"Cannot pull library '{library.libraryName}', which is referenced by {projects_str}. "
+                              + reason)
 
         projects_to_pull = sorted(projects_to_pull, key=lambda p: p.name)
         projects_with_paths = []
