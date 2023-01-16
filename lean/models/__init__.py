@@ -32,6 +32,8 @@ try:
         if res.ok:
             new_content = res.json()
             from json import dump
+            # create parents if not exists
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, 'w', encoding='utf-8') as f:
                 dump(new_content, f, ensure_ascii=False, indent=4)
         else:
