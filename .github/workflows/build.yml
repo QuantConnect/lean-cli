@@ -96,12 +96,16 @@ jobs:
 
       - name: Zip package
         if: matrix.os == 'windows-latest'
-        run: 7z a -tzip portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip portable/dist/lean
+        run: |
+          cd portable/dist/lean
+          7z a -tzip ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
         shell: bash
 
       - name: Zip package
         if: matrix.os == 'macos-12' || matrix.os == 'ubuntu-22.04'
-        run: zip -r portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip portable/dist/lean
+        run: |
+          cd portable/dist/lean
+          zip -r ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -111,8 +115,15 @@ jobs:
           aws-region: us-west-1
 
       - name: Publish To S3
-        run:
-          aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+        run: aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+        shell: bash
+
+      # only update version file once. 
+      - name: Update version information
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          echo '{ "version": ${GITHUB_REF##*/} }' > portable/latest.json
+          aws s3 cp portable/latest.json s3://${{ secrets.AWS_BUCKET }}/ --content-type "text/plain"
         shell: bash
 
       - name: Cleanup
