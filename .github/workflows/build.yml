@@ -112,7 +112,7 @@ jobs:
 
       - name: Publish To S3
         run:
-          aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+          aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/ --content-type "application/zip"
         shell: bash
 
       - name: Cleanup
