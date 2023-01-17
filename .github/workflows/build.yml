@@ -120,7 +120,7 @@ jobs:
           rm -rf portable
         shell: bash
 
-  test:
+  aws:
     runs-on: ${{ matrix.os }}
 
     strategy:
