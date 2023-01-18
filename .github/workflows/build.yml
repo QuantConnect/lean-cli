@@ -115,8 +115,9 @@ jobs:
           security unlock-keychain -p $KEYCHAIN_PASSWORD build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $KEYCHAIN_PASSWORD build.keychain
-          security find-identity -v 
+          security find-identity -v
           cd portable/dist/lean
+          /usr/bin/codesign --force -s CY5GJ9682W ./lean -v 
           zip -r ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
 
       - name: Zip package Ubuntu
