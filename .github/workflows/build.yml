@@ -65,7 +65,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12, windows-latest]
+        # os: [ubuntu-22.04, macos-12, windows-latest]
+        os: [macos-12]
         python-version: ["3.10"]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
@@ -90,11 +91,31 @@ jobs:
         run: pip install pyinstaller lean
         shell: bash
 
-      - name: Create Portable
+      - name: Create Portable Windows & Linux
+        if: matrix.os == 'windows-latest' || matrix.os == 'ubuntu-22.04'
         run: |
           mkdir portable
           cd portable
           pyinstaller ../scripts/main.spec
+        shell: bash
+
+       - name: Create Portable Macos
+        if: matrix.os == 'macos-12' || matrix.os == 'macos-11'
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          KEYCHAIN_PASSWORD: 'KEYCHAINPASSWORD'
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $KEYCHAIN_PASSWORD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $KEYCHAIN_PASSWORD build.keychain
+          security find-identity -v
+          mkdir portable
+          cd portable
+          pyinstaller --osx-bundle-identifier "build.keychain" ../scripts/main.spec
         shell: bash
 
       - name: Get OS Name Without Version
@@ -111,18 +132,7 @@ jobs:
 
       - name: Zip package Macos
         if: matrix.os == 'macos-12'
-        env: 
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-          KEYCHAIN_PASSWORD: 'KEYCHAINPASSWORD'
         run: |
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security create-keychain -p $KEYCHAIN_PASSWORD build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p $KEYCHAIN_PASSWORD build.keychain
-          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $KEYCHAIN_PASSWORD build.keychain
-          security find-identity -v
           cd portable/dist/lean
           /usr/bin/codesign --force -s CY5GJ9682W ./lean -v 
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
