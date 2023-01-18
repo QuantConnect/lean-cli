@@ -118,7 +118,7 @@ jobs:
           security find-identity -v
           cd portable/dist/lean
           /usr/bin/codesign --force -s CY5GJ9682W ./lean -v 
-          zip -r ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
+          zip -r ../lean.test1.${{ matrix.os }}.zip .
 
       - name: Zip package Ubuntu
         if: matrix.os == 'ubuntu-22.04'
