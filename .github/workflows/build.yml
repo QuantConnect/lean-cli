@@ -96,11 +96,16 @@ jobs:
           pyinstaller ../scripts/main.spec
         shell: bash
 
+      - name: Get OS Name Without Version
+        run: echo "OS_NAME=$(echo ${{ matrix.os }} | sed 's/-.*//')" >> $GITHUB_ENV
+        shell: bash
+
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
         run: |
           cd portable/dist/lean
-          7z a -tzip ../lean.test1.${{ matrix.os }}.zip .
+          7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
+          7z a -tzip ../lean-test1-${{ matrix.os }}.zip .
         shell: bash
 
       - name: Zip package Macos
@@ -119,13 +124,15 @@ jobs:
           security find-identity -v
           cd portable/dist/lean
           /usr/bin/codesign --force -s CY5GJ9682W ./lean -v 
-          zip -r ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
+          zip -r ../lean-latest-${{env.OS_NAME}}.zip .
+          zip -r ../lean-test1-${{ matrix.os }}.zip .
 
       - name: Zip package Ubuntu
         if: matrix.os == 'ubuntu-22.04'
         run: |
           cd portable/dist/lean
-          zip -r ../lean.test1.${{ matrix.os }}.zip .
+          zip -r ../lean-latest-${{env.OS_NAME}}.zip .
+          zip -r ../lean-test1-${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -135,7 +142,9 @@ jobs:
           aws-region: us-west-1
 
       - name: Publish To S3
-        run: aws s3 cp portable/dist/lean.test1.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+        run: |
+          aws s3 cp portable/dist/lean-latest-${{env.OS_NAME}}.zip s3://${{ secrets.AWS_BUCKET }}/ --content-type "application/zip"
+          aws s3 cp portable/dist/lean-test1-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
         shell: bash
 
       # only update version file once. 
