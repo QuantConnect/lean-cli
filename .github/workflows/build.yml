@@ -81,7 +81,7 @@ jobs:
           python-version: '3.10'
 
       - name: Wait for pip release, sleep in seconds
-        run: sleep 900
+        run: sleep 1
         shell: bash
 
       - name: Setup Portable
