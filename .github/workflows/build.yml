@@ -99,7 +99,7 @@ jobs:
           pyinstaller ../scripts/main.spec
         shell: bash
 
-       - name: Create Portable Macos
+      - name: Create Portable Macos
         if: matrix.os == 'macos-12' || matrix.os == 'macos-11'
         env: 
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
