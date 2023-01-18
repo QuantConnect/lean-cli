@@ -67,8 +67,9 @@ jobs:
         python-version: ["3.10"]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    needs: [test, release]
+    # TODO: undo after testing
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    # needs: [test, release]
 
     steps:
       - name: Checkout
@@ -84,7 +85,7 @@ jobs:
         shell: bash
 
       - name: Setup Portable
-        run: pip install pyinstaller lean==${GITHUB_REF##*/}
+        run: pip install pyinstaller lean
         shell: bash
 
       - name: Create Portable
@@ -98,14 +99,14 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           cd portable/dist/lean
-          7z a -tzip ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
+          7z a -tzip ../lean.test1.${{ matrix.os }}.zip .
         shell: bash
 
       - name: Zip package
         if: matrix.os == 'macos-12' || matrix.os == 'ubuntu-22.04'
         run: |
           cd portable/dist/lean
-          zip -r ../lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip .
+          zip -r ../lean.test1.${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -115,14 +116,14 @@ jobs:
           aws-region: us-west-1
 
       - name: Publish To S3
-        run: aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+        run: aws s3 cp portable/dist/lean.test1.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
         shell: bash
 
       # only update version file once. 
       - name: Update version information
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          echo '{ "version": ${GITHUB_REF##*/} }' > portable/latest.json
+          echo '{ "version": 1.2 }' > portable/latest.json
           aws s3 cp portable/latest.json s3://${{ secrets.AWS_BUCKET }}/ --content-type "text/plain"
         shell: bash
 
