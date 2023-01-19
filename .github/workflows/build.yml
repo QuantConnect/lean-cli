@@ -127,9 +127,10 @@ jobs:
 
       - name: Zip package and notarize Macos
         if: matrix.os == 'macos-12'
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APPLE_TEAM_ID: ${{ secrets.APPLE_ID }}
-        APPLE_PASSWORD: ${{ secrets.APPLE_ID }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_ID }}
         run: |
           xcrun notarytool store-credentials --apple-id $APPLE_ID --password $APPLE_PASSWORD --team-id $APPLE_TEAM_ID
           cd portable/dist/lean-cli
