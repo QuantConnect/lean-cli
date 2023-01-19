@@ -118,8 +118,9 @@ jobs:
           pyinstaller ../scripts/main.spec
           cd dist/lean
           mv ./lean ./lean-cli
-          /usr/bin/codesign --deep --force -s CY5GJ9682W ./lean-cli -v
-          find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --deep --force -s CY5GJ9682W "${libfile}"; done;
+          mkdir ./lean
+          /usr/bin/codesign --deep --force --timestamp -o runtime -s CY5GJ9682W ./lean-cli -v
+          find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --timestamp --deep -o runtime --force -s CY5GJ9682W "${libfile}"; done;
         shell: bash
 
       - name: Get OS Name Without Version
