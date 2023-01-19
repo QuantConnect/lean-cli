@@ -101,7 +101,7 @@ jobs:
 
       - name: Create Portable Macos
         if: matrix.os == 'macos-12' || matrix.os == 'macos-11'
-        env: 
+        env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           KEYCHAIN_PASSWORD: 'KEYCHAINPASSWORD'
@@ -115,7 +115,11 @@ jobs:
           security find-identity -v
           mkdir portable
           cd portable
-          pyinstaller --osx-bundle-identifier "build.keychain" ../scripts/main.spec
+          pyinstaller ../scripts/main.spec
+          cd dist/lean
+          mv ./lean ./lean-cli
+          /usr/bin/codesign --deep --force -s CY5GJ9682W ./lean-cli -v
+          find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --deep --force -s CY5GJ9682W "${libfile}"; done;
         shell: bash
 
       - name: Get OS Name Without Version
@@ -134,7 +138,6 @@ jobs:
         if: matrix.os == 'macos-12'
         run: |
           cd portable/dist/lean
-          /usr/bin/codesign --force -s CY5GJ9682W ./lean -v 
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
           zip -r ../lean-test1-${{ matrix.os }}.zip .
 
@@ -158,7 +161,7 @@ jobs:
           aws s3 cp portable/dist/lean-test1-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
         shell: bash
 
-      # only update version file once. 
+      # only update version file once.
       - name: Update version information
         if: matrix.os == 'ubuntu-22.04'
         run: |
