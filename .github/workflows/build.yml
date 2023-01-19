@@ -67,9 +67,8 @@ jobs:
         python-version: ["3.10"]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
-    # TODO: undo after testing
-    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    # needs: [test, release]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    needs: [test, release]
 
     steps:
       - name: Checkout
@@ -81,11 +80,11 @@ jobs:
           python-version: '3.10'
 
       - name: Wait for pip release, sleep in seconds
-        run: sleep 1
+        run: sleep 900
         shell: bash
 
       - name: Setup Portable
-        run: pip install pyinstaller lean
+        run: pip install pyinstaller lean==${GITHUB_REF##*/}
         shell: bash
 
       - name: Create Portable Windows & Linux
@@ -132,10 +131,10 @@ jobs:
         run: |
           xcrun notarytool store-credentials --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" "QC_APPLE"
           cd portable/dist/lean-cli
-          ditto -c -k --keepParent . ../lean-${{ matrix.os }}.zip
+          ditto -c -k --keepParent . ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip
           cd ..
-          xcrun notarytool submit lean-${{ matrix.os }}.zip --keychain-profile "QC_APPLE" --wait
-          cp lean-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
+          xcrun notarytool submit lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip --keychain-profile "QC_APPLE" --wait
+          cp lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
@@ -143,7 +142,7 @@ jobs:
           cd portable/dist/lean-cli
           mkdir ./lean
           7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
-          7z a -tzip ../lean-${{ matrix.os }}.zip .
+          7z a -tzip ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip .
         shell: bash
 
       - name: Zip package Ubuntu
@@ -152,7 +151,7 @@ jobs:
           cd portable/dist/lean-cli
           mkdir ./lean
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
-          zip -r ../lean-${{ matrix.os }}.zip .
+          zip -r ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -164,14 +163,14 @@ jobs:
       - name: Publish To S3
         run: |
           aws s3 cp portable/dist/lean-latest-${{env.OS_NAME}}.zip s3://${{ secrets.AWS_BUCKET }}/ --content-type "application/zip"
-          aws s3 cp portable/dist/lean-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
+          aws s3 cp portable/dist/lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
         shell: bash
 
       # only update version file once.
       - name: Update version information
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          echo '{ "version": 1.2 }' > portable/latest.json
+          echo '{ "version": ${GITHUB_REF##*/} }' > portable/latest.json
           aws s3 cp portable/latest.json s3://${{ secrets.AWS_BUCKET }}/ --content-type "text/plain"
         shell: bash
 
