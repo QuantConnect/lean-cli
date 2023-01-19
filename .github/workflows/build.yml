@@ -132,11 +132,11 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_ID }}
         run: |
-          xcrun notarytool store-credentials --apple-id $APPLE_ID --password $APPLE_PASSWORD --team-id $APPLE_TEAM_ID
+          xcrun notarytool store-credentials --apple-id $APPLE_ID --password $APPLE_PASSWORD --team-id $APPLE_TEAM_ID "QC_APPLE"
           cd portable/dist/lean-cli
           ditto -c -k --keepParent . ../lean-${{ matrix.os }}.zip
           cd ..
-          xcrun notarytool submit lean-${{ matrix.os }}.zip --keychain-profile $APPLE_ID --wait
+          xcrun notarytool submit lean-${{ matrix.os }}.zip --keychain-profile "QC_APPLE" --wait
           cp lean-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
 
 
