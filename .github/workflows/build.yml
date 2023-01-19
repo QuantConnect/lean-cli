@@ -116,9 +116,7 @@ jobs:
           mkdir portable
           cd portable
           pyinstaller ../scripts/main.spec
-          cd dist/lean
-          mv ./lean ./lean-cli
-          mkdir ./lean
+          cd dist/lean-cli
           /usr/bin/codesign --deep --force --timestamp -o runtime -s CY5GJ9682W ./lean-cli -v
           find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --timestamp --deep -o runtime --force -s CY5GJ9682W "${libfile}"; done;
         shell: bash
@@ -130,7 +128,7 @@ jobs:
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
         run: |
-          cd portable/dist/lean
+          cd portable/dist/lean-cli
           7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
           7z a -tzip ../lean-test1-${{ matrix.os }}.zip .
         shell: bash
@@ -138,14 +136,14 @@ jobs:
       - name: Zip package Macos
         if: matrix.os == 'macos-12'
         run: |
-          cd portable/dist/lean
+          cd portable/dist/lean-cli
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
           zip -r ../lean-test1-${{ matrix.os }}.zip .
 
       - name: Zip package Ubuntu
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          cd portable/dist/lean
+          cd portable/dist/lean-cli
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
           zip -r ../lean-test1-${{ matrix.os }}.zip .
 
