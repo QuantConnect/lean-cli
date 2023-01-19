@@ -44,12 +44,14 @@ a = Entrypoint('lean', 'console_scripts', 'lean')
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+# update executable name to lean-cli as modules.json is expected to be inside lean/
+# the portable directory can't have two files with name lean 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name='lean',
+    name='lean-cli',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -69,5 +71,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='lean',
+    name='lean-cli',
 )
