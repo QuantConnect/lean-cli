@@ -8,10 +8,8 @@ jobs:
 
     strategy:
       matrix:
-        # os: [ubuntu-22.04, ubuntu-20.04, macos-12, macos-11, windows-latest]
-        # python-version: ["3.7", "3.8", "3.9", "3.10"]
-        os: [macos-12]
-        python-version: ["3.7"]
+        os: [ubuntu-22.04, ubuntu-20.04, macos-12, macos-11, windows-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
       - name: Checkout
@@ -65,8 +63,7 @@ jobs:
 
     strategy:
       matrix:
-        # os: [ubuntu-22.04, macos-12, windows-latest]
-        os: [macos-12]
+        os: [ubuntu-22.04, macos-12, windows-latest]
         python-version: ["3.10"]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
@@ -117,6 +114,7 @@ jobs:
           cd portable
           pyinstaller ../scripts/main.spec
           cd dist/lean-cli
+          mkdir ./lean
           /usr/bin/codesign --deep --force --timestamp -o runtime -s CY5GJ9682W ./lean-cli -v
           find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --timestamp --deep -o runtime --force -s CY5GJ9682W "${libfile}"; done;
         shell: bash
@@ -139,11 +137,11 @@ jobs:
           xcrun notarytool submit lean-${{ matrix.os }}.zip --keychain-profile "QC_APPLE" --wait
           cp lean-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
 
-
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
         run: |
           cd portable/dist/lean-cli
+          mkdir ./lean
           7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
           7z a -tzip ../lean-${{ matrix.os }}.zip .
         shell: bash
@@ -152,6 +150,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           cd portable/dist/lean-cli
+          mkdir ./lean
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
           zip -r ../lean-${{ matrix.os }}.zip .
 
