@@ -125,27 +125,34 @@ jobs:
         run: echo "OS_NAME=$(echo ${{ matrix.os }} | sed 's/-.*//')" >> $GITHUB_ENV
         shell: bash
 
+      - name: Zip package and notarize Macos
+        if: matrix.os == 'macos-12'
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_ID }}
+        run: |
+          xcrun notarytool store-credentials --apple-id $APPLE_ID --password $APPLE_PASSWORD --team-id $APPLE_TEAM_ID
+          cd portable/dist/lean-cli
+          ditto -c -k --keepParent . ../lean-${{ matrix.os }}.zip
+          cd ..
+          xcrun notarytool submit lean-${{ matrix.os }}.zip --keychain-profile $APPLE_ID --wait
+          cp lean-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
+
+
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
         run: |
           cd portable/dist/lean-cli
           7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
-          7z a -tzip ../lean-test1-${{ matrix.os }}.zip .
+          7z a -tzip ../lean-${{ matrix.os }}.zip .
         shell: bash
-
-      - name: Zip package Macos
-        if: matrix.os == 'macos-12'
-        run: |
-          cd portable/dist/lean-cli
-          zip -r ../lean-latest-${{env.OS_NAME}}.zip .
-          zip -r ../lean-test1-${{ matrix.os }}.zip .
 
       - name: Zip package Ubuntu
         if: matrix.os == 'ubuntu-22.04'
         run: |
           cd portable/dist/lean-cli
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
-          zip -r ../lean-test1-${{ matrix.os }}.zip .
+          zip -r ../lean-${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -157,7 +164,7 @@ jobs:
       - name: Publish To S3
         run: |
           aws s3 cp portable/dist/lean-latest-${{env.OS_NAME}}.zip s3://${{ secrets.AWS_BUCKET }}/ --content-type "application/zip"
-          aws s3 cp portable/dist/lean-test1-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
+          aws s3 cp portable/dist/lean-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
         shell: bash
 
       # only update version file once.
