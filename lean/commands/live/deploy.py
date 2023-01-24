@@ -265,7 +265,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
-@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets")
+@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
 def deploy(project: Path,
            environment: Optional[str],
            output: Optional[Path],

@@ -202,7 +202,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
               is_flag=True,
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
-@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets")
+@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
 def deploy(project: str,
            brokerage: str,
            node: str,

@@ -24,7 +24,7 @@ from lean.components.api.api_client import APIClient
 @command(cls=LeanCommand)
 @option("--user-id", "-u", type=str, help="QuantConnect user id")
 @option("--api-token", "-t", type=str, help="QuantConnect API token")
-@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets")
+@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
 def login(user_id: Optional[str], api_token: Optional[str], show_secrets: bool) -> None:
     """Log in with a QuantConnect account.
 
