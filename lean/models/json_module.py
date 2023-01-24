@@ -145,12 +145,17 @@ class JsonModule(ABC):
         """
         return variable_key.replace('_', '-')
 
-    def build(self, lean_config: Dict[str, Any], logger: Logger, properties: Dict[str, Any] = {}) -> 'JsonModule':
+    def build(self,
+              lean_config: Dict[str, Any],
+              logger: Logger,
+              properties: Dict[str, Any] = {},
+              hide_input: bool = False) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
         :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
         :param properties: the properties that passed as options
+        :param hide_input: whether to hide secrets inputs
         :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
         """
         logger.info(f'Configure credentials for {self._display_name}')
@@ -175,7 +180,7 @@ class JsonModule(ABC):
                 # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ != 'CloudBrokerage':
                     default_value = self._get_default(lean_config, configuration._id)
-                user_choice = configuration.AskUserForInput(default_value, logger)
+                user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
 
             self.update_value_for_given_config(configuration._id, user_choice)
 

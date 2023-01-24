@@ -132,13 +132,18 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     sleep(10)
 
 
-def _configure_lean_config_interactively(lean_config: Dict[str, Any], environment_name: str, properties: Dict[str, Any]) -> None:
+def _configure_lean_config_interactively(lean_config: Dict[str, Any],
+                                         environment_name: str,
+                                         properties: Dict[str, Any],
+                                         show_secrets: bool) -> None:
     """Interactively configures the Lean config to use.
 
     Asks the user all questions required to set up the Lean config for local live trading.
 
     :param lean_config: the base lean config to use
     :param environment_name: the name of the environment to configure
+    :param properties: the properties to use to configure lean
+    :param show_secrets: whether to show secrets on input
     """
     logger = container.logger
 
@@ -150,7 +155,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
 
-    brokerage.build(lean_config, logger, properties).configure(lean_config, environment_name)
+    brokerage.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
 
     data_feeds = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
@@ -167,7 +172,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any], environmen
                                          for config in brokerage.get_required_configs([InternalInputUserInput])}
             properties.update(required_properties_value)
             logger.debug(f"live.deploy._configure_lean_config_interactively(): required_properties_value: {required_properties_value}")
-        data_feed.build(lean_config, logger, properties).configure(lean_config, environment_name)
+        data_feed.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
 
 
 def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
@@ -260,20 +265,22 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before starting live trading")
+@option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets")
 def deploy(project: Path,
-        environment: Optional[str],
-        output: Optional[Path],
-        detach: bool,
-        brokerage: Optional[str],
-        data_feed: Optional[str],
-        data_provider: Optional[str],
-        release: bool,
-        image: Optional[str],
-        python_venv: Optional[str],
-        live_cash_balance: Optional[str],
-        live_holdings: Optional[str],
-        update: bool,
-        **kwargs) -> None:
+           environment: Optional[str],
+           output: Optional[Path],
+           detach: bool,
+           brokerage: Optional[str],
+           data_feed: Optional[str],
+           data_provider: Optional[str],
+           release: bool,
+           image: Optional[str],
+           python_venv: Optional[str],
+           live_cash_balance: Optional[str],
+           live_holdings: Optional[str],
+           update: bool,
+           show_secrets: bool,
+           **kwargs) -> None:
     """Start live trading a project locally using Docker.
 
     \b
@@ -336,7 +343,7 @@ def deploy(project: Path,
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-        _configure_lean_config_interactively(lean_config, environment_name, kwargs)
+        _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
     if data_provider is not None:
         [data_provider_configurer] = [_get_and_build_module(data_provider, all_data_providers, kwargs)]
