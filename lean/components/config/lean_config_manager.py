@@ -109,6 +109,15 @@ class LeanConfigManager:
 
         :param path: the path to the Lean configuration file
         """
+        try:
+            lean_config = self.get_lean_config()
+            if lean_config.get("organization-id") is None:
+                return
+        except Exception as e:
+            # If we can't get the Lean config then it must be from the lean init.
+            # Therefore, we can trust it's valid
+            self._logger.debug(f"LeanConfigManager.store_known_lean_config_path(): Failed to get Lean config: {e}")
+            pass
         lean_config_paths = set(self._cache_storage.get("known-lean-config-paths", []))
         lean_config_paths.add(str(path))
         self._cache_storage.set("known-lean-config-paths", list(lean_config_paths))
