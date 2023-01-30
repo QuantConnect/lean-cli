@@ -326,6 +326,7 @@ Options:
                                   holdings
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
+  --show-secrets                  Show secrets as they are input
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
 ```
@@ -983,6 +984,7 @@ Options:
   --live-holdings TEXT            A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio
                                   holdings
   --update                        Pull the LEAN engine image before starting live trading
+  --show-secrets                  Show secrets as they are input
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -1090,6 +1092,7 @@ Usage: lean login [OPTIONS]
 Options:
   -u, --user-id TEXT    QuantConnect user id
   -t, --api-token TEXT  QuantConnect API token
+  --show-secrets        Show secrets as they are input
   --verbose             Enable debug logging
   --help                Show this message and exit.
 ```

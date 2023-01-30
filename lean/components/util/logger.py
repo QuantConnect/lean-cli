@@ -116,11 +116,12 @@ class Logger:
                 if len(user_selected_values) == expected_outputs:
                     return user_selected_values
 
-    def prompt_password(self, text: str, default: Optional[str] = None) -> str:
+    def prompt_password(self, text: str, default: Optional[str] = None, hide_input: bool = True) -> str:
         """Asks the user for a string value while masking the given input.
 
         :param text: the text to display before prompting
         :param default: the default value if no input is given
+        :param hide_input: whether to hide the input
         :return: the given input
         """
         from platform import uname
@@ -131,8 +132,8 @@ class Logger:
             text = f"{text} [{'*' * len(default)}]"
 
         # Masking does not work properly in WSL2 and when the input is not coming from a keyboard
-        if "microsoft" in uname().release.lower() or not stdin.isatty():
-            return prompt(text, default=default, show_default=False)
+        if "microsoft" in uname().release.lower() or not stdin.isatty() or not hide_input:
+            return prompt(text, default=default, show_default=False, hide_input=hide_input)
 
         while True:
             user_input = askpass(f"{text}: ")
