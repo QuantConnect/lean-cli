@@ -131,10 +131,9 @@ jobs:
         run: |
           xcrun notarytool store-credentials --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" "QC_APPLE"
           cd portable/dist/lean-cli
-          ditto -c -k --keepParent . ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip
+          ditto -c -k --keepParent . ../lean-latest-${{env.OS_NAME}}.zip
           cd ..
-          xcrun notarytool submit lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip --keychain-profile "QC_APPLE" --wait
-          cp lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip lean-latest-${{env.OS_NAME}}.zip
+          xcrun notarytool submit lean-latest-${{env.OS_NAME}}.zip --keychain-profile "QC_APPLE" --wait
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
@@ -142,7 +141,6 @@ jobs:
           cd portable/dist/lean-cli
           mkdir ./lean
           7z a -tzip ../lean-latest-${{env.OS_NAME}}.zip .
-          7z a -tzip ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip .
         shell: bash
 
       - name: Zip package Ubuntu
@@ -151,7 +149,6 @@ jobs:
           cd portable/dist/lean-cli
           mkdir ./lean
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
-          zip -r ../lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -163,7 +160,6 @@ jobs:
       - name: Publish To S3
         run: |
           aws s3 cp portable/dist/lean-latest-${{env.OS_NAME}}.zip s3://${{ secrets.AWS_BUCKET }}/ --content-type "application/zip"
-          aws s3 cp portable/dist/lean-${GITHUB_REF##*/}-${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{env.OS_NAME}}/ --content-type "application/zip"
         shell: bash
 
       # only update version file once.
@@ -172,9 +168,37 @@ jobs:
         run: |
           echo '{ "version": ${GITHUB_REF##*/} }' > portable/latest.json
           aws s3 cp portable/latest.json s3://${{ secrets.AWS_BUCKET }}/ --content-type "text/plain"
+          aws cloudfront create-invalidation --distribution-id EATCOTHB6KFQP --paths /${{ secrets.AWS_BUCKET }}/latest.json
         shell: bash
 
       - name: Cleanup
         run: |
           rm -rf portable
+        shell: bash
+
+  invalidate:
+    runs-on: ubuntu-22.04
+    needs: portable
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET }}
+          aws-region: us-west-1
+
+      - name: Invalidate Lean Executable zips
+        run: |
+          aws cloudfront create-invalidation --distribution-id EATCOTHB6KFQP --paths /${{ secrets.AWS_BUCKET }}/lean-latest-ubuntu.zip
+          aws cloudfront create-invalidation --distribution-id EATCOTHB6KFQP --paths /${{ secrets.AWS_BUCKET }}/lean-latest-macos.zip
+          aws cloudfront create-invalidation --distribution-id EATCOTHB6KFQP --paths /${{ secrets.AWS_BUCKET }}/lean-latest-windows.zip
         shell: bash
