@@ -222,6 +222,8 @@ def report(backtest_results: Optional[Path],
         }
     }
 
+    if pdf:
+        run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')
     if live_results is not None:
         run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
                                            source=str(live_results),
