@@ -76,6 +76,10 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the report creator")
+@option("--pdf",
+              is_flag=True,
+              default=False,
+              help="Create a PDF version along with the HTML version of the report")
 def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
@@ -85,7 +89,8 @@ def report(backtest_results: Optional[Path],
            strategy_description: Optional[str],
            overwrite: bool,
            image: Optional[str],
-           update: bool) -> None:
+           update: bool,
+           pdf: bool) -> None:
     """Generate a report of a backtest.
 
     This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
@@ -152,7 +157,7 @@ def report(backtest_results: Optional[Path],
         "live-data-source-file": "live-data-source-file.json" if live_results is not None else "",
         "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/tmp/report.html",
-
+        "report-format": "pdf" if pdf else "",
         "environment": "report",
 
         "log-handler": "QuantConnect.Logging.CompositeLogHandler",

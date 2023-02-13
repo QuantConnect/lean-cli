@@ -1268,6 +1268,7 @@ Options:
   --overwrite                  Overwrite --report-destination if it already contains a file
   --image TEXT                 The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                     Pull the LEAN engine image before running the report creator
+  --pdf                        Create a PDF version along with the HTML version of the report
   --lean-config FILE           The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                    Enable debug logging
   --help                       Show this message and exit.
