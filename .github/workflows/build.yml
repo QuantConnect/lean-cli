@@ -166,7 +166,7 @@ jobs:
       - name: Update version information
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          echo '{ "version": ${GITHUB_REF##*/} }' > portable/latest.json
+          echo '{ "version": "'${GITHUB_REF##*/}'" }' > portable/latest.json
           aws s3 cp portable/latest.json s3://${{ secrets.AWS_BUCKET }}/ --content-type "text/plain"
           aws cloudfront create-invalidation --distribution-id EATCOTHB6KFQP --paths /${{ secrets.AWS_BUCKET }}/latest.json
         shell: bash
