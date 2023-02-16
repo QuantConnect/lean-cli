@@ -24,7 +24,6 @@ from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 from lean.models.addon_modules import all_addon_modules
-from lean.models.addon_modules.addon_module import AddonModule
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -323,7 +322,6 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
-    addon_modules_to_build: List[AddonModule] = []
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -394,16 +392,15 @@ def backtest(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     for given_module in addon_module:
-        found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-        if found_module:
-            addon_modules_to_build.append(found_module)
-        else:
-            logger.error(f"Addon module '{given_module}' not found")
-
-    # build and configure addon modules
-    for module in addon_modules_to_build:
-        module.build(lean_config, logger).configure(lean_config, "backtesting")
-        module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
+        try:
+            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
+            if found_module:
+                found_module.build(lean_config, logger).configure(lean_config, "backtesting")
+                found_module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
+            else:
+                logger.error(f"Addon module '{given_module}' not found")
+        except Exception as e:
+            logger.error(f"Addon module '{given_module}' failed to configure: {e}")
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,

@@ -28,6 +28,7 @@ from lean.commands.live.live import live
 from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 from lean.models.data_providers import all_data_providers
+from lean.models.addon_modules import all_addon_modules
 
 _environment_skeleton = {
     "live-mode": True,
@@ -266,6 +267,14 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=False,
               help="Pull the LEAN engine image before starting live trading")
 @option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
+@option("--addon-module",
+              type=str,
+              multiple=True,
+              hidden=True)
+@option("--extra-config",
+              type=(str, str),
+              multiple=True,
+              hidden=True)
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -284,6 +293,8 @@ def deploy(project: Path,
            live_holdings: Optional[str],
            update: bool,
            show_secrets: bool,
+           addon_module: Optional[List[str]],
+           extra_config: Optional[Tuple[str, str]],
            no_update: bool,
            **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -421,6 +432,21 @@ def deploy(project: Path,
 
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
+
+    # Set extra config
+    for key, value in extra_config:
+        lean_config[key] = value
+
+    for given_module in addon_module:
+        try:
+            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
+            if found_module:
+                found_module.build(lean_config, logger).configure(lean_config, environment_name)
+                found_module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
+            else:
+                logger.error(f"Addon module '{given_module}' not found")
+        except Exception as e:
+            logger.error(f"Addon module '{given_module}' failed to configure: {e}")
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
