@@ -289,6 +289,10 @@ def _select_organization() -> QCMinimalOrganization:
               type=(str, str),
               multiple=True,
               hidden=True)
+@option("--no-update",
+              is_flag=True,
+              default=False,
+              help="Use the local LEAN engine image instead of pulling the latest version")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -302,7 +306,8 @@ def backtest(project: Path,
              update: bool,
              backtest_name: str,
              addon_module: Optional[List[str]],
-             extra_config: Optional[Tuple[str, str]]) -> None:
+             extra_config: Optional[Tuple[str, str]],
+             no_update: bool) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -368,7 +373,12 @@ def backtest(project: Path,
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    if no_update and update:
+        logger.warn("Both --no-update and --update are specified, ignoring --no-update")
+        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+
+    if not no_update:
+        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
 
     if not output.exists():
         output.mkdir(parents=True)
