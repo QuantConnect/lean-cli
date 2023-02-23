@@ -563,3 +563,24 @@ class DockerManager:
                 break
 
         return path
+    
+    def get_container_port(self, container_name: str, internal_port: str) -> Optional[int]:
+        """
+        Returns a containers external port for a mapped internal port
+        :param container_name: Name of the container
+        :param internal_port: The internal port of container. If protocol not included
+        we assume /tcp. ex. 5678/tcp 
+        :return: The external port that is linked to it, or None if it does not exist
+        """
+
+        # In case a port is supplied without a protocol assume tcp
+        if not internal_port.__contains__("/tcp") and not internal_port.__contains__("/udp"):
+            internal_port = str(internal_port) + "/tcp"
+
+        container = self.get_container_by_name(container_name)
+
+        # Grab the host port assigned
+        if container is not None and internal_port in container.ports:
+            return container.ports[internal_port][0]["HostPort"]
+
+        return None
