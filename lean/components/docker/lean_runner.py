@@ -122,7 +122,7 @@ class LeanRunner:
             }
 
         # Setup debugging with QC Extension
-        if debugging_method == DebuggingMethod.QC:
+        if debugging_method == DebuggingMethod.LocalPlatform:
             run_options["ports"]["5678"] = "0" # Using port 0 will assign a random port every time
 
         run_options["commands"].append("exec dotnet QuantConnect.Lean.Launcher.dll")
@@ -142,7 +142,7 @@ class LeanRunner:
         relative_project_dir = project_dir.relative_to(cli_root_dir)
         relative_output_dir = output_dir.relative_to(cli_root_dir)
 
-        if debugging_method == DebuggingMethod.QC:
+        if debugging_method == DebuggingMethod.LocalPlatform:
             # set the container port mapped with host in config for later retrieval
             port = self._docker_manager.get_container_port(run_options["name"], "5678/tcp")
             output_config = self._output_config_manager.get_output_config(output_dir)
