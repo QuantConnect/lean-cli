@@ -142,6 +142,7 @@ Options:
   --python-venv TEXT              The path of the python virtual environment to be used
   --update                        Pull the LEAN engine image before running the backtest
   --backtest-name TEXT            Backtest name
+  --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -985,6 +986,7 @@ Options:
                                   holdings
   --update                        Pull the LEAN engine image before starting live trading
   --show-secrets                  Show secrets as they are input
+  --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
