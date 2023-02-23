@@ -252,7 +252,7 @@ def _select_organization() -> QCMinimalOrganization:
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
 @option("--debug",
-              type=Choice(["pycharm", "ptvsd", "vsdbg", "rider"], case_sensitive=False),
+              type=Choice(["pycharm", "ptvsd", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
@@ -339,8 +339,10 @@ def backtest(project: Path,
     elif debug == "rider":
         debugging_method = DebuggingMethod.Rider
         _migrate_csharp_rider(logger, algorithm_file.parent)
+    elif debug == "local-platform":
+        debugging_method = DebuggingMethod.LocalPlatform
 
-    if debugging_method is not None and detach:
+    if detach and debugging_method != None and debugging_method != DebuggingMethod.LocalPlatform:
         raise RuntimeError("Running a debugging session in a detached container is not supported")
 
     if algorithm_file.name.endswith(".cs"):
