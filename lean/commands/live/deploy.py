@@ -266,6 +266,10 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=False,
               help="Pull the LEAN engine image before starting live trading")
 @option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
+@option("--no-update",
+              is_flag=True,
+              default=False,
+              help="Use the local LEAN engine image instead of pulling the latest version")
 def deploy(project: Path,
            environment: Optional[str],
            output: Optional[Path],
@@ -280,6 +284,7 @@ def deploy(project: Path,
            live_holdings: Optional[str],
            update: bool,
            show_secrets: bool,
+           no_update: bool,
            **kwargs) -> None:
     """Start live trading a project locally using Docker.
 
@@ -369,7 +374,7 @@ def deploy(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
