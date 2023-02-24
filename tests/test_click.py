@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from unittest import mock
+from unittest.mock import patch
 
 import click
 import pytest
@@ -26,6 +27,7 @@ from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
+@patch("platform.platform", lambda: "OS")
 def test_lean_command_enables_verbose_logging_when_verbose_option_given() -> None:
     @click.command(cls=LeanCommand)
     def command() -> None:
