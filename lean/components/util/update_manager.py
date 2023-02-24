@@ -74,7 +74,7 @@ class UpdateManager:
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
             self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
-    def pull_docker_image_if_necessary(self, image: DockerImage, force: bool) -> None:
+    def pull_docker_image_if_necessary(self, image: DockerImage, force: bool, no_update = False) -> None:
         """Pulls a Docker image if necessary.
 
         Docker images are pulled when they are not installed yet,
@@ -82,7 +82,14 @@ class UpdateManager:
 
         :param image: the image to pull
         :param force: skip the interval check to force a pull
+        :param no_update: do not pull the image
         """
+
+        if no_update:
+            if not force:
+                return
+            self._logger.warn("Both --no-update and --update were specified, ignoring --no-update")
+
         from docker.errors import APIError
         if not force and self._docker_manager.image_installed(image):
             if not self._should_check_for_updates(str(image), UPDATE_CHECK_INTERVAL_DOCKER_IMAGE):

@@ -374,12 +374,7 @@ def deploy(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
-    if no_update and update:
-        logger.warn("Both --no-update and --update are specified, ignoring --no-update")
-        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
-
-    if not no_update:
-        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 

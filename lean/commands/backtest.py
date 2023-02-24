@@ -373,12 +373,7 @@ def backtest(project: Path,
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
-    if no_update and update:
-        logger.warn("Both --no-update and --update are specified, ignoring --no-update")
-        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
-
-    if not no_update:
-        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     if not output.exists():
         output.mkdir(parents=True)
