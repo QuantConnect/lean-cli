@@ -12,14 +12,51 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Callable
 
 from click import Command, Context, Parameter, ParamType, Option as ClickOption
+from click.decorators import FC, option
 
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
+
+
+class VerboseOption(ClickOption):
+    def __init__(self, *args, **kwargs):
+        super().__init__(["--verbose"],
+                         help="Enable debug logging",
+                         is_flag=True,
+                         default=False,
+                         expose_value=False,
+                         is_eager=True,
+                         callback=self._parse_verbose_option)
+
+    @staticmethod
+    def _parse_verbose_option(ctx: Context, param: Parameter, value: Optional[bool]) -> None:
+        """Parses the --verbose option."""
+        if not value:
+            return
+
+        from platform import platform
+        from sys import version as sys_version
+        from lean import __version__ as lean_cli_version
+
+        logger = container.logger
+        logger.debug_logging_enabled = True
+
+        # show additional context information
+        python_version = sys_version.replace("\n", ". ")
+        logger.debug(f"Context information:\n"
+                     f"  Python version: {python_version}\n"
+                     f"  OS: {platform()}\n"
+                     f"  Lean CLI version: {lean_cli_version}")
+
+
+def verbose_option() -> Callable[[FC], FC]:
+    return option(cls=VerboseOption)
+
 
 class LeanCommand(Command):
     """A click.Command wrapper with some Lean CLI customization."""
@@ -138,13 +175,7 @@ class LeanCommand(Command):
                                                         callback=self._parse_config_option))
 
         # Add --verbose option
-        params.insert(len(params) - 1, ClickOption(["--verbose"],
-                                                    help="Enable debug logging",
-                                                    is_flag=True,
-                                                    default=False,
-                                                    expose_value=False,
-                                                    is_eager=True,
-                                                    callback=self._parse_verbose_option))
+        params.insert(len(params) - 1, VerboseOption())
 
         return params
 
@@ -154,11 +185,6 @@ class LeanCommand(Command):
             lean_config_manager = container.lean_config_manager
             lean_config_manager.set_default_lean_config_path(value)
 
-    def _parse_verbose_option(self, ctx: Context, param: Parameter, value: Optional[bool]) -> None:
-        """Parses the --verbose option."""
-        if value:
-            logger = container.logger
-            logger.debug_logging_enabled = True
 
 
 class PathParameter(ParamType):

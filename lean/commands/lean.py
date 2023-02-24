@@ -10,20 +10,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 
-from click import group, version_option
+from click import group, option, Context, pass_context, echo
 
 from lean import __version__
+from lean.click import verbose_option
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
 
-@group(cls=AliasedCommandGroup)
-@version_option(__version__)
-def lean() -> None:
+@group(cls=AliasedCommandGroup, invoke_without_command=True)
+@option("--version", is_flag=True, is_eager=True, help="Show the version and exit.")
+@verbose_option()
+@pass_context
+def lean(ctx: Context, version: bool) -> None:
     """The Lean CLI by QuantConnect."""
     # This method is used as the command group for all `lean <command>` commands
+
+    if ctx.invoked_subcommand is None:
+        if version:
+            program_name = ctx.find_root().info_name
+            container.logger.info(f"{program_name} {__version__}")
+            ctx.exit()
+        else:
+            echo(ctx.get_help())
 
     # Here we check whether `lean init` has already been called and this is an old CLI folder
     # before passing through the actual invoked command, to make sure this is not an old CLI folder.
