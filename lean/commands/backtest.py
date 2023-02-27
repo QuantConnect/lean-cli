@@ -379,7 +379,8 @@ def backtest(project: Path,
         output.mkdir(parents=True)
 
     output_config_manager = container.output_config_manager
-    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
+
+    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output, extra_config.get("algorithm-id", None)))
 
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
