@@ -393,7 +393,7 @@ def deploy(project: Path,
         output.mkdir(parents=True)
 
     output_config_manager = container.output_config_manager
-    lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output)}"
+    lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output, extra_config.get('algorithm-id', None))}"
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
