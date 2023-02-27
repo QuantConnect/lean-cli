@@ -376,17 +376,20 @@ def backtest(project: Path,
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager
-
-    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output, extra_config.get("algorithm-id", None)))
-
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
 
     # Set extra config
+    given_algorithm_id = None
     for key, value in extra_config:
-        lean_config[key] = value
+        if key == "algorithm-id":
+            given_algorithm_id = int(value)
+        else:
+            lean_config[key] = value
+
+    output_config_manager = container.output_config_manager
+    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output, given_algorithm_id))
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
