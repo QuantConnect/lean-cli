@@ -28,7 +28,7 @@ from lean.commands.live.live import live
 from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 from lean.models.data_providers import all_data_providers
-from lean.models.addon_modules import all_addon_modules
+from lean.components.util.addon_modules_handler import build_and_configure_modules
 
 _environment_skeleton = {
     "live-mode": True,
@@ -441,16 +441,8 @@ def deploy(project: Path,
     output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output, given_algorithm_id)}"
 
-    for given_module in addon_module:
-        try:
-            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-            if found_module:
-                found_module.build(lean_config, logger).configure(lean_config, environment_name)
-                found_module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
-            else:
-                logger.error(f"Addon module '{given_module}' not found")
-        except Exception as e:
-            logger.error(f"Addon module '{given_module}' failed to configure: {e}")
+    # Configure addon modules
+    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, environment_name)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)

@@ -23,7 +23,7 @@ from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
-from lean.models.addon_modules import all_addon_modules
+from lean.components.util.addon_modules_handler import build_and_configure_modules
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -394,16 +394,8 @@ def backtest(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    for given_module in addon_module:
-        try:
-            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-            if found_module:
-                found_module.build(lean_config, logger).configure(lean_config, "backtesting")
-                found_module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
-            else:
-                logger.error(f"Addon module '{given_module}' not found")
-        except Exception as e:
-            logger.error(f"Addon module '{given_module}' failed to configure: {e}")
+    # Configure addon modules
+    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, "backtesting")
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
