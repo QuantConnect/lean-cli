@@ -23,8 +23,7 @@ from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
-from lean.models.addon_modules import all_addon_modules
-from lean.models.addon_modules.addon_module import AddonModule
+from lean.components.util.addon_modules_handler import build_and_configure_modules
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -323,7 +322,6 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
-    addon_modules_to_build: List[AddonModule] = []
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -378,31 +376,26 @@ def backtest(project: Path,
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager
-    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output))
-
     # Set backtest name
     if backtest_name is not None and backtest_name != "":
         lean_config["backtest-name"] = backtest_name
 
     # Set extra config
+    given_algorithm_id = None
     for key, value in extra_config:
-        lean_config[key] = value
+        if key == "algorithm-id":
+            given_algorithm_id = int(value)
+        else:
+            lean_config[key] = value
+
+    output_config_manager = container.output_config_manager
+    lean_config["algorithm-id"] = str(output_config_manager.get_backtest_id(output, given_algorithm_id))
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    for given_module in addon_module:
-        found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-        if found_module:
-            addon_modules_to_build.append(found_module)
-        else:
-            logger.error(f"Addon module '{given_module}' not found")
-
-    # build and configure addon modules
-    for module in addon_modules_to_build:
-        module.build(lean_config, logger).configure(lean_config, "backtesting")
-        module.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
+    # Configure addon modules
+    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, "backtesting")
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
