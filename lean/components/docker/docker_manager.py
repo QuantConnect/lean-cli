@@ -51,16 +51,24 @@ class DockerManager:
             return
 
         self._logger.info(f"Pulling {image}...")
+        
+        import platform
+        isArchitectureARM = True if platform.machine().startswith('arm') else False
+        isForceAmdRequired = isArchitectureARM and self._platform_manager.is_system_macos()
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
         # Downloading multiple gigabytes without showing progress does not provide good developer experience
         # Since the pull command is the same on Windows, macOS and Linux we can safely use a system call
         if which("docker") is not None:
-            process = run(["docker", "image", "pull", str(image)])
+            args = ["docker", "image", "pull", str(image)]
+            if isForceAmdRequired:
+                args.append("--platform=linux/amd64")
+            process = run(args)
             if process.returncode != 0:
                 raise RuntimeError(
                     f"Something went wrong while pulling {image}, see the logs above for more information")
         else:
-            self._get_docker_client().images.pull(image.name, image.tag)
+            platform_name = "linux/amd64" if isForceAmdRequired else None
+            self._get_docker_client().images.pull(image.name, image.tag, platform=platform_name)
 
     def run_image(self, image: DockerImage, **kwargs) -> bool:
         """Runs a Docker image. If the image is not available locally it will be pulled first.
