@@ -222,6 +222,19 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
     lean_runner.run_lean.assert_not_called()
 
 
+terminal_link_required_options = {
+    "terminal-link-environment": "Beta",
+    "terminal-link-server-host": "abc",
+    "terminal-link-server-port": "123",
+    "terminal-link-emsx-broker": "abc",
+    "terminal-link-allow-modification": "no",
+    "terminal-link-emsx-account": "abc",
+    "terminal-link-emsx-strategy": "abc",
+    "terminal-link-emsx-notes": "abc",
+    "terminal-link-emsx-handling": "abc",
+    "terminal-link-emsx-user-time-zone": "abc",
+}
+
 brokerage_required_options = {
     "Paper Trading": {},
     "Interactive Brokers": {
@@ -281,16 +294,8 @@ brokerage_required_options = {
         "atreyu-locate-rqd": "abc",
     },
     "Terminal Link": {
-        "terminal-link-environment": "Beta",
-        "terminal-link-server-host": "abc",
-        "terminal-link-server-port": "123",
-        "terminal-link-emsx-broker": "abc",
-        "terminal-link-allow-modification": "no",
-        "terminal-link-emsx-account": "abc",
-        "terminal-link-emsx-strategy": "abc",
-        "terminal-link-emsx-notes": "abc",
-        "terminal-link-emsx-handling": "abc",
-        "terminal-link-emsx-user-time-zone": "abc",
+        **terminal_link_required_options,
+        "live-cash-balance": "USD:10000,EUR:10",
     },
     "Kraken": {
         "kraken-api-key": "abc",
@@ -334,7 +339,7 @@ data_feed_required_options = {
     "Binance": brokerage_required_options["Binance"],
     "Zerodha": brokerage_required_options["Zerodha"],
     "Samco": brokerage_required_options["Samco"],
-    "Terminal Link": brokerage_required_options["Terminal Link"],
+    "Terminal Link": terminal_link_required_options,
     "Kraken": brokerage_required_options["Kraken"],
     "TDAmeritrade": brokerage_required_options["TDAmeritrade"]
 }
@@ -343,7 +348,7 @@ data_feed_required_options = {
 data_providers_required_options = {
     "QuantConnect": {},
     "local": {},
-    "Terminal Link": brokerage_required_options["Terminal Link"]
+    "Terminal Link": terminal_link_required_options
 }
 
 
@@ -479,7 +484,7 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
         for key in brokerage_required_options_not_persistently_save_in_lean_config[brokerage]:
             assert key not in config
 
-            
+
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
