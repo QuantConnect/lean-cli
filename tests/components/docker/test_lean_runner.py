@@ -469,7 +469,9 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str,
 
     from lean.container import container
     cli_root_dir = container.lean_config_manager.get_cli_root_directory()
-    expected_source = local_path if local_path.is_absolute() else cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / local_path
+    expected_source = local_path \
+        if local_path.is_absolute() \
+        else cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties" / local_path
 
     assert any([
         Path(mount["Source"]) == expected_source and

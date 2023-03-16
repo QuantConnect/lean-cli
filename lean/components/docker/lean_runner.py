@@ -259,7 +259,7 @@ class LeanRunner:
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         files_to_mount = [
             ("transaction-log", cli_root_dir),
-            ("terminal-link-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME)
+            ("terminal-link-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties")
         ]
         for key, base_path in files_to_mount:
             if key not in lean_config or lean_config[key] == "":
