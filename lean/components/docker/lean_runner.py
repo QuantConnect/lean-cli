@@ -265,7 +265,8 @@ class LeanRunner:
             if key not in lean_config or lean_config[key] == "":
                 continue
 
-            local_path = base_path / lean_config[key]
+            lean_config_entry = Path(lean_config[key])
+            local_path = lean_config_entry if lean_config_entry.is_absolute() else base_path / lean_config_entry
             if not local_path.exists():
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.touch()

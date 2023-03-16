@@ -431,15 +431,31 @@ def test_run_lean_raises_when_run_image_fails() -> None:
     docker_manager.run_image.assert_called_once()
 
 
-def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder() -> None:
+@pytest.mark.parametrize("os,root", [
+    ("Windows", ""),
+    ("Linux", ""),
+    ("Darwin", ""),
+    ("Windows", "some/directory"),
+    ("Linux", "some/directory"),
+    ("Darwin", "some/directory"),
+    ("Windows", r"C:\Users\user\some_directory"),
+    ("Linux", "/home/user/some_directory"),
+    ("Darwin", "/Users/user/some_directory")
+])
+def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str, root: str) -> None:
+    from platform import system
+    if os != system():
+        pytest.skip(f"This test requires {os}")
+
     create_fake_lean_cli_directory()
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
 
-    lean_runner = create_lean_runner(docker_manager)
+    local_path = Path(root) / "terminal-link-symbol-map.json"
 
-    lean_runner.run_lean({"terminal-link-symbol-map-file": "terminal-link-symbol-map.json"},
+    lean_runner = create_lean_runner(docker_manager)
+    lean_runner.run_lean({"terminal-link-symbol-map-file": str(local_path)},
                          "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
@@ -453,9 +469,10 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder() -> Non
 
     from lean.container import container
     cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    expected_source = local_path if local_path.is_absolute() else cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / local_path
 
     assert any([
-        Path(mount["Source"]) == Path(f'{cli_root_dir}/{DEFAULT_DATA_DIRECTORY_NAME}/terminal-link-symbol-map.json') and
+        Path(mount["Source"]) == expected_source and
         mount["Target"] == f'/Files/terminal-link-symbol-map-file'
         for mount in kwargs["mounts"]
     ])
