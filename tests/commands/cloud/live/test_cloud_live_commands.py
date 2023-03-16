@@ -190,6 +190,10 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Zerodha", "USD:100"),
                                             ("TDAmeritrade", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()
@@ -269,6 +273,10 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("TDAmeritrade", ""),
                                                 ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()

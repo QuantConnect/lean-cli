@@ -827,6 +827,10 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("TDAmeritrade", ""),
                                             ("TDAmeritrade", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
@@ -894,6 +898,10 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("TDAmeritrade", ""),
                                                 ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
