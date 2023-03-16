@@ -222,6 +222,19 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
     lean_runner.run_lean.assert_not_called()
 
 
+terminal_link_required_options = {
+    "terminal-link-environment": "Beta",
+    "terminal-link-server-host": "abc",
+    "terminal-link-server-port": "123",
+    "terminal-link-emsx-broker": "abc",
+    "terminal-link-allow-modification": "no",
+    "terminal-link-emsx-account": "abc",
+    "terminal-link-emsx-strategy": "abc",
+    "terminal-link-emsx-notes": "abc",
+    "terminal-link-emsx-handling": "abc",
+    "terminal-link-emsx-user-time-zone": "abc",
+}
+
 brokerage_required_options = {
     "Paper Trading": {},
     "Interactive Brokers": {
@@ -281,16 +294,8 @@ brokerage_required_options = {
         "atreyu-locate-rqd": "abc",
     },
     "Terminal Link": {
-        "terminal-link-environment": "Beta",
-        "terminal-link-server-host": "abc",
-        "terminal-link-server-port": "123",
-        "terminal-link-emsx-broker": "abc",
-        "terminal-link-allow-modification": "no",
-        "terminal-link-emsx-account": "abc",
-        "terminal-link-emsx-strategy": "abc",
-        "terminal-link-emsx-notes": "abc",
-        "terminal-link-emsx-handling": "abc",
-        "terminal-link-emsx-user-time-zone": "abc",
+        **terminal_link_required_options,
+        "live-cash-balance": "USD:10000,EUR:10",
     },
     "Kraken": {
         "kraken-api-key": "abc",
@@ -334,7 +339,7 @@ data_feed_required_options = {
     "Binance": brokerage_required_options["Binance"],
     "Zerodha": brokerage_required_options["Zerodha"],
     "Samco": brokerage_required_options["Samco"],
-    "Terminal Link": brokerage_required_options["Terminal Link"],
+    "Terminal Link": terminal_link_required_options,
     "Kraken": brokerage_required_options["Kraken"],
     "TDAmeritrade": brokerage_required_options["TDAmeritrade"]
 }
@@ -343,7 +348,7 @@ data_feed_required_options = {
 data_providers_required_options = {
     "QuantConnect": {},
     "local": {},
-    "Terminal Link": brokerage_required_options["Terminal Link"]
+    "Terminal Link": terminal_link_required_options
 }
 
 
@@ -375,6 +380,10 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
 
     required_options = brokerage_required_options[brokerage].items()
@@ -442,6 +451,10 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_config(brokerage: str, data_feed: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -479,10 +492,14 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
         for key in brokerage_required_options_not_persistently_save_in_lean_config[brokerage]:
             assert key not in config
 
-            
+
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -518,6 +535,10 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
 def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -557,6 +578,10 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(brokerage: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
 
     required_options = brokerage_required_options[brokerage].items()
@@ -813,7 +838,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("OANDA", "USD:100"),
                                             ("Samco", ""),
                                             ("Samco", "USD:100"),
-                                            ("Terminal Link", ""),
+                                            # ("Terminal Link", ""),  not tested since this will prompt to interactive panel
                                             ("Terminal Link", "USD:100"),
                                             ("Tradier", ""),
                                             ("Tradier", "USD:100"),
@@ -822,19 +847,26 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("TDAmeritrade", ""),
                                             ("TDAmeritrade", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
     options = []
     required_options = brokerage_required_options[brokerage].items()
     for key, value in required_options:
+        if key == "live-cash-balance":
+            continue
         options.extend([f"--{key}", value])
 
-    result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
-                                       "--data-feed", "Custom data only", *options])
+    result = CliRunner().invoke(lean, ["live", "Python Project", *options,
+                                       "--brokerage", brokerage, "--live-cash-balance", cash,
+                                       "--data-feed", "Custom data only"])
 
     # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies"] and cash != "":
+    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies", "Terminal Link"] and cash != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
@@ -886,6 +918,10 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("TDAmeritrade", ""),
                                                 ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
+    if brokerage == "Terminal Link":
+        # skip test
+        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
+
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
@@ -901,7 +937,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
                                        "--data-feed", "Custom data only", *options])
 
     # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu"] and holdings != "":
+    if brokerage not in ["Paper Trading", "Atreyu", "Terminal Link"] and holdings != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return

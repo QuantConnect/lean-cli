@@ -932,7 +932,7 @@ Options:
   --terminal-link-emsx-handling TEXT
                                   The EMSX handling to use
   --terminal-link-allow-modification BOOLEAN
-                                  Whether modification is allowed
+                                  Whether order updates are allowed
   --atreyu-host TEXT              The host of the Atreyu server
   --atreyu-req-port INTEGER       The Atreyu request port
   --atreyu-sub-port INTEGER       The Atreyu subscribe port
