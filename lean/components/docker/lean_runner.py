@@ -22,7 +22,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROOT_PATH
+from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME
 from lean.constants import DOCKER_PYTHON_SITE_PACKAGES_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
@@ -147,7 +147,7 @@ class LeanRunner:
             port = self._docker_manager.get_container_port(run_options["name"], "5678/tcp")
             output_config = self._output_config_manager.get_output_config(output_dir)
             output_config.set("debugport", port)
-            
+
         if detach:
             self._temp_manager.delete_temporary_directories_when_done = False
 
@@ -257,11 +257,15 @@ class LeanRunner:
 
         # Mount all local files referenced in the Lean config
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        for key in ["transaction-log", "terminal-link-symbol-map-file"]:
+        files_to_mount = [
+            ("transaction-log", cli_root_dir),
+            ("terminal-link-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME)
+        ]
+        for key, base_path in files_to_mount:
             if key not in lean_config or lean_config[key] == "":
                 continue
 
-            local_path = cli_root_dir / lean_config[key]
+            local_path = base_path / lean_config[key]
             if not local_path.exists():
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.touch()
@@ -336,7 +340,7 @@ class LeanRunner:
             run_options["name"] = lean_config["container-name"]
         else:
             run_options["name"] = f"lean_cli_{str(uuid4()).replace('-', '')}"
-        
+
         # set the hostname
         if "hostname" in lean_config:
             run_options["hostname"] = lean_config["hostname"]

@@ -26,7 +26,7 @@ from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from lean.models.modules import NuGetPackage
@@ -429,3 +429,63 @@ def test_run_lean_raises_when_run_image_fails() -> None:
                              False)
 
     docker_manager.run_image.assert_called_once()
+
+
+def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({"terminal-link-symbol-map-file": "terminal-link-symbol-map.json"},
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+
+    assert any([
+        Path(mount["Source"]) == Path(f'{cli_root_dir}/{DEFAULT_DATA_DIRECTORY_NAME}/terminal-link-symbol-map.json') and
+        mount["Target"] == f'/Files/terminal-link-symbol-map-file'
+        for mount in kwargs["mounts"]
+    ])
+
+
+def test_run_lean_mounts_transaction_log_file_from_cli_root() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({"transaction-log": "transaction-log.log"},
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+
+    assert any([
+        Path(mount["Source"]) == Path(f'{cli_root_dir}/transaction-log.log') and
+        mount["Target"] == f'/Files/transaction-log'
+        for mount in kwargs["mounts"]
+    ])
