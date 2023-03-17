@@ -227,11 +227,7 @@ terminal_link_required_options = {
     "terminal-link-server-host": "abc",
     "terminal-link-server-port": "123",
     "terminal-link-emsx-broker": "abc",
-    "terminal-link-allow-modification": "no",
     "terminal-link-emsx-account": "abc",
-    "terminal-link-emsx-strategy": "abc",
-    "terminal-link-emsx-notes": "abc",
-    "terminal-link-emsx-handling": "abc",
     "terminal-link-emsx-user-time-zone": "abc",
 }
 
@@ -366,16 +362,21 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
                                 "--data-provider", data_provider,
                                 *options])
 
-    assert result.exit_code == 0
+    expected = 0
+    # not a valid option
+    if data_provider == 'Terminal Link':
+        expected = 2
+    assert result.exit_code == expected
 
-    lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "live-paper",
-                                                 Path("CSharp Project/Main.cs").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 False,
-                                                 False)
+    if expected == 0:
+        lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                     "live-paper",
+                                                     Path("CSharp Project/Main.cs").resolve(),
+                                                     mock.ANY,
+                                                     ENGINE_IMAGE,
+                                                     None,
+                                                     False,
+                                                     False)
 
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])

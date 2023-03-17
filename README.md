@@ -131,7 +131,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Terminal Link|QuantConnect|Local]
+  --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
@@ -860,7 +860,7 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
-  --data-provider [Terminal Link|QuantConnect|Local]
+  --data-provider [QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -917,22 +917,12 @@ Options:
                                   The host of the TerminalLink server
   --terminal-link-server-port INTEGER
                                   The port of the TerminalLink server
-  --terminal-link-symbol-map-file FILE
-                                  The path to the TerminalLink symbol map file
   --terminal-link-emsx-broker TEXT
                                   The EMSX broker to use
   --terminal-link-emsx-user-time-zone TEXT
                                   The EMSX user timezone to use
   --terminal-link-emsx-account TEXT
                                   The EMSX account to use
-  --terminal-link-emsx-strategy TEXT
-                                  The EMSX strategy to use
-  --terminal-link-emsx-notes TEXT
-                                  The EMSX notes to use
-  --terminal-link-emsx-handling TEXT
-                                  The EMSX handling to use
-  --terminal-link-allow-modification BOOLEAN
-                                  Whether order updates are allowed
   --atreyu-host TEXT              The host of the Atreyu server
   --atreyu-req-port INTEGER       The Atreyu request port
   --atreyu-sub-port INTEGER       The Atreyu subscribe port
@@ -1292,7 +1282,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Terminal Link|QuantConnect|Local]
+  --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect

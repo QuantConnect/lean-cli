@@ -37,6 +37,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
 @option("--data-provider",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
 @option("--download-data",
               is_flag=True,

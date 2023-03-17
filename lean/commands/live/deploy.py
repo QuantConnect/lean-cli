@@ -241,7 +241,8 @@ def _get_default_value(key: str) -> Optional[Any]:
               multiple=True,
               help="The data feed to use")
 @option("--data-provider",
-              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
+              default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
 @options_from_json(_get_configs_for_options("local"))
 @option("--release",
