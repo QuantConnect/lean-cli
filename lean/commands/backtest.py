@@ -255,6 +255,7 @@ def _select_organization() -> QCMinimalOrganization:
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
 @option("--download-data",
               is_flag=True,
