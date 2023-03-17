@@ -380,10 +380,6 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
 
     required_options = brokerage_required_options[brokerage].items()
@@ -451,10 +447,6 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_config(brokerage: str, data_feed: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -496,10 +488,6 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -535,10 +523,6 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
 def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
     lean_runner = container.lean_runner
 
@@ -578,10 +562,6 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
 def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(brokerage: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
 
     required_options = brokerage_required_options[brokerage].items()
@@ -847,10 +827,6 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("TDAmeritrade", ""),
                                             ("TDAmeritrade", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
@@ -918,10 +894,6 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("TDAmeritrade", ""),
                                                 ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
-    if brokerage == "Terminal Link":
-        # skip test
-        pytest.skip("Terminal Link live tests skipped until modules json file is up to date")
-
     create_fake_lean_cli_directory()
     lean_runner= container.lean_runner
 
