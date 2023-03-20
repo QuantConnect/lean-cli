@@ -919,8 +919,6 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-emsx-broker TEXT
                                   The EMSX broker to use
-  --terminal-link-emsx-user-time-zone TEXT
-                                  The EMSX user timezone to use
   --terminal-link-emsx-account TEXT
                                   The EMSX account to use
   --atreyu-host TEXT              The host of the Atreyu server
