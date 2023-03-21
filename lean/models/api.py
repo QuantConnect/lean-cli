@@ -44,25 +44,6 @@ class QCParameter(WrappedBaseModel):
     type: Optional[str]
 
 
-class QCLiveResults(WrappedBaseModel):
-    eStatus: str
-    sDeployID: Optional[str] = None
-    sServerType: Optional[str] = None
-    dtLaunched: Optional[datetime] = None
-    dtStopped: Optional[datetime] = None
-    sBrokerage: Optional[str] = None
-    sSecurityTypes: Optional[str] = None
-    dUnrealized: Optional[float] = None
-    dfees: Optional[float] = None
-    dnetprofit: Optional[float] = None
-    dEquity: Optional[float] = None
-    dHoldings: Optional[float] = None
-    dCapital: Optional[float] = None
-    dVolume: Optional[float] = None
-    iTrades: Optional[int] = None
-    sErrorMessage: Optional[str] = None
-
-
 class QCLanguage(str, Enum):
     CSharp = "C#"
     FSharp = "F#"
@@ -99,7 +80,6 @@ class QCProject(WrappedBaseModel):
     leanPinnedToMaster: bool
     leanEnvironment: int
     parameters: List[QCParameter]
-    liveResults: QCLiveResults
     libraries: List[QCProjectLibrary]
 
     @validator("parameters", pre=True)
