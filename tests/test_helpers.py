@@ -19,7 +19,7 @@ from typing import List
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCLiveResults, QCProject, QCFullOrganization, \
+from lean.models.api import QCLanguage, QCProject, QCFullOrganization, \
     QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice, QCLeanEnvironment
 
 
@@ -151,7 +151,6 @@ def create_api_project(id: int, name: str) -> QCProject:
         leanPinnedToMaster=True,
         leanEnvironment=1,
         parameters=[],
-        liveResults=QCLiveResults(eStatus="Unknown"),
         libraries=[]
     )
 
