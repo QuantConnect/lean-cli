@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
-
+from lean.components.util.addon_modules_handler import build_and_configure_modules
 
 def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     from re import findall
@@ -111,6 +111,21 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 @option("--max-concurrent-backtests",
               type=IntRange(min=1),
               help="Maximum number of concurrent backtests to run")
+@option("--optimization-name",
+              type=str,
+              help="Optimization name")
+@option("--addon-module",
+              type=str,
+              multiple=True,
+              hidden=True)
+@option("--extra-config",
+              type=(str, str),
+              multiple=True,
+              hidden=True)
+@option("--no-update",
+              is_flag=True,
+              default=False,
+              help="Use the local LEAN engine image instead of pulling the latest version")
 def optimize(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -124,7 +139,11 @@ def optimize(project: Path,
              image: Optional[str],
              update: bool,
              estimate: bool,
-             max_concurrent_backtests: Optional[int]) -> None:
+             max_concurrent_backtests: Optional[int],
+             optimization_name: str,
+             addon_module: Optional[List[str]],
+             extra_config: Optional[Tuple[str, str]],
+             no_update: bool) -> None:
     """Optimize a project's parameters locally using Docker.
 
     \b
@@ -262,8 +281,7 @@ def optimize(project: Path,
     if not output.exists():
         output.mkdir(parents=True)
 
-    output_config_manager = container.output_config_manager
-    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
+    # This maybe overwritten by the addon module later if given.
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner
@@ -277,7 +295,7 @@ def optimize(project: Path,
               type="bind",
               read_only=True)
     )
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
@@ -286,6 +304,24 @@ def optimize(project: Path,
     cli_root_dir = container.lean_config_manager.get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
+
+    # Set extra config
+    given_algorithm_id = None
+    for key, value in extra_config:
+        if key == "algorithm-id":
+            given_algorithm_id = int(value)
+        else:
+            lean_config[key] = value
+
+    output_config_manager = container.output_config_manager
+    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output, given_algorithm_id))
+
+    # Configure addon modules
+    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, "backtesting")
+
+    # Set optimization name
+    if optimization_name is not None and optimization_name != "":
+        lean_config["optimization-name"] = optimization_name
 
     if should_detach:
         temp_manager = container.temp_manager
