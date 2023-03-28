@@ -227,7 +227,8 @@ terminal_link_required_options = {
     "terminal-link-server-host": "abc",
     "terminal-link-server-port": "123",
     "terminal-link-emsx-broker": "abc",
-    "terminal-link-emsx-account": "abc"
+    "terminal-link-emsx-account": "abc",
+    "terminal-link-openfigi-api-key": "test"
 }
 
 brokerage_required_options = {
