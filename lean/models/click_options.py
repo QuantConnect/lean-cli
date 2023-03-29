@@ -28,8 +28,10 @@ def get_configs_for_options(env: str) -> List[Configuration]:
         brokerage = all_local_brokerages + all_local_data_feeds + all_data_providers
     elif env == "backtest":
         brokerage = all_data_providers
+    elif env == "research":
+        brokerage = all_data_providers
     else:
-        raise ValueError("Only 'cloud' and 'local' are accepted for the argument 'env'")
+        raise ValueError("Acceptable values for 'env' are: 'live-cloud', 'live-local', 'backtest', 'research'")
 
     run_options: Dict[str, Configuration] = {}
     config_with_module_id: Dict[str, str] = {}
