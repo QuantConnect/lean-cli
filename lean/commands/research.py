@@ -19,7 +19,8 @@ from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
 from lean.components.util.name_extraction import convert_to_class_name
-
+from lean.components.util.json_modules_handler import get_and_build_module
+from lean.models.click_options import options_from_json, get_configs_for_options
 
 def _check_docker_output(chunk: str, port: int) -> None:
     """Checks the output of the Docker container and opens the browser if Jupyter Lab has started.
@@ -39,6 +40,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
+@options_from_json(get_configs_for_options("research"))
 @option("--download-data",
               is_flag=True,
               default=False,
@@ -67,7 +69,8 @@ def research(project: Path,
              detach: bool,
              no_open: bool,
              image: Optional[str],
-             update: bool) -> None:
+             update: bool,
+             **kwargs) -> None:
     """Run a Jupyter Lab environment locally using Docker.
 
     By default the official LEAN research image is used.
@@ -77,6 +80,8 @@ def research(project: Path,
     from docker.types import Mount
     from docker.errors import APIError
 
+    logger = container.logger
+    
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
     algorithm_name = convert_to_class_name(project)
@@ -90,8 +95,8 @@ def research(project: Path,
         data_provider = QuantConnectDataProvider.get_name()
 
     if data_provider is not None:
-        data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
-        data_provider.build(lean_config, container.logger).configure(lean_config, "backtesting")
+        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
+        data_provider_configurer.configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
@@ -145,8 +150,6 @@ def research(project: Path,
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
-
-    logger = container.logger
 
     if str(research_image) != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')

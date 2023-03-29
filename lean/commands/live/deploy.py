@@ -22,13 +22,13 @@ from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
 from lean.models.configuration import InternalInputUserInput
-from lean.models.click_options import options_from_json
-from lean.models.json_module import JsonModule, LiveInitialStateInput
+from lean.models.click_options import options_from_json, get_configs_for_options
+from lean.models.json_module import LiveInitialStateInput
 from lean.commands.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
+from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 from lean.models.data_providers import all_data_providers
-from lean.components.util.addon_modules_handler import build_and_configure_modules
+from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
 
 _environment_skeleton = {
     "live-mode": True,
@@ -176,27 +176,6 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
         data_feed.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
 
 
-def _get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any]):
-    logger = container.logger
-    [target_module] = [module for module in module_list if module.get_name() == target_module_name]
-    # update essential properties from brokerage to datafeed
-    # needs to be updated before fetching required properties
-    essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
-    ensure_options(essential_properties)
-    essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
-    target_module.update_configs(essential_properties_value)
-    logger.debug(f"live.deploy._get_and_build_module(): non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
-    # now required properties can be fetched as per data/filter provider from essential properties
-    required_properties: List[str] = []
-    for config in target_module.get_required_configs([InternalInputUserInput]):
-        required_properties.append(target_module.convert_lean_key_to_variable(config._id))
-    ensure_options(required_properties)
-    required_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
-    target_module.update_configs(required_properties_value)
-    logger.debug(f"live.deploy._get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
-    return target_module
-
-
 _cached_lean_config = None
 
 
@@ -244,7 +223,7 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
-@options_from_json(_get_configs_for_options("local"))
+@options_from_json(get_configs_for_options("live-local"))
 @option("--release",
               is_flag=True,
               default=False,
@@ -350,11 +329,11 @@ def deploy(project: Path,
             environment_name: copy(_environment_skeleton)
         }
 
-        [brokerage_configurer] = [_get_and_build_module(brokerage, all_local_brokerages, kwargs)]
+        [brokerage_configurer] = [get_and_build_module(brokerage, all_local_brokerages, kwargs, logger)]
         brokerage_configurer.configure(lean_config, environment_name)
 
         for df in data_feed:
-            [data_feed_configurer] = [_get_and_build_module(df, all_local_data_feeds, kwargs)]
+            [data_feed_configurer] = [get_and_build_module(df, all_local_data_feeds, kwargs, logger)]
             data_feed_configurer.configure(lean_config, environment_name)
 
     else:
@@ -363,7 +342,7 @@ def deploy(project: Path,
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
     if data_provider is not None:
-        [data_provider_configurer] = [_get_and_build_module(data_provider, all_data_providers, kwargs)]
+        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
         data_provider_configurer.configure(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:

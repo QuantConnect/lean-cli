@@ -17,33 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
-from lean.models.brokerages.cloud import all_cloud_brokerages
-from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
-from lean.models.data_providers import all_data_providers
 from lean.models.json_module import LiveInitialStateInput, JsonModule
-from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
-
-def _get_configs_for_options(env: str) -> List[Configuration]:
-    if env == "cloud":
-        brokerage = all_cloud_brokerages
-    elif env == "local":
-        brokerage = all_local_brokerages + all_local_data_feeds + all_data_providers
-    else:
-        raise ValueError("Only 'cloud' and 'local' are accepted for the argument 'env'")
-
-    run_options: Dict[str, Configuration] = {}
-    config_with_module_id: Dict[str, str] = {}
-    for module in brokerage:
-        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
-            if config._id in run_options:
-                if config._id in config_with_module_id and config_with_module_id[config._id] == module._id:
-                    continue
-                else:
-                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
-            run_options[config._id] = config
-            config_with_module_id[config._id] = module._id
-    return list(run_options.values())
-
 
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
     from pytz import utc, UTC
