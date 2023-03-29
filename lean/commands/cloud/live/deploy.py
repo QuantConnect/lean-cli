@@ -23,10 +23,10 @@ from lean.models.json_module import LiveInitialStateInput
 from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput
-from lean.models.click_options import options_from_json
+from lean.models.click_options import options_from_json, get_configs_for_options
 from lean.models.brokerages.cloud import all_cloud_brokerages
 from lean.commands.cloud.live.live import live
-from lean.components.util.live_utils import _get_configs_for_options, get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
+from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 
 def _log_notification_methods(methods: List[QCNotificationMethod]) -> None:
@@ -173,7 +173,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @option("--brokerage",
               type=Choice([b.get_name() for b in all_cloud_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@options_from_json(_get_configs_for_options("cloud"))
+@options_from_json(get_configs_for_options("live-cloud"))
 @option("--node", type=str, help="The name or id of the live node to run on")
 @option("--auto-restart", type=bool, help="Whether automatic algorithm restarting must be enabled")
 @option("--notify-order-events", type=bool, help="Whether notifications must be sent for order events")

@@ -23,7 +23,8 @@ from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
-from lean.components.util.addon_modules_handler import build_and_configure_modules
+from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+from lean.models.click_options import options_from_json, get_configs_for_options
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -257,6 +258,7 @@ def _select_organization() -> QCMinimalOrganization:
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
+@options_from_json(get_configs_for_options("backtest"))
 @option("--download-data",
               is_flag=True,
               default=False,
@@ -307,7 +309,8 @@ def backtest(project: Path,
              backtest_name: str,
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
-             no_update: bool) -> None:
+             no_update: bool,
+             **kwargs) -> None:
     """Backtest a project locally using Docker.
 
     \b
@@ -358,8 +361,8 @@ def backtest(project: Path,
         data_provider = QuantConnectDataProvider.get_name()
 
     if data_provider is not None:
-        data_provider = next(dp for dp in all_data_providers if dp.get_name() == data_provider)
-        data_provider.build(lean_config, logger).configure(lean_config, "backtesting")
+        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
+        data_provider_configurer.configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 

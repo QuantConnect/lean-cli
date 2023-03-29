@@ -12,10 +12,37 @@
 # limitations under the License.
 
 
-from typing import Any, List
+from typing import Any, List, Dict
 from click import option, Choice
 from lean.click import PathParameter
 from lean.models.configuration import Configuration
+from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
+from lean.models.data_providers import all_data_providers
+from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
+
+def get_configs_for_options(env: str) -> List[Configuration]:
+    if env == "live-cloud":
+        brokerage = all_cloud_brokerages
+    elif env == "live-local":
+        brokerage = all_local_brokerages + all_local_data_feeds + all_data_providers
+    elif env == "backtest":
+        brokerage = all_data_providers
+    else:
+        raise ValueError("Only 'cloud' and 'local' are accepted for the argument 'env'")
+
+    run_options: Dict[str, Configuration] = {}
+    config_with_module_id: Dict[str, str] = {}
+    for module in brokerage:
+        for config in module.get_all_input_configs([InternalInputUserInput, InfoConfiguration]):
+            if config._id in run_options:
+                if config._id in config_with_module_id and config_with_module_id[config._id] == module._id:
+                    continue
+                else:
+                    raise ValueError(f'Options names should be unique. Duplicate key present: {config._id}')
+            run_options[config._id] = config
+            config_with_module_id[config._id] = module._id
+    return list(run_options.values())
 
 
 def get_click_option_type(configuration: Configuration):
