@@ -111,9 +111,6 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 @option("--max-concurrent-backtests",
               type=IntRange(min=1),
               help="Maximum number of concurrent backtests to run")
-@option("--optimization-name",
-              type=str,
-              help="Optimization name")
 @option("--addon-module",
               type=str,
               multiple=True,
@@ -140,7 +137,6 @@ def optimize(project: Path,
              update: bool,
              estimate: bool,
              max_concurrent_backtests: Optional[int],
-             optimization_name: str,
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
              no_update: bool) -> None:
@@ -285,10 +281,6 @@ def optimize(project: Path,
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner
-
-    # Set optimization name
-    if optimization_name is not None and optimization_name != "":
-        lean_config["optimization-name"] = optimization_name
 
     # Set extra config
     for key, value in extra_config:
