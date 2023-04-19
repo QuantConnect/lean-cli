@@ -23,7 +23,7 @@ from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
-from lean.components.util.addon_modules_handler import build_and_configure_modules
+from lean.components.util.json_modules_handler import build_and_configure_modules
 
 def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     from re import findall
@@ -188,7 +188,7 @@ def optimize(project: Path,
     from math import floor
 
     should_detach = detach and not estimate
-
+    environment = "backtesting"
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
 
@@ -276,7 +276,7 @@ def optimize(project: Path,
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
     lean_config_manager = container.lean_config_manager
-    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, None)
+    lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None)
 
     if not output.exists():
         output.mkdir(parents=True)
@@ -285,6 +285,25 @@ def optimize(project: Path,
     lean_config["messaging-handler"] = "QuantConnect.Messaging.Messaging"
 
     lean_runner = container.lean_runner
+
+    # Set optimization name
+    if optimization_name is not None and optimization_name != "":
+        lean_config["optimization-name"] = optimization_name
+
+    # Set extra config
+    for key, value in extra_config:
+        if "environments" in lean_config and environment in lean_config["environments"] \
+                and key in lean_config["environments"][environment]:
+            lean_config["environments"][environment][key] = value
+        else:
+            lean_config[key] = value
+
+    output_config_manager = container.output_config_manager
+    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
+
+    # Configure addon modules
+    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, environment)
+
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
@@ -304,24 +323,6 @@ def optimize(project: Path,
     cli_root_dir = container.lean_config_manager.get_cli_root_directory()
     relative_project_dir = project.relative_to(cli_root_dir)
     relative_output_dir = output.relative_to(cli_root_dir)
-
-    # Set extra config
-    given_algorithm_id = None
-    for key, value in extra_config:
-        if key == "algorithm-id":
-            given_algorithm_id = int(value)
-        else:
-            lean_config[key] = value
-
-    output_config_manager = container.output_config_manager
-    lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output, given_algorithm_id))
-
-    # Configure addon modules
-    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, "backtesting")
-
-    # Set optimization name
-    if optimization_name is not None and optimization_name != "":
-        lean_config["optimization-name"] = optimization_name
 
     if should_detach:
         temp_manager = container.temp_manager
