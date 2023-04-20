@@ -80,13 +80,14 @@ class OutputConfigManager:
         """
         return self._get_by_id("Backtest", backtest_id, ["backtests/*", "optimizations/*/*"], root_directory)
 
-    def get_optimization_id(self, optimization_directory: Path) -> int:
+    def get_optimization_id(self, optimization_directory: Path, optimization_id: int = None) -> int:
         """Returns the id of an optimization.
 
         :param optimization_directory: the path to the optimization to retrieve the id of
+        :param optimization_id: the id that needs to be set in the config file
         :return: the id of the given optimization
         """
-        return self._get_id(optimization_directory, 2)
+        return self._get_id(optimization_directory, 2, optimization_id)
 
     def get_optimization_by_id(self, optimization_id: int, root_directory: Optional[Path] = None) -> Path:
         """Finds the directory of an optimization by its id.
@@ -153,7 +154,7 @@ class OutputConfigManager:
         if id is not None:
             config.set("id", id)
             return id
-        
+
         if config.has("id"):
             return config.get("id")
 

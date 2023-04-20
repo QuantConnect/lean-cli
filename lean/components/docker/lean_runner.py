@@ -350,7 +350,6 @@ class LeanRunner:
         output_config.set("container", run_options["name"])
         if "backtest-name" in lean_config:
             output_config.set("backtest-name", lean_config["backtest-name"])
-
         if "environment" in lean_config and "environments" in lean_config:
             environment = lean_config["environments"][lean_config["environment"]]
             if "live-mode-brokerage" in environment:
