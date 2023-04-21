@@ -111,6 +111,13 @@ class DataDownloader:
         tar.errorlevel = 0
         tar.extractall(destination)
         tar.close()
+        from os import remove
+        remove(file)
+
+    def remove_suffix(self,input_string, suffix):
+        if suffix and input_string.endswith(suffix):
+            return input_string[:-len(suffix)]
+        return input_string
 
     def _download_file(self,
                        relative_file: str,
@@ -129,11 +136,19 @@ class DataDownloader:
         :param organization_id: the id of the organization that should be billed
         :param callback: the lambda that is called just before the method returns
         """
-        local_path = data_directory / relative_file
 
-        if local_path.exists() and not overwrite:
+        local_path = canary_path = data_directory / relative_file
+
+        is_bulk = "setup/" in relative_file and relative_file.endswith(".tar")
+        if is_bulk:
+            # for bulk, we will download to a temporary folder and delete it at the end
+            import tempfile
+            local_path = tempfile.gettempdir() + "/" + relative_file
+            canary_path = Path(self.remove_suffix(str(data_directory / relative_file), ".tar") + ".log")
+
+        if canary_path.exists() and not overwrite:
             self._logger.warn("\n".join([
-                f"{local_path} already exists, use --overwrite to overwrite it",
+                f"{relative_file} already exists, use --overwrite to overwrite it",
                 "You have not been charged for this file"
             ]))
             progress_callback(1)
@@ -142,10 +157,13 @@ class DataDownloader:
         try:
             self._api_client.data.download_file(relative_file, organization_id, local_path, progress_callback)
         except RequestFailedError as error:
-            self._logger.warn(f"{local_path}: {error}\nYou have not been charged for this file")
+            self._logger.warn(f"{relative_file}: {error}\nYou have not been charged for this file")
             progress_callback(1)
             return
 
         # Special case: bulk files need unpacked
-        if "setup/" in relative_file and relative_file.endswith(".tar"):
+        if is_bulk:
+            canary_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(canary_path, 'a') as log_file:
+                log_file.write(f'Downloaded: {relative_file}\n')
             self._process_bulk(local_path, data_directory)
