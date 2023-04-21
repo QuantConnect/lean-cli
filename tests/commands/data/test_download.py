@@ -13,15 +13,15 @@ test_files = Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "tes
 # Load in our test files into fake filesystem
 @pytest.fixture
 def setup(fs):
-    fs.add_real_directory(test_files)
+    fs.add_real_directory(test_files, read_only=False)
     yield fs
 
 def test_bulk_extraction(setup):
-    fakeTar = Path(os.path.join(test_files, "20220222_coinapi_crypto_ftx_price_aggregation.tar"))
+    fake_tar = Path(os.path.join(test_files, "20220222_coinapi_crypto_ftx_price_aggregation.tar"))
     out = Path("/tmp/out")
 
-    container.data_downloader._process_bulk(fakeTar, out)
-    assert os.path.exists(out)
+    container.data_downloader._process_bulk(fake_tar, out)
+    assert not os.path.exists(out / fake_tar)
 
     # Empty file in fake tar
     file = os.path.join(out, "crypto/ftx/daily/imxusd_trade.zip")

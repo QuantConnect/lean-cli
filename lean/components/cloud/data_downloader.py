@@ -154,10 +154,6 @@ class DataDownloader:
             progress_callback(1)
             return
 
-        if is_bulk:
-            with open(canary_path, 'a') as log_file:
-                log_file.write(f'Downloading: {relative_file}\n')
-
         try:
             self._api_client.data.download_file(relative_file, organization_id, local_path, progress_callback)
         except RequestFailedError as error:
@@ -167,4 +163,7 @@ class DataDownloader:
 
         # Special case: bulk files need unpacked
         if is_bulk:
+            canary_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(canary_path, 'a') as log_file:
+                log_file.write(f'Downloaded: {relative_file}\n')
             self._process_bulk(local_path, data_directory)
