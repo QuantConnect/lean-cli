@@ -406,7 +406,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
-@option("--force", is_flag=True, default=False, hidden=True, help="Ignores warnings and downloads anyway")
+@option("--force", is_flag=True, default=False, hidden=True)
 @pass_context
 def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
