@@ -153,7 +153,14 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     logger.info(f"Organization balance: {organization.credit.balance:,.0f} QCC")
 
 
-def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset]) -> List[Product]:
+def _get_security_master_warn() -> str:
+    return "\n".join([f"Your organization does not have an active Security Master subscription. Override the Security Master precautions will likely"
+                      f" result in inaccurate and misleading backtest results. Use this override flag at your own risk.",
+                      f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+                      ])
+
+
+def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset], force: bool) -> List[Product]:
     """Asks the user for the products that should be purchased and downloaded.
 
     :param organization: the organization that will be charged
@@ -187,11 +194,14 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
                                               [Option(id=d, label=d.name) for d in available_datasets])
 
         if dataset.requires_security_master and not organization.has_security_master_subscription():
-            logger.warn("\n".join([
-                f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
-                f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
-            ]))
-            continue
+            if not force:
+                logger.warn("\n".join([
+                    f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
+                    f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+                ]))
+                continue
+            else:
+                logger.warn(_get_security_master_warn())
 
         option_results = OrderedDict()
         for dataset_option in dataset.options:
@@ -300,7 +310,8 @@ def _get_organization() -> QCFullOrganization:
 
 def _select_products_non_interactive(organization: QCFullOrganization,
                                      datasets: List[Dataset],
-                                     ctx: Context) -> List[Product]:
+                                     ctx: Context,
+                                     force: bool) -> List[Product]:
     """Asks the user for the products that should be purchased and downloaded.
 
     :param organization: the organization that will be charged
@@ -315,10 +326,13 @@ def _select_products_non_interactive(organization: QCFullOrganization,
         raise RuntimeError(f"There is no dataset named '{ctx.params['dataset']}'")
 
     if dataset.requires_security_master and not organization.has_security_master_subscription():
-        raise RuntimeError("\n".join([
-            f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
-            f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
-        ]))
+        if not force:
+            raise RuntimeError("\n".join([
+                f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
+                f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+            ]))
+        else:
+            container.logger.warn(_get_security_master_warn())
 
     option_results = OrderedDict()
     invalid_options = []
@@ -392,8 +406,9 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
+@option("--force", is_flag=True, default=False, hidden=True, help="Ignores warnings and downloads anyway")
 @pass_context
-def download(ctx: Context, dataset: Optional[str], overwrite: bool, **kwargs) -> None:
+def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
     An interactive wizard will show to walk you through the process of selecting data,
@@ -414,10 +429,10 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, **kwargs) ->
     if not is_interactive:
         ensure_options(["dataset"])
         datasets = _get_available_datasets(organization)
-        products = _select_products_non_interactive(organization, datasets, ctx)
+        products = _select_products_non_interactive(organization, datasets, ctx, force)
     else:
         datasets = _get_available_datasets(organization)
-        products = _select_products_interactive(organization, datasets)
+        products = _select_products_interactive(organization, datasets, force)
 
     _confirm_organization_balance(organization, products)
     _verify_accept_agreement(organization, is_interactive)

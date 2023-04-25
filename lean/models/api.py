@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import validator
 
-from lean.constants import EQUITY_SECURITY_MASTER_PRODUCT_ID, BULK_EQUITY_SECURITY_MASTER_PRODUCT_ID
+from lean.constants import EQUITY_SECURITY_MASTER_PRODUCT_ID
 from lean.models.pydantic import WrappedBaseModel
 
 
@@ -414,7 +414,7 @@ class QCFullOrganization(WrappedBaseModel):
         if data_products_product is None:
             return False
 
-        return any(x.productId in {EQUITY_SECURITY_MASTER_PRODUCT_ID, BULK_EQUITY_SECURITY_MASTER_PRODUCT_ID} for x in data_products_product.items)
+        return any(x.productId in {EQUITY_SECURITY_MASTER_PRODUCT_ID} for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):

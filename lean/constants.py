@@ -94,35 +94,8 @@ UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 # The product id of the Equity Security Master subscription
 EQUITY_SECURITY_MASTER_PRODUCT_ID = 37
 
-# The product id of the Equity Bulk Security Master subscription
-BULK_EQUITY_SECURITY_MASTER_PRODUCT_ID = 180
-
 # The product id of the Terminal Link module
 TERMINAL_LINK_PRODUCT_ID = 44
-
-# The product id of the Trading Technologies module
-TRADING_TECHNOLOGIES_PRODUCT_ID = 64
-
-# The product id of the Atreyu module
-ATREYU_PRODUCT_ID = 65
-
-# The product id of the Kraken module
-KRAKEN_PRODUCT_ID = 130
-
-# The product id of the FTX module
-FTX_PRODUCT_ID = 138
-
-# The product id of the ZERODHA module
-ZERODHA_PRODUCT_ID = 174
-
-# The product id of the Binance module
-BINANCE_PRODUCT_ID = 176
-
-# The product id of the SAMCO module
-SAMCO_PRODUCT_ID = 173
-
-# The product id of the Interactive Brokers module
-INTERACTIVE_BROKERS_PRODUCT_ID = 181
 
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"
