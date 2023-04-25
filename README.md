@@ -133,6 +133,14 @@ Options:
                                   Enable a certain debugging method (see --help for more information)
   --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --terminal-link-environment [Production|Beta]
+                                  The environment to run in
+  --terminal-link-server-host TEXT
+                                  The host of the TerminalLink server
+  --terminal-link-server-port INTEGER
+                                  The port of the TerminalLink server
+  --terminal-link-openfigi-api-key TEXT
+                                  The Open FIGI API key to use for mapping options
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -1181,6 +1189,7 @@ Options:
   --estimate                      Estimate optimization runtime without running it
   --max-concurrent-backtests INTEGER RANGE
                                   Maximum number of concurrent backtests to run  [x>=1]
+  --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -1284,6 +1293,14 @@ Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
   --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --terminal-link-environment [Production|Beta]
+                                  The environment to run in
+  --terminal-link-server-host TEXT
+                                  The host of the TerminalLink server
+  --terminal-link-server-port INTEGER
+                                  The port of the TerminalLink server
+  --terminal-link-openfigi-api-key TEXT
+                                  The Open FIGI API key to use for mapping options
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
