@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
@@ -61,6 +61,10 @@ def _check_docker_output(chunk: str, port: int) -> None:
               is_flag=True,
               default=False,
               help="Pull the LEAN research image before starting the research environment")
+@option("--extra-config",
+              type=(str, str),
+              multiple=True,
+              hidden=True)
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -74,6 +78,7 @@ def research(project: Path,
              no_open: bool,
              image: Optional[str],
              update: bool,
+             extra_config: Optional[Tuple[str, str]],
              no_update: bool,
              **kwargs) -> None:
     """Run a Jupyter Lab environment locally using Docker.
@@ -107,6 +112,11 @@ def research(project: Path,
 
     lean_runner = container.lean_runner
     temp_manager = container.temp_manager
+
+    # Set extra config
+    for key, value in extra_config:
+        lean_config[key] = value
+        
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
