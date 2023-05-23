@@ -86,7 +86,7 @@ DEFAULT_PYTHON_NOTEBOOK = """
                 "# For more information see https://www.quantconnect.com/docs/research/overview\\n",
                 "qb = QuantBook()\\n",
                 "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
-                "qb.SetStartDate(2021, 3, 31)\\n",
+                "qb.SetStartDate(2013, 10, 11)\\n",
                 "spy = qb.AddEquity(\\"SPY\\")\\n",
                 "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
                 "\\n",
@@ -225,7 +225,7 @@ DEFAULT_CSHARP_NOTEBOOK = """
                 "\\n",
                 "var qb = new QuantBook();\\n",
                 "// Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
-                "qb.SetStartDate(2021, 3, 31);\\n",
+                "qb.SetStartDate(2013, 10, 11);\\n",
                 "var spy = qb.AddEquity(\\"SPY\\");\\n",
                 "var history = qb.History(qb.Securities.Keys, 360, Resolution.Daily);"
             ]
