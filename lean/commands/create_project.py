@@ -28,6 +28,7 @@ from AlgorithmImports import *
 
 class $CLASS_NAME$(QCAlgorithm):
     def Initialize(self):
+        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data
         self.SetStartDate(2013, 10, 7)  # Set Start Date
         self.SetEndDate(2013, 10, 11)  # Set End Date
         self.SetCash(100000)  # Set Strategy Cash
@@ -84,6 +85,8 @@ DEFAULT_PYTHON_NOTEBOOK = """
                 "# QuantBook Analysis Tool\\n",
                 "# For more information see https://www.quantconnect.com/docs/research/overview\\n",
                 "qb = QuantBook()\\n",
+                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
+                "qb.SetStartDate(2013, 10, 11)\\n",
                 "spy = qb.AddEquity(\\"SPY\\")\\n",
                 "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
                 "\\n",
@@ -133,6 +136,7 @@ namespace QuantConnect.Algorithm.CSharp
     {
         public override void Initialize()
         {
+            // Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data
             SetStartDate(2013, 10, 7); // Set Start Date
             SetEndDate(2013, 10, 11); // Set Start Date
             SetCash(100000); // Set Strategy Cash
@@ -220,6 +224,8 @@ DEFAULT_CSHARP_NOTEBOOK = """
                 "using QuantConnect.Algorithm;\\n",
                 "\\n",
                 "var qb = new QuantBook();\\n",
+                "// Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
+                "qb.SetStartDate(2013, 10, 11);\\n",
                 "var spy = qb.AddEquity(\\"SPY\\");\\n",
                 "var history = qb.History(qb.Securities.Keys, 360, Resolution.Daily);"
             ]
