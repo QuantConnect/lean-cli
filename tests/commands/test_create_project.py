@@ -49,7 +49,7 @@ def assert_csharp_project_exists(path: str) -> None:
 
     assert project_dir.exists()
     assert (project_dir / "Main.cs").exists()
-    assert (project_dir / "research.ipynb").exists()
+    assert (project_dir / "Research.ipynb").exists()
     assert (project_dir / "config.json").exists()
 
     with open(project_dir / "Main.cs") as file:
@@ -58,7 +58,7 @@ def assert_csharp_project_exists(path: str) -> None:
         else:
             assert "class MyFirstProject : QCAlgorithm" in file.read()
 
-    with open(project_dir / "research.ipynb") as file:
+    with open(project_dir / "Research.ipynb") as file:
         assert json.load(file)["metadata"]["kernelspec"]["language"] == "C#"
 
     with open(project_dir / "config.json") as file:
