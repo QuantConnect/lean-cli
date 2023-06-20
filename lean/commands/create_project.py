@@ -336,15 +336,17 @@ Please remove the character '{problematic_char}' and retry""")
 
     if language == "python":
         main_name = "main.py"
+        research_name = "research.ipynb"
         main_content = DEFAULT_PYTHON_MAIN if not is_library_project else LIBRARY_PYTHON_MAIN
     else:
         main_name = "Main.cs"
+        research_name = "Research.ipynb"
         main_content = DEFAULT_CSHARP_MAIN if not is_library_project else LIBRARY_CSHARP_MAIN
 
     with (full_path / main_name).open("w+", encoding="utf-8") as file:
         file.write(main_content.replace("$CLASS_NAME$", class_name).replace("$PROJECT_NAME$", full_path.name))
 
-    with (full_path / "research.ipynb").open("w+", encoding="utf-8") as file:
+    with (full_path / research_name).open("w+", encoding="utf-8") as file:
         file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
     if language == "csharp":

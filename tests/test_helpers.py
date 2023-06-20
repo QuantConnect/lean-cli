@@ -37,7 +37,7 @@ def _get_python_project_files(path: Path) -> dict:
 def _get_csharp_project_files(path: Path) -> dict:
     return {
         (path / "Main.cs"): DEFAULT_CSHARP_MAIN.replace("$CLASS_NAME$", "CSharpProject"),
-        (path / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
+        (path / "Research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
         (path / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
             "parameters": {}
@@ -57,7 +57,7 @@ def _get_fake_libraries() -> dict:
         }),
         (Path.cwd() / "Library" / "CSharp Library" / "Main.cs"):
             LIBRARY_CSHARP_MAIN.replace("$CLASS_NAME$", "CSharpLibrary"),
-        (Path.cwd() / "Library" / "CSharp Library" / "research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
+        (Path.cwd() / "Library" / "CSharp Library" / "Research.ipynb"): DEFAULT_CSHARP_NOTEBOOK,
         (Path.cwd() / "Library" / "CSharp Library" / "config.json"): json.dumps({
             "algorithm-language": "CSharp",
             "parameters": {}

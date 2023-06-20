@@ -194,7 +194,7 @@ def test_cli() -> None:
     run_command(["lean", "create-project", "--language", "csharp", csharp_project_name], cwd=test_dir)
     csharp_project_dir = test_dir / csharp_project_name
     assert (csharp_project_dir / "Main.cs").is_file()
-    assert (csharp_project_dir / "research.ipynb").is_file()
+    assert (csharp_project_dir / "Research.ipynb").is_file()
     assert (csharp_project_dir / "config.json").is_file()
     assert (csharp_project_dir / f"{csharp_project_name}.csproj").is_file()
     assert (csharp_project_dir / ".vscode" / "launch.json").is_file()
