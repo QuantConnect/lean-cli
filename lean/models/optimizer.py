@@ -13,9 +13,7 @@
 
 from enum import Enum
 
-from pydantic import Field
-
-from lean.models.pydantic import WrappedBaseModel
+from lean.models.pydantic import WrappedBaseModel, Field
 
 
 class OptimizationExtremum(str, Enum):

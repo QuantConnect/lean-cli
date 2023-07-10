@@ -17,14 +17,12 @@ from enum import Enum
 from typing import List, Any, Optional, Dict, Set, Tuple, Pattern
 
 from click import prompt
-from pydantic import validator
 
 from lean.click import DateParameter
 from lean.container import container
 from lean.models.api import QCDataVendor
 from lean.models.logger import Option
-from lean.models.pydantic import WrappedBaseModel
-
+from lean.models.pydantic import WrappedBaseModel, validator
 
 class OptionResult(WrappedBaseModel):
     """The OptionResult class represents an option's result with an internal value and a display-friendly label."""

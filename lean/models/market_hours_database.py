@@ -14,10 +14,7 @@
 from datetime import datetime
 from typing import List, Dict, Any
 
-from pydantic import validator
-
-from lean.models.pydantic import WrappedBaseModel
-
+from lean.models.pydantic import WrappedBaseModel, validator
 
 class MarketHoursSegment(WrappedBaseModel):
     start: str
