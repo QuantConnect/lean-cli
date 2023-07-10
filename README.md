@@ -864,7 +864,7 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Atreyu|Trading Technologies|Kraken|TDAmeritrade]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade]
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon Data Feed|Custom data only]
                                   The data feed to use
@@ -931,14 +931,6 @@ Options:
                                   The EMSX account to use
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --atreyu-host TEXT              The host of the Atreyu server
-  --atreyu-req-port INTEGER       The Atreyu request port
-  --atreyu-sub-port INTEGER       The Atreyu subscribe port
-  --atreyu-username TEXT          Your Atreyu username
-  --atreyu-password TEXT          Your Atreyu password
-  --atreyu-client-id TEXT         Your Atreyu client id
-  --atreyu-broker-mpid TEXT       The broker MPID to use
-  --atreyu-locate-rqd TEXT        The locate rqd to use
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
@@ -1309,6 +1301,7 @@ Options:
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment
+  --no-update                     Use the local LEAN research image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
