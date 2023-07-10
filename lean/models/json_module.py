@@ -169,7 +169,9 @@ class JsonModule(ABC):
             if self.__class__.__name__ == 'CloudBrokerage' and not configuration._is_cloud_property:
                 continue
             if configuration._log_message is not None:
-                logger.info(configuration._log_message.strip())
+                log_message = configuration._log_message.strip()
+                if log_message:
+                    logger.info(log_message)
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
