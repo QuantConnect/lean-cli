@@ -101,7 +101,7 @@ def main() -> None:
         from click import UsageError, Abort
         from requests import exceptions
         from io import StringIO
-        from pydantic import ValidationError
+        from lean.models.pydantic import ValidationError
         from lean.models.errors import MoreInfoError
 
         logger = container.logger

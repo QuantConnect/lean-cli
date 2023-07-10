@@ -15,10 +15,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import validator
-
 from lean.constants import EQUITY_SECURITY_MASTER_PRODUCT_ID
-from lean.models.pydantic import WrappedBaseModel
+from lean.models.pydantic import WrappedBaseModel, validator
 
 
 # The models in this module are all parts of responses from the QuantConnect API
