@@ -1,4 +1,7 @@
 import json
+from unittest import mock
+from unittest.mock import MagicMock
+
 import pytest
 import os
 import re
@@ -6,6 +9,7 @@ from pathlib import Path
 
 from lean.commands.data.download import *
 from lean.container import container
+from lean.models.api import QCDataset, QCOrganizationCredit, QCOrganizationData
 from tests.test_helpers import create_api_organization
 
 test_files = Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "testFiles"))
@@ -240,3 +244,39 @@ def test_validate_datafile() -> None:
 		DataFile(file='equity/usa/daily/aal.zip', vendor=vendor)
 	except Exception as err:
 		pytest.fail(f"{err}")
+
+def test_filter_pending_datasets() -> None:
+    from lean.commands.data.download import _get_available_datasets, _get_data_information
+
+    market_api_client = mock.Mock()
+    test_datasets = [
+        QCDataset(id=1, name="Pending Dataset", delivery=QCDatasetDelivery.DownloadOnly, vendorName="Vendor", tags=[],
+                  pending=True),
+        QCDataset(id=2, name="Non-Pending Dataset", delivery=QCDatasetDelivery.DownloadOnly, vendorName="Vendor",
+                  tags=[], pending=False)
+    ]
+    market_api_client.list_datasets = MagicMock(return_value=test_datasets)
+    container.api_client.market = market_api_client
+
+    datasources = {
+        str(test_datasets[0].id): {
+            'options': [],
+            'paths': [],
+            'requiresSecurityMaster': True,
+        },
+        str(test_datasets[1].id): {
+            'options': [],
+            'paths': [],
+            'requiresSecurityMaster': True,
+        }
+    }
+    container.api_client.data.get_info = MagicMock(return_value=QCDataInformation(datasources=datasources, prices=[],
+                                                                                  agreement=""))
+
+    datasets = _get_available_datasets(QCFullOrganization(id=1, name="Test Org", seats=1, type="",
+                                                          credit=QCOrganizationCredit(movements=[], balance=1000),
+                                                          products=[], data=QCOrganizationData(current=True),
+                                                          members=[]))
+
+    assert len(datasets) == 1
+    assert datasets[0].name == test_datasets[1].name
