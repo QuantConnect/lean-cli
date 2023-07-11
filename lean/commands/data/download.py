@@ -381,7 +381,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     available_datasets = []
     for cloud_dataset in cloud_datasets:
-        if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly:
+        if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly or cloud_dataset.pending:
             continue
 
         datasource = data_information.datasources.get(str(cloud_dataset.id), None)

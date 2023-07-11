@@ -538,6 +538,7 @@ class QCDataset(WrappedBaseModel):
     delivery: QCDatasetDelivery
     vendorName: str
     tags: List[QCDatasetTag]
+    pending: bool
 
 
 class QCUser(WrappedBaseModel):
