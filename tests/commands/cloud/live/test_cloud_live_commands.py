@@ -176,7 +176,6 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
-                                            ("Atreyu", "USD:100"),
                                             ("Trading Technologies", "USD:100"),
                                             ("Binance", "USD:100"),
                                             ("Bitfinex", "USD:100"),
@@ -242,8 +241,6 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
                                                 ("Paper Trading", "A:A 2T:1:145.1"),
                                                 ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
-                                                ("Atreyu", ""),
-                                                ("Atreyu", "A:A 2T:1:145.1"),
                                                 ("Trading Technologies", ""),
                                                 ("Trading Technologies", "A:A 2T:1:145.1"),
                                                 ("Binance", ""),
@@ -297,7 +294,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
                                        "--notify-insights", "no", *options])
 
     if (brokerage != "Paper Trading" and holdings != "")\
-    or brokerage == "Atreyu" or brokerage == "Terminal Link":   # non-cloud brokerage
+        or brokerage == "Terminal Link":   # non-cloud brokerage
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
         return
