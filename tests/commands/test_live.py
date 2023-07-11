@@ -279,16 +279,6 @@ brokerage_required_options = {
         "samco-product-type": "mis",
         "samco-trading-segment": "equity",
     },
-    "Atreyu": {
-        "atreyu-host": "abc",
-        "atreyu-req-port": "123",
-        "atreyu-sub-port": "456",
-        "atreyu-username": "abc",
-        "atreyu-password": "abc",
-        "atreyu-client-id": "abc",
-        "atreyu-broker-mpid": "abc",
-        "atreyu-locate-rqd": "abc",
-    },
     "Terminal Link": {
         **terminal_link_required_options,
         "live-cash-balance": "USD:10000,EUR:10",
@@ -406,7 +396,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
                                 "--binance-api-secret", "456",
                                 "--binance-use-testnet", "live"])
 
-            if brokerage == "Trading Technologies" or brokerage == "Atreyu":
+            if brokerage == "Trading Technologies":
                 options.extend(["--live-cash-balance", "USD:100"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -597,7 +587,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                                 "--binance-api-secret", "456",
                                 "--binance-use-testnet", "live"])
 
-            if brokerage == "Trading Technologies" or brokerage == "Atreyu":
+            if brokerage == "Trading Technologies":
                 options.extend(["--live-cash-balance", "USD:100"])
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
@@ -800,8 +790,6 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", ""),
                                             ("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
-                                            ("Atreyu", ""),
-                                            ("Atreyu", "USD:100"),
                                             # ("Trading Technologies", "") not tested since this will prompt to interactive panel
                                             ("Trading Technologies", "USD:100"),
                                             ("Trading Technologies", "USD:100,EUR:200"),
@@ -842,8 +830,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                        "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--data-feed", "Custom data only"])
 
-    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu", "Trading Technologies", "Terminal Link"] and cash != "":
+    if brokerage not in ["Paper Trading", "Trading Technologies", "Terminal Link"] and cash != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
@@ -868,8 +855,6 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
                                                 ("Paper Trading", "A:A 2T:1:145.1"),
                                                 ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
-                                                ("Atreyu", ""),
-                                                ("Atreyu", "A:A 2T:1:145.1"),
                                                 ("Trading Technologies", ""),
                                                 ("Trading Technologies", "A:A 2T:1:145.1"),
                                                 ("Binance", ""),
@@ -909,8 +894,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--data-feed", "Custom data only", *options])
 
-    # TODO: remove Atreyu after the discontinuation of the brokerage support (when removed from module-*.json)
-    if brokerage not in ["Paper Trading", "Atreyu", "Terminal Link"] and holdings != "":
+    if brokerage not in ["Paper Trading", "Terminal Link"] and holdings != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
