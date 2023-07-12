@@ -46,3 +46,11 @@ def test_config_list_does_not_show_complete_values_of_sensitive_options(size) ->
 
     assert "123" not in result.output
     assert "abcdefghijklmnopqrstuvwxyz" not in result.output
+
+
+def test_handles_non_string_sensitive_configs() -> None:
+    container.cli_config_manager.user_id.set_value(123)
+
+    result = CliRunner().invoke(lean, ["config", "list"])
+
+    assert result.exit_code == 0

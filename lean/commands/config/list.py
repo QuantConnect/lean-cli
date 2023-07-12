@@ -29,7 +29,7 @@ def list() -> None:
     table.add_column("Description", overflow="fold")
 
     for option in container.cli_config_manager.all_options:
-        value = option.get_value(default="<not set>")
+        value = str(option.get_value(default="<not set>"))
 
         # Mask values of sensitive options
         if value != "<not set>" and option.is_sensitive:
