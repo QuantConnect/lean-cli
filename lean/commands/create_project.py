@@ -23,10 +23,12 @@ from lean.components.util.name_extraction import convert_to_class_name
 from lean.components import reserved_names
 
 DEFAULT_PYTHON_MAIN = '''
+# region imports
 from AlgorithmImports import *
-
+# endregion
 
 class $CLASS_NAME$(QCAlgorithm):
+
     def Initialize(self):
         # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data
         self.SetStartDate(2013, 10, 7)  # Set Start Date
@@ -34,7 +36,7 @@ class $CLASS_NAME$(QCAlgorithm):
         self.SetCash(100000)  # Set Strategy Cash
         self.AddEquity("SPY", Resolution.Minute)
 
-    def OnData(self, data):
+    def OnData(self, data: Slice):
         """OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
             Arguments:
                 data: Slice object keyed by symbol containing the stock data
@@ -45,24 +47,26 @@ class $CLASS_NAME$(QCAlgorithm):
 '''.strip() + "\n"
 
 LIBRARY_PYTHON_MAIN = '''
+#region imports
 from AlgorithmImports import *
+#endregion
 
 
-class $CLASS_NAME$:
-    """
-    To use this library place this at the top:
-    from $PROJECT_NAME$.main import $CLASS_NAME$
+### Library classes are snippets of code/classes you can reuse between projects. They are
+### added to projects on compile.
+###
+### To import this class use the following import with your values subbed in for the {} sections:
+### from {libraryProjectName} import Library
+###
+### Example using your newly imported library from 'Library.py' like so:
+###
+### from $PROJECT_NAME$ import Library
+### x = Library.Add(1,1)
+### print(x)
+###
 
-    Then instantiate the class:
-    x = $CLASS_NAME$()
-    x.Add(1, 2)
-    """
-
-    def Add(self, a, b):
-        return a + b
-
-    def Subtract(self, a, b):
-        return a - b
+def Add(a: int, b: int):
+    return a + b
 '''.strip() + "\n"
 
 DEFAULT_PYTHON_NOTEBOOK = """
@@ -82,25 +86,18 @@ DEFAULT_PYTHON_NOTEBOOK = """
             "metadata": {},
             "outputs": [],
             "source": [
-                "# QuantBook Analysis Tool\\n",
-                "# For more information see https://www.quantconnect.com/docs/research/overview\\n",
+                "# QuantBook Analysis Tool \\n",
+                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",
                 "qb = QuantBook()\\n",
+                "spy = qb.AddEquity(\\"SPY\\")\\n",
                 "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
                 "qb.SetStartDate(2013, 10, 11)\\n",
-                "spy = qb.AddEquity(\\"SPY\\")\\n",
                 "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
                 "\\n",
                 "# Indicator Analysis\\n",
-                "ema = qb.Indicator(ExponentialMovingAverage(10), spy.Symbol, 360, Resolution.Daily)\\n",
-                "ema.plot()"
+                "bbdf = qb.Indicator(BollingerBands(30, 2), spy.Symbol, 360, Resolution.Daily)\\n",
+                "bbdf.drop('standarddeviation', axis=1).plot()"
             ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": null,
-            "metadata": {},
-            "outputs": [],
-            "source": []
         }
     ],
     "metadata": {
@@ -108,18 +105,6 @@ DEFAULT_PYTHON_NOTEBOOK = """
             "display_name": "Python 3",
             "language": "python",
             "name": "python3"
-        },
-        "language_info": {
-            "codemirror_mode": {
-                "name": "ipython",
-                "version": 3
-            },
-            "file_extension": ".py",
-            "mimetype": "text/x-python",
-            "name": "python",
-            "nbconvert_exporter": "python",
-            "pygments_lexer": "ipython3",
-            "version": "3.8.13"
         }
     },
     "nbformat": 4,
@@ -128,19 +113,66 @@ DEFAULT_PYTHON_NOTEBOOK = """
 """.strip() + "\n"
 
 DEFAULT_CSHARP_MAIN = """
-using QuantConnect.Data;
-
+#region imports
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Globalization;
+    using System.Drawing;
+    using QuantConnect;
+    using QuantConnect.Algorithm.Framework;
+    using QuantConnect.Algorithm.Framework.Selection;
+    using QuantConnect.Algorithm.Framework.Alphas;
+    using QuantConnect.Algorithm.Framework.Portfolio;
+    using QuantConnect.Algorithm.Framework.Execution;
+    using QuantConnect.Algorithm.Framework.Risk;
+    using QuantConnect.Parameters;
+    using QuantConnect.Benchmarks;
+    using QuantConnect.Brokerages;
+    using QuantConnect.Util;
+    using QuantConnect.Interfaces;
+    using QuantConnect.Algorithm;
+    using QuantConnect.Indicators;
+    using QuantConnect.Data;
+    using QuantConnect.Data.Consolidators;
+    using QuantConnect.Data.Custom;
+    using QuantConnect.DataSource;
+    using QuantConnect.Data.Fundamental;
+    using QuantConnect.Data.Market;
+    using QuantConnect.Data.UniverseSelection;
+    using QuantConnect.Notifications;
+    using QuantConnect.Orders;
+    using QuantConnect.Orders.Fees;
+    using QuantConnect.Orders.Fills;
+    using QuantConnect.Orders.Slippage;
+    using QuantConnect.Scheduling;
+    using QuantConnect.Securities;
+    using QuantConnect.Securities.Equity;
+    using QuantConnect.Securities.Future;
+    using QuantConnect.Securities.Option;
+    using QuantConnect.Securities.Forex;
+    using QuantConnect.Securities.Crypto;
+    using QuantConnect.Securities.Interfaces;
+    using QuantConnect.Storage;
+    using QuantConnect.Data.Custom.AlphaStreams;
+    using QCAlgorithmFramework = QuantConnect.Algorithm.QCAlgorithm;
+    using QCAlgorithmFrameworkBridge = QuantConnect.Algorithm.QCAlgorithm;
+#endregion
 namespace QuantConnect.Algorithm.CSharp
 {
     public class $CLASS_NAME$ : QCAlgorithm
     {
+
         public override void Initialize()
         {
             // Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data
             SetStartDate(2013, 10, 7); // Set Start Date
             SetEndDate(2013, 10, 11); // Set Start Date
-            SetCash(100000); // Set Strategy Cash
+            SetCash(100000);             //Set Strategy Cash
+
             AddEquity("SPY", Resolution.Minute);
+
         }
 
         /// OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
@@ -153,35 +185,92 @@ namespace QuantConnect.Algorithm.CSharp
                 Debug("Purchased Stock");
             }
         }
+
     }
 }
 """.strip() + "\n"
 
 LIBRARY_CSHARP_MAIN = """
+#region imports
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Globalization;
+    using System.Drawing;
+    using QuantConnect;
+    using QuantConnect.Algorithm.Framework;
+    using QuantConnect.Algorithm.Framework.Selection;
+    using QuantConnect.Algorithm.Framework.Alphas;
+    using QuantConnect.Algorithm.Framework.Portfolio;
+    using QuantConnect.Algorithm.Framework.Execution;
+    using QuantConnect.Algorithm.Framework.Risk;
+    using QuantConnect.Parameters;
+    using QuantConnect.Benchmarks;
+    using QuantConnect.Brokerages;
+    using QuantConnect.Util;
+    using QuantConnect.Interfaces;
+    using QuantConnect.Algorithm;
+    using QuantConnect.Indicators;
+    using QuantConnect.Data;
+    using QuantConnect.Data.Consolidators;
+    using QuantConnect.Data.Custom;
+    using QuantConnect.DataSource;
+    using QuantConnect.Data.Fundamental;
+    using QuantConnect.Data.Market;
+    using QuantConnect.Data.UniverseSelection;
+    using QuantConnect.Notifications;
+    using QuantConnect.Orders;
+    using QuantConnect.Orders.Fees;
+    using QuantConnect.Orders.Fills;
+    using QuantConnect.Orders.Slippage;
+    using QuantConnect.Scheduling;
+    using QuantConnect.Securities;
+    using QuantConnect.Securities.Equity;
+    using QuantConnect.Securities.Future;
+    using QuantConnect.Securities.Option;
+    using QuantConnect.Securities.Forex;
+    using QuantConnect.Securities.Crypto;
+    using QuantConnect.Securities.Interfaces;
+    using QuantConnect.Storage;
+    using QuantConnect.Data.Custom.AlphaStreams;
+    using QCAlgorithmFramework = QuantConnect.Algorithm.QCAlgorithm;
+    using QCAlgorithmFrameworkBridge = QuantConnect.Algorithm.QCAlgorithm;
+#endregion
+
+
 namespace QuantConnect
 {
-    public class $CLASS_NAME$
+    /// <summary>
+    /// Template Library Class
+    ///
+    /// Library classes are snippets of code you can reuse between projects. They are added to projects on compile. This can be useful for reusing
+    /// indicators, math components, risk modules etc. If you use a custom namespace make sure you add the correct using statement to the
+    /// algorithm.
+    /// </summary>
+    public static class $CLASS_NAME$
     {
         /*
-         * To use this library, first add it to a solution and create a project reference in your algorithm project:
-         * https://www.lean.io/docs/v2/lean-cli/projects/libraries/project-libraries#02-C-Libraries
+         * To use this library; add its namespace at the top of the page:
+         * using QuantConnect
          *
-         * Then add its namespace at the top of the page:
-         * using QuantConnect;
-         *
-         * Then instantiate the class:
-         * var x = new $CLASS_NAME$();
-         * x.Add(1, 2);
+         * Then use the static class:
+         * var x = $CLASS_NAME$.Add(1, 5);
+         * Console.Out.WriteLine(x);
          */
 
-        public int Add(int a, int b)
+        public static int Add(int a, int b)
         {
             return a + b;
         }
 
-        public int Subtract(int a, int b)
+        public static int Subtract(int a, int b)
         {
             return a - b;
+        }
+
+        public static int Divide(int a, int b){
+            return a / b;
         }
     }
 }
@@ -215,7 +304,7 @@ DEFAULT_CSHARP_NOTEBOOK = """
             "outputs": [],
             "source": [
                 "// QuantBook C# Research Environment\\n",
-                "// For more information see https://www.quantconnect.com/docs/research/overview\\n",
+                "// For more information see https://www.quantconnect.com/docs/v2/our-platform/research/getting-started\\n",
                 "#load \\"../QuantConnect.csx\\"\\n",
                 "\\n",
                 "using QuantConnect;\\n",
@@ -335,19 +424,20 @@ Please remove the character '{problematic_char}' and retry""")
     class_name = convert_to_class_name(full_path)
 
     if language == "python":
-        main_name = "main.py"
+        main_name = "main.py" if not is_library_project else "Library.py"
         research_name = "research.ipynb"
         main_content = DEFAULT_PYTHON_MAIN if not is_library_project else LIBRARY_PYTHON_MAIN
     else:
-        main_name = "Main.cs"
+        main_name = "Main.cs" if not is_library_project else "Library.cs"
         research_name = "Research.ipynb"
         main_content = DEFAULT_CSHARP_MAIN if not is_library_project else LIBRARY_CSHARP_MAIN
 
     with (full_path / main_name).open("w+", encoding="utf-8") as file:
         file.write(main_content.replace("$CLASS_NAME$", class_name).replace("$PROJECT_NAME$", full_path.name))
 
-    with (full_path / research_name).open("w+", encoding="utf-8") as file:
-        file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
+    if not is_library_project:
+        with (full_path / research_name).open("w+", encoding="utf-8") as file:
+            file.write(DEFAULT_PYTHON_NOTEBOOK if language == "python" else DEFAULT_CSHARP_NOTEBOOK)
 
     if language == "csharp":
         project_manager = container.project_manager
