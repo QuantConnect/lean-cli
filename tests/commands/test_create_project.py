@@ -27,18 +27,22 @@ from tests.test_helpers import create_fake_lean_cli_directory
 def assert_python_project_exists(path: str) -> None:
     project_dir = (Path.cwd() / path)
 
-    assert project_dir.exists()
-    assert (project_dir / "main.py").exists()
-    assert (project_dir / "research.ipynb").exists()
+    is_libary = path.startswith("Library/")
+    main_filename = "Library.py" if is_libary else "main.py"
 
-    with open(project_dir / "main.py") as file:
-        if path.startswith("Library/"):
-            assert "class MyFirstLibrary" in file.read()
+    assert project_dir.exists()
+    assert (project_dir / main_filename).exists()
+    assert is_libary or (project_dir / "research.ipynb").exists()
+
+    with open(project_dir / main_filename) as file:
+        if is_libary:
+            assert "\ndef Add(a: int, b: int):" in file.read()
         else:
             assert "class MyFirstProject(QCAlgorithm)" in file.read()
 
-    with open(project_dir / "research.ipynb") as file:
-        assert json.load(file)["metadata"]["kernelspec"]["language"] == "python"
+    if not is_libary:
+        with open(project_dir / "research.ipynb") as file:
+            assert json.load(file)["metadata"]["kernelspec"]["language"] == "python"
 
     with open(project_dir / "config.json") as file:
         assert json.load(file)["algorithm-language"] == "Python"
@@ -47,19 +51,23 @@ def assert_python_project_exists(path: str) -> None:
 def assert_csharp_project_exists(path: str) -> None:
     project_dir = (Path.cwd() / path)
 
+    is_library = path.startswith("Library/")
+    main_filename = "Library.cs" if is_library else "Main.cs"
+
     assert project_dir.exists()
-    assert (project_dir / "Main.cs").exists()
-    assert (project_dir / "Research.ipynb").exists()
+    assert (project_dir / main_filename).exists()
+    assert is_library or (project_dir / "Research.ipynb").exists()
     assert (project_dir / "config.json").exists()
 
-    with open(project_dir / "Main.cs") as file:
-        if path.startswith("Library/"):
+    with open(project_dir / main_filename) as file:
+        if is_library:
             assert "class MyFirstLibrary" in file.read()
         else:
             assert "class MyFirstProject : QCAlgorithm" in file.read()
 
-    with open(project_dir / "Research.ipynb") as file:
-        assert json.load(file)["metadata"]["kernelspec"]["language"] == "C#"
+    if not is_library:
+        with open(project_dir / "Research.ipynb") as file:
+            assert json.load(file)["metadata"]["kernelspec"]["language"] == "C#"
 
     with open(project_dir / "config.json") as file:
         assert json.load(file)["algorithm-language"] == "CSharp"
