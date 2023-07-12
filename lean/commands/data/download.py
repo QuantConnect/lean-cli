@@ -407,8 +407,9 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @option("--force", is_flag=True, default=False, hidden=True)
+@option("--yes", "-y", "auto_confirm", is_flag=True, default=False, hidden=True)
 @pass_context
-def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, **kwargs) -> None:
+def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, auto_confirm: bool, **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
     An interactive wizard will show to walk you through the process of selecting data,
@@ -437,7 +438,7 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool,
     _confirm_organization_balance(organization, products)
     _verify_accept_agreement(organization, is_interactive)
 
-    if is_interactive:
+    if is_interactive and not auto_confirm:
         _confirm_payment(organization, products)
 
     all_data_files = _get_data_files(organization, products)
