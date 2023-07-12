@@ -51,6 +51,7 @@ class DataDownloader:
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
             if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > timedelta(days=1):
                 data_dir = self._lean_config_manager.get_data_directory()
+                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
 
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
@@ -58,8 +59,6 @@ class DataDownloader:
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json"),
                     data_dir / "market-hours" / "market-hours-database.json")
-
-                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
         except MoreInfoError as e:
             if "not found" in str(e):
                 pass
