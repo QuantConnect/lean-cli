@@ -593,6 +593,7 @@ Usage: lean data download [OPTIONS]
 Options:
   --dataset TEXT      The name of the dataset to download non-interactively
   --overwrite         Overwrite existing local data
+  -y, --yes           Automatically confirm all prompts
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose           Enable debug logging
   --help              Show this message and exit.
