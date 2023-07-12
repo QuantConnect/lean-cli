@@ -160,11 +160,14 @@ def _get_security_master_warn() -> str:
                       ])
 
 
-def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset], force: bool) -> List[Product]:
+def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset], force: bool,
+                                 ask_for_more_data: bool) -> List[Product]:
     """Asks the user for the products that should be purchased and downloaded.
 
     :param organization: the organization that will be charged
     :param datasets: the available datasets
+    :param force: whether to force when organization does not have an active Security Master subscription
+    :param ask_for_more_data: whether to ask the user if they want to select more products
     :return: the list of products selected by the user
     """
     from collections import OrderedDict
@@ -213,7 +216,7 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         logger.info("Selected data:")
         _display_products(organization, products)
 
-        if not confirm("Do you want to download more data?"):
+        if not ask_for_more_data or not confirm("Do you want to download more data?"):
             break
 
     return products
@@ -433,7 +436,7 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool,
         products = _select_products_non_interactive(organization, datasets, ctx, force)
     else:
         datasets = _get_available_datasets(organization)
-        products = _select_products_interactive(organization, datasets, force)
+        products = _select_products_interactive(organization, datasets, force, ask_for_more_data=not auto_confirm)
 
     _confirm_organization_balance(organization, products)
     _verify_accept_agreement(organization, is_interactive)
