@@ -15,11 +15,14 @@ from pathlib import Path
 from typing import Any
 
 
-def safe_save(data: str, path: str, _retry: int = 0):
+def safe_save(data: str, path: Path, _retry: int = 0):
     from uuid import uuid4
     from shutil import move
     from os import unlink, path as os_path
     from time import time, sleep
+
+    # make sure the parent folder exists
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     lock_file = Path(str(path) + '.lock').resolve()
     try:
@@ -123,8 +126,6 @@ class Storage:
 
         """Saves the data to the underlying file, deleting the file if there is no data."""
         if len(self._data) > 0:
-            self.file.parent.mkdir(parents=True, exist_ok=True)
-
             safe_save(data=dumps(self._data, indent=4) + "\n", path=self.file.resolve())
         else:
             if self.file.exists():
