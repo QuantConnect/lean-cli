@@ -56,11 +56,11 @@ from AlgorithmImports import *
 ### added to projects on compile.
 ###
 ### To import this class use the following import with your values subbed in for the {} sections:
-### from {libraryProjectName} import {libraryFileName}
+### from {libraryProjectName} import Library
 ###
 ### Example using your newly imported library from 'Library.py' like so:
 ###
-### from {libraryProjectName} import Library
+### from $PROJECT_NAME$ import Library
 ### x = Library.Add(1,1)
 ### print(x)
 ###
@@ -90,6 +90,8 @@ DEFAULT_PYTHON_NOTEBOOK = """
                 "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",
                 "qb = QuantBook()\\n",
                 "spy = qb.AddEquity(\\"SPY\\")\\n",
+                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
+                "qb.SetStartDate(2013, 10, 11)\\n",
                 "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
                 "\\n",
                 "# Indicator Analysis\\n",
@@ -253,7 +255,7 @@ namespace QuantConnect
          * using QuantConnect
          *
          * Then use the static class:
-         * var x = MathLibrary.Add(1, 5);
+         * var x = $CLASS_NAME$.Add(1, 5);
          * Console.Out.WriteLine(x);
          */
 
