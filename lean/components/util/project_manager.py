@@ -605,33 +605,51 @@ class ProjectManager:
         # Save the modified XML tree
         self._generate_file(jdk_table_file, self._xml_manager.to_string(root))
 
+    def _get_libraries_path_from_project(self, project_dir: Path) -> str:
+        """Gets the libraries path from a given project.
+
+        The returned path is relative to the project directory.
+        - For a project in ${cli_root_dir}/Project, the returned path will be ../Library.
+        - For a project in ${cli_root_dir}/SomeSubdirectory/Project, the returned path will be ../../Library.
+
+        :param project_dir: The path to the project directory
+        :return The path to the libraries directory relative to the project directory
+        """
+        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
+        project_dir_relative_to_cli = self._path_manager.get_relative_path(project_dir, cli_root_dir)
+
+        return "../" * len(project_dir_relative_to_cli.parts) + "Library"
+
     def _generate_vscode_csharp_config(self, project_dir: Path) -> None:
         """Generates C# debugging configuration for VS Code.
 
         :param project_dir: the directory of the new project
         """
-        self._generate_file(project_dir / ".vscode" / "launch.json", """
-{
+        self._generate_file(project_dir / ".vscode" / "launch.json", f"""
+{{
     "version": "0.2.0",
     "configurations": [
-        {
+        {{
             "name": "Debug with Lean CLI",
             "request": "attach",
             "type": "coreclr",
             "processId": "1",
-            "pipeTransport": {
-                "pipeCwd": "${workspaceRoot}",
+            "pipeTransport": {{
+                "pipeCwd": "${{workspaceRoot}}",
                 "pipeProgram": "docker",
                 "pipeArgs": ["exec", "-i", "lean_cli_vsdbg"],
                 "debuggerPath": "/root/vsdbg/vsdbg",
                 "quoteArgs": false
-            },
-            "logging": {
+            }},
+            "logging": {{
                 "moduleLoad": false
-            }
-        }
+            }},
+            "sourceFileMap": {{
+                "/Library": "${{workspaceFolder}}/{self._get_libraries_path_from_project(project_dir)}"
+            }}
+        }}
     ]
-}
+}}
         """)
 
     def _generate_csproj(self, project_dir: Path) -> None:

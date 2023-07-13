@@ -223,6 +223,7 @@ def test_create_new_project_creates_project_directory() -> None:
 
 @pytest.mark.parametrize("language", [QCLanguage.Python, QCLanguage.CSharp])
 def test_create_new_project_sets_language_in_project_config(language: QCLanguage) -> None:
+    create_fake_lean_cli_directory()
     project_path = Path.cwd() / f"{language.name} Project"
 
     project_manager = _create_project_manager()
@@ -234,6 +235,7 @@ def test_create_new_project_sets_language_in_project_config(language: QCLanguage
 
 
 def test_create_new_project_sets_parameters_in_project_config() -> None:
+    create_fake_lean_cli_directory()
     project_path = Path.cwd() / "Python Project"
 
     project_manager = _create_project_manager()
@@ -292,6 +294,7 @@ def test_create_new_project_creates_valid_python_editor_configs(file: str, valid
 @pytest.mark.parametrize("file,validator", [("CSharp Project.csproj", validate_xml),
                                             (".vscode/launch.json", validate_json)])
 def test_create_new_project_creates_valid_csharp_editor_configs(file: str, validator: Callable[[str], bool]) -> None:
+    create_fake_lean_cli_directory()
     project_path = Path.cwd() / "CSharp Project"
 
     project_manager = _create_project_manager()
@@ -391,6 +394,7 @@ def test_create_new_project_does_not_update_pycharm_jdk_table_when_jdk_entry_alr
 
 
 def test_create_new_project_copies_ssh_keys_to_global_config_dir() -> None:
+    create_fake_lean_cli_directory()
     project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
@@ -409,6 +413,7 @@ def test_create_new_project_creates_rider_debugger_entry_when_not_set_yet(system
 
     key_path = Path("~/.lean/ssh/key").expanduser()
 
+    create_fake_lean_cli_directory()
     debugger_file = Path(path).expanduser() / "Rider" / "options" / "debugger.xml"
     debugger_file.parent.mkdir(parents=True, exist_ok=True)
     with debugger_file.open("w+", encoding="utf-8") as file:
@@ -450,6 +455,7 @@ def test_create_new_project_creates_rider_debugger_config_when_rider_not_install
 
     key_path = Path("~/.lean/ssh/key").expanduser()
 
+    create_fake_lean_cli_directory()
     project_manager = _create_project_manager()
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
@@ -475,6 +481,8 @@ def test_create_new_project_does_not_update_rider_debugger_config_when_entry_alr
     system.return_value = os
 
     key_path = Path("~/.lean/ssh/key").expanduser()
+
+    create_fake_lean_cli_directory()
 
     debugger_content = f"""
 <application>
