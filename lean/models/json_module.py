@@ -149,12 +149,14 @@ class JsonModule(ABC):
               lean_config: Dict[str, Any],
               logger: Logger,
               properties: Dict[str, Any] = {},
+              default_values: Dict[str, Any] = {},
               hide_input: bool = False) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
         :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
         :param properties: the properties that passed as options
+        :param default_values: the default values to use for the configurations
         :param hide_input: whether to hide secrets inputs
         :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
         """
@@ -173,16 +175,24 @@ class JsonModule(ABC):
                 if log_message:
                     logger.info(log_message)
 
+            user_choice = None
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
             if property_name in properties and properties[property_name]:
                 user_choice = properties[property_name]
             else:
-                default_value = None
                 # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ != 'CloudBrokerage':
-                    default_value = self._get_default(lean_config, configuration._id)
-                user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
+                    # Let's try to get the value from the lean config and use it as the user choice, without prompting
+                    user_choice = self._get_default(lean_config, configuration._id)
+
+                # There's no value in the lean config, let's use the module default value instead and prompt the user
+                # NOTE: using "not" instead of "is None" because the default value can be false,
+                #       in which case we still want to prompt the user.
+                if not user_choice:
+                    default_value = default_values.get(property_name)
+                    logger.info(f"    ---> Default value: {default_value}")
+                    user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
 
             self.update_value_for_given_config(configuration._id, user_choice)
 

@@ -13,7 +13,9 @@
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from click import option, argument, Choice
+from click import option, argument, Choice, pass_context, Context
+from click.core import ParameterSource
+
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -136,6 +138,7 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
 def _configure_lean_config_interactively(lean_config: Dict[str, Any],
                                          environment_name: str,
                                          properties: Dict[str, Any],
+                                         default_values: Dict[str, Any],
                                          show_secrets: bool) -> None:
     """Interactively configures the Lean config to use.
 
@@ -144,6 +147,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
     :param lean_config: the base lean config to use
     :param environment_name: the name of the environment to configure
     :param properties: the properties to use to configure lean
+    :param default_values: the default values to use for each configuration
     :param show_secrets: whether to show secrets on input
     """
     logger = container.logger
@@ -156,7 +160,9 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
         Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
     ])
 
-    brokerage.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
+    brokerage\
+        .build(lean_config, logger, properties, default_values, hide_input=not show_secrets)\
+        .configure(lean_config, environment_name)
 
     data_feeds = logger.prompt_list("Select a data feed", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
@@ -259,7 +265,9 @@ def _get_default_value(key: str) -> Optional[Any]:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
-def deploy(project: Path,
+@pass_context
+def deploy(context: Context,
+           project: Path,
            environment: Optional[str],
            output: Optional[Path],
            detach: bool,
@@ -339,7 +347,15 @@ def deploy(project: Path,
     else:
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-        _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
+
+        # filter configurations that were not passed as command line arguments,
+        # so that we prompt the user for them only when they don't have a value in the Lean config
+        configuration_values = {k: v for k, v in kwargs.items()
+                                if context.get_parameter_source(k) == ParameterSource.COMMANDLINE}
+        default_values = {k: v for k, v in kwargs.items() if k not in configuration_values}
+
+        _configure_lean_config_interactively(lean_config, environment_name, configuration_values, default_values,
+                                             show_secrets=show_secrets)
 
     if data_provider is not None:
         [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
