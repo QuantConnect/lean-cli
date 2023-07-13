@@ -13,6 +13,10 @@
 
 from enum import Enum
 from typing import Any, Dict, List, Type
+
+from click import get_current_context
+from click.core import ParameterSource
+
 from lean.components.util.logger import Logger
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
 from copy import copy
@@ -149,14 +153,12 @@ class JsonModule(ABC):
               lean_config: Dict[str, Any],
               logger: Logger,
               properties: Dict[str, Any] = {},
-              default_values: Dict[str, Any] = {},
               hide_input: bool = False) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
         :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
         :param properties: the properties that passed as options
-        :param default_values: the default values to use for the configurations
         :param hide_input: whether to hide secrets inputs
         :return: a LeanConfigConfigurer instance containing all the details needed to configure the Lean config
         """
@@ -175,11 +177,17 @@ class JsonModule(ABC):
                 if log_message:
                     logger.info(log_message)
 
+            # filter properties that were not passed as command line arguments,
+            # so that we prompt the user for them only when they don't have a value in the Lean config
+            context = get_current_context()
+            user_provided_options = {k: v for k, v in properties.items()
+                                     if context.get_parameter_source(k) == ParameterSource.COMMANDLINE}
+
             user_choice = None
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
-            if property_name in properties and properties[property_name]:
-                user_choice = properties[property_name]
+            if property_name in user_provided_options and user_provided_options[property_name]:
+                user_choice = user_provided_options[property_name]
             else:
                 # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ != 'CloudBrokerage':
@@ -190,8 +198,7 @@ class JsonModule(ABC):
                 # NOTE: using "not" instead of "is None" because the default value can be false,
                 #       in which case we still want to prompt the user.
                 if not user_choice:
-                    default_value = default_values.get(property_name)
-                    logger.info(f"    ---> Default value: {default_value}")
+                    default_value = configuration._input_default
                     user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
 
             self.update_value_for_given_config(configuration._id, user_choice)
