@@ -189,10 +189,13 @@ class JsonModule(ABC):
             if property_name in user_provided_options and user_provided_options[property_name]:
                 user_choice = user_provided_options[property_name]
             else:
+                # Let's try to get the value from the lean config and use it as the user choice, without prompting
                 # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ != 'CloudBrokerage':
-                    # Let's try to get the value from the lean config and use it as the user choice, without prompting
                     user_choice = self._get_default(lean_config, configuration._id)
+                # Try to get the values from lean config
+                elif lean_config is not None and configuration._id in lean_config:
+                    user_choice = lean_config[configuration._id]
 
                 # There's no value in the lean config, let's use the module default value instead and prompt the user
                 # NOTE: using "not" instead of "is None" because the default value can be false,

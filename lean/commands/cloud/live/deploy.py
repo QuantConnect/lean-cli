@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Optional
 from click import prompt, option, argument, Choice, confirm
 from lean.click import LeanCommand, ensure_options
@@ -97,16 +98,17 @@ def _prompt_notification_method() -> QCNotificationMethod:
         return QCSMSNotificationMethod(phoneNumber=phone_number)
 
 
-def _configure_brokerage(logger: Logger, user_provided_options: Dict[str, Any], show_secrets: bool) -> CloudBrokerage:
+def _configure_brokerage(lean_config: Dict[str, Any], logger: Logger, user_provided_options: Dict[str, Any], show_secrets: bool) -> CloudBrokerage:
     """Interactively configures the brokerage to use.
 
+    :param lean_config: the LEAN configuration that should be used
     :param logger: the logger to use
     :param user_provided_options: the dictionary containing user provided options
     :param show_secrets: whether to show secrets on input
     :return: the cloud brokerage the user configured
     """
     brokerage_options = [Option(id=b, label=b.get_name()) for b in all_cloud_brokerages]
-    return logger.prompt_list("Select a brokerage", brokerage_options).build(None,
+    return logger.prompt_list("Select a brokerage", brokerage_options).build(lean_config,
                                                                              logger,
                                                                              user_provided_options,
                                                                              hide_input=not show_secrets)
@@ -304,7 +306,10 @@ def deploy(project: str,
             raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
 
     else:
-        brokerage_instance = _configure_brokerage(logger, kwargs, show_secrets=show_secrets)
+        environment_name = "lean-cli-cloud"
+        algorithm_file = container.project_manager.find_algorithm_file(Path(project))
+        lean_config = container.lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+        brokerage_instance = _configure_brokerage(lean_config, logger, kwargs, show_secrets=show_secrets)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
