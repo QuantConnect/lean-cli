@@ -214,11 +214,15 @@ class PullManager:
                     continue
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
+
             with local_file_path.open("w+", encoding="utf-8") as local_file:
-                if cloud_file.content != "" and not cloud_file.content.endswith("\n"):
-                    local_file.write(cloud_file.content + "\n")
-                else:
-                    local_file.write(cloud_file.content)
+                if cloud_file.content != "":
+                    # Make sure we always work with unix line endings in memory,
+                    # so they can be properly translated to the local OS line endings when writing to disk.
+                    content = cloud_file.content.replace("\r\n", "\n")
+                    if not content.endswith("\n"):
+                        content += "\n"
+                    local_file.write(content)
 
             self._project_manager.update_last_modified_time(local_file_path, cloud_file.modified)
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")
