@@ -13,6 +13,10 @@
 
 from enum import Enum
 from typing import Any, Dict, List, Type
+
+from click import get_current_context
+from click.core import ParameterSource
+
 from lean.components.util.logger import Logger
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
 from copy import copy
@@ -173,16 +177,32 @@ class JsonModule(ABC):
                 if log_message:
                     logger.info(log_message)
 
+            # filter properties that were not passed as command line arguments,
+            # so that we prompt the user for them only when they don't have a value in the Lean config
+            context = get_current_context()
+            user_provided_options = {k: v for k, v in properties.items()
+                                     if context.get_parameter_source(k) == ParameterSource.COMMANDLINE}
+
+            user_choice = None
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
-            if property_name in properties and properties[property_name]:
-                user_choice = properties[property_name]
+            if property_name in user_provided_options and user_provided_options[property_name]:
+                user_choice = user_provided_options[property_name]
             else:
-                default_value = None
+                # Let's try to get the value from the lean config and use it as the user choice, without prompting
                 # TODO: use type(class) equality instead of class name (str)
                 if self.__class__.__name__ != 'CloudBrokerage':
-                    default_value = self._get_default(lean_config, configuration._id)
-                user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
+                    user_choice = self._get_default(lean_config, configuration._id)
+                # Try to get the values from lean config
+                elif lean_config is not None and configuration._id in lean_config:
+                    user_choice = lean_config[configuration._id]
+
+                # There's no value in the lean config, let's use the module default value instead and prompt the user
+                # NOTE: using "not" instead of "is None" because the default value can be false,
+                #       in which case we still want to prompt the user.
+                if not user_choice:
+                    default_value = configuration._input_default
+                    user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
 
             self.update_value_for_given_config(configuration._id, user_choice)
 
