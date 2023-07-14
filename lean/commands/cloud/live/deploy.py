@@ -306,9 +306,7 @@ def deploy(project: str,
             raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance.get_name()}")
 
     else:
-        environment_name = "lean-cli-cloud"
-        algorithm_file = container.project_manager.find_algorithm_file(Path(project))
-        lean_config = container.lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+        lean_config = container.lean_config_manager.get_lean_config()
         brokerage_instance = _configure_brokerage(lean_config, logger, kwargs, show_secrets=show_secrets)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
