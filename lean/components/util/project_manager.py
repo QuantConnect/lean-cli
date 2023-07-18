@@ -682,12 +682,9 @@ class ProjectManager:
         return self._generate_rider_debugger_entry(rider_dir, ssh_dir)
 
     def _generate_rider_debugger_entry(self, rider_config_dir: Path, ssh_dir: Path) -> bool:
-        """Generates a "root@localhost:2222" remote debugger entry to Rider's internal debugger configuration.
+        """Generates a "root@localhost:2222" ssh configuration for the debugger to attach to the remote process.
 
-        If Rider is not installed yet, we create the configuration anyways.
-        Once the user installs Rider, it will then automatically pick up the configuration we created in the past.
-
-        :param rider_config_dir: the path to the global configuration directory of a Rider edition
+        :param rider_config_dir: the path to the project's rider configuration directory
         :param ssh_dir: the path to the directory containing the SSH keys
         :return: True if the configuration was generated successfully or changes where made, False if otherwise.
         """
