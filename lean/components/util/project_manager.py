@@ -716,7 +716,8 @@ class ProjectManager:
         configs = root.find(".//configs")
 
         if configs.find(".//sshConfig[@id='dotnet_debugger']") is None:
-            configs.append(self._xml_manager.parse(f'<sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{ssh_dir}\key" useOpenSSHConfig="true" />'))
+            key_path = ssh_dir / "key"
+            configs.append(self._xml_manager.parse(f'<sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{key_path}" useOpenSSHConfig="true" />'))
             made_changes = True
 
         # Save the modified XML tree
