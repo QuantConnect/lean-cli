@@ -468,7 +468,7 @@ def test_backtest_auto_creates_rider_debug_config_if_not_there_yet() -> None:
 
     rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
     rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
-    rider_ssh_configs_file_path.unlink(missing_ok=True)
+    rider_ssh_configs_file_path.unlink()
 
     result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", "rider"])
 
