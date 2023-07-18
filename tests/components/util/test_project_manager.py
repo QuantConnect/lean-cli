@@ -402,7 +402,119 @@ def test_create_new_project_copies_ssh_keys_to_global_config_dir() -> None:
         assert Path(f"~/.lean/ssh/{name}").expanduser().is_file()
 
 
-def test_create_new_project_creates_rider_debugger_config() -> None:
+@mock.patch("platform.system")
+@pytest.mark.parametrize("os,path", [("Windows", "~/AppData/Roaming/JetBrains"),
+                                     ("Darwin", "~/Library/Application Support/JetBrains"),
+                                     ("Linux", "~/.config/JetBrains")])
+def test_create_new_project_creates_rider_debugger_entry_when_not_set_yet(system: mock.Mock,
+                                                                          os: str,
+                                                                          path: str) -> None:
+    system.return_value = os
+
+    key_path = Path("~/.lean/ssh/key").expanduser()
+
+    create_fake_lean_cli_directory()
+    debugger_file = Path(path).expanduser() / "Rider2021.1" / "options" / "debugger.xml"
+    debugger_file.parent.mkdir(parents=True, exist_ok=True)
+    with debugger_file.open("w+", encoding="utf-8") as file:
+        file.write(f"""
+<application>
+  <component name="XDebuggerSettings">
+    <data-views />
+    <general />
+    <debuggers>
+      <debugger id="dotnet_debugger">
+        <configuration>
+          <option name="needNotifyWhenStoppedInExternalCode" value="false" />
+          <option name="sshCredentials">
+            <option value="&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{key_path.as_posix()}&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;" />
+          </option>
+        </configuration>
+      </debugger>
+    </debuggers>
+  </component>
+</application>
+        """)
+
+    project_manager = _create_project_manager()
+    project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
+
+    debugger_root = XMLManager().parse(debugger_file.read_text(encoding="utf-8"))
+    assert debugger_root.find(
+        f".//option/option[@value='<credentials HOST=\"localhost\" PORT=\"2222\" USERNAME=\"root\" PRIVATE_KEY_FILE=\"{key_path.as_posix()}\" USE_KEY_PAIR=\"true\" USE_AUTH_AGENT=\"false\" />']") is not None
+
+
+@mock.patch("platform.system")
+@pytest.mark.parametrize("os,path", [("Windows", "~/AppData/Roaming/JetBrains"),
+                                     ("Darwin", "~/Library/Application Support/JetBrains"),
+                                     ("Linux", "~/.config/JetBrains")])
+def test_create_new_project_creates_rider_debugger_config_when_rider_not_installed_yet(system: mock.Mock,
+                                                                                       os: str,
+                                                                                       path: str) -> None:
+    system.return_value = os
+
+    key_path = Path("~/.lean/ssh/key").expanduser()
+
+    create_fake_lean_cli_directory()
+    project_manager = _create_project_manager()
+    project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
+
+    debugger_file = Path(path).expanduser() / "Rider" / "options" / "debugger.xml"
+    assert debugger_file.is_file()
+
+    debugger_root = XMLManager().parse(debugger_file.read_text(encoding="utf-8"))
+    assert debugger_root.find(
+        f".//option/option[@value='<credentials HOST=\"localhost\" PORT=\"2222\" USERNAME=\"root\" PRIVATE_KEY_FILE=\"{key_path.as_posix()}\" USE_KEY_PAIR=\"true\" USE_AUTH_AGENT=\"false\" />']") is not None
+
+
+@mock.patch("platform.system")
+@pytest.mark.parametrize("editor,os,path", [("PyCharm", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharm", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharm", "Linux", "~/.config/JetBrains"),
+                                            ("PyCharmCE", "Windows", "~/AppData/Roaming/JetBrains"),
+                                            ("PyCharmCE", "Darwin", "~/Library/Application Support/JetBrains"),
+                                            ("PyCharmCE", "Linux", "~/.config/JetBrains")])
+def test_create_new_project_does_not_update_rider_debugger_config_when_entry_already_set(system: mock.Mock,
+                                                                                         editor: str,
+                                                                                         os: str,
+                                                                                         path: str) -> None:
+    system.return_value = os
+
+    key_path = Path("~/.lean/ssh/key").expanduser()
+
+    create_fake_lean_cli_directory()
+
+    debugger_content = f"""
+<application>
+  <component name="XDebuggerSettings">
+    <data-views />
+    <general />
+    <debuggers>
+      <debugger id="dotnet_debugger">
+        <configuration>
+          <option name="needNotifyWhenStoppedInExternalCode" value="false" />
+          <option name="sshCredentials">
+            <option value="&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{key_path.as_posix()}&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;" />
+          </option>
+        </configuration>
+      </debugger>
+    </debuggers>
+  </component>
+</application>
+    """
+
+    debugger_file = Path(path).expanduser() / "Rider" / "options" / "debugger.xml"
+    debugger_file.parent.mkdir(parents=True, exist_ok=True)
+    with debugger_file.open("w+", encoding="utf-8") as file:
+        file.write(debugger_content)
+
+    project_manager = _create_project_manager()
+    project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
+
+    assert debugger_file.read_text(encoding="utf-8") == debugger_content
+
+
+def test_create_new_project_creates_rider_debugger_config_for_versions_2022_and_up() -> None:
     key_path = Path("~/.lean/ssh/key").expanduser()
 
     create_fake_lean_cli_directory()

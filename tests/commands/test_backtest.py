@@ -223,6 +223,45 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
         assert "python-venv" not in args[0]
 
 
+def _ensure_rider_debugger_config_files_exist(project_dir: Path) -> None:
+    # Old debugger configs
+    if container.platform_manager.is_host_windows():
+        rider_global_dir = Path("~/AppData/Roaming/JetBrains").expanduser()
+    elif container.platform_manager.is_host_macos():
+        rider_global_dir = Path("~/Library/Application Support/JetBrains").expanduser()
+    else:
+        rider_global_dir = Path("~/.config/JetBrains").expanduser()
+    rider_old_debugger_config_file = rider_global_dir / "Rider" / "options" / "debugger.xml"
+    _generate_file(rider_old_debugger_config_file, f"""
+    <application>
+        <component name="XDebuggerSettings">
+            <debuggers>
+                <debugger id="dotnet_debugger">
+                    <configuration>
+                        <option name="sshCredentials">
+                            <option value="&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;C:/Users/jhona/.lean/ssh/key&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;"/>
+                        </option>
+                    </configuration>
+                </debugger>
+            </debuggers>
+        </component>
+    </application>
+                    """)
+
+    # New debugger configs
+    rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
+    rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+    _generate_file(rider_ssh_configs_file_path, f"""
+    <project version="4">
+        <component name="SshConfigs">
+            <configs>
+                <sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{Path('.lean/ssh/key').expanduser()}" useOpenSSHConfig="true"/>
+            </configs>
+        </component>
+    </project>
+            """)
+
+
 @pytest.mark.parametrize("value,debugging_method", [("pycharm", DebuggingMethod.PyCharm),
                                                     ("PyCharm", DebuggingMethod.PyCharm),
                                                     ("ptvsd", DebuggingMethod.PTVSD),
@@ -237,17 +276,7 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
     project_dir = Path.cwd() / "Python Project"
 
     if debugging_method == DebuggingMethod.Rider:
-        rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
-        rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
-        _generate_file(rider_ssh_configs_file_path, f"""
-        <project version="4">
-          <component name="SshConfigs">
-            <configs>
-                <sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{Path('.lean/ssh/key').expanduser()}" useOpenSSHConfig="true"/>
-            </configs>
-          </component>
-        </project>
-        """)
+        _ensure_rider_debugger_config_files_exist(project_dir)
 
     result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", value])
 
@@ -468,7 +497,8 @@ def test_backtest_auto_creates_rider_debug_config_if_not_there_yet() -> None:
 
     rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
     rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
-    rider_ssh_configs_file_path.unlink()
+    if rider_ssh_configs_file_path.exists():
+        rider_ssh_configs_file_path.unlink()
 
     result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", "rider"])
 
