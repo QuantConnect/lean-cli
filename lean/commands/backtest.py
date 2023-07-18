@@ -157,7 +157,7 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
         made_changes = True
 
     if container.project_manager.generate_rider_config(project_dir) or made_changes:
-        logger.warn("Your debbuger configuration has been updated to work with the latest version of LEAN")
+        logger.warn("Your debugger configuration has been updated to work with the latest version of LEAN")
         logger.warn("Please restart Rider and start debugging again")
         logger.warn(
             "See https://www.lean.io/docs/v2/lean-cli/backtesting/debugging#05-C-and-Rider for the updated instructions")
