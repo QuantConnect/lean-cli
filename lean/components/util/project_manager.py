@@ -670,16 +670,17 @@ class ProjectManager:
         ssh_dir = Path("~/.lean/ssh").expanduser()
 
         # Add SSH keys to .lean/ssh if necessary
-        if not ssh_dir.exists():
-            ssh_dir.mkdir(parents=True)
-            for name in ["key", "key.pub", "README.md"]:
+        ssh_dir.mkdir(parents=True, exist_ok=True)
+        for name in ["key", "key.pub", "README.md"]:
+            file_name = ssh_dir / name
+            if not file_name.exists() or file_name.stat().st_size == 0:
                 with (ssh_dir / name).open("wb+") as file:
                     file.write(resource_string("lean", f"ssh/{name}"))
 
         made_changes = False
         # Find Rider's global configuration directory for versions < 2022
         for directory in self._get_jetbrains_config_dirs("Rider"):
-            directory_name_parts = directory.name.replace("Rider", "").split(".")  # e.g. "Rider2023.1"
+            directory_name_parts = directory.name.replace("Rider", "").split(".")  # e.g. "Rider2021.1"
             major_version = directory_name_parts[0]
             if not major_version or (major_version.isdigit() and int(major_version) < 2022):
                 made_changes = self._generate_rider_below_v2022_debugger_entry(directory, ssh_dir)
