@@ -276,8 +276,8 @@ Options:
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
   --gdax-use-sandbox [live|paper]
                                   Whether the sandbox should be used
-  --binance-exchange-name [Binance|BinanceUS]
-                                  Binance exchange name [Binance, BinanceUS]
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
@@ -893,8 +893,8 @@ Options:
   --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
   --gdax-use-sandbox [live|paper]
                                   Whether the sandbox should be used
-  --binance-exchange-name [Binance|BinanceUS]
-                                  Binance exchange name [Binance, BinanceUS]
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
   --binance-api-secret TEXT       Your Binance API secret
