@@ -156,10 +156,14 @@ def _migrate_csharp_rider(logger: Logger, project_dir: Path) -> None:
         workspace_xml_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
         made_changes = True
 
-    if made_changes:
-        container.project_manager.generate_rider_config()
+    main_message = None
+    if container.project_manager.generate_rider_config(project_dir):
+        main_message = "Your debbuger configuration has been updated to work with the latest version of LEAN"
+    elif made_changes:
+        main_message = "Your run configuration has been updated to work with the .NET 5 version of LEAN"
 
-        logger.warn("Your run configuration has been updated to work with the .NET 5 version of LEAN")
+    if main_message is not None:
+        logger.warn(main_message)
         logger.warn("Please restart Rider and start debugging again")
         logger.warn(
             "See https://www.lean.io/docs/v2/lean-cli/backtesting/debugging#05-C-and-Rider for the updated instructions")

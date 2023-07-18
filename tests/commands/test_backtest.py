@@ -23,6 +23,7 @@ from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
+from lean.models.api import QCLanguage
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from tests.conftest import initialize_container
@@ -233,7 +234,22 @@ def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
     create_fake_lean_cli_directory()
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project/main.py", "--debug", value])
+    project_dir = Path.cwd() / "Python Project"
+
+    if debugging_method == DebuggingMethod.Rider:
+        rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
+        rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+        _generate_file(rider_ssh_configs_file_path, f"""
+        <project version="4">
+          <component name="SshConfigs">
+            <configs>
+                <sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{Path('.lean/ssh/key').expanduser()}" useOpenSSHConfig="true"/>
+            </configs>
+          </component>
+        </project>
+        """)
+
+    result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", value])
 
     assert result.exit_code == 0
 
@@ -442,6 +458,60 @@ def test_backtest_auto_updates_outdated_csharp_rider_debug_config() -> None:
         workspace_xml_path = Path.cwd() / "CSharp Project" / ".idea" / dir_name / ".idea" / "workspace.xml"
         workspace_xml = XMLManager().parse(workspace_xml_path.read_text(encoding="utf-8"))
         assert workspace_xml.find(".//configuration[@name='Debug with Lean CLI']") is None
+
+
+def test_backtest_auto_creates_rider_debug_config_if_not_there_yet() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    (project_dir / "Main.cs").touch()
+
+    rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
+    rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+    rider_ssh_configs_file_path.unlink(missing_ok=True)
+
+    result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", "rider"])
+
+    # The command should fail because we recommend to restart rider after creating the debug configuration
+    assert result.exit_code == 1
+
+    rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+    assert rider_ssh_configs_file_path.is_file()
+
+    debugger_root = XMLManager().parse(rider_ssh_configs_file_path.read_text(encoding="utf-8"))
+    assert debugger_root.find(
+        f".//component[@name='SshConfigs']/configs/sshConfig[@id='dotnet_debugger'][@host='localhost'][@port='2222'][@username='root'][@keyPath='{Path('~/.lean/ssh/key').expanduser()}']") is not None
+
+
+def test_backtest_auto_creates_rider_debug_config_entry_if_not_there_yet() -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "My CSharp Project"
+    container.project_manager.create_new_project(project_dir, QCLanguage.CSharp)
+    (project_dir / "Main.cs").touch()
+
+    rider_config_dir = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea"
+    rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+    _generate_file(rider_ssh_configs_file_path, """
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+    </configs>
+  </component>
+</project>
+""")
+
+    result = CliRunner().invoke(lean, ["backtest", project_dir.name, "--debug", "rider"])
+
+    # The command should fail because we recommend to restart rider after creating the debug configuration
+    assert result.exit_code == 1
+
+    rider_ssh_configs_file_path = rider_config_dir / "sshConfigs.xml"
+    assert rider_ssh_configs_file_path.is_file()
+
+    debugger_root = XMLManager().parse(rider_ssh_configs_file_path.read_text(encoding="utf-8"))
+    assert debugger_root.find(
+        f".//component[@name='SshConfigs']/configs/sshConfig[@id='dotnet_debugger'][@host='localhost'][@port='2222'][@username='root'][@keyPath='{Path('~/.lean/ssh/key').expanduser()}']") is not None
 
 
 def test_backtest_auto_updates_outdated_csharp_csproj() -> None:

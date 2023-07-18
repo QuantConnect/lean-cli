@@ -184,7 +184,7 @@ class ProjectManager:
         else:
             self._generate_vscode_csharp_config(project_dir)
             self._generate_csproj(project_dir)
-            self.generate_rider_config()
+            self.generate_rider_config(project_dir)
 
     def delete_project(self, project_dir: Path) -> None:
         """Deletes a project directory.
@@ -659,8 +659,12 @@ class ProjectManager:
         """
         self._generate_file(project_dir / f"{project_dir.name}.csproj", self.get_csproj_file_default_content())
 
-    def generate_rider_config(self) -> None:
-        """Generates C# debugging configuration for Rider."""
+    def generate_rider_config(self, project_dir: Path) -> bool:
+        """Generates C# debugging configuration for Rider.
+
+        :param project_dir: the directory of the project
+        :return: True if the configuration was generated successfully or changes where made, False if otherwise.
+        """
         from pkg_resources import resource_string
 
         ssh_dir = Path("~/.lean/ssh").expanduser()
@@ -672,11 +676,12 @@ class ProjectManager:
                 with (ssh_dir / name).open("wb+") as file:
                     file.write(resource_string("lean", f"ssh/{name}"))
 
-        # Find Rider's global configuration directory
-        for directory in self._get_jetbrains_config_dirs("Rider"):
-            self._generate_rider_debugger_entry(directory, ssh_dir)
+        rider_dir = project_dir / ".idea" / f".idea.{project_dir.stem}.dir" / ".idea"
+        rider_dir.mkdir(parents=True, exist_ok=True)
 
-    def _generate_rider_debugger_entry(self, rider_config_dir: Path, ssh_dir: Path) -> None:
+        return self._generate_rider_debugger_entry(rider_dir, ssh_dir)
+
+    def _generate_rider_debugger_entry(self, rider_config_dir: Path, ssh_dir: Path) -> bool:
         """Generates a "root@localhost:2222" remote debugger entry to Rider's internal debugger configuration.
 
         If Rider is not installed yet, we create the configuration anyways.
@@ -684,49 +689,40 @@ class ProjectManager:
 
         :param rider_config_dir: the path to the global configuration directory of a Rider edition
         :param ssh_dir: the path to the directory containing the SSH keys
+        :return: True if the configuration was generated successfully or changes where made, False if otherwise.
         """
+        made_changes = False
+
         # Parse the file containing Rider's internal list of remote hosts
-        debugger_file = rider_config_dir / "options" / "debugger.xml"
-        if debugger_file.exists():
-            root = self._xml_manager.parse(debugger_file.read_text(encoding="utf-8"))
+        ssh_configs_file = rider_config_dir / "sshConfigs.xml"
+        if ssh_configs_file.exists():
+            root = self._xml_manager.parse(ssh_configs_file.read_text(encoding="utf-8"))
         else:
             root = self._xml_manager.parse("""
-<application>
-    <component name="XDebuggerSettings">
-    </component>
-</application>
-            """)
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+    </configs>
+  </component>
+</project>
+""")
+            made_changes = True
 
-        component_element = root.find(".//component[@name='XDebuggerSettings']")
+        component_element = root.find(".//component[@name='SshConfigs']")
 
-        if root.find(".//debuggers") is None:
-            component_element.append(self._xml_manager.parse("<debuggers></debuggers>"))
-        debuggers = root.find(".//debuggers")
+        if component_element.find(".//configs") is None:
+            component_element.append(self._xml_manager.parse("<configs></configs>"))
+            made_changes = True
+        configs = root.find(".//configs")
 
-        if debuggers.find(".//debugger[@id='dotnet_debugger']") is None:
-            debuggers.append(self._xml_manager.parse('<debugger id="dotnet_debugger"></debugger>'))
-        dotnet_debugger = debuggers.find(".//debugger[@id='dotnet_debugger']")
-
-        if dotnet_debugger.find(".//configuration") is None:
-            dotnet_debugger.append(self._xml_manager.parse("<configuration></configuration>"))
-        configuration = dotnet_debugger.find(".//configuration")
-
-        if configuration.find(".//option[@name='sshCredentials']") is None:
-            configuration.append(self._xml_manager.parse('<option name="sshCredentials"></option>'))
-        ssh_credentials = configuration.find(".//option[@name='sshCredentials']")
-
-        required_value = f"&lt;credentials HOST=&quot;localhost&quot; PORT=&quot;2222&quot; USERNAME=&quot;root&quot; PRIVATE_KEY_FILE=&quot;{ssh_dir.as_posix()}/key&quot; USE_KEY_PAIR=&quot;true&quot; USE_AUTH_AGENT=&quot;false&quot; /&gt;"
-
-        # Don't do anything if the required entry already exists
-        for option in ssh_credentials.findall(f".//option"):
-            if option.get("value") == required_value.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"'):
-                return
-
-        # Add the new entry to the XML tree
-        ssh_credentials.append(self._xml_manager.parse(f'<option value="{required_value}"/>'))
+        if configs.find(".//sshConfig[@id='dotnet_debugger']") is None:
+            configs.append(self._xml_manager.parse(f'<sshConfig id="dotnet_debugger" host="localhost" port="2222" username="root" keyPath="{ssh_dir}\key" useOpenSSHConfig="true" />'))
+            made_changes = True
 
         # Save the modified XML tree
-        self._generate_file(debugger_file, self._xml_manager.to_string(root))
+        self._generate_file(ssh_configs_file, self._xml_manager.to_string(root))
+
+        return made_changes
 
     def _rename_csproj_file(self, project_path: Path) -> None:
         """Renames the csproj file in the project to name the project name.
