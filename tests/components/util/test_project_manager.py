@@ -414,7 +414,7 @@ def test_create_new_project_creates_rider_debugger_entry_when_not_set_yet(system
     key_path = Path("~/.lean/ssh/key").expanduser()
 
     create_fake_lean_cli_directory()
-    debugger_file = Path(path).expanduser() / "Rider" / "options" / "debugger.xml"
+    debugger_file = Path(path).expanduser() / "Rider2021.1" / "options" / "debugger.xml"
     debugger_file.parent.mkdir(parents=True, exist_ok=True)
     with debugger_file.open("w+", encoding="utf-8") as file:
         file.write(f"""
@@ -512,6 +512,21 @@ def test_create_new_project_does_not_update_rider_debugger_config_when_entry_alr
     project_manager.create_new_project(Path.cwd() / "CSharp Project", QCLanguage.CSharp)
 
     assert debugger_file.read_text(encoding="utf-8") == debugger_content
+
+
+def test_create_new_project_creates_rider_debugger_config_for_versions_2022_and_up() -> None:
+    key_path = Path("~/.lean/ssh/key").expanduser()
+
+    create_fake_lean_cli_directory()
+    project_manager = _create_project_manager()
+    project_dir = Path.cwd() / "CSharp Project"
+    project_manager.create_new_project(project_dir, QCLanguage.CSharp)
+
+    ssh_configs_file = project_dir / ".idea" / f".idea.{project_dir.name}.dir" / ".idea" / "sshConfigs.xml"
+    assert ssh_configs_file.is_file()
+
+    debugger_root = XMLManager().parse(ssh_configs_file.read_text(encoding="utf-8"))
+    assert debugger_root.find(f".//component[@name='SshConfigs']/configs/sshConfig[@id='dotnet_debugger'][@host='localhost'][@port='2222'][@username='root'][@keyPath='{key_path}']") is not None
 
 
 def test_get_project_libraries() -> None:
