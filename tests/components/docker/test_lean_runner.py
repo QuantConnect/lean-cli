@@ -34,6 +34,18 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
+
+def _generate_file(file: Path, content: str) -> None:
+    """Writes to a file, which is created if it doesn't exist yet, and normalizes the content before doing so.
+
+    :param file: the file to write to
+    :param content: the content to write to the file
+    """
+    file.parent.mkdir(parents=True, exist_ok=True)
+    with file.open("w+", encoding="utf-8") as file:
+        file.write(content.strip() + "\n")
+
+
 def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
     logger = mock.Mock()
     logger.debug_logging_enabled = False
@@ -508,3 +520,64 @@ def test_run_lean_mounts_transaction_log_file_from_cli_root() -> None:
         mount["Target"] == f'/Files/transaction-log'
         for mount in kwargs["mounts"]
     ])
+
+
+@pytest.mark.parametrize("in_solution", [True, False])
+def test_run_lean_compiles_csharp_project_that_is_part_of_a_solution(in_solution: bool) -> None:
+    create_fake_lean_cli_directory()
+
+    if in_solution:
+        _generate_file(Path.cwd() / "Solution.sln", """
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31605.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp Project", "CSharp Project\CSharp Project.csproj", "{E0B7E0A0-0F0B-4F1A-9F0B-0F0B0F0B0F0B}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {E0B7E0A0-0F0B-4F1A-9F0B-0F0B0F0B0F0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {E0B7E0A0-0F0B-4F1A-9F0B-0F0B0F0B0F0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {E0B7E0A0-0F0B-4F1A-9F0B-0F0B0F0B0F0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {E0B7E0A0-0F0B-4F1A-9F0B-0F0B0F0B0F0B}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+EndGlobal
+        """)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    root_dir = Path.cwd()
+    lean_runner = create_lean_runner(docker_manager)
+    lean_runner.run_lean({},
+                         "backtesting",
+                         root_dir / "CSharp Project" / "Main.cs",
+                         root_dir / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    build_command = next((cmd for cmd in kwargs["commands"] if cmd.startswith("dotnet build")), None)
+    assert build_command is not None
+
+    project_dir_str = str(root_dir / "CSharp Project")
+    # The volume should be mounted at the solution directory, not the project directory
+    if in_solution:
+        assert str(root_dir) in kwargs["volumes"]
+        assert kwargs["volumes"][str(root_dir)]["bind"] == "/LeanCLI"
+        assert project_dir_str not in kwargs["volumes"]
+    else:
+        assert project_dir_str in kwargs["volumes"]
+        assert kwargs["volumes"][project_dir_str]["bind"] == "/LeanCLI"
+        assert str(root_dir) not in kwargs["volumes"]
