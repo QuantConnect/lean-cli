@@ -16,65 +16,121 @@ from typing import Optional
 
 from click import command, option, Choice, IntRange
 
-from lean.click import DateParameter, LeanCommand
+from lean.click import DateParameter, LeanCommand, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 
 
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @option("--start",
-              type=DateParameter(),
-              required=True,
-              help="Start date for the data to generate in yyyyMMdd format")
+        type=DateParameter(),
+        required=True,
+        help="Start date for the data to generate in yyyyMMdd format")
 @option("--end",
-              type=DateParameter(),
-              default=datetime.today().strftime("%Y%m%d"),
-              help="End date for the data to generate in yyyyMMdd format (defaults to today)")
+        type=DateParameter(),
+        default=datetime.today().strftime("%Y%m%d"),
+        help="End date for the data to generate in yyyyMMdd format (defaults to today)")
 @option("--symbol-count",
-              type=IntRange(min=0),
-              required=True,
-              help="The number of symbols to generate data for")
+        type=IntRange(min=0),
+        help="The number of symbols to generate data for")
 @option("--tickers",
-              type=str,
-              required=False,
-              default="",
-              help="Comma separated list of tickers to use for generated data")
+        type=str,
+        required=False,
+        default="",
+        help="Comma separated list of tickers to use for generated data")
 @option("--security-type",
-              type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
-              default="Equity",
-              help="The security type to generate data for (defaults to Equity)")
+        type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
+        default="Equity",
+        help="The security type to generate data for (defaults to Equity)")
 @option("--resolution",
-              type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
-              default="Minute",
-              help="The resolution of the generated data (defaults to Minute)")
+        type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
+        default="Minute",
+        help="The resolution of the generated data (defaults to Minute)")
 @option("--data-density",
-              type=Choice(["Dense", "Sparse", "VerySparse"], case_sensitive=False),
-              default="Dense",
-              help="The density of the generated data (defaults to Dense)")
+        type=Choice(["Dense", "Sparse", "VerySparse"], case_sensitive=False),
+        default="Dense",
+        help="The density of the generated data (defaults to Dense)")
 @option("--include-coarse",
-              type=bool,
-              default=True,
-              help="Whether coarse universe data should be generated for Equity data (defaults to True)")
+        type=bool,
+        default=True,
+        help="Whether coarse universe data should be generated for Equity data (defaults to True)")
 @option("--market",
-              type=str,
-              default="",
-              help="The market to generate data for (defaults to standard market for the security type)")
+        type=str,
+        default="",
+        help="The market to generate data for (defaults to standard market for the security type)")
+@option("--quote-trade-ratio",
+        type=float,
+        default=1.0,
+        help="The ratio of generated quotes to generated trades. Values larger than 1 mean more quotes than "
+             "trades. Only used for Option, Future and Crypto (defaults to 1)")
+@option("--random-seed",
+        type=IntRange(min=0),
+        default=None,
+        help="The random number generator seed. Defaults to None, which means no seed will be used")
+@option("--ipo-percentage",
+        type=float,
+        default=5.0,
+        help="The probability each equity generated will have an IPO event. Note that this is not the total "
+             "probability for all symbols generated. Only used for Equity (defaults to 5.0)")
+@option("--rename-percentage",
+        type=float,
+        default=30.0,
+        help="The probability each equity generated will have a rename event. Note that this is not the total "
+             "probability for all symbols generated. Only used for Equity (defaults to 30.0)")
+@option("--splits-percentage",
+        type=float,
+        default=15.0,
+        help="The probability each equity generated will have a stock split event. Note that this is not the "
+             "total probability for all symbols generated. Only used for Equity (defaults to 15.0)")
+@option("--dividends-percentage",
+        type=float,
+        default=60.0,
+        help="The probability each equity generated will have dividends. Note that this is not the probability "
+             "for all symbols genearted. Only used for Equity (defaults to 60.0)")
+@option("--dividend-every-quarter-percentage",
+        type=float,
+        default=30.0,
+        help="The probability each equity generated will have a dividend event every quarter. Note that this is "
+             "not the total probability for all symbols generated. Only used for Equity (defaults to 30.0)")
+@option("--option-price-engine",
+        type=str,
+        default="BaroneAdesiWhaleyApproximationEngine",
+        help="The stochastic process, and returns new pricing engine to run calculations for that option "
+             "(defaults to BaroneAdesiWhaleyApproximationEngine)")
+@option("--volatility-model-resolution",
+        type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
+        default="Daily",
+        help="The volatility model period span (defaults to Daily)")
+@option("--chain-symbol-count",
+        type=IntRange(min=0),
+        default=10,
+        help="The size of the option chain (defaults to 10)")
 @option("--image",
-              type=str,
-              help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+        type=str,
+        help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
 @option("--update",
-              is_flag=True,
-              default=False,
-              help="Pull the LEAN engine image before running the generator")
+        is_flag=True,
+        default=False,
+        help="Pull the LEAN engine image before running the generator")
 def generate(start: datetime,
              end: datetime,
-             symbol_count: int,
+             symbol_count: Optional[int],
              tickers: str,
              security_type: str,
              resolution: str,
              data_density: str,
              include_coarse: bool,
              market: str,
+             quote_trade_ratio: float,
+             random_seed: Optional[int],
+             ipo_percentage: float,
+             rename_percentage: float,
+             splits_percentage: float,
+             dividends_percentage: float,
+             dividend_every_quarter_percentage: float,
+             option_price_engine: str,
+             volatility_model_resolution: str,
+             chain_symbol_count: int,
              image: Optional[str],
              update: bool) -> None:
     """Generate random market data.
@@ -117,16 +173,30 @@ def generate(start: datetime,
                   "--app", "randomdatagenerator",
                   "--start", start.strftime("%Y%m%d"),
                   "--end", end.strftime("%Y%m%d"),
-                  "--symbol-count", str(symbol_count),
                   "--security-type", security_type,
                   "--resolution", resolution,
                   "--data-density", data_density,
                   "--include-coarse", str(include_coarse).lower(),
-                  "--market", market.lower()]
+                  "--market", market.lower(),
+                  "--quote-trade-ratio", str(quote_trade_ratio),
+                  "--ipo-percentage", str(ipo_percentage),
+                  "--rename-percentage", str(rename_percentage),
+                  "--splits-percentage", str(splits_percentage),
+                  "--dividends-percentage", str(dividends_percentage),
+                  "--dividend-every-quarter-percentage", str(dividend_every_quarter_percentage),
+                  "--option-price-engine", option_price_engine,
+                  "--volatility-model-resolution", volatility_model_resolution,
+                  "--chain-symbol-count", str(chain_symbol_count)]
 
-    # Toolbox uses '--opt=val' as single argument
     if tickers:
-        entrypoint.append("--tickers=" + tickers)
+        entrypoint.extend(["--tickers", tickers])
+        entrypoint.extend(["--symbol-count", str(len(tickers.split(",")))])
+    else:
+        ensure_options(["symbol_count"])
+        entrypoint.extend(["--symbol-count", str(symbol_count)])
+
+    if random_seed:
+        entrypoint.extend(["--random-seed", str(random_seed)])
 
     run_options = {
         "entrypoint": entrypoint,
