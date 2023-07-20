@@ -14,6 +14,7 @@
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 
 from lean.commands import lean
@@ -75,20 +76,85 @@ def test_data_generate_adds_parameters_to_entrypoint() -> None:
                                        "--security-type", "Crypto",
                                        "--resolution", "Daily",
                                        "--data-density", "Sparse",
-                                       "--market", "bitfinex"])
+                                       "--include-coarse", "True",
+                                       "--market", "bitfinex",
+                                       "--quote-trade-ratio", "1.5",
+                                       "--random-seed", "123",
+                                       "--ipo-percentage", "10",
+                                       "--rename-percentage", "20",
+                                       "--splits-percentage", "10",
+                                       "--dividends-percentage", "50",
+                                       "--dividend-every-quarter-percentage", "40",
+                                       "--option-price-engine", "BlackScholes",
+                                       "--volatility-model-resolution", "Minute",
+                                       "--chain-symbol-count", "20"])
 
     assert result.exit_code == 0
 
     docker_manager.run_image.assert_called_once()
     args, kwargs = docker_manager.run_image.call_args
+    entrypoint = " ".join(kwargs["entrypoint"])
 
-    assert "--start 20200101" in " ".join(kwargs["entrypoint"])
-    assert "--end 20200201" in " ".join(kwargs["entrypoint"])
-    assert "--symbol-count 1" in " ".join(kwargs["entrypoint"])
-    assert "--security-type Crypto" in " ".join(kwargs["entrypoint"])
-    assert "--resolution Daily" in " ".join(kwargs["entrypoint"])
-    assert "--data-density Sparse" in " ".join(kwargs["entrypoint"])
-    assert "--market bitfinex" in " ".join(kwargs["entrypoint"])
+    assert "--start 20200101" in entrypoint
+    assert "--end 20200201" in entrypoint
+    assert "--symbol-count 1" in entrypoint
+    assert "--security-type Crypto" in entrypoint
+    assert "--resolution Daily" in entrypoint
+    assert "--data-density Sparse" in entrypoint
+    assert "--include-coarse true" in entrypoint
+    assert "--market bitfinex" in entrypoint
+    assert "--quote-trade-ratio 1.5" in entrypoint
+    assert "--random-seed 123" in entrypoint
+    assert "--ipo-percentage 10" in entrypoint
+    assert "--rename-percentage 20" in entrypoint
+    assert "--splits-percentage 10" in entrypoint
+    assert "--dividends-percentage 50" in entrypoint
+    assert "--dividend-every-quarter-percentage 40" in entrypoint
+    assert "--option-price-engine BlackScholes" in entrypoint
+    assert "--volatility-model-resolution Minute" in entrypoint
+    assert "--chain-symbol-count 20" in entrypoint
+
+
+@pytest.mark.parametrize("pass_symbol_count", [True, False])
+def test_data_generate_adds_correct_symbol_count_to_entrypoint(pass_symbol_count: bool) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    container.docker_manager = docker_manager
+
+    parameters = ["data", "generate",
+                  "--tickers", "SPY,AAPL,GOOG",
+                  "--start", "20200101",
+                  "--end", "20200201",
+                  "--security-type", "Crypto",
+                  "--resolution", "Daily",
+                  "--data-density", "Sparse",
+                  "--include-coarse", "True",
+                  "--market", "bitfinex",
+                  "--quote-trade-ratio", "1.5",
+                  "--random-seed", "123",
+                  "--ipo-percentage", "10",
+                  "--rename-percentage", "20",
+                  "--splits-percentage", "10",
+                  "--dividends-percentage", "50",
+                  "--dividend-every-quarter-percentage", "40",
+                  "--option-price-engine", "BlackScholes",
+                  "--volatility-model-resolution", "Minute",
+                  "--chain-symbol-count", "20"]
+
+    if pass_symbol_count:
+        parameters.extend(["--symbol-count", "1"])  # 1 != 3 (tickers count)
+
+    result = CliRunner().invoke(lean, parameters)
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+    entrypoint = " ".join(kwargs["entrypoint"])
+
+    assert "--tickers SPY,AAPL" in entrypoint
+    assert "--symbol-count 3" in entrypoint     # Correct symbol count (tickers count)
 
 
 def test_data_generate_forces_update_when_update_option_given() -> None:
