@@ -459,6 +459,14 @@ class LeanRunner:
         """
         compile_root = self._get_csharp_compile_root(project_dir)
 
+        if compile_root != project_dir:
+            # The /LeanCLI needs to be properly mounted to the compile root when the project is part of a solution
+            run_options["volumes"].pop(str(project_dir))
+            run_options["volumes"][str(compile_root)] = {
+                "bind": "/LeanCLI",
+                "mode": "rw"
+            }
+
         # Ensure all .csproj files refer to the version of LEAN in the Docker container
         csproj_temp_dir = self._temp_manager.create_temporary_directory()
         for path in compile_root.rglob("*.csproj"):
