@@ -13,6 +13,7 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional
+from os import path
 
 from click import command, option
 
@@ -52,7 +53,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
-@option("--css-override-file",
+@option("--css",
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               help="Path where the CSS override file is stored")
 @option("--detach", "-d",
@@ -86,7 +87,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
-           css_override_file: Optional[Path],
+           css: Optional[Path],
            detach: bool,
            strategy_name: Optional[str],
            strategy_version: Optional[str],
@@ -161,7 +162,7 @@ def report(backtest_results: Optional[Path],
         "live-data-source-file": "live-data-source-file.json" if live_results is not None else "",
         "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/tmp/report.html",
-        "report-css-override-file": "report_override.css" if css_override_file is not None else "",
+        "report-css-override-file": "report_override.css" if (css is not None) and (path.isfile(css)) else "",
         "report-format": "pdf" if pdf else "",
         "environment": "report",
 
@@ -213,10 +214,6 @@ def report(backtest_results: Optional[Path],
             Mount(target="/Lean/Report/bin/Debug/backtest-data-source-file.json",
                   source=str(backtest_results),
                   type="bind",
-                  read_only=True),
-            Mount(target="/Lean/Report/bin/Debug/report_override.css",
-                  source=str(css_override_file),
-                  type="bind",
                   read_only=True)
         ],
         "volumes": {
@@ -230,6 +227,15 @@ def report(backtest_results: Optional[Path],
             }
         }
     }
+
+    if css is not None:
+        if path.isfile(css):
+            run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/report_override.css",
+                                               source=str(css),
+                                               type="bind",
+                                               read_only=True))
+        else:
+            logger.info(f"CSS override file '{css}' could not be found")
 
     if pdf:
         run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')
