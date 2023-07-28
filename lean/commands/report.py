@@ -52,6 +52,9 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               default=lambda: Path.cwd() / "report.html",
               help="Path where the generated report is stored as HTML (defaults to ./report.html)")
+@option("--css",
+              type=PathParameter(exists=False, file_okay=True, dir_okay=False),
+              help="Path where the CSS override file is stored")
 @option("--detach", "-d",
               is_flag=True,
               default=False,
@@ -83,6 +86,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
+           css: Optional[Path],
            detach: bool,
            strategy_name: Optional[str],
            strategy_version: Optional[str],
@@ -157,6 +161,7 @@ def report(backtest_results: Optional[Path],
         "live-data-source-file": "live-data-source-file.json" if live_results is not None else "",
         "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/tmp/report.html",
+        "report-css-override-file": "report_override.css" if (css is not None) and (css.exists()) else "",
         "report-format": "pdf" if pdf else "",
         "environment": "report",
 
@@ -221,6 +226,15 @@ def report(backtest_results: Optional[Path],
             }
         }
     }
+
+    if css is not None:
+        if css.exists():
+            run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/report_override.css",
+                                               source=str(css),
+                                               type="bind",
+                                               read_only=True))
+        else:
+            logger.info(f"CSS override file '{css}' could not be found")
 
     if pdf:
         run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')
