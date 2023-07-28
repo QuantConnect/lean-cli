@@ -13,7 +13,6 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional
-from os import path
 
 from click import command, option
 
@@ -162,7 +161,7 @@ def report(backtest_results: Optional[Path],
         "live-data-source-file": "live-data-source-file.json" if live_results is not None else "",
         "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/tmp/report.html",
-        "report-css-override-file": "report_override.css" if (css is not None) and (path.isfile(css)) else "",
+        "report-css-override-file": "report_override.css" if (css is not None) and (css.exists()) else "",
         "report-format": "pdf" if pdf else "",
         "environment": "report",
 
@@ -229,7 +228,7 @@ def report(backtest_results: Optional[Path],
     }
 
     if css is not None:
-        if path.isfile(css):
+        if css.exists():
             run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/report_override.css",
                                                source=str(css),
                                                type="bind",
