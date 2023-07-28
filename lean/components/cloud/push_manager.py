@@ -97,13 +97,13 @@ class PushManager:
         :param organization_id: the id of the organization to push the project to
         :param suggested_rename_path: the path to move the project to.
         """
-        
+
         project_name = project_path.relative_to(Path.cwd()).as_posix()
 
         potential_new_name = project_name
         if suggested_rename_path and suggested_rename_path != project_path:
             potential_new_name = suggested_rename_path.relative_to(Path.cwd()).as_posix()
-            
+
 
         project_config = self._project_config_manager.get_project_config(project_path)
         cloud_id = project_config.get("cloud-id")
@@ -154,17 +154,13 @@ class PushManager:
         :param project: the local project to push the files of
         """
         paths = self._project_manager.get_source_files(project)
-        files = []
-
-        for path in paths:
-            relative_path = path.relative_to(project).as_posix()
-            if "bin/" in relative_path and "obj/" in relative_path and ".ipynb_checkpoints/" in relative_path:
-                continue
-
-            files.append({
-                'name': relative_path,
+        files = [
+            {
+                'name': path.relative_to(project).as_posix(),
                 'content': path.read_text(encoding="utf-8")
-            })
+            }
+            for path in paths
+        ]
 
         return files
 

@@ -123,12 +123,15 @@ class ProjectManager:
 
         for obj in directory.iterdir():
             if obj.is_dir():
-                if obj.name in ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"]:
+                if (obj.name in ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"] or
+                        obj.name.startswith(".") or
+                        # ignore python virtual environments
+                        (obj / "pyvenv.cfg").is_file()):
                     continue
 
                 source_files.extend(self.get_source_files(obj))
 
-            if obj.suffix not in [".py", ".cs", ".ipynb"]:
+            if obj.suffix not in [".py", ".cs", ".ipynb", ".css", ".html"]:
                 continue
 
             source_files.append(obj)
