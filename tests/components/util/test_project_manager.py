@@ -138,12 +138,52 @@ def test_get_source_files_returns_all_source_files() -> None:
     assert sorted(files_to_sync) == sorted(files)
 
 
-@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"])
+@pytest.mark.parametrize(
+    "directory",
+    ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations", ".hidden"])
 def test_get_source_files_ignores_generated_source_files(directory: str) -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
     files = [project_path / "main.py", project_path / directory / "main.py"]
+    for file in files:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.touch()
+
+    project_manager = _create_project_manager()
+    files_to_sync = project_manager.get_source_files(project_path)
+
+    assert files_to_sync == [files[0]]
+
+
+@pytest.mark.parametrize("filename", ["file.csv", "file.xlsx", "file.java"])
+def test_get_source_files_ignores_unsuported_extension_files(filename: str) -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = [
+        project_path / "main.py",
+        project_path / "main.cs",
+        project_path / "main.ipynb",
+        project_path / "main.css",
+        project_path / "main.html",
+        project_path / filename]
+    for file in files:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.touch()
+
+    project_manager = _create_project_manager()
+    files_to_sync = project_manager.get_source_files(project_path)
+
+    assert files_to_sync == files[:-1]
+
+
+@pytest.mark.parametrize("directory", ["venv", "pyvenv", "my_venv"])
+def test_get_source_files_ignores_python_virtual_environments(directory: str) -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    files = [project_path / "main.py", project_path / directory / "pyvenv.cfg"]
     for file in files:
         file.parent.mkdir(parents=True, exist_ok=True)
         file.touch()
@@ -190,7 +230,9 @@ def test_copy_code_copies_source_files_to_output_directory() -> None:
         assert (output_dir / file).read_text(encoding="utf-8") == file.name
 
 
-@pytest.mark.parametrize("directory", ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"])
+@pytest.mark.parametrize(
+    "directory",
+    ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations", ".hidden"])
 def test_copy_code_ignores_generated_source_files(directory: str) -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
