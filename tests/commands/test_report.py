@@ -228,6 +228,23 @@ def test_report_mounts_given_css_override_file() -> None:
     mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/report_override.css"][0]
     assert mount["Source"] == str(Path.cwd() / "1459804915.css")
 
+def test_report_runs_even_when_css_override_file_does_not_exist() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--css",
+                                       "1459804916.css"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/report_override.css"]
+    assert len(mount) == 0
+
 def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
