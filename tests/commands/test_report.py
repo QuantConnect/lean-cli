@@ -42,6 +42,11 @@ def setup_backtest_results() -> None:
     with results_path.open("w+", encoding="utf-8") as file:
         file.write("{}")
 
+    css_path = Path.cwd() / f"{results_id}.css"
+    css_path.parent.mkdir(parents=True, exist_ok=True)
+    with css_path.open("w+", encoding="utf-8") as file:
+        file.write("")
+
     results_config_path = results_dir / "config"
     with results_config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps({'id': results_id}))
@@ -206,6 +211,22 @@ def test_report_mounts_given_backtest_data_source_file() -> None:
     mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/backtest-data-source-file.json"][0]
     assert mount["Source"] == str(Path.cwd() / "Python Project" / "backtests" / "2020-01-01_00-00-00" / "1459804915.json")
 
+def test_report_mounts_given_css_override_file() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--css",
+                                       "1459804915.css"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/report_override.css"][0]
+    assert mount["Source"] == str(Path.cwd() / "1459804915.css")
 
 def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
     docker_manager = mock.Mock()
