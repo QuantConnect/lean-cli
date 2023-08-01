@@ -1256,6 +1256,7 @@ Options:
   --live-results FILE          Path to the JSON file containing the live trading results
   --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
   --css FILE                   Path where the CSS override file is stored
+  --html FILE                  Path where the custom HTML template file is stored
   -d, --detach                 Run the report creator in a detached Docker container and return immediately
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name

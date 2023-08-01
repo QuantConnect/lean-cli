@@ -55,6 +55,9 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 @option("--css",
               type=PathParameter(exists=False, file_okay=True, dir_okay=False),
               help="Path where the CSS override file is stored")
+@option("--html",
+              type=PathParameter(exists=False, file_okay=True, dir_okay=False),
+              help="Path where the custom HTML template file is stored")
 @option("--detach", "-d",
               is_flag=True,
               default=False,
@@ -87,6 +90,7 @@ def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
            css: Optional[Path],
+           html: Optional[Path],
            detach: bool,
            strategy_name: Optional[str],
            strategy_version: Optional[str],
@@ -162,6 +166,7 @@ def report(backtest_results: Optional[Path],
         "backtest-data-source-file": "backtest-data-source-file.json",
         "report-destination": "/tmp/report.html",
         "report-css-override-file": "report_override.css" if (css is not None) and (css.exists()) else "",
+        "report-html-custom-file": "template_custom.html" if (html is not None) and (html.exists()) else "",
         "report-format": "pdf" if pdf else "",
         "environment": "report",
 
@@ -235,6 +240,15 @@ def report(backtest_results: Optional[Path],
                                                read_only=True))
         else:
             logger.info(f"CSS override file '{css}' could not be found")
+
+    if html is not None:
+        if html.exists():
+            run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/template_custom.html",
+                                               source=str(html),
+                                               type="bind",
+                                               read_only=True))
+        else:
+            logger.info(f"Custom HTML template file '{html}' could not be found")
 
     if pdf:
         run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')

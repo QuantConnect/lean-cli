@@ -47,6 +47,11 @@ def setup_backtest_results() -> None:
     with css_path.open("w+", encoding="utf-8") as file:
         file.write("")
 
+    html_path = Path.cwd() / f"{results_id}.html"
+    html_path.parent.mkdir(parents=True, exist_ok=True)
+    with html_path.open("w+", encoding="utf-8") as file:
+        file.write("")
+
     results_config_path = results_dir / "config"
     with results_config_path.open("w+", encoding="utf-8") as file:
         file.write(json.dumps({'id': results_id}))
@@ -243,6 +248,40 @@ def test_report_runs_even_when_css_override_file_does_not_exist() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/report_override.css"]
+    assert len(mount) == 0
+
+def test_report_mounts_given_custom_html_template_file() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--html",
+                                       "1459804915.html"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/template_custom.html"][0]
+    assert mount["Source"] == str(Path.cwd() / "1459804915.html")
+
+def test_report_runs_even_when_custom_html_template_file_does_not_exist() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--html",
+                                       "1459804916.html"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    mount = [m for m in kwargs["mounts"] if m["Target"] == "/Lean/Report/bin/Debug/template_custom.html"]
     assert len(mount) == 0
 
 def test_report_finds_latest_backtest_data_source_file_when_not_given() -> None:
