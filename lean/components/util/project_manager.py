@@ -241,7 +241,7 @@ class ProjectManager:
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                if current_project_config.get("cloud-id") == cloud_id:
+                elif current_project_config.get("cloud-id") == cloud_id:
                     return current_path
 
             if local_id is not None:
@@ -250,7 +250,7 @@ class ProjectManager:
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                if current_project_config.get("local-id") == local_id:
+                elif current_project_config.get("local-id") == local_id:
                     return current_path
 
             if current_index == 1:
