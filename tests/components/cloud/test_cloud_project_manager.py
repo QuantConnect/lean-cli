@@ -36,6 +36,7 @@ def test_get_cloud_project_pushing_new_project():
 
     project_config = mock.Mock()
     project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
+    project_config.is_empty = mock.MagicMock(return_value=False)
     project_config_manager = mock.Mock()
     project_config_manager.try_get_project_config = mock.MagicMock(return_value=None)
     project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)

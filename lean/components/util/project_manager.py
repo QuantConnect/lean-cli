@@ -203,16 +203,18 @@ class ProjectManager:
             raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
 
 
-    def get_local_project_path(self, project_name: str, cloud_id: Optional[int] = None, local_id: Optional[int] = None) -> Path:
+    def get_local_project_path(self, project_name: str, cloud_id: Optional[int] = None, local_id: Optional[int] = None,
+                               allow_corrupted: Optional[bool] = False) -> Path:
         """Returns the local path where a certain cloud project should be stored.
 
         If two cloud projects are named "Project", they are pulled to ./Project and ./Project 2.
 
         If you push a project with unsupported cloud name, a supported project name would be assigned.
 
-        :param project_name: the cloud project to get the project path of
-        :param cloud_id: the cloud project to get the project path of
-        :param local_id: the cloud project to get the project path of
+        :param project_name: the cloud project name to get the project path of
+        :param cloud_id: the cloud project id to get the project path of
+        :param local_id: the cloud project local id to get the project path of
+        :param allow_corrupted: true if a corrupted path can be used
         :return: the path to the local project directory
         """
 
@@ -226,6 +228,7 @@ class ProjectManager:
 
         current_index = 1
         while True:
+            # we first check the current project name
             path_suffix = "" if current_index == 1 else f" {current_index}"
             current_path = Path.cwd() / (local_path + path_suffix)
 
@@ -234,14 +237,33 @@ class ProjectManager:
 
             if cloud_id is not None:
                 current_project_config = self._project_config_manager.get_project_config(current_path)
-                if current_project_config.get("cloud-id") == cloud_id:
+                if current_project_config.is_empty():
+                    self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
+                    if allow_corrupted:
+                        return current_path
+                elif current_project_config.get("cloud-id") == cloud_id:
                     return current_path
 
             if local_id is not None:
                 current_project_config = self._project_config_manager.get_project_config(current_path)
-                if current_project_config.get("local-id") == local_id:
+                if current_project_config.is_empty():
+                    self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
+                    if allow_corrupted:
+                        return current_path
+                elif current_project_config.get("local-id") == local_id:
                     return current_path
 
+            if current_index == 1:
+                from re import findall
+
+                ints_in_name = findall(r"(\s\d+)$", local_path)
+                if len(ints_in_name) != 0:
+                    # the current project name already exists, and it has a 'space + int' at the end of it
+                    # so, we take that int and increment it
+                    int_value = ints_in_name[0]
+                    # we remove the int from the name because we will re add it in the loop
+                    local_path = local_path[:-len(int_value)]
+                    current_index = int(int_value)
             current_index += 1
 
     def rename_project_and_contents(self, old_path: Path, new_path: Path,) -> None:
