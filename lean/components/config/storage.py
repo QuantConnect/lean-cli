@@ -75,6 +75,13 @@ class Storage:
         else:
             self._data = {}
 
+    def is_empty(self) -> bool:
+        """Determines if this storage file is empty
+
+        :return: True if this storage file is empty
+        """
+        return len(self._data) == 0
+
     def get(self, key: str, default: Any = None) -> Any:
         """Returns the value assigned to the given key.
 

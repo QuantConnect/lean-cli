@@ -153,7 +153,8 @@ class PullManager:
         :param project: the cloud project to pull
         :return the actual local path of the project
         """
-        local_project_path = self._project_manager.get_local_project_path(project.name, project.projectId)
+        local_project_path = self._project_manager.get_local_project_path(project.name, project.projectId,
+                                                                          allow_corrupted=True)
         local_project_name = local_project_path.relative_to(Path.cwd()).as_posix()
         # Check if cloud project has invalid name, if so update it and inform user.
         if local_project_name != project.name:
