@@ -260,7 +260,7 @@ def test_run_lean_mounts_storage_directory() -> None:
     assert any([volume["bind"] == "/Storage" for volume in kwargs["volumes"].values()])
 
     key = next(key for key in kwargs["volumes"].keys() if kwargs["volumes"][key]["bind"] == "/Storage")
-    assert key == str(Path.cwd() / "Python Project" / "storage")
+    assert key == str(Path.cwd() / "storage")
 
 
 def test_run_lean_creates_output_directory_when_not_existing_yet() -> None:

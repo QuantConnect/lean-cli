@@ -213,7 +213,7 @@ class LeanRunner:
             output_dir.mkdir(parents=True)
 
         # Create the storage directory if it doesn't exist yet
-        storage_dir = project_dir / "storage"
+        storage_dir = self._lean_config_manager.get_cli_root_directory() / "storage"
         if not storage_dir.exists():
             storage_dir.mkdir(parents=True)
 
