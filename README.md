@@ -101,6 +101,10 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean logs`](#lean-logs)
+- [`lean object-store delete`](#lean-object-store-delete)
+- [`lean object-store get`](#lean-object-store-get)
+- [`lean object-store list`](#lean-object-store-list)
+- [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
 - [`lean project-create`](#lean-project-create)
 - [`lean project-delete`](#lean-project-delete)
@@ -1128,6 +1132,72 @@ Options:
 ```
 
 _See code: [lean/commands/logs.py](lean/commands/logs.py)_
+
+### `lean object-store delete`
+
+Delete a value from the QuantConnect Object Store.
+
+```
+Usage: lean object-store delete [OPTIONS] KEY
+
+  Delete a value from the QuantConnect Object Store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/delete.py](lean/commands/object_store/delete.py)_
+
+### `lean object-store get`
+
+Get a value from the QuantConnect Object Store.
+
+```
+Usage: lean object-store get [OPTIONS] KEY
+
+  Get a value from the QuantConnect Object Store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/get.py](lean/commands/object_store/get.py)_
+
+### `lean object-store list`
+
+List all values for the given root key in the QuantConnect Object Store.
+
+```
+Usage: lean object-store list [OPTIONS] ROOT_KEY
+
+  List all values for the given root key in the QuantConnect Object Store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/list.py](lean/commands/object_store/list.py)_
+
+### `lean object-store set`
+
+Sets the data to the given key in the organization's object store.
+
+```
+Usage: lean object-store set [OPTIONS] KEY PATH
+
+  Sets the data to the given key in the organization's object store.
+
+  :param key: The key to set the data to. :param path: Path to the file containing the object data.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/set.py](lean/commands/object_store/set.py)_
 
 ### `lean optimize`
 
