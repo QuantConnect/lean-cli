@@ -30,15 +30,21 @@ def get(key: str) -> str:
     data = api_client.object_store.get(key, organization_id)
 
     try:
-        headers = ["bytes", "modified", "preview", "filename"]
-        spacing = "    "
-        logger.info(spacing.join(headers))
+        headers = ["size", "modified", "preview", "key"]
+        display_headers = ["bytes", "modified", "preview", "filename"]
+        row = [str(data["metadata"].get(header, "")) for header in headers]
+        all_rows = [display_headers] + [row]
+        column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
+
+        logger.info("  ".join(header.ljust(width) for header, width in zip(display_headers, column_widths)))
+
         bytes = str(data["metadata"].get('size', ""))
         modified = data["metadata"].get('modified', "")
         preview = data["metadata"].get('preview', "")[:10].rstrip()
         filename = data["metadata"].get('key', "")
+        
         values = [bytes, modified, preview, filename]
-        logger.info(spacing.join(values))
+        logger.info("  ".join(value.ljust(width) for value, width in zip(values, column_widths)))
     except KeyError as e:
         logger.error(f"Key {key} not found.")
     except Exception as e:
