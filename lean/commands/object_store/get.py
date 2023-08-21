@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command, argument
-
+from click import argument
+from lean.commands.object_store import object_store
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@command(cls=LeanCommand)
+@object_store.command(cls=LeanCommand, name="get", aliases=["ls"])
 @argument("key", type=str)
 def get(key: str) -> str:
     """

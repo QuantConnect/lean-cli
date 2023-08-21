@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lean.commands.object_store.object_store import object_store
-from lean.commands.object_store.get import get
-from lean.commands.object_store.set import set
-from lean.commands.object_store.list import list
-from lean.commands.object_store.delete import delete
+from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
-object_store.add_command(get)
-object_store.add_command(set)
-object_store.add_command(list)
-object_store.add_command(delete)
+@group(cls=AliasedCommandGroup, invoke_without_command=True)
+def object_store() -> None:
+    """Interact with the Organization's Object Store."""
+    # This method is intentionally empty
+    # It is used as the command group for all `lean object-store <command>` commands
+    pass
 

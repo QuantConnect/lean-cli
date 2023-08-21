@@ -104,6 +104,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean object-store delete`](#lean-object-store-delete)
 - [`lean object-store get`](#lean-object-store-get)
 - [`lean object-store list`](#lean-object-store-list)
+- [`lean object-store ls`](#lean-object-store-ls)
 - [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
 - [`lean project-create`](#lean-project-create)
@@ -1180,6 +1181,22 @@ Options:
 ```
 
 _See code: [lean/commands/object_store/list.py](lean/commands/object_store/list.py)_
+
+### `lean object-store ls`
+
+Alias for 'get'
+
+```
+Usage: lean object-store ls [OPTIONS] KEY
+
+  Get a value from the organization's object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/ls.py](lean/commands/object_store/ls.py)_
 
 ### `lean object-store set`
 
