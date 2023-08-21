@@ -21,7 +21,7 @@ from lean.container import container
 @argument("root-key", type=str)
 def list(root_key: str) -> str:
     """
-    List all values for the given root key in the QuantConnect Object Store.
+    List all values for the given root key in the organization's object store.
     
     """
     organization_id = container.organization_manager.try_get_working_organization_id()

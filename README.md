@@ -1135,12 +1135,12 @@ _See code: [lean/commands/logs.py](lean/commands/logs.py)_
 
 ### `lean object-store delete`
 
-Delete a value from the QuantConnect Object Store.
+Delete a value from the organization's object store.
 
 ```
 Usage: lean object-store delete [OPTIONS] KEY
 
-  Delete a value from the QuantConnect Object Store.
+  Delete a value from the organization's object store.
 
 Options:
   --verbose  Enable debug logging
@@ -1151,12 +1151,12 @@ _See code: [lean/commands/object_store/delete.py](lean/commands/object_store/del
 
 ### `lean object-store get`
 
-Get a value from the QuantConnect Object Store.
+Get a value from the organization's object store.
 
 ```
 Usage: lean object-store get [OPTIONS] KEY
 
-  Get a value from the QuantConnect Object Store.
+  Get a value from the organization's object store.
 
 Options:
   --verbose  Enable debug logging
@@ -1167,12 +1167,12 @@ _See code: [lean/commands/object_store/get.py](lean/commands/object_store/get.py
 
 ### `lean object-store list`
 
-List all values for the given root key in the QuantConnect Object Store.
+List all values for the given root key in the organization's object store.
 
 ```
 Usage: lean object-store list [OPTIONS] ROOT_KEY
 
-  List all values for the given root key in the QuantConnect Object Store.
+  List all values for the given root key in the organization's object store.
 
 Options:
   --verbose  Enable debug logging

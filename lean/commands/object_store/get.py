@@ -21,7 +21,7 @@ from lean.container import container
 @argument("key", type=str)
 def get(key: str) -> str:
     """
-    Get a value from the QuantConnect Object Store.
+    Get a value from the organization's object store.
 
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
