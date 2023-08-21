@@ -31,7 +31,7 @@ def list(root_key: str) -> str:
 
     try:
         headers = ["key", "size", "folder", "name"]
-        display_headers = ["key", "bytes", "folder", "filename"]
+        display_headers = ["Key", "Bytes", "Folder", "Filename"]
         rows = [[str(obj.get(header, "")) for header in headers] for obj in data['objects']]
         all_rows = [display_headers] + rows
         column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]

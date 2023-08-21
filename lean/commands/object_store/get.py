@@ -31,7 +31,7 @@ def get(key: str) -> str:
 
     try:
         headers = ["size", "modified", "preview", "key"]
-        display_headers = ["bytes", "modified", "preview", "filename"]
+        display_headers = ["Bytes", "Modified", "Preview", "Filename"]
         row = [str(data["metadata"].get(header, "")) for header in headers]
         all_rows = [display_headers] + [row]
         column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]

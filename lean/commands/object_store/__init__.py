@@ -21,7 +21,7 @@ from lean.commands.object_store.delete import delete
 
 @group()
 def object_store() -> None:
-    """Interact with the QuantConnect Object Store."""
+    """Interact with the Organization's Object Store."""
     # This method is intentionally empty
     # It is used as the command group for all `lean object-store <command>` commands
     pass
