@@ -30,12 +30,16 @@ def list(root_key: str) -> str:
     data = api_client.object_store.list(root_key, organization_id)
 
     try:
-        total_objects = len(data['objects'])
-        logger.info(f"Found {total_objects} objects for key {root_key}")
-        for object in data['objects']:
-            logger.info('\n')
-            for k, v in object.items():
-                logger.info(f"{k}: {v}")
+        headers = ["key", "bytes", "folder", "filename"]
+        spacing = "    "
+        logger.info(spacing.join(headers))
+        for obj in data['objects']:
+            key = obj.get('key', "")
+            bytes = str(obj.get('size', ""))
+            folder = str(obj.get('folder', ""))
+            filename = obj.get('name', "")
+            values = [key, bytes, folder, filename]
+            logger.info(spacing.join(values))
     except KeyError as e:
         logger.error(f"Key {root_key} not found.")
     except Exception as e:

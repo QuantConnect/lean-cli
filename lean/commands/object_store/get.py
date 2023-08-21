@@ -30,8 +30,15 @@ def get(key: str) -> str:
     data = api_client.object_store.get(key, organization_id)
 
     try:
-        for k, v in data["metadata"].items():
-            logger.info(f"{k}: {v}")
+        headers = ["bytes", "modified", "preview", "filename"]
+        spacing = "    "
+        logger.info(spacing.join(headers))
+        bytes = str(data["metadata"].get('size', ""))
+        modified = data["metadata"].get('modified', "")
+        preview = data["metadata"].get('preview', "")[:10].rstrip()
+        filename = data["metadata"].get('key', "")
+        values = [bytes, modified, preview, filename]
+        logger.info(spacing.join(values))
     except KeyError as e:
         logger.error(f"Key {key} not found.")
     except Exception as e:
