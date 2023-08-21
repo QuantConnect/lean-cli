@@ -23,6 +23,7 @@ from lean.components.api.live_client import LiveClient
 from lean.components.api.market_client import MarketClient
 from lean.components.api.module_client import ModuleClient
 from lean.components.api.node_client import NodeClient
+from lean.components.api.object_store_client import ObjectStoreClient
 from lean.components.api.optimization_client import OptimizationClient
 from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
@@ -59,6 +60,7 @@ class APIClient:
         self.market = MarketClient(self)
         self.modules = ModuleClient(self)
         self.nodes = NodeClient(self)
+        self.object_store = ObjectStoreClient(self)
         self.optimizations = OptimizationClient(self)
         self.organizations = OrganizationClient(self)
         self.projects = ProjectClient(self)
@@ -81,7 +83,7 @@ class APIClient:
         """
         return self._request("get", endpoint, {"params": parameters})
 
-    def post(self, endpoint: str, data: Dict[str, Any] = {}, data_as_json: bool = True) -> Any:
+    def post(self, endpoint: str, data: Dict[str, Any] = {}, data_as_json: bool = True, extra_options: Dict[str, Any] = None) -> Any:
         """Makes an authenticated POST request to the given endpoint with the given data.
 
         Raises an error if the request fails or if the current credentials are invalid.
@@ -92,6 +94,8 @@ class APIClient:
         :return: the parsed response of the request
         """
         options = {"json": data} if data_as_json else {"data": data}
+        if extra_options is not None:
+            options.update(extra_options)
         return self._request("post", endpoint, options)
 
     def is_authenticated(self) -> bool:
