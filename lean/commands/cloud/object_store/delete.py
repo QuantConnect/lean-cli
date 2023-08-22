@@ -11,16 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command
+from click import command, argument
+
 from lean.click import LeanCommand
 from lean.container import container
-from lean.components.util.object_store_helper import open_storage_directory_in_explorer
 
 
 @command(cls=LeanCommand)
-def set() -> None:
+@argument("key", type=str)
+def delete(key: str) -> str:
     """
-    Opens the local storage directory in the file explorer.
-
+    Delete a value from the organization's cloud object store.
+    
     """
-    open_storage_directory_in_explorer(container.lean_config_manager)
+    organization_id = container.organization_manager.try_get_working_organization_id()
+    api_client = container.api_client
+    api_client.object_store.delete(key, organization_id)

@@ -11,16 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command
-from lean.click import LeanCommand
-from lean.container import container
-from lean.components.util.object_store_helper import open_storage_directory_in_explorer
+from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
+@group(cls=AliasedCommandGroup, invoke_without_command=True)
+def object_store() -> None:
+    """Interact with the Organization's Cloud Object Store."""
+    # This method is intentionally empty
+    # It is used as the command group for all `lean object-store <command>` commands
+    pass
 
-@command(cls=LeanCommand)
-def set() -> None:
-    """
-    Opens the local storage directory in the file explorer.
-
-    """
-    open_storage_directory_in_explorer(container.lean_config_manager)

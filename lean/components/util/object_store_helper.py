@@ -11,16 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command
-from lean.click import LeanCommand
-from lean.container import container
-from lean.components.util.object_store_helper import open_storage_directory_in_explorer
+import webbrowser
+from lean.components.config.lean_config_manager import LeanConfigManager
 
-
-@command(cls=LeanCommand)
-def set() -> None:
-    """
-    Opens the local storage directory in the file explorer.
-
-    """
-    open_storage_directory_in_explorer(container.lean_config_manager)
+def open_storage_directory_in_explorer(lean_config_manager: LeanConfigManager):
+    """Opens the storage directory in the file explorer."""
+    global_storage_directory_path = lean_config_manager.get_cli_root_directory() / "storage"
+    if not global_storage_directory_path.exists():
+        global_storage_directory_path.mkdir(parents=True)
+    open_file_explorer(str(global_storage_directory_path))
+    
+def open_file_explorer(directory_path: str):
+    """Opens the given directory in the file explorer."""
+    webbrowser.open('file:///' + directory_path)

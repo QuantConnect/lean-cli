@@ -11,16 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command
-from lean.click import LeanCommand
-from lean.container import container
-from lean.components.util.object_store_helper import open_storage_directory_in_explorer
+from lean.commands.cloud.object_store.object_store import object_store
+from lean.commands.cloud.object_store.get import get
+from lean.commands.cloud.object_store.set import set
+from lean.commands.cloud.object_store.list import list
+from lean.commands.cloud.object_store.delete import delete
 
+object_store.add_command(get)
+object_store.add_command(set)
+object_store.add_command(list)
+object_store.add_command(delete)
 
-@command(cls=LeanCommand)
-def set() -> None:
-    """
-    Opens the local storage directory in the file explorer.
-
-    """
-    open_storage_directory_in_explorer(container.lean_config_manager)

@@ -19,7 +19,7 @@ from lean.commands.cloud.optimize import optimize
 from lean.commands.cloud.pull import pull
 from lean.commands.cloud.push import push
 from lean.commands.cloud.status import status
-
+from lean.commands.cloud.object_store import object_store
 
 @group()
 def cloud() -> None:
@@ -35,3 +35,4 @@ cloud.add_command(backtest)
 cloud.add_command(optimize)
 cloud.add_command(live)
 cloud.add_command(status)
+cloud.add_command(object_store)

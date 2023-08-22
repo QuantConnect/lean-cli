@@ -11,43 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import argument
-from lean.commands.object_store import object_store
 from lean.click import LeanCommand
 from lean.container import container
+from lean.components.util.object_store_helper import open_storage_directory_in_explorer
+from lean.commands.object_store import object_store
 
 
 @object_store.command(cls=LeanCommand, name="get", aliases=["ls"])
-@argument("key", type=str)
-def get(key: str) -> str:
+def get() -> str:
     """
-    Get a value from the organization's object store.
+    Opens the local storage directory in the file explorer.
 
     """
-    organization_id = container.organization_manager.try_get_working_organization_id()
-    api_client = container.api_client
-    logger = container.logger
-    data = api_client.object_store.get(key, organization_id)
+    open_storage_directory_in_explorer(container.lean_config_manager)
 
-    try:
-        headers = ["size", "modified", "preview", "key"]
-        display_headers = ["Bytes", "Modified", "Preview", "Filename"]
-        row = [str(data["metadata"].get(header, "")) for header in headers]
-        all_rows = [display_headers] + [row]
-        column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
-
-        logger.info("  ".join(header.ljust(width) for header, width in zip(display_headers, column_widths)))
-
-        bytes = str(data["metadata"].get('size', ""))
-        modified = data["metadata"].get('modified', "")
-        preview = data["metadata"].get('preview', "")[:10].rstrip()
-        filename = data["metadata"].get('key', "")
-        
-        values = [bytes, modified, preview, filename]
-        logger.info("  ".join(value.ljust(width) for value, width in zip(values, column_widths)))
-    except KeyError as e:
-        logger.error(f"Key {key} not found.")
-    except Exception as e:
-        logger.error(f"Error: {e}")
 
 

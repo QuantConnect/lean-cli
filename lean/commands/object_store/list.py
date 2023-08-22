@@ -11,33 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import command, argument
-
+from click import command
 from lean.click import LeanCommand
 from lean.container import container
+from lean.components.util.object_store_helper import open_storage_directory_in_explorer
 
 
 @command(cls=LeanCommand)
-@argument("root-key", type=str)
-def list(root_key: str) -> str:
+def list() -> str:
     """
-    List all values for the given root key in the organization's object store.
+    Opens the local storage directory in the file explorer.
     
     """
-    organization_id = container.organization_manager.try_get_working_organization_id()
-    api_client = container.api_client
-    logger = container.logger
-    data = api_client.object_store.list(root_key, organization_id)
-
-    try:
-        headers = ["key", "size", "folder", "name"]
-        display_headers = ["Key", "Bytes", "Folder", "Filename"]
-        rows = [[str(obj.get(header, "")) for header in headers] for obj in data['objects']]
-        all_rows = [display_headers] + rows
-        column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
-        for row in all_rows:
-            logger.info("  ".join(value.ljust(width) for value, width in zip(row, column_widths)))
-    except KeyError as e:
-        logger.error(f"Key {root_key} not found.")
-    except Exception as e:
-        logger.error(f"Error: {e}")
+    open_storage_directory_in_explorer(container.lean_config_manager)

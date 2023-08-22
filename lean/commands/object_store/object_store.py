@@ -16,7 +16,7 @@ from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 @group(cls=AliasedCommandGroup, invoke_without_command=True)
 def object_store() -> None:
-    """Interact with the Organization's Object Store."""
+    """Interact with the Organization's Local Object Store."""
     # This method is intentionally empty
     # It is used as the command group for all `lean object-store <command>` commands
     pass
