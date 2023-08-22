@@ -20,11 +20,11 @@ from lean.container import container
 from tests.conftest import initialize_container
 
 
-def test_delete_deletes_value_when_key_is_given() -> None:
+def test_list_gets_value_when_key_is_given() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
     initialize_container(api_client_to_use=api_client)
 
-    result = CliRunner().invoke(lean, ["object-store", "delete", "test-key"])
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "list", "test-key"])
     assert result.exit_code == 0
-    container.api_client.object_store.delete.assert_called_once_with('test-key', 'abc')
+    container.api_client.object_store.list.assert_called_once_with('test-key', 'abc')

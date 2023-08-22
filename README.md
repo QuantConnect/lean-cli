@@ -75,6 +75,11 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
 - [`lean cloud live stop`](#lean-cloud-live-stop)
+- [`lean cloud object-store delete`](#lean-cloud-object-store-delete)
+- [`lean cloud object-store get`](#lean-cloud-object-store-get)
+- [`lean cloud object-store list`](#lean-cloud-object-store-list)
+- [`lean cloud object-store ls`](#lean-cloud-object-store-ls)
+- [`lean cloud object-store set`](#lean-cloud-object-store-set)
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
@@ -379,6 +384,88 @@ Options:
 
 _See code: [lean/commands/cloud/live/stop.py](lean/commands/cloud/live/stop.py)_
 
+### `lean cloud object-store delete`
+
+Delete a value from the organization's cloud object store.
+
+```
+Usage: lean cloud object-store delete [OPTIONS] KEY
+
+  Delete a value from the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/delete.py](lean/commands/cloud/object_store/delete.py)_
+
+### `lean cloud object-store get`
+
+Get a value from the organization's cloud object store.
+
+```
+Usage: lean cloud object-store get [OPTIONS] KEY
+
+  Get a value from the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/get.py](lean/commands/cloud/object_store/get.py)_
+
+### `lean cloud object-store list`
+
+List all values for the given root key in the organization's cloud object store.
+
+```
+Usage: lean cloud object-store list [OPTIONS] ROOT_KEY
+
+  List all values for the given root key in the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/list.py](lean/commands/cloud/object_store/list.py)_
+
+### `lean cloud object-store ls`
+
+Alias for 'get'
+
+```
+Usage: lean cloud object-store ls [OPTIONS] KEY
+
+  Get a value from the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/ls.py](lean/commands/cloud/object_store/ls.py)_
+
+### `lean cloud object-store set`
+
+Sets the data to the given key in the organization's cloud object store.
+
+```
+Usage: lean cloud object-store set [OPTIONS] KEY PATH
+
+  Sets the data to the given key in the organization's cloud object store.
+
+  :param key: The key to set the data to. :param path: Path to the file containing the object data.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/set.py](lean/commands/cloud/object_store/set.py)_
+
 ### `lean cloud optimize`
 
 Optimize a project in the cloud.
@@ -598,7 +685,6 @@ Usage: lean data download [OPTIONS]
 Options:
   --dataset TEXT      The name of the dataset to download non-interactively
   --overwrite         Overwrite existing local data
-  -y, --yes           Automatically confirm payment confirmation prompts
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose           Enable debug logging
   --help              Show this message and exit.
@@ -1136,12 +1222,12 @@ _See code: [lean/commands/logs.py](lean/commands/logs.py)_
 
 ### `lean object-store delete`
 
-Delete a value from the organization's object store.
+Opens the local storage directory in the file explorer.
 
 ```
-Usage: lean object-store delete [OPTIONS] KEY
+Usage: lean object-store delete [OPTIONS]
 
-  Delete a value from the organization's object store.
+  Opens the local storage directory in the file explorer.
 
 Options:
   --verbose  Enable debug logging
@@ -1152,12 +1238,12 @@ _See code: [lean/commands/object_store/delete.py](lean/commands/object_store/del
 
 ### `lean object-store get`
 
-Get a value from the organization's object store.
+Opens the local storage directory in the file explorer.
 
 ```
-Usage: lean object-store get [OPTIONS] KEY
+Usage: lean object-store get [OPTIONS]
 
-  Get a value from the organization's object store.
+  Opens the local storage directory in the file explorer.
 
 Options:
   --verbose  Enable debug logging
@@ -1168,12 +1254,12 @@ _See code: [lean/commands/object_store/get.py](lean/commands/object_store/get.py
 
 ### `lean object-store list`
 
-List all values for the given root key in the organization's object store.
+Opens the local storage directory in the file explorer.
 
 ```
-Usage: lean object-store list [OPTIONS] ROOT_KEY
+Usage: lean object-store list [OPTIONS]
 
-  List all values for the given root key in the organization's object store.
+  Opens the local storage directory in the file explorer.
 
 Options:
   --verbose  Enable debug logging
@@ -1187,9 +1273,9 @@ _See code: [lean/commands/object_store/list.py](lean/commands/object_store/list.
 Alias for 'get'
 
 ```
-Usage: lean object-store ls [OPTIONS] KEY
+Usage: lean object-store ls [OPTIONS]
 
-  Get a value from the organization's object store.
+  Opens the local storage directory in the file explorer.
 
 Options:
   --verbose  Enable debug logging
@@ -1200,14 +1286,12 @@ _See code: [lean/commands/object_store/ls.py](lean/commands/object_store/ls.py)_
 
 ### `lean object-store set`
 
-Sets the data to the given key in the organization's object store.
+Opens the local storage directory in the file explorer.
 
 ```
-Usage: lean object-store set [OPTIONS] KEY PATH
+Usage: lean object-store set [OPTIONS]
 
-  Sets the data to the given key in the organization's object store.
-
-  :param key: The key to set the data to. :param path: Path to the file containing the object data.
+  Opens the local storage directory in the file explorer.
 
 Options:
   --verbose  Enable debug logging
@@ -1342,8 +1426,6 @@ Options:
   --backtest-results FILE      Path to the JSON file containing the backtest results
   --live-results FILE          Path to the JSON file containing the live trading results
   --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
-  --css FILE                   Path where the CSS override file is stored
-  --html FILE                  Path where the custom HTML template file is stored
   -d, --detach                 Run the report creator in a detached Docker container and return immediately
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name
