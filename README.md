@@ -685,6 +685,7 @@ Usage: lean data download [OPTIONS]
 Options:
   --dataset TEXT      The name of the dataset to download non-interactively
   --overwrite         Overwrite existing local data
+  -y, --yes           Automatically confirm payment confirmation prompts
   --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose           Enable debug logging
   --help              Show this message and exit.
@@ -729,7 +730,7 @@ Usage: lean data generate [OPTIONS]
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
-  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0; required]
+  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0]
   --tickers TEXT                  Comma separated list of tickers to use for generated data
   --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
                                   The security type to generate data for (defaults to Equity)
@@ -739,6 +740,31 @@ Options:
                                   The density of the generated data (defaults to Dense)
   --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
   --market TEXT                   The market to generate data for (defaults to standard market for the security type)
+  --quote-trade-ratio FLOAT       The ratio of generated quotes to generated trades. Values larger than 1 mean more
+                                  quotes than trades. Only used for Option, Future and Crypto (defaults to 1)
+  --random-seed INTEGER RANGE     The random number generator seed. Defaults to None, which means no seed will be used
+                                  [x>=0]
+  --ipo-percentage FLOAT          The probability each equity generated will have an IPO event. Note that this is not
+                                  the total probability for all symbols generated. Only used for Equity (defaults to
+                                  5.0)
+  --rename-percentage FLOAT       The probability each equity generated will have a rename event. Note that this is not
+                                  the total probability for all symbols generated. Only used for Equity (defaults to
+                                  30.0)
+  --splits-percentage FLOAT       The probability each equity generated will have a stock split event. Note that this is
+                                  not the total probability for all symbols generated. Only used for Equity (defaults to
+                                  15.0)
+  --dividends-percentage FLOAT    The probability each equity generated will have dividends. Note that this is not the
+                                  probability for all symbols genearted. Only used for Equity (defaults to 60.0)
+  --dividend-every-quarter-percentage FLOAT
+                                  The probability each equity generated will have a dividend event every quarter. Note
+                                  that this is not the total probability for all symbols generated. Only used for Equity
+                                  (defaults to 30.0)
+  --option-price-engine TEXT      The stochastic process, and returns new pricing engine to run calculations for that
+                                  option (defaults to BaroneAdesiWhaleyApproximationEngine)
+  --volatility-model-resolution [Tick|Second|Minute|Hour|Daily]
+                                  The volatility model period span (defaults to Daily)
+  --chain-symbol-count INTEGER RANGE
+                                  The size of the option chain (defaults to 10)  [x>=0]
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the generator
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -1426,6 +1452,8 @@ Options:
   --backtest-results FILE      Path to the JSON file containing the backtest results
   --live-results FILE          Path to the JSON file containing the live trading results
   --report-destination FILE    Path where the generated report is stored as HTML (defaults to ./report.html)
+  --css FILE                   Path where the CSS override file is stored
+  --html FILE                  Path where the custom HTML template file is stored
   -d, --detach                 Run the report creator in a detached Docker container and return immediately
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name
