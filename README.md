@@ -75,6 +75,11 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
 - [`lean cloud live stop`](#lean-cloud-live-stop)
+- [`lean cloud object-store delete`](#lean-cloud-object-store-delete)
+- [`lean cloud object-store get`](#lean-cloud-object-store-get)
+- [`lean cloud object-store list`](#lean-cloud-object-store-list)
+- [`lean cloud object-store ls`](#lean-cloud-object-store-ls)
+- [`lean cloud object-store set`](#lean-cloud-object-store-set)
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
 - [`lean cloud push`](#lean-cloud-push)
@@ -101,6 +106,11 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean logs`](#lean-logs)
+- [`lean object-store delete`](#lean-object-store-delete)
+- [`lean object-store get`](#lean-object-store-get)
+- [`lean object-store list`](#lean-object-store-list)
+- [`lean object-store ls`](#lean-object-store-ls)
+- [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
 - [`lean project-create`](#lean-project-create)
 - [`lean project-delete`](#lean-project-delete)
@@ -374,6 +384,88 @@ Options:
 
 _See code: [lean/commands/cloud/live/stop.py](lean/commands/cloud/live/stop.py)_
 
+### `lean cloud object-store delete`
+
+Delete a value from the organization's cloud object store.
+
+```
+Usage: lean cloud object-store delete [OPTIONS] KEY
+
+  Delete a value from the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/delete.py](lean/commands/cloud/object_store/delete.py)_
+
+### `lean cloud object-store get`
+
+Get a value from the organization's cloud object store.
+
+```
+Usage: lean cloud object-store get [OPTIONS] KEY
+
+  Get a value from the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/get.py](lean/commands/cloud/object_store/get.py)_
+
+### `lean cloud object-store list`
+
+List all values for the given root key in the organization's cloud object store.
+
+```
+Usage: lean cloud object-store list [OPTIONS] [KEY]
+
+  List all values for the given root key in the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/list.py](lean/commands/cloud/object_store/list.py)_
+
+### `lean cloud object-store ls`
+
+Alias for 'list'
+
+```
+Usage: lean cloud object-store ls [OPTIONS] [KEY]
+
+  List all values for the given root key in the organization's cloud object store.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/ls.py](lean/commands/cloud/object_store/ls.py)_
+
+### `lean cloud object-store set`
+
+Sets the data to the given key in the organization's cloud object store.
+
+```
+Usage: lean cloud object-store set [OPTIONS] KEY PATH
+
+  Sets the data to the given key in the organization's cloud object store.
+
+  :param key: The key to set the data to. :param path: Path to the file containing the object data.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/set.py](lean/commands/cloud/object_store/set.py)_
+
 ### `lean cloud optimize`
 
 Optimize a project in the cloud.
@@ -638,7 +730,7 @@ Usage: lean data generate [OPTIONS]
 Options:
   --start [yyyyMMdd]              Start date for the data to generate in yyyyMMdd format  [required]
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
-  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0; required]
+  --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0]
   --tickers TEXT                  Comma separated list of tickers to use for generated data
   --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
                                   The security type to generate data for (defaults to Equity)
@@ -648,6 +740,31 @@ Options:
                                   The density of the generated data (defaults to Dense)
   --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
   --market TEXT                   The market to generate data for (defaults to standard market for the security type)
+  --quote-trade-ratio FLOAT       The ratio of generated quotes to generated trades. Values larger than 1 mean more
+                                  quotes than trades. Only used for Option, Future and Crypto (defaults to 1)
+  --random-seed INTEGER RANGE     The random number generator seed. Defaults to None, which means no seed will be used
+                                  [x>=0]
+  --ipo-percentage FLOAT          The probability each equity generated will have an IPO event. Note that this is not
+                                  the total probability for all symbols generated. Only used for Equity (defaults to
+                                  5.0)
+  --rename-percentage FLOAT       The probability each equity generated will have a rename event. Note that this is not
+                                  the total probability for all symbols generated. Only used for Equity (defaults to
+                                  30.0)
+  --splits-percentage FLOAT       The probability each equity generated will have a stock split event. Note that this is
+                                  not the total probability for all symbols generated. Only used for Equity (defaults to
+                                  15.0)
+  --dividends-percentage FLOAT    The probability each equity generated will have dividends. Note that this is not the
+                                  probability for all symbols genearted. Only used for Equity (defaults to 60.0)
+  --dividend-every-quarter-percentage FLOAT
+                                  The probability each equity generated will have a dividend event every quarter. Note
+                                  that this is not the total probability for all symbols generated. Only used for Equity
+                                  (defaults to 30.0)
+  --option-price-engine TEXT      The stochastic process, and returns new pricing engine to run calculations for that
+                                  option (defaults to BaroneAdesiWhaleyApproximationEngine)
+  --volatility-model-resolution [Tick|Second|Minute|Hour|Daily]
+                                  The volatility model period span (defaults to Daily)
+  --chain-symbol-count INTEGER RANGE
+                                  The size of the option chain (defaults to 10)  [x>=0]
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the generator
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -1128,6 +1245,86 @@ Options:
 ```
 
 _See code: [lean/commands/logs.py](lean/commands/logs.py)_
+
+### `lean object-store delete`
+
+Opens the local storage directory in the file explorer.
+
+```
+Usage: lean object-store delete [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/delete.py](lean/commands/object_store/delete.py)_
+
+### `lean object-store get`
+
+Opens the local storage directory in the file explorer.
+
+```
+Usage: lean object-store get [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/get.py](lean/commands/object_store/get.py)_
+
+### `lean object-store list`
+
+Opens the local storage directory in the file explorer.
+
+```
+Usage: lean object-store list [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/list.py](lean/commands/object_store/list.py)_
+
+### `lean object-store ls`
+
+Alias for 'list'
+
+```
+Usage: lean object-store ls [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/ls.py](lean/commands/object_store/ls.py)_
+
+### `lean object-store set`
+
+Opens the local storage directory in the file explorer.
+
+```
+Usage: lean object-store set [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/set.py](lean/commands/object_store/set.py)_
 
 ### `lean optimize`
 

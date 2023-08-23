@@ -12,27 +12,12 @@
 # limitations under the License.
 
 from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
-from lean.commands.cloud.backtest import backtest
-from lean.commands.cloud.live.live import live
-from lean.commands.cloud.optimize import optimize
-from lean.commands.cloud.pull import pull
-from lean.commands.cloud.push import push
-from lean.commands.cloud.status import status
-from lean.commands.cloud.object_store import object_store
-
-@group()
-def cloud() -> None:
-    """Interact with the QuantConnect cloud."""
+@group(cls=AliasedCommandGroup, invoke_without_command=True)
+def object_store() -> None:
+    """Interact with the Organization's Local Object Store."""
     # This method is intentionally empty
-    # It is used as the command group for all `lean cloud <command>` commands
+    # It is used as the command group for all `lean object-store <command>` commands
     pass
 
-
-cloud.add_command(pull)
-cloud.add_command(push)
-cloud.add_command(backtest)
-cloud.add_command(optimize)
-cloud.add_command(live)
-cloud.add_command(status)
-cloud.add_command(object_store)
