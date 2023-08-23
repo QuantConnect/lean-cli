@@ -41,7 +41,7 @@ class ObjectStoreClient:
 
         return data
 
-    def set(self, key: str, objectData: str, organization_id: str) -> None:
+    def set(self, key: str, objectData: bytes, organization_id: str) -> None:
         """Sets the given key in the Object Store.
 
         :param key: key of the object to set
@@ -56,7 +56,7 @@ class ObjectStoreClient:
             "files": {"objectData": objectData}
         }
         self._api.post("object/set", payload, False, extra_options)
-    
+
     def list(self, path: str, organization_id: str) -> str:
         """List all values for the given root key in the Object Store.
 

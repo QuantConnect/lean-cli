@@ -421,7 +421,7 @@ _See code: [lean/commands/cloud/object_store/get.py](lean/commands/cloud/object_
 List all values for the given root key in the organization's cloud object store.
 
 ```
-Usage: lean cloud object-store list [OPTIONS] ROOT_KEY
+Usage: lean cloud object-store list [OPTIONS] [KEY]
 
   List all values for the given root key in the organization's cloud object store.
 
@@ -434,12 +434,12 @@ _See code: [lean/commands/cloud/object_store/list.py](lean/commands/cloud/object
 
 ### `lean cloud object-store ls`
 
-Alias for 'get'
+Alias for 'list'
 
 ```
-Usage: lean cloud object-store ls [OPTIONS] KEY
+Usage: lean cloud object-store ls [OPTIONS] [KEY]
 
-  Get a value from the organization's cloud object store.
+  List all values for the given root key in the organization's cloud object store.
 
 Options:
   --verbose  Enable debug logging
@@ -1296,7 +1296,7 @@ _See code: [lean/commands/object_store/list.py](lean/commands/object_store/list.
 
 ### `lean object-store ls`
 
-Alias for 'get'
+Alias for 'list'
 
 ```
 Usage: lean object-store ls [OPTIONS]

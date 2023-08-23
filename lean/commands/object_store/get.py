@@ -11,13 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from click import command
 from lean.click import LeanCommand
 from lean.container import container
 from lean.components.util.object_store_helper import open_storage_directory_in_explorer
-from lean.commands.object_store import object_store
 
 
-@object_store.command(cls=LeanCommand, name="get", aliases=["ls"])
+@command(cls=LeanCommand)
 def get() -> str:
     """
     Opens the local storage directory in the file explorer.

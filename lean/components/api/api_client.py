@@ -169,6 +169,7 @@ class APIClient:
         :param response: the response of the request
         :return: the data in the response
         """
+
         data = response.json()
 
         if data["success"]:

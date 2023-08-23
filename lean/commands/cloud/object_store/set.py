@@ -29,6 +29,6 @@ def set(key: str, path: Path) -> None:
     organization_id = container.organization_manager.try_get_working_organization_id()
     container.logger.info(f"Setting object {key} in organization {organization_id}")
     api_client = container.api_client
-    with open(path, 'r', encoding='utf-8') as f:
-        objectData = f.read()
-    api_client.object_store.set(key, objectData, organization_id)
+    with open(path, "rb") as file:
+        bytes_data: bytes = file.read()
+    api_client.object_store.set(key, bytes_data, organization_id)

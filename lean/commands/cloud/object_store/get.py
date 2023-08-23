@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import argument
-from lean.commands.cloud.object_store import object_store
+from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@object_store.command(cls=LeanCommand, name="get", aliases=["ls"])
+@command(cls=LeanCommand)
 @argument("key", type=str)
 def get(key: str) -> str:
     """
@@ -30,24 +29,27 @@ def get(key: str) -> str:
     data = api_client.object_store.get(key, organization_id)
 
     try:
-        headers = ["size", "modified", "preview", "key"]
-        display_headers = ["Bytes", "Modified", "Preview", "Filename"]
-        row = [str(data["metadata"].get(header, "")) for header in headers]
-        all_rows = [display_headers] + [row]
+        headers = ["size", "modified", "key", "preview"]
+        display_headers = ["Bytes", "Modified", "Filename", "Preview"]
+        data_row = []
+        for header in headers:
+            if header == "preview":
+                value = str(data["metadata"].get(header, "N/A"))
+                data_row.append(_clean_up_preview(value))
+            else:
+                value = str(data["metadata"].get(header, ""))
+                data_row.append(value)
+        all_rows = [display_headers] + [data_row]
         column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
-
-        logger.info("  ".join(header.ljust(width) for header, width in zip(display_headers, column_widths)))
-
-        bytes = str(data["metadata"].get('size', ""))
-        modified = data["metadata"].get('modified', "")
-        preview = data["metadata"].get('preview', "")[:10].rstrip()
-        filename = data["metadata"].get('key', "")
-        
-        values = [bytes, modified, preview, filename]
-        logger.info("  ".join(value.ljust(width) for value, width in zip(values, column_widths)))
+        for row in all_rows:
+            logger.info("  ".join(value.ljust(width) for value, width in zip(row, column_widths)))
     except KeyError as e:
         logger.error(f"Key {key} not found.")
     except Exception as e:
         logger.error(f"Error: {e}")
+
+
+def _clean_up_preview(preview: str) -> str:
+    return preview.rstrip()[:10]
 
 

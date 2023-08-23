@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webbrowser
 from lean.components.config.lean_config_manager import LeanConfigManager
 
 def open_storage_directory_in_explorer(lean_config_manager: LeanConfigManager):
@@ -23,4 +22,5 @@ def open_storage_directory_in_explorer(lean_config_manager: LeanConfigManager):
     
 def open_file_explorer(directory_path: str):
     """Opens the given directory in the file explorer."""
-    webbrowser.open('file:///' + directory_path)
+    from webbrowser import open
+    open('file:///' + directory_path)
