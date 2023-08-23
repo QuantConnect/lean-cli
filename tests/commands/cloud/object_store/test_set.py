@@ -32,4 +32,6 @@ def test_set_sets_value_when_path_is_given() -> None:
 
     result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "test-key", file_path])
     assert result.exit_code == 0
-    container.api_client.object_store.set.assert_called_once_with('test-key', b'\r\n{\r\n    // data-folder documentation\r\n    "data-folder": "data"\r\n}\r\n        ', 'abc')
+    with open(file_path, "rb") as file:
+        bytes_data: bytes = file.read()
+        container.api_client.object_store.set.assert_called_once_with('test-key', bytes_data, 'abc')
