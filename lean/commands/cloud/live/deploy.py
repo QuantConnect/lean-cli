@@ -251,7 +251,7 @@ def deploy(project: str,
         ensure_options(essential_properties)
         essential_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_instance.update_configs(essential_properties_value)
-        # now required properties can be fetched as per data provider from esssential properties
+        # now required properties can be fetched as per data provider from essential properties
         required_properties = [brokerage_instance.convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
