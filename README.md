@@ -75,6 +75,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
 - [`lean cloud live stop`](#lean-cloud-live-stop)
+- [`lean cloud object-store`](#lean-cloud-object-store)
 - [`lean cloud object-store delete`](#lean-cloud-object-store-delete)
 - [`lean cloud object-store get`](#lean-cloud-object-store-get)
 - [`lean cloud object-store list`](#lean-cloud-object-store-list)
@@ -106,6 +107,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean login`](#lean-login)
 - [`lean logout`](#lean-logout)
 - [`lean logs`](#lean-logs)
+- [`lean object-store`](#lean-object-store)
 - [`lean object-store delete`](#lean-object-store-delete)
 - [`lean object-store get`](#lean-object-store-get)
 - [`lean object-store list`](#lean-object-store-list)
@@ -383,6 +385,26 @@ Options:
 ```
 
 _See code: [lean/commands/cloud/live/stop.py](lean/commands/cloud/live/stop.py)_
+
+### `lean cloud object-store`
+
+Interact with the Organization's Cloud Object Store.
+
+```
+Usage: lean cloud object-store [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the Organization's Cloud Object Store.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  delete  Delete a value from the organization's cloud object store.
+  get     Get a value from the organization's cloud object store.
+  list    List all values for the given root key in the organization's...
+  ls      Alias for 'list'
+  set     Sets the data to the given key in the organization's cloud...
+```
 
 ### `lean cloud object-store delete`
 
@@ -1245,6 +1267,26 @@ Options:
 ```
 
 _See code: [lean/commands/logs.py](lean/commands/logs.py)_
+
+### `lean object-store`
+
+Interact with the Organization's Local Object Store.
+
+```
+Usage: lean object-store [OPTIONS] COMMAND [ARGS]...
+
+  Interact with the Organization's Local Object Store.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  delete  Opens the local storage directory in the file explorer.
+  get     Opens the local storage directory in the file explorer.
+  list    Opens the local storage directory in the file explorer.
+  ls      Alias for 'list'
+  set     Opens the local storage directory in the file explorer.
+```
 
 ### `lean object-store delete`
 
