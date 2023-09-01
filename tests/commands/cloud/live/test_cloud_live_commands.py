@@ -116,6 +116,27 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
     assert result.exit_code == 0
     assert "Data provider: quantconnecthandler+interactivebrokershandler" in result.output.split("\n")
 
+def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = cloud_project_manager
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner = cloud_runner
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Tradier", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--tradier-data-feed", "Tradier", "--tradier-account-id", "123",
+                                       "--tradier-access-token", "456", "--tradier-environment", "paper"])
+
+    assert result.exit_code == 0
+    assert "Data provider: Tradier" in result.output.split("\n")
+
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
                                              ("webhooks", "customAddress:header1=value1"),
