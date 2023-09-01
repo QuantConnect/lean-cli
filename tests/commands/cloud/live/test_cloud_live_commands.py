@@ -330,7 +330,9 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     if brokerage == "Trading Technologies":
         options.extend(["--live-cash-balance", "USD:100"])
     elif brokerage == "Interactive Brokers":
-        options.extend(["--ib-data-feed", "no"])
+        options.extend(["--ib-data-feed", "QuantConnect"])
+    elif brokerage == "Tradier":
+        options.extend(["--tradier-data-feed", "QuantConnect"])
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",

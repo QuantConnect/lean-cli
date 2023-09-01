@@ -79,10 +79,12 @@ class CloudBrokerage(JsonModule):
         :return: the value to assign to the "dataHandler" property of the live/create API endpoint
         """
         # TODO: Handle this case with json conditions
-        [property_name] = [name for name in self.get_required_properties([InternalInputUserInput]) if ("data-feed" in name)]
+        property_name = [name for name in self.get_required_properties([InternalInputUserInput]) if ("data-feed" in name)]
+        property_name = property_name[0] if len(property_name) != 0 else ""
         brokerage_name = self.get_name().replace(" ", "")
-        if brokerage_name == self.get_config_value_from_name(property_name):
-            return self.get_name().replace(" ", "") + "Handler"
-        elif brokerage_name in self.get_config_value_from_name(property_name):
-            return "quantconnecthandler+" + brokerage_name.lower() + "handler"
+        if property_name != "":
+            if brokerage_name == self.get_config_value_from_name(property_name):
+                return self.get_name().replace(" ", "") + "Handler"
+            elif brokerage_name in self.get_config_value_from_name(property_name):
+                return "quantconnecthandler+" + brokerage_name.lower() + "handler"
         return "QuantConnectHandler"
