@@ -131,11 +131,11 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Tradier", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
-                                       "--tradier-data-feed", "Tradier", "--tradier-account-id", "123",
+                                       "--tradier-data-feed", "Tradier Brokerage", "--tradier-account-id", "123",
                                        "--tradier-access-token", "456", "--tradier-environment", "paper"])
 
     assert result.exit_code == 0
-    assert "Data provider: Tradier" in result.output.split("\n")
+    assert "Data provider: TradierBrokerage" in result.output.split("\n")
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
