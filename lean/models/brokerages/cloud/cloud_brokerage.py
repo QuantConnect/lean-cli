@@ -83,8 +83,8 @@ class CloudBrokerage(JsonModule):
         property_name = property_name[0] if len(property_name) != 0 else ""
         brokerage_name = self.get_name().replace(" ", "")
         if property_name != "":
-            if brokerage_name == self.get_config_value_from_name(property_name):
-                return self.get_name().replace(" ", "") + "Handler"
-            elif brokerage_name in self.get_config_value_from_name(property_name):
+            if "QuantConnect +" in self.get_config_value_from_name(property_name):
                 return "quantconnecthandler+" + brokerage_name.lower() + "handler"
+            else:
+                return self.get_config_value_from_name(property_name).replace(" ", "") + "Handler"
         return "QuantConnectHandler"
