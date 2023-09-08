@@ -25,7 +25,7 @@ from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput
 from lean.models.click_options import options_from_json, get_configs_for_options
-from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.models.brokerages.cloud import all_cloud_brokerages, cloud_brokerage_data_feeds
 from lean.commands.cloud.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
@@ -308,6 +308,7 @@ def deploy(project: str,
     else:
         lean_config = container.lean_config_manager.get_lean_config()
         brokerage_instance = _configure_brokerage(lean_config, logger, kwargs, show_secrets=show_secrets)
+        _configure_data_feed(brokerage_instance, logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
