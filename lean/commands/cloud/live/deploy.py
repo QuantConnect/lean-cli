@@ -113,6 +113,20 @@ def _configure_brokerage(lean_config: Dict[str, Any], logger: Logger, user_provi
                                                                              user_provided_options,
                                                                              hide_input=not show_secrets)
 
+def _configure_data_feed(brokerage: CloudBrokerage, logger: Logger) -> None:
+    """Configures the data feed to use based on the brokerage given.
+
+    :param brokerage: the cloud brokerage
+    :param logger: the logger to use
+    """
+    if len(cloud_brokerage_data_feeds[brokerage]) != 0:
+        data_feed_selected = logger.prompt_list("Select a data feed", [
+            Option(id=data_feed, label=data_feed) for data_feed in cloud_brokerage_data_feeds[brokerage]
+        ], multiple=False)
+        data_feed_property_name = [name for name in brokerage.get_required_properties([InternalInputUserInput]) if ("data-feed" in name)]
+        data_feed_property_name = data_feed_property_name[0] if len(data_feed_property_name) != 0 else ""
+        brokerage.update_value_for_given_config(data_feed_property_name, data_feed_selected)
+
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
     """Interactively configures the live node to use.
