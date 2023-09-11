@@ -94,6 +94,49 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY,
                                                   mock.ANY)
 
+def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = cloud_project_manager
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner = cloud_runner
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Interactive Brokers", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--ib-data-feed", "QuantConnect + InteractiveBrokers", "--ib-user-name", "test_user",
+                                       "--ib-account", "DU2366417", "--ib-password", "test_password"])
+
+    assert result.exit_code == 0
+    assert "Data provider: quantconnecthandler+interactivebrokershandler" in result.output.split("\n")
+
+def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = cloud_project_manager
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner = cloud_runner
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Tradier", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--tradier-data-feed", "Tradier Brokerage", "--tradier-account-id", "123",
+                                       "--tradier-access-token", "456", "--tradier-environment", "paper"])
+
+    assert result.exit_code == 0
+    assert "Data provider: TradierBrokerage" in result.output.split("\n")
+
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
                                              ("webhooks", "customAddress:header1=value1"),
@@ -287,7 +330,9 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     if brokerage == "Trading Technologies":
         options.extend(["--live-cash-balance", "USD:100"])
     elif brokerage == "Interactive Brokers":
-        options.extend(["--ib-data-feed", "no"])
+        options.extend(["--ib-data-feed", "QuantConnect"])
+    elif brokerage == "Tradier":
+        options.extend(["--tradier-data-feed", "QuantConnect"])
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",

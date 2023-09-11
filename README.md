@@ -269,12 +269,16 @@ Options:
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value.
-  --ib-data-feed BOOLEAN          Whether the Interactive Brokers price data feed must be used instead of the
-                                  QuantConnect price data feed
+  --ib-data-feed [QuantConnect|Interactive Brokers|QuantConnect + InteractiveBrokers]
+                                  The data feed to use. These are the available ones: Interactive Brokers price data
+                                  feed, QuantConnect price data feed or QuantConnect + InteractiveBrokers price data feed.
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
+  --tradier-data-feed [QuantConnect|Tradier Brokerage]
+                                  The data feed to use. These are the available ones: QuantConnect price data feed or
+                                  Tradier Brokerage data feed.
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]

@@ -13,13 +13,28 @@
 
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models import json_modules
-from typing import List
+from typing import Dict, Type, List
+from lean.models.brokerages.local.data_feed import DataFeed
 
 all_cloud_brokerages: List[CloudBrokerage] = []
+all_cloud_data_feeds: List[DataFeed] = []
+cloud_brokerage_data_feeds: Dict[Type[CloudBrokerage],
+                                 List[Type[DataFeed]]] = {}
 
 for json_module in json_modules:
     if "cloud-brokerage" in json_module["type"]:
         all_cloud_brokerages.append(CloudBrokerage(json_module))
+    if "data-queue-handler" in json_module["type"]:
+        all_cloud_data_feeds.append((DataFeed(json_module)))
+
+for cloud_brokerage in all_cloud_brokerages:
+    data_feed_property_found = False
+    for x in cloud_brokerage.get_all_input_configs():
+        if "data-feed" in x.__getattribute__("_id"):
+            data_feed_property_found = True
+            cloud_brokerage_data_feeds[cloud_brokerage] = x.__getattribute__("_choices")
+    if not data_feed_property_found:
+        cloud_brokerage_data_feeds[cloud_brokerage] = []
 
 [PaperTradingBrokerage] = [
     cloud_brokerage for cloud_brokerage in all_cloud_brokerages if cloud_brokerage._id == "QuantConnectBrokerage"]

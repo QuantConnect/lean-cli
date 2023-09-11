@@ -25,7 +25,7 @@ from lean.models.logger import Option
 from lean.models.brokerages.cloud.cloud_brokerage import CloudBrokerage
 from lean.models.configuration import InternalInputUserInput
 from lean.models.click_options import options_from_json, get_configs_for_options
-from lean.models.brokerages.cloud import all_cloud_brokerages
+from lean.models.brokerages.cloud import all_cloud_brokerages, cloud_brokerage_data_feeds
 from lean.commands.cloud.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
@@ -112,6 +112,20 @@ def _configure_brokerage(lean_config: Dict[str, Any], logger: Logger, user_provi
                                                                              logger,
                                                                              user_provided_options,
                                                                              hide_input=not show_secrets)
+
+def _configure_data_feed(brokerage: CloudBrokerage, logger: Logger) -> None:
+    """Configures the data feed to use based on the brokerage given.
+
+    :param brokerage: the cloud brokerage
+    :param logger: the logger to use
+    """
+    if len(cloud_brokerage_data_feeds[brokerage]) != 0:
+        data_feed_selected = logger.prompt_list("Select a data feed", [
+            Option(id=data_feed, label=data_feed) for data_feed in cloud_brokerage_data_feeds[brokerage]
+        ], multiple=False)
+        data_feed_property_name = [name for name in brokerage.get_required_properties([InternalInputUserInput]) if ("data-feed" in name)]
+        data_feed_property_name = data_feed_property_name[0] if len(data_feed_property_name) != 0 else ""
+        brokerage.update_value_for_given_config(data_feed_property_name, data_feed_selected)
 
 
 def _configure_live_node(logger: Logger, api_client: APIClient, cloud_project: QCProject) -> QCNode:
@@ -251,7 +265,7 @@ def deploy(project: str,
         ensure_options(essential_properties)
         essential_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_instance.update_configs(essential_properties_value)
-        # now required properties can be fetched as per data provider from esssential properties
+        # now required properties can be fetched as per data provider from essential properties
         required_properties = [brokerage_instance.convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
@@ -308,6 +322,7 @@ def deploy(project: str,
     else:
         lean_config = container.lean_config_manager.get_lean_config()
         brokerage_instance = _configure_brokerage(lean_config, logger, kwargs, show_secrets=show_secrets)
+        _configure_data_feed(brokerage_instance, logger)
         live_node = _configure_live_node(logger, api_client, cloud_project)
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
