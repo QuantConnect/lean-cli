@@ -57,7 +57,8 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
@@ -88,7 +89,8 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_calls_lean_runner_with_release_mode() -> None:
@@ -105,7 +107,8 @@ def test_backtest_calls_lean_runner_with_release_mode() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  True,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_calls_lean_runner_with_detach() -> None:
@@ -122,7 +125,8 @@ def test_backtest_calls_lean_runner_with_detach() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 True)
+                                                 True,
+                                                 {})
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
@@ -163,7 +167,8 @@ def test_backtest_forces_update_when_update_option_given() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
@@ -182,7 +187,8 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
@@ -201,7 +207,8 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
                                                  DockerImage(name="custom/lean", tag="456"),
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 @pytest.mark.parametrize("python_venv", ["Custom-venv",
@@ -289,7 +296,8 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
                                                  ENGINE_IMAGE,
                                                  debugging_method,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
@@ -649,3 +657,23 @@ def test_backtest_adds_python_libraries_path_to_lean_config() -> None:
     expected_library_path = (Path("/") / library_path.relative_to(lean_cli_root_dir)).as_posix()
 
     assert expected_library_path in lean_config.get('python-additional-paths')
+
+
+def test_backtest_calls_lean_runner_with_extra_docker_config() -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project",
+                                       "--extra-docker-config",
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}]}'])
+
+    assert result.exit_code == 0
+
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {"device_requests": [{"count": -1, "capabilities": [["compute"]]}]})

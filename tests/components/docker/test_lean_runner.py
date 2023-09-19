@@ -14,6 +14,7 @@
 from pathlib import Path
 from unittest import mock
 
+import docker.types
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -581,3 +582,51 @@ EndGlobal
         assert project_dir_str in kwargs["volumes"]
         assert kwargs["volumes"][project_dir_str]["bind"] == "/LeanCLI"
         assert str(root_dir) not in kwargs["volumes"]
+
+
+def test_lean_runner_parses_device_requests_from_extra_docker_configs() -> None:
+    create_fake_lean_cli_directory()
+
+    run_options = {}
+    LeanRunner.parse_extra_docker_config(run_options,
+                                         {"device_requests": [{"count": -1, "capabilities": [["compute"]]}]})
+
+    assert "device_requests" in run_options
+
+    device_requests = run_options["device_requests"]
+    assert len(device_requests) == 1
+
+    device_request: docker.types.DeviceRequest = device_requests[0]
+    assert isinstance(device_request, docker.types.DeviceRequest)
+    assert device_request.count == -1
+    assert (len(device_request.capabilities) == 1 and
+            len(device_request.capabilities[0]) == 1 and
+            device_request.capabilities[0][0] == "compute")
+    assert device_request.driver == ""
+    assert device_request.device_ids == []
+    assert device_request.options == {}
+
+
+def test_run_lean_passes_device_requests() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({"transaction-log": "transaction-log.log"},
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False,
+                         extra_docker_config={"device_requests": [{"count": -1, "capabilities": [["compute"]]}]})
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert "device_requests" in kwargs
+    assert kwargs["device_requests"] == [docker.types.DeviceRequest(count=-1, capabilities=[["compute"]])]

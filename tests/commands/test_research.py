@@ -228,3 +228,25 @@ def test_research_runs_custom_image_when_given_as_option() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == DockerImage(name="custom/research", tag="456")
+
+
+def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
+    import docker.types
+
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
+
+    result = CliRunner().invoke(lean, ["research", "Python Project",
+                                       "--extra-docker-config",
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}]}'])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == RESEARCH_IMAGE
+    assert "device_requests" in kwargs
+    assert kwargs["device_requests"] == [docker.types.DeviceRequest(count=-1, capabilities=[["compute"]])]

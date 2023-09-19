@@ -11,10 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 from typing import Optional, Tuple
 from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
+from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
@@ -65,6 +67,10 @@ def _check_docker_output(chunk: str, port: int) -> None:
               type=(str, str),
               multiple=True,
               hidden=True)
+@option("--extra-docker-config",
+              type=str,
+              default="{}",
+              hidden=True)
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -79,6 +85,7 @@ def research(project: Path,
              image: Optional[str],
              update: bool,
              extra_config: Optional[Tuple[str, str]],
+             extra_docker_config: Optional[str],
              no_update: bool,
              **kwargs) -> None:
     """Run a Jupyter Lab environment locally using Docker.
@@ -116,7 +123,7 @@ def research(project: Path,
     # Set extra config
     for key, value in extra_config:
         lean_config[key] = value
-        
+
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
@@ -159,6 +166,9 @@ def research(project: Path,
 
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
+
+    # Add known additional run options from the extra docker config
+    LeanRunner.parse_extra_docker_config(run_options, json.loads(extra_docker_config))
 
     project_config_manager = container.project_config_manager
     cli_config_manager = container.cli_config_manager

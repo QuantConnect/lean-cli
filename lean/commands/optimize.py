@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 from typing import Optional, List, Tuple
 from datetime import datetime, timedelta
@@ -18,6 +19,7 @@ from datetime import datetime, timedelta
 from click import command, argument, option, Choice, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options
+from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
@@ -119,6 +121,10 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               type=(str, str),
               multiple=True,
               hidden=True)
+@option("--extra-docker-config",
+              type=str,
+              default="{}",
+              hidden=True)
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -139,6 +145,7 @@ def optimize(project: Path,
              max_concurrent_backtests: Optional[int],
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
+             extra_docker_config: Optional[str],
              no_update: bool) -> None:
     """Optimize a project's parameters locally using Docker.
 
@@ -307,6 +314,9 @@ def optimize(project: Path,
               read_only=True)
     )
     container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
+    # Add known additional run options from the extra docker config
+    LeanRunner.parse_extra_docker_config(run_options, json.loads(extra_docker_config))
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
