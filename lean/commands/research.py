@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from pathlib import Path
 from typing import Optional, Tuple
 from click import command, argument, option, Choice
@@ -70,7 +69,9 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @option("--extra-docker-config",
               type=str,
               default="{}",
-              hidden=True)
+              help="Extra docker configuration as a JSON string. Supported configurations can be found at "
+                   "https://docker-py.readthedocs.io/en/stable/containers.html, althaugh not all of them might be "
+                   "supported by the Lean CLI.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -96,6 +97,7 @@ def research(project: Path,
     """
     from docker.types import Mount
     from docker.errors import APIError
+    from json import loads
 
     logger = container.logger
 
@@ -168,7 +170,7 @@ def research(project: Path,
     run_options["commands"].append("./start.sh")
 
     # Add known additional run options from the extra docker config
-    LeanRunner.parse_extra_docker_config(run_options, json.loads(extra_docker_config))
+    LeanRunner.parse_extra_docker_config(run_options, loads(extra_docker_config))
 
     project_config_manager = container.project_config_manager
     cli_config_manager = container.cli_config_manager

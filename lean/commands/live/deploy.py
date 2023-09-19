@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
@@ -259,7 +258,9 @@ def _get_default_value(key: str) -> Optional[Any]:
 @option("--extra-docker-config",
               type=str,
               default="{}",
-              hidden=True)
+              help="Extra docker configuration as a JSON string. Supported configurations can be found at "
+                   "https://docker-py.readthedocs.io/en/stable/containers.html, althaugh not all of them might be "
+                   "supported by the Lean CLI.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -305,6 +306,7 @@ def deploy(project: Path,
     """
     from copy import copy
     from datetime import datetime
+    from json import loads
     # Reset globals so we reload everything in between tests
     global _cached_lean_config
     _cached_lean_config = None
@@ -436,4 +438,4 @@ def deploy(project: Path,
             raise RuntimeError(f"InteractiveBrokers is currently not supported for ARM hosts")
 
     lean_runner = container.lean_runner
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach, json.loads(extra_docker_config))
+    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach, loads(extra_docker_config))

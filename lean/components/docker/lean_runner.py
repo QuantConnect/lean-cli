@@ -13,7 +13,6 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional, List
-import docker.types
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -772,8 +771,9 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
+        from docker.types import DeviceRequest
         # Add known additional run options from the extra docker config.
         # For now, only device_requests is supported
         if extra_docker_config is not None and "device_requests" in extra_docker_config:
-            run_options["device_requests"] = [docker.types.DeviceRequest(**device_request)
+            run_options["device_requests"] = [DeviceRequest(**device_request)
                                               for device_request in extra_docker_config["device_requests"]]

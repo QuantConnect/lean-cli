@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from pathlib import Path
 from typing import Optional, List, Tuple
 from datetime import datetime, timedelta
@@ -124,7 +123,9 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 @option("--extra-docker-config",
               type=str,
               default="{}",
-              hidden=True)
+              help="Extra docker configuration as a JSON string. Supported configurations can be found at "
+                   "https://docker-py.readthedocs.io/en/stable/containers.html, althaugh not all of them might be "
+                   "supported by the Lean CLI.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -316,7 +317,7 @@ def optimize(project: Path,
     container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     # Add known additional run options from the extra docker config
-    LeanRunner.parse_extra_docker_config(run_options, json.loads(extra_docker_config))
+    LeanRunner.parse_extra_docker_config(run_options, loads(extra_docker_config))
 
     project_manager.copy_code(algorithm_file.parent, output / "code")
 
