@@ -607,6 +607,36 @@ def test_lean_runner_parses_device_requests_from_extra_docker_configs() -> None:
     assert device_request.options == {}
 
 
+def test_lean_runner_parses_volumes_from_extra_docker_configs() -> None:
+    create_fake_lean_cli_directory()
+
+    run_options = {
+        "volumes": {
+            "source/path": {
+                "bind": "/target/path",
+                "mode": "rw"
+            }
+        }
+    }
+    LeanRunner.parse_extra_docker_config(run_options,
+                                         {"volumes": {"extra/path": {"bind": "/extra/bound/path", "mode": "rw"}}})
+
+    assert "volumes" in run_options
+
+    volumes = run_options["volumes"]
+    assert len(volumes) == 2
+    assert "source/path" in volumes
+    assert "extra/path" in volumes
+
+    existing_volume = volumes["source/path"]
+    assert existing_volume["bind"] == "/target/path"
+    assert existing_volume["mode"] == "rw"
+
+    new_volume = volumes["extra/path"]
+    assert new_volume["bind"] == "/extra/bound/path"
+    assert new_volume["mode"] == "rw"
+
+
 def test_run_lean_passes_device_requests() -> None:
     create_fake_lean_cli_directory()
 
@@ -630,3 +660,31 @@ def test_run_lean_passes_device_requests() -> None:
 
     assert "device_requests" in kwargs
     assert kwargs["device_requests"] == [docker.types.DeviceRequest(count=-1, capabilities=[["compute"]])]
+
+
+def test_run_lean_passes_extra_volumes() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({"transaction-log": "transaction-log.log"},
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False,
+                         extra_docker_config={"volumes": {"extra/path": {"bind": "/extra/bound/path", "mode": "rw"}}})
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert "volumes" in kwargs
+    volumes = kwargs["volumes"]
+    assert "extra/path" in volumes
+    assert volumes["extra/path"]["bind"] == "/extra/bound/path"
+    assert volumes["extra/path"]["mode"] == "rw"

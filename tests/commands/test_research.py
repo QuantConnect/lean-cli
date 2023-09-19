@@ -240,7 +240,8 @@ def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
 
     result = CliRunner().invoke(lean, ["research", "Python Project",
                                        "--extra-docker-config",
-                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}]}'])
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}],'
+                                       '"volumes": {"extra/path": {"bind": "/extra/path", "mode": "rw"}}}'])
 
     assert result.exit_code == 0
 
@@ -248,5 +249,11 @@ def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == RESEARCH_IMAGE
+
     assert "device_requests" in kwargs
     assert kwargs["device_requests"] == [docker.types.DeviceRequest(count=-1, capabilities=[["compute"]])]
+
+    assert "volumes" in kwargs
+    volumes = kwargs["volumes"]
+    assert "extra/path" in volumes
+    assert volumes["extra/path"] == {"bind": "/extra/path", "mode": "rw"}

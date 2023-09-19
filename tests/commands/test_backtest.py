@@ -664,7 +664,8 @@ def test_backtest_calls_lean_runner_with_extra_docker_config() -> None:
 
     result = CliRunner().invoke(lean, ["backtest", "Python Project",
                                        "--extra-docker-config",
-                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}]}'])
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}],'
+                                       '"volumes": {"extra/path": {"bind": "/extra/path", "mode": "rw"}}}'])
 
     assert result.exit_code == 0
 
@@ -676,4 +677,11 @@ def test_backtest_calls_lean_runner_with_extra_docker_config() -> None:
                                                            None,
                                                            False,
                                                            False,
-                                                           {"device_requests": [{"count": -1, "capabilities": [["compute"]]}]})
+                                                           {
+                                                               "device_requests": [
+                                                                   {"count": -1, "capabilities": [["compute"]]}
+                                                               ],
+                                                               "volumes": {
+                                                                   "extra/path": {"bind": "/extra/path", "mode": "rw"}
+                                                               }
+                                                           })

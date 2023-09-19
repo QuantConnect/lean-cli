@@ -97,7 +97,8 @@ def test_live_calls_lean_runner_with_extra_docker_config() -> None:
                                        "--environment",
                                        "live-paper",
                                        "--extra-docker-config",
-                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}]}'])
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}],'
+                                       '"volumes": {"extra/path": {"bind": "/extra/path", "mode": "rw"}}}'])
 
     traceback.print_exception(*result.exc_info)
 
@@ -111,7 +112,14 @@ def test_live_calls_lean_runner_with_extra_docker_config() -> None:
                                                            None,
                                                            False,
                                                            False,
-                                                           {"device_requests": [{"count": -1, "capabilities": [["compute"]]}]})
+                                                           {
+                                                               "device_requests": [
+                                                                   {"count": -1, "capabilities": [["compute"]]}
+                                                               ],
+                                                               "volumes": {
+                                                                   "extra/path": {"bind": "/extra/path", "mode": "rw"}
+                                                               }
+                                                           })
 
 
 def test_live_aborts_when_environment_does_not_exist() -> None:
