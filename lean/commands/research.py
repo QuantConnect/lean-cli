@@ -69,9 +69,8 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @option("--extra-docker-config",
               type=str,
               default="{}",
-              help="Extra docker configuration as a JSON string. Supported configurations can be found at "
-                   "https://docker-py.readthedocs.io/en/stable/containers.html, althaugh not all of them might be "
-                   "supported by the Lean CLI.")
+              help="Extra docker configuration as a JSON string. "
+                   "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
 @option("--no-update",
               is_flag=True,
               default=False,
