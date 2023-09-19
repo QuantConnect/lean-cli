@@ -13,6 +13,7 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional, List
+
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
@@ -70,7 +71,8 @@ class LeanRunner:
                  image: DockerImage,
                  debugging_method: Optional[DebuggingMethod],
                  release: bool,
-                 detach: bool) -> None:
+                 detach: bool,
+                 extra_docker_config: Optional[Dict[str, Any]] = None) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -83,6 +85,7 @@ class LeanRunner:
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
+        :param extra_docker_config: additional docker configurations
         """
         project_dir = algorithm_file.parent
 
@@ -94,6 +97,9 @@ class LeanRunner:
                                                    debugging_method,
                                                    release,
                                                    detach)
+
+        # Add known additional run options from the extra docker config
+        self.parse_extra_docker_config(run_options, extra_docker_config)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -762,3 +768,19 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                 "bind": "/Library",
                 "mode": "rw"
             }
+
+    @staticmethod
+    def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
+        from docker.types import DeviceRequest
+        # Add known additional run options from the extra docker config.
+        # For now, only device_requests is supported
+        if extra_docker_config is not None:
+            if "device_requests" in extra_docker_config:
+                run_options["device_requests"] = [DeviceRequest(**device_request)
+                                                  for device_request in extra_docker_config["device_requests"]]
+
+            if "volumes" in extra_docker_config:
+                volumes = run_options.get("volumes")
+                if not volumes:
+                    volumes = run_options["volumes"] = {}
+                volumes.update(extra_docker_config["volumes"])

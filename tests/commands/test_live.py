@@ -84,7 +84,42 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
+
+
+def test_live_calls_lean_runner_with_extra_docker_config() -> None:
+    # TODO: currently it is not using the live-paper environment
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    result = CliRunner().invoke(lean, ["live", "Python Project",
+                                       "--environment",
+                                       "live-paper",
+                                       "--extra-docker-config",
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}],'
+                                       '"volumes": {"extra/path": {"bind": "/extra/path", "mode": "rw"}}}'])
+
+    traceback.print_exception(*result.exc_info)
+
+    assert result.exit_code == 0
+
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                           "live-paper",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {
+                                                               "device_requests": [
+                                                                   {"count": -1, "capabilities": [["compute"]]}
+                                                               ],
+                                                               "volumes": {
+                                                                   "extra/path": {"bind": "/extra/path", "mode": "rw"}
+                                                               }
+                                                           })
 
 
 def test_live_aborts_when_environment_does_not_exist() -> None:
@@ -159,7 +194,8 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  True,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_live_calls_lean_runner_with_detach() -> None:
@@ -178,7 +214,8 @@ def test_live_calls_lean_runner_with_detach() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 True)
+                                                 True,
+                                                 {})
 
 
 def test_live_aborts_when_project_does_not_exist() -> None:
@@ -366,7 +403,8 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
                                                      ENGINE_IMAGE,
                                                      None,
                                                      False,
-                                                     False)
+                                                     False,
+                                                     {})
 
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
@@ -468,7 +506,8 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
     config = container.lean_config_manager.get_lean_config()
     if brokerage in brokerage_required_options_not_persistently_save_in_lean_config:
@@ -509,7 +548,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
@@ -548,7 +588,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 @pytest.mark.parametrize("brokerage", brokerage_required_options.keys() - ["Paper Trading"])
@@ -606,7 +647,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
                                                          ENGINE_IMAGE,
                                                          None,
                                                          False,
-                                                         False)
+                                                         False,
+                                                         {})
 
 
 @pytest.mark.parametrize("data_feed", data_feed_required_options.keys())
@@ -653,7 +695,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                                                          ENGINE_IMAGE,
                                                          None,
                                                          False,
-                                                         False)
+                                                         False,
+                                                         {})
 
 
 @pytest.mark.parametrize("data_feed1,data_feed2", itertools.combinations(data_feed_required_options.keys(), 2))
@@ -702,7 +745,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                                                          ENGINE_IMAGE,
                                                          None,
                                                          False,
-                                                         False)
+                                                         False,
+                                                         {})
 
 
 def test_live_forces_update_when_update_option_given() -> None:
@@ -721,7 +765,8 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  ENGINE_IMAGE,
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
@@ -741,7 +786,8 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
                                                  DockerImage(name="custom/lean", tag="123"),
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
@@ -762,7 +808,8 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  DockerImage(name="custom/lean", tag="456"),
                                                  None,
                                                  False,
-                                                 False)
+                                                 False,
+                                                 {})
 
 
 @pytest.mark.parametrize("python_venv", ["Custom-venv",

@@ -255,6 +255,11 @@ def _get_default_value(key: str) -> Optional[Any]:
               type=(str, str),
               multiple=True,
               hidden=True)
+@option("--extra-docker-config",
+              type=str,
+              default="{}",
+              help="Extra docker configuration as a JSON string. "
+                   "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -275,6 +280,7 @@ def deploy(project: Path,
            show_secrets: bool,
            addon_module: Optional[List[str]],
            extra_config: Optional[Tuple[str, str]],
+           extra_docker_config: Optional[str],
            no_update: bool,
            **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -299,6 +305,7 @@ def deploy(project: Path,
     """
     from copy import copy
     from datetime import datetime
+    from json import loads
     # Reset globals so we reload everything in between tests
     global _cached_lean_config
     _cached_lean_config = None
@@ -430,4 +437,4 @@ def deploy(project: Path,
             raise RuntimeError(f"InteractiveBrokers is currently not supported for ARM hosts")
 
     lean_runner = container.lean_runner
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach)
+    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach, loads(extra_docker_config))

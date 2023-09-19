@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from pathlib import Path
 from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
@@ -289,6 +288,11 @@ def _select_organization() -> QCMinimalOrganization:
               type=(str, str),
               multiple=True,
               hidden=True)
+@option("--extra-docker-config",
+              type=str,
+              default="{}",
+              help="Extra docker configuration as a JSON string. "
+                   "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -307,6 +311,7 @@ def backtest(project: Path,
              backtest_name: str,
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
+             extra_docker_config: Optional[str],
              no_update: bool,
              **kwargs) -> None:
     """Backtest a project locally using Docker.
@@ -324,6 +329,8 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
+    from json import loads
+
     logger = container.logger
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -407,4 +414,5 @@ def backtest(project: Path,
                          engine_image,
                          debugging_method,
                          release,
-                         detach)
+                         detach,
+                         loads(extra_docker_config))

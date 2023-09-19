@@ -160,6 +160,8 @@ Options:
   --python-venv TEXT              The path of the python virtual environment to be used
   --update                        Pull the LEAN engine image before running the backtest
   --backtest-name TEXT            Backtest name
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
+                                  py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
@@ -1098,6 +1100,8 @@ Options:
                                   holdings
   --update                        Pull the LEAN engine image before starting live trading
   --show-secrets                  Show secrets as they are input
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
+                                  py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
@@ -1383,6 +1387,8 @@ Options:
   --estimate                      Estimate optimization runtime without running it
   --max-concurrent-backtests INTEGER RANGE
                                   Maximum number of concurrent backtests to run  [x>=1]
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
+                                  py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
@@ -1505,6 +1511,8 @@ Options:
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
   --update                        Pull the LEAN research image before starting the research environment
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
+                                  py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN research image instead of pulling the latest version
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging

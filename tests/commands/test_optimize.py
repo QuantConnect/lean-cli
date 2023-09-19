@@ -753,3 +753,36 @@ Time Elapsed 00:00:04.15
     args, kwargs = docker_manager.run_image.call_args
 
     assert any(command == 'dotnet QuantConnect.Optimizer.Launcher.dll --estimate' for command in kwargs["commands"])
+
+
+def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
+    import docker.types
+
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.MagicMock()
+    docker_manager.run_image.side_effect = run_image
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", "Python Project",
+                                       "--extra-docker-config",
+                                       '{"device_requests": [{"count": -1, "capabilities": [["compute"]]}],'
+                                       '"volumes": {"extra/path": {"bind": "/extra/path", "mode": "rw"}}}'])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == ENGINE_IMAGE
+
+    assert "device_requests" in kwargs
+    assert kwargs["device_requests"] == [docker.types.DeviceRequest(count=-1, capabilities=[["compute"]])]
+
+    assert "volumes" in kwargs
+    volumes = kwargs["volumes"]
+    assert "extra/path" in volumes
+    assert volumes["extra/path"] == {"bind": "/extra/path", "mode": "rw"}
