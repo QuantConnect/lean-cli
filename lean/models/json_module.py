@@ -168,14 +168,15 @@ class JsonModule(ABC):
                 continue
             if not configuration._is_required_from_user:
                 continue
-            if type(configuration) is InternalInputUserInput:
-                continue
             if self.__class__.__name__ == 'CloudBrokerage' and not configuration._is_cloud_property:
                 continue
+            # Lets log messages for internal input configurations as well
             if configuration._log_message is not None:
                 log_message = configuration._log_message.strip()
                 if log_message:
                     logger.info(log_message)
+            if type(configuration) is InternalInputUserInput:
+                continue
 
             # filter properties that were not passed as command line arguments,
             # so that we prompt the user for them only when they don't have a value in the Lean config
