@@ -143,6 +143,9 @@ Options:
                                   Enable a certain debugging method (see --help for more information)
   --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --terminal-link-connection-type [DAPI|SAPI]
+                                  Terminal Link Connection Type [DAPI, SAPI]
+  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -262,7 +265,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Trading Technologies|Kraken|TDAmeritrade]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -272,15 +275,14 @@ Options:
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value.
   --ib-data-feed [QuantConnect|Interactive Brokers|QuantConnect + InteractiveBrokers]
-                                  The data feed to use. These are the available ones: Interactive Brokers price data
-                                  feed, QuantConnect price data feed or QuantConnect + InteractiveBrokers price data feed.
+                                  The available price data feeds are: Interactive Brokers price data feed, QuantConnect
+                                  price data feed or QuantConnect + InteractiveBrokers price data feed
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
   --tradier-data-feed [QuantConnect|Tradier Brokerage]
-                                  The data feed to use. These are the available ones: QuantConnect price data feed or
-                                  Tradier Brokerage data feed.
+                                  Whether the Tradier data feed must be used instead of the QuantConnect price data feed
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -319,6 +321,19 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
+  --terminal-link-environment [Production|Beta]
+                                  The environment to run in
+  --terminal-link-server-host TEXT
+                                  The host of the SAPI server
+  --terminal-link-server-port INTEGER
+                                  The port of the SAPI server
+  --terminal-link-emsx-broker TEXT
+                                  The EMSX broker to use
+  --terminal-link-emsx-account TEXT
+                                  The EMSX account to use
+  --terminal-link-openfigi-api-key TEXT
+                                  The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
@@ -1043,6 +1058,9 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
+  --terminal-link-connection-type [DAPI|SAPI]
+                                  Terminal Link Connection Type [DAPI, SAPI]
+  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1495,6 +1513,9 @@ Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
   --data-provider [QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --terminal-link-connection-type [DAPI|SAPI]
+                                  Terminal Link Connection Type [DAPI, SAPI]
+  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
