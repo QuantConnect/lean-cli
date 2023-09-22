@@ -260,6 +260,8 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
 
 
 terminal_link_required_options = {
+    "terminal-link-connection-type": "SAPI",
+    "terminal-link-server-auth-id": "abc",
     "terminal-link-environment": "Beta",
     "terminal-link-server-host": "abc",
     "terminal-link-server-port": "123",
