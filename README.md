@@ -145,7 +145,8 @@ Options:
                                   Update the Lean configuration file to retrieve data from the given provider
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -321,7 +322,8 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1060,7 +1062,8 @@ Options:
                                   commodities on MCX
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1515,7 +1518,8 @@ Options:
                                   Update the Lean configuration file to retrieve data from the given provider
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-auth-id TEXT    The Auth ID of the TerminalLink server
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
