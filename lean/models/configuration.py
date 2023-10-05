@@ -187,18 +187,21 @@ class UserInputConfiguration(Configuration, ABC):
         self._save_persistently_in_lean = True
         self._input_method = self._prompt_info = self._help = ""
         self._input_default = self._cloud_id = None
-        if "input-method" in config_json_object.keys():
+        self._optional = False
+        if "input-method" in config_json_object:
             self._input_method = config_json_object["input-method"]
-        if "prompt-info" in config_json_object.keys():
+        if "prompt-info" in config_json_object:
             self._prompt_info = config_json_object["prompt-info"]
-        if "help" in config_json_object.keys():
+        if "help" in config_json_object:
             self._help = config_json_object["help"]
-        if "input-default" in config_json_object.keys():
+        if "input-default" in config_json_object:
             self._input_default = config_json_object["input-default"]
-        if "cloud-id" in config_json_object.keys():
+        if "cloud-id" in config_json_object:
             self._cloud_id = config_json_object["cloud-id"]
-        if "save-persistently-in-lean" in config_json_object.keys():
+        if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
+        if "optional" in config_json_object.keys():
+            self._optional = not config_json_object["optional"]
 
     @abstractmethod
     def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):

@@ -112,13 +112,18 @@ class JsonModule(ABC):
         return [config._id for config in self._lean_configs if not config._is_required_from_user and not
                 config._is_type_configurations_env and self.check_if_config_passes_filters(config)]
 
-    def get_required_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
-        return [config._id for config in self.get_required_configs(filters)]
+    def get_required_properties(self,
+                                filters: List[Type[Configuration]] = [],
+                                include_optionals: bool = True) -> List[str]:
+        return [config._id for config in self.get_required_configs(filters, include_optionals)]
 
-    def get_required_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
+    def get_required_configs(self,
+                             filters: List[Type[Configuration]] = [],
+                             include_optionals: bool = True) -> List[Configuration]:
         required_configs = [copy(config) for config in self._lean_configs if config._is_required_from_user
                             and type(config) not in filters
-                            and self.check_if_config_passes_filters(config)]
+                            and self.check_if_config_passes_filters(config)
+                            and (include_optionals or not getattr(config, '_is_optional', True))]
         return required_configs
 
     def get_persistent_save_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:
