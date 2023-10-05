@@ -123,7 +123,7 @@ class JsonModule(ABC):
         required_configs = [copy(config) for config in self._lean_configs if config._is_required_from_user
                             and type(config) not in filters
                             and self.check_if_config_passes_filters(config)
-                            and (include_optionals or not getattr(config, '_is_optional', True))]
+                            and (include_optionals or not getattr(config, '_optional', False))]
         return required_configs
 
     def get_persistent_save_properties(self, filters: List[Type[Configuration]] = []) -> List[str]:

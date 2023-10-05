@@ -201,7 +201,7 @@ class UserInputConfiguration(Configuration, ABC):
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
         if "optional" in config_json_object.keys():
-            self._optional = not config_json_object["optional"]
+            self._optional = config_json_object["optional"]
 
     @abstractmethod
     def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
