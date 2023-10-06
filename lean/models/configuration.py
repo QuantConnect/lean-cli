@@ -200,7 +200,7 @@ class UserInputConfiguration(Configuration, ABC):
             self._cloud_id = config_json_object["cloud-id"]
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
-        if "optional" in config_json_object.keys():
+        if "optional" in config_json_object:
             self._optional = config_json_object["optional"]
 
     @abstractmethod
