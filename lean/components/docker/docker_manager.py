@@ -499,8 +499,7 @@ class DockerManager:
             if not success:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
         if not success and not error_message:
-            error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds. " \
-                            + "Please check your algorithm does not have any loops."
+            error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds. Please check your algorithm does not have any loops. Run 'docker logs {docker_container_name}' for more information."
 
         return {
             "error": error_message,
