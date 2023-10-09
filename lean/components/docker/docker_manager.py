@@ -456,7 +456,7 @@ class DockerManager:
         except Exception as e:
             raise ValueError(f"Failed to write to {docker_file.name}: {e}")
 
-    def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=30) -> Dict[str,Any]:
+    def read_from_file(self, docker_container_name: str, docker_file: Path, interval=1, timeout=60) -> Dict[str,Any]:
         """Read data from file in docker.
 
         Args:
@@ -499,7 +499,7 @@ class DockerManager:
             if not success:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
         if not success and not error_message:
-            error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds"
+            error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds. This could be due to an action taking longer than expected. Run 'docker logs {docker_container_name}' for more information."
 
         return {
             "error": error_message,
