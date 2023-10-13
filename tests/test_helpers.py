@@ -19,7 +19,7 @@ from typing import List
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
 from lean.components.util.project_manager import ProjectManager
-from lean.models.api import QCLanguage, QCProject, QCFullOrganization, \
+from lean.models.api import QCLanguage, QCProject, QCFullOrganization, ProjectEncryptionKey, \
     QCOrganizationData, QCOrganizationCredit, QCNode, QCNodeList, QCNodePrice, QCLeanEnvironment
 
 
@@ -136,7 +136,7 @@ def create_fake_lean_cli_directory_with_subdirectories(depth: int) -> None:
     _write_fake_directory(files)
 
 
-def create_api_project(id: int, name: str) -> QCProject:
+def create_api_project(id: int, name: str, encrypted: bool=False, encryptionKey: ProjectEncryptionKey=None) -> QCProject:
     """Creates a fake API project response."""
     return QCProject(
         projectId=id,
@@ -151,7 +151,9 @@ def create_api_project(id: int, name: str) -> QCProject:
         leanPinnedToMaster=True,
         leanEnvironment=1,
         parameters=[],
-        libraries=[]
+        libraries=[],
+        encrypted= encrypted,
+        encryptionKey=encryptionKey
     )
 
 

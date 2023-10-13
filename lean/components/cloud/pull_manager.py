@@ -22,8 +22,10 @@ from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
 from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
+from lean.models.encryption import ActionType
 from lean.components.config.storage import safe_save
-
+from lean.components.util.encryption_helper import get_decrypted_content_from_cloud_project, \
+                                    get_encrypted_content_from_cloud_project, get_project_key_hash
 
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
@@ -90,7 +92,7 @@ class PullManager:
 
         return libraries, inaccessible_libraries
 
-    def pull_projects(self, projects_to_pull: List[QCProject],
+    def pull_projects(self, projects_to_pull: List[QCProject], encryption_action: Optional[ActionType], encryption_key: Optional[Path],
                       all_cloud_projects: Optional[List[QCProject]] = None) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
@@ -135,7 +137,7 @@ class PullManager:
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                projects_with_paths.append((project, self._pull_project(project)))
+                projects_with_paths.append((project, self._pull_project(project, encryption_action, encryption_key)))
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -147,7 +149,7 @@ class PullManager:
 
         self._update_local_library_references(projects_with_paths)
 
-    def _pull_project(self, project: QCProject) -> Path:
+    def _pull_project(self, project: QCProject, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> Path:
         """Pulls a single project from the cloud to the local drive.
 
         Raises an error with a descriptive message if the project cannot be pulled.
@@ -174,8 +176,17 @@ class PullManager:
                 if project_name_on_disk != project.name:
                     self._project_manager.rename_project_and_contents(project_path_on_disk, Path.cwd() / project.name)
 
+        project_config = self._project_config_manager.get_project_config(local_project_path)
+        local_encryption_state = project_config.get("encrypted", False)
+
+        # Handle mismatch cases
+        if not encryption_key and bool(project.encrypted) != bool(local_encryption_state):
+            raise RuntimeError(f"Project encryption state mismatch. Please provide encryption key to pull project '{project.name}'")
+        if getattr(project.encryptionKey, 'id', None) and encryption_key and get_project_key_hash(encryption_key) != project.encryptionKey.id:
+            raise RuntimeError(f"Encryption Key mismatch. Please provide correct encryption key to pull project '{project.name}'")
+
         # Pull the cloud files to the local drive
-        self._pull_files(project, local_project_path)
+        self._pull_files(project, local_project_path, encryption_action, encryption_key)
 
         # Update the local project config with the latest details
         project_config = self._project_config_manager.get_project_config(local_project_path)
@@ -185,6 +196,9 @@ class PullManager:
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
         project_config.set("python-venv", project.leanEnvironment)
+        project_config.set('encrypted', project.encrypted)
+        if encryption_key:
+            project_config.set("encrypted", encryption_action == ActionType.ENCRYPT)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)
@@ -193,7 +207,7 @@ class PullManager:
 
         return local_project_path
 
-    def _pull_files(self, project: QCProject, local_project_path: Path) -> None:
+    def _pull_files(self, project: QCProject, local_project_path: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> None:
         """Pull the files of a single project.
 
         :param project: the cloud project of which the files need to be pulled
@@ -202,7 +216,15 @@ class PullManager:
         if not local_project_path.exists():
             self._project_manager.create_new_project(local_project_path, project.language)
 
-        for cloud_file in self._api_client.files.get_all(project.projectId):
+        cloud_files = self._api_client.files.get_all(project.projectId)
+        if encryption_key:
+            organization_id = self._organization_manager.try_get_working_organization_id()
+            if encryption_action == ActionType.DECRYPT:
+                cloud_files = get_decrypted_content_from_cloud_project(project, cloud_file, encryption_key, organization_id)
+            if encryption_action == ActionType.ENCRYPT:
+                cloud_files = get_encrypted_content_from_cloud_project(project, cloud_file, encryption_key, organization_id)
+
+        for cloud_file in cloud_files:
             self._last_file = cloud_file.name
 
             if cloud_file.isLibrary:

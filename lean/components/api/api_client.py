@@ -17,6 +17,7 @@ from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
 from lean.components.api.data_client import DataClient
+from lean.components.api.encryption_keys_client import EncryptionKeysClient
 from lean.components.api.file_client import FileClient
 from lean.components.api.lean_client import LeanClient
 from lean.components.api.live_client import LiveClient
@@ -55,6 +56,7 @@ class APIClient:
         self.backtests = BacktestClient(self)
         self.compiles = CompileClient(self)
         self.data = DataClient(self, http_client)
+        self.encryption_keys = EncryptionKeysClient(self)
         self.files = FileClient(self)
         self.live = LiveClient(self)
         self.market = MarketClient(self)
