@@ -58,7 +58,8 @@ install_requires = [
     "joblib>=1.1.0",
     "wrapt~=1.14.1",
     "setuptools",
-    f"quantconnect-stubs{get_stubs_version_range()}"
+    f"quantconnect-stubs{get_stubs_version_range()}",
+    "cryptography~=41.0.4"
 ]
 
 setup(

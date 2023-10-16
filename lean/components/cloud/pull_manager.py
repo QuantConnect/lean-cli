@@ -20,6 +20,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
+from lean.components.util.organization_manager import OrganizationManager
 from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
@@ -36,7 +37,8 @@ class PullManager:
                  project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager,
                  library_manager: LibraryManager,
-                 platform_manager: PlatformManager) -> None:
+                 platform_manager: PlatformManager,
+                 organization_manager: OrganizationManager) -> None:
         """Creates a new PullManager instance.
 
         :param logger: the logger to use when printing messages
@@ -52,6 +54,7 @@ class PullManager:
         self._project_config_manager = project_config_manager
         self._library_manager = library_manager
         self._platform_manager = platform_manager
+        self._organization_manager = organization_manager
         self._last_file = None
 
     def _get_libraries(self, project: QCProject,
@@ -220,9 +223,9 @@ class PullManager:
         if encryption_key:
             organization_id = self._organization_manager.try_get_working_organization_id()
             if encryption_action == ActionType.DECRYPT:
-                cloud_files = get_decrypted_content_from_cloud_project(project, cloud_file, encryption_key, organization_id)
+                cloud_files = get_decrypted_content_from_cloud_project(project, cloud_files, encryption_key, organization_id)
             if encryption_action == ActionType.ENCRYPT:
-                cloud_files = get_encrypted_content_from_cloud_project(project, cloud_file, encryption_key, organization_id)
+                cloud_files = get_encrypted_content_from_cloud_project(project, cloud_files, encryption_key, organization_id)
 
         for cloud_file in cloud_files:
             self._last_file = cloud_file.name

@@ -39,7 +39,6 @@ def pull(project: Optional[str], pull_bootcamp: bool, encrypt: Optional[bool], d
     This command will not delete local files for which there is no counterpart in the cloud.
     """
 
-    encryption_key_id = None
     encryption_action = None
 
     if encrypt and decrypt:

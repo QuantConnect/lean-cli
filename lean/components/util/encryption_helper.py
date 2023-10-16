@@ -177,14 +177,16 @@ def get_decrypted_content_from_cloud_project(project: QCProject, cloud_files: Li
 
 def get_encrypted_content_from_cloud_project(project: QCProject, cloud_files: List[QCFullFile], encryption_key: Path, organization_id: str) -> List[QCFullFile]:
     # Check if the project is already encrypted
-    if project.encrypted or project.encryptionKey.id != get_project_key_hash(encryption_key):
+    if project.encrypted:
+        if encryption_key is not None and project.encryptionKey and project.encryptionKey.id != get_project_key_hash(encryption_key):
+            raise RuntimeError(f"Registered encryption key {project.encryptionKey.id} is different from the one provided {encryption_key}")
         return cloud_files
 
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
     for cloud_file in cloud_files:
         try:
-            encrypted = encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), cloud_file.content)
+            encrypted = encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), cloud_file.content.encode('utf-8'))
             cloud_file.content = encrypted
         except Exception as e:
             raise RuntimeError(f"Failed to decrypt file {cloud_file} with error {e}")

@@ -120,7 +120,8 @@ class Container:
                                         self.project_manager,
                                         self.project_config_manager,
                                         self.library_manager,
-                                        self.platform_manager)
+                                        self.platform_manager,
+                                        self.organization_manager)
 
         self.push_manager = push_manager
         if not push_manager:
