@@ -81,6 +81,8 @@ def get_decrypted_file_content_for_local_project(project: Path, source_files: Li
 
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
+    encoded_project_key = project_key.encode('utf-8')
+    encoded_project_iv = project_iv.encode('utf-8')
     decrypted_data = []
     for file in source_files:
         try:
@@ -90,7 +92,7 @@ def get_decrypted_file_content_for_local_project(project: Path, source_files: Li
                 if not areProjectFilesAlreadyEncrypted:
                     decrypted = encrypted
                 else:
-                    decrypted = _decrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), encrypted)
+                    decrypted = _decrypt_file_content(encoded_project_key, encoded_project_iv, encrypted)
                 decrypted_data.append(decrypted)
         except Exception as e:
             raise RuntimeError(f"Failed to decrypt file {file} with error {e}")
@@ -107,6 +109,8 @@ def get_encrypted_file_content_for_local_project(project: Path, source_files: Li
 
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
+    encoded_project_key = project_key.encode('utf-8')
+    encoded_project_iv = project_iv.encode('utf-8')
     encrypted_data: List[str] = []
     for file in source_files:
         try:
@@ -116,7 +120,7 @@ def get_encrypted_file_content_for_local_project(project: Path, source_files: Li
                 if areProjectFilesAlreadyEncrypted:
                     encrypted = plain_text
                 else:
-                    encrypted = _encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), plain_text.encode('utf-8'))
+                    encrypted = _encrypt_file_content(encoded_project_key, encoded_project_iv, plain_text.encode('utf-8'))
                 encrypted_data.append(encrypted)
         except Exception as e:
             raise RuntimeError(f"Failed to encrypt file {file} with error {e}")
@@ -155,13 +159,11 @@ def _validate_key_state_for_local_project(project_config: Storage, encryption_ke
     if local_encryption_key_path and encryption_key and Path(local_encryption_key_path) != encryption_key:
         raise RuntimeError(f"Registered encryption key {local_encryption_key_path} is different from the one provided {encryption_key}")
 
-def _decrypt_file_content(b64_encoded_key: bytes, b64_encoded_iv: bytes, b64_encoded_content: str) -> str:
+def _decrypt_file_content(key: bytes, init_vector: bytes, b64_encoded_content: str) -> str:
     # remove new line characters that we added during encryption
     b64_encoded_content = b64_encoded_content.replace('\n', '')
     b64_encoded_content = b64_encoded_content.strip()
     content = b64decode(b64_encoded_content.encode('utf-8'))
-    key = b64decode(b64_encoded_key)
-    init_vector = b64decode(b64_encoded_iv)
     # Setup module-specific classes
     cipher = Cipher(algorithms.AES(key), modes.CBC(init_vector))
     decryptor = cipher.decryptor()
@@ -172,9 +174,7 @@ def _decrypt_file_content(b64_encoded_key: bytes, b64_encoded_iv: bytes, b64_enc
     unpadded_data = unpadder.update(plaintext) + unpadder.finalize()
     return unpadded_data.decode('utf-8').replace("\r\n", "\n")
 
-def _encrypt_file_content(b64_encoded_key: bytes, b64_encoded_iv: bytes, content: bytes) -> str:
-    key = b64decode(b64_encoded_key)
-    init_vector = b64decode(b64_encoded_iv)
+def _encrypt_file_content(key: bytes, init_vector: bytes, content: bytes) -> str:
     plain_text = _pad(content, 16)
     # Setup module-specific classes
     cipher = Cipher(algorithms.AES(key), modes.CBC(init_vector))
@@ -196,9 +196,11 @@ def _get_decrypted_content_from_cloud_project(project: QCProject, cloud_files: L
 
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
+    encoded_project_key = project_key.encode('utf-8')
+    encoded_project_iv = project_iv.encode('utf-8')
     for cloud_file in cloud_files:
         try:
-            decrypted = _decrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), cloud_file.content)
+            decrypted = _decrypt_file_content(encoded_project_key, encoded_project_iv, cloud_file.content)
             cloud_file.content = decrypted
         except Exception as e:
             raise RuntimeError(f"Failed to decrypt file {cloud_file} with error {e}")
@@ -213,9 +215,11 @@ def _get_encrypted_content_from_cloud_project(project: QCProject, cloud_files: L
 
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
+    encoded_project_key = project_key.encode('utf-8')
+    encoded_project_iv = project_iv.encode('utf-8')
     for cloud_file in cloud_files:
         try:
-            encrypted = _encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), cloud_file.content.encode('utf-8'))
+            encrypted = _encrypt_file_content(encoded_project_key, encoded_project_iv, cloud_file.content.encode('utf-8'))
             cloud_file.content = encrypted
         except Exception as e:
             raise RuntimeError(f"Failed to decrypt file {cloud_file} with error {e}")
