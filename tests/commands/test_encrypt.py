@@ -113,36 +113,6 @@ def test_encrypt_updates_project_config_file() -> None:
     assert project_config.get("encrypted", False) == True
     assert project_config.get("encryption-key-path", None) == str(encryption_file_path)
 
-# def test_encrypt_does_not_update_project_config_file_if_not_all_files_successful() -> None:
-#     create_fake_lean_cli_directory()
-
-#     project_path = Path.cwd() / "Python Project"
-
-#     encryption_file_path = project_path / "encryption_x.txt"
-#     encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
-
-#     CliRunner().invoke(lean, ["encrypt", "Python Project", "--key", encryption_file_path])
-
-#     project_config = container.project_config_manager.get_project_config(project_path)
-#     assert project_config.get("encrypted", False) != False
-#     assert project_config.get("encryption-key-path", None) != None
-
-#     # let's corrupt one file
-#     source_files = container.project_manager.get_source_files(project_path)
-#     source_files[0].write_text("corrupted")
-#     file_contents_map = {file.name: file.read_text() for file in source_files}
-
-#     result = CliRunner().invoke(lean, ["decrypt", "Python Project", "--key", encryption_file_path])
-
-#     assert result.exit_code != 0
-
-#     source_files = container.project_manager.get_source_files(project_path)
-#     for file in source_files:
-#         assert file_contents_map[file.name] == file.read_text()
-#     project_config = container.project_config_manager.get_project_config(project_path)
-#     assert project_config.get("encrypted", False) != False
-#     assert project_config.get("encryption-key-path", None) != None
-
 def test_encrypt_aborts_when_key_is_not_provided_and_not_in_config_file() -> None:
     create_fake_lean_cli_directory()
 
