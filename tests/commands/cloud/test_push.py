@@ -116,7 +116,7 @@ def test_cloud_push_aborts_when_given_directory_does_not_exist() -> None:
 def test_cloud_push_updates_lean_config() -> None:
 
     create_fake_lean_cli_directory()
-
+    project_path = Path.cwd() / "Python Project"
     cloud_project = create_api_project(1, "Python Project")
     api_client = mock.Mock()
     api_client.projects.create = mock.MagicMock(return_value=cloud_project)
@@ -127,25 +127,18 @@ def test_cloud_push_updates_lean_config() -> None:
     api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
     api_client.projects.get = mock.MagicMock(return_value=create_api_project(1, "Python Project"))
 
-    project_config = mock.Mock()
-    project_config.get = mock.MagicMock(side_effect=[None, "Python", "", {}, -1, None, []])
+    init_container(api_client_to_use=api_client)
 
-    project_config_manager = mock.Mock()
-    project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)
-
-    project_manager = mock.Mock()
-    project_manager.get_source_files = mock.MagicMock(return_value=[])
-    project_manager.get_project_libraries = mock.MagicMock(return_value=[])
-
-    push_manager = PushManager(mock.Mock(), api_client, project_manager, project_config_manager, mock.Mock())
-
-    init_container(push_manager_to_use=push_manager, api_client_to_use=api_client)
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("organization-id", None) == None
+    assert cloud_project.organizationId == "123"
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
 
     assert result.exit_code == 0
 
-    project_config.set.assert_called_with("organization-id", "123")
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("organization-id", None) == "123"
 
 
 def test_cloud_push_aborts_when_encrypting_without_key_given() -> None:

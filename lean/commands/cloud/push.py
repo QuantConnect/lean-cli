@@ -19,7 +19,6 @@ from click import command, option
 from lean.click import LeanCommand, PathParameter
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.container import container
-from lean.components.util.encryption_helper import get_project_key_hash
 from lean.models.encryption import ActionType
 
 @command(cls=LeanCommand)
@@ -64,6 +63,7 @@ def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[boo
             raise RuntimeError(f"'{project}' is not a Lean project")
 
         if encrypt and key is not None:
+            from lean.components.util.encryption_helper import get_project_key_hash
             # lets check if the given key is registered with the cloud
             organization_id = container.organization_manager.try_get_working_organization_id()
             available_encryption_keys = container.api_client.encryption_keys.list(organization_id)['keys']

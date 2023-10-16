@@ -17,7 +17,7 @@ from click import command, option, argument
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.components.util.encryption_helper import get_decrypted_file_content_for_project
+
 
 @command(cls=LeanCommand)
 @argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
@@ -38,24 +38,19 @@ def decrypt(project: Path,
 
     # Check if the project is already decrypted
     if not project_config.get("encrypted", False):
+        logger.info(f"Successfully decrypted project {project}")
         return
 
     decryption_key: Path = project_config.get('encryption-key-path', None)
-    if decryption_key is not None and Path(decryption_key).exists():
-        decryption_key = Path(decryption_key)
-
-    if decryption_key is None and key is None:
-        raise RuntimeError("No decryption key was provided, please provide one using --key")
-    elif decryption_key is None:
-        decryption_key = key
-    elif key is not None and decryption_key != key:
-        raise RuntimeError(f"Provided decryption key ({key}) does not match the decryption key in the project ({decryption_key})")
+    from lean.components.util.encryption_helper import get_and_validate_user_input_encryption_key
+    decryption_key = get_and_validate_user_input_encryption_key(key, decryption_key)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
 
     source_files = project_manager.get_source_files(project)
     try:
-        decrypted_data = get_decrypted_file_content_for_project(project, 
+        from lean.components.util.encryption_helper import get_decrypted_file_content_for_local_project
+        decrypted_data = get_decrypted_file_content_for_local_project(project, 
                                 source_files, decryption_key, project_config_manager, organization_id)
     except Exception as e:
         raise RuntimeError(f"Could not decrypt project {project}: {e}")

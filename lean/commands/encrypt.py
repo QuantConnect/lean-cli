@@ -17,7 +17,6 @@ from click import command, option, argument
 
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.components.util.encryption_helper import get_encrypted_file_content_for_project
 
 
 @command(cls=LeanCommand)
@@ -40,24 +39,19 @@ def encrypt(project: Path,
 
     # Check if the project is already encrypted
     if project_config.get('encrypted', False):
+        logger.info(f"Local files encrypted successfully.")
         return
     
     encryption_key: Path = project_config.get('encryption-key-path', None)
-    if encryption_key is not None and Path(encryption_key).exists():
-        encryption_key = Path(encryption_key)
-
-    if encryption_key is None and key is None:
-        raise RuntimeError("No encryption key was provided, please provide one using --key")
-    elif encryption_key is None:
-        encryption_key = key
-    elif key is not None and encryption_key != key:
-        raise RuntimeError(f"Provided encryption key ({key}) does not match the encryption key in the project ({encryption_key})")
+    from lean.components.util.encryption_helper import get_and_validate_user_input_encryption_key
+    encryption_key = get_and_validate_user_input_encryption_key(key, encryption_key)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
 
     source_files = project_manager.get_source_files(project)
     try:
-        encrypted_data = get_encrypted_file_content_for_project(project, 
+        from lean.components.util.encryption_helper import get_encrypted_file_content_for_local_project
+        encrypted_data = get_encrypted_file_content_for_local_project(project, 
                             source_files, encryption_key, project_config_manager, organization_id)
     except Exception as e:
         raise RuntimeError(f"Could not encrypt project {project}: {e}")

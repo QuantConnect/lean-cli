@@ -77,7 +77,7 @@ def _assert_pull_manager_adds_property_to_project_config(prop: str,
     pull_manager = _create_pull_manager(api_client, project_config_manager)
     pull_manager.pull_projects(cloud_projects, cloud_projects)
 
-    project_config.set.assert_called_with(prop, expected_value)
+    project_config.set.assert_any_call(prop, expected_value)
 
 
 def test_pull_manager_adds_lean_engine_version_to_config() -> None:

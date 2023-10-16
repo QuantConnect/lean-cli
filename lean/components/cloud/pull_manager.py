@@ -25,8 +25,6 @@ from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
 from lean.components.config.storage import safe_save
-from lean.components.util.encryption_helper import get_decrypted_content_from_cloud_project, \
-                                    get_encrypted_content_from_cloud_project, get_project_key_hash
 
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
@@ -182,10 +180,8 @@ class PullManager:
         local_encryption_state = project_config.get("encrypted", False)
 
         # Handle mismatch cases
-        if not encryption_key and bool(project.encrypted) != bool(local_encryption_state):
-            raise RuntimeError(f"Project encryption state mismatch. Please provide encryption key to pull project '{project.name}'")
-        if getattr(project.encryptionKey, 'id', None) and encryption_key and get_project_key_hash(encryption_key) != project.encryptionKey.id:
-            raise RuntimeError(f"Encryption Key mismatch. Please provide correct encryption key to pull project '{project.name}'")
+        from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
+        validate_key_and_encryption_state_for_cloud_project(project, local_encryption_state, encryption_key)
 
         # Pull the cloud files to the local drive
         self._pull_files(project, local_project_path, encryption_action, encryption_key)
@@ -198,9 +194,10 @@ class PullManager:
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
         project_config.set("python-venv", project.leanEnvironment)
-        project_config.set('encrypted', project.encrypted)
         if encryption_key:
             project_config.set("encrypted", encryption_action == ActionType.ENCRYPT)
+        else:
+            project_config.set('encrypted', project.encrypted)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)
@@ -220,11 +217,9 @@ class PullManager:
 
         cloud_files = self._api_client.files.get_all(project.projectId)
         if encryption_key:
+            from lean.components.util.encryption_helper import get_appropriate_files_from_cloud_project
             organization_id = self._organization_manager.try_get_working_organization_id()
-            if encryption_action == ActionType.DECRYPT:
-                cloud_files = get_decrypted_content_from_cloud_project(project, cloud_files, encryption_key, organization_id)
-            if encryption_action == ActionType.ENCRYPT:
-                cloud_files = get_encrypted_content_from_cloud_project(project, cloud_files, encryption_key, organization_id)
+            cloud_files = get_appropriate_files_from_cloud_project(project, cloud_files, encryption_key, organization_id, encryption_action)
 
         for cloud_file in cloud_files:
             self._last_file = cloud_file.name

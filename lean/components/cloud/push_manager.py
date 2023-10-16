@@ -21,8 +21,6 @@ from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
-from lean.components.util.encryption_helper import get_encrypted_file_content_for_project,\
-                                get_project_key_hash, get_decrypted_file_content_for_project
 from lean.models.encryption import ActionType
 
 class PushManager:
@@ -150,10 +148,8 @@ class PushManager:
             self._logger.info(f"Successfully created cloud project '{cloud_project.name}'{organization_message_part}")
 
         # Handle mismatch cases
-        if not encryption_key and bool(cloud_project.encrypted) != bool(local_encryption_state):
-            raise RuntimeError(f"Project encryption state mismatch. Please provide encryption key to push the project.")
-        if getattr(cloud_project.encryptionKey, 'id', None) and encryption_key and get_project_key_hash(encryption_key) != cloud_project.encryptionKey.id:
-            raise RuntimeError(f"Project encryption key mismatch. Please provide correct encryption key to push the project.")
+        from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
+        validate_key_and_encryption_state_for_cloud_project(cloud_project, local_encryption_state, encryption_key)
 
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project, encryption_action, encryption_key)
@@ -164,14 +160,10 @@ class PushManager:
         :param project: the local project to push the files of
         """
         paths = self._project_manager.get_source_files(project)
-        if (encryption_key):
+        if encryption_key:
+            from lean.components.util.encryption_helper import get_appropriate_files_from_local_project
             organization_id = self._organization_manager.try_get_working_organization_id()
-            if encryption_action == ActionType.ENCRYPT:
-                data = get_encrypted_file_content_for_project(project, paths,
-                        encryption_key, self._project_config_manager, organization_id)
-            else:
-                data = get_decrypted_file_content_for_project(project,
-                        paths, encryption_key, self._project_config_manager, organization_id)
+            data = get_appropriate_files_from_local_project(project, paths, encryption_key, self._project_config_manager, organization_id, encryption_action)
             files = [
             {
                 'name': path.relative_to(project).as_posix(),
@@ -243,6 +235,7 @@ class PushManager:
 
         if (encryption_action is not None and encryption_key is not None):
             if encryption_action == ActionType.ENCRYPT:
+                from lean.components.util.encryption_helper import get_project_key_hash
                 encryption_key_id = get_project_key_hash(encryption_key)
                 update_args["encryption_key"] = encryption_key_id
             else:
