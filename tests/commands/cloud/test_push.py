@@ -276,6 +276,48 @@ def test_cloud_push_sends_decrypted_files_and_turns_off_encryption_with_decrypte
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
+def test_cloud_push_sends_decrypted_files_when_project_in_encrypted_state_with_decrypted_flag_given() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    # Keys API Data
+    key_hash = get_project_key_hash(encryption_file_path)
+    keys_api_data = {'keys': [{'name': 'test', 'hash': key_hash}]}
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value=keys_api_data)
+    cloud_project = create_api_project(1, "Python Project")
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    fake_cloud_files = [QCFullFile(name="file.py", content="testing", modified=datetime.now(), isLibrary=False)]
+    api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
+
+    init_container(api_client_to_use=api_client)
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", True)
+    project_config.set("encryption-key-path", str(encryption_file_path))
+    # update the project with encrypted files so that it's in encrypted state
+    expected_encrypted_files = _get_expected_encrypted_files_content()
+    source_files = container.project_manager.get_source_files(project_path)
+    for source_file in source_files:
+        source_file.write_text(expected_encrypted_files[source_file.name])
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path, "--decrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+    # verify that the encryption key is set to empty string to turn off the encryption.
+    expected_arguments = {
+        "name": "Python Project",
+        "description": "",
+        "files": [{'name': 'main.py', 'content': '# region imports\nfrom AlgorithmImports import *\n# endregion\n\nclass PythonProject(QCAlgorithm):\n\n    def Initialize(self):\n        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data\n        self.SetStartDate(2013, 10, 7)  # Set Start Date\n        self.SetEndDate(2013, 10, 11)  # Set End Date\n        self.SetCash(100000)  # Set Strategy Cash\n        self.AddEquity("SPY", Resolution.Minute)\n\n    def OnData(self, data: Slice):\n        """OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.\n            Arguments:\n                data: Slice object keyed by symbol containing the stock data\n        """\n        if not self.Portfolio.Invested:\n            self.SetHoldings("SPY", 1)\n            self.Debug("Purchased Stock")\n'}, {'name': 'research.ipynb', 'content': '{\n    "cells": [\n        {\n            "cell_type": "markdown",\n            "metadata": {},\n            "source": [\n                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",\n                "<hr>"\n            ]\n        },\n        {\n            "cell_type": "code",\n            "execution_count": null,\n            "metadata": {},\n            "outputs": [],\n            "source": [\n                "# QuantBook Analysis Tool \\n",\n                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",\n                "qb = QuantBook()\\n",\n                "spy = qb.AddEquity(\\"SPY\\")\\n",\n                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",\n                "qb.SetStartDate(2013, 10, 11)\\n",\n                "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",\n                "\\n",\n                "# Indicator Analysis\\n",\n                "bbdf = qb.Indicator(BollingerBands(30, 2), spy.Symbol, 360, Resolution.Daily)\\n",\n                "bbdf.drop(\'standarddeviation\', axis=1).plot()"\n            ]\n        }\n    ],\n    "metadata": {\n        "kernelspec": {\n            "display_name": "Python 3",\n            "language": "python",\n            "name": "python3"\n        }\n    },\n    "nbformat": 4,\n    "nbformat_minor": 2\n}\n'}],
+        "libraries": [],
+        "encryption_key": ''
+    }
+    api_client.projects.update.assert_called_once_with(1, **expected_arguments)
+
 def test_cloud_push_aborts_when_local_files_in_encrypted_state_and_cloud_project_in_decrypted_state_without_key_given() -> None:
     create_fake_lean_cli_directory()
 
