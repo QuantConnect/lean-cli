@@ -48,7 +48,7 @@ class PushManager:
         self._organization_manager = organization_manager
         self._cloud_projects = []
 
-    def push_project(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> None:
+    def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pushes the given project from the local drive to the cloud.
 
         It will also push every library referenced by the project and add or remove references.
@@ -58,7 +58,7 @@ class PushManager:
         libraries = self._project_manager.get_project_libraries(project)
         self.push_projects(libraries + [project], encryption_action, encryption_key)
 
-    def push_projects(self, projects_to_push: List[Path], encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> None:
+    def push_projects(self, projects_to_push: List[Path], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
@@ -167,10 +167,10 @@ class PushManager:
         if (encryption_key):
             organization_id = self._organization_manager.try_get_working_organization_id()
             if encryption_action == ActionType.ENCRYPT:
-                data = get_encrypted_file_content_for_project(project, paths, 
+                data = get_encrypted_file_content_for_project(project, paths,
                         encryption_key, self._project_config_manager, organization_id)
             else:
-                data = get_decrypted_file_content_for_project(project, 
+                data = get_decrypted_file_content_for_project(project,
                         paths, encryption_key, self._project_config_manager, organization_id)
             files = [
             {

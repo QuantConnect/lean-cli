@@ -95,8 +95,7 @@ class PullManager:
 
         return libraries, inaccessible_libraries
 
-    def pull_projects(self, projects_to_pull: List[QCProject], encryption_action: Optional[ActionType], encryption_key: Optional[Path],
-                      all_cloud_projects: Optional[List[QCProject]] = None) -> None:
+    def pull_projects(self, projects_to_pull: List[QCProject], all_cloud_projects: Optional[List[QCProject]] = None, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
         This will also pull libraries referenced by the project.

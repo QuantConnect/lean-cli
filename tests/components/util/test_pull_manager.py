@@ -32,7 +32,9 @@ def _create_pull_manager(api_client: mock.Mock,
     logger = mock.Mock()
     platform_manager = mock.Mock()
     project_manager = container.project_manager
-    return PullManager(logger, api_client, project_manager, project_config_manager, library_manager, platform_manager)
+    organization_manager = container.organization_manager
+    return PullManager(logger, api_client, project_manager,
+                       project_config_manager, library_manager, platform_manager, organization_manager)
 
 
 def _make_cloud_projects_and_libraries(project_count: int,

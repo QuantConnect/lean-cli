@@ -81,4 +81,4 @@ def pull(project: Optional[str], pull_bootcamp: bool, encrypt: Optional[bool], d
         raise RuntimeError(f"Cannot encrypt or decrypt more than one project at a time.")
 
     pull_manager = container.pull_manager
-    pull_manager.pull_projects(projects_to_pull, encryption_action, key, all_projects)
+    pull_manager.pull_projects(projects_to_pull, all_projects, encryption_action, key)

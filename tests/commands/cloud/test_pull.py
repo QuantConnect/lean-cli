@@ -52,7 +52,7 @@ def test_cloud_pull_pulls_all_non_bootcamp_projects_when_no_options_given() -> N
 
     assert result.exit_code == 0
 
-    pull_manager.pull_projects.assert_called_once_with(cloud_projects[:3], None, None, cloud_projects)
+    pull_manager.pull_projects.assert_called_once_with(cloud_projects[:3], cloud_projects, None, None)
 
 
 def test_cloud_pull_pulls_all_projects_when_pull_bootcamp_option_given() -> None:
@@ -75,7 +75,7 @@ def test_cloud_pull_pulls_all_projects_when_pull_bootcamp_option_given() -> None
 
     assert result.exit_code == 0
 
-    pull_manager.pull_projects.assert_called_once_with(cloud_projects, None, None, cloud_projects)
+    pull_manager.pull_projects.assert_called_once_with(cloud_projects, cloud_projects, None, None)
 
 
 def test_cloud_pull_pulls_project_by_id() -> None:
@@ -122,7 +122,7 @@ def test_cloud_pull_pulls_project_by_name() -> None:
 
     assert result.exit_code == 0
 
-    pull_manager.pull_projects.assert_called_once_with([cloud_projects[0]], None, None, cloud_projects)
+    pull_manager.pull_projects.assert_called_once_with([cloud_projects[0]], cloud_projects, None, None)
 
 
 def test_cloud_pull_aborts_when_project_input_matches_no_cloud_projects() -> None:
