@@ -60,7 +60,7 @@ def get_project_key_hash(project_key_path: Path):
     with open(project_key_path, 'r', encoding='utf-8') as f:
         content = f.read()
         return calculate_md5(content)
-    
+
 def get_project_iv(project_key_path: Path):
     """Get the project iv from the project key file
 
@@ -78,7 +78,7 @@ def get_decrypted_file_content_for_local_project(project: Path, source_files: Li
 
     # Check if there is mismatch of keys
     _validate_key_state_for_local_project(project_config, encryption_key)
-    
+
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
     decrypted_data = []
@@ -111,12 +111,12 @@ def get_encrypted_file_content_for_local_project(project: Path, source_files: Li
     for file in source_files:
         try:
             # lets read and decrypt the file
-            with open(file, 'rb') as f:
+            with open(file, 'r') as f:
                 plain_text = f.read()
                 if areProjectFilesAlreadyEncrypted:
                     encrypted = plain_text
                 else:
-                    encrypted = _encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), plain_text)
+                    encrypted = _encrypt_file_content(get_b64_encoded(project_key), get_b64_encoded(project_iv), plain_text.encode('utf-8'))
                 encrypted_data.append(encrypted)
         except Exception as e:
             raise RuntimeError(f"Failed to encrypt file {file} with error {e}")
@@ -154,7 +154,7 @@ def _validate_key_state_for_local_project(project_config: Storage, encryption_ke
     local_encryption_key_path = project_config.get('encryption-key-path', None)
     if local_encryption_key_path and encryption_key and Path(local_encryption_key_path) != encryption_key:
         raise RuntimeError(f"Registered encryption key {local_encryption_key_path} is different from the one provided {encryption_key}")
-    
+
 def _decrypt_file_content(b64_encoded_key: bytes, b64_encoded_iv: bytes, b64_encoded_content: str) -> str:
     # remove new line characters that we added during encryption
     b64_encoded_content = b64_encoded_content.replace('\n', '')
@@ -193,7 +193,7 @@ def _get_decrypted_content_from_cloud_project(project: QCProject, cloud_files: L
     # Check if the project is already encrypted
     if not project.encrypted or project.encryptionKey.id != get_project_key_hash(encryption_key):
         return cloud_files
-    
+
     project_key = get_project_key(encryption_key, organization_id)
     project_iv = get_project_iv(encryption_key)
     for cloud_file in cloud_files:
