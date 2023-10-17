@@ -147,7 +147,7 @@ def validate_user_inputs_for_cloud_push_pull_commands(encrypt: bool, decrypt: bo
         raise RuntimeError(f"Encryption key is required when encrypting or decrypting.")
     if key is not None and not encrypt and not decrypt:
             raise RuntimeError(f"Encryption key can only be specified when encrypting or decrypting.")
-    
+
 def validate_encryption_key_registered_with_cloud(user_key: Path, organization_manager: OrganizationManager, api_client: APIClient):
     # lets check if the given key is registered with the cloud
     organization_id = organization_manager.try_get_working_organization_id()
@@ -155,12 +155,12 @@ def validate_encryption_key_registered_with_cloud(user_key: Path, organization_m
     encryption_key_id = get_project_key_hash(user_key)
     if (not any(found_key for found_key in available_encryption_keys if found_key['hash'] == encryption_key_id)):
         raise RuntimeError(f"Given encryption key is not registered with the cloud.")
-    
+
 def validate_key_and_encryption_state_for_cloud_project(project: QCProject, local_project_encryption_state: bool, encryption_key: Path, local_encryption_key: Path, logger:Logger) -> None:
     if not encryption_key and project.encryptionKey and local_encryption_key and local_encryption_key.exists() and get_project_key_hash(local_encryption_key) != project.encryptionKey.id:
         raise RuntimeError(f"Encryption Key mismatch. Local Project Key: {local_encryption_key}. Cloud Project Key: {project.encryptionKey.name}. Please provide correct encryption key for project '{project.name}' to proceed.")
     if not encryption_key and bool(project.encrypted) != bool(local_project_encryption_state):
-        logger.warn(f"Force Overwrite: Project encryption state mismatch. Local Project Encrypted: {bool(local_project_encryption_state)}. Cloud Project Encrypted: {bool(project.encrypted)}.")
+        logger.debug(f"Force Overwrite: Project encryption state mismatch. Local Project Encrypted: {bool(local_project_encryption_state)}. Cloud Project Encrypted: {bool(project.encrypted)}.")
         return
     if encryption_key and project.encryptionKey and get_project_key_hash(encryption_key) != project.encryptionKey.id:
         raise RuntimeError(f"Encryption Key mismatch. Local Project Key hash: {get_project_key_hash(encryption_key)}. Cloud Project Key Hash: {project.encryptionKey.id}. Please provide correct encryption key for project '{project.name}' to proceed.")
