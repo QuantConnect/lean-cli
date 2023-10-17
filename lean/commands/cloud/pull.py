@@ -24,10 +24,10 @@ from lean.models.encryption import ActionType
 @option("--pull-bootcamp", is_flag=True, default=False, help="Pull Boot Camp projects (disabled by default)")
 @option("--encrypt",
         is_flag=True, default=False,
-        help="Encrypt your cloud files with a key")
+        help="Pull your cloud files and encrypt them before saving on your local drive")
 @option("--decrypt",
         is_flag=True, default=False,
-        help="Decrypt your cloud files with a key")
+        help="Pull your cloud files and decrypt them before saving on your local drive")
 @option("--key",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the encryption key to use")
@@ -41,11 +41,9 @@ def pull(project: Optional[str], pull_bootcamp: bool, encrypt: Optional[bool], d
 
     encryption_action = None
 
-    if encrypt and decrypt:
-        raise RuntimeError(f"Cannot encrypt and decrypt at the same time.")
-    if key is None and (encrypt or decrypt):
-        raise RuntimeError(f"Encryption key is required when encrypting or decrypting.")
-
+    from lean.components.util.encryption_helper import validate_user_inputs_for_cloud_push_pull_commands
+    validate_user_inputs_for_cloud_push_pull_commands(encrypt, decrypt, key)
+    
     if encrypt:
         encryption_action = ActionType.ENCRYPT
     if decrypt:
@@ -77,8 +75,11 @@ def pull(project: Optional[str], pull_bootcamp: bool, encrypt: Optional[bool], d
     if project is None and not pull_bootcamp:
         projects_to_pull = [p for p in projects_to_pull if not p.name.startswith("Boot Camp/")]
 
-    if  len(projects_to_pull) > 1 and key is not None:
+    if key is not None and len(projects_to_pull) > 1:
         raise RuntimeError(f"Cannot encrypt or decrypt more than one project at a time.")
+
+    # the encryption key info is available when reading the project individually from API
+    projects_to_pull = [api_client.projects.get(project.projectId, project.organizationId) if project.encrypted == True else project for project in projects_to_pull]
 
     pull_manager = container.pull_manager
     pull_manager.pull_projects(projects_to_pull, all_projects, encryption_action, key)

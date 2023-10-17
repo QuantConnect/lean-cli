@@ -178,10 +178,12 @@ class PullManager:
 
         project_config = self._project_config_manager.get_project_config(local_project_path)
         local_encryption_state = project_config.get("encrypted", False)
-
+        local_encryption_key = project_config.get("encryption-key-path", None)
+        if local_encryption_key is not None:
+            local_encryption_key = Path(local_encryption_key)
         # Handle mismatch cases
         from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
-        validate_key_and_encryption_state_for_cloud_project(project, local_encryption_state, encryption_key)
+        validate_key_and_encryption_state_for_cloud_project(project, local_encryption_state, encryption_key, local_encryption_key, self._logger)
 
         # Pull the cloud files to the local drive
         self._pull_files(project, local_project_path, encryption_action, encryption_key)

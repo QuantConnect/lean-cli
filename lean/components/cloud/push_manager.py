@@ -109,6 +109,9 @@ class PushManager:
         project_config = self._project_config_manager.get_project_config(project_path)
         cloud_id = project_config.get("cloud-id")
         local_encryption_state = project_config.get("encrypted", False)
+        local_encryption_key = project_config.get("encryption-key-path", None)
+        if local_encryption_key is not None:
+            local_encryption_key = Path(local_encryption_key)
 
         # check if project name is valid or if rename is required
         if cloud_id is not None:
@@ -149,8 +152,10 @@ class PushManager:
 
         # Handle mismatch cases
         from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
-        validate_key_and_encryption_state_for_cloud_project(cloud_project, local_encryption_state, encryption_key)
-
+        validate_key_and_encryption_state_for_cloud_project(cloud_project, local_encryption_state, encryption_key, local_encryption_key, self._logger)
+        if local_encryption_state == True and encryption_key is None and local_encryption_key is not None:
+            encryption_key = local_encryption_key
+            encryption_action = ActionType.ENCRYPT if local_encryption_state else ActionType.DECRYPT
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project, encryption_action, encryption_key)
 
@@ -233,14 +238,16 @@ class PushManager:
         update_args["files"] = self._get_files(project, encryption_action, encryption_key)
         update_args["libraries"] = self._get_local_libraries_cloud_ids(project)
 
+        # default value
+        update_args["encryption_key"] = ''
         if (encryption_action is not None and encryption_key is not None):
+            # lets check if the given key is registered with the cloud
+            from lean.components.util.encryption_helper import validate_encryption_key_registered_with_cloud, get_project_key_hash
+            validate_encryption_key_registered_with_cloud(encryption_key, self._organization_manager, self._api_client) 
+
             if encryption_action == ActionType.ENCRYPT:
-                from lean.components.util.encryption_helper import get_project_key_hash
                 encryption_key_id = get_project_key_hash(encryption_key)
                 update_args["encryption_key"] = encryption_key_id
-            else:
-                # decryption case: Lets reset the value in the Cloud.
-                update_args["encryption_key"] = ''
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)

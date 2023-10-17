@@ -26,11 +26,7 @@ from lean.container import container
               help="Path to the encryption key to use")
 def encrypt(project: Path,
             key: Optional[Path]) -> None:
-    """Encrypt the project using the specified encryption key.
-
-    :param project: The project to encrypt
-    :param key: The path to the encryption key to use
-    """
+    """Encrypt your local project using the specified encryption key."""
 
     logger = container.logger
     project_manager = container.project_manager

@@ -222,8 +222,10 @@ def test_cloud_pull_aborts_receiving_encrypted_files_when_local_file_encrypted_w
     key_hash_y = get_project_key_hash(encryption_file_path_y)
 
     api_client = mock.Mock()
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})
+    cloud_projects = [cloud_project]
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     initial_source_files = container.project_manager.get_source_files(project_path)
     file_contents_map = {file.name: file.read_text() for file in initial_source_files}
@@ -253,11 +255,12 @@ def test_cloud_pull_turns_on_encryption_with_encrypted_flag_given() -> None:
     encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
     # Keys API Data
     key_hash = get_project_key_hash(encryption_file_path)
-
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})
+    cloud_projects = [cloud_project]
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     initial_source_files = container.project_manager.get_source_files(project_path)
     fake_cloud_files = [QCFullFile(name=file.name, content=file.read_text(), modified=datetime.now(), isLibrary=False)
@@ -284,10 +287,12 @@ def test_cloud_pull_receives_decrypted_files_with_decrypted_flag_given() -> None
     # Keys API Data
     key_hash = get_project_key_hash(encryption_file_path)
 
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})
+    cloud_projects = [cloud_project]
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     encrypted_source_files = _get_expected_encrypted_files_content()
     initial_source_files = container.project_manager.get_source_files(project_path)
@@ -319,10 +324,12 @@ def test_cloud_pull_turns_off_encryption_with_decrypted_flag_given() -> None:
     # Keys API Data
     key_hash = get_project_key_hash(encryption_file_path)
 
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})
+    cloud_projects = [cloud_project]
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     encrypted_source_files = _get_expected_encrypted_files_content()
     fake_cloud_files = [QCFullFile(name=name, content=content, modified=datetime.now(), isLibrary=False)
@@ -377,7 +384,7 @@ def test_cloud_pull_aborts_when_local_files_in_encrypted_state_and_cloud_project
     for file in source_files:
         assert file_contents_map[file.name].strip() == file.read_text().strip()
 
-def test_cloud_pull_aborts_when_local_files_in_decrypted_state_and_cloud_project_in_encrypted_state_without_key_given() -> None:
+def test_cloud_pull_encrypts_when_local_files_in_decrypted_state_and_cloud_project_in_encrypted_state_without_key_given() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
@@ -386,14 +393,14 @@ def test_cloud_pull_aborts_when_local_files_in_decrypted_state_and_cloud_project
     # Keys API Data
     key_hash = get_project_key_hash(encryption_file_path)
 
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})
+    cloud_projects = [cloud_project]
 
     api_client = mock.Mock()
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     encrypted_source_files = _get_expected_encrypted_files_content()
-    initial_source_files = container.project_manager.get_source_files(project_path)
-    file_contents_map = {file.name: file.read_text() for file in initial_source_files}
     fake_cloud_files = [QCFullFile(name=name, content=content, modified=datetime.now(), isLibrary=False)
                         for name, content in encrypted_source_files.items()]
     api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
@@ -406,8 +413,9 @@ def test_cloud_pull_aborts_when_local_files_in_decrypted_state_and_cloud_project
     assert result.exit_code == 0
 
     source_files = container.project_manager.get_source_files(project_path)
+    expected_encrypted_files = _get_expected_encrypted_files_content()
     for file in source_files:
-        assert file_contents_map[file.name].strip() == file.read_text().strip()
+        assert expected_encrypted_files[file.name].strip() == file.read_text().strip()
 
 def test_cloud_pull_aborts_when_local_files_in_encrypted_state_with_key_x_and_cloud_project_in_encrypted_state_with_key_y() -> None:
     create_fake_lean_cli_directory()
@@ -424,8 +432,10 @@ def test_cloud_pull_aborts_when_local_files_in_encrypted_state_with_key_x_and_cl
     key_hash_y = get_project_key_hash(encryption_file_path_y)
 
     api_client = mock.Mock()
-    cloud_projects = [create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})]
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})
+    cloud_projects = [cloud_project]
     api_client.projects.get_all.return_value = cloud_projects
+    api_client.projects.get.return_value = cloud_project
 
     initial_source_files = container.project_manager.get_source_files(project_path)
     file_contents_map = {file.name: file.read_text() for file in initial_source_files}

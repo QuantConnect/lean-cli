@@ -27,10 +27,10 @@ from lean.models.encryption import ActionType
         help="Path to the local project to push (all local projects if not specified)")
 @option("--encrypt",
         is_flag=True, default=False,
-        help="Encrypt your cloud files with a key")
+        help="Push your local files and encrypt them before saving on the cloud")
 @option("--decrypt",
         is_flag=True, default=False,
-        help="Decrypt your cloud files with a key")
+        help="Push your local files and decrypt them before saving on the cloud")
 @option("--key",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the encryption key to use")
@@ -42,13 +42,10 @@ def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[boo
     This command will delete cloud files which don't have a local counterpart.
     """
     push_manager = container.push_manager
-    encryption_key_id = None
     encryption_action = None
 
-    if encrypt and decrypt:
-        raise RuntimeError(f"Cannot encrypt and decrypt at the same time.")
-    if key is None and (encrypt or decrypt):
-        raise RuntimeError(f"Encryption key is required when encrypting or decrypting.")
+    from lean.components.util.encryption_helper import validate_user_inputs_for_cloud_push_pull_commands
+    validate_user_inputs_for_cloud_push_pull_commands(encrypt, decrypt, key)
 
     if encrypt:
         encryption_action = ActionType.ENCRYPT
@@ -63,14 +60,9 @@ def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[boo
             raise RuntimeError(f"'{project}' is not a Lean project")
 
         if encrypt and key is not None:
-            from lean.components.util.encryption_helper import get_project_key_hash
-            # lets check if the given key is registered with the cloud
-            organization_id = container.organization_manager.try_get_working_organization_id()
-            available_encryption_keys = container.api_client.encryption_keys.list(organization_id)['keys']
-            encryption_key_id = get_project_key_hash(key)
-            if (not any(found_key for found_key in available_encryption_keys if found_key['hash'] == encryption_key_id)):
-                raise RuntimeError(f"Given encryption key is not registered with the cloud.")
-        
+            from lean.components.util.encryption_helper import validate_encryption_key_registered_with_cloud
+            validate_encryption_key_registered_with_cloud(key, container.organization_manager, container.api_client) 
+
         push_manager.push_project(project, encryption_action, key)
     else:
         if key is not None:

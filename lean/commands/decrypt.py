@@ -26,11 +26,8 @@ from lean.container import container
               help="Path to the decryption key to use")
 def decrypt(project: Path,
             key: Optional[Path]) -> None:
-    """Decrypt the project using the specified decryption key.
-
-    :param project: The project to decrypt
-    :param key: The path to the decryption key to use
-    """
+    """Decrypt your local project using the specified decryption key."""
+    
     logger = container.logger
     project_manager = container.project_manager
     project_config_manager = container.project_config_manager

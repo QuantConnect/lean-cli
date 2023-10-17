@@ -13,6 +13,7 @@
 
 from typing import List
 from pathlib import Path
+from lean.components.util.logger import Logger
 from base64 import b64decode, b64encode
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -22,6 +23,8 @@ from lean.models.encryption import ActionType
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.models.api import QCProject, QCFullFile
 from lean.components.config.storage import Storage
+from lean.components.api.api_client import APIClient
+from lean.components.util.organization_manager import OrganizationManager
 
 def calculate_md5(input_string: str):
     """Calculate the md5 hash of a string
@@ -137,11 +140,30 @@ def get_and_validate_user_input_encryption_key(user_input_key: Path, project_con
         raise RuntimeError(f"Provided encryption key ({user_input_key}) does not match the encryption key in the project ({project_config_encryption_key})")
     return project_config_encryption_key
 
-def validate_key_and_encryption_state_for_cloud_project(project: QCProject, local_project_encryption_state: bool, encryption_key: Path) -> None:
+def validate_user_inputs_for_cloud_push_pull_commands(encrypt: bool, decrypt: bool, key: Path):
+    if encrypt and decrypt:
+        raise RuntimeError(f"Cannot encrypt and decrypt at the same time.")
+    if key is None and (encrypt or decrypt):
+        raise RuntimeError(f"Encryption key is required when encrypting or decrypting.")
+    if key is not None and not encrypt and not decrypt:
+            raise RuntimeError(f"Encryption key can only be specified when encrypting or decrypting.")
+    
+def validate_encryption_key_registered_with_cloud(user_key: Path, organization_manager: OrganizationManager, api_client: APIClient):
+    # lets check if the given key is registered with the cloud
+    organization_id = organization_manager.try_get_working_organization_id()
+    available_encryption_keys = api_client.encryption_keys.list(organization_id)['keys']
+    encryption_key_id = get_project_key_hash(user_key)
+    if (not any(found_key for found_key in available_encryption_keys if found_key['hash'] == encryption_key_id)):
+        raise RuntimeError(f"Given encryption key is not registered with the cloud.")
+    
+def validate_key_and_encryption_state_for_cloud_project(project: QCProject, local_project_encryption_state: bool, encryption_key: Path, local_encryption_key: Path, logger:Logger) -> None:
+    if not encryption_key and project.encryptionKey and local_encryption_key and local_encryption_key.exists() and get_project_key_hash(local_encryption_key) != project.encryptionKey.id:
+        raise RuntimeError(f"Encryption Key mismatch. Local Project Key: {local_encryption_key}. Cloud Project Key: {project.encryptionKey.name}. Please provide correct encryption key for project '{project.name}' to proceed.")
     if not encryption_key and bool(project.encrypted) != bool(local_project_encryption_state):
-        raise RuntimeError(f"Project encryption state mismatch. Local Project Encrypted: {bool(local_project_encryption_state)}. Cloud Project Encrypted {bool(project.encrypted)}. Please provide encryption key to pull project '{project.name}'")
-    if project.encryptionKey and encryption_key and get_project_key_hash(encryption_key) != project.encryptionKey.id:
-        raise RuntimeError(f"Encryption Key mismatch. Local Project Key hash: {get_project_key_hash(encryption_key)}. Cloud Project Key Hash {project.encryptionKey.id}. Please provide correct encryption key to pull project '{project.name}'")
+        logger.warn(f"Force Overwrite: Project encryption state mismatch. Local Project Encrypted: {bool(local_project_encryption_state)}. Cloud Project Encrypted: {bool(project.encrypted)}.")
+        return
+    if encryption_key and project.encryptionKey and get_project_key_hash(encryption_key) != project.encryptionKey.id:
+        raise RuntimeError(f"Encryption Key mismatch. Local Project Key hash: {get_project_key_hash(encryption_key)}. Cloud Project Key Hash: {project.encryptionKey.id}. Please provide correct encryption key for project '{project.name}' to proceed.")
 
 def get_appropriate_files_from_cloud_project(project: QCProject, cloud_files: List[QCFullFile], encryption_key: Path, organization_id: str, encryption_action: ActionType) -> List[QCFullFile]:
     if encryption_action == ActionType.DECRYPT:
