@@ -20,10 +20,11 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject, QCLanguage, QCProjectLibrary
+from lean.components.util.organization_manager import OrganizationManager
 from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
+from lean.models.encryption import ActionType
 from lean.components.config.storage import safe_save
-
 
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
@@ -34,7 +35,8 @@ class PullManager:
                  project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager,
                  library_manager: LibraryManager,
-                 platform_manager: PlatformManager) -> None:
+                 platform_manager: PlatformManager,
+                 organization_manager: OrganizationManager) -> None:
         """Creates a new PullManager instance.
 
         :param logger: the logger to use when printing messages
@@ -50,6 +52,7 @@ class PullManager:
         self._project_config_manager = project_config_manager
         self._library_manager = library_manager
         self._platform_manager = platform_manager
+        self._organization_manager = organization_manager
         self._last_file = None
 
     def _get_libraries(self, project: QCProject,
@@ -90,8 +93,7 @@ class PullManager:
 
         return libraries, inaccessible_libraries
 
-    def pull_projects(self, projects_to_pull: List[QCProject],
-                      all_cloud_projects: Optional[List[QCProject]] = None) -> None:
+    def pull_projects(self, projects_to_pull: List[QCProject], all_cloud_projects: Optional[List[QCProject]] = None, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pulls the given projects from the cloud to the local drive.
 
         This will also pull libraries referenced by the project.
@@ -135,7 +137,7 @@ class PullManager:
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                projects_with_paths.append((project, self._pull_project(project)))
+                projects_with_paths.append((project, self._pull_project(project, encryption_action, encryption_key)))
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -147,7 +149,7 @@ class PullManager:
 
         self._update_local_library_references(projects_with_paths)
 
-    def _pull_project(self, project: QCProject) -> Path:
+    def _pull_project(self, project: QCProject, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> Path:
         """Pulls a single project from the cloud to the local drive.
 
         Raises an error with a descriptive message if the project cannot be pulled.
@@ -174,8 +176,17 @@ class PullManager:
                 if project_name_on_disk != project.name:
                     self._project_manager.rename_project_and_contents(project_path_on_disk, Path.cwd() / project.name)
 
+        project_config = self._project_config_manager.get_project_config(local_project_path)
+        local_encryption_state = project_config.get("encrypted", False)
+        local_encryption_key = project_config.get("encryption-key-path", None)
+        if local_encryption_key is not None:
+            local_encryption_key = Path(local_encryption_key)
+        # Handle mismatch cases
+        from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
+        validate_key_and_encryption_state_for_cloud_project(project, local_encryption_state, encryption_key, local_encryption_key, self._logger)
+
         # Pull the cloud files to the local drive
-        self._pull_files(project, local_project_path)
+        self._pull_files(project, local_project_path, encryption_action, encryption_key)
 
         # Update the local project config with the latest details
         project_config = self._project_config_manager.get_project_config(local_project_path)
@@ -185,6 +196,10 @@ class PullManager:
         project_config.set("description", project.description)
         project_config.set("organization-id", project.organizationId)
         project_config.set("python-venv", project.leanEnvironment)
+        if encryption_key:
+            project_config.set("encrypted", encryption_action == ActionType.ENCRYPT)
+        else:
+            project_config.set('encrypted', project.encrypted)
 
         if not project.leanPinnedToMaster:
             project_config.set("lean-engine", project.leanVersionId)
@@ -193,7 +208,7 @@ class PullManager:
 
         return local_project_path
 
-    def _pull_files(self, project: QCProject, local_project_path: Path) -> None:
+    def _pull_files(self, project: QCProject, local_project_path: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> None:
         """Pull the files of a single project.
 
         :param project: the cloud project of which the files need to be pulled
@@ -202,7 +217,13 @@ class PullManager:
         if not local_project_path.exists():
             self._project_manager.create_new_project(local_project_path, project.language)
 
-        for cloud_file in self._api_client.files.get_all(project.projectId):
+        cloud_files = self._api_client.files.get_all(project.projectId)
+        if encryption_key:
+            from lean.components.util.encryption_helper import get_appropriate_files_from_cloud_project
+            organization_id = self._organization_manager.try_get_working_organization_id()
+            cloud_files = get_appropriate_files_from_cloud_project(project, cloud_files, encryption_key, organization_id, encryption_action)
+
+        for cloud_file in cloud_files:
             self._last_file = cloud_file.name
 
             if cloud_file.isLibrary:

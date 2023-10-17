@@ -82,7 +82,8 @@ class ProjectClient:
                lean_engine: Optional[int] = None,
                python_venv: Optional[int] = None,
                files: Optional[List[Dict[str, str]]] = None,
-               libraries: Optional[List[int]] = None) -> None:
+               libraries: Optional[List[int]] = None,
+               encryption_key: Optional[str] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
@@ -133,6 +134,9 @@ class ProjectClient:
             else:
                 request_parameters["libraries"] = []
 
+        if encryption_key is not None:
+            request_parameters["encryptionKey"] = encryption_key
+            
         self._api.post("projects/update", request_parameters, data_as_json=False)
 
     def delete(self, project_id: int) -> None:

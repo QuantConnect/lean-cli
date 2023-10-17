@@ -19,6 +19,8 @@ from lean.commands.config import config
 from lean.commands.create_project import create_project
 from lean.commands.delete_project import delete_project
 from lean.commands.data import data
+from lean.commands.decrypt import decrypt
+from lean.commands.encrypt import encrypt
 from lean.commands.init import init
 from lean.commands.library import library
 from lean.commands.live.live import live
@@ -35,6 +37,8 @@ from lean.commands.object_store import object_store
 lean.add_command(config)
 lean.add_command(cloud)
 lean.add_command(data)
+lean.add_command(decrypt)
+lean.add_command(encrypt)
 lean.add_command(library)
 lean.add_command(live)
 lean.add_command(login)

@@ -23,6 +23,10 @@ from lean.models.pydantic import WrappedBaseModel, validator
 # The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 
 
+class ProjectEncryptionKey(WrappedBaseModel):
+    id: str
+    name: str
+
 class QCCollaborator(WrappedBaseModel):
     id: int
     uid: int
@@ -79,6 +83,8 @@ class QCProject(WrappedBaseModel):
     leanEnvironment: int
     parameters: List[QCParameter]
     libraries: List[QCProjectLibrary]
+    encrypted: Optional[bool] = False
+    encryptionKey: Optional[ProjectEncryptionKey] = None
 
     @validator("parameters", pre=True)
     def process_parameters_dict(cls, value: Any) -> Any:

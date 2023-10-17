@@ -91,7 +91,9 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean create-project`](#lean-create-project)
 - [`lean data download`](#lean-data-download)
 - [`lean data generate`](#lean-data-generate)
+- [`lean decrypt`](#lean-decrypt)
 - [`lean delete-project`](#lean-delete-project)
+- [`lean encrypt`](#lean-encrypt)
 - [`lean init`](#lean-init)
 - [`lean library add`](#lean-library-add)
 - [`lean library remove`](#lean-library-remove)
@@ -547,6 +549,9 @@ Usage: lean cloud pull [OPTIONS]
 Options:
   --project TEXT   Name or id of the project to pull (all cloud projects if not specified)
   --pull-bootcamp  Pull Boot Camp projects (disabled by default)
+  --encrypt        Pull your cloud files and encrypt them before saving on your local drive
+  --decrypt        Pull your cloud files and decrypt them before saving on your local drive
+  --key FILE       Path to the encryption key to use
   --verbose        Enable debug logging
   --help           Show this message and exit.
 ```
@@ -568,6 +573,9 @@ Usage: lean cloud push [OPTIONS]
 
 Options:
   --project DIRECTORY  Path to the local project to push (all local projects if not specified)
+  --encrypt            Push your local files and encrypt them before saving on the cloud
+  --decrypt            Push your local files and decrypt them before saving on the cloud
+  --key FILE           Path to the encryption key to use
   --verbose            Enable debug logging
   --help               Show this message and exit.
 ```
@@ -797,6 +805,23 @@ Options:
 
 _See code: [lean/commands/data/generate.py](lean/commands/data/generate.py)_
 
+### `lean decrypt`
+
+Decrypt your local project using the specified decryption key.
+
+```
+Usage: lean decrypt [OPTIONS] PROJECT
+
+  Decrypt your local project using the specified decryption key.
+
+Options:
+  --key FILE  Path to the decryption key to use
+  --verbose   Enable debug logging
+  --help      Show this message and exit.
+```
+
+_See code: [lean/commands/decrypt.py](lean/commands/decrypt.py)_
+
 ### `lean delete-project`
 
 Alias for 'project-delete'
@@ -814,6 +839,23 @@ Options:
 ```
 
 _See code: [lean/commands/delete_project.py](lean/commands/delete_project.py)_
+
+### `lean encrypt`
+
+Encrypt your local project using the specified encryption key.
+
+```
+Usage: lean encrypt [OPTIONS] PROJECT
+
+  Encrypt your local project using the specified encryption key.
+
+Options:
+  --key FILE  Path to the encryption key to use
+  --verbose   Enable debug logging
+  --help      Show this message and exit.
+```
+
+_See code: [lean/commands/encrypt.py](lean/commands/encrypt.py)_
 
 ### `lean init`
 

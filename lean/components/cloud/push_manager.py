@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -21,6 +21,7 @@ from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
+from lean.models.encryption import ActionType
 
 class PushManager:
     """The PushManager class is responsible for synchronizing local projects to the cloud."""
@@ -45,7 +46,7 @@ class PushManager:
         self._organization_manager = organization_manager
         self._cloud_projects = []
 
-    def push_project(self, project: Path) -> None:
+    def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pushes the given project from the local drive to the cloud.
 
         It will also push every library referenced by the project and add or remove references.
@@ -53,9 +54,9 @@ class PushManager:
         :param project: path to the directory containing the local project that needs to be pushed
         """
         libraries = self._project_manager.get_project_libraries(project)
-        self.push_projects(libraries + [project])
+        self.push_projects(libraries + [project], encryption_action, encryption_key)
 
-    def push_projects(self, projects_to_push: List[Path]) -> None:
+    def push_projects(self, projects_to_push: List[Path], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
@@ -71,7 +72,7 @@ class PushManager:
             relative_path = path.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
-                self._push_project(path, organization_id)
+                self._push_project(path, organization_id, encryption_action, encryption_key)
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -88,7 +89,7 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: str, suggested_rename_path: Path = None) -> None:
+    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], suggested_rename_path: Path = None) -> None:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -107,6 +108,10 @@ class PushManager:
 
         project_config = self._project_config_manager.get_project_config(project_path)
         cloud_id = project_config.get("cloud-id")
+        local_encryption_state = project_config.get("encrypted", False)
+        local_encryption_key = project_config.get("encryption-key-path", None)
+        if local_encryption_key is not None:
+            local_encryption_key = Path(local_encryption_key)
 
         # check if project name is valid or if rename is required
         if cloud_id is not None:
@@ -138,33 +143,51 @@ class PushManager:
             if cloud_project.name != project_name:
                 # cloud project name was changed. Repeat steps to validate the new name locally.
                 self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
-                self._push_project(project_path, organization_id, Path.cwd() / cloud_project.name)
+                self._push_project(project_path, organization_id, encryption_action, encryption_key, Path.cwd() / cloud_project.name)
                 return
 
             self._cloud_projects.append(cloud_project)
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
             self._logger.info(f"Successfully created cloud project '{cloud_project.name}'{organization_message_part}")
 
+        # Handle mismatch cases
+        from lean.components.util.encryption_helper import validate_key_and_encryption_state_for_cloud_project
+        validate_key_and_encryption_state_for_cloud_project(cloud_project, local_encryption_state, encryption_key, local_encryption_key, self._logger)
+        if local_encryption_state == True and encryption_key is None and local_encryption_key is not None:
+            encryption_key = local_encryption_key
+            encryption_action = ActionType.ENCRYPT if local_encryption_state else ActionType.DECRYPT
         # Finalize pushing by updating locally modified metadata, files and libraries
-        self._push_metadata(project_path, cloud_project)
+        self._push_metadata(project_path, cloud_project, encryption_action, encryption_key)
 
-    def _get_files(self, project: Path) -> List[Dict[str, str]]:
+    def _get_files(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.
 
         :param project: the local project to push the files of
         """
         paths = self._project_manager.get_source_files(project)
-        files = [
+        if encryption_key:
+            from lean.components.util.encryption_helper import get_appropriate_files_from_local_project
+            organization_id = self._organization_manager.try_get_working_organization_id()
+            data = get_appropriate_files_from_local_project(project, paths, encryption_key, self._project_config_manager, organization_id, encryption_action)
+            files = [
             {
                 'name': path.relative_to(project).as_posix(),
-                'content': path.read_text(encoding="utf-8")
+                'content': encrypted_content
             }
-            for path in paths
+            for path, encrypted_content in zip(paths, data)
         ]
+        else:
+            files = [
+                {
+                    'name': path.relative_to(project).as_posix(),
+                    'content': path.read_text(encoding="utf-8")
+                }
+                for path in paths
+            ]
 
         return files
 
-    def _push_metadata(self, project: Path, cloud_project: QCProject) -> None:
+    def _push_metadata(self, project: Path, cloud_project: QCProject, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> None:
         """Pushes local project description and parameters to the cloud.
 
         Does nothing if the cloud is already up-to-date.
@@ -212,8 +235,19 @@ class PushManager:
         if local_lean_venv is not None and local_lean_venv != cloud_lean_venv:
             update_args["python_venv"] = local_lean_venv
 
-        update_args["files"] = self._get_files(project)
+        update_args["files"] = self._get_files(project, encryption_action, encryption_key)
         update_args["libraries"] = self._get_local_libraries_cloud_ids(project)
+
+        # default value
+        update_args["encryption_key"] = ''
+        if (encryption_action is not None and encryption_key is not None):
+            # lets check if the given key is registered with the cloud
+            from lean.components.util.encryption_helper import validate_encryption_key_registered_with_cloud, get_project_key_hash
+            validate_encryption_key_registered_with_cloud(encryption_key, self._organization_manager, self._api_client)
+
+            if encryption_action == ActionType.ENCRYPT:
+                encryption_key_id = get_project_key_hash(encryption_key)
+                update_args["encryption_key"] = encryption_key_id
 
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
