@@ -67,8 +67,13 @@ def _assert_pull_manager_adds_property_to_project_config(prop: str,
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.files.get_all = mock.MagicMock(return_value=[])
 
+    def config_get_side_effect(key: str, default: Any = None):
+        if key == "encryption-key-path":
+            return None
+        return []
+
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=[])
+    project_config.get = mock.MagicMock(side_effect=config_get_side_effect)
     project_config.set = mock.Mock()
 
     project_config_manager = mock.Mock()
@@ -109,8 +114,13 @@ def _assert_pull_manager_removes_property_from_project_config(prop: str, cloud_p
     api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
     api_client.files.get_all = mock.MagicMock(return_value=[])
 
+    def config_get_side_effect(key: str, default: Any = None):
+        if key == "encryption-key-path":
+            return None
+        return []
+
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=[])
+    project_config.get = mock.MagicMock(side_effect=config_get_side_effect)
     project_config.set = mock.Mock()
     project_config.delete = mock.Mock()
 
@@ -318,8 +328,13 @@ def test_pull_projects_updates_lean_config() -> None:
     api_client.projects.get_all.return_value = cloud_projects
     api_client.files.get_all = mock.MagicMock(return_value=[])
 
+    def config_get_side_effect(key: str, default: Any = None):
+        if key == "encryption-key-path":
+            return None
+        return []
+
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=[])    # get("libraries")
+    project_config.get = mock.MagicMock(side_effect=config_get_side_effect)
 
     project_config_manager = mock.Mock()
     project_config_manager.get_project_config = mock.MagicMock(return_value=project_config)

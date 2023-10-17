@@ -243,7 +243,7 @@ class PushManager:
         if (encryption_action is not None and encryption_key is not None):
             # lets check if the given key is registered with the cloud
             from lean.components.util.encryption_helper import validate_encryption_key_registered_with_cloud, get_project_key_hash
-            validate_encryption_key_registered_with_cloud(encryption_key, self._organization_manager, self._api_client) 
+            validate_encryption_key_registered_with_cloud(encryption_key, self._organization_manager, self._api_client)
 
             if encryption_action == ActionType.ENCRYPT:
                 encryption_key_id = get_project_key_hash(encryption_key)

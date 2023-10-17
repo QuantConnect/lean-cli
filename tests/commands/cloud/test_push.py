@@ -407,11 +407,10 @@ def test_cloud_push_aborts_when_local_files_in_encrypted_state_with_key_x_and_cl
     key_hash_y = get_project_key_hash(encryption_file_path_y)
 
     api_client = mock.Mock()
-    cloud_project = create_api_project(1, "Python Project")
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})
     api_client.projects.create = mock.MagicMock(return_value=cloud_project, encrypted=True, encryptionKey={"name":"test", "id": key_hash_y})
     fake_cloud_files = [QCFullFile(name="file.py", content="testing", modified=datetime.now(), isLibrary=False)]
     api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
-
     init_container(api_client_to_use=api_client)
 
     project_config = container.project_config_manager.get_project_config(project_path)

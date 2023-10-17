@@ -209,7 +209,7 @@ def test_cloud_pull_receives_encrypted_files_with_encrypted_flag_given() -> None
     for file in source_files:
         assert expected_encrypted_files[file.name].strip() == file.read_text().strip()
 
-def test_cloud_pull_aborts_receiving_encrypted_files_when_local_file_encrypted_with_key_x_and_given_key_y() -> None:
+def test_cloud_pull_aborts_receiving_encrypted_files_when_cloud_file_encrypted_with_key_x_and_given_key_y() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
@@ -240,7 +240,7 @@ def test_cloud_pull_aborts_receiving_encrypted_files_when_local_file_encrypted_w
     project_config.set("encryption-key-path", str(encryption_file_path_x))
     project_config.set("cloud-id", 1)
 
-    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_path.name, "--encrypt", "--key", encryption_file_path_y])
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_path.name, "--encrypt", "--key", encryption_file_path_x])
 
     assert result.exit_code == 0
     source_files = container.project_manager.get_source_files(project_path)
@@ -349,16 +349,13 @@ def test_cloud_pull_turns_off_encryption_with_decrypted_flag_given() -> None:
     project_config = container.project_config_manager.get_project_config(project_path)
     assert project_config.get("encrypted", False) == False
 
-def test_cloud_pull_aborts_when_local_files_in_encrypted_state_and_cloud_project_in_decrypted_state_without_key_given() -> None:
+def test_cloud_pull_decrypted_files_when_local_files_in_encrypted_state_and_cloud_project_in_decrypted_state_without_key_given() -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "Python Project"
 
     encryption_file_path_x = project_path / "encryption_x.txt"
     encryption_file_path_x.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
-
-    encryption_file_path_y = project_path / "encryption_y.txt"
-    encryption_file_path_y.write_text("Jtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
 
     api_client = mock.Mock()
     cloud_projects = [create_api_project(1, "Python Project")]
@@ -369,6 +366,10 @@ def test_cloud_pull_aborts_when_local_files_in_encrypted_state_and_cloud_project
     fake_cloud_files = [QCFullFile(name=file.name, content=file.read_text(), modified=datetime.now(), isLibrary=False)
                         for file in initial_source_files]
     api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
+    encrypted_source_files = _get_expected_encrypted_files_content()
+    # replace the content of the files with the encrypted content and verify later that they are decrypted.
+    for file in initial_source_files:
+        file.write_text(encrypted_source_files[file.name])
 
     init_container(api_client_to_use=api_client)
 
@@ -383,6 +384,8 @@ def test_cloud_pull_aborts_when_local_files_in_encrypted_state_and_cloud_project
     source_files = container.project_manager.get_source_files(project_path)
     for file in source_files:
         assert file_contents_map[file.name].strip() == file.read_text().strip()
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted", False) == False
 
 def test_cloud_pull_encrypts_when_local_files_in_decrypted_state_and_cloud_project_in_encrypted_state_without_key_given() -> None:
     create_fake_lean_cli_directory()
