@@ -46,14 +46,30 @@ def test_interactive_bulk_select():
                         categories=["testData"],
                         options=datasource["options"],
                         paths=datasource["paths"],
-                        requires_security_master=datasource["requiresSecurityMaster"])]
+                        requirements=datasource.get("requirements", {}))]
 
     products = _select_products_interactive(organization, testSets)
     # No assertion, since interactive has multiple results
 
+def test_dataset_requirements():
+	organization = create_api_organization()
+	datasource = json.loads(bulk_datasource)
+	testSet = Dataset(name="testSet",
+                      vendor="testVendor",
+                      categories=["testData"],
+                      options=datasource["options"],
+                      paths=datasource["paths"],
+                      requirements=datasource.get("requirements", {}))
+    
+	for id, name in testSet.requirements.items():
+		assert not organization.has_security_master_subscription(id)
+	assert id==39
+
 bulk_datasource="""
 {
-	"requiresSecurityMaster": true,
+	"requirements": {
+        "39": "quantconnect-us-equity-security-master"
+    },
 	"options": [
 		{
 			"type": "select",
@@ -262,12 +278,12 @@ def test_filter_pending_datasets() -> None:
         str(test_datasets[0].id): {
             'options': [],
             'paths': [],
-            'requiresSecurityMaster': True,
+            'requirements': {},
         },
         str(test_datasets[1].id): {
             'options': [],
             'paths': [],
-            'requiresSecurityMaster': True,
+            'requirements': {},
         }
     }
     container.api_client.data.get_info = MagicMock(return_value=QCDataInformation(datasources=datasources, prices=[],

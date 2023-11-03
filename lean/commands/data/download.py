@@ -153,10 +153,10 @@ def _display_products(organization: QCFullOrganization, products: List[Product])
     logger.info(f"Organization balance: {organization.credit.balance:,.0f} QCC")
 
 
-def _get_security_master_warn() -> str:
+def _get_security_master_warn(url: str) -> str:
     return "\n".join([f"Your organization does not have an active Security Master subscription. Override the Security Master precautions will likely"
                       f" result in inaccurate and misleading backtest results. Use this override flag at your own risk.",
-                      f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+                      f"You can add the subscription at https://www.quantconnect.com/datasets/{url}/pricing"
                       ])
 
 
@@ -196,15 +196,16 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         dataset: Dataset = logger.prompt_list("Select a dataset",
                                               [Option(id=d, label=d.name) for d in available_datasets])
 
-        if dataset.requires_security_master and not organization.has_security_master_subscription():
+        for id, url in dataset.requirements.items():
+            if organization.has_security_master_subscription(id):
+                continue
             if not force:
                 logger.warn("\n".join([
                     f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
-                    f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+                    f"You can add the subscription at https://www.quantconnect.com/datasets/{url}/pricing"
                 ]))
-                continue
             else:
-                logger.warn(_get_security_master_warn())
+                logger.warn(_get_security_master_warn(url))
 
         option_results = OrderedDict()
         for dataset_option in dataset.options:
@@ -328,14 +329,16 @@ def _select_products_non_interactive(organization: QCFullOrganization,
     if dataset is None:
         raise RuntimeError(f"There is no dataset named '{ctx.params['dataset']}'")
 
-    if dataset.requires_security_master and not organization.has_security_master_subscription():
+    for id, url in dataset.requirements.items():
+        if organization.has_security_master_subscription(id):
+            continue
         if not force:
             raise RuntimeError("\n".join([
                 f"Your organization needs to have an active Security Master subscription to download data from the '{dataset.name}' dataset",
-                f"You can add the subscription at https://www.quantconnect.com/datasets/quantconnect-security-master/pricing"
+                f"You can add the subscription at https://www.quantconnect.com/datasets/{url}/pricing"
             ]))
         else:
-            container.logger.warn(_get_security_master_warn())
+            container.logger.warn(_get_security_master_warn(url))
 
     option_results = OrderedDict()
     invalid_options = []
@@ -401,7 +404,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
                                           categories=[tag.name.strip() for tag in cloud_dataset.tags],
                                           options=datasource["options"],
                                           paths=datasource["paths"],
-                                          requires_security_master=datasource["requiresSecurityMaster"]))
+                                          requirements=datasource.get("requirements", {})))
 
     return available_datasets
 
