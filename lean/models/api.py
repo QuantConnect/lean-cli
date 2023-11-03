@@ -15,7 +15,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from lean.constants import EQUITY_SECURITY_MASTER_PRODUCT_ID
 from lean.models.pydantic import WrappedBaseModel, validator
 
 
@@ -403,22 +402,18 @@ class QCFullOrganization(WrappedBaseModel):
     data: QCOrganizationData
     members: List[QCOrganizationMember]
 
-    def has_security_master_subscription(self) -> bool:
-        """Returns whether this organization has a Security Master subscription.
+    def has_security_master_subscription(self, id: int) -> bool:
+        """Returns whether this organization has the Security Master subscription of a given Id
 
+        :param id: the Id of the Security Master Subscription
         :return: True if the organization has a Security Master subscription, False if not
         """
-
-        # TODO: This sort of hardcoded product ID checking is not sufficient when we consider
-        # multiple 'Security Master' products. Especially since they will be specific to certain datasources.
-        # For now, simple checks for an equity "Security Master" subscription
-        # Issue created here: https://github.com/QuantConnect/lean-cli/issues/73
 
         data_products_product = next((x for x in self.products if x.name == "Data"), None)
         if data_products_product is None:
             return False
 
-        return any(x.productId in {EQUITY_SECURITY_MASTER_PRODUCT_ID} for x in data_products_product.items)
+        return any(x.productId == id for x in data_products_product.items)
 
 
 class QCMinimalOrganization(WrappedBaseModel):
