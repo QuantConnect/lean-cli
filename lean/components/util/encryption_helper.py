@@ -60,7 +60,7 @@ def get_project_key_hash(project_key_path: Path):
     :param project_key_path: The path to the project key file
     :return: The project iv
     """
-    with open(project_key_path, 'r', encoding='utf-8', newline='\r\n') as f:
+    with open(project_key_path, 'r', encoding='utf-8', newline='') as f:
         content = f.read()
         return calculate_md5(content)
 
