@@ -49,7 +49,7 @@ def get_project_key(project_key_path: Path, organization_id: str) -> str:
     :param project_key_path: The path to the project key file
     :return: The project key
     """
-    with open(project_key_path, 'r') as f:
+    with open(project_key_path, 'r', encoding='utf-8', newline='') as f:
         content = f.read()
         key_for_aes = _get_fixed_length_key_from_user_full_length_key(content, organization_id.encode('utf-8'))
         return key_for_aes
@@ -60,7 +60,7 @@ def get_project_key_hash(project_key_path: Path):
     :param project_key_path: The path to the project key file
     :return: The project iv
     """
-    with open(project_key_path, 'r', encoding='utf-8') as f:
+    with open(project_key_path, 'r', encoding='utf-8', newline='') as f:
         content = f.read()
         return calculate_md5(content)
 
