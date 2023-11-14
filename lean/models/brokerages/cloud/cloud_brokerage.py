@@ -39,7 +39,7 @@ class CloudBrokerage(JsonModule):
                 continue
             # TODO: handle cases where tranding env config is not present, environment will still be required.
             if type(config) == TradingEnvConfiguration:
-                value = "paper" if str(config).lower() in [
+                value = "paper" if config._value.lower() in [
                     "practice", "demo", "beta", "paper"] else "live"
             elif type(config) is InternalInputUserInput:
                 if not config._is_conditional:
