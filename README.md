@@ -359,8 +359,6 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
-  --bybit-use-testnet [live|paper]
-                                  Whether the testnet should be used
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
