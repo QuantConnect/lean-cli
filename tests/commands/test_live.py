@@ -348,6 +348,12 @@ brokerage_required_options = {
         "tdameritrade-account-number": "123",
         "tdameritrade-api-key": "abc",
         "tdameritrade-access-token": "abc",
+    },
+    "Bybit": {
+        "bybit-api-key": "abc",
+        "bybit-api-secret": "abc",
+        "bybit-vip-level": "VIP0",
+        "bybit-use-testnet": "paper",
     }
 }
 
@@ -366,7 +372,8 @@ data_feed_required_options = {
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": terminal_link_required_options,
     "Kraken": brokerage_required_options["Kraken"],
-    "TDAmeritrade": brokerage_required_options["TDAmeritrade"]
+    "TDAmeritrade": brokerage_required_options["TDAmeritrade"],
+    "Bybit": brokerage_required_options["Bybit"]
 }
 
 
