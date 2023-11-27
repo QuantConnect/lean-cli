@@ -252,6 +252,8 @@ class PushManager:
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
 
+            if "encryption_key" in update_args:
+                del update_args["encryption_key"]
             updated_keys = list(update_args)
             if len(updated_keys) == 1:
                 updated_keys_str = updated_keys[0]
