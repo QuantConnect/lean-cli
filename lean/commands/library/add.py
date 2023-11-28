@@ -304,16 +304,14 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
 
     if library_manager.is_lean_library(library_dir):
         # check encryption conditions
-        if project_config.get('encrypted', False) and project_config.get('encryption-key-path', None):
+        is_project_encrypted = project_config.get('encrypted', False)
+        project_encryption_key_path = project_config.get('encryption-key-path', None)
+        if is_project_encrypted and project_encryption_key_path:
+            from lean.components.util.encryption_helper import are_encryption_keys_equal
             library_project_config = container.project_config_manager.get_project_config(library_dir)
             is_library_encrypted = library_project_config.get('encrypted', False)
             library_encryption_key_path = library_project_config.get('encryption-key-path', None)
-            if library_encryption_key_path:
-                library_encryption_key_path = Path(library_encryption_key_path)
-            project_encryption_key_path = project_config.get('encryption-key-path', None)
-            if project_encryption_key_path:
-                project_encryption_key_path = Path(project_encryption_key_path)
-            if is_library_encrypted and library_encryption_key_path != project_encryption_key_path:
+            if is_library_encrypted and are_encryption_keys_equal(library_encryption_key_path, project_encryption_key_path) == False:
                 raise RuntimeError(f"Library is encrypted with a different key {library_encryption_key_path}. "
                                    f"Please use the same key as project {project_encryption_key_path}.")
         logger.info(f"Adding Lean CLI library {library_dir} to project {project}")
