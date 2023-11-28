@@ -73,6 +73,19 @@ def get_project_iv(project_key_path: Path):
     key_id = get_project_key_hash(project_key_path)
     return key_id[:16]
 
+def are_encryption_keys_equal(key1: Path, key2: Path) -> bool:
+    """Check if two encryption keys are equal
+
+    :param key1: The first key to compare
+    :param key2: The second key to compare
+    :return: True if the keys are equal, False otherwise
+    """
+    if key1 is None and key2 is None:
+        return True
+    if key1 is None or key2 is None:
+        return False
+    return get_project_key_hash(key1) == get_project_key_hash(key2)
+
 def get_decrypted_file_content_for_local_project(project: Path, source_files: List[Path], encryption_key: Path, project_config_manager: ProjectConfigManager, organization_id: str) -> List[str]:
     project_config = project_config_manager.get_project_config(project)
 
