@@ -54,25 +54,31 @@ class PushManager:
         :param project: path to the directory containing the local project that needs to be pushed
         """
         libraries = self._project_manager.get_project_libraries(project)
-        self.push_projects(libraries + [project], encryption_action, encryption_key)
+        self.push_projects([project], libraries, encryption_action, encryption_key)
 
-    def push_projects(self, projects_to_push: List[Path], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
+    def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None) -> None:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         """
-        if len(projects_to_push) == 0:
+        all_projects_to_push = associated_libraries_to_push + projects_to_push
+
+        if len(all_projects_to_push) == 0:
             return
 
         organization_id = self._organization_manager.try_get_working_organization_id()
 
-        for index, path in enumerate(projects_to_push, start=1):
+        for index, path in enumerate(all_projects_to_push, start=1):
+
+            # Check if it's an associated library to push, we don't encrypt those.
+            encryption_action_value = encryption_action if path not in associated_libraries_to_push else None
+            encryption_key_value = encryption_key if path not in associated_libraries_to_push else None
             relative_path = path.relative_to(Path.cwd())
             try:
-                self._logger.info(f"[{index}/{len(projects_to_push)}] Pushing '{relative_path}'")
-                self._push_project(path, organization_id, encryption_action, encryption_key)
+                self._logger.info(f"[{index}/{len(all_projects_to_push)}] Pushing '{relative_path}'")
+                self._push_project(path, organization_id, encryption_action_value, encryption_key_value)
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
