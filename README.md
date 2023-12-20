@@ -143,8 +143,11 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [QuantConnect|Local|Terminal Link]
+  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
+                                  Your Polygon.io subscription plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1053,9 +1056,9 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon Data Feed|Custom data only|Bybit]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|Custom data only|Bybit]
                                   The data feed to use
-  --data-provider [QuantConnect|Local]
+  --data-provider [Polygon|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1164,7 +1167,9 @@ Options:
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --polygon-api-key TEXT          Your Polygon data feed API Key
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
+                                  Your Polygon.io subscription plan
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1566,8 +1571,11 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [QuantConnect|Local|Terminal Link]
+  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
+                                  Your Polygon.io subscription plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
