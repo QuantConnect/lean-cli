@@ -21,7 +21,7 @@ from lean.container import container, Logger
 from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
 from lean.models.logger import Option
-from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
+from lean.models.data_providers import QuantConnectDataProvider, all_data_providers, DataProvider
 from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
 from lean.models.click_options import options_from_json, get_configs_for_options
 
@@ -365,8 +365,11 @@ def backtest(project: Path,
     if download_data:
         data_provider = QuantConnectDataProvider.get_name()
 
+    organization_id = container.organization_manager.try_get_working_organization_id()
+
     if data_provider is not None:
-        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+        data_provider_configurer.ensure_module_installed(organization_id)
         data_provider_configurer.configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
@@ -404,7 +407,7 @@ def backtest(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     # Configure addon modules
-    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, "backtesting")
+    build_and_configure_modules(addon_module, organization_id, lean_config, logger, "backtesting")
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
