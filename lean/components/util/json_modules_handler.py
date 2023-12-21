@@ -37,7 +37,8 @@ def build_and_configure_modules(modules: List[AddonModule], organization_id: str
             logger.error(f"Addon module '{given_module}' failed to configure: {e}")
     return lean_config
 
-def get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger):
+
+def get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger) -> JsonModule:
     [target_module] = [module for module in module_list if module.get_name() == target_module_name]
     # update essential properties from brokerage to datafeed
     # needs to be updated before fetching required properties

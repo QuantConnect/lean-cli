@@ -18,7 +18,7 @@ from lean.click import LeanCommand, PathParameter
 from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
-from lean.models.data_providers import QuantConnectDataProvider, all_data_providers
+from lean.models.data_providers import QuantConnectDataProvider, all_data_providers, DataProvider
 from lean.components.util.name_extraction import convert_to_class_name
 from lean.components.util.json_modules_handler import get_and_build_module
 from lean.models.click_options import options_from_json, get_configs_for_options
@@ -113,7 +113,8 @@ def research(project: Path,
         data_provider = QuantConnectDataProvider.get_name()
 
     if data_provider is not None:
-        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+        data_provider_configurer.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
         data_provider_configurer.configure(lean_config, "backtesting")
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
