@@ -195,11 +195,6 @@ class LeanRunner:
         project_config = self._project_config_manager.get_project_config(project_dir)
         docker_project_config = project_config.get("docker", {})
 
-        # Install the required modules when they're needed
-        if lean_config.get("data-provider", None) == "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider" \
-            and lean_config.get("data-downloader", None) == "TerminalLinkDataDownloader":
-            self._module_manager.install_module(TERMINAL_LINK_PRODUCT_ID, lean_config["job-organization-id"])
-
         # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
         data_dir = self._lean_config_manager.get_data_directory()
         if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
