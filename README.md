@@ -146,8 +146,6 @@ Options:
   --data-provider [Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
-                                  Your Polygon.io subscription plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1168,8 +1166,6 @@ Options:
   --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
-                                  Your Polygon.io subscription plan
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1574,8 +1570,6 @@ Options:
   --data-provider [Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-subscription-plan [Basic|Starter|Developer|Advanced]
-                                  Your Polygon.io subscription plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
