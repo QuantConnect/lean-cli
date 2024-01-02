@@ -269,7 +269,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -293,11 +293,8 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-api-key TEXT             Your Coinbase Pro API key
-  --gdax-api-secret TEXT          Your Coinbase Pro API secret
-  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-use-sandbox [live|paper]
-                                  Whether the sandbox should be used
+  --coinbase-api-key TEXT             Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT          Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1052,9 +1049,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Pro|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|Custom data only|Bybit]
+  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|Custom data only|Bybit]
                                   The data feed to use
   --data-provider [Polygon|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
@@ -1075,11 +1072,8 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --gdax-api-key TEXT             Your Coinbase Pro API key
-  --gdax-api-secret TEXT          Your Coinbase Pro API secret
-  --gdax-passphrase TEXT          Your Coinbase Pro API passphrase
-  --gdax-use-sandbox [live|paper]
-                                  Whether the sandbox should be used
+  --coinbase-api-key TEXT             Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT          Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
