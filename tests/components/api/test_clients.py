@@ -305,11 +305,11 @@ def test_data_client_list_files() -> None:
     data_client = DataClient(api_client, HTTPClient(mock.Mock()))
 
     # Test files can be listed
-    files = data_client.list_files("crypto/gdax/daily/")
+    files = data_client.list_files("crypto/coinbase/daily/")
 
     # Test all files start with the requested prefix
     for file in files:
-        assert file.startswith("crypto/gdax/daily/")
+        assert file.startswith("crypto/coinbase/daily/")
 
 
 def test_data_client_get_info() -> None:
