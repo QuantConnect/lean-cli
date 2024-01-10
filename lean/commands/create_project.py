@@ -246,7 +246,6 @@ LIBRARY_CSHARP_MAIN = """
     using QuantConnect.Orders.Slippage;
     using QuantConnect.Orders.TimeInForces;
     using QuantConnect.Python;
-    using QuantConnect.Research;
     using QuantConnect.Scheduling;
     using QuantConnect.Securities;
     using QuantConnect.Securities.Equity;
