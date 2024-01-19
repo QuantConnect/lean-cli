@@ -1053,7 +1053,7 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|Custom data only|Bybit]
                                   The data feed to use
-  --data-provider [Polygon|QuantConnect|Local]
+  --data-provider [Polygon|IQFeed|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
