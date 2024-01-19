@@ -54,12 +54,13 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if _getBrokerageBaseName(local_brokerage.get_live_name(environment_name)) == _getBrokerageBaseName(brokerage)]
-    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
+    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if _get_brokerage_base_name(local_brokerage.get_live_name(environment_name)) == _get_brokerage_base_name(brokerage)]
+    data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
+    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if _get_brokerage_base_name(local_data_feed.get_live_name(environment_name)) in data_queue_handlers_base_names]
     return brokerage_configurer, data_feed_configurers
 
 
-def _getBrokerageBaseName(brokerage: str) -> str:
+def _get_brokerage_base_name(brokerage: str) -> str:
     """Returns the base name of the brokerage.
 
     :param brokerage: the name of the brokerage
