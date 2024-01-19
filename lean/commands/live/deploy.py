@@ -28,7 +28,7 @@ from lean.commands.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 from lean.models.data_providers import all_data_providers
-from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module, update_essential_properties_available
 
 _environment_skeleton = {
     "live-mode": True,
@@ -54,10 +54,18 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
+    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if _getBrokerageBaseName(local_brokerage.get_live_name(environment_name)) == _getBrokerageBaseName(brokerage)]
     data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
     return brokerage_configurer, data_feed_configurers
 
+
+def _getBrokerageBaseName(brokerage: str) -> str:
+    """Returns the base name of the brokerage.
+
+    :param brokerage: the name of the brokerage
+    :return: the base name of the brokerage
+    """
+    return brokerage.split('.')[-1]
 
 def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str, Any]) -> None:
     """Raises an error if any of the given modules are not installed.
@@ -326,6 +334,8 @@ def deploy(project: Path,
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+        [update_essential_properties_available(all_local_brokerages, kwargs)]
+        [update_essential_properties_available(all_local_data_feeds, kwargs)]
     elif brokerage is not None or len(data_feed) > 0:
         ensure_options(["brokerage", "data_feed"])
 

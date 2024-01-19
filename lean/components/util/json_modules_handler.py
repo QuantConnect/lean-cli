@@ -56,3 +56,12 @@ def get_and_build_module(target_module_name: str, module_list: List[JsonModule],
     target_module.update_configs(required_properties_value)
     logger.debug(f"json_module_handler.get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
     return target_module
+
+
+def update_essential_properties_available(module_list: List[JsonModule], properties: Dict[str, Any]) -> JsonModule:
+    for target_module in module_list:
+        # update essential properties from brokerage to datafeed
+        # needs to be updated before fetching required properties
+        essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
+        essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
+        target_module.update_configs(essential_properties_value)
