@@ -63,5 +63,5 @@ def update_essential_properties_available(module_list: List[JsonModule], propert
         # update essential properties from brokerage to datafeed
         # needs to be updated before fetching required properties
         essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
-        essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
+        essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties if properties[prop] is not None}
         target_module.update_configs(essential_properties_value)
