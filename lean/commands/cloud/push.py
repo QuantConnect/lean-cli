@@ -68,4 +68,4 @@ def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[boo
         if key is not None:
             raise RuntimeError(f"Encryption key can only be specified when pushing a single project.")
         projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
-        push_manager.push_projects(projects_to_push, encryption_action, key)
+        push_manager.push_projects(projects_to_push, [], encryption_action, key)
