@@ -65,6 +65,34 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     path.write_text(config, encoding="utf-8")
 
 
+def create_fake_binance_environment(name: str, live_mode: bool) -> None:
+    path = Path.cwd() / "lean.json"
+    config = path.read_text(encoding="utf-8")
+    config = config.replace("{", f"""
+{{
+    "binance-use-testnet": "live",
+    "binance-exchange-name": "binance",
+    "binance-api-secret": "abc",
+    "binance-api-key": "abc",
+    "organization-id": "abc",
+
+    "environments": {{
+        "{name}": {{
+            "live-mode": {str(live_mode).lower()},
+
+            "live-mode-brokerage": "QuantConnect.BinanceBrokerage.BinanceCoinFuturesBrokerage",
+            "data-queue-handler": [ "QuantConnect.BinanceBrokerage.BinanceCoinFuturesBrokerage" ],
+            "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
+            "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
+            "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
+            "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
+            "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler",
+            "history-provider": [ "BrokerageHistoryProvider", "SubscriptionDataReaderHistoryProvider" ]
+        }}
+    }},
+    """)
+
+    path.write_text(config, encoding="utf-8")
 
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     # TODO: currently it is not using the live-paper envrionment
@@ -258,6 +286,20 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
 
     lean_runner.run_lean.assert_not_called()
 
+def test_live_sets_dependent_configurations_from_modules_json_based_on_environment() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_binance_environment("live-binance", True)
+    lean_runner = container.lean_runner
+
+    config_path = Path.cwd() / "lean.json"
+    config = config_path.read_text(encoding="utf-8")
+    config_path.write_text(config.replace("binance-exchange-name", "different-config"), encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-binance"])
+
+    assert result.exit_code == 0
+
+    lean_runner.run_lean.assert_called()
 
 terminal_link_required_options = {
     "terminal-link-connection-type": "SAPI",
