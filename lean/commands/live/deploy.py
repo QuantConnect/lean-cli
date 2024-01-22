@@ -21,14 +21,14 @@ from lean.models.brokerages.local import all_local_brokerages, local_brokerage_d
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
-from lean.models.configuration import InternalInputUserInput
+from lean.models.configuration import ConfigurationsEnvConfiguration, InternalInputUserInput
 from lean.models.click_options import options_from_json, get_configs_for_options
 from lean.models.json_module import LiveInitialStateInput
 from lean.commands.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
 from lean.models.data_providers import all_data_providers
-from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module, update_essential_properties_available
 
 _environment_skeleton = {
     "live-mode": True,
@@ -54,10 +54,19 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if local_brokerage.get_live_name(environment_name) == brokerage]
-    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if local_data_feed.get_live_name(environment_name) in data_queue_handlers]
+    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if _get_brokerage_base_name(local_brokerage.get_live_name(environment_name)) == _get_brokerage_base_name(brokerage)]
+    data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
+    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if _get_brokerage_base_name(local_data_feed.get_live_name(environment_name)) in data_queue_handlers_base_names]
     return brokerage_configurer, data_feed_configurers
 
+
+def _get_brokerage_base_name(brokerage: str) -> str:
+    """Returns the base name of the brokerage.
+
+    :param brokerage: the name of the brokerage
+    :return: the base name of the brokerage
+    """
+    return brokerage.split('.')[-1]
 
 def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str, Any]) -> None:
     """Raises an error if any of the given modules are not installed.
@@ -326,6 +335,52 @@ def deploy(project: Path,
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+        
+        lean_environment = lean_config["environments"][environment_name]
+        for key in ["live-mode-brokerage", "data-queue-handler"]:
+            if key not in lean_environment:
+                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
+                                    "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
+
+        brokerage = lean_environment["live-mode-brokerage"]
+        data_queue_handlers = lean_environment["data-queue-handler"]
+        data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
+        data_feed_configurers = []
+
+        for local_brokerage in all_local_brokerages:
+            configuration_environments: List[ConfigurationsEnvConfiguration] = [config for config in local_brokerage._lean_configs if config._is_type_configurations_env]
+            for configuration_environment in configuration_environments:
+                configuration_environment_values = list(configuration_environment._env_and_values.values())[0]
+                if any(True for x in configuration_environment_values if x["name"] == "live-mode-brokerage" and _get_brokerage_base_name(x["value"]) == _get_brokerage_base_name(brokerage)):
+                    brokerage_configurer = local_brokerage
+                    # fill essential properties
+                    for condition in configuration_environment._filter._conditions:
+                        if condition._type != "exact-match":
+                            continue
+                        property_name_to_fill = local_brokerage.convert_lean_key_to_variable(condition._dependent_config_id)
+                        property_value_to_fill = condition._pattern
+                        kwargs[property_name_to_fill] = property_value_to_fill
+                        lean_config[condition._dependent_config_id] = property_value_to_fill
+                    break
+        
+        for local_data_feed in all_local_data_feeds:
+            configuration_environments: List[ConfigurationsEnvConfiguration] = [config for config in local_data_feed._lean_configs if config._is_type_configurations_env]
+            for configuration_environment in configuration_environments:
+                configuration_environment_values = list(configuration_environment._env_and_values.values())[0]
+                if any(True for x in configuration_environment_values if x["name"] == "data-queue-handler" and _get_brokerage_base_name(x["value"]) in data_queue_handlers_base_names):
+                    data_feed_configurers.append(local_data_feed)
+                    # fill essential properties
+                    for condition in configuration_environment._filter._conditions:
+                        if condition._type != "exact-match":
+                            continue
+                        property_name_to_fill = local_data_feed.convert_lean_key_to_variable(condition._dependent_config_id)
+                        property_value_to_fill = condition._pattern
+                        kwargs[property_name_to_fill] = property_value_to_fill
+                        lean_config[condition._dependent_config_id] = property_value_to_fill
+
+        [update_essential_properties_available([brokerage_configurer], kwargs)]
+        [update_essential_properties_available(data_feed_configurers, kwargs)]
+
     elif brokerage is not None or len(data_feed) > 0:
         ensure_options(["brokerage", "data_feed"])
 

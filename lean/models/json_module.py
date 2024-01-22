@@ -91,8 +91,8 @@ class JsonModule(ABC):
                         config._is_type_configurations_env and self.check_if_config_passes_filters(
                             config)
                         ] or [None]
-        if env_config is not None and target_env in env_config._env_and_values.keys():
-            env_config_values = env_config._env_and_values[target_env]
+        if env_config is not None:
+            env_config_values = list(env_config._env_and_values.values())[0]
         return env_config_values
 
     def get_config_from_type(self, config_type: Configuration) -> str:
