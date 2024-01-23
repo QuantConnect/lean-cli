@@ -33,7 +33,7 @@ def get_version() -> str:
 
 
 def get_stubs_version_range() -> str:
-    if get_version() == "dev":
+    if "dev" in get_version():
         return ""
 
     try:
