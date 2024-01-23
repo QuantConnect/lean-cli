@@ -53,7 +53,7 @@ def test_warn_if_cli_outdated_warns_when_pypi_version_newer_than_current_version
     logger.warn.assert_called()
 
 
-@mock.patch.object(lean, "__version__", "dev")
+@mock.patch.object(lean, "__version__", "0.0.0-dev")
 def test_warn_if_cli_outdated_does_nothing_when_running_dev_version(requests_mock: RequestsMock) -> None:
     logger, storage, docker_manager, update_manager = create_objects()
 

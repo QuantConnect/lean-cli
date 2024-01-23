@@ -47,7 +47,7 @@ jobs:
         run: pip install wheel
 
       - name: Update version
-        run: sed -i 's/__version__ = "dev"/__version__ = "'"${GITHUB_REF##*/}"'"/g' lean/__init__.py
+        run: sed -i 's/__version__ = "0.0.0-dev"/__version__ = "'"${GITHUB_REF##*/}"'"/g' lean/__init__.py
 
       - name: Build package
         run: python setup.py sdist bdist_wheel

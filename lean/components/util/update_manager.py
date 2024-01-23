@@ -51,7 +51,7 @@ class UpdateManager:
         current_version = __version__
 
         # A development version is never considered outdated
-        if current_version == "dev":
+        if "dev" in current_version:
             return
 
         if not force and not self._should_check_for_updates("cli", UPDATE_CHECK_INTERVAL_CLI):

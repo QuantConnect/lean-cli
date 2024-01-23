@@ -138,7 +138,7 @@ class APIClient:
         }
 
         version = __version__
-        if __version__ == 'dev':
+        if "dev" in version:
             version = 99999999
         headers["User-Agent"] = f"Lean CLI {version}"
 
