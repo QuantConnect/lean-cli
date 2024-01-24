@@ -39,7 +39,7 @@ class LeanConfigConfigurer(JsonModule, ABC):
         :param lean_config: the Lean configuration dict to write to
         :param environment_name: the name of the environment to update
         """
-        for environment_config in self.get_configurations_env_values_from_name(environment_name):
+        for environment_config in self.get_configurations_env_values():
             environment_config_name = environment_config["name"]
             if self.__class__.__name__ == 'DataFeed':
                 if environment_config_name == "data-queue-handler":
@@ -51,8 +51,6 @@ class LeanConfigConfigurer(JsonModule, ABC):
             elif self.__class__.__name__ == 'LocalBrokerage':
                 if environment_config_name != "data-queue-handler":
                     lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
-            else:
-                raise ValueError(f'{self.__class__.__name__} not valid for _configure_environment()')
 
     def configure_credentials(self, lean_config: Dict[str, Any]) -> None:
         """Configures the credentials in the Lean config for this brokerage and saves them persistently to disk.

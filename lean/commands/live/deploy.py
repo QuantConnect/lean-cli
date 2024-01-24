@@ -54,9 +54,13 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage for local_brokerage in all_local_brokerages if _get_brokerage_base_name(local_brokerage.get_live_name(environment_name)) == _get_brokerage_base_name(brokerage)]
+    [brokerage_configurer] = [local_brokerage
+                              for local_brokerage in all_local_brokerages
+                              if _get_brokerage_base_name(local_brokerage.get_live_name()) == _get_brokerage_base_name(brokerage)]
     data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
-    data_feed_configurers = [local_data_feed for local_data_feed in all_local_data_feeds if _get_brokerage_base_name(local_data_feed.get_live_name(environment_name)) in data_queue_handlers_base_names]
+    data_feed_configurers = [local_data_feed
+                             for local_data_feed in all_local_data_feeds
+                             if _get_brokerage_base_name(local_data_feed.get_live_name()) in data_queue_handlers_base_names]
     return brokerage_configurer, data_feed_configurers
 
 
@@ -335,7 +339,7 @@ def deploy(project: Path,
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-        
+
         lean_environment = lean_config["environments"][environment_name]
         for key in ["live-mode-brokerage", "data-queue-handler"]:
             if key not in lean_environment:
@@ -362,7 +366,7 @@ def deploy(project: Path,
                         kwargs[property_name_to_fill] = property_value_to_fill
                         lean_config[condition._dependent_config_id] = property_value_to_fill
                     break
-        
+
         for local_data_feed in all_local_data_feeds:
             configuration_environments: List[ConfigurationsEnvConfiguration] = [config for config in local_data_feed._lean_configs if config._is_type_configurations_env]
             for configuration_environment in configuration_environments:
