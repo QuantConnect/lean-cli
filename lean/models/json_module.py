@@ -85,13 +85,14 @@ class JsonModule(ABC):
         for key, value in key_and_values.items():
             self.update_value_for_given_config(key, value)
 
-    def get_configurations_env_values_from_name(self, target_env: str) -> List[Dict[str, str]]:
+    def get_configurations_env_values(self) -> List[Dict[str, str]]:
         env_config_values = []
         [env_config] = [config for config in self._lean_configs if
                         config._is_type_configurations_env and self.check_if_config_passes_filters(
                             config)
                         ] or [None]
         if env_config is not None:
+            # Always get the first one, since we only expect one env config in the json modules file
             env_config_values = list(env_config._env_and_values.values())[0]
         return env_config_values
 

@@ -21,11 +21,9 @@ class LocalBrokerage(LeanConfigConfigurer):
     def __init__(self, json_brokerage_data: Dict[str, Any]) -> None:
         super().__init__(json_brokerage_data)
 
-    def get_live_name(self, environment_name: str) -> str:
+    def get_live_name(self) -> str:
         live_name = self._id
-        environment_obj = self.get_configurations_env_values_from_name(
-            environment_name)
+        environment_obj = self.get_configurations_env_values()
         if environment_obj:
-            [live_name] = [x["value"]
-                           for x in environment_obj if x["name"] == "live-mode-brokerage"]
+            [live_name] = [x["value"] for x in environment_obj if x["name"] == "live-mode-brokerage"]
         return live_name
