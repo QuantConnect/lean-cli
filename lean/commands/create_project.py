@@ -168,7 +168,6 @@ DEFAULT_CSHARP_MAIN = """
     using QuantConnect.Securities.Volatility;
     using QuantConnect.Storage;
     using QuantConnect.Statistics;
-    using QuantConnect.Data.Custom.AlphaStreams;
     using QCAlgorithmFramework = QuantConnect.Algorithm.QCAlgorithm;
     using QCAlgorithmFrameworkBridge = QuantConnect.Algorithm.QCAlgorithm;
 #endregion
@@ -259,7 +258,6 @@ LIBRARY_CSHARP_MAIN = """
     using QuantConnect.Securities.Volatility;
     using QuantConnect.Storage;
     using QuantConnect.Statistics;
-    using QuantConnect.Data.Custom.AlphaStreams;
     using QCAlgorithmFramework = QuantConnect.Algorithm.QCAlgorithm;
     using QCAlgorithmFrameworkBridge = QuantConnect.Algorithm.QCAlgorithm;
 #endregion
