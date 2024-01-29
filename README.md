@@ -150,8 +150,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
 
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
@@ -1164,8 +1162,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
 
   --polygon-api-key TEXT          Your Polygon.io API Key
 
@@ -1577,8 +1573,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
 
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
