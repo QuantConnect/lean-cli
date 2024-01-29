@@ -143,8 +143,13 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
+  --data-provider [IQFeed|Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
@@ -293,8 +298,8 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT             Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT          Your Coinbase Advanced Trade API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1053,7 +1058,7 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|Custom data only|Bybit]
                                   The data feed to use
-  --data-provider [Polygon|QuantConnect|Local]
+  --data-provider [IQFeed|Polygon|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1072,8 +1077,8 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT             Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT          Your Coinbase Advanced Trade API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1157,8 +1162,8 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
@@ -1561,8 +1566,13 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
+  --data-provider [IQFeed|Polygon|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
