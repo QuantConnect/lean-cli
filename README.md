@@ -148,7 +148,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -1163,7 +1162,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -1573,7 +1571,6 @@ Options:
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
