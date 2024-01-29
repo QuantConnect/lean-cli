@@ -143,9 +143,16 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
+  --data-provider [Polygon|IQFeed|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --polygon-api-key TEXT          Your Polygon.io API Key
+
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
+
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1154,12 +1161,14 @@ Options:
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for
-  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
-  --iqfeed-productName TEXT       The product name of your IQFeed developer account
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
+
   --polygon-api-key TEXT          Your Polygon.io API Key
+
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1561,9 +1570,16 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [Polygon|QuantConnect|Local|Terminal Link]
+  --data-provider [Polygon|IQFeed|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --polygon-api-key TEXT          Your Polygon.io API Key
+
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary (optional)
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-productName TEXT       The product name of your IQFeed developer account (optional)
+
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
