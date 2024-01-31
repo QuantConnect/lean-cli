@@ -19,6 +19,7 @@ import pytest
 from click.testing import CliRunner
 
 from lean.commands import lean
+from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.storage import Storage
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
@@ -786,3 +787,32 @@ def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
     volumes = kwargs["volumes"]
     assert "extra/path" in volumes
     assert volumes["extra/path"] == {"bind": "/extra/path", "mode": "rw"}
+
+
+def test_optimize_used_data_downloader_specified_with_data_provider_option() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.MagicMock()
+    docker_manager.run_image.side_effect = run_image
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    with mock.patch.object(ModuleManager, "install_module"):
+        result = CliRunner().invoke(lean, ["optimize", "Python Project",
+                                           "--data-provider", "Polygon",
+                                           "--polygon-api-key", "my-key"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+    mounts = kwargs["mounts"]
+
+    lean_config_filename = next(mount["Source"] for mount in mounts if mount["Target"] == "/Lean/Launcher/bin/Debug/config.json")
+    assert lean_config_filename is not None
+
+    config = json.loads(Path(lean_config_filename).read_text(encoding="utf-8"))
+    assert "data-downloader" in config
+    assert config["data-downloader"] == "QuantConnect.Polygon.PolygonDataDownloader"

@@ -1454,6 +1454,10 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
+  --data-provider [IQFeed|Polygon|QuantConnect|Local|Terminal Link]
+                                  Update the Lean configuration file to retrieve data from the given provider
+  --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
+                                  for --data-provider QuantConnect
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer
@@ -1463,6 +1467,24 @@ Options:
   --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
                                   py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --terminal-link-connection-type [DAPI|SAPI]
+                                  Terminal Link Connection Type [DAPI, SAPI]
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
+  --terminal-link-environment [Production|Beta]
+                                  The environment to run in
+  --terminal-link-server-host TEXT
+                                  The host of the TerminalLink server
+  --terminal-link-server-port INTEGER
+                                  The port of the TerminalLink server
+  --terminal-link-openfigi-api-key TEXT
+                                  The Open FIGI API key to use for mapping options
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
