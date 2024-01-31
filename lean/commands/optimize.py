@@ -22,9 +22,12 @@ from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
+from lean.models.click_options import options_from_json, get_configs_for_options
+from lean.models.data_providers import all_data_providers, QuantConnectDataProvider, DataProvider
 from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
-from lean.components.util.json_modules_handler import build_and_configure_modules
+from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+
 
 def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
     from re import findall
@@ -94,6 +97,14 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               type=str,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
+@option("--data-provider",
+              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              default="Local",
+              help="Update the Lean configuration file to retrieve data from the given provider")
+@option("--download-data",
+              is_flag=True,
+              default=False,
+              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
 @option("--release",
               is_flag=True,
               default=False,
@@ -129,6 +140,7 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
+@options_from_json(get_configs_for_options("backtest"))
 def optimize(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -138,6 +150,8 @@ def optimize(project: Path,
              target_direction: Optional[str],
              parameter: List[Tuple[str, float, float, float]],
              constraint: List[str],
+             data_provider: Optional[str],
+             download_data: bool,
              release: bool,
              image: Optional[str],
              update: bool,
@@ -146,7 +160,8 @@ def optimize(project: Path,
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
-             no_update: bool) -> None:
+             no_update: bool,
+             **kwargs) -> None:
     """Optimize a project's parameters locally using Docker.
 
     \b
@@ -281,6 +296,17 @@ def optimize(project: Path,
     lean_config_manager = container.lean_config_manager
     lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None)
 
+    organization_id = container.organization_manager.try_get_working_organization_id()
+
+    if download_data:
+        data_provider = QuantConnectDataProvider.get_name()
+
+    if data_provider is not None:
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+        data_provider_configurer.ensure_module_installed(organization_id)
+        data_provider_configurer.configure(lean_config, environment)
+        logger.info(lean_config)
+
     if not output.exists():
         output.mkdir(parents=True)
 
@@ -301,7 +327,7 @@ def optimize(project: Path,
     lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
 
     # Configure addon modules
-    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, environment)
+    build_and_configure_modules(addon_module, organization_id, lean_config, logger, environment)
 
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach)
 
