@@ -143,7 +143,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [IQFeed|Polygon|IEX|QuantConnect|Local|Terminal Link]
+  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
@@ -154,6 +154,7 @@ Options:
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
+  --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1061,7 +1062,7 @@ Options:
                                   The brokerage to use
   --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|Custom data only|Bybit]
                                   The data feed to use
-  --data-provider [IQFeed|Polygon|IEX|QuantConnect|Local]
+  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1171,6 +1172,7 @@ Options:
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
+  --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1460,7 +1462,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider [IQFeed|Polygon|QuantConnect|Local|Terminal Link]
+  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider QuantConnect
@@ -1479,6 +1481,10 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
+  --iex-price-plan [Launch|Grow|Enterprise]
+                                  Your IEX Cloud Price plan
+  --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1594,7 +1600,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [IQFeed|Polygon|IEX|QuantConnect|Local|Terminal Link]
+  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given provider
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
@@ -1605,6 +1611,7 @@ Options:
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
+  --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
