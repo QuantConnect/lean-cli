@@ -155,6 +155,8 @@ Options:
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
+  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+                                  Your Alpha Vantage Premium API Key plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1173,6 +1175,8 @@ Options:
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
+  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+                                  Your Alpha Vantage Premium API Key plan
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1485,6 +1489,8 @@ Options:
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
+  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+                                  Your Alpha Vantage Premium API Key plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
@@ -1612,6 +1618,8 @@ Options:
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
+  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+                                  Your Alpha Vantage Premium API Key plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
   --terminal-link-server-auth-id TEXT
