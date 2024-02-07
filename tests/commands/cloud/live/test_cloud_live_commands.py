@@ -114,7 +114,7 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
                                        "--ib-account", "DU2366417", "--ib-password", "test_password"])
 
     assert result.exit_code == 0
-    assert "Data provider: quantconnecthandler+interactivebrokershandler" in result.output.split("\n")
+    assert "Data provider live: quantconnecthandler+interactivebrokershandler" in result.output.split("\n")
 
 def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
     create_fake_lean_cli_directory()
@@ -135,7 +135,7 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
                                        "--tradier-access-token", "456", "--tradier-environment", "paper"])
 
     assert result.exit_code == 0
-    assert "Data provider: TradierBrokerage" in result.output.split("\n")
+    assert "Data provider live: TradierBrokerage" in result.output.split("\n")
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),

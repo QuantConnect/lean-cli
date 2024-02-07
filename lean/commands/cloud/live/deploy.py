@@ -340,7 +340,7 @@ def deploy(project: str,
     logger.info(f"Environment: {brokerage_settings['environment'].title()}")
     logger.info(f"Server name: {live_node.name}")
     logger.info(f"Server type: {live_node.sku}")
-    logger.info(f"Data provider historical: {price_data_handler.replace('Handler', '')}")
+    logger.info(f"Data provider live: {price_data_handler.replace('Handler', '')}")
     logger.info(f"LEAN version: {cloud_project.leanVersionId}")
     logger.info(f"Order event notifications: {'Yes' if notify_order_events else 'No'}")
     logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")

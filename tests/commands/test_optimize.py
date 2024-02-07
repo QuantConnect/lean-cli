@@ -801,7 +801,7 @@ def test_optimize_used_data_downloader_specified_with_data_provider_option() -> 
 
     with mock.patch.object(ModuleManager, "install_module"):
         result = CliRunner().invoke(lean, ["optimize", "Python Project",
-                                           "--data-provider", "Polygon",
+                                           "--data-provider-historical", "Polygon",
                                            "--polygon-api-key", "my-key"])
 
     assert result.exit_code == 0
