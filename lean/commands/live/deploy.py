@@ -171,7 +171,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
 
     brokerage.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
 
-    data_feeds = logger.prompt_list("Select a data feed", [
+    data_feeds = logger.prompt_list("Select a live data provider", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
     ], multiple= True)
     for data_feed in data_feeds:
@@ -228,14 +228,14 @@ def _get_default_value(key: str) -> Optional[Any]:
 @option("--brokerage",
               type=Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
               help="The brokerage to use")
-@option("--data-feed",
+@option("--data-provider-live",
               type=Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               multiple=True,
-              help="The data feed to use")
-@option("--data-provider",
+              help="The live data provider to use")
+@option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
               default="Local",
-              help="Update the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-local"))
 @option("--release",
               is_flag=True,
@@ -282,8 +282,8 @@ def deploy(project: Path,
            output: Optional[Path],
            detach: bool,
            brokerage: Optional[str],
-           data_feed: Optional[str],
-           data_provider: Optional[str],
+           data_provider_live: Optional[str],
+           data_provider_historical: Optional[str],
            release: bool,
            image: Optional[str],
            python_venv: Optional[str],
@@ -302,14 +302,14 @@ def deploy(project: Path,
     If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
-    By default an interactive wizard is shown letting you configure the brokerage and data feed to use.
-    If --environment, --brokerage or --data-feed are given the command runs in non-interactive mode.
+    By default an interactive wizard is shown letting you configure the brokerage and live data provider to use.
+    If --environment, --brokerage or --data-provider-live are given the command runs in non-interactive mode.
     In this mode the CLI does not prompt for input.
 
     If --environment is given it must be the name of a live environment in the Lean configuration.
 
-    If --brokerage and --data-feed are given, the options specific to the given brokerage/data feed must also be given.
-    The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in.
+    If --brokerage and --data-provider-live are given, the options specific to the given brokerage/live data provider must also be given.
+    The Lean config is used as fallback when a brokerage/live data provider-specific option hasn't been passed in.
     If a required option is not given and cannot be found in the Lean config the command aborts.
 
     By default the official LEAN engine image is used.
@@ -333,8 +333,8 @@ def deploy(project: Path,
 
     lean_config_manager = container.lean_config_manager
 
-    if environment is not None and (brokerage is not None or len(data_feed) > 0):
-        raise RuntimeError("--environment and --brokerage + --data-feed are mutually exclusive")
+    if environment is not None and (brokerage is not None or len(data_provider_live) > 0):
+        raise RuntimeError("--environment and --brokerage + --data-provider-live are mutually exclusive")
 
     if environment is not None:
         environment_name = environment
@@ -385,7 +385,7 @@ def deploy(project: Path,
         [update_essential_properties_available([brokerage_configurer], kwargs)]
         [update_essential_properties_available(data_feed_configurers, kwargs)]
 
-    elif brokerage is not None or len(data_feed) > 0:
+    elif brokerage is not None or len(data_provider_live) > 0:
         ensure_options(["brokerage", "data_feed"])
 
         environment_name = "lean-cli"
@@ -398,7 +398,7 @@ def deploy(project: Path,
         [brokerage_configurer] = [get_and_build_module(brokerage, all_local_brokerages, kwargs, logger)]
         brokerage_configurer.configure(lean_config, environment_name)
 
-        for df in data_feed:
+        for df in data_provider_live:
             [data_feed_configurer] = [get_and_build_module(df, all_local_data_feeds, kwargs, logger)]
             data_feed_configurer.configure(lean_config, environment_name)
 
@@ -407,8 +407,8 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
-    if data_provider is not None:
-        [data_provider_configurer] = [get_and_build_module(data_provider, all_data_providers, kwargs, logger)]
+    if data_provider_historical is not None:
+        [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
         data_provider_configurer.configure(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:
@@ -444,7 +444,7 @@ def deploy(project: Path,
     cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, env_brokerage,
                                                                                                       project_config.get("cloud-id", None), project)
 
-    if environment is None and brokerage is None and len(data_feed) == 0:   # condition for using interactive panel
+    if environment is None and brokerage is None and len(data_provider_live) == 0:   # condition for using interactive panel
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
 

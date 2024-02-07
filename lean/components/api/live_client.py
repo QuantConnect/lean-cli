@@ -71,7 +71,7 @@ class LiveClient:
         :param compile_id: the id of the compile to use for live trading
         :param node_id: the id of the node to start live trading on
         :param brokerage_settings: the brokerage settings to use
-        :param price_data_handler: the data feed to use
+        :param price_data_handler: the live data provider to use
         :param automatic_redeploy: whether automatic redeploys are enabled
         :param version_id: the id of the LEAN version to use
         :param notify_order_events: whether notifications should be sent on order events

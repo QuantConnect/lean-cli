@@ -16,7 +16,7 @@ from lean.models.lean_config_configurer import LeanConfigConfigurer
 
 
 class DataFeed(LeanConfigConfigurer):
-    """A JsonModule implementation for the Json data feed module."""
+    """A JsonModule implementation for the Json live data provider module."""
 
     def __init__(self, json_datafeed_data: Dict[str, Any]) -> None:
         super().__init__(json_datafeed_data)

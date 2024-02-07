@@ -15,7 +15,7 @@ from typing import Any, Dict
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 
 class DataProvider(LeanConfigConfigurer):
-    """A JsonModule implementation for the Json data provider module."""
+    """A JsonModule implementation for the Json historical data provider module."""
 
     def __init__(self, json_data_provider_data: Dict[str, Any]) -> None:
         super().__init__(json_data_provider_data)

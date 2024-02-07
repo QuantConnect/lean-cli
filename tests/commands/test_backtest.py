@@ -612,7 +612,7 @@ def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
 }
         """)
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-provider", "QuantConnect", "--data-purchase-limit", "1000"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-provider-historical", "QuantConnect", "--data-purchase-limit", "1000"])
 
     assert result.exit_code == 0
 

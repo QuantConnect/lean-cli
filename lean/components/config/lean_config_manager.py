@@ -297,7 +297,7 @@ class LeanConfigManager:
     def configure_data_purchase_limit(self, lean_config: Dict[str, Any], data_purchase_limit: Optional[int]) -> None:
         """Updates the data purchase limit in the Lean config.
 
-        Logs a warning if the data provider is not configured to download from QuantConnect.
+        Logs a warning if the historical data provider is not configured to download from QuantConnect.
 
         :param lean_config: the Lean config dict to update
         :param data_purchase_limit: the data purchase limit provided by the user, or None if no such limit was provided
@@ -307,7 +307,7 @@ class LeanConfigManager:
 
         if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
             self._logger.warn(
-                "--data-purchase-limit is ignored because the data provider is not set to download from the QuantConnect API, use --download-data to set that up")
+                "--data-purchase-limit is ignored because the historical data provider is not set to download from the QuantConnect API, use --download-data to set that up")
             return
 
         lean_config["data-purchase-limit"] = data_purchase_limit

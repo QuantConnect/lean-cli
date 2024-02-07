@@ -435,7 +435,7 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
         options.extend([f"--{key}", value])
 
     result = CliRunner().invoke(lean, ["live", "CSharp Project", "--environment", "live-paper",
-                                "--data-provider", data_provider,
+                                "--data-provider-historical", data_provider,
                                 *options])
 
     expected = 0
@@ -488,7 +488,7 @@ def test_live_non_interactive_aborts_when_missing_brokerage_options(brokerage: s
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                             "--brokerage", brokerage,
-                                            "--data-feed", data_feed,
+                                            "---data-provider-live", data_feed,
                                             *options])
             assert result.exit_code != 0
 
@@ -511,7 +511,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
-                                               "--data-feed", data_feed,
+                                               "--data-provider-live", data_feed,
                                                "--live-cash-balance", "USD:100",
                                                *options])
 
@@ -541,7 +541,7 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
-                                       "--data-feed", data_feed,
+                                       "--data-provider-live", data_feed,
                                        *options])
 
     traceback.print_exception(*result.exc_info)
@@ -583,7 +583,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
-                                       "--data-feed", data_feed,
+                                       "--data-provider-live", data_feed,
                                        *options])
 
     traceback.print_exception(*result.exc_info)
@@ -622,8 +622,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
 
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
-                                       "--data-feed", data_feed1,
-                                       "--data-feed", data_feed2,
+                                       "--data-provider-live", data_feed1,
+                                       "--data-provider-live", data_feed2,
                                        *options])
 
     traceback.print_exception(*result.exc_info)
@@ -682,7 +682,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_brokerage_settings(b
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", brokerage,
-                                               "--data-feed", data_feed,
+                                               "--data-provider-live", data_feed,
                                                *options])
 
             traceback.print_exception(*result.exc_info)
@@ -731,7 +731,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
-                                               "--data-feed", data_feed,
+                                               "--data-provider-live", data_feed,
                                                "--live-cash-balance", "USD:100",
                                                *options])
 
@@ -780,8 +780,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
 
             result = CliRunner().invoke(lean, ["live", "Python Project",
                                                "--brokerage", "Paper Trading",
-                                               "--data-feed", data_feed1,
-                                               "--data-feed", data_feed2,
+                                               "--data-provider-live", data_feed1,
+                                               "--data-provider-live", data_feed2,
                                                "--live-cash-balance", "USD:100",
                                                *options])
 
@@ -924,7 +924,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
 
     result = CliRunner().invoke(lean, ["live", "Python Project", *options,
                                        "--brokerage", brokerage, "--live-cash-balance", cash,
-                                       "--data-feed", "Custom data only"])
+                                       "--data-provider-live", "Custom data only"])
 
     if brokerage not in ["Paper Trading", "Trading Technologies", "Terminal Link"] and cash != "":
         assert result.exit_code != 0
@@ -988,7 +988,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
         options.extend(["--live-cash-balance", "USD:100"])
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
-                                       "--data-feed", "Custom data only", *options])
+                                       "--data-provider-live", "Custom data only", *options])
 
     if brokerage not in ["Paper Trading", "Terminal Link"] and holdings != "":
         assert result.exit_code != 0
