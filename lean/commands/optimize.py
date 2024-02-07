@@ -100,7 +100,7 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
-              help="Update the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given historical provider")
 @option("--download-data",
               is_flag=True,
               default=False,

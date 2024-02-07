@@ -254,7 +254,7 @@ def _select_organization() -> QCMinimalOrganization:
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
-              help="Update the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("backtest"))
 @option("--download-data",
               is_flag=True,
@@ -262,7 +262,7 @@ def _select_organization() -> QCMinimalOrganization:
               help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider-historical QuantConnect")
 @option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider historical")
+              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as historical data provider")
 @option("--release",
               is_flag=True,
               default=False,

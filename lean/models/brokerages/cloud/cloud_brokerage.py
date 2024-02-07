@@ -75,7 +75,7 @@ class CloudBrokerage(JsonModule):
         return settings
 
     def get_price_data_handler(self) -> str:
-        """Returns the price data provider live handler to use.
+        """Returns the price live data provider handler to use.
         :return: the value to assign to the "dataHandler" property of the live/create API endpoint
         """
         # TODO: Handle this case with json conditions

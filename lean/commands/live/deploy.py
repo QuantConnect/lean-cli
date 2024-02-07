@@ -171,7 +171,7 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
 
     brokerage.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
 
-    data_feeds = logger.prompt_list("Select a data provider live", [
+    data_feeds = logger.prompt_list("Select a live data provider", [
         Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
     ], multiple= True)
     for data_feed in data_feeds:
@@ -231,11 +231,11 @@ def _get_default_value(key: str) -> Optional[Any]:
 @option("--data-provider-live",
               type=Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
               multiple=True,
-              help="The data provider live to use")
+              help="The live data provider to use")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
               default="Local",
-              help="Update the Lean configuration file to retrieve data from the given provider")
+              help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-local"))
 @option("--release",
               is_flag=True,
@@ -302,14 +302,14 @@ def deploy(project: Path,
     If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
-    By default an interactive wizard is shown letting you configure the brokerage and data provider live to use.
+    By default an interactive wizard is shown letting you configure the brokerage and live data provider to use.
     If --environment, --brokerage or --data-provider-live are given the command runs in non-interactive mode.
     In this mode the CLI does not prompt for input.
 
     If --environment is given it must be the name of a live environment in the Lean configuration.
 
-    If --brokerage and --data-provider-live are given, the options specific to the given brokerage/data provider live must also be given.
-    The Lean config is used as fallback when a brokerage/data provider live-specific option hasn't been passed in.
+    If --brokerage and --data-provider-live are given, the options specific to the given brokerage/live data provider must also be given.
+    The Lean config is used as fallback when a brokerage/live data provider-specific option hasn't been passed in.
     If a required option is not given and cannot be found in the Lean config the command aborts.
 
     By default the official LEAN engine image is used.
