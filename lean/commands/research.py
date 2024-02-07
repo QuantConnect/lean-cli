@@ -37,7 +37,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
-@option("--data-provider",
+@option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
@@ -45,10 +45,10 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @option("--download-data",
               is_flag=True,
               default=False,
-              help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider {QuantConnectDataProvider.get_name()}")
+              help=f"Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider-historical {QuantConnectDataProvider.get_name()}")
 @option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider")
+              help="The maximum amount of QCC to spend on downloading data during the research session when using QuantConnect as data provider historical")
 @option("--detach", "-d",
               is_flag=True,
               default=False,
@@ -77,7 +77,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
               help="Use the local LEAN research image instead of pulling the latest version")
 def research(project: Path,
              port: int,
-             data_provider: Optional[str],
+             data_provider_historical: Optional[str],
              download_data: bool,
              data_purchase_limit: Optional[int],
              detach: bool,
@@ -110,10 +110,10 @@ def research(project: Path,
     lean_config["research-object-store-name"] = algorithm_name
 
     if download_data:
-        data_provider = QuantConnectDataProvider.get_name()
+        data_provider_historical = QuantConnectDataProvider.get_name()
 
-    if data_provider is not None:
-        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+    if data_provider_historical is not None:
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)
         data_provider_configurer.ensure_module_installed(container.organization_manager.try_get_working_organization_id())
         data_provider_configurer.configure(lean_config, "backtesting")
 

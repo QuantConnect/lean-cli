@@ -251,7 +251,7 @@ def _select_organization() -> QCMinimalOrganization:
 @option("--debug",
               type=Choice(["pycharm", "ptvsd", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
-@option("--data-provider",
+@option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
@@ -259,10 +259,10 @@ def _select_organization() -> QCMinimalOrganization:
 @option("--download-data",
               is_flag=True,
               default=False,
-              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
+              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider-historical QuantConnect")
 @option("--data-purchase-limit",
               type=int,
-              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider")
+              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as data provider historical")
 @option("--release",
               is_flag=True,
               default=False,
@@ -301,7 +301,7 @@ def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
              debug: Optional[str],
-             data_provider: Optional[str],
+             data_provider_historical: Optional[str],
              download_data: bool,
              data_purchase_limit: Optional[int],
              release: bool,
@@ -363,12 +363,12 @@ def backtest(project: Path,
     lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, debugging_method)
 
     if download_data:
-        data_provider = QuantConnectDataProvider.get_name()
+        data_provider_historical = QuantConnectDataProvider.get_name()
 
     organization_id = container.organization_manager.try_get_working_organization_id()
 
-    if data_provider is not None:
-        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+    if data_provider_historical is not None:
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)
         data_provider_configurer.ensure_module_installed(organization_id)
         data_provider_configurer.configure(lean_config, "backtesting")
 

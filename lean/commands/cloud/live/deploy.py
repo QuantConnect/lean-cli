@@ -114,13 +114,13 @@ def _configure_brokerage(lean_config: Dict[str, Any], logger: Logger, user_provi
                                                                              hide_input=not show_secrets)
 
 def _configure_data_feed(brokerage: CloudBrokerage, logger: Logger) -> None:
-    """Configures the data feed to use based on the brokerage given.
+    """Configures the data provider live to use based on the brokerage given.
 
     :param brokerage: the cloud brokerage
     :param logger: the logger to use
     """
     if len(cloud_brokerage_data_feeds[brokerage]) != 0:
-        data_feed_selected = logger.prompt_list("Select a data feed", [
+        data_feed_selected = logger.prompt_list("Select a data provider live", [
             Option(id=data_feed, label=data_feed) for data_feed in cloud_brokerage_data_feeds[brokerage]
         ], multiple=False)
         data_feed_property_name = [name for name in brokerage.get_required_properties([InternalInputUserInput]) if ("data-feed" in name)]
@@ -265,7 +265,7 @@ def deploy(project: str,
         ensure_options(essential_properties)
         essential_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in essential_properties}
         brokerage_instance.update_configs(essential_properties_value)
-        # now required properties can be fetched as per data provider from essential properties
+        # now required properties can be fetched as per data provider historical from essential properties
         required_properties = [brokerage_instance.convert_lean_key_to_variable(prop) for prop in brokerage_instance.get_required_properties([InternalInputUserInput])]
         ensure_options(required_properties)
         required_properties_value = {brokerage_instance.convert_variable_to_lean_key(prop) : kwargs[prop] for prop in required_properties}
@@ -340,7 +340,7 @@ def deploy(project: str,
     logger.info(f"Environment: {brokerage_settings['environment'].title()}")
     logger.info(f"Server name: {live_node.name}")
     logger.info(f"Server type: {live_node.sku}")
-    logger.info(f"Data provider: {price_data_handler.replace('Handler', '')}")
+    logger.info(f"Data provider historical: {price_data_handler.replace('Handler', '')}")
     logger.info(f"LEAN version: {cloud_project.leanVersionId}")
     logger.info(f"Order event notifications: {'Yes' if notify_order_events else 'No'}")
     logger.info(f"Insight notifications: {'Yes' if notify_insights else 'No'}")

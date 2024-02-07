@@ -97,14 +97,14 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               type=str,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
-@option("--data-provider",
+@option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given provider")
 @option("--download-data",
               is_flag=True,
               default=False,
-              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider QuantConnect")
+              help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider-historical QuantConnect")
 @option("--release",
               is_flag=True,
               default=False,
@@ -150,7 +150,7 @@ def optimize(project: Path,
              target_direction: Optional[str],
              parameter: List[Tuple[str, float, float, float]],
              constraint: List[str],
-             data_provider: Optional[str],
+             data_provider_historical: Optional[str],
              download_data: bool,
              release: bool,
              image: Optional[str],
@@ -299,10 +299,10 @@ def optimize(project: Path,
     organization_id = container.organization_manager.try_get_working_organization_id()
 
     if download_data:
-        data_provider = QuantConnectDataProvider.get_name()
+        data_provider_historical = QuantConnectDataProvider.get_name()
 
-    if data_provider is not None:
-        data_provider_configurer: DataProvider = get_and_build_module(data_provider, all_data_providers, kwargs, logger)
+    if data_provider_historical is not None:
+        data_provider_configurer: DataProvider = get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)
         data_provider_configurer.ensure_module_installed(organization_id)
         data_provider_configurer.configure(lean_config, environment)
         logger.info(lean_config)
