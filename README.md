@@ -143,8 +143,8 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
-                                  Update the Lean configuration file to retrieve data from the given provider
+  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
+                                  Update the Lean configuration file to retrieve data from the given historical provider
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -170,9 +170,9 @@ Options:
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
-                                  for --data-provider QuantConnect
+                                  for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
-                                  QuantConnect as data provider
+                                  QuantConnect as historical data provider
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --python-venv TEXT              The path of the python virtual environment to be used
@@ -1043,15 +1043,15 @@ Usage: lean live deploy [OPTIONS] PROJECT
   If PROJECT is a directory, the algorithm in the main.py or Main.cs file inside it will be executed.
   If PROJECT is a file, the algorithm in the specified file will be executed.
 
-  By default an interactive wizard is shown letting you configure the brokerage and data feed to use. If --environment,
-  --brokerage or --data-feed are given the command runs in non-interactive mode. In this mode the CLI does not prompt
-  for input.
+  By default an interactive wizard is shown letting you configure the brokerage and live data provider to use. If
+  --environment, --brokerage or --data-provider-live are given the command runs in non-interactive mode. In this mode
+  the CLI does not prompt for input.
 
   If --environment is given it must be the name of a live environment in the Lean configuration.
 
-  If --brokerage and --data-feed are given, the options specific to the given brokerage/data feed must also be given.
-  The Lean config is used as fallback when a brokerage/data feed-specific option hasn't been passed in. If a required
-  option is not given and cannot be found in the Lean config the command aborts.
+  If --brokerage and --data-provider-live are given, the options specific to the given brokerage/live data provider must
+  also be given. The Lean config is used as fallback when a brokerage/live data provider-specific option hasn't been
+  passed in. If a required option is not given and cannot be found in the Lean config the command aborts.
 
   By default the official LEAN engine image is used. You can override this using the --image option. Alternatively you
   can set the default engine image for all commands using `lean config set engine-image <image>`.
@@ -1062,10 +1062,10 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
-  --data-feed [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|Custom data only|Bybit]
-                                  The data feed to use
-  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local]
-                                  Update the Lean configuration file to retrieve data from the given provider
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|Custom data only|Bybit]
+                                  The live data provider to use
+  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local]
+                                  Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
@@ -1466,10 +1466,10 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
-                                  Update the Lean configuration file to retrieve data from the given provider
+  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
+                                  Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
-                                  for --data-provider QuantConnect
+                                  for --data-provider-historical QuantConnect
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer
@@ -1606,8 +1606,8 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
-                                  Update the Lean configuration file to retrieve data from the given provider
+  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local|Terminal Link]
+                                  Update the Lean configuration file to retrieve data from the given historical provider
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1633,9 +1633,9 @@ Options:
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
-                                  for --data-provider QuantConnect
+                                  for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
-                                  when using QuantConnect as data provider
+                                  when using QuantConnect as historical data provider
   -d, --detach                    Run Jupyter Lab in a detached Docker container and return immediately
   --no-open                       Don't open the Jupyter Lab environment in the browser after starting it
   --image TEXT                    The LEAN research image to use (defaults to quantconnect/research:latest)
