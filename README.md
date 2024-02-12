@@ -1062,7 +1062,7 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|Custom data only|Bybit]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|Custom data only|Bybit]
                                   The live data provider to use
   --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given historical provider
@@ -1174,6 +1174,9 @@ Options:
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
                                   Your IEX Cloud Price plan
+  --coinapi-api-key TEXT          Your coinapi.io Api Key
+  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+                                  CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
                                   Your Alpha Vantage Premium API Key plan
