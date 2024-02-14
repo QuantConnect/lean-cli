@@ -234,3 +234,22 @@ def test_local_live_update_order_fails_without_order_id() -> None:
     result = CliRunner().invoke(lean, ["live", "update-order", "Python Project"])
 
     assert result.exit_code != 0
+
+def test_local() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = mock.MagicMock()
+    project_config_manager.get_latest_live_directory.return_value = "mock_live_dir"
+    container.project_config_manager = project_config_manager
+
+    output_config_manager = mock.Mock()
+    container.output_config_manager = output_config_manager
+
+    docker_manager = mock.MagicMock()
+    docker_manager.read_from_file.return_value = {"success": True}
+    container.docker_manager = docker_manager
+
+    result = CliRunner().invoke(lean, ["live", "add-security", "Python Project",
+                                        *symbol_options])
+
+    assert result.exit_code == 0
