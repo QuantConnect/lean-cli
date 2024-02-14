@@ -49,7 +49,7 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
     environment = lean_config["environments"][environment_name]
     for key in ["live-mode-brokerage", "data-queue-handler"]:
         if key not in environment:
-            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
+            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {'data-provider-live' if key == 'data-queue-handler' else key}",
                                 "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
     brokerage = environment["live-mode-brokerage"]
@@ -343,7 +343,7 @@ def deploy(project: Path,
         lean_environment = lean_config["environments"][environment_name]
         for key in ["live-mode-brokerage", "data-queue-handler"]:
             if key not in lean_environment:
-                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {key}",
+                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {'data-provider-live' if key == 'data-queue-handler' else key}",
                                     "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
         brokerage = lean_environment["live-mode-brokerage"]
