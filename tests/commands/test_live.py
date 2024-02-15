@@ -1011,3 +1011,137 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
         return
 
     assert args[0]["live-holdings"] == holding_list
+
+def test_live_non_interactive_deploy_with_live_and_historical_provider() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+    
+    provider_history_option = ["--data-provider-historical", "Polygon",
+                               "--polygon-api-key", "123"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       ])
+    assert result.exit_code == 0
+
+def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_historical_not_optional_config() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+    
+    provider_history_option = ["--data-provider-historical", "Polygon"]
+                               # "--polygon-api-key", "123"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       ])
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--polygon-api-key" in error_msg
+    assert "--iex-cloud-api-key" not in error_msg
+
+    assert result.exit_code == 1
+
+def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_live_not_optional_config() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123"]
+                            #"--iex-price-plan", "Launch"]
+    
+    provider_history_option = ["--data-provider-historical", "Polygon", "--polygon-api-key", "123"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       ])
+    
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--iex-price-plan" in error_msg
+    assert "--polygon-api-key" not in error_msg
+
+    assert result.exit_code == 1
+
+def test_live_non_interactive_deploy_with_live_and_without_historical_provider() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       "Python Project",
+                                       ])
+    assert result.exit_code == 0
+
+def test_live_non_interactive_deploy_with_real_brokerage() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    # create fake environment has IB configs already
+    brokerage = ["--brokerage", "Interactive Brokers"]
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" ,
+                                       *brokerage,
+                                       *provider_live_option,
+                                       "Python Project",
+                                       ])
+    assert result.exit_code == 0
+
+def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    # create fake environment has IB configs already
+    brokerage = ["--brokerage", "OANDA"]
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" ,
+                                       *brokerage,
+                                       *provider_live_option,
+                                       "Python Project",
+                                       ])
+    
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--oanda-account-id" in error_msg
+    assert "--oanda-access-token" in error_msg
+    assert "--oanda-environment" in error_msg
+    assert "--iex-price-plan" not in error_msg
+
+    assert result.exit_code == 1
