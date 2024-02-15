@@ -48,7 +48,7 @@ class LeanConfigConfigurer(JsonModule, ABC):
                         previous_value = copy(lean_config["environments"][environment_name][environment_config_name])
                     previous_value.append(environment_config["value"])
                     lean_config["environments"][environment_name][environment_config_name] = copy(previous_value)
-            elif self.__class__.__name__ == 'LocalBrokerage':
+            elif self.__class__.__name__ == 'LocalBrokerage' or self.__class__.__name__ == 'DataProvider':
                 if environment_config_name != "data-queue-handler":
                     lean_config["environments"][environment_name][environment_config_name] = environment_config["value"]
 
