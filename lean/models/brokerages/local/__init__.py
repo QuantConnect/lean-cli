@@ -17,9 +17,11 @@ from lean.container import container
 from lean.models.brokerages.local.local_brokerage import LocalBrokerage
 from lean.models.brokerages.local.data_feed import DataFeed
 from lean.models import json_modules
+from lean.models.brokerages.local.historical_data_provider import HistoricalDataProvider
 
 all_local_brokerages: List[LocalBrokerage] = []
 all_local_data_feeds: List[DataFeed] = []
+all_local_historical_data_providers: List[HistoricalDataProvider] = []
 local_brokerage_data_feeds: Dict[Type[LocalBrokerage],
                                  List[Type[DataFeed]]] = {}
 
@@ -28,6 +30,8 @@ for json_module in json_modules:
         all_local_brokerages.append(LocalBrokerage(json_module))
     if "data-queue-handler" in json_module["type"]:
         all_local_data_feeds.append(DataFeed(json_module))
+    if "data-provider" in json_module["type"]:
+        all_local_historical_data_providers.append(HistoricalDataProvider(json_module))
 
 # Remove IQFeed DataFeed for other than windows machines
 if not [container.platform_manager.is_host_windows() or environ.get("__README__", "false") == "true"]:
