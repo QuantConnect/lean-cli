@@ -17,7 +17,7 @@ from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
+from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds, all_local_historical_data_providers
 from lean.models.errors import MoreInfoError
 from lean.models.lean_config_configurer import LeanConfigConfigurer
 from lean.models.logger import Option
@@ -39,7 +39,7 @@ _environment_skeleton = {
 }
 
 
-def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer]]:
+def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer], LeanConfigConfigurer]:
     """Returns the configurable modules from the given environment.
 
     :param lean_config: the LEAN configuration that should be used
@@ -54,14 +54,22 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
 
     brokerage = environment["live-mode-brokerage"]
     data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage
-                              for local_brokerage in all_local_brokerages
-                              if _get_brokerage_base_name(local_brokerage.get_live_name()) == _get_brokerage_base_name(brokerage)]
+    brokerage_preference = next((local_brokerage for local_brokerage in all_local_brokerages 
+                                 if _get_brokerage_base_name(local_brokerage.get_live_name()) == _get_brokerage_base_name(brokerage)), None)
     data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
-    data_feed_configurers = [local_data_feed
+    data_feed_preferences = [local_data_feed
                              for local_data_feed in all_local_data_feeds
                              if _get_brokerage_base_name(local_data_feed.get_live_name()) in data_queue_handlers_base_names]
-    return brokerage_configurer, data_feed_configurers
+    
+    data_history_preference = None
+    if "history-provider" in environment:
+        # get requested data history provider
+        data_history_providers_base_names = [_get_brokerage_base_name(history_provider) for history_provider in environment["history-provider"]]
+        # get historical data provider preferences from json_modules
+        data_history_preference = next((local_data_history for local_data_history in all_local_historical_data_providers
+                                        if _get_brokerage_base_name(local_data_history.get_live_name()) in data_history_providers_base_names), None)
+
+    return brokerage_preference, data_feed_preferences, data_history_preference
 
 
 def _get_brokerage_base_name(brokerage: str) -> str:
@@ -78,7 +86,7 @@ def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str,
     :param modules: the modules to check
     """
     for module in modules:
-        if not module._installs:
+        if module is None or not module._installs:
             continue
         organization_id = container.organization_manager.try_get_working_organization_id()
         module.ensure_module_installed(organization_id)
@@ -91,12 +99,16 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     :param environment_name: the name of the environment
     :param lean_config_path: the path to the LEAN configuration file
     """
-    brokerage_configurer, data_feed_configurers = _get_configurable_modules_from_environment(lean_config, environment_name)
+    brokerage_configurer, data_feed_configurers, data_history_provider = _get_configurable_modules_from_environment(lean_config, environment_name)
     brokerage_properties = brokerage_configurer.get_required_properties(include_optionals=False)
     data_queue_handler_properties = []
     for data_feed_configurer in data_feed_configurers:
         data_queue_handler_properties.extend(data_feed_configurer.get_required_properties(include_optionals=False))
     required_properties = list(set(brokerage_properties + data_queue_handler_properties))
+
+    if data_history_provider is not None:
+        required_properties.extend(data_history_provider.get_required_properties(include_optionals=False))
+
     missing_properties = [p for p in required_properties if p not in lean_config or lean_config[p] == ""]
     missing_properties = set(missing_properties)
     if len(missing_properties) == 0:
@@ -407,7 +419,7 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
-    if data_provider_historical is not None:
+    if data_provider_historical is not None or len(data_provider_historical) > 0:
         [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
         data_provider_configurer.configure(lean_config, environment_name)
 
@@ -420,8 +432,8 @@ def deploy(project: Path,
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
-    env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
-    _install_modules([env_brokerage] + env_data_queue_handlers, kwargs)
+    env_brokerage, env_data_queue_handlers, env_data_history_provider = _get_configurable_modules_from_environment(lean_config, environment_name)
+    _install_modules([env_brokerage] + env_data_queue_handlers + [env_data_history_provider], kwargs)
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
