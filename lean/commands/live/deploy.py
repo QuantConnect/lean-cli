@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter, ensure_options
+from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
@@ -49,7 +50,7 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
     environment = lean_config["environments"][environment_name]
     for key in ["live-mode-brokerage", "data-queue-handler"]:
         if key not in environment:
-            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {'data-provider-live' if key == 'data-queue-handler' else key}",
+            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
                                 "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
     brokerage = environment["live-mode-brokerage"]
@@ -343,7 +344,7 @@ def deploy(project: Path,
         lean_environment = lean_config["environments"][environment_name]
         for key in ["live-mode-brokerage", "data-queue-handler"]:
             if key not in lean_environment:
-                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {'data-provider-live' if key == 'data-queue-handler' else key}",
+                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
                                     "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
         brokerage = lean_environment["live-mode-brokerage"]
