@@ -40,7 +40,7 @@ _environment_skeleton = {
 }
 
 
-def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer]]:
+def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer], LeanConfigConfigurer]:
     """Returns the configurable modules from the given environment.
 
     :param lean_config: the LEAN configuration that should be used
@@ -62,7 +62,14 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
     data_feed_configurers = [local_data_feed
                              for local_data_feed in all_local_data_feeds
                              if _get_brokerage_base_name(local_data_feed.get_live_name()) in data_queue_handlers_base_names]
-    return brokerage_configurer, data_feed_configurers
+    
+    data_downloader_preference = None
+    if "data-downloader" in lean_config:
+        data_downloader_base_name = _get_brokerage_base_name(lean_config["data-downloader"])
+        data_downloader_preference = next((local_data_history for local_data_history in all_data_providers
+                                           if _get_brokerage_base_name(local_data_history.get_config_value_from_name('data-downloader')) in data_downloader_base_name), None)
+
+    return brokerage_configurer, data_feed_configurers, data_downloader_preference
 
 
 def _get_brokerage_base_name(brokerage: str) -> str:
@@ -79,7 +86,7 @@ def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str,
     :param modules: the modules to check
     """
     for module in modules:
-        if not module._installs:
+        if module is None or not module._installs:
             continue
         organization_id = container.organization_manager.try_get_working_organization_id()
         module.ensure_module_installed(organization_id)
@@ -92,12 +99,19 @@ def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name:
     :param environment_name: the name of the environment
     :param lean_config_path: the path to the LEAN configuration file
     """
-    brokerage_configurer, data_feed_configurers = _get_configurable_modules_from_environment(lean_config, environment_name)
+    brokerage_configurer, data_feed_configurers, data_downloader_preference = _get_configurable_modules_from_environment(lean_config, environment_name)
     brokerage_properties = brokerage_configurer.get_required_properties(include_optionals=False)
     data_queue_handler_properties = []
-    for data_feed_configurer in data_feed_configurers:
+    for data_feed_configurer in data_feed_configurers: 
         data_queue_handler_properties.extend(data_feed_configurer.get_required_properties(include_optionals=False))
+
     required_properties = list(set(brokerage_properties + data_queue_handler_properties))
+
+    if data_downloader_preference is not None:
+        for data_downloader_property in data_downloader_preference.get_required_properties(include_optionals=False):
+            if data_downloader_property not in required_properties:
+                required_properties.append(data_downloader_property)
+
     missing_properties = [p for p in required_properties if p not in lean_config or lean_config[p] == ""]
     missing_properties = set(missing_properties)
     if len(missing_properties) == 0:
@@ -191,6 +205,15 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
 
 
 _cached_lean_config = None
+
+def _try_get_data_downloader_name(data_provider_historical_name: str, data_provider_live_name: str) -> str:
+    """ Get name for data downloader provider based on data provider live (if exist)
+
+    :param data_provider_historical_name: the current (default) data provider historical
+    :param data_provider_live_name: the current data provider live name
+    """
+    return next((live_data_downloader.get_name() for live_data_downloader in all_data_providers
+                                             if live_data_downloader.get_name() in data_provider_live_name), data_provider_historical_name)
 
 
 # being used by lean.models.click_options.get_the_correct_type_default_value()
@@ -409,6 +432,9 @@ def deploy(project: Path,
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
     if data_provider_historical is not None:
+        # if default historical provider try to find 
+        if data_provider_historical == "Local":
+            data_provider_historical = _try_get_data_downloader_name(data_provider_historical, data_provider_live)
         [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
         data_provider_configurer.configure(lean_config, environment_name)
 
@@ -421,8 +447,8 @@ def deploy(project: Path,
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
-    env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
-    _install_modules([env_brokerage] + env_data_queue_handlers, kwargs)
+    env_brokerage, env_data_queue_handlers, env_data_downloader = _get_configurable_modules_from_environment(lean_config, environment_name)
+    _install_modules([env_brokerage] + env_data_queue_handlers + [env_data_downloader], kwargs)
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
