@@ -521,6 +521,21 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
 
             container.lean_runner.run_lean.assert_not_called()
 
+def test_live_non_interactive_raise_error_when_missing_data_provider_live_options() -> None:
+    create_fake_lean_cli_directory()
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock())
+    
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading", "Python Project"])
+
+    error_msg = str(result.exc_info[1]).split()
+    
+    assert "data-provider-live" in error_msg
+    assert "data-queue-handler" not in error_msg 
+
+    assert result.exit_code != 0
+
+
 
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
