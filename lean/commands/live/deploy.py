@@ -28,7 +28,7 @@ from lean.models.json_module import LiveInitialStateInput
 from lean.commands.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
-from lean.models.data_providers import all_data_providers
+from lean.models.data_providers import all_data_providers, installed_data_providers
 from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module, update_essential_properties_available
 
 _environment_skeleton = {
@@ -66,7 +66,7 @@ def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], envi
     data_downloader_preference = None
     if "data-downloader" in lean_config:
         data_downloader_base_name = _get_brokerage_base_name(lean_config["data-downloader"])
-        data_downloader_preference = next((local_data_history for local_data_history in all_data_providers
+        data_downloader_preference = next((local_data_history for local_data_history in installed_data_providers
                                            if _get_brokerage_base_name(local_data_history.get_config_value_from_name('data-downloader')) in data_downloader_base_name), None)
 
     return brokerage_configurer, data_feed_configurers, data_downloader_preference
