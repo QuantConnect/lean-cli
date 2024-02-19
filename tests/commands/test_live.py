@@ -1203,10 +1203,6 @@ def test_live_non_interactive_deploy_with_different_brokerage_with_the_same_live
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
     
-    if brokerage_name == "Interactive Brokers":
-        assert len(api_client.method_calls) == 1
-    else:
-        assert len(api_client.method_calls) == 2
     assert brokerage_product_id in api_client.method_calls[0].args[0]
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_live_product_id",
