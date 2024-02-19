@@ -1155,9 +1155,10 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
 
     if data_provider_historical_name is not None:
         option.extend(["--data-provider-historical", data_provider_historical_name])
-        for key, value in data_feed_required_options[data_provider_historical_name].items():
-            if f"--{key}" not in option:
-                option.extend([f"--{key}", value])
+        if data_provider_historical_name is not "Local": 
+            for key, value in data_feed_required_options[data_provider_historical_name].items():
+                if f"--{key}" not in option:
+                    option.extend([f"--{key}", value])
 
     result = CliRunner().invoke(lean, ["live", "deploy",
                                        *option,
@@ -1169,15 +1170,19 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_historical_name,brokerage_product_id,data_provider_live_product_id,data_provider_historical_id",
                          [("Interactive Brokers", "IEX", "Polygon", "181", "333", "306"),
                           ("Paper Trading", "IEX", "Polygon", None, "333", "306"),
-                          ("Tradier", "IEX", "AlphaVantage", "185", "333", "334")])
+                          ("Tradier", "IEX", "AlphaVantage", "185", "333", "334"),
+                          ("Paper Trading", "IEX", "Local", None, "333", "222")])
 def test_live_deploy_with_different_brokerage_and_different_live_data_provider_and_historical_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, brokerage_product_id: str, data_provider_live_product_id: str, data_provider_historical_id: str) -> None:
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, data_provider_historical_name, api_client)
     
-    if brokerage_product_id is None:
+    if brokerage_product_id is None and data_provider_historical_name != "Local":
         assert len(api_client.method_calls) == 3
         assert data_provider_live_product_id in api_client.method_calls[0].args[0]
         assert data_provider_historical_id in api_client.method_calls[1].args[0]
+    elif brokerage_product_id is None and data_provider_historical_name == "Local":
+        assert len(api_client.method_calls) == 2
+        assert data_provider_live_product_id in api_client.method_calls[0].args[0]
     else:
         assert len(api_client.method_calls) == 3
         assert brokerage_product_id in api_client.method_calls[0].args[0]
