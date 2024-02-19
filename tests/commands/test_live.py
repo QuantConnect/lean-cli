@@ -415,6 +415,9 @@ data_feed_required_options = {
     "Kraken": brokerage_required_options["Kraken"],
     "TDAmeritrade": brokerage_required_options["TDAmeritrade"],
     "Bybit": brokerage_required_options["Bybit"],
+}
+
+data_provider_required_options = {
     "IEX": {
         "iex-cloud-api-key": "123",
         "iex-price-plan": "Launch",
@@ -1157,6 +1160,8 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
     option = ["--brokerage", brokerage_name]
     for key, value in brokerage_required_options[brokerage_name].items():
         option.extend([f"--{key}", value])
+
+    data_feed_required_options.update(data_provider_required_options)
 
     option.extend(["--data-provider-live", data_provider_live_name])
     for key, value in data_feed_required_options[data_provider_live_name].items():
