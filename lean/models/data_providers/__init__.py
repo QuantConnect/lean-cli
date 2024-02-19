@@ -16,10 +16,15 @@ from lean.models.data_providers.data_provider import DataProvider
 from lean.models import json_modules
 
 all_data_providers: List[DataProvider] = []
+installed_data_providers: List[DataProvider] = []
 
 for json_module in json_modules:
     if "data-provider" in json_module["type"]:
         all_data_providers.append(DataProvider(json_module))
+
+for data_provider in all_data_providers:
+    if data_provider._installs:
+        installed_data_providers.append(data_provider)
 
 # QuantConnect DataProvider
 [QuantConnectDataProvider] = [
