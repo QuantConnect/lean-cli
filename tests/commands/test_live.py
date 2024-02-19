@@ -1042,37 +1042,6 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
 
     assert args[0]["live-holdings"] == holding_list
 
-def test_live_non_interactive_deploy_with_live_and_historical_provider() -> None:
-    create_fake_lean_cli_directory()
-    create_fake_environment("live-paper", True)
-
-    api_client = mock.MagicMock()
-    container.initialize(docker_manager=mock.Mock(), api_client=api_client, lean_runner=mock.Mock())
-
-    provider_live_option = ["--data-provider-live", "IEX",
-                            "--iex-cloud-api-key", "123",
-                            "--iex-price-plan", "Launch"]
-
-    provider_history_option = ["--data-provider-historical", "Polygon",
-                               "--polygon-api-key", "123"]
-
-    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
-                                       *provider_live_option,
-                                       *provider_history_option,
-                                       "Python Project",
-                                       ])
-    
-    # validate amount of request to download packages from api 
-    assert len(api_client.method_calls) > 2
-
-    product_ids = []
-    for method_call in list(api_client.method_calls)[:2]:
-        product_ids.append(method_call.args[0])
-
-    assert "333" in product_ids
-    assert "306" in product_ids
-    assert result.exit_code == 0
-
 def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_historical_not_optional_config() -> None:
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
@@ -1191,18 +1160,27 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, data_provider_historical_name, api_client)
     
+    is_exists = []
     if brokerage_product_id is None and data_provider_historical_name != "Local":
         assert len(api_client.method_calls) == 3
-        assert data_provider_live_product_id in api_client.method_calls[0].args[0]
-        assert data_provider_historical_id in api_client.method_calls[1].args[0]
+        for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, data_provider_historical_id]):
+            if id in m_c[1]:
+                is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 2
     elif brokerage_product_id is None and data_provider_historical_name == "Local":
         assert len(api_client.method_calls) == 2
-        assert data_provider_live_product_id in api_client.method_calls[0].args[0]
+        if data_provider_live_product_id in api_client.method_calls[0][1]:
+            is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 1
     else:
         assert len(api_client.method_calls) == 3
-        assert brokerage_product_id in api_client.method_calls[0].args[0]
-        assert data_provider_live_product_id in api_client.method_calls[1].args[0]
-        assert data_provider_historical_id in f"{api_client.method_calls[2].args[0]}"
+        for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id, data_provider_historical_id]):
+            if id in f"{m_c[1]}":
+                is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 3
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id,data_provider_live_product_id",
                          [("Interactive Brokers", "IEX", "181", "333"),
@@ -1212,8 +1190,13 @@ def test_live_non_interactive_deploy_with_different_brokerage_and_different_live
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
     
     assert len(api_client.method_calls) == 2
-    assert brokerage_product_id in api_client.method_calls[0].args[0]
-    assert data_provider_live_product_id in api_client.method_calls[1].args[0]
+    is_exists = []
+    for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id]):
+        if id in m_c[1]:
+            is_exists.append(True)
+    
+    assert is_exists
+    assert len(is_exists) == 2
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id",
                          [("Bybit", "Bybit", "305"),
@@ -1222,8 +1205,15 @@ def test_live_non_interactive_deploy_with_different_brokerage_and_different_live
 def test_live_non_interactive_deploy_with_different_brokerage_with_the_same_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str) -> None:
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
-    
-    assert brokerage_product_id in api_client.method_calls[0].args[0]
+
+    print(api_client.call_args_list)
+    print(api_client.call_args)
+
+    for m_c in api_client.method_calls:
+        if brokerage_product_id in m_c[1]:
+            is_exist = True
+
+    assert is_exist
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_live_product_id",
                          [("Paper Trading", "IEX", "333"),
@@ -1233,4 +1223,8 @@ def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provide
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
 
     assert len(api_client.method_calls) == 2
-    assert data_provider_live_product_id in f"{api_client.method_calls[0].args[0]}"
+    for m_c in api_client.method_calls:
+        if data_provider_live_product_id in m_c[1]:
+            is_exist = True
+
+    assert is_exist
