@@ -258,7 +258,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="The live data provider to use")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
-              default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-local"))
 @option("--release",
@@ -431,12 +430,10 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
-    if data_provider_historical is not None:
-        # if default historical provider try to find 
-        if data_provider_historical == "Local":
-            data_provider_historical = _try_get_data_downloader_name(data_provider_historical, data_provider_live)
-        [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
-        data_provider_configurer.configure(lean_config, environment_name)
+    if data_provider_historical is None:
+        data_provider_historical = _try_get_data_downloader_name("Local", data_provider_live)
+    [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
+    data_provider_configurer.configure(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
