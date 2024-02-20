@@ -1185,6 +1185,7 @@ def test_live_non_interactive_deploy_with_different_brokerage_and_different_live
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id",
                          [("Bybit", "Bybit", "305"),
+                          ("Coinbase Advanced Trade", "Coinbase Advanced Trade", "183"),
                           ("Interactive Brokers", "Interactive Brokers", "181"),
                           ("Tradier", "Tradier", "185")])
 def test_live_non_interactive_deploy_with_different_brokerage_with_the_same_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str) -> None:
