@@ -545,7 +545,7 @@ def test_live_non_interactive_raise_error_when_missing_data_provider_live_option
 
     error_msg = str(result.exc_info[1]).split()
     
-    assert "data-provider-live" in error_msg
+    assert "--data-provider-live" in error_msg
     assert "data-queue-handler" not in error_msg 
 
     assert result.exit_code != 0
