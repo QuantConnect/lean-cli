@@ -79,7 +79,7 @@ def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str,
     :param modules: the modules to check
     """
     for module in modules:
-        if not module._installs:
+        if module is None or not module._installs:
             continue
         organization_id = container.organization_manager.try_get_working_organization_id()
         module.ensure_module_installed(organization_id)
@@ -192,6 +192,15 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
 
 _cached_lean_config = None
 
+def _try_get_data_historical_name(data_provider_historical_name: str, data_provider_live_name: str) -> str:
+    """ Get name for historical data provider based on data provider live (if exist)
+
+    :param data_provider_historical_name: the current (default) data provider historical
+    :param data_provider_live_name: the current data provider live name
+    """
+    return next((live_data_historical.get_name() for live_data_historical in all_data_providers
+                                             if live_data_historical.get_name() in data_provider_live_name), data_provider_historical_name)
+
 
 # being used by lean.models.click_options.get_the_correct_type_default_value()
 def _get_default_value(key: str) -> Optional[Any]:
@@ -235,7 +244,6 @@ def _get_default_value(key: str) -> Optional[Any]:
               help="The live data provider to use")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
-              default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-local"))
 @option("--release",
@@ -387,7 +395,7 @@ def deploy(project: Path,
         [update_essential_properties_available(data_feed_configurers, kwargs)]
 
     elif brokerage is not None or len(data_provider_live) > 0:
-        ensure_options(["brokerage", "data_feed"])
+        ensure_options(["brokerage", "data_provider_live"])
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
@@ -408,9 +416,10 @@ def deploy(project: Path,
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
-    if data_provider_historical is not None:
-        [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
-        data_provider_configurer.configure(lean_config, environment_name)
+    if data_provider_historical is None:
+        data_provider_historical = _try_get_data_historical_name("Local", data_provider_live)
+    [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
+    data_provider_configurer.configure(lean_config, environment_name)
 
     if "environments" not in lean_config or environment_name not in lean_config["environments"]:
         lean_config_path = lean_config_manager.get_lean_config_path()
@@ -422,7 +431,7 @@ def deploy(project: Path,
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
     env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
-    _install_modules([env_brokerage] + env_data_queue_handlers, kwargs)
+    _install_modules([env_brokerage] + env_data_queue_handlers + [data_provider_configurer], kwargs)
 
     _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 

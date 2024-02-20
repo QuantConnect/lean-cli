@@ -25,8 +25,9 @@ from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
-from tests.test_helpers import create_fake_lean_cli_directory
+from tests.test_helpers import create_fake_lean_cli_directory, reset_state_installed_modules
 from tests.conftest import initialize_container
+from click.testing import Result
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
@@ -413,7 +414,21 @@ data_feed_required_options = {
     "Terminal Link": terminal_link_required_options,
     "Kraken": brokerage_required_options["Kraken"],
     "TDAmeritrade": brokerage_required_options["TDAmeritrade"],
-    "Bybit": brokerage_required_options["Bybit"]
+    "Bybit": brokerage_required_options["Bybit"],
+}
+
+data_provider_required_options = {
+    "IEX": {
+        "iex-cloud-api-key": "123",
+        "iex-price-plan": "Launch",
+    },
+    "Polygon": {
+        "polygon-api-key": "123",
+    },
+    "AlphaVantage": {
+        "alpha-vantage-api-key": "111",
+        "alpha-vantage-price-plan": "Free"
+    }
 }
 
 
@@ -530,7 +545,7 @@ def test_live_non_interactive_raise_error_when_missing_data_provider_live_option
 
     error_msg = str(result.exc_info[1]).split()
     
-    assert "data-provider-live" in error_msg
+    assert "--data-provider-live" in error_msg
     assert "data-queue-handler" not in error_msg 
 
     assert result.exit_code != 0
@@ -1026,3 +1041,191 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
         return
 
     assert args[0]["live-holdings"] == holding_list
+
+def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_historical_not_optional_config() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+
+    provider_history_option = ["--data-provider-historical", "Polygon"]
+                               # "--polygon-api-key", "123"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       ])
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--polygon-api-key" in error_msg
+    assert "--iex-cloud-api-key" not in error_msg
+
+    assert result.exit_code == 1
+
+def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_live_not_optional_config() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123"]
+                            #"--iex-price-plan", "Launch"]
+
+    provider_history_option = ["--data-provider-historical", "Polygon", "--polygon-api-key", "123"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       ])
+
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--iex-price-plan" in error_msg
+    assert "--polygon-api-key" not in error_msg
+
+    assert result.exit_code == 1
+
+def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    # create fake environment has IB configs already
+    brokerage = ["--brokerage", "OANDA"]
+
+    provider_live_option = ["--data-provider-live", "IEX",
+                            "--iex-cloud-api-key", "123",
+                            "--iex-price-plan", "Launch"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy" ,
+                                       *brokerage,
+                                       *provider_live_option,
+                                       "Python Project",
+                                       ])
+    assert result.exit_code == 1
+
+    error_msg = str(result.exc_info[1]).split()
+
+    assert "--oanda-account-id" in error_msg
+    assert "--oanda-access-token" in error_msg
+    assert "--oanda-environment" in error_msg
+    assert "--iex-price-plan" not in error_msg    
+
+def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, api_client: any) -> Result:
+    reset_state_installed_modules()
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    initialize_container(api_client_to_use=api_client)
+
+    option = ["--brokerage", brokerage_name]
+    for key, value in brokerage_required_options[brokerage_name].items():
+        option.extend([f"--{key}", value])
+
+    data_feed_required_options.update(data_provider_required_options)
+
+    option.extend(["--data-provider-live", data_provider_live_name])
+    for key, value in data_feed_required_options[data_provider_live_name].items():
+        if f"--{key}" not in option:
+            option.extend([f"--{key}", value])
+
+    if data_provider_historical_name is not None:
+        option.extend(["--data-provider-historical", data_provider_historical_name])
+        if data_provider_historical_name is not "Local": 
+            for key, value in data_feed_required_options[data_provider_historical_name].items():
+                if f"--{key}" not in option:
+                    option.extend([f"--{key}", value])
+
+    result = CliRunner().invoke(lean, ["live", "deploy",
+                                       *option,
+                                       "Python Project",
+                                       ])
+    assert result.exit_code == 0
+    return result
+
+@pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_historical_name,brokerage_product_id,data_provider_live_product_id,data_provider_historical_id",
+                         [("Interactive Brokers", "IEX", "Polygon", "181", "333", "306"),
+                          ("Paper Trading", "IEX", "Polygon", None, "333", "306"),
+                          ("Tradier", "IEX", "AlphaVantage", "185", "333", "334"),
+                          ("Paper Trading", "IEX", "Local", None, "333", "222")])
+def test_live_deploy_with_different_brokerage_and_different_live_data_provider_and_historical_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, brokerage_product_id: str, data_provider_live_product_id: str, data_provider_historical_id: str) -> None:
+    api_client = mock.MagicMock()
+    create_lean_option(brokerage_name, data_provider_live_name, data_provider_historical_name, api_client)
+    
+    is_exists = []
+    if brokerage_product_id is None and data_provider_historical_name != "Local":
+        assert len(api_client.method_calls) == 3
+        for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, data_provider_historical_id]):
+            if id in m_c[1]:
+                is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 2
+    elif brokerage_product_id is None and data_provider_historical_name == "Local":
+        assert len(api_client.method_calls) == 2
+        if data_provider_live_product_id in api_client.method_calls[0][1]:
+            is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 1
+    else:
+        assert len(api_client.method_calls) == 3
+        for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id, data_provider_historical_id]):
+            if id in f"{m_c[1]}":
+                is_exists.append(True)
+        assert is_exists
+        assert len(is_exists) == 3
+
+@pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id,data_provider_live_product_id",
+                         [("Interactive Brokers", "IEX", "181", "333"),
+                          ("Tradier", "IEX", "185", "333")])
+def test_live_non_interactive_deploy_with_different_brokerage_and_different_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str, data_provider_live_product_id: str) -> None:
+    api_client = mock.MagicMock()
+    create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
+    
+    assert len(api_client.method_calls) == 2
+    is_exists = []
+    for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id]):
+        if id in m_c[1]:
+            is_exists.append(True)
+    
+    assert is_exists
+    assert len(is_exists) == 2
+
+@pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id",
+                         [("Bybit", "Bybit", "305"),
+                          ("Coinbase Advanced Trade", "Coinbase Advanced Trade", "183"),
+                          ("Interactive Brokers", "Interactive Brokers", "181"),
+                          ("Tradier", "Tradier", "185")])
+def test_live_non_interactive_deploy_with_different_brokerage_with_the_same_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str) -> None:
+    api_client = mock.MagicMock()
+    create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
+
+    print(api_client.call_args_list)
+    print(api_client.call_args)
+
+    for m_c in api_client.method_calls:
+        if brokerage_product_id in m_c[1]:
+            is_exist = True
+
+    assert is_exist
+
+@pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_live_product_id",
+                         [("Paper Trading", "IEX", "333"),
+                          ("Paper Trading", "Polygon", "306")])
+def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_live_product_id: str) -> None:
+    api_client = mock.MagicMock()
+    create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
+
+    assert len(api_client.method_calls) == 2
+    for m_c in api_client.method_calls:
+        if data_provider_live_product_id in m_c[1]:
+            is_exist = True
+
+    assert is_exist
