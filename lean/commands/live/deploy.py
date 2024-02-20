@@ -395,7 +395,7 @@ def deploy(project: Path,
         [update_essential_properties_available(data_feed_configurers, kwargs)]
 
     elif brokerage is not None or len(data_provider_live) > 0:
-        ensure_options(["brokerage", "data_feed"])
+        ensure_options(["brokerage", "data_provider_live"])
 
         environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
