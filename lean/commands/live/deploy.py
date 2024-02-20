@@ -192,14 +192,14 @@ def _configure_lean_config_interactively(lean_config: Dict[str, Any],
 
 _cached_lean_config = None
 
-def _try_get_data_downloader_name(data_provider_historical_name: str, data_provider_live_name: str) -> str:
-    """ Get name for data downloader provider based on data provider live (if exist)
+def _try_get_data_historical_name(data_provider_historical_name: str, data_provider_live_name: str) -> str:
+    """ Get name for historical data provider based on data provider live (if exist)
 
     :param data_provider_historical_name: the current (default) data provider historical
     :param data_provider_live_name: the current data provider live name
     """
-    return next((live_data_downloader.get_name() for live_data_downloader in all_data_providers
-                                             if live_data_downloader.get_name() in data_provider_live_name), data_provider_historical_name)
+    return next((live_data_historical.get_name() for live_data_historical in all_data_providers
+                                             if live_data_historical.get_name() in data_provider_live_name), data_provider_historical_name)
 
 
 # being used by lean.models.click_options.get_the_correct_type_default_value()
@@ -417,7 +417,7 @@ def deploy(project: Path,
         _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
 
     if data_provider_historical is None:
-        data_provider_historical = _try_get_data_downloader_name("Local", data_provider_live)
+        data_provider_historical = _try_get_data_historical_name("Local", data_provider_live)
     [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
     data_provider_configurer.configure(lean_config, environment_name)
 
