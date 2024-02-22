@@ -285,6 +285,8 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit]
+                                  The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
@@ -292,15 +294,10 @@ Options:
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value.
-  --ib-data-feed [QuantConnect|Interactive Brokers|QuantConnect + InteractiveBrokers]
-                                  The available price data feeds are: Interactive Brokers price data feed, QuantConnect
-                                  price data feed or QuantConnect + InteractiveBrokers price data feed
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
                                   Whether the developer sandbox should be used
-  --tradier-data-feed [QuantConnect|Tradier Brokerage]
-                                  Whether the Tradier data feed must be used instead of the QuantConnect price data feed
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -371,6 +368,13 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
+  --iex-price-plan [Launch|Grow|Enterprise]
+                                  Your IEX Cloud Price plan
+  --coinapi-api-key TEXT          Your coinapi.io Api Key
+  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+                                  CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -1065,7 +1069,7 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|Custom data only|Bybit]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|Custom data only|Bybit]
                                   The live data provider to use
   --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given historical provider

@@ -16,8 +16,7 @@ from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.api import QCLiveAlgorithmStatus
-from lean.models.brokerages.cloud import all_cloud_brokerages, PaperTradingBrokerage
-
+from lean.models.cloud import cloud_brokerages
 
 @command(cls=LeanCommand)
 @argument("project", type=str)
@@ -49,11 +48,8 @@ def status(project: str) -> None:
         QCLiveAlgorithmStatus.LoggingIn: "Logging in"
     }.get(live_algorithm.status, live_algorithm.status.value)
 
-    brokerage_name = next((b.get_name() for b in all_cloud_brokerages if b.get_id() == live_algorithm.brokerage),
+    brokerage_name = next((b.get_name() for b in cloud_brokerages if b.get_id() == live_algorithm.brokerage),
                           live_algorithm.brokerage)
-
-    if brokerage_name == "PaperBrokerage":
-        brokerage_name = PaperTradingBrokerage.get_name()
 
     logger.info(f"Live status: {live_status}")
     logger.info(f"Live id: {live_algorithm.deployId}")

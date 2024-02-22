@@ -14,7 +14,6 @@
 
 from unittest import mock
 from click.testing import CliRunner
-import lean.models.brokerages.local
 from lean.commands import lean
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory

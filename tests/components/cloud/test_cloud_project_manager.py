@@ -11,13 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
 from lean.container import container
-from lean.models.api import QCMinimalFile
-from tests.test_helpers import create_api_project, create_fake_lean_cli_directory, create_lean_environments
+from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
 
 

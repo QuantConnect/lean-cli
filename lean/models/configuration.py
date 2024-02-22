@@ -92,13 +92,9 @@ class Configuration(ABC):
     def __init__(self, config_json_object):
         self._id: str = config_json_object["id"]
         self._config_type: str = config_json_object["type"]
-        self._value: str = config_json_object["value"]
-        self._is_cloud_property: bool = "cloud-id" in config_json_object
+        self._value: str = config_json_object["value"] if "value" in config_json_object else ""
         self._is_required_from_user = False
         self._save_persistently_in_lean = False
-        self._is_type_configurations_env: bool = type(
-            self) is ConfigurationsEnvConfiguration
-        self._is_type_trading_env: bool = type(self) is TradingEnvConfiguration
         self._log_message: str = ""
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]
@@ -106,6 +102,8 @@ class Configuration(ABC):
             self._filter = Filter(config_json_object["filters"])
         else:
             self._filter = Filter([])
+        self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
+        self._optional = config_json_object["optional"] if "optional" in config_json_object else False
 
     def factory(config_json_object) -> 'Configuration':
         """Creates an instance of the child classes.
@@ -115,20 +113,21 @@ class Configuration(ABC):
         :return: An instance of Configuration.
         """
 
-        if config_json_object["type"] in ["info", "configurations-env"]:
+        if config_json_object["type"] in ["info"]:
             return InfoConfiguration.factory(config_json_object)
         elif config_json_object["type"] in ["input", "internal-input"]:
             return UserInputConfiguration.factory(config_json_object)
         elif config_json_object["type"] == "filter-env":
             return BrokerageEnvConfiguration.factory(config_json_object)
-        elif config_json_object["type"] == "trading-env":
-            return TradingEnvConfiguration.factory(config_json_object)
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
 
+    def __repr__(self):
+        return f'{self._id}: {self._value}'
 
-class Filter():
+
+class Filter:
     """This class handles the conditional filters added to configurations.
     """
 
@@ -154,23 +153,7 @@ class InfoConfiguration(Configuration):
         :param config_json_object: the json object dict with configuration info
         :return: An instance of InfoConfiguration.
         """
-        if config_json_object["type"] == "configurations-env":
-            return ConfigurationsEnvConfiguration(config_json_object)
-        else:
-            return InfoConfiguration(config_json_object)
-
-
-class ConfigurationsEnvConfiguration(InfoConfiguration):
-    """Configuration class used for environment properties.
-
-    Doesn't support user prompt inputs.
-    Values of this configuration isn't persistently saved in the Lean configuration.
-    """
-
-    def __init__(self, config_json_object):
-        super().__init__(config_json_object)
-        self._env_and_values = {
-            env_obj["name"]: env_obj["value"] for env_obj in self._value}
+        return InfoConfiguration(config_json_object)
 
 
 class UserInputConfiguration(Configuration, ABC):
@@ -186,22 +169,14 @@ class UserInputConfiguration(Configuration, ABC):
         self._is_required_from_user = True
         self._save_persistently_in_lean = True
         self._input_method = self._prompt_info = self._help = ""
-        self._input_default = self._cloud_id = None
-        self._optional = False
         if "input-method" in config_json_object:
             self._input_method = config_json_object["input-method"]
         if "prompt-info" in config_json_object:
             self._prompt_info = config_json_object["prompt-info"]
         if "help" in config_json_object:
             self._help = config_json_object["help"]
-        if "input-default" in config_json_object:
-            self._input_default = config_json_object["input-default"]
-        if "cloud-id" in config_json_object:
-            self._cloud_id = config_json_object["cloud-id"]
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
-        if "optional" in config_json_object:
-            self._optional = config_json_object["optional"]
 
     @abstractmethod
     def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
@@ -409,46 +384,6 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
             return PromptUserInput.ask_user_for_input(self, default_value, logger)
         else:
             raise ValueError(f"Undefined input method type {self._input_method}")
-
-
-class TradingEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInput):
-    """This class adds trading-mode/envirionment based user filters.
-
-    Normalizes the value of envrionment values(live/paper) for cloud live.
-    """
-
-    def __init__(self, config_json_object):
-        super().__init__(config_json_object)
-
-    def factory(config_json_object) -> 'TradingEnvConfiguration':
-        """Creates an instance of the child classes.
-
-        :param config_json_object: the json object dict with configuration info
-        :return: An instance of TradingEnvConfiguration.
-        """
-        if config_json_object["type"] == "trading-env":
-            return TradingEnvConfiguration(config_json_object)
-        else:
-            raise ValueError(
-                f'Undefined input method type {config_json_object["type"]}')
-
-    def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
-        """Prompts user to provide input while validating the type of input
-        against the expected type
-
-        :param default_value: The default to prompt to the user.
-        :param logger: The instance of logger class.
-        :param hide_input: Whether to hide the input (not used for this type of input, which is never hidden).
-        :return: The value provided by the user.
-        """
-        # NOTE: trading envrionment config should not use old boolean value as default
-        if type(default_value) == bool:
-            default_value = "paper" if default_value else "live"
-        if self._input_method == "confirm":
-            raise ValueError(
-                f'input method -- {self._input_method} is not allowed with {self.__class__.__name__}')
-        else:
-            return BrokerageEnvConfiguration.ask_user_for_input(self, default_value, logger)
 
 
 class FilterEnvConfiguration(BrokerageEnvConfiguration):

@@ -18,11 +18,9 @@ from click import command, option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
-from lean.models.api import QCMinimalOrganization
 from lean.models.utils import DebuggingMethod
-from lean.models.logger import Option
-from lean.models.data_providers import QuantConnectDataProvider, all_data_providers, DataProvider
-from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+from lean.models.cli import cli_data_downloaders, cli_addon_modules
+from lean.components.util.json_modules_handler import build_and_configure_modules, non_interactive_config_build_for_name
 from lean.models.click_options import options_from_json, get_configs_for_options
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
@@ -32,6 +30,7 @@ from lean.models.click_options import options_from_json, get_configs_for_options
 # but projects created before that need changes.
 #
 # These methods checks if the project has outdated configurations, and if so, update them to keep it working.
+
 
 def _migrate_python_pycharm(logger: Logger, project_dir: Path) -> None:
     from os import path
@@ -225,20 +224,6 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
     csproj_path.write_text(xml_manager.to_string(current_content), encoding="utf-8")
 
 
-def _select_organization() -> QCMinimalOrganization:
-    """Asks the user for the organization that should be charged when downloading data.
-
-    :return: the selected organization
-    """
-    api_client = container.api_client
-
-    organizations = api_client.organizations.get_all()
-    options = [Option(id=organization, label=organization.name) for organization in organizations]
-
-    logger = container.logger
-    return logger.prompt_list("Select the organization to purchase and download data with", options)
-
-
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
 @option("--output",
@@ -252,7 +237,7 @@ def _select_organization() -> QCMinimalOrganization:
               type=Choice(["pycharm", "ptvsd", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("backtest"))
@@ -338,6 +323,7 @@ def backtest(project: Path,
     if output is None:
         output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+    environment_name = "backtesting"
     debugging_method = None
     if debug == "pycharm":
         debugging_method = DebuggingMethod.PyCharm
@@ -360,17 +346,18 @@ def backtest(project: Path,
     if algorithm_file.name.endswith(".cs"):
         _migrate_csharp_csproj(algorithm_file.parent)
 
-    lean_config = lean_config_manager.get_complete_lean_config("backtesting", algorithm_file, debugging_method)
+    lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, debugging_method)
 
     if download_data:
-        data_provider_historical = QuantConnectDataProvider.get_name()
+        data_provider_historical = "QuantConnect"
 
     organization_id = container.organization_manager.try_get_working_organization_id()
 
     if data_provider_historical is not None:
-        data_provider_configurer: DataProvider = get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)
-        data_provider_configurer.ensure_module_installed(organization_id)
-        data_provider_configurer.configure(lean_config, "backtesting")
+        data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
+                                                              cli_data_downloaders, kwargs, logger, environment_name)
+        data_provider.ensure_module_installed(organization_id)
+        container.lean_config_manager.set_properties(data_provider.get_settings())
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
@@ -407,11 +394,12 @@ def backtest(project: Path,
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     # Configure addon modules
-    build_and_configure_modules(addon_module, organization_id, lean_config, logger, "backtesting")
+    build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
+                                kwargs, logger, environment_name)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
-                         "backtesting",
+                         environment_name,
                          algorithm_file,
                          output,
                          engine_image,

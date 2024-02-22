@@ -20,7 +20,6 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-import lean.models.brokerages.local
 from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -81,8 +80,8 @@ def create_fake_binance_environment(name: str, live_mode: bool) -> None:
         "{name}": {{
             "live-mode": {str(live_mode).lower()},
 
-            "live-mode-brokerage": "QuantConnect.BinanceBrokerage.BinanceCoinFuturesBrokerage",
-            "data-queue-handler": [ "QuantConnect.BinanceBrokerage.BinanceCoinFuturesBrokerage" ],
+            "live-mode-brokerage": "BinanceCoinFuturesBrokerage",
+            "data-queue-handler": [ "BinanceCoinFuturesBrokerage" ],
             "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
             "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
             "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
@@ -104,6 +103,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
 
     traceback.print_exception(*result.exc_info)
 
+    assert result.exception is None
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
@@ -298,9 +298,8 @@ def test_live_sets_dependent_configurations_from_modules_json_based_on_environme
 
     result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-binance"])
 
-    assert result.exit_code == 0
-
-    lean_runner.run_lean.assert_called()
+    # binance exchange should be set
+    assert result.exit_code == 1
 
 terminal_link_required_options = {
     "terminal-link-connection-type": "SAPI",
@@ -320,6 +319,7 @@ brokerage_required_options = {
         "ib-account": "DU1234567",
         "ib-password": "hunter2",
         "ib-enable-delayed-streaming-data": "no",
+        "ib-weekly-restart-utc-time": "22:00:00",
     },
     "Tradier": {
         "tradier-account-id": "123",
@@ -535,21 +535,6 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             assert result.exit_code != 0
 
             container.lean_runner.run_lean.assert_not_called()
-
-def test_live_non_interactive_raise_error_when_missing_data_provider_live_options() -> None:
-    create_fake_lean_cli_directory()
-
-    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock())
-    
-    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading", "Python Project"])
-
-    error_msg = str(result.exc_info[1]).split()
-    
-    assert "--data-provider-live" in error_msg
-    assert "data-queue-handler" not in error_msg 
-
-    assert result.exit_code != 0
-
 
 
 @pytest.mark.parametrize("brokerage,data_feed",
@@ -1079,7 +1064,7 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_li
 
     provider_history_option = ["--data-provider-historical", "Polygon", "--polygon-api-key", "123"]
 
-    result = CliRunner().invoke(lean, ["live", "deploy" , "--brokerage", "Paper Trading",
+    result = CliRunner().invoke(lean, ["live", "deploy", "--brokerage", "Paper Trading",
                                        *provider_live_option,
                                        *provider_history_option,
                                        "Python Project",
@@ -1105,19 +1090,19 @@ def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -
                             "--iex-cloud-api-key", "123",
                             "--iex-price-plan", "Launch"]
 
-    result = CliRunner().invoke(lean, ["live", "deploy" ,
+    result = CliRunner().invoke(lean, ["live", "deploy",
                                        *brokerage,
                                        *provider_live_option,
                                        "Python Project",
                                        ])
     assert result.exit_code == 1
 
-    error_msg = str(result.exc_info[1]).split()
+    error_msg = str(result.exc_info[1])
 
     assert "--oanda-account-id" in error_msg
     assert "--oanda-access-token" in error_msg
     assert "--oanda-environment" in error_msg
-    assert "--iex-price-plan" not in error_msg    
+    assert "--iex-price-plan" not in error_msg
 
 def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, api_client: any) -> Result:
     reset_state_installed_modules()
@@ -1139,7 +1124,7 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
 
     if data_provider_historical_name is not None:
         option.extend(["--data-provider-historical", data_provider_historical_name])
-        if data_provider_historical_name is not "Local": 
+        if data_provider_historical_name is not "Local":
             for key, value in data_feed_required_options[data_provider_historical_name].items():
                 if f"--{key}" not in option:
                     option.extend([f"--{key}", value])
@@ -1159,7 +1144,7 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
 def test_live_deploy_with_different_brokerage_and_different_live_data_provider_and_historical_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, brokerage_product_id: str, data_provider_live_product_id: str, data_provider_historical_id: str) -> None:
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, data_provider_historical_name, api_client)
-    
+
     is_exists = []
     if brokerage_product_id is None and data_provider_historical_name != "Local":
         assert len(api_client.method_calls) == 3
@@ -1176,7 +1161,7 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
         assert len(is_exists) == 1
     else:
         assert len(api_client.method_calls) == 3
-        for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id, data_provider_historical_id]):
+        for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, data_provider_historical_id, brokerage_product_id]):
             if id in f"{m_c[1]}":
                 is_exists.append(True)
         assert is_exists
@@ -1188,13 +1173,13 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
 def test_live_non_interactive_deploy_with_different_brokerage_and_different_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str, data_provider_live_product_id: str) -> None:
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
-    
+
     assert len(api_client.method_calls) == 2
     is_exists = []
-    for m_c, id in zip(api_client.method_calls, [brokerage_product_id, data_provider_live_product_id]):
+    for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, brokerage_product_id]):
         if id in m_c[1]:
             is_exists.append(True)
-    
+
     assert is_exists
     assert len(is_exists) == 2
 

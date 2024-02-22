@@ -12,56 +12,134 @@
 # limitations under the License.
 
 from typing import Any, Dict, List
-from lean.models.addon_modules.addon_module import AddonModule
-from lean.models.addon_modules import all_addon_modules
 from lean.components.util.logger import Logger
-from lean.models.configuration import InternalInputUserInput
 from lean.models.json_module import JsonModule
-from lean.click import ensure_options
+from lean.models.logger import Option
 
-def build_and_configure_modules(modules: List[AddonModule], organization_id: str, lean_config: Dict[str, Any], logger: Logger, environment_name: str) -> Dict[str, Any]:
-    """Capitalizes the given word.
 
-    :param word: the word to capitalize
-    :return: the word with the first letter capitalized (any other uppercase characters are preserved)
+def build_and_configure_modules(target_modules: List[str], module_list: List[JsonModule], organization_id: str,
+                                lean_config: Dict[str, Any], properties: Dict[str, Any], logger: Logger,
+                                environment_name: str):
+    """Builds and configures the given modules
+
+    :param target_modules: the requested modules
+    :param module_list: the available modules
+    :param organization_id: the organization id
+    :param lean_config: the current lean configs
+    :param properties: the user provided arguments
+    :param logger: the logger instance
+    :param environment_name: the environment name to use
     """
-    for given_module in modules:
-        try:
-            found_module = next((module for module in all_addon_modules if module.get_name().lower() == given_module.lower()), None)
-            if found_module:
-                found_module.build(lean_config, logger).configure(lean_config, environment_name)
-                found_module.ensure_module_installed(organization_id)
-            else:
-                logger.error(f"Addon module '{given_module}' not found")
-        except Exception as e:
-            logger.error(f"Addon module '{given_module}' failed to configure: {e}")
-    return lean_config
+    for target_module_name in target_modules:
+        module = non_interactive_config_build_for_name(lean_config, target_module_name, module_list, properties,
+                                                       logger, environment_name)
+        module.ensure_module_installed(organization_id)
+        lean_config["environments"][environment_name].update(module.get_settings())
 
 
-def get_and_build_module(target_module_name: str, module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger) -> JsonModule:
-    [target_module] = [module for module in module_list if module.get_name() == target_module_name]
-    # update essential properties from brokerage to datafeed
-    # needs to be updated before fetching required properties
-    essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
-    ensure_options(essential_properties)
-    essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties}
-    target_module.update_configs(essential_properties_value)
-    logger.debug(f"json_module_handler.get_and_build_module(): non-interactive: essential_properties_value with module {target_module_name}: {essential_properties_value}")
-    # now required properties can be fetched as per data/filter provider from essential properties
-    required_properties: List[str] = []
-    for config in target_module.get_required_configs([InternalInputUserInput]):
-        required_properties.append(target_module.convert_lean_key_to_variable(config._id))
-    ensure_options(required_properties)
-    required_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in required_properties}
-    target_module.update_configs(required_properties_value)
-    logger.debug(f"json_module_handler.get_and_build_module(): non-interactive: required_properties_value with module {target_module_name}: {required_properties_value}")
+def non_interactive_config_build_for_name(lean_config: Dict[str, Any], target_module_name: str,
+                                          module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger,
+                                          environment_name: str = None) -> JsonModule:
+    return config_build_for_name(lean_config, target_module_name, module_list, properties, logger, interactive=False,
+                                 environment_name=environment_name)
+
+
+def config_build_for_name(lean_config: Dict[str, Any], target_module_name: str, module_list: List[JsonModule],
+                          properties: Dict[str, Any], logger: Logger, interactive: bool,
+                          environment_name: str = None) -> JsonModule:
+    target_module: JsonModule = None
+    for module in module_list:
+        if module.get_id() == target_module_name or module.get_name() == target_module_name:
+            target_module = module
+            break
+        else:
+            index = target_module_name.rfind('.')
+            if (index != -1 and module.get_id() == target_module_name[index + 1:]
+                    or module.get_name() == target_module_name[index + 1:]):
+                target_module = module
+                break
+
+    if not target_module:
+        for module in module_list:
+            if module.get_config_value_from_value(target_module_name):
+                target_module = module
+        if not target_module:
+            raise RuntimeError(f"""Failed to resolve module for name: '{target_module_name}'""")
+    else:
+        logger.debug(f'Found module \'{target_module_name}\' from given name')
+
+    target_module.config_build(lean_config, logger, interactive=interactive, properties=properties,
+                               environment_name=environment_name)
+    _update_settings(logger, environment_name, target_module, lean_config)
     return target_module
 
 
-def update_essential_properties_available(module_list: List[JsonModule], properties: Dict[str, Any]) -> JsonModule:
-    for target_module in module_list:
-        # update essential properties from brokerage to datafeed
-        # needs to be updated before fetching required properties
-        essential_properties = [target_module.convert_lean_key_to_variable(prop) for prop in target_module.get_essential_properties()]
-        essential_properties_value = {target_module.convert_variable_to_lean_key(prop) : properties[prop] for prop in essential_properties if properties[prop] is not None}
-        target_module.update_configs(essential_properties_value)
+def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], logger: Logger,
+                             user_provided_options: Dict[str, Any], show_secrets: bool, select_message: str,
+                             multiple: bool, environment_name: str = None) -> [JsonModule]:
+    """Interactively configures the brokerage to use.
+
+    :param lean_config: the LEAN configuration that should be used
+    :param models: the modules to choose from
+    :param logger: the logger to use
+    :param user_provided_options: the dictionary containing user provided options
+    :param show_secrets: whether to show secrets on input
+    :param select_message: the user facing selection message
+    :param multiple: true if multiple selections are allowed
+    :param environment_name: the target environment name
+    :return: the brokerage the user configured
+    """
+    options = [Option(id=b, label=b.get_name()) for b in models]
+
+    modules: [JsonModule] = []
+    if multiple:
+        modules = logger.prompt_list(select_message, options, multiple=True)
+    else:
+        module = logger.prompt_list(select_message, options, multiple=False)
+        modules.append(module)
+
+    for module in modules:
+        module.config_build(lean_config, logger, interactive=True, properties=user_provided_options,
+                            hide_input=not show_secrets, environment_name=environment_name)
+        _update_settings(logger, environment_name, module, lean_config)
+    if multiple:
+        return modules
+    return modules[-1]
+
+
+def _update_settings(logger: Logger, environment_name: str, module: JsonModule,
+                     lean_config: Dict[str, Any]) -> None:
+    settings = module.get_settings()
+    logger.debug(f'_update_settings({module}): Settings: {settings}')
+
+    if environment_name:
+        if "environments" not in lean_config:
+            lean_config["environments"] = {}
+        if environment_name not in lean_config["environments"]:
+            lean_config["environments"][environment_name] = {}
+        target = lean_config["environments"][environment_name]
+    else:
+        target = lean_config
+
+    for key, value in settings.items():
+        if key in target:
+            from json import loads
+            if isinstance(target[key], str) and target[key].startswith("["):
+                # it already exists, and it's an array we need to merge
+                logger.debug(f'_update_settings({module}): target[key]: {target[key]}')
+                existing_value = loads(target[key])
+                if value.startswith("["):
+                    # the new value is also an array, merge them
+                    existing_value = existing_value + loads(value)
+                else:
+                    existing_value.append(value)
+                # guarantee order but uniqueness
+                target[key] = list(dict.fromkeys(existing_value).keys())
+            elif isinstance(target[key], list):
+                # guarantee order but uniqueness
+                target[key] = list(dict.fromkeys(target[key] + loads(value)).keys())
+            else:
+                target[key] = value
+        else:
+            target[key] = value
+

@@ -14,7 +14,6 @@
 from unittest import mock
 from click.testing import CliRunner
 import pytest
-import lean.models.brokerages.local
 from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod
@@ -77,7 +76,7 @@ def test_cloud_live_deploy() -> None:
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
-                                       "--live-cash-balance", "USD:100"])
+                                       "--live-cash-balance", "USD:100", "--data-provider-live", "QuantConnect"])
 
     assert result.exit_code == 0
 
@@ -110,11 +109,11 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Interactive Brokers", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
-                                       "--ib-data-feed", "QuantConnect + InteractiveBrokers", "--ib-user-name", "test_user",
-                                       "--ib-account", "DU2366417", "--ib-password", "test_password"])
+                                       "--ib-user-name", "test_user", "--ib-account", "DU2366417", "--ib-password", "test_password",
+                                       "--data-provider-live", "QuantConnect", "--data-provider-live", "Interactive Brokers"])
 
     assert result.exit_code == 0
-    assert "Live data provider: quantconnecthandler+interactivebrokershandler" in result.output.split("\n")
+    assert "Live data providers: QuantConnectBrokerage, InteractiveBrokersBrokerage" in result.output.replace("\n", "")
 
 def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
     create_fake_lean_cli_directory()
@@ -131,11 +130,11 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Tradier", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
-                                       "--tradier-data-feed", "Tradier Brokerage", "--tradier-account-id", "123",
-                                       "--tradier-access-token", "456", "--tradier-environment", "paper"])
+                                       "--data-provider-live", "Tradier", "--tradier-account-id", "123",
+                                       "--tradier-access-token", "456", "--tradier-environment", "live"])
 
     assert result.exit_code == 0
-    assert "Live data provider: TradierBrokerage" in result.output.split("\n")
+    assert "Live data providers: TradierBrokerage" in result.output.replace("\n", "")
 
 @pytest.mark.parametrize("notice_method,configs", [("emails", "customAddress:customSubject"),
                                              ("emails", "customAddress1:customSubject1,customAddress2:customSubject2"),
@@ -167,7 +166,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
                                        "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
-                                       "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs])
+                                       "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs, "--data-provider-live", "QuantConnect"])
 
     assert result.exit_code == 0
 
@@ -252,7 +251,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
-                                       "--notify-insights", "no", *options])
+                                       "--notify-insights", "no", *options, "--data-provider-live", "QuantConnect"])
 
     if brokerage not in ["Paper Trading", "Trading Technologies"]:
         assert result.exit_code != 0
@@ -329,14 +328,10 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
 
     if brokerage == "Trading Technologies":
         options.extend(["--live-cash-balance", "USD:100"])
-    elif brokerage == "Interactive Brokers":
-        options.extend(["--ib-data-feed", "QuantConnect"])
-    elif brokerage == "Tradier":
-        options.extend(["--tradier-data-feed", "QuantConnect"])
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
-                                       "--notify-insights", "no", *options])
+                                       "--notify-insights", "no", *options, "--data-provider-live", "QuantConnect"])
 
     if (brokerage != "Paper Trading" and holdings != "")\
         or brokerage == "Terminal Link":   # non-cloud brokerage

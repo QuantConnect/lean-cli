@@ -57,7 +57,7 @@ class LiveClient:
               compile_id: str,
               node_id: str,
               brokerage_settings: Dict[str, Any],
-              price_data_handler: str,
+              live_data_providers_settings: Dict[str, Any],
               automatic_redeploy: bool,
               version_id: int,
               notify_order_events: bool,
@@ -71,7 +71,7 @@ class LiveClient:
         :param compile_id: the id of the compile to use for live trading
         :param node_id: the id of the node to start live trading on
         :param brokerage_settings: the brokerage settings to use
-        :param price_data_handler: the live data provider to use
+        :param live_data_providers_settings: the live data providers settings to use
         :param automatic_redeploy: whether automatic redeploys are enabled
         :param version_id: the id of the LEAN version to use
         :param notify_order_events: whether notifications should be sent on order events
@@ -92,7 +92,7 @@ class LiveClient:
             "compileId": compile_id,
             "nodeId": node_id,
             "brokerage": brokerage_settings,
-            "dataHandler": price_data_handler,
+            "dataProviders": live_data_providers_settings,
             "automaticRedeploy": automatic_redeploy,
             "versionId": version_id
         }

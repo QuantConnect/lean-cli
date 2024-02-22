@@ -143,16 +143,8 @@ def test_init_creates_clean_config_file_from_repo() -> None:
     assert config_path.exists()
     assert config_path.read_text(encoding="utf-8") == """
 {{
-  "organization-id": "{0}",
-  // this configuration file works by first loading all top-level
-  // configuration items and then will load the specified environment
-  // on top, this provides a layering affect. environment names can be
-  // anything, and just require definition in this file. There's
-  // two predefined environments, 'backtesting' and 'live', feel free
-  // to add more!
-
-  // data documentation
-  "data-folder": "data"
+    "data-folder": "data",
+    "organization-id": "{0}"
 }}
     """.format(_get_test_organization().id).strip()
 

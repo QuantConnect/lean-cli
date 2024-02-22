@@ -145,24 +145,15 @@ class LeanConfigManager:
 
         :param updates: the key -> new value updates to apply to the current config
         """
-        from json5 import dumps
-        from re import sub
-
-        config = self.get_lean_config()
+        from json import dumps
 
         config_path = self.get_lean_config_path()
-        config_text = config_path.read_text(encoding="utf-8")
+        json_config = self.get_lean_config()
 
         for key, value in reversed(list(updates.items())):
-            json_value = dumps(value)
+            json_config[key] = value
 
-            # We can only use regex to set the property because converting the config back to JSON drops all comments
-            if key in config:
-                config_text = sub(fr'"{key}":\s*("?[^",]*"?)', f'"{key}": {json_value}', config_text)
-            else:
-                config_text = config_text.replace("{", f'{{\n  "{key}": {json_value},', 1)
-
-        safe_save(path=config_path, data=config_text)
+        safe_save(path=config_path, data=dumps(json_config, indent=4))
 
     def clean_lean_config(self, config: str) -> str:
         """Removes the properties from a Lean config file which can be set in get_complete_lean_config().

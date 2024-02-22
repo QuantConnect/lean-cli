@@ -12,26 +12,25 @@
 # limitations under the License.
 
 
-from typing import Any, List, Dict
+from typing import List, Dict
 from click import option, Choice
 from lean.click import PathParameter
-from lean.models.configuration import Configuration
-from lean.models.brokerages.cloud import all_cloud_brokerages
-from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
-from lean.models.data_providers import all_data_providers
+from lean.models.cli import cli_brokerages, cli_data_downloaders, cli_data_queue_handlers
+from lean.models.cloud import cloud_brokerages, cloud_data_queue_handlers
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
+
 
 def get_configs_for_options(env: str) -> List[Configuration]:
     if env == "live-cloud":
-        brokerage = all_cloud_brokerages
-    elif env == "live-local":
-        brokerage = all_local_brokerages + all_local_data_feeds + all_data_providers
+        brokerage = cloud_brokerages + cloud_data_queue_handlers
+    elif env == "live-cli":
+        brokerage = cli_brokerages + cli_data_queue_handlers + cli_data_downloaders
     elif env == "backtest":
-        brokerage = all_data_providers
+        brokerage = cli_data_downloaders
     elif env == "research":
-        brokerage = all_data_providers
+        brokerage = cli_data_downloaders
     else:
-        raise ValueError("Acceptable values for 'env' are: 'live-cloud', 'live-local', 'backtest', 'research'")
+        raise ValueError("Acceptable values for 'env' are: 'live-cloud', 'live-cli', 'backtest', 'research'")
 
     run_options: Dict[str, Configuration] = {}
     config_with_module_id: Dict[str, str] = {}
@@ -81,32 +80,11 @@ def get_attribute_type(configuration: Configuration):
         return str
 
 
-def get_the_correct_type_default_value(default_lean_config_key: str, default_input_value: str, expected_type: Any,
-                                       choices: List[str] = None):
-    from lean.commands.live.deploy import _get_default_value
-    lean_value = _get_default_value(default_lean_config_key)
-    if lean_value is None and default_input_value is not None:
-        lean_value = default_input_value
-    # This handles backwards compatibility for the old modules.json values.
-    if lean_value is not None and type(lean_value) != expected_type and type(lean_value) == bool:
-        if choices and "true" in choices and "false" in choices:
-            # Backwards compatibility for zeroha-history-subscription.
-            lean_value = "true" if lean_value else "false"
-        else:
-            # Backwards compatibility for tradier-use-sandbox
-            lean_value = "paper" if lean_value else "live"
-    return lean_value
-
-
 def get_options_attributes(configuration: Configuration, default_lean_config_key=None):
     options_attributes = {
         "type": get_click_option_type(configuration),
         "help": configuration._help
     }
-    default_input_value = configuration._input_default if configuration._is_required_from_user else None
-    options_attributes["default"] = lambda: get_the_correct_type_default_value(
-        default_lean_config_key, default_input_value, get_attribute_type(configuration),
-        configuration._choices if configuration._input_method == "choice" else None)
     return options_attributes
 
 

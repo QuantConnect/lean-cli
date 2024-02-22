@@ -814,5 +814,5 @@ def test_optimize_used_data_downloader_specified_with_data_provider_option() -> 
     assert lean_config_filename is not None
 
     config = json.loads(Path(lean_config_filename).read_text(encoding="utf-8"))
-    assert "data-downloader" in config
-    assert config["data-downloader"] == "QuantConnect.Polygon.PolygonDataDownloader"
+    assert "data-downloader" in config['environments']['backtesting']
+    assert config['environments']['backtesting']["data-downloader"] == "QuantConnect.Lean.DataSource.Polygon.PolygonDataDownloader"
