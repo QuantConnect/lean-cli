@@ -155,7 +155,7 @@ def test_set_properties_updates_property_when_part_of_config_already() -> None:
     assert config.count("my-property") == 1
 
 
-def test_set_properties_preserves_comments() -> None:
+def test_set_properties_does_not_preserve_comments() -> None:
     with (Path.cwd() / "lean.json").open("w+", encoding="utf-8") as file:
         file.write("""
 {
@@ -169,7 +169,7 @@ def test_set_properties_preserves_comments() -> None:
 
     config = (Path.cwd() / "lean.json").read_text(encoding="utf-8")
 
-    assert "// some comment about the data-folder" in config
+    assert "// some comment about the data-folder" not in config
 
 
 def test_clean_lean_config_removes_auto_configurable_keys_from_original_config() -> None:

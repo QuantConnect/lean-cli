@@ -14,106 +14,30 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
-from lean.click import LeanCommand, PathParameter, ensure_options
+from lean.click import LeanCommand, PathParameter
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.brokerages.local import all_local_brokerages, local_brokerage_data_feeds, all_local_data_feeds
+from lean.models.cli import (cli_brokerages, cli_data_queue_handlers, cli_data_downloaders,
+                             cli_addon_modules, cli_history_provider)
 from lean.models.errors import MoreInfoError
-from lean.models.lean_config_configurer import LeanConfigConfigurer
-from lean.models.logger import Option
-from lean.models.configuration import ConfigurationsEnvConfiguration, InternalInputUserInput
 from lean.models.click_options import options_from_json, get_configs_for_options
-from lean.models.json_module import LiveInitialStateInput
+from lean.models.json_module import LiveInitialStateInput, JsonModule
 from lean.commands.live.live import live
 from lean.components.util.live_utils import get_last_portfolio_cash_holdings, configure_initial_cash_balance, configure_initial_holdings,\
                                             _configure_initial_cash_interactively, _configure_initial_holdings_interactively
-from lean.models.data_providers import all_data_providers
-from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module, update_essential_properties_available
+from lean.components.util.json_modules_handler import build_and_configure_modules, \
+    non_interactive_config_build_for_name, interactive_config_build, config_build_for_name
 
 _environment_skeleton = {
     "live-mode": True,
     "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
     "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
     "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
-    "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler"
+    "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
+    "history-provider": ["SubscriptionDataReaderHistoryProvider"],
+    "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 }
-
-
-def _get_configurable_modules_from_environment(lean_config: Dict[str, Any], environment_name: str) -> Tuple[LeanConfigConfigurer, List[LeanConfigConfigurer]]:
-    """Returns the configurable modules from the given environment.
-
-    :param lean_config: the LEAN configuration that should be used
-    :param environment_name: the name of the environment
-    :return: the configurable modules from the given environment
-    """
-    environment = lean_config["environments"][environment_name]
-    for key in ["live-mode-brokerage", "data-queue-handler"]:
-        if key not in environment:
-            raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
-                                "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
-
-    brokerage = environment["live-mode-brokerage"]
-    data_queue_handlers = environment["data-queue-handler"]
-    [brokerage_configurer] = [local_brokerage
-                              for local_brokerage in all_local_brokerages
-                              if _get_brokerage_base_name(local_brokerage.get_live_name()) == _get_brokerage_base_name(brokerage)]
-    data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
-    data_feed_configurers = [local_data_feed
-                             for local_data_feed in all_local_data_feeds
-                             if _get_brokerage_base_name(local_data_feed.get_live_name()) in data_queue_handlers_base_names]
-    return brokerage_configurer, data_feed_configurers
-
-
-def _get_brokerage_base_name(brokerage: str) -> str:
-    """Returns the base name of the brokerage.
-
-    :param brokerage: the name of the brokerage
-    :return: the base name of the brokerage
-    """
-    return brokerage.split('.')[-1]
-
-def _install_modules(modules: List[LeanConfigConfigurer], user_kwargs: Dict[str, Any]) -> None:
-    """Raises an error if any of the given modules are not installed.
-
-    :param modules: the modules to check
-    """
-    for module in modules:
-        if module is None or not module._installs:
-            continue
-        organization_id = container.organization_manager.try_get_working_organization_id()
-        module.ensure_module_installed(organization_id)
-
-
-def _raise_for_missing_properties(lean_config: Dict[str, Any], environment_name: str, lean_config_path: Path) -> None:
-    """Raises an error if any required properties are missing.
-
-    :param lean_config: the LEAN configuration that should be used
-    :param environment_name: the name of the environment
-    :param lean_config_path: the path to the LEAN configuration file
-    """
-    brokerage_configurer, data_feed_configurers = _get_configurable_modules_from_environment(lean_config, environment_name)
-    brokerage_properties = brokerage_configurer.get_required_properties(include_optionals=False)
-    data_queue_handler_properties = []
-    for data_feed_configurer in data_feed_configurers:
-        data_queue_handler_properties.extend(data_feed_configurer.get_required_properties(include_optionals=False))
-    required_properties = list(set(brokerage_properties + data_queue_handler_properties))
-    missing_properties = [p for p in required_properties if p not in lean_config or lean_config[p] == ""]
-    missing_properties = set(missing_properties)
-    if len(missing_properties) == 0:
-        return
-
-    properties_str = "properties" if len(missing_properties) > 1 else "property"
-    these_str = "these" if len(missing_properties) > 1 else "this"
-
-    missing_properties = "\n".join(f"- {p}" for p in missing_properties)
-
-    raise RuntimeError(f"""
-Please configure the following missing {properties_str} in {lean_config_path}:
-{missing_properties}
-Go to the following url for documentation on {these_str} {properties_str}:
-https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading
-    """.strip())
 
 
 def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name: str) -> None:
@@ -147,80 +71,26 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     sleep(10)
 
 
-def _configure_lean_config_interactively(lean_config: Dict[str, Any],
-                                         environment_name: str,
-                                         properties: Dict[str, Any],
-                                         show_secrets: bool) -> None:
-    """Interactively configures the Lean config to use.
+def _try_get_data_downloader_name(data_downloader_name: str, data_provider_live_names: [str]) -> str:
+    """ Get name for data downloader provider based on data provider live (if exist)
 
-    Asks the user all questions required to set up the Lean config for local live trading.
-
-    :param lean_config: the base lean config to use
-    :param environment_name: the name of the environment to configure
-    :param properties: the properties to use to configure lean
-    :param show_secrets: whether to show secrets on input
+    :param data_downloader_name: the current (default) data provider historical
+    :param data_provider_live_names: the current data provider live names
     """
-    logger = container.logger
-
-    lean_config["environments"] = {
-        environment_name: _environment_skeleton
-    }
-
-    brokerage = logger.prompt_list("Select a brokerage", [
-        Option(id=brokerage, label=brokerage.get_name()) for brokerage in all_local_brokerages
-    ])
-
-    brokerage.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
-
-    data_feeds = logger.prompt_list("Select a live data provider", [
-        Option(id=data_feed, label=data_feed.get_name()) for data_feed in local_brokerage_data_feeds[brokerage]
-    ], multiple= True)
-    for data_feed in data_feeds:
-        if brokerage._id == data_feed._id:
-            # update essential properties, so that other dependent values can be fetched.
-            essential_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
-                                          for config in brokerage.get_essential_configs()}
-            properties.update(essential_properties_value)
-            logger.debug(f"live.deploy._configure_lean_config_interactively(): essential_properties_value: {brokerage._id} {essential_properties_value}")
-            # now required properties can be fetched as per data/filter provider from essential properties
-            required_properties_value = {brokerage.convert_lean_key_to_variable(config._id): config._value
-                                         for config in brokerage.get_required_configs([InternalInputUserInput])}
-            properties.update(required_properties_value)
-            logger.debug(f"live.deploy._configure_lean_config_interactively(): required_properties_value: {required_properties_value}")
-        data_feed.build(lean_config, logger, properties, hide_input=not show_secrets).configure(lean_config, environment_name)
+    return next((live_data_historical.get_name() for live_data_historical in cli_data_downloaders
+                 if live_data_historical.get_name() in data_provider_live_names), data_downloader_name)
 
 
-_cached_lean_config = None
+def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
+    """ Get name for history providers based on the live data providers
 
-def _try_get_data_historical_name(data_provider_historical_name: str, data_provider_live_name: str) -> str:
-    """ Get name for historical data provider based on data provider live (if exist)
-
-    :param data_provider_historical_name: the current (default) data provider historical
-    :param data_provider_live_name: the current data provider live name
+    :param data_provider_live_names: the current data provider live names
     """
-    return next((live_data_historical.get_name() for live_data_historical in all_data_providers
-                                             if live_data_historical.get_name() in data_provider_live_name), data_provider_historical_name)
-
-
-# being used by lean.models.click_options.get_the_correct_type_default_value()
-def _get_default_value(key: str) -> Optional[Any]:
-    """Returns the default value for an option based on the Lean config.
-
-    :param key: the name of the property in the Lean config that supplies the default value of an option
-    :return: the value of the property in the Lean config, or None if there is none
-    """
-    global _cached_lean_config
-    if _cached_lean_config is None:
-        _cached_lean_config = container.lean_config_manager.get_lean_config()
-
-    if key not in _cached_lean_config:
-        return None
-
-    value = _cached_lean_config[key]
-    if value == "":
-        return None
-
-    return value
+    history_providers = []
+    for potential_history_provider in cli_history_provider:
+        if potential_history_provider.get_name() in data_provider_live_names:
+            history_providers.append(potential_history_provider.get_name())
+    return history_providers
 
 
 @live.command(cls=LeanCommand, requires_lean_config=True, requires_docker=True, default_command=True, name="deploy")
@@ -236,16 +106,16 @@ def _get_default_value(key: str) -> Optional[Any]:
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
 @option("--brokerage",
-              type=Choice([b.get_name() for b in all_local_brokerages], case_sensitive=False),
+              type=Choice([b.get_name() for b in cli_brokerages], case_sensitive=False),
               help="The brokerage to use")
 @option("--data-provider-live",
-              type=Choice([d.get_name() for d in all_local_data_feeds], case_sensitive=False),
+              type=Choice([d.get_name() for d in cli_data_queue_handlers], case_sensitive=False),
               multiple=True,
               help="The live data provider to use")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in all_data_providers if dp._id != "TerminalLinkBrokerage"], case_sensitive=False),
+              type=Choice([dp.get_name() for dp in cli_data_downloaders if dp.get_id() != "TerminalLinkBrokerage"], case_sensitive=False),
               help="Update the Lean configuration file to retrieve data from the given historical provider")
-@options_from_json(get_configs_for_options("live-local"))
+@options_from_json(get_configs_for_options("live-cli"))
 @option("--release",
               is_flag=True,
               default=False,
@@ -328,9 +198,6 @@ def deploy(project: Path,
     from copy import copy
     from datetime import datetime
     from json import loads
-    # Reset globals so we reload everything in between tests
-    global _cached_lean_config
-    _cached_lean_config = None
 
     logger = container.logger
 
@@ -342,98 +209,86 @@ def deploy(project: Path,
 
     lean_config_manager = container.lean_config_manager
 
+    brokerage_instance: JsonModule
+    data_provider_live_instances: [JsonModule] = []
+    history_providers: [str] = []
+    history_providers_instances: [JsonModule] = []
+    data_downloader_instances: JsonModule
     if environment is not None and (brokerage is not None or len(data_provider_live) > 0):
         raise RuntimeError("--environment and --brokerage + --data-provider-live are mutually exclusive")
 
+    environment_name = "lean-cli"
     if environment is not None:
         environment_name = environment
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
-        lean_environment = lean_config["environments"][environment_name]
-        for key in ["live-mode-brokerage", "data-queue-handler"]:
-            if key not in lean_environment:
-                raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
-                                    "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
+        if environment_name in lean_config["environments"]:
+            lean_environment = lean_config["environments"][environment_name]
+            for key in ["live-mode-brokerage", "data-queue-handler"]:
+                if key not in lean_environment:
+                    raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
+                                        "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
 
-        brokerage = lean_environment["live-mode-brokerage"]
-        data_queue_handlers = lean_environment["data-queue-handler"]
-        data_queue_handlers_base_names = [_get_brokerage_base_name(data_queue_handler) for data_queue_handler in data_queue_handlers]
-        data_feed_configurers = []
-
-        for local_brokerage in all_local_brokerages:
-            configuration_environments: List[ConfigurationsEnvConfiguration] = [config for config in local_brokerage._lean_configs if config._is_type_configurations_env]
-            for configuration_environment in configuration_environments:
-                configuration_environment_values = list(configuration_environment._env_and_values.values())[0]
-                if any(True for x in configuration_environment_values if x["name"] == "live-mode-brokerage" and _get_brokerage_base_name(x["value"]) == _get_brokerage_base_name(brokerage)):
-                    brokerage_configurer = local_brokerage
-                    # fill essential properties
-                    for condition in configuration_environment._filter._conditions:
-                        if condition._type != "exact-match":
-                            continue
-                        property_name_to_fill = local_brokerage.convert_lean_key_to_variable(condition._dependent_config_id)
-                        property_value_to_fill = condition._pattern
-                        kwargs[property_name_to_fill] = property_value_to_fill
-                        lean_config[condition._dependent_config_id] = property_value_to_fill
-                    break
-
-        for local_data_feed in all_local_data_feeds:
-            configuration_environments: List[ConfigurationsEnvConfiguration] = [config for config in local_data_feed._lean_configs if config._is_type_configurations_env]
-            for configuration_environment in configuration_environments:
-                configuration_environment_values = list(configuration_environment._env_and_values.values())[0]
-                if any(True for x in configuration_environment_values if x["name"] == "data-queue-handler" and _get_brokerage_base_name(x["value"]) in data_queue_handlers_base_names):
-                    data_feed_configurers.append(local_data_feed)
-                    # fill essential properties
-                    for condition in configuration_environment._filter._conditions:
-                        if condition._type != "exact-match":
-                            continue
-                        property_name_to_fill = local_data_feed.convert_lean_key_to_variable(condition._dependent_config_id)
-                        property_value_to_fill = condition._pattern
-                        kwargs[property_name_to_fill] = property_value_to_fill
-                        lean_config[condition._dependent_config_id] = property_value_to_fill
-
-        [update_essential_properties_available([brokerage_configurer], kwargs)]
-        [update_essential_properties_available(data_feed_configurers, kwargs)]
-
-    elif brokerage is not None or len(data_provider_live) > 0:
-        ensure_options(["brokerage", "data_provider_live"])
-
-        environment_name = "lean-cli"
-        lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-
-        lean_config["environments"] = {
-            environment_name: copy(_environment_skeleton)
-        }
-
-        [brokerage_configurer] = [get_and_build_module(brokerage, all_local_brokerages, kwargs, logger)]
-        brokerage_configurer.configure(lean_config, environment_name)
-
-        for df in data_provider_live:
-            [data_feed_configurer] = [get_and_build_module(df, all_local_data_feeds, kwargs, logger)]
-            data_feed_configurer.configure(lean_config, environment_name)
-
+            brokerage = lean_environment["live-mode-brokerage"]
+            data_provider_live = lean_environment["data-queue-handler"]
+            if type(data_provider_live) is not list:
+                data_provider_live = [data_provider_live]
+            history_providers = lean_environment["history-provider"]
+            if type(history_providers) is not list:
+                history_providers = [history_providers]
+            logger.debug(f'Deploy(): loading env \'{environment_name}\'. Brokerage: \'{brokerage}\'. IDQHs: '
+                         f'{data_provider_live}. HistoryProviders: {history_providers}')
+        else:
+            logger.info(f'Environment \'{environment_name}\' not found, creating from scratch')
+            lean_config["environments"] = {environment_name: copy(_environment_skeleton)}
     else:
-        environment_name = "lean-cli"
         lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
-        _configure_lean_config_interactively(lean_config, environment_name, kwargs, show_secrets=show_secrets)
+        lean_config["environments"] = {environment_name: copy(_environment_skeleton)}
 
+    if brokerage:
+        # user provided brokerage, check all arguments were provided
+        brokerage_instance = non_interactive_config_build_for_name(lean_config, brokerage, cli_brokerages, kwargs,
+                                                                   logger, environment_name)
+    else:
+        # let the user choose the brokerage
+        brokerage_instance = interactive_config_build(lean_config, cli_brokerages, logger, kwargs, show_secrets,
+                                                      "Select a brokerage", multiple=False,
+                                                      environment_name=environment_name)
+
+    if data_provider_live and len(data_provider_live) > 0:
+        for data_feed_name in data_provider_live:
+            data_feed = non_interactive_config_build_for_name(lean_config, data_feed_name, cli_data_queue_handlers,
+                                                              kwargs, logger, environment_name)
+            data_provider_live_instances.append(data_feed)
+    else:
+        data_provider_live_instances = interactive_config_build(lean_config, cli_data_queue_handlers, logger, kwargs,
+                                                                show_secrets, "Select a live data feed", multiple=True,
+                                                                environment_name=environment_name)
+
+    # based on the live data providers we set up the history providers
+    data_provider_live = [provider.get_name() for provider in data_provider_live_instances]
     if data_provider_historical is None:
-        data_provider_historical = _try_get_data_historical_name("Local", data_provider_live)
-    [data_provider_configurer] = [get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)]
-    data_provider_configurer.configure(lean_config, environment_name)
+        data_provider_historical = _try_get_data_downloader_name("Local", data_provider_live)
+    data_downloader_instances = non_interactive_config_build_for_name(lean_config, data_provider_historical,
+                                                                      cli_data_downloaders, kwargs, logger,
+                                                                      environment_name)
+    if history_providers is None or len(history_providers) == 0:
+        history_providers = _get_history_provider_name(data_provider_live)
+    for history_provider in history_providers:
+        if history_provider in ["BrokerageHistoryProvider", "SubscriptionDataReaderHistoryProvider"]:
+            continue
+        history_providers_instances.append(config_build_for_name(lean_config, history_provider, cli_history_provider,
+                                                                 kwargs, logger, interactive=True,
+                                                                 environment_name=environment_name))
 
-    if "environments" not in lean_config or environment_name not in lean_config["environments"]:
-        lean_config_path = lean_config_manager.get_lean_config_path()
-        raise MoreInfoError(f"{lean_config_path} does not contain an environment named '{environment_name}'",
-                            "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
+    organization_id = container.organization_manager.try_get_working_organization_id()
+    for module in (data_provider_live_instances + [data_downloader_instances, brokerage_instance]
+                   + history_providers_instances):
+        module.ensure_module_installed(organization_id)
 
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
-
-    env_brokerage, env_data_queue_handlers = _get_configurable_modules_from_environment(lean_config, environment_name)
-    _install_modules([env_brokerage] + env_data_queue_handlers + [data_provider_configurer], kwargs)
-
-    _raise_for_missing_properties(lean_config, environment_name, lean_config_manager.get_lean_config_path())
 
     project_config_manager = container.project_config_manager
     cli_config_manager = container.cli_config_manager
@@ -451,7 +306,7 @@ def deploy(project: Path,
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, env_brokerage,
+    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, brokerage_instance,
                                                                                                       project_config.get("cloud-id", None), project)
 
     if environment is None and brokerage is None and len(data_provider_live) == 0:   # condition for using interactive panel
@@ -498,7 +353,8 @@ def deploy(project: Path,
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output, given_algorithm_id)}"
 
     # Configure addon modules
-    build_and_configure_modules(addon_module, container.organization_manager.try_get_working_organization_id(), lean_config, logger, environment_name)
+    build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
+                                kwargs, logger, environment_name)
 
     if container.platform_manager.is_host_arm():
         if "InteractiveBrokersBrokerage" in lean_config["environments"][environment_name]["live-mode-brokerage"] \

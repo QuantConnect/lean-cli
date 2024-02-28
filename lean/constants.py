@@ -96,3 +96,18 @@ TERMINAL_LINK_PRODUCT_ID = 44
 
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"
+
+# Module constants
+MODULE_TYPE = "type"
+MODULE_PLATFORM = "platform"
+
+# types
+MODULE_ADDON = "addon-module"
+MODULE_BROKERAGE = "brokerage"
+MODULE_DATA_DOWNLOADER = "data-downloader"
+MODULE_HISTORY_PROVIDER = "history-provider"
+MODULE_DATA_QUEUE_HANDLER = "data-queue-handler"
+
+# platforms
+MODULE_CLI_PLATFORM = "cli"
+MODULE_CLOUD_PLATFORM = "cloud"

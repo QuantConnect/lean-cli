@@ -15,8 +15,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import List
-from lean.models.data_providers import all_data_providers
-from lean.models.brokerages.local import all_local_brokerages, all_local_data_feeds
+from lean.models.cli import (cli_brokerages, cli_data_downloaders, cli_data_queue_handlers,
+                             cli_addon_modules, cli_history_provider)
 
 from lean.commands.create_project import (DEFAULT_CSHARP_MAIN, DEFAULT_CSHARP_NOTEBOOK, DEFAULT_PYTHON_MAIN,
                                           DEFAULT_PYTHON_NOTEBOOK, LIBRARY_PYTHON_MAIN, LIBRARY_CSHARP_MAIN)
@@ -228,9 +228,6 @@ def create_lean_environments() -> List[QCLeanEnvironment]:
     ]
 
 def reset_state_installed_modules() -> None:
-    for data_provider in all_data_providers:
+    for data_provider in (cli_brokerages + cli_data_downloaders + cli_data_queue_handlers
+                          + cli_addon_modules + cli_history_provider):
         data_provider.__setattr__("_is_module_installed", False)
-    for local_brokerage in all_local_brokerages:
-        local_brokerage.__setattr__("_is_module_installed", False)
-    for local_data_feed in all_local_data_feeds:
-        local_data_feed.__setattr__("_is_module_installed", False)

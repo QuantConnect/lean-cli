@@ -87,6 +87,7 @@ class LeanRunner:
         :param detach: whether LEAN should run in a detached container
         :param extra_docker_config: additional docker configurations
         """
+        self._logger.debug(f'LeanRunner().run_lean: lean_config: {lean_config}')
         project_dir = algorithm_file.parent
 
         # The dict containing all options passed to `docker run`

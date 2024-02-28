@@ -23,10 +23,10 @@ from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.click_options import options_from_json, get_configs_for_options
-from lean.models.data_providers import all_data_providers, QuantConnectDataProvider, DataProvider
+from lean.models.cli import cli_data_downloaders, cli_addon_modules
 from lean.models.errors import MoreInfoError
 from lean.models.optimizer import OptimizationTarget
-from lean.components.util.json_modules_handler import build_and_configure_modules, get_and_build_module
+from lean.components.util.json_modules_handler import build_and_configure_modules, non_interactive_config_build_for_name
 
 
 def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
@@ -98,7 +98,7 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in all_data_providers], case_sensitive=False),
+              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @option("--download-data",
@@ -206,7 +206,7 @@ def optimize(project: Path,
     from math import floor
 
     should_detach = detach and not estimate
-    environment = "backtesting"
+    environment_name = "backtesting"
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project)
 
@@ -294,18 +294,18 @@ def optimize(project: Path,
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
     lean_config_manager = container.lean_config_manager
-    lean_config = lean_config_manager.get_complete_lean_config(environment, algorithm_file, None)
+    lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
 
     if download_data:
-        data_provider_historical = QuantConnectDataProvider.get_name()
+        data_provider_historical = "QuantConnect"
 
     if data_provider_historical is not None:
-        data_provider_configurer: DataProvider = get_and_build_module(data_provider_historical, all_data_providers, kwargs, logger)
-        data_provider_configurer.ensure_module_installed(organization_id)
-        data_provider_configurer.configure(lean_config, environment)
-        logger.info(lean_config)
+        data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
+                                                              cli_data_downloaders, kwargs, logger, environment_name)
+        data_provider.ensure_module_installed(organization_id)
+        container.lean_config_manager.set_properties(data_provider.get_settings())
 
     if not output.exists():
         output.mkdir(parents=True)
@@ -317,9 +317,9 @@ def optimize(project: Path,
 
     # Set extra config
     for key, value in extra_config:
-        if "environments" in lean_config and environment in lean_config["environments"] \
-                and key in lean_config["environments"][environment]:
-            lean_config["environments"][environment][key] = value
+        if "environments" in lean_config and environment_name in lean_config["environments"] \
+                and key in lean_config["environments"][environment_name]:
+            lean_config["environments"][environment_name][key] = value
         else:
             lean_config[key] = value
 
@@ -327,7 +327,8 @@ def optimize(project: Path,
     lean_config["algorithm-id"] = str(output_config_manager.get_optimization_id(output))
 
     # Configure addon modules
-    build_and_configure_modules(addon_module, organization_id, lean_config, logger, environment)
+    build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
+                                kwargs, logger, environment_name)
 
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach)
 
