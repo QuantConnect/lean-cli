@@ -318,8 +318,7 @@ brokerage_required_options = {
         "ib-user-name": "trader777",
         "ib-account": "DU1234567",
         "ib-password": "hunter2",
-        "ib-enable-delayed-streaming-data": "no",
-        "ib-weekly-restart-utc-time": "22:00:00",
+        "ib-enable-delayed-streaming-data": "no"
     },
     "Tradier": {
         "tradier-account-id": "123",

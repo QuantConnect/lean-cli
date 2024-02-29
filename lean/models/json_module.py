@@ -24,6 +24,8 @@ from lean.models.configuration import BrokerageEnvConfiguration, Configuration, 
 from copy import copy
 from abc import ABC
 
+_logged_messages = set()
+
 
 class JsonModule(ABC):
     """The JsonModule class is the base class extended for all json modules."""
@@ -178,8 +180,10 @@ class JsonModule(ABC):
             # Let's log messages for internal input configurations as well
             if configuration._log_message is not None:
                 log_message = configuration._log_message.strip()
-                if log_message:
+                if log_message and log_message not in _logged_messages:
                     logger.info(log_message)
+                    # make sure we log these messages once, we could use the same module for different functionalities
+                    _logged_messages.add(log_message)
             if type(configuration) is InternalInputUserInput:
                 continue
 
@@ -197,16 +201,18 @@ class JsonModule(ABC):
                 # NOTE: using "not" instead of "is None" because the default value can be false,
                 #       in which case we still want to prompt the user.
                 if not user_choice:
-                    if configuration._input_default != None and configuration._optional:
-                        user_choice = configuration._input_default
-                    elif interactive:
+                    if interactive:
                         default_value = configuration._input_default
                         user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
 
                         if not isinstance(configuration, BrokerageEnvConfiguration):
                             self._save_property({f"{configuration._id}": user_choice})
                     else:
-                        missing_options.append(f"--{configuration._id}")
+                        if configuration._input_default != None and configuration._optional:
+                            # if optional and we have a default input value and the user didn't provider it we use it
+                            user_choice = configuration._input_default
+                        else:
+                            missing_options.append(f"--{configuration._id}")
 
             configuration._value = user_choice
 
