@@ -1480,6 +1480,8 @@ Options:
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
+  --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
+                                  QuantConnect as historical data provider
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the optimizer

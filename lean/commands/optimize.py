@@ -105,6 +105,9 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               is_flag=True,
               default=False,
               help="Update the Lean configuration file to download data from the QuantConnect API, alias for --data-provider-historical QuantConnect")
+@option("--data-purchase-limit",
+              type=int,
+              help="The maximum amount of QCC to spend on downloading data during the backtest when using QuantConnect as historical data provider")
 @option("--release",
               is_flag=True,
               default=False,
@@ -152,6 +155,7 @@ def optimize(project: Path,
              constraint: List[str],
              data_provider_historical: Optional[str],
              download_data: bool,
+             data_purchase_limit: Optional[int],
              release: bool,
              image: Optional[str],
              update: bool,
@@ -306,6 +310,8 @@ def optimize(project: Path,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
+
+    lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     if not output.exists():
         output.mkdir(parents=True)
