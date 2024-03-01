@@ -224,7 +224,7 @@ def deploy(project: Path,
 
         if environment_name in lean_config["environments"]:
             lean_environment = lean_config["environments"][environment_name]
-            for key in ["live-mode-brokerage", "data-queue-handler"]:
+            for key in ["live-mode-brokerage", "data-queue-handler", "history-provider"]:
                 if key not in lean_environment:
                     raise MoreInfoError(f"The '{environment_name}' environment does not specify a {rename_internal_config_to_user_friendly_format(key)}",
                                         "https://www.lean.io/docs/v2/lean-cli/live-trading/algorithm-control")
@@ -319,12 +319,12 @@ def deploy(project: Path,
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
         elif live_cash_balance is not None and live_cash_balance != "":
-            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage}")
+            raise RuntimeError(f"Custom cash balance setting is not available for {brokerage_instance}")
 
         if holdings_option != LiveInitialStateInput.NotSupported:
             live_holdings = configure_initial_holdings(logger, holdings_option, live_holdings, last_holdings)
         elif live_holdings is not None and live_holdings != "":
-            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage}")
+            raise RuntimeError(f"Custom portfolio holdings setting is not available for {brokerage_instance}")
 
     if live_cash_balance:
         lean_config["live-cash-balance"] = live_cash_balance

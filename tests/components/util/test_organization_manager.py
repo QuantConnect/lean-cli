@@ -48,7 +48,6 @@ def test_try_get_id_aborts_if_organization_id_is_not_in_the_lean_config() -> Non
 
 def test_organization_manager_sets_working_organization_id_in_lean_config():
     organization_id = "abc123"
-    lean_config_updates = {"organization-id": organization_id}
 
     lean_config_manager = mock.Mock()
     lean_config_manager.set_properties = mock.Mock()
@@ -57,4 +56,5 @@ def test_organization_manager_sets_working_organization_id_in_lean_config():
 
     organization_manager.configure_working_organization_id(organization_id)
 
-    lean_config_manager.set_properties.assert_called_once_with(lean_config_updates)
+    lean_config_manager.set_properties.assert_called_with({"job-organization-id": organization_id})
+    lean_config_manager.set_properties.assert_called_with({"organization-id": organization_id})

@@ -235,11 +235,14 @@ class LeanConfigManager:
             config["debugging"] = False
             config["debugging-method"] = "LocalCmdline"
 
+        from lean.components.util.organization_manager import get_organization
+
         # The following key -> value pairs are added to the config unless they are already set by the user
         config_defaults = {
             "job-user-id": self._cli_config_manager.user_id.get_value(default="0"),
             "api-access-token": self._cli_config_manager.api_token.get_value(default=""),
             "job-project-id": self._project_config_manager.get_local_id(algorithm_file.parent),
+            "job-organization-id": get_organization(config),
 
             "ib-host": "127.0.0.1",
             "ib-port": "4002",

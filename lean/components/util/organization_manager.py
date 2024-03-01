@@ -11,10 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
+
+
+def get_organization(config: Dict[str, Any]):
+    organization_id = None
+    if "job-organization-id" in config:
+        organization_id = config["job-organization-id"]
+    elif "organization-id" in config:
+        # for backwards compatibility with local platform and old lean cli setups
+        organization_id = config["organization-id"]
+    return organization_id
 
 
 class OrganizationManager:
@@ -24,7 +34,6 @@ class OrganizationManager:
         """Creates a new OrganizationManager instance.
 
         :param logger: the logger to use to log messages with
-        :param api_client: the API client to use to fetch organizations info
         :param lean_config_manager: the LeanConfigManager to use to manipulate the lean configuration file
         """
         self._logger = logger
@@ -39,7 +48,7 @@ class OrganizationManager:
         """
         if self._working_organization_id is None:
             lean_config = self._lean_config_manager.get_lean_config()
-            self._working_organization_id = lean_config.get("organization-id")
+            self._working_organization_id = get_organization(lean_config)
 
         return self._working_organization_id
 
@@ -64,5 +73,7 @@ class OrganizationManager:
 
         :param organization_id: the working organization di
         """
+        self._lean_config_manager.set_properties({"job-organization-id": organization_id})
+        # for backwards compatibility with local platform
         self._lean_config_manager.set_properties({"organization-id": organization_id})
         self._working_organization_id = organization_id

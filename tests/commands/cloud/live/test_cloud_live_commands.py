@@ -333,7 +333,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
                                        "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
                                        "--notify-insights", "no", *options, "--data-provider-live", "QuantConnect"])
 
-    if (brokerage != "Paper Trading" and holdings != "")\
+    if (brokerage != "Paper Trading" and brokerage != "Binance" and holdings != "")\
         or brokerage == "Terminal Link":   # non-cloud brokerage
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
@@ -348,7 +348,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
                         {"symbol": "AA", "symbolId": "AA 2T", "quantity": 2, "averagePrice": 20.35}]
     elif len(holding) == 1:
         holding_list = [{"symbol": "A", "symbolId": "A 2T", "quantity": 1, "averagePrice": 145.1}]
-    elif brokerage == "Paper Trading":
+    elif brokerage == "Paper Trading" or brokerage == "Binance":
         holding_list = []
 
     api_client.live.start.assert_called_once_with(mock.ANY,

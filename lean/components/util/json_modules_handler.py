@@ -44,30 +44,41 @@ def non_interactive_config_build_for_name(lean_config: Dict[str, Any], target_mo
                                  environment_name=environment_name)
 
 
-def config_build_for_name(lean_config: Dict[str, Any], target_module_name: str, module_list: List[JsonModule],
-                          properties: Dict[str, Any], logger: Logger, interactive: bool,
-                          environment_name: str = None) -> JsonModule:
+def find_module(target_module_name: str, module_list: List[JsonModule], logger: Logger) -> JsonModule:
     target_module: JsonModule = None
+    # because we compare str we normalize everything to lower case
+    target_module_name = target_module_name.lower()
+    module_class_name = target_module_name.rfind('.')
     for module in module_list:
-        if module.get_id() == target_module_name or module.get_name() == target_module_name:
+        # we search in the modules name and id
+        module_id = module.get_id().lower()
+        module_name = module.get_name().lower()
+
+        if module_id == target_module_name or module_name == target_module_name:
             target_module = module
             break
         else:
-            index = target_module_name.rfind('.')
-            if (index != -1 and module.get_id() == target_module_name[index + 1:]
-                    or module.get_name() == target_module_name[index + 1:]):
+            if (module_class_name != -1 and module_id == target_module_name[module_class_name + 1:]
+                    or module_name == target_module_name[module_class_name + 1:]):
                 target_module = module
                 break
 
     if not target_module:
         for module in module_list:
-            if module.get_config_value_from_value(target_module_name):
+            # we search in the modules configuration values, this is for when the user provides an environment
+            if (module.is_value_in_config(target_module_name)
+               or module_class_name != -1 and module.is_value_in_config(target_module_name[module_class_name + 1:])):
                 target_module = module
         if not target_module:
             raise RuntimeError(f"""Failed to resolve module for name: '{target_module_name}'""")
-    else:
-        logger.debug(f'Found module \'{target_module_name}\' from given name')
+    logger.debug(f'Found module \'{target_module_name}\' from given name')
+    return target_module
 
+
+def config_build_for_name(lean_config: Dict[str, Any], target_module_name: str, module_list: List[JsonModule],
+                          properties: Dict[str, Any], logger: Logger, interactive: bool,
+                          environment_name: str = None) -> JsonModule:
+    target_module = find_module(target_module_name, module_list, logger)
     target_module.config_build(lean_config, logger, interactive=interactive, properties=properties,
                                environment_name=environment_name)
     _update_settings(logger, environment_name, target_module, lean_config)
