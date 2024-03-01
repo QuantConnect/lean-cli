@@ -56,5 +56,5 @@ def test_organization_manager_sets_working_organization_id_in_lean_config():
 
     organization_manager.configure_working_organization_id(organization_id)
 
-    lean_config_manager.set_properties.assert_called_with({"job-organization-id": organization_id})
-    lean_config_manager.set_properties.assert_called_with({"organization-id": organization_id})
+    lean_config_manager.set_properties.assert_has_calls(calls=[mock.call({"job-organization-id": organization_id}),
+                                                               mock.call({"organization-id": organization_id})])
