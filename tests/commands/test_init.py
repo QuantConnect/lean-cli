@@ -144,6 +144,7 @@ def test_init_creates_clean_config_file_from_repo() -> None:
     assert config_path.read_text(encoding="utf-8") == """
 {{
     "data-folder": "data",
+    "job-organization-id": "{0}",
     "organization-id": "{0}"
 }}
     """.format(_get_test_organization().id).strip()

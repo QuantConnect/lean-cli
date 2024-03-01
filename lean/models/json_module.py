@@ -92,9 +92,16 @@ class JsonModule(ABC):
                  if self._lean_configs[i]._id == target_name]
         return self._lean_configs[idx]._value
 
-    def get_config_value_from_value(self, value: str) -> bool:
+    def is_value_in_config(self, searched_value: str) -> bool:
+        searched_value = searched_value.lower()
         for i in range(len(self._lean_configs)):
-            if value in self._lean_configs[i]._value:
+            value = self._lean_configs[i]._value
+            if isinstance(value, str):
+                value = value.lower()
+            if isinstance(value, list):
+                value = [x.lower() for x in value]
+
+            if searched_value in value:
                 return True
         return False
 
@@ -223,7 +230,7 @@ class JsonModule(ABC):
 
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:
-            container.logger.debug(f"JsonModule.ensure_module_installed(): installing module for module {self._id}: {self._product_id}")
+            container.logger.debug(f"JsonModule.ensure_module_installed(): installing module {self}: {self._product_id}")
             container.module_manager.install_module(
                 self._product_id, organization_id)
             self._is_module_installed = True

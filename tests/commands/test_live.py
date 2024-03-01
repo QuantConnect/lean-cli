@@ -1004,7 +1004,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--data-provider-live", "Custom data only", *options])
 
-    if brokerage not in ["Paper Trading", "Terminal Link"] and holdings != "":
+    if brokerage not in ["Paper Trading", "Terminal Link", "Binance"] and holdings != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
