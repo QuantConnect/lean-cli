@@ -37,7 +37,7 @@ class ObjectStoreClient:
             "key": key,
         }
 
-        data = self._api.post("object/get", payload)
+        data = self._api.post("object/metadata/get", payload)
 
         return data
 
