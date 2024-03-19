@@ -143,8 +143,18 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given historical provider
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
+  --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier [Starter|Intermediate|Pro]
+                                  Your Kraken Verification Tier
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1071,7 +1081,7 @@ Options:
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|Custom data only|Bybit]
                                   The live data provider to use
-  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local]
+  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1476,7 +1486,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1491,6 +1501,16 @@ Options:
   --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
                                   py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
+  --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier [Starter|Intermediate|Pro]
+                                  Your Kraken Verification Tier
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1621,8 +1641,18 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
                                   Update the Lean configuration file to retrieve data from the given historical provider
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
+  --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier [Starter|Intermediate|Pro]
+                                  Your Kraken Verification Tier
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
