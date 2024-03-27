@@ -27,11 +27,10 @@ class ProjectEncryptionKey(WrappedBaseModel):
     name: str
 
 class QCCollaborator(WrappedBaseModel):
-    id: int
     uid: int
-    blivecontrol: bool
-    epermission: str
-    profileimage: str
+    liveControl: bool
+    permission: str
+    profileImage: str
     name: str
     owner: bool = False
 
