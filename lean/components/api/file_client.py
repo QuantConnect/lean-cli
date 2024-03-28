@@ -53,13 +53,12 @@ class FileClient:
 
         return [QCFullFile(**file) for file in data["files"]]
 
-    def create(self, project_id: int, file_name: str, content: str) -> QCMinimalFile:
+    def create(self, project_id: int, file_name: str, content: str) -> None:
         """Creates a new file.
 
         :param project_id: the id of the project to create a file for
         :param file_name: the name of the file to create
         :param content: the content of the file to create
-        :return: the created file
         """
         data = self._api.post("files/create", {
             "projectId": project_id,
@@ -67,9 +66,7 @@ class FileClient:
             "content": content
         })
 
-        return QCMinimalFile(**data["files"][0])
-
-    def update(self, project_id: int, file_name: str, content: str) -> QCMinimalFile:
+    def update(self, project_id: int, file_name: str, content: str) -> None:
         """Updates an existing file.
 
         :param project_id: the id of the project to update a file in
@@ -81,8 +78,6 @@ class FileClient:
             "name": file_name,
             "content": content
         })
-
-        return QCMinimalFile(**data["files"][0])
 
     def delete(self, project_id: int, file_name: str) -> None:
         """Deletes an existing file.

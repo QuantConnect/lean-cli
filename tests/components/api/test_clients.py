@@ -148,10 +148,7 @@ def test_files_crud() -> None:
 
     with create_project(api_client, "Test Project") as project:
         # Test a file can be created
-        created_file = file_client.create(project.projectId, "file.py", "# This is a comment")
-
-        assert created_file.name == "file.py"
-        assert created_file.content == "# This is a comment"
+        file_client.create(project.projectId, "file.py", "# This is a comment")
 
         # Test the file can be retrieved
         retrieved_file = file_client.get(project.projectId, "file.py")
