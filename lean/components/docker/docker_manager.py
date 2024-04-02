@@ -38,6 +38,16 @@ class DockerManager:
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
 
+    def get_image_label(self, image: DockerImage, label: str, default: str) -> str:
+        docker_image = self._get_docker_client().images.get(image.name)
+
+        for name, value in docker_image.labels.items():
+            if name == label:
+                self._logger.debug(f"Label '{label}' found in image '{image.name}', value {value}")
+                return value
+        self._logger.info(f"Label '{label}' not found in image '{image.name}', using default {default}")
+        return default
+
     def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
 
@@ -563,13 +573,13 @@ class DockerManager:
                 break
 
         return path
-    
+
     def get_container_port(self, container_name: str, internal_port: str) -> Optional[int]:
         """
         Returns a containers external port for a mapped internal port
         :param container_name: Name of the container
         :param internal_port: The internal port of container. If protocol not included
-        we assume /tcp. ex. 5678/tcp 
+        we assume /tcp. ex. 5678/tcp
         :return: The external port that is linked to it, or None if it does not exist
         """
 

@@ -44,7 +44,7 @@ def _get_csharp_project_files(path: Path) -> dict:
             "algorithm-language": "CSharp",
             "parameters": {}
         }),
-        (path / "CSharp Project.csproj"): ProjectManager.get_csproj_file_default_content()
+        (path / "CSharp Project.csproj"): ProjectManager.get_csproj_file_default_content('net6.0')
     }
 
 
@@ -65,7 +65,7 @@ def _get_fake_libraries() -> dict:
             "parameters": {}
         }),
         (Path.cwd() / "Library" / "CSharp Library" / "CSharp Library.csproj"):
-            ProjectManager.get_csproj_file_default_content()
+            ProjectManager.get_csproj_file_default_content('net6.0')
     }
 
 

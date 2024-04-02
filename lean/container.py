@@ -95,12 +95,18 @@ class Container:
         self.output_config_manager = OutputConfigManager(self.lean_config_manager)
         self.optimizer_config_manager = OptimizerConfigManager(self.logger)
 
+        self.docker_manager = docker_manager
+        if not self.docker_manager:
+            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager)
+
         self.project_manager = ProjectManager(self.logger,
                                               self.project_config_manager,
                                               self.lean_config_manager,
                                               self.path_manager,
                                               self.xml_manager,
-                                              self.platform_manager)
+                                              self.platform_manager,
+                                              self.cli_config_manager,
+                                              self.docker_manager)
         self.library_manager = LibraryManager(self.logger,
                                               self.project_manager,
                                               self.project_config_manager,
@@ -138,10 +144,6 @@ class Container:
                                                          self.path_manager,
                                                          self.project_manager,
                                                          self.organization_manager)
-
-        self.docker_manager = docker_manager
-        if not self.docker_manager:
-            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager)
 
         self.lean_runner = lean_runner
         if not self.lean_runner:

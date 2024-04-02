@@ -13,7 +13,6 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
-from lean.constants import LEAN_STRICT_PYTHON_VERSION
 from click import command, argument, option
 
 from lean.click import LeanCommand, PathParameter
@@ -124,7 +123,7 @@ def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version) -> b
     return True
 
 
-def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
+def _get_pypi_package(name: str, version: Optional[str], python_version: str) -> Tuple[str, str]:
     """Retrieves the properly-capitalized name and the latest compatible version of a package from PyPI.
 
     If the version is already given, this method checks whether that version is compatible with the Docker images.
@@ -148,7 +147,7 @@ def _get_pypi_package(name: str, version: Optional[str]) -> Tuple[str, str]:
     pypi_data = loads(response.text)
     name = pypi_data["info"]["name"]
 
-    required_python_version = StrictVersion(LEAN_STRICT_PYTHON_VERSION)
+    required_python_version = StrictVersion(python_version)
 
     last_compatible_version = None
     last_compatible_version_upload_time = None
@@ -237,7 +236,11 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
     else:
         logger.info("Retrieving latest compatible version from PyPI")
 
-    name, version = _get_pypi_package(name, version)
+    project_config = container.project_config_manager.get_project_config(project_dir)
+    engine_image = container.cli_config_manager.get_engine_image(project_config.get("engine-image", None))
+    python_version = container.docker_manager.get_image_label(engine_image, 'strict_python_version', '3.11.7')
+
+    name, version = _get_pypi_package(name, version, python_version)
 
     requirements_file = project_dir / "requirements.txt"
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(requirements_file)}'")

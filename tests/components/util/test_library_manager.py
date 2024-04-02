@@ -16,44 +16,15 @@ from unittest import mock
 
 import pytest
 
-from lean.components.config.lean_config_manager import LeanConfigManager
-from lean.components.config.project_config_manager import ProjectConfigManager
-from lean.components.config.storage import Storage
 from lean.components.util.library_manager import LibraryManager
-from lean.components.util.path_manager import PathManager
-from lean.components.util.platform_manager import PlatformManager
-from lean.components.util.project_manager import ProjectManager
-from lean.components.util.xml_manager import XMLManager
 from lean.container import container
 from lean.models.utils import LeanLibraryReference
+from tests.conftest import initialize_container
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def _create_library_manager() -> LibraryManager:
-    cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
-    lean_config_manager = LeanConfigManager(mock.Mock(),
-                                            mock.Mock(),
-                                            mock.Mock(),
-                                            mock.Mock(),
-                                            cache_storage)
-    platform_manager = PlatformManager()
-    path_manager = PathManager(lean_config_manager, platform_manager)
-    xml_manager = XMLManager()
-    project_config_manager = ProjectConfigManager(xml_manager)
-    logger = mock.Mock()
-    project_manager = ProjectManager(logger,
-                                     project_config_manager,
-                                     lean_config_manager,
-                                     path_manager,
-                                     xml_manager,
-                                     platform_manager)
-
-    return LibraryManager(logger,
-                          project_manager,
-                          project_config_manager,
-                          lean_config_manager,
-                          path_manager,
-                          xml_manager)
+    return initialize_container().library_manager
 
 
 def _project_has_library_reference_in_config(project_dir: Path, library_dir: Path) -> bool:
@@ -96,7 +67,7 @@ def test_get_csharp_lean_library_path_for_csproj_file(project_depth: int) -> Non
     # plus 'Library/CSharp Library/CSharp Project.csproj' (2 more parts),
     # plus the csproj file name (1 more part)
     expected_csproj_file_path = \
-        (Path("/".join(".." for i in range(project_depth + 1))) / library_dir_relative_to_cli / "CSharp Library.csproj")
+        (Path("/".join(".." for _ in range(project_depth + 1))) / library_dir_relative_to_cli / "CSharp Library.csproj")
     assert Path(csproj_file_path) == expected_csproj_file_path
 
 

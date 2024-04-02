@@ -15,8 +15,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union, Tuple
 from lean.components import reserved_names
+from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.components.docker.docker_manager import DockerManager
 from lean.components.util.logger import Logger
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
@@ -24,6 +26,7 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject, QCProjectLibrary
 from lean.models.utils import LeanLibraryReference
+
 
 class ProjectManager:
     """The ProjectManager class provides utilities for handling a single project."""
@@ -34,7 +37,9 @@ class ProjectManager:
                  lean_config_manager: LeanConfigManager,
                  path_manager: PathManager,
                  xml_manager: XMLManager,
-                 platform_manager: PlatformManager) -> None:
+                 platform_manager: PlatformManager,
+                 cli_config_manager: CLIConfigManager,
+                 docker_manager: DockerManager) -> None:
         """Creates a new ProjectManager instance.
 
         :param logger: the logger to use to log messages with
@@ -50,6 +55,8 @@ class ProjectManager:
         self._path_manager = path_manager
         self._xml_manager = xml_manager
         self._platform_manager = platform_manager
+        self._cli_config_manager = cli_config_manager
+        self._docker_manager = docker_manager
 
     def find_algorithm_file(self, input: Path) -> Path:
         """Returns the path to the file containing the algorithm.
@@ -186,7 +193,10 @@ class ProjectManager:
             self._generate_pycharm_config(project_dir)
         else:
             self._generate_vscode_csharp_config(project_dir)
-            self._generate_csproj(project_dir)
+
+            image = self._cli_config_manager.get_engine_image()
+            framework_ver = self._docker_manager.get_image_label(image, 'target_framework', 'net6.0')
+            self._generate_csproj(project_dir, framework_ver)
             self.generate_rider_config(project_dir)
 
     def delete_project(self, project_dir: Path) -> None:
@@ -677,12 +687,13 @@ class ProjectManager:
 }}
         """)
 
-    def _generate_csproj(self, project_dir: Path) -> None:
+    def _generate_csproj(self, project_dir: Path, framework_version: str) -> None:
         """Generates a .csproj file for the given project and returns the path to it.
 
         :param project_dir: the path of the new project
         """
-        self._generate_file(project_dir / f"{project_dir.name}.csproj", self.get_csproj_file_default_content())
+        self._generate_file(project_dir / f"{project_dir.name}.csproj",
+                            self.get_csproj_file_default_content(framework_version))
 
     def generate_rider_config(self, project_dir: Path) -> bool:
         """Generates C# debugging configuration for Rider.
@@ -952,13 +963,13 @@ class ProjectManager:
         return list(set(libraries)), list(set(libraries_not_found))
 
     @staticmethod
-    def get_csproj_file_default_content() -> str:
+    def get_csproj_file_default_content(framework_version: str) -> str:
         return """
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>{TARGET_FRAMEWORK}</TargetFramework>
         <OutputPath>bin/$(Configuration)</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <DefaultItemExcludes>$(DefaultItemExcludes);backtests/*/code/**;live/*/code/**;optimizations/*/code/**</DefaultItemExcludes>
@@ -969,7 +980,7 @@ class ProjectManager:
         <PackageReference Include="QuantConnect.DataSource.Libraries" Version="2.5.*"/>
     </ItemGroup>
 </Project>
-        """
+        """.replace('{TARGET_FRAMEWORK}', framework_version)
 
     @staticmethod
     def get_csproj_file_path(project_dir: Path) -> Path:

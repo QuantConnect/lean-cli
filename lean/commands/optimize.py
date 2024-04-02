@@ -336,7 +336,10 @@ def optimize(project: Path,
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
                                 kwargs, logger, environment_name)
 
-    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach)
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
+    run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach,
+                                                      engine_image)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append(f"dotnet QuantConnect.Optimizer.Launcher.dll{' --estimate' if estimate else ''}")
@@ -346,7 +349,6 @@ def optimize(project: Path,
               type="bind",
               read_only=True)
     )
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     # Add known additional run options from the extra docker config
     LeanRunner.parse_extra_docker_config(run_options, loads(extra_docker_config))

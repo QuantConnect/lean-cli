@@ -20,37 +20,18 @@ from unittest import mock
 import pytest
 from lxml import etree
 
-from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.config.storage import Storage
-from lean.components.util.path_manager import PathManager
-from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
 from lean.container import container
-from lean.models.api import QCLanguage, QCProjectLibrary, QCProject
+from lean.models.api import QCLanguage, QCProjectLibrary
+from tests.conftest import initialize_container
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 
 
 def _create_project_manager() -> ProjectManager:
-    logger = mock.Mock()
-    xml_manager = XMLManager()
-    project_config_manager = ProjectConfigManager(xml_manager)
-    cache_storage = Storage(str(Path("~/.lean/cache").expanduser()))
-    platform_manager = PlatformManager()
-    lean_config_manager = LeanConfigManager(mock.Mock(),
-                                            mock.Mock(),
-                                            project_config_manager,
-                                            mock.Mock(),
-                                            cache_storage)
-    path_manager = PathManager(lean_config_manager, platform_manager)
-
-    return ProjectManager(logger,
-                          project_config_manager,
-                          lean_config_manager,
-                          path_manager,
-                          xml_manager,
-                          platform_manager)
+    return initialize_container().project_manager
 
 
 def _lists_are_equal(list1: List[Any], list2: List[Any]) -> bool:
