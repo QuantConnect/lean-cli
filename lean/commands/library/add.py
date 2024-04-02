@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional, Tuple
 from click import command, argument, option
 
 from lean.click import LeanCommand, PathParameter
+from lean.constants import DEFAULT_LEAN_STRICT_PYTHON_VERSION
 from lean.container import container
 from lean.models.errors import MoreInfoError
 
@@ -238,7 +239,8 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
 
     project_config = container.project_config_manager.get_project_config(project_dir)
     engine_image = container.cli_config_manager.get_engine_image(project_config.get("engine-image", None))
-    python_version = container.docker_manager.get_image_label(engine_image, 'strict_python_version', '3.11.7')
+    python_version = container.docker_manager.get_image_label(engine_image, 'strict_python_version',
+                                                              DEFAULT_LEAN_STRICT_PYTHON_VERSION)
 
     name, version = _get_pypi_package(name, version, python_version)
 

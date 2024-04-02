@@ -21,6 +21,11 @@ CUSTOM_FOUNDATION = "lean-cli/foundation"
 CUSTOM_ENGINE = "lean-cli/engine"
 CUSTOM_RESEARCH = "lean-cli/research"
 
+# we get these values from the image labels, but we still have defaults just in case
+DEFAULT_LEAN_PYTHON_VERSION = "3.11"
+DEFAULT_LEAN_STRICT_PYTHON_VERSION = f"{DEFAULT_LEAN_PYTHON_VERSION}.7"
+DEFAULT_LEAN_DOTNET_FRAMEWORK = "net6.0"
+
 # The path to the root python directory in docker image
 DOCKER_PYTHON_SITE_PACKAGES_PATH = "/root/.local/lib/python{LEAN_PYTHON_VERSION}/site-packages"
 

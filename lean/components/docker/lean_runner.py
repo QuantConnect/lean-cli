@@ -23,7 +23,8 @@ from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME
+from lean.constants import MODULES_DIRECTORY, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME, \
+    DEFAULT_LEAN_DOTNET_FRAMEWORK, DEFAULT_LEAN_PYTHON_VERSION
 from lean.constants import DOCKER_PYTHON_SITE_PACKAGES_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
@@ -313,7 +314,8 @@ class LeanRunner:
             run_options["commands"].append("mkdir /ModulesProject")
             run_options["commands"].append("dotnet new sln -o /ModulesProject")
 
-            framework_ver = self._docker_manager.get_image_label(image, 'target_framework', 'net6.0')
+            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
             run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
             run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
@@ -417,7 +419,8 @@ class LeanRunner:
             "mode": "rw"
         }
 
-        python_version = self._docker_manager.get_image_label(image, 'python_version', '3.11')
+        python_version = self._docker_manager.get_image_label(image, 'python_version',
+                                                              DEFAULT_LEAN_PYTHON_VERSION)
         site_packages_path = DOCKER_PYTHON_SITE_PACKAGES_PATH.replace('{LEAN_PYTHON_VERSION}', python_version)
 
         # Mount a volume to the user packages directory so we don't install packages every time
@@ -486,7 +489,8 @@ class LeanRunner:
         for path in compile_root.rglob("*.csproj"):
             self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
 
-        framework_ver = self._docker_manager.get_image_label(image, 'target_framework', 'net6.0')
+        framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                             DEFAULT_LEAN_DOTNET_FRAMEWORK)
         # Set up the MSBuild properties
         msbuild_properties = {
             "Configuration": "Release" if release else "Debug",

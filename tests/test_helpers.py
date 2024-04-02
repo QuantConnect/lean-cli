@@ -15,6 +15,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import List
+
+from lean.constants import DEFAULT_LEAN_DOTNET_FRAMEWORK
 from lean.models.cli import (cli_brokerages, cli_data_downloaders, cli_data_queue_handlers,
                              cli_addon_modules, cli_history_provider)
 
@@ -44,7 +46,7 @@ def _get_csharp_project_files(path: Path) -> dict:
             "algorithm-language": "CSharp",
             "parameters": {}
         }),
-        (path / "CSharp Project.csproj"): ProjectManager.get_csproj_file_default_content('net6.0')
+        (path / "CSharp Project.csproj"): ProjectManager.get_csproj_file_default_content(DEFAULT_LEAN_DOTNET_FRAMEWORK)
     }
 
 
@@ -65,7 +67,7 @@ def _get_fake_libraries() -> dict:
             "parameters": {}
         }),
         (Path.cwd() / "Library" / "CSharp Library" / "CSharp Library.csproj"):
-            ProjectManager.get_csproj_file_default_content('net6.0')
+            ProjectManager.get_csproj_file_default_content(DEFAULT_LEAN_DOTNET_FRAMEWORK)
     }
 
 
