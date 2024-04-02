@@ -23,7 +23,8 @@ from lean.components.util.logger import Logger
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import MODULES_DIRECTORY, TERMINAL_LINK_PRODUCT_ID, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME
+from lean.constants import MODULES_DIRECTORY, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME, \
+    DEFAULT_LEAN_DOTNET_FRAMEWORK, DEFAULT_LEAN_PYTHON_VERSION
 from lean.constants import DOCKER_PYTHON_SITE_PACKAGES_PATH
 from lean.models.docker import DockerImage
 from lean.models.utils import DebuggingMethod
@@ -97,7 +98,8 @@ class LeanRunner:
                                                    output_dir,
                                                    debugging_method,
                                                    release,
-                                                   detach)
+                                                   detach,
+                                                   image)
 
         # Add known additional run options from the extra docker config
         self.parse_extra_docker_config(run_options, extra_docker_config)
@@ -175,7 +177,8 @@ class LeanRunner:
                                 output_dir: Path,
                                 debugging_method: Optional[DebuggingMethod],
                                 release: bool,
-                                detach: bool) -> Dict[str, Any]:
+                                detach: bool,
+                                image: DockerImage) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -186,6 +189,7 @@ class LeanRunner:
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
+        :param image: The docker image that will be used
         :return: the Docker configuration containing basic configuration to run Lean
         """
         from docker.types import Mount
@@ -309,7 +313,10 @@ class LeanRunner:
             # Create a C# project used to resolve the dependencies of the modules
             run_options["commands"].append("mkdir /ModulesProject")
             run_options["commands"].append("dotnet new sln -o /ModulesProject")
-            run_options["commands"].append("dotnet new classlib -o /ModulesProject -f net6.0 --no-restore")
+
+            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
+            run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
             run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
             # Add all modules to the project, automatically resolving all dependencies
@@ -325,7 +332,8 @@ class LeanRunner:
 
         # Set up language-specific run options
         self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
-                                            set_up_common_csharp_options_called, release)
+                                                 set_up_common_csharp_options_called, release,
+                                                 image)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -359,11 +367,12 @@ class LeanRunner:
 
         return run_options
 
-    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
+    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any], image: DockerImage) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
+        :param image: the docker image that will be used
         """
 
         from docker.types import Mount
@@ -410,10 +419,14 @@ class LeanRunner:
             "mode": "rw"
         }
 
+        python_version = self._docker_manager.get_image_label(image, 'python_version',
+                                                              DEFAULT_LEAN_PYTHON_VERSION)
+        site_packages_path = DOCKER_PYTHON_SITE_PACKAGES_PATH.replace('{LEAN_PYTHON_VERSION}', python_version)
+
         # Mount a volume to the user packages directory so we don't install packages every time
         site_packages_volume = self._docker_manager.create_site_packages_volume(requirements_txt)
         run_options["volumes"][site_packages_volume] = {
-            "bind": f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}",
+            "bind": f"{site_packages_path}",
             "mode": "rw"
         }
 
@@ -424,7 +437,7 @@ class LeanRunner:
         # We only need to do this if it hasn't already been done before for this site packages volume
         # To keep track of this we create a special file in the site packages directory after installation
         # If this file already exists we can skip pip install completely
-        marker_file = f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}/pip-install-done"
+        marker_file = f"{site_packages_path}/pip-install-done"
         run_options["commands"].extend([
             f"! test -f {marker_file} && pip install --user --progress-bar off -r /requirements.txt",
             f"touch {marker_file}"
@@ -452,12 +465,14 @@ class LeanRunner:
         requirements = sorted(set(requirements))
         return "\n".join(requirements)
 
-    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
+    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool,
+                              image: DockerImage) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
         :param release: whether C# projects should be compiled in release configuration instead of debug
+        :param image: the docker image that will be used
         """
         compile_root = self._get_csharp_compile_root(project_dir)
 
@@ -474,11 +489,13 @@ class LeanRunner:
         for path in compile_root.rglob("*.csproj"):
             self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
 
+        framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                             DEFAULT_LEAN_DOTNET_FRAMEWORK)
         # Set up the MSBuild properties
         msbuild_properties = {
             "Configuration": "Release" if release else "Debug",
             "Platform": "AnyCPU",
-            "TargetFramework": "net6.0",
+            "TargetFramework": framework_ver,
             "OutputPath": "/Compile/bin",
             "GenerateAssemblyInfo": "false",
             "GenerateTargetFrameworkAttribute": "false",
@@ -722,14 +739,14 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             lean_config[config_key] = disk_provider
 
     def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,
-                                            set_up_common_csharp_options_called, release) -> None:
+                                            set_up_common_csharp_options_called, release, image: DockerImage) -> None:
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self.set_up_python_options(project_dir, run_options)
+            self.set_up_python_options(project_dir, run_options, image)
         else:
             if not set_up_common_csharp_options_called:
                 self.set_up_common_csharp_options(run_options)
-            self.set_up_csharp_options(project_dir, run_options, release)
+            self.set_up_csharp_options(project_dir, run_options, release, image)
 
     def format_error_before_logging(self, chunk: str):
         from lean.components.util import compiler

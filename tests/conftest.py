@@ -19,6 +19,8 @@ import certifi
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
+
+from lean.constants import DEFAULT_LEAN_DOTNET_FRAMEWORK
 from lean.models.api import QCMinimalOrganization
 
 from lean.container import container
@@ -38,6 +40,7 @@ def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, ap
     docker_manager = mock.Mock()
     if docker_manager_to_use:
         docker_manager = docker_manager_to_use
+    docker_manager.get_image_label = mock.MagicMock(return_value=DEFAULT_LEAN_DOTNET_FRAMEWORK)
 
     lean_runner = mock.Mock()
     if lean_runner_to_use:

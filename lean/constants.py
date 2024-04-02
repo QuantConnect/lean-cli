@@ -21,14 +21,13 @@ CUSTOM_FOUNDATION = "lean-cli/foundation"
 CUSTOM_ENGINE = "lean-cli/engine"
 CUSTOM_RESEARCH = "lean-cli/research"
 
-# The python version of docker image
-LEAN_PYTHON_VERSION = "3.8"
-
-# The strict python version of docker image
-LEAN_STRICT_PYTHON_VERSION =  f"{LEAN_PYTHON_VERSION}.13"
+# we get these values from the image labels, but we still have defaults just in case
+DEFAULT_LEAN_PYTHON_VERSION = "3.11"
+DEFAULT_LEAN_STRICT_PYTHON_VERSION = f"{DEFAULT_LEAN_PYTHON_VERSION}.7"
+DEFAULT_LEAN_DOTNET_FRAMEWORK = "net6.0"
 
 # The path to the root python directory in docker image
-DOCKER_PYTHON_SITE_PACKAGES_PATH = f"/root/.local/lib/python{LEAN_PYTHON_VERSION}/site-packages"
+DOCKER_PYTHON_SITE_PACKAGES_PATH = "/root/.local/lib/python{LEAN_PYTHON_VERSION}/site-packages"
 
 # The file in which general CLI configuration is stored
 LEAN_ROOT_PATH = "/Lean/Launcher/bin/Debug"
@@ -90,9 +89,6 @@ UPDATE_CHECK_INTERVAL_DOCKER_IMAGE = 24 * 7
 
 # The interval in hours at which the CLI checks for new announcements
 UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
-
-# The product id of the Terminal Link module
-TERMINAL_LINK_PRODUCT_ID = 44
 
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"

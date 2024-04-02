@@ -128,12 +128,24 @@ def research(project: Path,
     for key, value in extra_config:
         lean_config[key] = value
 
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
+
+    container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
+
+    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
+        logger.warn(f'A custom research image: "{research_image}" is being used!')
+
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
                                                       temp_manager.create_temporary_directory(),
                                                       None,
                                                       False,
-                                                      detach)
+                                                      detach,
+                                                      research_image)
 
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))
@@ -173,17 +185,6 @@ def research(project: Path,
 
     # Add known additional run options from the extra docker config
     LeanRunner.parse_extra_docker_config(run_options, loads(extra_docker_config))
-
-    project_config_manager = container.project_config_manager
-    cli_config_manager = container.cli_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
-
-    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
-        logger.warn(f'A custom research image: "{research_image}" is being used!')
-
-    container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
 
     try:
         container.docker_manager.run_image(research_image, **run_options)
