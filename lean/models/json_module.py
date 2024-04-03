@@ -228,6 +228,9 @@ class JsonModule(ABC):
                                .join(missing_options)}""".strip())
         return self
 
+    def get_paths_to_mount(self) -> Dict[str, str]:
+        return {config._id: config._value for config in self._lean_configs if config._should_mount}
+
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:
             container.logger.debug(f"JsonModule.ensure_module_installed(): installing module {self}: {self._product_id}")

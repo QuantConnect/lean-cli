@@ -73,7 +73,8 @@ class LeanRunner:
                  debugging_method: Optional[DebuggingMethod],
                  release: bool,
                  detach: bool,
-                 extra_docker_config: Optional[Dict[str, Any]] = None) -> None:
+                 extra_docker_config: Optional[Dict[str, Any]] = None,
+                 paths_to_mount: Optional[Dict[str, str]] = None) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -87,9 +88,26 @@ class LeanRunner:
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
         :param extra_docker_config: additional docker configurations
+        :param paths_to_mount: additional paths to mount to the container
         """
         self._logger.debug(f'LeanRunner().run_lean: lean_config: {lean_config}')
         project_dir = algorithm_file.parent
+
+        # Add additional paths to mount to the container
+        mounts = []
+        if paths_to_mount is not None:
+            from docker.types import Mount
+            for key, pathStr in paths_to_mount.items():
+                path = Path(pathStr).resolve()
+                target = f"/Files/{Path(path).name}"
+
+                self._logger.info(f"Mounting {path} to {target}")
+
+                mounts.append(Mount(target=target,
+                                    source=str(path),
+                                    type="bind",
+                                    read_only=True))
+                lean_config["environments"][environment][key] = target
 
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
@@ -103,6 +121,9 @@ class LeanRunner:
 
         # Add known additional run options from the extra docker config
         self.parse_extra_docker_config(run_options, extra_docker_config)
+
+        # Add the additional mounts
+        run_options["mounts"].extend(mounts)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:

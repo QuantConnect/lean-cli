@@ -104,6 +104,7 @@ class Configuration(ABC):
             self._filter = Filter([])
         self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
         self._optional = config_json_object["optional"] if "optional" in config_json_object else False
+        self._should_mount = config_json_object["mount"] if "mount" in config_json_object else False
 
     def factory(config_json_object) -> 'Configuration':
         """Creates an instance of the child classes.
