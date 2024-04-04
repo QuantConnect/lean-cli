@@ -690,3 +690,65 @@ def test_run_lean_passes_extra_volumes() -> None:
     assert "extra/path" in volumes
     assert volumes["extra/path"]["bind"] == "/extra/bound/path"
     assert volumes["extra/path"]["mode"] == "rw"
+
+
+def test_run_lean_mounts_additional_paths() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_config = {
+        "transaction-log": "transaction-log.log",
+        "environments": {
+            "backtesting": {}
+        }
+    }
+    paths_to_mount = {
+        "file-to-mount-key": "../some/path/to/mount/file.json",
+        "directory-to-mount-key": "../some/path/to/mount"
+    }
+
+    lean_runner.run_lean(lean_config,
+                         "backtesting",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False,
+                         {},
+                         paths_to_mount)
+
+    docker_manager.run_image.assert_called_once()
+    _, kwargs = docker_manager.run_image.call_args
+
+    assert "mounts" in kwargs
+    mounts = kwargs["mounts"]
+
+    def source_to_target(path):
+        return f"/Files/{str(Path(path).name)}"
+
+    def path_is_in_mounts(path):
+        return any([mount["Source"] == str(Path(path).resolve()) for mount in mounts])
+
+    def path_is_mounted_in_files(path):
+        return any([mount["Target"] == source_to_target(path) for mount in mounts])
+
+    assert all([path_is_in_mounts(path) and path_is_mounted_in_files(path) for path in paths_to_mount.values()])
+
+    # The target paths should have been added to the lean config
+    lean_config_path = next((mount["Source"] for mount in mounts if mount["Target"].endswith("config.json")), None)
+    assert lean_config_path is not None
+
+    # Read temporal lean config
+    with open(lean_config_path, "r") as f:
+        import json
+        lean_config = json.load(f)
+
+    backtesting_env = lean_config["environments"]["backtesting"]
+
+    assert all([key in backtesting_env and backtesting_env[key] == source_to_target(value)
+                for key, value in paths_to_mount.items()])

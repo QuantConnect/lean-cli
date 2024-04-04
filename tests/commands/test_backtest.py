@@ -24,6 +24,7 @@ from lean.components.util.xml_manager import XMLManager
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCLanguage
+from lean.models.json_module import JsonModule
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from tests.conftest import initialize_container
@@ -51,14 +52,15 @@ def test_backtest_calls_lean_runner_with_correct_algorithm_file() -> None:
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_calls_lean_runner_with_default_output_directory() -> None:
@@ -83,14 +85,15 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 Path.cwd() / "Python Project" / "custom",
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           Path.cwd() / "Python Project" / "custom",
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_calls_lean_runner_with_release_mode() -> None:
@@ -101,14 +104,15 @@ def test_backtest_calls_lean_runner_with_release_mode() -> None:
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("CSharp Project/Main.cs").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 True,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("CSharp Project/Main.cs").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           True,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_calls_lean_runner_with_detach() -> None:
@@ -119,14 +123,15 @@ def test_backtest_calls_lean_runner_with_detach() -> None:
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 False,
-                                                 True,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           True,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_aborts_when_project_does_not_exist() -> None:
@@ -161,14 +166,15 @@ def test_backtest_forces_update_when_update_option_given() -> None:
 
     docker_manager.pull_image.assert_called_once_with(ENGINE_IMAGE)
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 None,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
@@ -181,14 +187,15 @@ def test_backtest_passes_custom_image_to_lean_runner_when_set_in_config() -> Non
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 DockerImage(name="custom/lean", tag="123"),
-                                                 None,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           DockerImage(name="custom/lean", tag="123"),
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
@@ -201,19 +208,20 @@ def test_backtest_passes_custom_image_to_lean_runner_when_given_as_option() -> N
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 DockerImage(name="custom/lean", tag="456"),
-                                                 None,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           DockerImage(name="custom/lean", tag="456"),
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 @pytest.mark.parametrize("python_venv", ["Custom-venv",
-                                        "/Custom-venv",
-                                        None])
+                                         "/Custom-venv",
+                                         None])
 def test_backtest_passes_custom_python_venv_to_lean_runner_when_given_as_option(python_venv: str) -> None:
     create_fake_lean_cli_directory()
 
@@ -290,14 +298,15 @@ def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, deb
     assert result.exit_code == 0
 
     container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
-                                                 "backtesting",
-                                                 Path("Python Project/main.py").resolve(),
-                                                 mock.ANY,
-                                                 ENGINE_IMAGE,
-                                                 debugging_method,
-                                                 False,
-                                                 False,
-                                                 {})
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           debugging_method,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {})
 
 
 def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
@@ -612,7 +621,8 @@ def test_backtest_passes_data_purchase_limit_to_lean_runner() -> None:
 }
         """)
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-provider-historical", "QuantConnect", "--data-purchase-limit", "1000"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-provider-historical", "QuantConnect",
+                                       "--data-purchase-limit", "1000"])
 
     assert result.exit_code == 0
 
@@ -684,4 +694,25 @@ def test_backtest_calls_lean_runner_with_extra_docker_config() -> None:
                                                                "volumes": {
                                                                    "extra/path": {"bind": "/extra/path", "mode": "rw"}
                                                                }
-                                                           })
+                                                           },
+                                                           {})
+
+
+def test_backtest_calls_lean_runner_with_paths_to_mount() -> None:
+    create_fake_lean_cli_directory()
+
+    with mock.patch.object(JsonModule, "get_paths_to_mount", return_value={"some-config": "/path/to/file.json"}):
+        result = CliRunner().invoke(lean, ["backtest", "Python Project", "--data-provider-historical", "QuantConnect"])
+
+    assert result.exit_code == 0
+
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                           "backtesting",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {"some-config": "/path/to/file.json"})
