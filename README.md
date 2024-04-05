@@ -161,7 +161,7 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --factset-auth-config-file TEXT
+  --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -1196,7 +1196,7 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --factset-auth-config-file TEXT
+  --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
   --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
@@ -1521,7 +1521,7 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --factset-auth-config-file TEXT
+  --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -1665,7 +1665,7 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --factset-auth-config-file TEXT
+  --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
