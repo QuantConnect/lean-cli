@@ -115,6 +115,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 
@@ -149,7 +150,8 @@ def test_live_calls_lean_runner_with_extra_docker_config() -> None:
                                                                "volumes": {
                                                                    "extra/path": {"bind": "/extra/path", "mode": "rw"}
                                                                }
-                                                           })
+                                                           },
+                                                           {})
 
 
 def test_live_calls_lean_runner_with_paths_to_mount() -> None:
@@ -248,6 +250,7 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
                                                  None,
                                                  True,
                                                  False,
+                                                 {},
                                                  {})
 
 
@@ -268,6 +271,7 @@ def test_live_calls_lean_runner_with_detach() -> None:
                                                  None,
                                                  False,
                                                  True,
+                                                 {},
                                                  {})
 
 
@@ -491,6 +495,7 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
                                                      None,
                                                      False,
                                                      False,
+                                                     {},
                                                      {})
 
 
@@ -594,6 +599,7 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
     config = container.lean_config_manager.get_lean_config()
@@ -636,6 +642,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
@@ -676,6 +683,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 
@@ -833,6 +841,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                                                          None,
                                                          False,
                                                          False,
+                                                         {},
                                                          {})
 
 
@@ -853,6 +862,7 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 
@@ -874,6 +884,7 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 
@@ -896,6 +907,7 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  None,
                                                  False,
                                                  False,
+                                                 {},
                                                  {})
 
 
