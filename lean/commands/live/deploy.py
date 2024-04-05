@@ -282,9 +282,11 @@ def deploy(project: Path,
                                                                  environment_name=environment_name))
 
     organization_id = container.organization_manager.try_get_working_organization_id()
+    paths_to_mount = {}
     for module in (data_provider_live_instances + [data_downloader_instances, brokerage_instance]
                    + history_providers_instances):
         module.ensure_module_installed(organization_id)
+        paths_to_mount.update(module.get_paths_to_mount())
 
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
@@ -362,4 +364,13 @@ def deploy(project: Path,
             raise RuntimeError(f"InteractiveBrokers is currently not supported for ARM hosts")
 
     lean_runner = container.lean_runner
-    lean_runner.run_lean(lean_config, environment_name, algorithm_file, output, engine_image, None, release, detach, loads(extra_docker_config))
+    lean_runner.run_lean(lean_config,
+                         environment_name,
+                         algorithm_file,
+                         output,
+                         engine_image,
+                         None,
+                         release,
+                         detach,
+                         loads(extra_docker_config),
+                         paths_to_mount)

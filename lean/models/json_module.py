@@ -20,7 +20,8 @@ from click.core import ParameterSource
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
-from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput
+from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
+    PathParameterUserInput
 from copy import copy
 from abc import ABC
 
@@ -227,6 +228,12 @@ class JsonModule(ABC):
             raise RuntimeError(f"""You are missing the following option{"s" if len(missing_options) > 1 else ""}: {', '
                                .join(missing_options)}""".strip())
         return self
+
+    def get_paths_to_mount(self) -> Dict[str, str]:
+        return {config._id: config._value
+                for config in self._lean_configs
+                if (isinstance(config, PathParameterUserInput)
+                    and self._check_if_config_passes_filters(config, all_for_platform_type=False))}
 
     def ensure_module_installed(self, organization_id: str) -> None:
         if not self._is_module_installed and self._installs:

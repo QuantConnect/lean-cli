@@ -352,12 +352,14 @@ def backtest(project: Path,
         data_provider_historical = "QuantConnect"
 
     organization_id = container.organization_manager.try_get_working_organization_id()
+    paths_to_mount = None
 
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
+        paths_to_mount = data_provider.get_paths_to_mount()
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
@@ -406,4 +408,5 @@ def backtest(project: Path,
                          debugging_method,
                          release,
                          detach,
-                         loads(extra_docker_config))
+                         loads(extra_docker_config),
+                         paths_to_mount)

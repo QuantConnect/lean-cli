@@ -113,12 +113,15 @@ def research(project: Path,
     if download_data:
         data_provider_historical = "QuantConnect"
 
+    paths_to_mount = None
+
     if data_provider_historical is not None:
         organization_id = container.organization_manager.try_get_working_organization_id()
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
+        paths_to_mount = data_provider.get_paths_to_mount()
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
     lean_runner = container.lean_runner
@@ -145,7 +148,8 @@ def research(project: Path,
                                                       None,
                                                       False,
                                                       detach,
-                                                      research_image)
+                                                      research_image,
+                                                      paths_to_mount)
 
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))

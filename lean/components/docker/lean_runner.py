@@ -73,7 +73,8 @@ class LeanRunner:
                  debugging_method: Optional[DebuggingMethod],
                  release: bool,
                  detach: bool,
-                 extra_docker_config: Optional[Dict[str, Any]] = None) -> None:
+                 extra_docker_config: Optional[Dict[str, Any]] = None,
+                 paths_to_mount: Optional[Dict[str, str]] = None) -> None:
         """Runs the LEAN engine locally in Docker.
 
         Raises an error if something goes wrong.
@@ -87,6 +88,7 @@ class LeanRunner:
         :param release: whether C# projects should be compiled in release configuration instead of debug
         :param detach: whether LEAN should run in a detached container
         :param extra_docker_config: additional docker configurations
+        :param paths_to_mount: additional paths to mount to the container
         """
         self._logger.debug(f'LeanRunner().run_lean: lean_config: {lean_config}')
         project_dir = algorithm_file.parent
@@ -99,7 +101,8 @@ class LeanRunner:
                                                    debugging_method,
                                                    release,
                                                    detach,
-                                                   image)
+                                                   image,
+                                                   paths_to_mount)
 
         # Add known additional run options from the extra docker config
         self.parse_extra_docker_config(run_options, extra_docker_config)
@@ -178,7 +181,8 @@ class LeanRunner:
                                 debugging_method: Optional[DebuggingMethod],
                                 release: bool,
                                 detach: bool,
-                                image: DockerImage) -> Dict[str, Any]:
+                                image: DockerImage,
+                                paths_to_mount: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -191,6 +195,7 @@ class LeanRunner:
         :param detach: whether LEAN should run in a detached container
         :param image: The docker image that will be used
         :return: the Docker configuration containing basic configuration to run Lean
+        :param paths_to_mount: additional paths to mount to the container
         """
         from docker.types import Mount
         from uuid import uuid4
@@ -239,6 +244,9 @@ class LeanRunner:
             "volumes": {},
             "ports": docker_project_config.get("ports", {})
         }
+
+        # mount the paths passed in
+        self.mount_paths(paths_to_mount, lean_config, run_options)
 
         # mount the project and library directories
         self.mount_project_and_library_directories(project_dir, run_options)
@@ -781,6 +789,30 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                 "bind": "/Library",
                 "mode": "rw"
             }
+
+    def mount_paths(self, paths_to_mount, lean_config, run_options):
+        if not paths_to_mount:
+            return
+
+        from docker.types import Mount
+
+        environment = {}
+        if "environment" in lean_config and "environments" in lean_config:
+            environment = lean_config["environments"][lean_config["environment"]]
+
+        mounts = run_options["mounts"]
+
+        for key, pathStr in paths_to_mount.items():
+            path = Path(pathStr).resolve()
+            target = f"/Files/{Path(path).name}"
+
+            self._logger.info(f"Mounting {path} to {target}")
+
+            mounts.append(Mount(target=target,
+                                source=str(path),
+                                type="bind",
+                                read_only=True))
+            environment[key] = target
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
