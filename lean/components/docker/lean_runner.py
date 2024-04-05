@@ -93,22 +93,6 @@ class LeanRunner:
         self._logger.debug(f'LeanRunner().run_lean: lean_config: {lean_config}')
         project_dir = algorithm_file.parent
 
-        # Add additional paths to mount to the container
-        mounts = []
-        if paths_to_mount is not None:
-            from docker.types import Mount
-            for key, pathStr in paths_to_mount.items():
-                path = Path(pathStr).resolve()
-                target = f"/Files/{Path(path).name}"
-
-                self._logger.info(f"Mounting {path} to {target}")
-
-                mounts.append(Mount(target=target,
-                                    source=str(path),
-                                    type="bind",
-                                    read_only=True))
-                lean_config["environments"][environment][key] = target
-
         # The dict containing all options passed to `docker run`
         # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
         run_options = self.get_basic_docker_config(lean_config,
@@ -117,13 +101,11 @@ class LeanRunner:
                                                    debugging_method,
                                                    release,
                                                    detach,
-                                                   image)
+                                                   image,
+                                                   paths_to_mount)
 
         # Add known additional run options from the extra docker config
         self.parse_extra_docker_config(run_options, extra_docker_config)
-
-        # Add the additional mounts
-        run_options["mounts"].extend(mounts)
 
         # Set up PTVSD debugging
         if debugging_method == DebuggingMethod.PTVSD:
@@ -199,7 +181,8 @@ class LeanRunner:
                                 debugging_method: Optional[DebuggingMethod],
                                 release: bool,
                                 detach: bool,
-                                image: DockerImage) -> Dict[str, Any]:
+                                image: DockerImage,
+                                paths_to_mount: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -212,6 +195,7 @@ class LeanRunner:
         :param detach: whether LEAN should run in a detached container
         :param image: The docker image that will be used
         :return: the Docker configuration containing basic configuration to run Lean
+        :param paths_to_mount: additional paths to mount to the container
         """
         from docker.types import Mount
         from uuid import uuid4
@@ -260,6 +244,9 @@ class LeanRunner:
             "volumes": {},
             "ports": docker_project_config.get("ports", {})
         }
+
+        # mount the paths passed in
+        self.mount_paths(paths_to_mount, lean_config, run_options)
 
         # mount the project and library directories
         self.mount_project_and_library_directories(project_dir, run_options)
@@ -334,10 +321,7 @@ class LeanRunner:
             # Create a C# project used to resolve the dependencies of the modules
             run_options["commands"].append("mkdir /ModulesProject")
             run_options["commands"].append("dotnet new sln -o /ModulesProject")
-
-            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
-            run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
+            run_options["commands"].append("dotnet new classlib -o /ModulesProject -f net6.0 --no-restore")
             run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
             # Add all modules to the project, automatically resolving all dependencies
@@ -353,8 +337,7 @@ class LeanRunner:
 
         # Set up language-specific run options
         self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
-                                                 set_up_common_csharp_options_called, release,
-                                                 image)
+                                            set_up_common_csharp_options_called, release)
 
         # Save the final Lean config to a temporary file so we can mount it into the container
         config_path = self._temp_manager.create_temporary_directory() / "config.json"
@@ -388,12 +371,11 @@ class LeanRunner:
 
         return run_options
 
-    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any], image: DockerImage) -> None:
+    def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any]) -> None:
         """Sets up Docker run options specific to Python projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
-        :param image: the docker image that will be used
         """
 
         from docker.types import Mount
@@ -440,14 +422,10 @@ class LeanRunner:
             "mode": "rw"
         }
 
-        python_version = self._docker_manager.get_image_label(image, 'python_version',
-                                                              DEFAULT_LEAN_PYTHON_VERSION)
-        site_packages_path = DOCKER_PYTHON_SITE_PACKAGES_PATH.replace('{LEAN_PYTHON_VERSION}', python_version)
-
         # Mount a volume to the user packages directory so we don't install packages every time
         site_packages_volume = self._docker_manager.create_site_packages_volume(requirements_txt)
         run_options["volumes"][site_packages_volume] = {
-            "bind": f"{site_packages_path}",
+            "bind": f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}",
             "mode": "rw"
         }
 
@@ -458,7 +436,7 @@ class LeanRunner:
         # We only need to do this if it hasn't already been done before for this site packages volume
         # To keep track of this we create a special file in the site packages directory after installation
         # If this file already exists we can skip pip install completely
-        marker_file = f"{site_packages_path}/pip-install-done"
+        marker_file = f"{DOCKER_PYTHON_SITE_PACKAGES_PATH}/pip-install-done"
         run_options["commands"].extend([
             f"! test -f {marker_file} && pip install --user --progress-bar off -r /requirements.txt",
             f"touch {marker_file}"
@@ -486,14 +464,12 @@ class LeanRunner:
         requirements = sorted(set(requirements))
         return "\n".join(requirements)
 
-    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool,
-                              image: DockerImage) -> None:
+    def set_up_csharp_options(self, project_dir: Path, run_options: Dict[str, Any], release: bool) -> None:
         """Sets up Docker run options specific to C# projects.
 
         :param project_dir: the path to the project directory
         :param run_options: the dictionary to append run options to
         :param release: whether C# projects should be compiled in release configuration instead of debug
-        :param image: the docker image that will be used
         """
         compile_root = self._get_csharp_compile_root(project_dir)
 
@@ -510,13 +486,11 @@ class LeanRunner:
         for path in compile_root.rglob("*.csproj"):
             self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
 
-        framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                             DEFAULT_LEAN_DOTNET_FRAMEWORK)
         # Set up the MSBuild properties
         msbuild_properties = {
             "Configuration": "Release" if release else "Debug",
             "Platform": "AnyCPU",
-            "TargetFramework": framework_ver,
+            "TargetFramework": "net6.0",
             "OutputPath": "/Compile/bin",
             "GenerateAssemblyInfo": "false",
             "GenerateTargetFrameworkAttribute": "false",
@@ -760,14 +734,14 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             lean_config[config_key] = disk_provider
 
     def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,
-                                            set_up_common_csharp_options_called, release, image: DockerImage) -> None:
+                                            set_up_common_csharp_options_called, release) -> None:
         # Set up language-specific run options
         if algorithm_file.name.endswith(".py"):
-            self.set_up_python_options(project_dir, run_options, image)
+            self.set_up_python_options(project_dir, run_options)
         else:
             if not set_up_common_csharp_options_called:
                 self.set_up_common_csharp_options(run_options)
-            self.set_up_csharp_options(project_dir, run_options, release, image)
+            self.set_up_csharp_options(project_dir, run_options, release)
 
     def format_error_before_logging(self, chunk: str):
         from lean.components.util import compiler
@@ -802,6 +776,28 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                 "bind": "/Library",
                 "mode": "rw"
             }
+
+    def mount_paths(self, paths_to_mount, lean_config, run_options):
+        mounts = []
+        environment = {}
+        if "environment" in lean_config and "environments" in lean_config:
+            environment = lean_config["environments"][lean_config["environment"]]
+        if paths_to_mount is not None:
+            from docker.types import Mount
+            for key, pathStr in paths_to_mount.items():
+                path = Path(pathStr).resolve()
+                target = f"/Files/{Path(path).name}"
+
+                self._logger.info(f"Mounting {path} to {target}")
+
+                mounts.append(Mount(target=target,
+                                    source=str(path),
+                                    type="bind",
+                                    read_only=True))
+                environment[key] = target
+
+        # Add the additional mounts to the container run uptions
+        run_options["mounts"].extend(mounts)
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
