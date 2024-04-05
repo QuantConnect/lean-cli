@@ -21,6 +21,7 @@ from lean.commands import lean
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.docker import DockerImage
+from lean.models.json_module import JsonModule
 from tests.test_helpers import create_fake_lean_cli_directory
 
 RESEARCH_IMAGE = DockerImage.parse(DEFAULT_RESEARCH_IMAGE)
@@ -229,7 +230,7 @@ def test_research_runs_custom_image_when_given_as_option() -> None:
     assert args[0] == DockerImage(name="custom/research", tag="456")
 
 
-def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
+def test_research_runs_lean_container_with_extra_docker_config() -> None:
     import docker.types
 
     create_fake_lean_cli_directory()
@@ -256,3 +257,26 @@ def test_optimize_runs_lean_container_with_extra_docker_config() -> None:
     volumes = kwargs["volumes"]
     assert "extra/path" in volumes
     assert volumes["extra/path"] == {"bind": "/extra/path", "mode": "rw"}
+
+
+def test_research_runs_lean_container_with_paths_to_mount() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
+
+    with mock.patch.object(JsonModule, "get_paths_to_mount", return_value={"some-config": "/path/to/file.json"}):
+        result = CliRunner().invoke(lean, ["research", "Python Project", "--data-provider-historical", "QuantConnect"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    assert args[0] == RESEARCH_IMAGE
+
+    expected_source = str(Path("/path/to/file.json").resolve())
+    mount = next((m for m in kwargs["mounts"] if m["Source"] == expected_source), None)
+
+    assert mount is not None
+    assert mount["Target"] == "/Files/file.json"

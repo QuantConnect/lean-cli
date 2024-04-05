@@ -24,6 +24,7 @@ from lean.commands import lean
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
+from lean.models.json_module import JsonModule
 from tests.test_helpers import create_fake_lean_cli_directory, reset_state_installed_modules
 from tests.conftest import initialize_container
 from click.testing import Result
@@ -149,6 +150,29 @@ def test_live_calls_lean_runner_with_extra_docker_config() -> None:
                                                                    "extra/path": {"bind": "/extra/path", "mode": "rw"}
                                                                }
                                                            })
+
+
+def test_live_calls_lean_runner_with_paths_to_mount() -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    with mock.patch.object(JsonModule, "get_paths_to_mount", return_value={"some-config": "/path/to/file.json"}):
+        result = CliRunner().invoke(lean, ["live", "Python Project",
+                                           "--environment", "live-paper",
+                                           "--data-provider-historical", "QuantConnect"])
+
+    assert result.exit_code == 0
+
+    container.lean_runner.run_lean.assert_called_once_with(mock.ANY,
+                                                           "live-paper",
+                                                           Path("Python Project/main.py").resolve(),
+                                                           mock.ANY,
+                                                           ENGINE_IMAGE,
+                                                           None,
+                                                           False,
+                                                           False,
+                                                           {},
+                                                           {"some-config": "/path/to/file.json"})
 
 
 def test_live_aborts_when_environment_does_not_exist() -> None:

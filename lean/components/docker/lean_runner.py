@@ -778,26 +778,28 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             }
 
     def mount_paths(self, paths_to_mount, lean_config, run_options):
-        mounts = []
+        if not paths_to_mount:
+            return
+
+        from docker.types import Mount
+
         environment = {}
         if "environment" in lean_config and "environments" in lean_config:
             environment = lean_config["environments"][lean_config["environment"]]
-        if paths_to_mount is not None:
-            from docker.types import Mount
-            for key, pathStr in paths_to_mount.items():
-                path = Path(pathStr).resolve()
-                target = f"/Files/{Path(path).name}"
 
-                self._logger.info(f"Mounting {path} to {target}")
+        mounts = run_options["mounts"]
 
-                mounts.append(Mount(target=target,
-                                    source=str(path),
-                                    type="bind",
-                                    read_only=True))
-                environment[key] = target
+        for key, pathStr in paths_to_mount.items():
+            path = Path(pathStr).resolve()
+            target = f"/Files/{Path(path).name}"
 
-        # Add the additional mounts to the container run uptions
-        run_options["mounts"].extend(mounts)
+            self._logger.info(f"Mounting {path} to {target}")
+
+            mounts.append(Mount(target=target,
+                                source=str(path),
+                                type="bind",
+                                read_only=True))
+            environment[key] = target
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:

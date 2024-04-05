@@ -702,6 +702,7 @@ def test_run_lean_mounts_additional_paths() -> None:
 
     lean_config = {
         "transaction-log": "transaction-log.log",
+        "environment": "backtesting",
         "environments": {
             "backtesting": {}
         }

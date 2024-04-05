@@ -305,11 +305,14 @@ def optimize(project: Path,
     if download_data:
         data_provider_historical = "QuantConnect"
 
+    paths_to_mount = None
+
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
+        paths_to_mount = data_provider.get_paths_to_mount()
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
@@ -339,7 +342,7 @@ def optimize(project: Path,
     container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach,
-                                                      engine_image)
+                                                      engine_image, paths_to_mount)
 
     run_options["working_dir"] = "/Lean/Optimizer.Launcher/bin/Debug"
     run_options["commands"].append(f"dotnet QuantConnect.Optimizer.Launcher.dll{' --estimate' if estimate else ''}")
