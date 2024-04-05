@@ -338,7 +338,7 @@ class LeanRunner:
             run_options["commands"].append(
                 "python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
 
-            # Set up language-specific run options
+        # Set up language-specific run options
         self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
                                                  set_up_common_csharp_options_called, release,
                                                  image)
