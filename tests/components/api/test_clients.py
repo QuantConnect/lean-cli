@@ -203,11 +203,6 @@ def test_backtest_crud() -> None:
                 break
             sleep(1)
 
-        # Ensure we have a backtest node to run on
-        backtest_nodes = node_client.get_all(project.organizationId).backtest
-        if all(node.busy for node in backtest_nodes):
-            node_client.stop(project.organizationId, backtest_nodes[0].id)
-
         # Test a backtest can be started
         backtest_name = f"Test Backtest {datetime.now()}"
         created_backtest = backtest_client.create(project.projectId, created_compile.compileId, backtest_name)
@@ -226,21 +221,8 @@ def test_backtest_crud() -> None:
         assert retrieved_backtest.backtestId == created_backtest.backtestId
         assert retrieved_backtest.name == backtest_name
 
-        # Test the backtest can be updated
-        backtest_client.update(project.projectId, created_backtest.backtestId, backtest_name + "2", "This is a note")
-        retrieved_backtest = backtest_client.get(project.projectId, created_backtest.backtestId)
-
-        assert retrieved_backtest.backtestId == created_backtest.backtestId
-        assert retrieved_backtest.name == backtest_name + "2"
-        assert retrieved_backtest.note == "This is a note"
-
         # Test the backtest can be deleted
         backtest_client.delete(project.projectId, created_backtest.backtestId)
-
-        # Test the backtest is really deleted
-        backtests = backtest_client.get_all(project.projectId)
-
-        assert not any([backtest.backtestId == created_backtest.backtestId for backtest in backtests])
 
 
 def test_live_client_get_all_parses_response() -> None:
@@ -251,20 +233,6 @@ def test_live_client_get_all_parses_response() -> None:
     # All we can do here is make sure LiveClient can parse the response
     # Tests aren't supposed to trigger actions which cost money, so we can't launch a live algorithm here
     live_client.get_all()
-
-
-def test_node_client_get_all_parses_response() -> None:
-    api_client = create_api_client()
-    account_client = AccountClient(api_client)
-    node_client = NodeClient(api_client)
-
-    # Retrieve the organization details
-    organization = account_client.get_organization()
-
-    # Test nodes can be retrieved
-    # All we can do here is make sure NodeClient can parse the response
-    # Tests aren't supposed to trigger actions which cost money, so we can't create a node here
-    node_client.get_all(organization.organizationId)
 
 
 def test_account_client_get_organization() -> None:

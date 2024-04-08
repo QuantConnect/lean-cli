@@ -11,32 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import argument
-from lean.commands.cloud.object_store import object_store
+from click import command, argument
 from lean.click import LeanCommand
 from lean.container import container
 
 
-@object_store.command(cls=LeanCommand, name="list", aliases=["ls"])
-@argument("key", type=str, default="/")
-def list(key: str):
+@command(cls=LeanCommand)
+@argument("key", type=str)
+def properties(key: str):
     """
-    List all values for the given root key in the organization's cloud object store.
+    Get a value properties from the organization's cloud object store.
 
-    :param key: The desired root key to list.
+    :param key: The desired key to fetch the properties for.
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
     api_client = container.api_client
     logger = container.logger
-    data = api_client.object_store.list(key, organization_id)
+    data = api_client.object_store.properties(key, organization_id)
 
     try:
-        headers = ["key", "size", "folder", "name"]
-        display_headers = ["Key", "Bytes", "Folder", "Filename"]
-        rows = [[str(obj.get(header, "")) for header in headers] for obj in data['objects']]
-        # sort rows by key
-        rows.sort(key=lambda x: x[0])
-        all_rows = [display_headers] + rows
+        headers = ["size", "modified", "key", "preview"]
+        display_headers = ["Bytes", "Modified", "Filename", "Preview"]
+        data_row = []
+        for header in headers:
+            if header == "preview":
+                value = str(data["metadata"].get(header, "N/A"))
+                data_row.append(_clean_up_preview(value))
+            else:
+                value = str(data["metadata"].get(header, ""))
+                data_row.append(value)
+        all_rows = [display_headers] + [data_row]
         column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
         for row in all_rows:
             logger.info("  ".join(value.ljust(width) for value, width in zip(row, column_widths)))
@@ -44,3 +48,7 @@ def list(key: str):
         logger.error(f"Key {key} not found.")
     except Exception as e:
         logger.error(f"Error: {e}")
+
+
+def _clean_up_preview(preview: str) -> str:
+    return preview.rstrip()[:10]

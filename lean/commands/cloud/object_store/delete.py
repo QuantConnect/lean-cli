@@ -22,7 +22,8 @@ from lean.container import container
 def delete(key: str) -> str:
     """
     Delete a value from the organization's cloud object store.
-    
+
+    :param key: The desired key name to delete.
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
     api_client = container.api_client

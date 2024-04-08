@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from lean.components.api.api_client import *
-from lean.models.api import QCNode, QCNodeList
+from lean.models.api import QCNodeList
 
 
 class NodeClient:
@@ -36,55 +36,3 @@ class NodeClient:
         })
 
         return QCNodeList(**data)
-
-    def create(self, organization_id: str, name: str, sku: str) -> QCNode:
-        """Creates a new node.
-
-        :param organization_id: the id of the organization to create the node in
-        :param name: the name of the node to create
-        :param sku: the sku of the node to create
-        :return: the created node
-        """
-        data = self._api.post("nodes/create", {
-            "organizationId": organization_id,
-            "name": name,
-            "sku": sku
-        })
-
-        return QCNode(**data["node"])
-
-    def update(self, organization_id: str, node_id: str, new_name: str) -> None:
-        """Updates an existing node.
-
-        :param organization_id: the id of the organization the node belongs to
-        :param node_id: the id of the node to update
-        :param new_name: the new name to assign to the node
-        :return: the updated node
-        """
-        self._api.post("nodes/update", {
-            "organizationId": organization_id,
-            "nodeId": node_id,
-            "name": new_name
-        })
-
-    def delete(self, organization_id: str, node_id: str) -> None:
-        """Deletes an existing node.
-
-        :param organization_id: the id of the organization the node belongs to
-        :param node_id: the id of the node to delete
-        """
-        self._api.post("nodes/delete", {
-            "organizationId": organization_id,
-            "nodeId": node_id
-        })
-
-    def stop(self, organization_id: str, node_id: str) -> None:
-        """Stops the current activity on a node.
-
-        :param organization_id: the id of the organization the node belongs to
-        :param node_id: the id of the node to stop the current activity for
-        """
-        self._api.post("nodes/stop", {
-            "organizationId": organization_id,
-            "nodeId": node_id
-        })
