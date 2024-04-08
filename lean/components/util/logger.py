@@ -56,6 +56,18 @@ class Logger:
         """
         self._console.print(message, style="red")
 
+    def transient_progress(self, prefix: str = ""):
+        """Creates a Progress instance.
+
+        :param prefix: the text to show before the bar (defaults to a blank string)
+        :return: a Progress instance which can be used to display progress bars
+        """
+        from rich.progress import BarColumn, Progress, TextColumn
+        progress = Progress(TextColumn(prefix), BarColumn(),
+                            console=self._console, transient=True)
+        progress.start()
+        return progress
+
     def progress(self, prefix: str = "", suffix: str = "{task.percentage:0.0f}%"):
         """Creates a Progress instance.
 

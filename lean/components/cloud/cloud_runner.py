@@ -126,22 +126,6 @@ class CloudRunner:
 
         created_compile = self._api_client.compiles.create(project.projectId)
 
-        # Log the parameters reported in the compile
-        parameters = []
-        parameter_count = 0
-
-        for parameter_container in created_compile.parameters:
-            for parameter in parameter_container.parameters:
-                parameters.append(f"- {parameter_container.file}:{parameter.line} :: {parameter.type}")
-                parameter_count += int(parameter.type.split(" ")[0])
-
-        if parameter_count > 0:
-            self._logger.info(f"Detected parameters ({parameter_count}):")
-            for parameter in parameters:
-                self._logger.info(parameter)
-        else:
-            self._logger.info("Detected parameters: none")
-
         finished_compile = self._task_manager.poll(
             make_request=lambda: self._api_client.compiles.get(project.projectId, created_compile.compileId),
             is_done=lambda data: data.state in [QCCompileState.BuildSuccess, QCCompileState.BuildError]

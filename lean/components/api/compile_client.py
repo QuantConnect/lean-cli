@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from lean.components.api.api_client import *
-from lean.models.api import QCCompileWithLogs, QCCompileWithParameters
+from lean.models.api import QCCompileWithLogs, QCCompile
 
 
 class CompileClient:
@@ -39,7 +39,7 @@ class CompileClient:
 
         return QCCompileWithLogs(**data)
 
-    def create(self, project_id: int) -> QCCompileWithParameters:
+    def create(self, project_id: int) -> QCCompile:
         """Creates a new compile.
 
         :param project_id: the id of the project to create a compile for
@@ -49,4 +49,4 @@ class CompileClient:
             "projectId": project_id
         })
 
-        return QCCompileWithParameters(**data)
+        return QCCompile(**data)

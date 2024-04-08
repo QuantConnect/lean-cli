@@ -39,18 +39,26 @@ class DataClient:
         :param local_filename: the final local path where the data file will be stored
         :param progress_callback: the download progress callback
         """
-        from tempfile import NamedTemporaryFile
-        from shutil import move
-        from os import path, makedirs
-
         data = self._api.post("data/read", {
             "format": "link",
             "filePath": relative_file_path,
             "organizationId": organization_id
         })
 
+        self.download_url(data["link"], local_filename, progress_callback)
+
+    def download_url(self, url: str, local_filename: str, progress_callback: Callable[[float], None]) -> None:
+        """Downloads the content of a downloadable file.
+        :param url: the url to download
+        :param local_filename: the final local path where the data file will be stored
+        :param progress_callback: the download progress callback
+        """
+        from tempfile import NamedTemporaryFile
+        from shutil import move
+        from os import path, makedirs
+
         # we stream the data into a temporary file and later move it to it's final location
-        with self._http_client.get(data["link"], stream=True) as r:
+        with self._http_client.get(url, stream=True) as r:
             r.raise_for_status()
             total_size = 0
             try:

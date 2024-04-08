@@ -126,32 +126,19 @@ class QCMinimalFile(WrappedBaseModel):
     modified: datetime
 
 
-class QCCompileParameter(WrappedBaseModel):
-    line: int
-    type: str
-
-
-class QCCompileParameterContainer(WrappedBaseModel):
-    file: str
-    parameters: List[QCCompileParameter]
-
-
 class QCCompileState(str, Enum):
     InQueue = "InQueue"
     BuildSuccess = "BuildSuccess"
     BuildError = "BuildError"
 
 
-class QCCompileWithLogs(WrappedBaseModel):
+class QCCompile(WrappedBaseModel):
     compileId: str
     state: QCCompileState
+
+
+class QCCompileWithLogs(QCCompile):
     logs: List[str]
-
-
-class QCCompileWithParameters(WrappedBaseModel):
-    compileId: str
-    state: QCCompileState
-    parameters: List[QCCompileParameterContainer]
 
 
 class QCBacktest(WrappedBaseModel):
@@ -236,10 +223,6 @@ class QCBacktest(WrappedBaseModel):
             table.add_row(*stats[start:end], end_section=end_of_first_section == end)
 
         return table
-
-
-class QCBacktestReport(WrappedBaseModel):
-    report: str
 
 
 class QCNodePrice(WrappedBaseModel):

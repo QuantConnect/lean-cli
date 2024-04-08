@@ -16,9 +16,10 @@ from lean.commands.object_store.get import get
 from lean.commands.object_store.set import set
 from lean.commands.object_store.list import list
 from lean.commands.object_store.delete import delete
+from lean.commands.object_store.properties import properties
 
 object_store.add_command(get)
 object_store.add_command(set)
 object_store.add_command(list)
 object_store.add_command(delete)
-
+object_store.add_command(properties)

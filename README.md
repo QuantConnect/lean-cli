@@ -79,6 +79,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean cloud object-store get`](#lean-cloud-object-store-get)
 - [`lean cloud object-store list`](#lean-cloud-object-store-list)
 - [`lean cloud object-store ls`](#lean-cloud-object-store-ls)
+- [`lean cloud object-store properties`](#lean-cloud-object-store-properties)
 - [`lean cloud object-store set`](#lean-cloud-object-store-set)
 - [`lean cloud optimize`](#lean-cloud-optimize)
 - [`lean cloud pull`](#lean-cloud-pull)
@@ -112,6 +113,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean object-store get`](#lean-object-store-get)
 - [`lean object-store list`](#lean-object-store-list)
 - [`lean object-store ls`](#lean-object-store-ls)
+- [`lean object-store properties`](#lean-object-store-properties)
 - [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
 - [`lean project-create`](#lean-project-create)
@@ -450,6 +452,8 @@ Usage: lean cloud object-store delete [OPTIONS] KEY
 
   Delete a value from the organization's cloud object store.
 
+  :param key: The desired key name to delete.
+
 Options:
   --verbose  Enable debug logging
   --help     Show this message and exit.
@@ -459,16 +463,20 @@ _See code: [lean/commands/cloud/object_store/delete.py](lean/commands/cloud/obje
 
 ### `lean cloud object-store get`
 
-Get a value from the organization's cloud object store.
+Download an object store value to disk from the organization's cloud object store.
 
 ```
-Usage: lean cloud object-store get [OPTIONS] KEY
+Usage: lean cloud object-store get [OPTIONS] [KEY]...
 
-  Get a value from the organization's cloud object store.
+  Download an object store value to disk from the organization's cloud object store.
+
+  :param key: The desired key to fetch, multiple can be provided.
 
 Options:
-  --verbose  Enable debug logging
-  --help     Show this message and exit.
+  --destination-folder TEXT  The destination folder to download the object store values, if not provided will use to
+                             current directory
+  --verbose                  Enable debug logging
+  --help                     Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/object_store/get.py](lean/commands/cloud/object_store/get.py)_
@@ -481,6 +489,8 @@ List all values for the given root key in the organization's cloud object store.
 Usage: lean cloud object-store list [OPTIONS] [KEY]
 
   List all values for the given root key in the organization's cloud object store.
+
+  :param key: The desired root key to list.
 
 Options:
   --verbose  Enable debug logging
@@ -498,12 +508,32 @@ Usage: lean cloud object-store ls [OPTIONS] [KEY]
 
   List all values for the given root key in the organization's cloud object store.
 
+  :param key: The desired root key to list.
+
 Options:
   --verbose  Enable debug logging
   --help     Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/object_store/ls.py](lean/commands/cloud/object_store/ls.py)_
+
+### `lean cloud object-store properties`
+
+Get a value properties from the organization's cloud object store.
+
+```
+Usage: lean cloud object-store properties [OPTIONS] KEY
+
+  Get a value properties from the organization's cloud object store.
+
+  :param key: The desired key to fetch the properties for.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/object_store/properties.py](lean/commands/cloud/object_store/properties.py)_
 
 ### `lean cloud object-store set`
 
@@ -1426,6 +1456,22 @@ Options:
 ```
 
 _See code: [lean/commands/object_store/ls.py](lean/commands/object_store/ls.py)_
+
+### `lean object-store properties`
+
+Opens the local storage directory in the file explorer.
+
+```
+Usage: lean object-store properties [OPTIONS]
+
+  Opens the local storage directory in the file explorer.
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/object_store/properties.py](lean/commands/object_store/properties.py)_
 
 ### `lean object-store set`
 

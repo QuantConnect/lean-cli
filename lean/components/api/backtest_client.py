@@ -11,10 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-
 from lean.components.api.api_client import *
-from lean.models.api import QCBacktest, QCBacktestReport
+from lean.models.api import QCBacktest
 
 
 class BacktestClient:
@@ -41,18 +39,6 @@ class BacktestClient:
 
         return QCBacktest(**data["backtest"])
 
-    def get_all(self, project_id: int) -> List[QCBacktest]:
-        """Returns all backtests in a project.
-
-        :param project_id: the id of the project to retrieve the backtests of
-        :return: the backtests in the specified project
-        """
-        data = self._api.get("backtests/read", {
-            "projectId": project_id
-        })
-
-        return [QCBacktest(**backtest) for backtest in data["backtests"]]
-
     def create(self, project_id: int, compile_id: str, name: str) -> QCBacktest:
         """Creates a new backtest.
 
@@ -70,35 +56,6 @@ class BacktestClient:
         })
 
         return QCBacktest(**data["backtest"])
-
-    def get_report(self, project_id: int, backtest_id: str) -> QCBacktestReport:
-        """Returns the report of a backtest.
-
-        :param project_id: the id of the project the backtest belongs to
-        :param backtest_id: the id of the backtest to retrieve the report of
-        :return: the report of the specified backtest
-        """
-        data = self._api.post("backtests/read/report", {
-            "projectId": project_id,
-            "backtestId": backtest_id
-        })
-
-        return QCBacktestReport(**data)
-
-    def update(self, project_id: int, backtest_id: str, name: str, note: str) -> None:
-        """Updates an existing backtest.
-
-        :param project_id: the id of the project the backtest belongs to
-        :param backtest_id: the id of the backtest to update
-        :param name: the new name to assign to the backtest
-        :param note: the new note to assign to the backtest
-        """
-        self._api.post("backtests/update", {
-            "projectId": project_id,
-            "backtestId": backtest_id,
-            "name": name,
-            "note": note
-        })
 
     def delete(self, project_id: int, backtest_id: str) -> None:
         """Deletes an existing backtest.
