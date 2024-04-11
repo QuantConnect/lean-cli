@@ -12,13 +12,14 @@
 # limitations under the License.
 
 from typing import Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context
-
+from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
-from lean.models.data import Dataset, DataFile, Product
+from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
 from lean.models.logger import Option
+from lean.models.cli import cli_data_downloaders
+from datetime import datetime
 
 _data_information: Optional[QCDataInformation] = None
 _presigned_terms="""
@@ -95,7 +96,6 @@ def _get_data_files(organization: QCFullOrganization, products: List[Product]) -
     unique_data_files = sorted(list(set(chain(*[product.get_data_files() for product in products]))))
     return _map_data_files_to_vendors(organization, unique_data_files)
 
-
 def _display_products(organization: QCFullOrganization, products: List[Product]) -> None:
     """Previews a list of products in pretty tables.
 
@@ -158,7 +158,6 @@ def _get_security_master_warn(url: str) -> str:
                       f" result in inaccurate and misleading backtest results. Use this override flag at your own risk.",
                       f"You can add the subscription at https://www.quantconnect.com/datasets/{url}/pricing"
                       ])
-
 
 def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset], force: bool,
                                  ask_for_more_data: bool) -> List[Product]:
@@ -408,15 +407,45 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     return available_datasets
 
-
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
+@option("--data-provider-historical", 
+        type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
+        help="The name of the downloader data provider.")
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
+@option("--historical-data-type", type=Choice(["Trade", "Quote", "OpenInterest"]), help="Specify the type of historical data")
+@option("--historical-resolution", type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"]), help="Specify the resolution of the historical data")
+@option("--historical-ticker-security-type", type=Choice(
+    [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]), 
+    help="Specify the security type of the historical data")
+@option("--historical-tickers",
+        type=str,
+        default="",
+        help="Specify comma separated list of tickers to use for historical data request.")
+@option("--historical-start-date",
+        type=str,
+        help="Specify the start date for the historical data request in the format yyyyMMdd.")
+@option("--historical-end-date",
+        type=str,
+        default=datetime.today().strftime("%Y%m%d"),
+        help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
 @pass_context
-def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, auto_confirm: bool, **kwargs) -> None:
+def download(ctx: Context,
+             dataset: Optional[str],
+             overwrite: bool,
+             force: bool,
+             auto_confirm: bool,
+             data_provider_historical: Optional[str], 
+             historical_data_type: Optional[str],
+             historical_resolution: Optional[str],
+             historical_ticker_security_type: Optional[str],
+             historical_tickers: Optional[str],
+             historical_start_date: Optional[str],
+             historical_end_date: Optional[str],
+             **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
     An interactive wizard will show to walk you through the process of selecting data,
@@ -433,20 +462,70 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool,
     """
     organization = _get_organization()
 
-    is_interactive = dataset is None
-    if not is_interactive:
-        ensure_options(["dataset"])
-        datasets = _get_available_datasets(organization)
-        products = _select_products_non_interactive(organization, datasets, ctx, force)
+    if data_provider_historical is None:
+        data_provider_historical = _get_historical_data_providers()
+
+    if data_provider_historical == 'QuantConnect':
+        is_interactive = dataset is None
+        if not is_interactive:
+            ensure_options(["dataset"])
+            datasets = _get_available_datasets(organization)
+            products = _select_products_non_interactive(organization, datasets, ctx, force)
+        else:
+            datasets = _get_available_datasets(organization)
+            products = _select_products_interactive(organization, datasets, force, ask_for_more_data=not auto_confirm)
+
+        _confirm_organization_balance(organization, products)
+        _verify_accept_agreement(organization, is_interactive)
+
+        if is_interactive and not auto_confirm:
+            _confirm_payment(organization, products)
+
+        all_data_files = _get_data_files(organization, products)
+        container.data_downloader.download_files(all_data_files, overwrite, organization.id)
     else:
-        datasets = _get_available_datasets(organization)
-        products = _select_products_interactive(organization, datasets, force, ask_for_more_data=not auto_confirm)
+        logger = container.logger
 
-    _confirm_organization_balance(organization, products)
-    _verify_accept_agreement(organization, is_interactive)
+        # download config by specific --data-provider-historical
+        # config_json = container.api_client.data.download_public_file_json("https://raw.githubusercontent.com/QuantConnect/Lean.DataSource.Polygon/master/polygon.json")
+        # logger.info(f'2configs {config_json["data-supported"]}')
 
-    if is_interactive and not auto_confirm:
-        _confirm_payment(organization, products)
+        # validate data_type exists
+        if not historical_data_type:
+            historical_data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in [ "Trade", "Quote", "OpenInterest" ]])
+            
+        logger.info(f'data_type: {historical_data_type}')
 
-    all_data_files = _get_data_files(organization, products)
-    container.data_downloader.download_files(all_data_files, overwrite, organization.id)
+        if not historical_resolution:
+            historical_resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in ["Tick", "Second", "Minute", "Hour", "Daily"]])
+
+        logger.info(f'resolution: {historical_resolution}')
+
+        if not historical_ticker_security_type:
+            historical_ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]])
+
+        logger.info(f'historical_ticker_security_type: {historical_ticker_security_type}')
+
+        if not historical_tickers:
+            historical_tickers = DatasetTextOption(id="id",
+                               label="Enter comma separated list of tickers to use for historical data request.",
+                               description="description",
+                               transform=DatasetTextOptionTransform.Lowercase,
+                               multiple=True).configure_interactive()
+        
+        logger.info(f'historical_tickers: {historical_tickers}')
+
+        start_data_option = DatasetDateOption(id="start", label="Start date", description="Enter the start date for the historical data request in the format YYYYMMDD.")
+        if not historical_start_date:
+            historical_start_date = start_data_option.configure_interactive()
+        else:
+            historical_start_date = start_data_option.configure_non_interactive(historical_start_date)
+
+        end_date_option = DatasetDateOption(id="end", label="End date",description="Enter the end date for the historical data request in the format YYYYMMDD.")
+        if not historical_end_date:
+            historical_end_date = end_date_option.configure_interactive()
+        else:
+            historical_end_date = end_date_option.configure_non_interactive(historical_end_date)
+
+def _get_historical_data_providers() -> str:
+    return container.logger.prompt_list("Select a downloading mode", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
