@@ -92,6 +92,14 @@ class DataClient:
         :return: the content of the file
         """
         return self._http_client.get(data_endpoint).content
+    
+    def download_public_file_json(self, data_endpoint: str) -> Any:
+        """Downloads the content of a downloadable public file in json format.
+
+        :param data_endpoint: the url of the public file
+        :return: the content of the file in json format
+        """
+        return self._http_client.get(data_endpoint).json()
 
     def list_files(self, prefix: str) -> List[str]:
         """Lists all remote files with a given prefix.
