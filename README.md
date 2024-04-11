@@ -145,8 +145,23 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -186,6 +201,10 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --bybit-api-key TEXT            Your Bybit API key
+  --bybit-api-secret TEXT         Your Bybit API secret
+  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+                                  Your Bybit VIP Level
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -1113,7 +1132,7 @@ Options:
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|Custom data only|Bybit]
                                   The live data provider to use
-  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1536,7 +1555,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1551,6 +1570,21 @@ Options:
   --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
                                   py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1590,6 +1624,10 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --bybit-api-key TEXT            Your Bybit API key
+  --bybit-api-secret TEXT         Your Bybit API secret
+  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+                                  Your Bybit VIP Level
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -1693,8 +1731,23 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|QuantConnect|Local|Terminal Link|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1734,6 +1787,10 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --bybit-api-key TEXT            Your Bybit API key
+  --bybit-api-secret TEXT         Your Bybit API secret
+  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+                                  Your Bybit VIP Level
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
