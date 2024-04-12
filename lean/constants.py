@@ -119,3 +119,6 @@ DATA_TYPES = ["Trade", "Quote", "OpenInterest"]
 
 # Lean Security Types
 SECURITY_TYPES = [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]
+
+# Lean Data folder path, where keeps tickers data
+DATA_FOLDER_PATH = "/Lean/Data"
