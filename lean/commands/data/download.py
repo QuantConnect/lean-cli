@@ -14,12 +14,13 @@
 from typing import Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
+from lean.components.util.json_modules_handler import config_build_for_name, non_interactive_config_build_for_name
+from lean.constants import DATA_TYPES, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
 from lean.models.logger import Option
 from lean.models.cli import cli_data_downloaders
-from datetime import datetime
 
 _data_information: Optional[QCDataInformation] = None
 _presigned_terms="""
@@ -408,7 +409,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     return available_datasets
 
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
-@option("--data-provider-historical", 
+@option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
         help="The name of the downloader data provider.")
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
@@ -416,29 +417,26 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--historical-data-type", type=Choice(["Trade", "Quote", "OpenInterest"]), help="Specify the type of historical data")
-@option("--historical-resolution", type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"]), help="Specify the resolution of the historical data")
-@option("--historical-ticker-security-type", type=Choice(
-    [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]), 
+@option("--historical-data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
+@option("--historical-resolution", type=Choice(RESOLUTIONS, case_sensitive=False), help="Specify the resolution of the historical data")
+@option("--historical-ticker-security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
     help="Specify the security type of the historical data")
 @option("--historical-tickers",
         type=str,
-        default="",
         help="Specify comma separated list of tickers to use for historical data request.")
 @option("--historical-start-date",
         type=str,
         help="Specify the start date for the historical data request in the format yyyyMMdd.")
 @option("--historical-end-date",
         type=str,
-        default=datetime.today().strftime("%Y%m%d"),
         help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
 @pass_context
 def download(ctx: Context,
+             data_provider_historical: Optional[str], 
              dataset: Optional[str],
              overwrite: bool,
              force: bool,
              auto_confirm: bool,
-             data_provider_historical: Optional[str], 
              historical_data_type: Optional[str],
              historical_resolution: Optional[str],
              historical_ticker_security_type: Optional[str],
@@ -463,7 +461,7 @@ def download(ctx: Context,
     organization = _get_organization()
 
     if data_provider_historical is None:
-        data_provider_historical = _get_historical_data_providers()
+        data_provider_historical = _get_historical_data_provider()
 
     if data_provider_historical == 'QuantConnect':
         is_interactive = dataset is None
@@ -485,26 +483,28 @@ def download(ctx: Context,
         container.data_downloader.download_files(all_data_files, overwrite, organization.id)
     else:
         logger = container.logger
+        
+        data_provider = next(data_downloader for data_downloader in cli_data_downloaders if data_downloader.get_name() == data_provider_historical)
 
-        # download config by specific --data-provider-historical
-        # config_json = container.api_client.data.download_public_file_json("https://raw.githubusercontent.com/QuantConnect/Lean.DataSource.Polygon/master/polygon.json")
-        # logger.info(f'2configs {config_json["data-supported"]}')
+        data_provider_config_json = None
+        if data_provider._specifications_url is not None:
+            data_provider_config_json = container.api_client.data.download_public_file_json(data_provider._specifications_url)
 
+        data_provider_support_security_types = SECURITY_TYPES
+        if data_provider_config_json is not None:
+            data_provider_support_security_types = data_provider_config_json["data-supported"]
+        
         # validate data_type exists
         if not historical_data_type:
-            historical_data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in [ "Trade", "Quote", "OpenInterest" ]])
-            
-        logger.info(f'data_type: {historical_data_type}')
+            historical_data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in DATA_TYPES])
 
         if not historical_resolution:
-            historical_resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in ["Tick", "Second", "Minute", "Hour", "Daily"]])
-
-        logger.info(f'resolution: {historical_resolution}')
+            historical_resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in RESOLUTIONS])
 
         if not historical_ticker_security_type:
-            historical_ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]])
-
-        logger.info(f'historical_ticker_security_type: {historical_ticker_security_type}')
+            historical_ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in data_provider_support_security_types])
+        elif historical_ticker_security_type not in data_provider_support_security_types:
+                raise ValueError(f"The {data_provider_historical} data provider does not support {historical_ticker_security_type}. Please choose a supported security type from: {data_provider_support_security_types}.")
 
         if not historical_tickers:
             historical_tickers = DatasetTextOption(id="id",
@@ -512,8 +512,6 @@ def download(ctx: Context,
                                description="description",
                                transform=DatasetTextOptionTransform.Lowercase,
                                multiple=True).configure_interactive()
-        
-        logger.info(f'historical_tickers: {historical_tickers}')
 
         start_data_option = DatasetDateOption(id="start", label="Start date", description="Enter the start date for the historical data request in the format YYYYMMDD.")
         if not historical_start_date:
@@ -527,5 +525,18 @@ def download(ctx: Context,
         else:
             historical_end_date = end_date_option.configure_non_interactive(historical_end_date)
 
-def _get_historical_data_providers() -> str:
+        if historical_start_date.value >= historical_end_date.value:
+            raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
+
+        lean_config = container.lean_config_manager.get_lean_config()
+        data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, True)
+        data_provider.ensure_module_installed(organization.id)
+        container.lean_config_manager.set_properties(data_provider.get_settings())
+        # TODO: copy / paste to new Lean.proj
+        paths_to_mount = data_provider.get_paths_to_mount()
+        
+        lean_config_manager = container.lean_config_manager
+        data_dir = lean_config_manager.get_data_directory()
+
+def _get_historical_data_provider() -> str:
     return container.logger.prompt_list("Select a downloading mode", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
