@@ -107,3 +107,15 @@ MODULE_DATA_QUEUE_HANDLER = "data-queue-handler"
 # platforms
 MODULE_CLI_PLATFORM = "cli"
 MODULE_CLOUD_PLATFORM = "cloud"
+
+# Lean Resolution
+RESOLUTIONS = ["Tick", "Second", "Minute", "Hour", "Daily"]
+
+# Lean Resolution
+RESOLUTIONS = ["Tick", "Second", "Minute", "Hour", "Daily"]
+
+# Lean Data Types
+DATA_TYPES = ["Trade", "Quote", "OpenInterest"]
+
+# Lean Security Types
+SECURITY_TYPES = [ "Equity", "Index", "Option", "IndexOption", "Commodity", "Forex", "Future", "Cfd", "Crypto", "FutureOption", "CryptoFuture" ]
