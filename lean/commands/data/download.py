@@ -15,7 +15,7 @@ from typing import Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name, non_interactive_config_build_for_name
-from lean.constants import DATA_TYPES, RESOLUTIONS, SECURITY_TYPES
+from lean.constants import DATA_FOLDER_PATH, DATA_TYPES, DEFAULT_ENGINE_IMAGE, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
@@ -430,6 +430,13 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @option("--historical-end-date",
         type=str,
         help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
+@option("--image",
+        type=str,
+        help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+@option("--update",
+        is_flag=True,
+        default=False,
+        help="Pull the LEAN engine image before running the Downloader Data Provider")
 @pass_context
 def download(ctx: Context,
              data_provider_historical: Optional[str], 
@@ -443,6 +450,8 @@ def download(ctx: Context,
              historical_tickers: Optional[str],
              historical_start_date: Optional[str],
              historical_end_date: Optional[str],
+             image: Optional[str],
+             update: bool,
              **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
@@ -532,11 +541,45 @@ def download(ctx: Context,
         data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, True)
         data_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
-        # TODO: copy / paste to new Lean.proj
         paths_to_mount = data_provider.get_paths_to_mount()
+        
+        for key, value in paths_to_mount.items():
+            logger.info(f'paths_to_mount {key}: {value}')
         
         lean_config_manager = container.lean_config_manager
         data_dir = lean_config_manager.get_data_directory()
+        
+        entrypoint = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
+                      "--data-provider", data_provider.get_name(),
+                      "--destination-dir", DATA_FOLDER_PATH,
+                      "--data-type", historical_data_type,
+                      "--start-date", historical_start_date.value.strftime("%Y%m%d"),
+                      "--end-date", historical_end_date.value.strftime("%Y%m%d"),
+                      "--security-type", historical_ticker_security_type,
+                      "--resolution", historical_resolution,
+                      "--tickers", historical_tickers]
+        
+        run_options = {
+            "entrypoint": entrypoint,
+            "volumes": {
+                str(data_dir): {
+                    "bind": DATA_FOLDER_PATH,
+                    "mode": "rw"
+                }
+            }
+        }
+        
+        engine_image = container.cli_config_manager.get_engine_image(image)
+
+        logger.info(f'engine_image: {engine_image.name}')
+        
+        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+        
+        success = container.docker_manager.run_image(engine_image, **run_options)
+        
+        if not success:
+            raise RuntimeError(
+                "Something went wrong while running the downloader data provider, see the logs above for more information")
 
 def _get_historical_data_provider() -> str:
     return container.logger.prompt_list("Select a downloading mode", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
