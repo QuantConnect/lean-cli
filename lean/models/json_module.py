@@ -37,6 +37,7 @@ class JsonModule(ABC):
         self._product_id: int = json_module_data["product-id"] if "product-id" in json_module_data else 0
         self._id: str = json_module_data["id"]
         self._display_name: str = json_module_data["display-id"]
+        self._specifications_url: str = json_module_data["specifications"] if "specifications" in json_module_data else None
         self._installs: bool = json_module_data["installs"] if ("installs" in json_module_data
                                                                 and platform == MODULE_CLI_PLATFORM) else False
         self._lean_configs: List[Configuration] = []
