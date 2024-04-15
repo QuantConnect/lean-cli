@@ -11,11 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from typing import Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name, non_interactive_config_build_for_name
-from lean.constants import DATA_FOLDER_PATH, DATA_PROVIDER_DOWNLOAD_CONFIG_KEY, DATA_TYPES, DEFAULT_ENGINE_IMAGE, RESOLUTIONS, SECURITY_TYPES
+from lean.constants import DATA_FOLDER_PATH, DATA_TYPES, DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
@@ -546,7 +547,7 @@ def download(ctx: Context,
         data_dir = lean_config_manager.get_data_directory()
         
         entrypoint = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
-                      "--data-provider", data_provider.get_config_value_from_name(DATA_PROVIDER_DOWNLOAD_CONFIG_KEY),
+                      "--data-provider", data_provider.get_config_value_from_name(MODULE_DATA_DOWNLOADER),
                       "--destination-dir", DATA_FOLDER_PATH,
                       "--data-type", historical_data_type,
                       "--start-date", historical_start_date.value.strftime("%Y%m%d"),

@@ -122,6 +122,3 @@ SECURITY_TYPES = [ "Equity", "Index", "Option", "IndexOption", "Commodity", "For
 
 # Lean Data folder path, where keeps tickers data
 DATA_FOLDER_PATH = "/Lean/Data"
-
-# Key in JSON configuration for data downloader settings.
-DATA_PROVIDER_DOWNLOAD_CONFIG_KEY = "data-downloader"
