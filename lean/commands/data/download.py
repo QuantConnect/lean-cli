@@ -15,7 +15,7 @@ from typing import Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name, non_interactive_config_build_for_name
-from lean.constants import DATA_FOLDER_PATH, DATA_TYPES, DEFAULT_ENGINE_IMAGE, RESOLUTIONS, SECURITY_TYPES
+from lean.constants import DATA_FOLDER_PATH, DATA_PROVIDER_DOWNLOAD_CONFIG_KEY, DATA_TYPES, DEFAULT_ENGINE_IMAGE, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
@@ -541,16 +541,12 @@ def download(ctx: Context,
         data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, True)
         data_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
-        paths_to_mount = data_provider.get_paths_to_mount()
-        
-        for key, value in paths_to_mount.items():
-            logger.info(f'paths_to_mount {key}: {value}')
         
         lean_config_manager = container.lean_config_manager
         data_dir = lean_config_manager.get_data_directory()
         
         entrypoint = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
-                      "--data-provider", data_provider.get_name(),
+                      "--data-provider", data_provider.get_config_value_from_name(DATA_PROVIDER_DOWNLOAD_CONFIG_KEY),
                       "--destination-dir", DATA_FOLDER_PATH,
                       "--data-type", historical_data_type,
                       "--start-date", historical_start_date.value.strftime("%Y%m%d"),
@@ -560,6 +556,7 @@ def download(ctx: Context,
                       "--tickers", historical_tickers]
         
         run_options = {
+            "working_dir": "/Lean/DownloaderDataProvider/bin/Debug/",
             "entrypoint": entrypoint,
             "volumes": {
                 str(data_dir): {
