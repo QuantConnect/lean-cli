@@ -1,16 +1,22 @@
 import json
 from unittest import mock
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
+import click
 import pytest
 import os
 import re
 from pathlib import Path
 
 from lean.commands.data.download import *
+from lean.commands.data.download import _select_products_non_interactive
 from lean.container import container
 from lean.models.api import QCDataset, QCOrganizationCredit, QCOrganizationData
 from tests.test_helpers import create_api_organization
+from click.testing import CliRunner
+from lean.commands import lean
+from tests.test_helpers import create_fake_lean_cli_directory
+from tests.conftest import initialize_container
 
 test_files = Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "testFiles"))
 
@@ -31,6 +37,62 @@ def test_bulk_extraction(setup):
     file = os.path.join(out, "crypto/ftx/daily/imxusd_trade.zip")
     assert os.path.exists(file)
 
+def test_invoke_interactive():
+	create_fake_lean_cli_directory()
+	result = CliRunner().invoke(lean, ["data", "download", "--data-provider-historical", "Binance"])
+
+	assert result.exit_code == 0
+
+def test_select_products_non_interactive():
+	organization = create_api_organization()
+	datasource = json.loads(bulk_datasource)
+	testDataSet = [Dataset(name="US Equity Options",
+                      vendor="testVendor",
+                      categories=["testData"],
+                      options=datasource["options"],
+                      paths=datasource["paths"],
+                      requirements=datasource.get("requirements", {}))]
+	force = True
+
+	
+	mock_context = Mock()
+	mock_context.params = {"dataset": "US Equity Options", "data-type": "Trade", "ticker": "AAPL", "resolution": "Daily", "start": "20240101", "end": "20240404"}
+
+	products = _select_products_non_interactive(organization, testDataSet, mock_context, force)
+	
+	assert products
+
+	# mocking 
+	create_fake_lean_cli_directory()
+	
+	api_client = mock.MagicMock()
+	
+	test_datasets = [
+        QCDataset(id=1, name="Pending Dataset", delivery=QCDatasetDelivery.DownloadOnly, vendorName="Vendor", tags=[], pending=True),
+        QCDataset(id=2, name="Non-Pending Dataset", delivery=QCDatasetDelivery.DownloadOnly, vendorName="Vendor", tags=[], pending=False)
+    ]
+	api_client.list_datasets = MagicMock(return_value=test_datasets)
+	container.api_client.market = api_client
+	container.api_client.organizations.get.return_value = create_api_organization()
+	
+	datasources = {
+        str(test_datasets[0].id): {
+            'options': [],
+            'paths': [],
+            'requirements': {},
+        },
+        str(test_datasets[1].id): {
+            'options': [],
+            'paths': [],
+            'requirements': {},
+        }
+    }
+	container.api_client.data.get_info = MagicMock(return_value=QCDataInformation(datasources=datasources, prices=[], agreement=""))
+
+	# initialize_container(api_client_to_use=api_client)
+	result = CliRunner().invoke(lean, ["data", "download", "--dataset", "US Equity Options"])
+
+	assert result.exit_code == 0
 
 def test_non_interactive_bulk_select():
 	# TODO

@@ -197,9 +197,6 @@ class LeanRunner:
         :return: the Docker configuration containing basic configuration to run Lean
         :param paths_to_mount: additional paths to mount to the container
         """
-        from docker.types import Mount
-        from uuid import uuid4
-        from json import dumps
 
         project_dir = algorithm_file.parent
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -207,92 +204,27 @@ class LeanRunner:
 
         # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
         data_dir = self._lean_config_manager.get_data_directory()
-        if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
-            self._force_disk_provider_if_necessary(lean_config,
-                                                   "map-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
-                                                   "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-                                                   data_dir / "equity" / "usa" / "map_files")
-            self._force_disk_provider_if_necessary(lean_config,
-                                                   "factor-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
-                                                   "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-                                                   data_dir / "equity" / "usa" / "factor_files")
+        self._handle_data_providers(lean_config, data_dir)
+
+        storage_dir = self._lean_config_manager.get_cli_root_directory() / "storage"
 
         # Create the output directory if it doesn't exist yet
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
         # Create the storage directory if it doesn't exist yet
-        storage_dir = self._lean_config_manager.get_cli_root_directory() / "storage"
-        if not storage_dir.exists():
-            storage_dir.mkdir(parents=True)
+        self._ensure_directories_exist([output_dir, storage_dir])
+        
+        lean_config.update({
+            "debug-mode": self._logger.debug_logging_enabled,
+            "data-folder": "/Lean/Data",
+            "results-destination-folder": "/Results",
+            "object-store-root": "/Storage"
+        })
 
-        lean_config["debug-mode"] = self._logger.debug_logging_enabled
-        lean_config["data-folder"] = "/Lean/Data"
-        lean_config["results-destination-folder"] = "/Results"
-        lean_config["object-store-root"] = "/Storage"
+        run_options = self._initialize_run_options(detach, docker_project_config, debugging_method)
 
-        # The dict containing all options passed to `docker run`
-        # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options: Dict[str, Any] = {
-            "detach": detach,
-            "commands": [],
-            "environment": docker_project_config.get("environment", {}),
-            "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
-            "mounts": [],
-            "volumes": {},
-            "ports": docker_project_config.get("ports", {})
-        }
-
-        # mount the paths passed in
-        self.mount_paths(paths_to_mount, lean_config, run_options)
-
-        # mount the project and library directories
-        self.mount_project_and_library_directories(project_dir, run_options)
-
-        # Mount the data directory
-        run_options["volumes"][str(data_dir)] = {
-            "bind": "/Lean/Data",
-            "mode": "rw"
-        }
-
-        # Mount the output directory
-        run_options["volumes"][str(output_dir)] = {
-            "bind": "/Results",
-            "mode": "rw"
-        }
-
-        # Mount the local object store directory
-        run_options["volumes"][str(storage_dir)] = {
-            "bind": "/Storage",
-            "mode": "rw"
-        }
-
-        # Mount all local files referenced in the Lean config
-        cli_root_dir = self._lean_config_manager.get_cli_root_directory()
-        files_to_mount = [
-            ("transaction-log", cli_root_dir),
-            ("terminal-link-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties")
-        ]
-        for key, base_path in files_to_mount:
-            if key not in lean_config or lean_config[key] == "":
-                continue
-
-            lean_config_entry = Path(lean_config[key])
-            local_path = lean_config_entry if lean_config_entry.is_absolute() else base_path / lean_config_entry
-            if not local_path.exists():
-                local_path.parent.mkdir(parents=True, exist_ok=True)
-                local_path.touch()
-
-            run_options["mounts"].append(Mount(target=f"/Files/{key}",
-                                               source=str(local_path),
-                                               type="bind",
-                                               read_only=False))
-
-            lean_config[key] = f"/Files/{key}"
+        self._mount_common_directories(run_options, paths_to_mount, lean_config, data_dir, storage_dir, project_dir, output_dir)
 
         # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
+        # TODO: we should remove it or add to config json 
         for key in ["terminal-link-server-host"]:
             if key not in lean_config:
                 continue
@@ -300,78 +232,15 @@ class LeanRunner:
             if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
                 lean_config[key] = "host.docker.internal"
 
-        set_up_common_csharp_options_called = False
-
         # Set up modules
-        installed_packages = self._module_manager.get_installed_packages()
-        if len(installed_packages) > 0:
-            self._logger.debug(f"LeanRunner.run_lean(): installed packages {len(installed_packages)}")
-            self.set_up_common_csharp_options(run_options)
-            set_up_common_csharp_options_called = True
-
-            # Mount the modules directory
-            run_options["volumes"][MODULES_DIRECTORY] = {
-                "bind": "/Modules",
-                "mode": "ro"
-            }
-
-            # Add the modules directory as a NuGet source root
-            run_options["commands"].append("dotnet nuget add source /Modules")
-
-            # Create a C# project used to resolve the dependencies of the modules
-            run_options["commands"].append("mkdir /ModulesProject")
-            run_options["commands"].append("dotnet new sln -o /ModulesProject")
-
-            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
-            run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
-            run_options["commands"].append("rm /ModulesProject/Class1.cs")
-
-            # Add all modules to the project, automatically resolving all dependencies
-            for package in installed_packages:
-                self._logger.debug(f"LeanRunner.run_lean(): Adding module {package} to the project")
-                run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
-                run_options["commands"].append(
-                    f"dotnet add /ModulesProject package {package.name} --version {package.version}")
-
-            # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
-            run_options["commands"].append(
-                "python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
+        set_up_common_csharp_options_called = self._setup_installed_packages(run_options, image)
 
         # Set up language-specific run options
         self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
                                                  set_up_common_csharp_options_called, release,
                                                  image)
 
-        # Save the final Lean config to a temporary file so we can mount it into the container
-        config_path = self._temp_manager.create_temporary_directory() / "config.json"
-        with config_path.open("w+", encoding="utf-8") as file:
-            file.write(dumps(lean_config, indent=4))
-
-        # Mount the Lean config
-        run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/config.json",
-                                           source=str(config_path),
-                                           type="bind",
-                                           read_only=True))
-
-        # Assign the container a name and store it in the output directory's configuration
-        if "container-name" in lean_config:
-            run_options["name"] = lean_config["container-name"]
-        else:
-            run_options["name"] = f"lean_cli_{str(uuid4()).replace('-', '')}"
-
-        # set the hostname
-        if "hostname" in lean_config:
-            run_options["hostname"] = lean_config["hostname"]
-
-        output_config = self._output_config_manager.get_output_config(output_dir)
-        output_config.set("container", run_options["name"])
-        if "backtest-name" in lean_config:
-            output_config.set("backtest-name", lean_config["backtest-name"])
-        if "environment" in lean_config and "environments" in lean_config:
-            environment = lean_config["environments"][lean_config["environment"]]
-            if "live-mode-brokerage" in environment:
-                output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
+        self._mount_lean_config_and_finalize(run_options, lean_config, output_dir)
 
         return run_options
 
@@ -393,68 +262,145 @@ class LeanRunner:
         :return: the Docker configuration containing basic configuration to run Lean
         :param paths_to_mount: additional paths to mount to the container
         """
+
+        docker_project_config = { "docker": {} }
+        # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
+        data_dir = self._lean_config_manager.get_data_directory()
+        self._handle_data_providers(lean_config, data_dir)
+
+        # Create the storage directory if it doesn't exist yet
+        storage_dir = self._lean_config_manager.get_cli_root_directory() / "storage"
+        self._ensure_directories_exist([storage_dir])
+
+        lean_config.update({
+            "debug-mode": self._logger.debug_logging_enabled,
+            "data-folder": "/Lean/Data",
+            "results-destination-folder": "/Results",
+            "object-store-root": "/Storage"
+        })
+
+        run_options = self._initialize_run_options(detach, docker_project_config, debugging_method)
+
+        self._mount_common_directories(run_options, paths_to_mount, lean_config, data_dir, storage_dir, None, None)
+
+        # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
+        # TODO: we should remove it or add to config json 
+        for key in ["terminal-link-server-host"]:
+            if key not in lean_config:
+                continue
+
+            if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
+                lean_config[key] = "host.docker.internal"
+
+        # Set up modules
+        self._setup_installed_packages(run_options, image, target_path)
+
+        self._mount_lean_config_and_finalize(run_options, lean_config, None)
+
+        return run_options
+    
+    def _mount_lean_config_and_finalize(self, run_options: Dict[str, Any], lean_config: Dict[str, Any], output_dir: Optional[Path]):
+        """Mounts Lean config and finalizes."""
         from docker.types import Mount
         from uuid import uuid4
         from json import dumps
 
-        docker_project_config = {
-            "docker": {}
-        }
-        # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
-        data_dir = self._lean_config_manager.get_data_directory()
-        if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
-            self._force_disk_provider_if_necessary(lean_config,
-                                                   "map-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
-                                                   "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-                                                   data_dir / "equity" / "usa" / "map_files")
-            self._force_disk_provider_if_necessary(lean_config,
-                                                   "factor-file-provider",
-                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
-                                                   "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-                                                   data_dir / "equity" / "usa" / "factor_files")
+        # Save the final Lean config to a temporary file so we can mount it into the container
+        config_path = self._temp_manager.create_temporary_directory() / "config.json"
+        with config_path.open("w+", encoding="utf-8") as file:
+            file.write(dumps(lean_config, indent=4))
+            
+        # Mount the Lean config
+        run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/config.json",
+                                           source=str(config_path),
+                                           type="bind",
+                                           read_only=True))
+        
+        # Assign the container a name and store it in the output directory's configuration
+        run_options["name"] = lean_config.get("container-name", f"lean_cli_{str(uuid4()).replace('-', '')}")
+        
+        # set the hostname
+        if "hostname" in lean_config:
+            run_options["hostname"] = lean_config["hostname"]
 
-        # Create the storage directory if it doesn't exist yet
-        storage_dir = self._lean_config_manager.get_cli_root_directory() / "storage"
-        if not storage_dir.exists():
-            storage_dir.mkdir(parents=True)
+        if output_dir:
+            output_config = self._output_config_manager.get_output_config(output_dir)
+            output_config.set("container", run_options["name"])
+            if "backtest-name" in lean_config:
+                output_config.set("backtest-name", lean_config["backtest-name"])
+            if "environment" in lean_config and "environments" in lean_config:
+                environment = lean_config["environments"][lean_config["environment"]]
+                if "live-mode-brokerage" in environment:
+                    output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
+    
+    def _setup_installed_packages(self, run_options: Dict[str, Any], image: DockerImage, target_path: str = "/Lean/Launcher/bin/Debug"):
+        """Sets up installed packages."""
+        installed_packages = self._module_manager.get_installed_packages()
+        if installed_packages:
+            self._logger.debug(f"LeanRunner._setup_installed_packages(): installed packages {len(installed_packages)}")
+            self.set_up_common_csharp_options(run_options, target_path)
 
-        lean_config["debug-mode"] = self._logger.debug_logging_enabled
-        lean_config["data-folder"] = "/Lean/Data"
-        lean_config["results-destination-folder"] = "/Results"
-        lean_config["object-store-root"] = "/Storage"
+        # Mount the modules directory
+        run_options["volumes"][MODULES_DIRECTORY] = {"bind": "/Modules", "mode": "ro"}
 
-        # The dict containing all options passed to `docker run`
-        # See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
-        run_options: Dict[str, Any] = {
-            "detach": detach,
-            "commands": [],
-            "environment": docker_project_config.get("environment", {}),
-            "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
-            "mounts": [],
-            "volumes": {},
-            "ports": docker_project_config.get("ports", {})
-        }
+        # Add the modules directory as a NuGet source root
+        run_options["commands"].append("dotnet nuget add source /Modules")
+        # Create a C# project used to resolve the dependencies of the modules
+        run_options["commands"].append("mkdir /ModulesProject")
+        run_options["commands"].append("dotnet new sln -o /ModulesProject")
+        
+        framework_ver = self._docker_manager.get_image_label(image, 'target_framework', DEFAULT_LEAN_DOTNET_FRAMEWORK)
+        run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
+        run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
-        # mount the paths passed in
+        # Add all modules to the project, automatically resolving all dependencies
+        for package in installed_packages:
+            self._logger.debug(f"LeanRunner._setup_installed_packages(): Adding module {package} to the project")
+            run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
+            run_options["commands"].append(f"dotnet add /ModulesProject package {package.name} --version {package.version}")
+
+        # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
+        run_options["commands"].append("python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
+        
+        return bool(installed_packages)
+    
+    def _mount_common_directories(self, 
+                                  run_options: Dict[str, Any], 
+                                  paths_to_mount: Optional[Dict[str, str]], 
+                                  lean_config: Dict[str, Any], 
+                                  data_dir: Path,
+                                  storage_dir: Path,
+                                  project_dir: Optional[Path], 
+                                  output_dir: Optional[Path]):
+        """
+        Mounts common directories.
+
+        1. mount the paths passed in
+        2. mount the project and library directories (param: `project_dir` is not None)
+        3. mount the data directory
+        4. mount the output directory (param: `output_dir` is not None)
+        5. mount the local object store directory
+        6. mount all local files referenced in the Lean config
+        """
+        from docker.types import Mount
+
+        # 1
         self.mount_paths(paths_to_mount, lean_config, run_options)
-
-        # mount the project and library directories
-        #self.mount_project_and_library_directories(project_dir, run_options)
-
-        # Mount the data directory
-        run_options["volumes"][str(data_dir)] = {
-            "bind": "/Lean/Data",
-            "mode": "rw"
-        }
-
-        # Mount the local object store directory
-        run_options["volumes"][str(storage_dir)] = {
-            "bind": "/Storage",
-            "mode": "rw"
-        }
-
-        # Mount all local files referenced in the Lean config
+        
+        # 2
+        if project_dir:
+            self.mount_project_and_library_directories(project_dir, run_options)
+        
+        # 3
+        run_options["volumes"][str(data_dir)] = {"bind": "/Lean/Data", "mode": "rw"}
+        
+        # 4
+        if output_dir:
+            run_options["volumes"][str(output_dir)] = {"bind": "/Results", "mode": "rw"}
+        # 5
+        run_options["volumes"][str(storage_dir)] = { "bind": "/Storage", "mode": "rw"}
+        
+        # 6
         cli_root_dir = self._lean_config_manager.get_cli_root_directory()
         files_to_mount = [
             ("transaction-log", cli_root_dir),
@@ -476,72 +422,43 @@ class LeanRunner:
                                                read_only=False))
 
             lean_config[key] = f"/Files/{key}"
-
-        # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
-        for key in ["terminal-link-server-host"]:
-            if key not in lean_config:
-                continue
-
-            if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
-                lean_config[key] = "host.docker.internal"
-
-        # Set up modules
-        installed_packages = self._module_manager.get_installed_packages()
-        if len(installed_packages) > 0:
-            self._logger.debug(f"LeanRunner.run_lean(): installed packages {len(installed_packages)}")
-            self.set_up_common_csharp_options(run_options, target_path)
-
-            # Mount the modules directory
-            run_options["volumes"][MODULES_DIRECTORY] = {
-                "bind": "/Modules",
-                "mode": "ro"
-            }
-
-            # Add the modules directory as a NuGet source root
-            run_options["commands"].append("dotnet nuget add source /Modules")
-
-            # Create a C# project used to resolve the dependencies of the modules
-            run_options["commands"].append("mkdir /ModulesProject")
-            run_options["commands"].append("dotnet new sln -o /ModulesProject")
-
-            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
-            run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
-            run_options["commands"].append("rm /ModulesProject/Class1.cs")
-
-            # Add all modules to the project, automatically resolving all dependencies
-            for package in installed_packages:
-                self._logger.debug(f"LeanRunner.run_lean(): Adding module {package} to the project")
-                run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
-                run_options["commands"].append(
-                    f"dotnet add /ModulesProject package {package.name} --version {package.version}")
-
-            # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
-            run_options["commands"].append(
-                "python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
+    
+    def _initialize_run_options(self, detach: bool, docker_project_config: Dict[str, Any], debugging_method: Optional[DebuggingMethod]):
+        """
+        Initializes run options.
         
-        # Save the final Lean config to a temporary file so we can mount it into the container
-        config_path = self._temp_manager.create_temporary_directory() / "config.json"
-        with config_path.open("w+", encoding="utf-8") as file:
-            file.write(dumps(lean_config, indent=4))
-
-        # Mount the Lean config
-        run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/config.json",
-                                           source=str(config_path),
-                                           type="bind",
-                                           read_only=True))
-
-        # Assign the container a name and store it in the output directory's configuration
-        if "container-name" in lean_config:
-            run_options["name"] = lean_config["container-name"]
-        else:
-            run_options["name"] = f"lean_cli_{str(uuid4()).replace('-', '')}"
-
-        # set the hostname
-        if "hostname" in lean_config:
-            run_options["hostname"] = lean_config["hostname"]
-
-        return run_options
+        The dict containing all options passed to `docker run`
+        See all available options at https://docker-py.readthedocs.io/en/stable/containers.html
+        """
+        return {
+            "detach": detach,
+            "commands": [],
+            "environment": docker_project_config.get("environment", {}),
+            "stop_signal": "SIGINT" if debugging_method is None else "SIGKILL",
+            "mounts": [],
+            "volumes": {},
+            "ports": docker_project_config.get("ports", {})
+        }
+    
+    def _ensure_directories_exist(self, dirs: List[Path]):
+        """Ensures directories exist."""
+        for dir_path in dirs:
+            if not dir_path.exists():
+                dir_path.mkdir(parents=True)
+    
+    def _handle_data_providers(self, lean_config: Dict[str, Any], data_dir: Path):
+        """Handles data provider logic."""
+        if lean_config.get("data-provider", None) != "QuantConnect.Lean.Engine.DataFeeds.ApiDataProvider":
+            self._force_disk_provider_if_necessary(lean_config,
+                                                   "map-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
+                                                   "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
+                                                   data_dir / "equity" / "usa" / "map_files")
+            self._force_disk_provider_if_necessary(lean_config,
+                                                   "factor-file-provider",
+                                                   "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+                                                   "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
+                                                   data_dir / "equity" / "usa" / "factor_files")
 
     def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any], image: DockerImage) -> None:
         """Sets up Docker run options specific to Python projects.
