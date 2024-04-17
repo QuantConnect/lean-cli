@@ -19,6 +19,7 @@ from lean.components.util.json_modules_handler import config_build_for_name, non
 from lean.constants import DATA_FOLDER_PATH, DATA_TYPES, DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
+from lean.models.click_options import get_configs_for_options, options_from_json
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, Product
 from lean.models.logger import Option
 from lean.models.cli import cli_data_downloaders
@@ -409,10 +410,11 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     return available_datasets
 
-@command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
+@command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
         help="The name of the downloader data provider.")
+@options_from_json(get_configs_for_options("backtest"))
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @option("--force", is_flag=True, default=False, hidden=True)
