@@ -420,17 +420,17 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--historical-data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
-@option("--historical-resolution", type=Choice(RESOLUTIONS, case_sensitive=False), help="Specify the resolution of the historical data")
-@option("--historical-ticker-security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
+@option("--data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
+@option("--resolution", type=Choice(RESOLUTIONS, case_sensitive=False), help="Specify the resolution of the historical data")
+@option("--ticker-security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
     help="Specify the security type of the historical data")
-@option("--historical-tickers",
+@option("--tickers",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
-@option("--historical-start-date",
+@option("--start-date",
         type=str,
         help="Specify the start date for the historical data request in the format yyyyMMdd.")
-@option("--historical-end-date",
+@option("--end-date",
         type=str,
         help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
 @option("--image",
@@ -447,12 +447,12 @@ def download(ctx: Context,
              overwrite: bool,
              force: bool,
              auto_confirm: bool,
-             historical_data_type: Optional[str],
-             historical_resolution: Optional[str],
-             historical_ticker_security_type: Optional[str],
-             historical_tickers: Optional[str],
-             historical_start_date: Optional[str],
-             historical_end_date: Optional[str],
+             data_type: Optional[str],
+             resolution: Optional[str],
+             ticker_security_type: Optional[str],
+             tickers: Optional[str],
+             start_date: Optional[str],
+             end_date: Optional[str],
              image: Optional[str],
              update: bool,
              **kwargs) -> None:
@@ -507,37 +507,37 @@ def download(ctx: Context,
             data_provider_support_security_types = data_provider_config_json["data-supported"]
         
         # validate data_type exists
-        if not historical_data_type:
-            historical_data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in DATA_TYPES])
+        if not data_type:
+            data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in DATA_TYPES])
 
-        if not historical_resolution:
-            historical_resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in RESOLUTIONS])
+        if not resolution:
+            resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in RESOLUTIONS])
 
-        if not historical_ticker_security_type:
-            historical_ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in data_provider_support_security_types])
-        elif historical_ticker_security_type not in data_provider_support_security_types:
-                raise ValueError(f"The {data_provider_historical} data provider does not support {historical_ticker_security_type}. Please choose a supported security type from: {data_provider_support_security_types}.")
+        if not ticker_security_type:
+            ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in data_provider_support_security_types])
+        elif ticker_security_type not in data_provider_support_security_types:
+                raise ValueError(f"The {data_provider_historical} data provider does not support {ticker_security_type}. Please choose a supported security type from: {data_provider_support_security_types}.")
 
-        if not historical_tickers:
-            historical_tickers = DatasetTextOption(id="id",
+        if not tickers:
+            tickers = DatasetTextOption(id="id",
                                label="Enter comma separated list of tickers to use for historical data request.",
                                description="description",
                                transform=DatasetTextOptionTransform.Lowercase,
                                multiple=True).configure_interactive()
 
         start_data_option = DatasetDateOption(id="start", label="Start date", description="Enter the start date for the historical data request in the format YYYYMMDD.")
-        if not historical_start_date:
-            historical_start_date = start_data_option.configure_interactive()
+        if not start_date:
+            start_date = start_data_option.configure_interactive()
         else:
-            historical_start_date = start_data_option.configure_non_interactive(historical_start_date)
+            start_date = start_data_option.configure_non_interactive(start_date)
 
         end_date_option = DatasetDateOption(id="end", label="End date",description="Enter the end date for the historical data request in the format YYYYMMDD.")
-        if not historical_end_date:
-            historical_end_date = end_date_option.configure_interactive()
+        if not end_date:
+            end_date = end_date_option.configure_interactive()
         else:
-            historical_end_date = end_date_option.configure_non_interactive(historical_end_date)
+            end_date = end_date_option.configure_non_interactive(end_date)
 
-        if historical_start_date.value >= historical_end_date.value:
+        if start_date.value >= end_date.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
 
         lean_config = container.lean_config_manager.get_lean_config()
@@ -566,12 +566,12 @@ def download(ctx: Context,
         dll_arguments = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
                          "--data-provider", data_provider.get_config_value_from_name(MODULE_DATA_DOWNLOADER),
                          "--destination-dir", DATA_FOLDER_PATH,
-                         "--data-type", historical_data_type,
-                         "--start-date", historical_start_date.value.strftime("%Y%m%d"),
-                         "--end-date", historical_end_date.value.strftime("%Y%m%d"),
-                         "--security-type", historical_ticker_security_type,
-                         "--resolution", historical_resolution,
-                         "--tickers", historical_tickers]
+                         "--data-type", data_type,
+                         "--start-date", start_date.value.strftime("%Y%m%d"),
+                         "--end-date", end_date.value.strftime("%Y%m%d"),
+                         "--security-type", ticker_security_type,
+                         "--resolution", resolution,
+                         "--tickers", tickers]
         
         run_options["commands"].append(' '.join(dll_arguments))
 
