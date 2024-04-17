@@ -542,37 +542,37 @@ def download(ctx: Context,
         data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, True)
         data_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
-        
-        lean_config_manager = container.lean_config_manager
-        data_dir = lean_config_manager.get_data_directory()
-        
-        entrypoint = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
-                      "--data-provider", data_provider.get_config_value_from_name(MODULE_DATA_DOWNLOADER),
-                      "--destination-dir", DATA_FOLDER_PATH,
-                      "--data-type", historical_data_type,
-                      "--start-date", historical_start_date.value.strftime("%Y%m%d"),
-                      "--end-date", historical_end_date.value.strftime("%Y%m%d"),
-                      "--security-type", historical_ticker_security_type,
-                      "--resolution", historical_resolution,
-                      "--tickers", historical_tickers]
-        
-        run_options = {
-            "working_dir": "/Lean/DownloaderDataProvider/bin/Debug/",
-            "entrypoint": entrypoint,
-            "volumes": {
-                str(data_dir): {
-                    "bind": DATA_FOLDER_PATH,
-                    "mode": "rw"
-                }
-            }
-        }
+        # Info: I don't understand why it returns empty result 
+        paths_to_mount = data_provider.get_paths_to_mount()
         
         engine_image = container.cli_config_manager.get_engine_image(image)
+        
+        no_update = False
+        if str(engine_image) != DEFAULT_ENGINE_IMAGE:
+            # Custom engine image should not be updated.
+            no_update = True
+            logger.warn(f'A custom engine image: "{engine_image}" is being used!')
+            
+        container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
-        logger.info(f'engine_image: {engine_image.name}')
+        downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
         
-        container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config, True, False, engine_image, downloader_data_provider_path_dll, paths_to_mount)
         
+        run_options["working_dir"] = downloader_data_provider_path_dll
+        
+        dll_arguments = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
+                         "--data-provider", data_provider.get_config_value_from_name(MODULE_DATA_DOWNLOADER),
+                         "--destination-dir", DATA_FOLDER_PATH,
+                         "--data-type", historical_data_type,
+                         "--start-date", historical_start_date.value.strftime("%Y%m%d"),
+                         "--end-date", historical_end_date.value.strftime("%Y%m%d"),
+                         "--security-type", historical_ticker_security_type,
+                         "--resolution", historical_resolution,
+                         "--tickers", historical_tickers]
+        
+        run_options["commands"].append(' '.join(dll_arguments))
+
         success = container.docker_manager.run_image(engine_image, **run_options)
         
         if not success:
