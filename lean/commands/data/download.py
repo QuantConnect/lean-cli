@@ -424,7 +424,6 @@ def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_pa
     Returns:
     - List[str]: List of parameters.
     """
-    container.logger.info(f'data_provider_config_json: {data_provider_config_json}')
     if data_provider_config_json is None:
         return default_param
     
@@ -576,9 +575,7 @@ def download(ctx: Context,
 
         all_data_files = _get_data_files(organization, products)
         container.data_downloader.download_files(all_data_files, overwrite, organization.id)
-    else:
-        logger = container.logger
-        
+    else:        
         data_provider = next(data_downloader for data_downloader in cli_data_downloaders if data_downloader.get_name() == data_provider_historical)
 
         data_provider_config_json = None
@@ -605,7 +602,8 @@ def download(ctx: Context,
 
         if start_date.value >= end_date.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
-
+        
+        logger = container.logger
         lean_config = container.lean_config_manager.get_lean_config()
         data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=False)
         data_provider.ensure_module_installed(organization.id)
