@@ -541,7 +541,7 @@ def download(ctx: Context,
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
 
         lean_config = container.lean_config_manager.get_lean_config()
-        data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, True)
+        data_provider = config_build_for_name(lean_config, data_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=False)
         data_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         # Info: I don't understand why it returns empty result 
@@ -559,7 +559,12 @@ def download(ctx: Context,
 
         downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
         
-        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config, True, False, engine_image, downloader_data_provider_path_dll, paths_to_mount)
+        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config,
+                                                                                 debugging_method=None,
+                                                                                 detach=False,
+                                                                                 image=engine_image,
+                                                                                 target_path=downloader_data_provider_path_dll,
+                                                                                 paths_to_mount=paths_to_mount)
         
         run_options["working_dir"] = downloader_data_provider_path_dll
         
