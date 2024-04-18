@@ -497,7 +497,7 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 @option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
         help="The name of the downloader data provider.")
-@options_from_json(get_configs_for_options("backtest"))
+@options_from_json(get_configs_for_options("download"))
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @option("--force", is_flag=True, default=False, hidden=True)

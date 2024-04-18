@@ -29,6 +29,8 @@ def get_configs_for_options(env: str) -> List[Configuration]:
         brokerage = cli_data_downloaders
     elif env == "research":
         brokerage = cli_data_downloaders
+    elif env == "download":
+        brokerage = cli_data_downloaders
     else:
         raise ValueError("Acceptable values for 'env' are: 'live-cloud', 'live-cli', 'backtest', 'research'")
 
