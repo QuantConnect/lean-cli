@@ -35,48 +35,116 @@ def test_bulk_extraction(setup):
     file = os.path.join(out, "crypto/ftx/daily/imxusd_trade.zip")
     assert os.path.exists(file)
 
-def test_download_data_non_interactive():
-	create_fake_lean_cli_directory()
+def _get_data_provider_config() -> Dict[str, Any]:
+    """
+    Retrieve the configuration settings for a financial data provider.
+    
+    This method encapsulates the configuration settings typically found in a data provider config JSON file,
+    as referenced by a file named <provider_name>.json in an example from a GitHub repository.
 
+    Returns:
+    Dict[str, Any]: Configuration settings including supported data types, resolutions, and asset classes.
+    """
+    data_provider_config_file_json: Dict[str, Any] = {
+        "data-types": [ "Trade", "Quote" ],  # Supported data types: Trade and Quote
+        "data-resolutions": [ "Second", "Minute", "Hour", "Daily" ],  # Supported data resolutions: Second, Minute, Hour, Daily
+        "data-supported": [ "Equity", "Equity Options", "Indexes", "Index Options" ]  # Supported asset classes: Equity, Equity Options, Indexes, Index Options
+    }
+    
+    return data_provider_config_file_json
+
+def _create_lean_data_download(data_provider_name: str,
+							  data_type: str,
+							  resolution: str,
+							  security_type: str,
+							  tickers: List[str],
+							  start_date: str,
+							  end_date: str,
+							  data_provider_config_file_json: Dict[str, Any],
+							  extra_run_command: List[str] = None):
+	"""
+    Create a data download command for the Lean algorithmic trading engine.
+    
+    This method constructs and invokes a Lean CLI command to download historical data from a specified data provider.
+    It utilizes a mock data provider configuration JSON and may include extra run commands if provided.
+
+    Args:
+    data_provider_name (str): Name of the data provider.
+    data_type (str): Type of data to download (e.g., Trade, Quote).
+    resolution (str): Time resolution of the data (e.g., Second, Minute).
+    security_type (str): Type of security (e.g., Equity, Equity Options).
+    tickers (List[str]): List of tickers to download data for.
+    start_date (str): Start date of the data download in YYYY-MM-DD format.
+    end_date (str): End date of the data download in YYYY-MM-DD format.
+    data_provider_config_file_json (Dict[str, Any]): Mock data provider configuration JSON.
+    extra_run_command (List[str], optional): Extra run commands to be included in the Lean CLI command.
+
+    Returns:
+    CompletedProcess: Result of the Lean CLI command execution.
+    """
+	create_fake_lean_cli_directory()
 	container = initialize_container()
 
 	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
-		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value={ "data-supported" : [ "Equity", "Equity Options", "Indexes", "Index Options" ] }):
-			result = CliRunner().invoke(lean, ["data", "download", 
-										"--data-provider-historical", "Polygon",
-										"--polygon-api-key", "123",
-										"--data-type", "Trade",
-										"--resolution", "Minute",
-										"--ticker-security-type", "Equity",
-										"--tickers", "AAPL",
-										"--start-date", "20240101",
-										"--end-date", "20240202"])
+		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value=data_provider_config_file_json):
+			run_parameters = [
+				"data", "download",
+				"--data-provider-historical", data_provider_name,
+				"--data-type", data_type,
+				"--resolution", resolution,
+				"--ticker-security-type", security_type,
+				"--tickers", ','.join(tickers),
+				"--start-date", start_date,
+				"--end-date", end_date,
+				]
+			if extra_run_command:
+				run_parameters += extra_run_command
 
-	assert result.exit_code == 0
+			return CliRunner().invoke(lean, run_parameters)
 
-def test_download_data_non_interactive_data_provider_missed_param():
-	create_fake_lean_cli_directory()
+@pytest.mark.parametrize("data_provider,data_provider_parameters",
+						 [("Polygon", ["--polygon-api-key", "123"]),
+						  ("Binance", ["--binance-exchange-name", "BinanceUS", "--binanceus-api-key", "123", "--binanceus-api-secret", "123"]),
+						  ("Interactive Brokers", ["--ib-user-name", "123", "--ib-account", "Individual", "--ib-password", "123"])])
+def test_download_data_non_interactive(data_provider: str, data_provider_parameters: List[str]):
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config(), data_provider_parameters)
+	assert run_data_download.exit_code == 0
 
-	container = initialize_container()
-
-	    # with mock.patch.object(container.api_client.projects, 'get_all', return_value=cloud_projects) as mock_get_all,\
-        #  mock.patch.object(container.api_client.projects, 'delete', return_value=None) as mock_delete:
-
-	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
-		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value={ "data-supported" : [ "Equity", "Equity Options", "Indexes", "Index Options" ] }):
-			result = CliRunner().invoke(lean, ["data", "download", 
-									  "--data-provider-historical", "Polygon",
-									  "--data-type", "Trade",
-									  "--resolution", "Minute",
-									  "--ticker-security-type", "Equity",
-									  "--tickers", "AAPL",
-									  "--start-date", "20240101",
-									  "--end-date", "20240202"])
-
-	assert result.exit_code == 1
+@pytest.mark.parametrize("data_provider,missed_parameters",
+						 [("Polygon", "--polygon-api-key"),
+						  ("Binance", "--binance-exchange-name"),
+						  ("Interactive Brokers", "--ib-user-name, --ib-account, --ib-password")])
+def test_download_data_non_interactive_data_provider_missed_param(data_provider: str, missed_parameters: str):
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config())
+	assert run_data_download.exit_code == 1
 	
-	error_msg = str(result.exc_info[1])
-	assert "--polygon-api-key" in error_msg
+	error_msg = str(run_data_download.exc_info[1])
+	assert missed_parameters in error_msg
+
+@pytest.mark.parametrize("data_provider,wrong_security_type",
+						 [("Polygon", "Future"),("Polygon", "Crypto"),("Polygon", "Forex")])
+def test_download_data_non_interactive_wrong_security_type(data_provider: str, wrong_security_type: str):
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", wrong_security_type, ["AAPL"], "20240101", "20240202", _get_data_provider_config(), ["--polygon-api-key", "123"])
+	assert run_data_download.exit_code == 1
+	
+	error_msg = str(run_data_download.exc_info[1])
+	assert f"The {data_provider} data provider does not support {wrong_security_type}." in error_msg
+
+@pytest.mark.parametrize("data_provider,start_date,end_date", [("Polygon", "20240101", "20230202"), ("Polygon", "2024-01-01", "2023-02-02")])
+def test_download_data_non_interactive_wrong_start_end_date(data_provider: str, start_date: str, end_date: str):
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", "Equity", ["AAPL"], start_date, end_date, _get_data_provider_config(), ["--polygon-api-key", "123"])
+	assert run_data_download.exit_code == 1
+
+	error_msg = str(run_data_download.exc_info[1])
+	assert f"Historical start date cannot be greater than or equal to historical end date." in error_msg
+
+@pytest.mark.parametrize("wrong_data_type",[("OpenInterest")])
+def test_download_data_non_interactive_wrong_data_type(wrong_data_type: str):
+	run_data_download = _create_lean_data_download("Polygon", wrong_data_type, "Hour", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config(), ["--polygon-api-key", "123"])
+	assert run_data_download.exit_code == 1
+	
+	error_msg = str(run_data_download.exc_info[1])
+	assert f"The Polygon data provider does not support {wrong_data_type}." in error_msg
 
 def test_non_interactive_bulk_select():
 	# TODO
