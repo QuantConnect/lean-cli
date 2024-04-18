@@ -11,6 +11,10 @@ from lean.commands.data.download import *
 from lean.container import container
 from lean.models.api import QCDataset, QCOrganizationCredit, QCOrganizationData
 from tests.test_helpers import create_api_organization
+from click.testing import CliRunner
+from lean.commands import lean
+from tests.test_helpers import create_fake_lean_cli_directory
+from tests.conftest import initialize_container
 
 test_files = Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "testFiles"))
 
@@ -31,6 +35,43 @@ def test_bulk_extraction(setup):
     file = os.path.join(out, "crypto/ftx/daily/imxusd_trade.zip")
     assert os.path.exists(file)
 
+def test_download_data_non_interactive():
+	create_fake_lean_cli_directory()
+
+	container = initialize_container()
+
+	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
+		result = CliRunner().invoke(lean, ["data", "download", 
+										"--data-provider-historical", "Polygon",
+										"--polygon-api-key", "123",
+										"--data-type", "Trade",
+										"--resolution", "Minute",
+										"--ticker-security-type", "Equity",
+										"--tickers", "AAPL",
+										"--start-date", "20240101",
+										"--end-date", "20240202"])
+
+	assert result.exit_code == 0
+
+def test_download_data_non_interactive_data_provider_missed_param():
+	create_fake_lean_cli_directory()
+
+	container = initialize_container()
+
+	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
+		result = CliRunner().invoke(lean, ["data", "download", 
+										"--data-provider-historical", "Polygon",
+										"--data-type", "Trade",
+										"--resolution", "Minute",
+										"--ticker-security-type", "Equity",
+										"--tickers", "AAPL",
+										"--start-date", "20240101",
+										"--end-date", "20240202"])
+
+	assert result.exit_code == 1
+	
+	error_msg = str(result.exc_info[1])
+	assert "--polygon-api-key" in error_msg
 
 def test_non_interactive_bulk_select():
 	# TODO
