@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
-from lean.components.util.json_modules_handler import config_build_for_name, non_interactive_config_build_for_name
+from lean.components.util.json_modules_handler import config_build_for_name
 from lean.constants import DATA_FOLDER_PATH, DATA_TYPES, DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER, RESOLUTIONS, SECURITY_TYPES
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
@@ -502,40 +501,23 @@ def download(ctx: Context,
         if data_provider._specifications_url is not None:
             data_provider_config_json = container.api_client.data.download_public_file_json(data_provider._specifications_url)
 
-        data_provider_support_security_types = SECURITY_TYPES
-        if data_provider_config_json is not None:
-            data_provider_support_security_types = data_provider_config_json["data-supported"]
-        
-        # validate data_type exists
-        if not data_type:
-            data_type = logger.prompt_list("Select a historical data type", [Option(id=data_type, label=data_type) for data_type in DATA_TYPES])
+        data_provider_support_security_types = _get_param_from_config(data_provider_config_json, SECURITY_TYPES, "data-supported")
+        data_provider_support_data_types = _get_param_from_config(data_provider_config_json, DATA_TYPES, "data-types")
+        data_provider_support_resolutions = _get_param_from_config(data_provider_config_json, RESOLUTIONS, "data-resolutions")
 
-        if not resolution:
-            resolution = logger.prompt_list("Select a historical resolution", [Option(id=data_type, label=data_type) for data_type in RESOLUTIONS])
-
-        if not ticker_security_type:
-            ticker_security_type = logger.prompt_list("Select a Ticker's security type", [Option(id=data_type, label=data_type) for data_type in data_provider_support_security_types])
-        elif ticker_security_type not in data_provider_support_security_types:
-                raise ValueError(f"The {data_provider_historical} data provider does not support {ticker_security_type}. Please choose a supported security type from: {data_provider_support_security_types}.")
+        ticker_security_type = get_user_input_or_prompt(ticker_security_type, data_provider_support_security_types, data_provider_historical)  
+        data_type = get_user_input_or_prompt(data_type, data_provider_support_data_types, data_provider_historical)
+        resolution = get_user_input_or_prompt(resolution, data_provider_support_resolutions, data_provider_historical)
 
         if not tickers:
-            tickers = DatasetTextOption(id="id",
+            tickers = ','.join(DatasetTextOption(id="id",
                                label="Enter comma separated list of tickers to use for historical data request.",
                                description="description",
                                transform=DatasetTextOptionTransform.Lowercase,
-                               multiple=True).configure_interactive()
-
-        start_data_option = DatasetDateOption(id="start", label="Start date", description="Enter the start date for the historical data request in the format YYYYMMDD.")
-        if not start_date:
-            start_date = start_data_option.configure_interactive()
-        else:
-            start_date = start_data_option.configure_non_interactive(start_date)
-
-        end_date_option = DatasetDateOption(id="end", label="End date",description="Enter the end date for the historical data request in the format YYYYMMDD.")
-        if not end_date:
-            end_date = end_date_option.configure_interactive()
-        else:
-            end_date = end_date_option.configure_non_interactive(end_date)
+                               multiple=True).configure_interactive().value)
+            
+        start_date = configure_date_option(start_date, "start", "Start date")
+        end_date = configure_date_option(end_date, "end", "End date")
 
         if start_date.value >= end_date.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
@@ -578,7 +560,7 @@ def download(ctx: Context,
                          "--resolution", resolution,
                          "--tickers", tickers]
         
-        run_options["commands"].append(' '.join(dll_arguments))
+        run_options["commands"].append(' '.join(dll_arguments))        
 
         success = container.docker_manager.run_image(engine_image, **run_options)
         
@@ -588,3 +570,84 @@ def download(ctx: Context,
 
 def _get_historical_data_provider() -> str:
     return container.logger.prompt_list("Select a downloading mode", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
+
+def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_param: List[str], key_config_data: str) -> List[str]:
+    """
+    Get parameter from data provider config JSON or return default parameters.
+
+    Args:
+    - data_provider_config_json (Dict[str, Any]): Configuration JSON.
+    - default_param (List[str]): Default parameters.
+    - key_config_data (str): Key to look for in the config JSON.
+
+    Returns:
+    - List[str]: List of parameters.
+    """
+    container.logger.info(f'data_provider_config_json: {data_provider_config_json}')
+    if data_provider_config_json is None:
+        return default_param
+    
+    return data_provider_config_json.get(key_config_data, default_param)
+
+def get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_provider_name: str) -> str:
+    """
+    Get user input or prompt for selection based on data types.
+
+    Args:
+    - user_input_data (str): User input data.
+    - data_types (List[str]): List of supported data types.
+    - data_provider_name (str): Name of the data provider.
+
+    Returns:
+    - str: Selected data type or prompted choice.
+    
+    Raises:
+    - ValueError: If user input data is not in supported data types.
+    """
+    
+    if not user_input_data:
+        # Prompt user to select a ticker's security type
+        return prompt_user_selection(data_types)
+    
+    elif user_input_data not in data_types:
+        # Raise ValueError for unsupported data type
+        raise ValueError(
+            f"The {data_provider_name} data provider does not support {user_input_data}. "
+            f"Please choose a supported data from: {data_types}."
+        )
+    
+    return user_input_data
+
+def prompt_user_selection(data_types: List[str]) -> str:
+    """
+    Prompt user to select a data type from a list.
+
+    Args:
+    - data_types (List[str]): List of supported data types.
+
+    Returns:
+    - str: Selected data type.
+    """
+
+    options = [Option(id=data_type, label=data_type) for data_type in data_types]
+    return container.logger.prompt_list("Select a Ticker's security type", options)
+
+def configure_date_option(date_value: str, option_id: str, option_label: str) -> str:
+    """
+    Configure the date based on the provided date value, option ID, and option label.
+
+    Args:
+    - date_value (str): Existing date value.
+    - option_id (str): Identifier for the date option.
+    - option_label (str): Label for the date option.
+
+    Returns:
+    - str: Configured date.
+    """
+    
+    date_option = DatasetDateOption(id=option_id, label=option_label, description=f"Enter the {option_label} for the historical data request in the format YYYYMMDD.")
+    
+    if not date_value:
+        return date_option.configure_interactive()
+    
+    return date_option.configure_non_interactive(date_value)
