@@ -41,7 +41,8 @@ def test_download_data_non_interactive():
 	container = initialize_container()
 
 	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
-		result = CliRunner().invoke(lean, ["data", "download", 
+		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value={ "data-supported" : [ "Equity", "Equity Options", "Indexes", "Index Options" ] }):
+			result = CliRunner().invoke(lean, ["data", "download", 
 										"--data-provider-historical", "Polygon",
 										"--polygon-api-key", "123",
 										"--data-type", "Trade",
@@ -58,15 +59,19 @@ def test_download_data_non_interactive_data_provider_missed_param():
 
 	container = initialize_container()
 
+	    # with mock.patch.object(container.api_client.projects, 'get_all', return_value=cloud_projects) as mock_get_all,\
+        #  mock.patch.object(container.api_client.projects, 'delete', return_value=None) as mock_delete:
+
 	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
-		result = CliRunner().invoke(lean, ["data", "download", 
-										"--data-provider-historical", "Polygon",
-										"--data-type", "Trade",
-										"--resolution", "Minute",
-										"--ticker-security-type", "Equity",
-										"--tickers", "AAPL",
-										"--start-date", "20240101",
-										"--end-date", "20240202"])
+		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value={ "data-supported" : [ "Equity", "Equity Options", "Indexes", "Index Options" ] }):
+			result = CliRunner().invoke(lean, ["data", "download", 
+									  "--data-provider-historical", "Polygon",
+									  "--data-type", "Trade",
+									  "--resolution", "Minute",
+									  "--ticker-security-type", "Equity",
+									  "--tickers", "AAPL",
+									  "--start-date", "20240101",
+									  "--end-date", "20240202"])
 
 	assert result.exit_code == 1
 	
