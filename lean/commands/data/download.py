@@ -633,7 +633,7 @@ def download(ctx: Context,
         run_options["working_dir"] = downloader_data_provider_path_dll
         
         dll_arguments = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
-                         "--data-provider", data_provider.get_config_value_from_name(MODULE_DATA_DOWNLOADER),
+                         "--data-provider", data_provider.get_settings()[MODULE_DATA_DOWNLOADER],
                          "--destination-dir", DATA_FOLDER_PATH,
                          "--data-type", data_type,
                          "--start-date", start_date.value.strftime("%Y%m%d"),
