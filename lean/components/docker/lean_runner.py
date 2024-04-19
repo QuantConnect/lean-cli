@@ -340,27 +340,27 @@ class LeanRunner:
             self._logger.debug(f"LeanRunner._setup_installed_packages(): installed packages {len(installed_packages)}")
             self.set_up_common_csharp_options(run_options, target_path)
 
-        # Mount the modules directory
-        run_options["volumes"][MODULES_DIRECTORY] = {"bind": "/Modules", "mode": "ro"}
+            # Mount the modules directory
+            run_options["volumes"][MODULES_DIRECTORY] = {"bind": "/Modules", "mode": "ro"}
 
-        # Add the modules directory as a NuGet source root
-        run_options["commands"].append("dotnet nuget add source /Modules")
-        # Create a C# project used to resolve the dependencies of the modules
-        run_options["commands"].append("mkdir /ModulesProject")
-        run_options["commands"].append("dotnet new sln -o /ModulesProject")
+            # Add the modules directory as a NuGet source root
+            run_options["commands"].append("dotnet nuget add source /Modules")
+            # Create a C# project used to resolve the dependencies of the modules
+            run_options["commands"].append("mkdir /ModulesProject")
+            run_options["commands"].append("dotnet new sln -o /ModulesProject")
         
-        framework_ver = self._docker_manager.get_image_label(image, 'target_framework', DEFAULT_LEAN_DOTNET_FRAMEWORK)
-        run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
-        run_options["commands"].append("rm /ModulesProject/Class1.cs")
+            framework_ver = self._docker_manager.get_image_label(image, 'target_framework', DEFAULT_LEAN_DOTNET_FRAMEWORK)
+            run_options["commands"].append(f"dotnet new classlib -o /ModulesProject -f {framework_ver} --no-restore")
+            run_options["commands"].append("rm /ModulesProject/Class1.cs")
 
-        # Add all modules to the project, automatically resolving all dependencies
-        for package in installed_packages:
-            self._logger.debug(f"LeanRunner._setup_installed_packages(): Adding module {package} to the project")
-            run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
-            run_options["commands"].append(f"dotnet add /ModulesProject package {package.name} --version {package.version}")
-
-        # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
-        run_options["commands"].append("python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
+            # Add all modules to the project, automatically resolving all dependencies
+            for package in installed_packages:
+                self._logger.debug(f"LeanRunner._setup_installed_packages(): Adding module {package} to the project")
+                run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
+                run_options["commands"].append(f"dotnet add /ModulesProject package {package.name} --version {package.version}")
+                
+            # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
+            run_options["commands"].append("python /copy_csharp_dependencies.py /Compile/obj/ModulesProject/project.assets.json")
         
         return bool(installed_packages)
     
