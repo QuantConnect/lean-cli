@@ -36,7 +36,7 @@ def assert_python_project_exists(path: str) -> None:
 
     with open(project_dir / main_filename) as file:
         if is_libary:
-            assert "\ndef Add(a: int, b: int):" in file.read()
+            assert "\ndef add(a: int, b: int):" in file.read()
         else:
             assert "class MyFirstProject(QCAlgorithm)" in file.read()
 
