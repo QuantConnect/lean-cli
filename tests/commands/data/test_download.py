@@ -124,11 +124,7 @@ def test_download_data_non_interactive_data_provider_missed_param(data_provider:
 @pytest.mark.parametrize("data_provider,wrong_security_type",
 						 [("Polygon", "Future"),("Polygon", "Crypto"),("Polygon", "Forex")])
 def test_download_data_non_interactive_wrong_security_type(data_provider: str, wrong_security_type: str):
-	data_provider_config = {
-        "data-supported": [ "Equity", "Equity Options", "Indexes", "Index Options" ]
-    }
-
-	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", wrong_security_type, ["AAPL"], "20240101", "20240202", data_provider_config, ["--polygon-api-key", "123"])
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", wrong_security_type, ["AAPL"], "20240101", "20240202", _get_data_provider_config(), ["--polygon-api-key", "123"])
 	assert run_data_download.exit_code == 1
 	
 	error_msg = str(run_data_download.exc_info[1])
