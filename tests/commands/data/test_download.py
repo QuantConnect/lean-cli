@@ -35,23 +35,33 @@ def test_bulk_extraction(setup):
     file = os.path.join(out, "crypto/ftx/daily/imxusd_trade.zip")
     assert os.path.exists(file)
 
-def _get_data_provider_config() -> Dict[str, Any]:
-    """
-    Retrieve the configuration settings for a financial data provider.
-    
-    This method encapsulates the configuration settings typically found in a data provider config JSON file,
-    as referenced by a file named <provider_name>.json in an example from a GitHub repository.
+def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]:
+	"""
+	Retrieve the configuration settings for a financial data provider.
 
-    Returns:
-    Dict[str, Any]: Configuration settings including supported data types, resolutions, and asset classes.
-    """
-    data_provider_config_file_json: Dict[str, Any] = {
+	This method encapsulates the configuration settings typically found in a data provider config JSON file,
+	as referenced by a file named <provider_name>.json in an example from a GitHub repository.
+
+	Returns:
+	Dict[str, Any]: Configuration settings including supported data types, resolutions, and asset classes.
+	"""
+
+	if is_crypto_configs:
+		return {
+			"data-types": [ "Trade", "Quote" ],
+			"data-resolutions": [ "Minute", "Hour", "Daily" ],
+			"data-supported": [ "Crypto", "CryptoFuture" ],
+			"data-markets": [ "Binance", "Kraken"]
+		   }
+	
+	data_provider_config_file_json: Dict[str, Any] = {
         "data-types": [ "Trade", "Quote" ],  # Supported data types: Trade and Quote
         "data-resolutions": [ "Second", "Minute", "Hour", "Daily" ],  # Supported data resolutions: Second, Minute, Hour, Daily
-        "data-supported": [ "Equity", "Equity Options", "Indexes", "Index Options" ]  # Supported asset classes: Equity, Equity Options, Indexes, Index Options
+        "data-supported": [ "Equity", "Option", "Index", "IndexOption" ], # Supported asset classes: Equity, Equity Options, Indexes, Index Options
+		"data-markets": [ "NYSE", "USA"]
     }
     
-    return data_provider_config_file_json
+	return data_provider_config_file_json
 
 def _create_lean_data_download(data_provider_name: str,
 							  data_type: str,
@@ -61,6 +71,7 @@ def _create_lean_data_download(data_provider_name: str,
 							  start_date: str,
 							  end_date: str,
 							  data_provider_config_file_json: Dict[str, Any],
+							  market: str = None,
 							  extra_run_command: List[str] = None):
 	"""
     Create a data download command for the Lean algorithmic trading engine.
@@ -96,30 +107,34 @@ def _create_lean_data_download(data_provider_name: str,
 				"--data-provider-historical", data_provider_name,
 				"--data-type", data_type,
 				"--resolution", resolution,
-				"--ticker-security-type", security_type,
+				"--security-type", security_type,
 				"--tickers", ','.join(tickers),
 				"--start-date", start_date,
 				"--end-date", end_date,
 				]
+			if market:
+				run_parameters.extend(["--market", market])
 			if extra_run_command:
 				run_parameters += extra_run_command
 
 			return CliRunner().invoke(lean, run_parameters)
 
-@pytest.mark.parametrize("data_provider,data_provider_parameters",
-						 [("Polygon", ["--polygon-api-key", "123"]),
-						  ("Binance", ["--binance-exchange-name", "BinanceUS", "--binanceus-api-key", "123", "--binanceus-api-secret", "123"]),
-						  ("Interactive Brokers", ["--ib-user-name", "123", "--ib-account", "Individual", "--ib-password", "123"])])
-def test_download_data_non_interactive(data_provider: str, data_provider_parameters: List[str]):
-	run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config(), data_provider_parameters)
+@pytest.mark.parametrize("data_provider,market,is_crypto,security_type,tickers,data_provider_parameters",
+						 [("Polygon", "NYSE", False, "Equity", ["AAPL"], ["--polygon-api-key", "123"]),
+						  ("Binance", "Binance", True, "CryptoFuture", ["BTCUSDT"], ["--binance-exchange-name", "BinanceUS", "--binanceus-api-key", "123", "--binanceus-api-secret", "123"]),
+						  ("CoinApi", "Kraken", True, "Crypto", ["BTCUSDC", "ETHUSD"], ["--coinapi-api-key", "123", "--coinapi-product", "Free"]),
+						  ("Interactive Brokers", "USA", False, "Index", ["INTL","NVDA"], ["--ib-user-name", "123", "--ib-account", "Individual", "--ib-password", "123"])])
+def test_download_data_non_interactive(data_provider: str, market: str, is_crypto: bool, security_type: str, tickers: List[str], data_provider_parameters: List[str]):
+	run_data_download = _create_lean_data_download(
+		data_provider, "Trade", "Minute", security_type, tickers, "20240101", "20240202", _get_data_provider_config(is_crypto), market, data_provider_parameters)
 	assert run_data_download.exit_code == 0
 
-@pytest.mark.parametrize("data_provider,missed_parameters",
-						 [("Polygon", "--polygon-api-key"),
-						  ("Binance", "--binance-exchange-name"),
-						  ("Interactive Brokers", "--ib-user-name, --ib-account, --ib-password")])
-def test_download_data_non_interactive_data_provider_missed_param(data_provider: str, missed_parameters: str):
-	run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config())
+@pytest.mark.parametrize("data_provider,market,is_crypto,security_type,missed_parameters",
+						 [("Polygon", "NYSE", False, "Equity", "--polygon-api-key"),
+						  ("Binance", "Binance", True, "Crypto", "--binance-exchange-name"),
+						  ("Interactive Brokers", "USA", False, "Equity", "--ib-user-name, --ib-account, --ib-password")])
+def test_download_data_non_interactive_data_provider_missed_param(data_provider: str, market: str, is_crypto: bool, security_type: str, missed_parameters: str):
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", security_type, ["AAPL"], "20240101", "20240202", _get_data_provider_config(is_crypto), market)
 	assert run_data_download.exit_code == 1
 	
 	error_msg = str(run_data_download.exc_info[1])
@@ -128,7 +143,7 @@ def test_download_data_non_interactive_data_provider_missed_param(data_provider:
 @pytest.mark.parametrize("data_provider,wrong_security_type",
 						 [("Polygon", "Future"),("Polygon", "Crypto"),("Polygon", "Forex")])
 def test_download_data_non_interactive_wrong_security_type(data_provider: str, wrong_security_type: str):
-	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", wrong_security_type, ["AAPL"], "20240101", "20240202", _get_data_provider_config(), ["--polygon-api-key", "123"])
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", wrong_security_type, ["AAPL"], "20240101", "20240202", _get_data_provider_config(), extra_run_command=["--polygon-api-key", "123"])
 	assert run_data_download.exit_code == 1
 	
 	error_msg = str(run_data_download.exc_info[1])
@@ -136,7 +151,7 @@ def test_download_data_non_interactive_wrong_security_type(data_provider: str, w
 
 @pytest.mark.parametrize("data_provider,start_date,end_date", [("Polygon", "20240101", "20230202"), ("Polygon", "2024-01-01", "2023-02-02")])
 def test_download_data_non_interactive_wrong_start_end_date(data_provider: str, start_date: str, end_date: str):
-	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", "Equity", ["AAPL"], start_date, end_date, _get_data_provider_config(), ["--polygon-api-key", "123"])
+	run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", "Equity", ["AAPL"], start_date, end_date, _get_data_provider_config(), "USA", extra_run_command=["--polygon-api-key", "123"])
 	assert run_data_download.exit_code == 1
 
 	error_msg = str(run_data_download.exc_info[1])
@@ -144,7 +159,7 @@ def test_download_data_non_interactive_wrong_start_end_date(data_provider: str, 
 
 @pytest.mark.parametrize("wrong_data_type",[("OpenInterest")])
 def test_download_data_non_interactive_wrong_data_type(wrong_data_type: str):
-	run_data_download = _create_lean_data_download("Polygon", wrong_data_type, "Hour", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config(), ["--polygon-api-key", "123"])
+	run_data_download = _create_lean_data_download("Polygon", wrong_data_type, "Hour", "Equity", ["AAPL"], "20240101", "20240202", _get_data_provider_config(), extra_run_command=["--polygon-api-key", "123"])
 	assert run_data_download.exit_code == 1
 	
 	error_msg = str(run_data_download.exc_info[1])
