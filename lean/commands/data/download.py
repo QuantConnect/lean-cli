@@ -429,7 +429,7 @@ def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_pa
     
     return data_provider_config_json.get(key_config_data, default_param)
 
-def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_provider_name: str) -> str:
+def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_provider_name: str, prompt_message_helper: str) -> str:
     """
     Get user input or prompt for selection based on data types.
 
@@ -447,7 +447,8 @@ def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_
     
     if not user_input_data:
         # Prompt user to select a ticker's security type
-        return _prompt_user_selection(data_types)
+        options = [Option(id=data_type, label=data_type) for data_type in data_types]
+        return container.logger.prompt_list(prompt_message_helper, options)
     
     elif user_input_data not in data_types:
         # Raise ValueError for unsupported data type
@@ -457,20 +458,6 @@ def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_
         )
     
     return user_input_data
-
-def _prompt_user_selection(data_types: List[str]) -> str:
-    """
-    Prompt user to select a data type from a list.
-
-    Args:
-    - data_types (List[str]): List of supported data types.
-
-    Returns:
-    - str: Selected data type.
-    """
-
-    options = [Option(id=data_type, label=data_type) for data_type in data_types]
-    return container.logger.prompt_list("Select a Ticker's security type", options)
 
 def _configure_date_option(date_value: str, option_id: str, option_label: str) -> str:
     """
@@ -504,8 +491,9 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
         help="Automatically confirm payment confirmation prompts")
 @option("--data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
 @option("--resolution", type=Choice(RESOLUTIONS, case_sensitive=False), help="Specify the resolution of the historical data")
-@option("--ticker-security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
+@option("--security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
     help="Specify the security type of the historical data")
+@option("--market", type=str, help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
 @option("--tickers",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
@@ -531,7 +519,8 @@ def download(ctx: Context,
              auto_confirm: bool,
              data_type: Optional[str],
              resolution: Optional[str],
-             ticker_security_type: Optional[str],
+             security_type: Optional[str],
+             market: Optional[str],
              tickers: Optional[str],
              start_date: Optional[str],
              end_date: Optional[str],
@@ -585,10 +574,12 @@ def download(ctx: Context,
         data_provider_support_security_types = _get_param_from_config(data_provider_config_json, SECURITY_TYPES, "data-supported")
         data_provider_support_data_types = _get_param_from_config(data_provider_config_json, DATA_TYPES, "data-types")
         data_provider_support_resolutions = _get_param_from_config(data_provider_config_json, RESOLUTIONS, "data-resolutions")
+        data_provider_support_markets = _get_param_from_config(data_provider_config_json, [ "USA" ], "data-markets")
 
-        ticker_security_type = _get_user_input_or_prompt(ticker_security_type, data_provider_support_security_types, data_provider_historical)  
-        data_type = _get_user_input_or_prompt(data_type, data_provider_support_data_types, data_provider_historical)
-        resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions, data_provider_historical)
+        security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types, data_provider_historical, "Select a Ticker's security type")  
+        data_type = _get_user_input_or_prompt(data_type, data_provider_support_data_types, data_provider_historical, "Select a Data type")
+        resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions, data_provider_historical, "Select a Resolution")
+        market = _get_user_input_or_prompt(market, data_provider_support_markets, data_provider_historical, "Select a Market")
 
         if not tickers:
             tickers = ','.join(DatasetTextOption(id="id",
@@ -638,7 +629,8 @@ def download(ctx: Context,
                          "--data-type", data_type,
                          "--start-date", start_date.value.strftime("%Y%m%d"),
                          "--end-date", end_date.value.strftime("%Y%m%d"),
-                         "--security-type", ticker_security_type,
+                         "--security-type", security_type,
+                         "--market", market,
                          "--resolution", resolution,
                          "--tickers", tickers]
         
