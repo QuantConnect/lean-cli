@@ -29,21 +29,21 @@ from AlgorithmImports import *
 
 class $CLASS_NAME$(QCAlgorithm):
 
-    def Initialize(self):
+    def initialize(self):
         # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data
-        self.SetStartDate(2013, 10, 7)  # Set Start Date
-        self.SetEndDate(2013, 10, 11)  # Set End Date
-        self.SetCash(100000)  # Set Strategy Cash
-        self.AddEquity("SPY", Resolution.Minute)
+        self.set_start_date(2013, 10, 7)  # Set Start Date
+        self.set_end_date(2013, 10, 11)  # Set End Date
+        self.set_cash(100000)  # Set Strategy Cash
+        self.add_equity("SPY", Resolution.MINUTE)
 
-    def OnData(self, data: Slice):
-        """OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
+    def on_data(self, data: Slice):
+        """on_data event is the primary entry point for your algorithm. Each new data point will be pumped in here.
             Arguments:
                 data: Slice object keyed by symbol containing the stock data
         """
-        if not self.Portfolio.Invested:
-            self.SetHoldings("SPY", 1)
-            self.Debug("Purchased Stock")
+        if not self.portfolio.invested:
+            self.set_holdings("SPY", 1)
+            self.debug("Purchased Stock")
 '''.strip() + "\n"
 
 LIBRARY_PYTHON_MAIN = '''
@@ -61,11 +61,11 @@ from AlgorithmImports import *
 ### Example using your newly imported library from 'Library.py' like so:
 ###
 ### from $PROJECT_NAME$ import Library
-### x = Library.Add(1,1)
+### x = Library.add(1,1)
 ### print(x)
 ###
 
-def Add(a: int, b: int):
+def add(a: int, b: int):
     return a + b
 '''.strip() + "\n"
 
@@ -89,13 +89,13 @@ DEFAULT_PYTHON_NOTEBOOK = """
                 "# QuantBook Analysis Tool \\n",
                 "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",
                 "qb = QuantBook()\\n",
-                "spy = qb.AddEquity(\\"SPY\\")\\n",
+                "spy = qb.add_equity(\\"SPY\\")\\n",
                 "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",
-                "qb.SetStartDate(2013, 10, 11)\\n",
-                "history = qb.History(qb.Securities.Keys, 360, Resolution.Daily)\\n",
+                "qb.set_start_date(2013, 10, 11)\\n",
+                "history = qb.history(qb.securities.keys(), 360, Resolution.DAILY)\\n",
                 "\\n",
                 "# Indicator Analysis\\n",
-                "bbdf = qb.Indicator(BollingerBands(30, 2), spy.Symbol, 360, Resolution.Daily)\\n",
+                "bbdf = qb.indicator(BollingerBands(30, 2), spy.symbol, 360, Resolution.DAILY)\\n",
                 "bbdf.drop('standarddeviation', axis=1).plot()"
             ]
         }
