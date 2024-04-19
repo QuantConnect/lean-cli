@@ -82,6 +82,10 @@ def _create_lean_data_download(data_provider_name: str,
     Returns:
     CompletedProcess: Result of the Lean CLI command execution.
     """
+	# add additional property in module config file
+	for data_provider in cli_data_downloaders:
+		data_provider.__setattr__("_specifications_url", "")
+
 	create_fake_lean_cli_directory()
 	container = initialize_container()
 
