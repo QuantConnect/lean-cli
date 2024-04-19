@@ -317,7 +317,8 @@ def deploy(project: str,
 
     brokerage_settings = brokerage_instance.get_settings()
 
-    logger.info(f"Brokerage: {brokerage_settings}")
+    logger.info(f"Brokerage: {brokerage_instance.get_name()}")
+    logger.debug(f"Brokerage: {brokerage_settings}")
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Server name: {live_node.name}")
     logger.info(f"Server type: {live_node.sku}")
