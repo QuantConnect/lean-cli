@@ -39,7 +39,7 @@ class DockerManager:
         self._platform_manager = platform_manager
 
     def get_image_label(self, image: DockerImage, label: str, default: str) -> str:
-        docker_image = self._get_docker_client().images.get(image.name)
+        docker_image = self._get_docker_client().images.get(str(image))
 
         for name, value in docker_image.labels.items():
             if name == label:
