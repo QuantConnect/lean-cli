@@ -36,7 +36,7 @@ def test_bulk_extraction(setup):
     assert os.path.exists(file)
 
 def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]:
-	"""
+    """
 	Retrieve the configuration settings for a financial data provider.
 
 	This method encapsulates the configuration settings typically found in a data provider config JSON file,
@@ -46,19 +46,21 @@ def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]
 	Dict[str, Any]: Configuration settings including supported data types, resolutions, and asset classes.
 	"""
 
-	if is_crypto_configs:
-		return {
-			"data-types": [ "Trade", "Quote" ],
-			"data-resolutions": [ "Minute", "Hour", "Daily" ],
-			"data-supported": [ "Crypto", "CryptoFuture" ],
-			"data-markets": [ "Binance", "Kraken"]
-		   }
-	
-	data_provider_config_file_json: Dict[str, Any] = {
-        "data-types": [ "Trade", "Quote" ],  # Supported data types: Trade and Quote
-        "data-resolutions": [ "Second", "Minute", "Hour", "Daily" ],  # Supported data resolutions: Second, Minute, Hour, Daily
-        "data-supported": [ "Equity", "Option", "Index", "IndexOption" ], # Supported asset classes: Equity, Equity Options, Indexes, Index Options
-		"data-markets": [ "NYSE", "USA"]
+    if is_crypto_configs:
+        return {
+            "data-types": ["Trade", "Quote"],
+            "data-resolutions": ["Minute", "Hour", "Daily"],
+            "data-supported": ["Crypto", "CryptoFuture"],
+            "data-markets": ["Binance", "Kraken"]
+        }
+
+    data_provider_config_file_json: Dict[str, Any] = {
+        "data-types": ["Trade", "Quote"],  # Supported data types: Trade and Quote
+        "data-resolutions": ["Second", "Minute", "Hour", "Daily"],
+        # Supported data resolutions: Second, Minute, Hour, Daily
+        "data-supported": ["Equity", "Option", "Index", "IndexOption"],
+        # Supported asset classes: Equity, Equity Options, Indexes, Index Options
+        "data-markets": ["NYSE", "USA"]
     }
     
 	return data_provider_config_file_json
@@ -100,22 +102,25 @@ def _create_lean_data_download(data_provider_name: str,
 	create_fake_lean_cli_directory()
 	container = initialize_container()
 
-	with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo", return_value={ "commands": [] }):
-		with mock.patch.object(container.api_client.data, "download_public_file_json", return_value=data_provider_config_file_json):
-			run_parameters = [
-				"data", "download",
-				"--data-provider-historical", data_provider_name,
-				"--data-type", data_type,
-				"--resolution", resolution,
-				"--security-type", security_type,
-				"--tickers", ','.join(tickers),
-				"--start-date", start_date,
-				"--end-date", end_date,
-				]
-			if market:
-				run_parameters.extend(["--market", market])
-			if extra_run_command:
-				run_parameters += extra_run_command
+    with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo",
+                           return_value={"commands": [], "mounts": []}):
+        with mock.patch.object(container.api_client.data, "download_public_file_json",
+                               return_value=data_provider_config_file_json):
+            with mock.patch.object(container.api_client.organizations, "get", return_value=create_api_organization()):
+                run_parameters = [
+                    "data", "download",
+                    "--data-provider-historical", data_provider_name,
+                    "--data-type", data_type,
+                    "--resolution", resolution,
+                    "--security-type", security_type,
+                    "--tickers", ','.join(tickers),
+                    "--start-date", start_date,
+                    "--end-date", end_date,
+                ]
+                if market:
+                    run_parameters.extend(["--market", market])
+                if extra_run_command:
+                    run_parameters += extra_run_command
 
 			return CliRunner().invoke(lean, run_parameters)
 

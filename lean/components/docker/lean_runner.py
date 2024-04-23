@@ -259,11 +259,12 @@ class LeanRunner:
         :param debugging_method: the debugging method if debugging needs to be enabled, None if not
         :param detach: whether LEAN should run in a detached container
         :param image: The docker image that will be used
-        :return: the Docker configuration containing basic configuration to run Lean
+        :param target_path: The target path inside the Docker container where the C# project should be located.
         :param paths_to_mount: additional paths to mount to the container
+        :return: the Docker configuration containing basic configuration to run Lean
         """
 
-        docker_project_config = { "docker": {} }
+        docker_project_config = {"docker": {}}
         # Force the use of the LocalDisk map/factor providers if no recent zip present and not using ApiDataProvider
         data_dir = self._lean_config_manager.get_data_directory()
         self._handle_data_providers(lean_config, data_dir)

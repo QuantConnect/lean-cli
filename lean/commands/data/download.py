@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+from json import dump
 from docker.types import Mount
 from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
@@ -428,7 +428,7 @@ def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_pa
     """
     if data_provider_config_json is None:
         return default_param
-    
+
     return data_provider_config_json.get(key_config_data, default_param)
 
 def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_provider_name: str, prompt_message_helper: str) -> str:
@@ -442,23 +442,23 @@ def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_
 
     Returns:
     - str: Selected data type or prompted choice.
-    
+
     Raises:
     - ValueError: If user input data is not in supported data types.
     """
-    
+
     if not user_input_data:
         # Prompt user to select a ticker's security type
         options = [Option(id=data_type, label=data_type) for data_type in data_types]
         return container.logger.prompt_list(prompt_message_helper, options)
-    
+
     elif user_input_data not in data_types:
         # Raise ValueError for unsupported data type
         raise ValueError(
             f"The {data_provider_name} data provider does not support {user_input_data}. "
             f"Please choose a supported data from: {data_types}."
         )
-    
+
     return user_input_data
 
 def _configure_date_option(date_value: str, option_id: str, option_label: str) -> OptionResult:
@@ -473,13 +473,14 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     Returns:
     - str: Configured date.
     """
-    
+
     date_option = DatasetDateOption(id=option_id, label=option_label, description=f"Enter the {option_label} for the historical data request in the format YYYYMMDD.")
-    
+
     if not date_value:
         return date_option.configure_interactive()
-    
+
     return date_option.configure_non_interactive(date_value)
+
 
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
@@ -492,10 +493,12 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
 @option("--data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
-@option("--resolution", type=Choice(RESOLUTIONS, case_sensitive=False), help="Specify the resolution of the historical data")
-@option("--security-type", type=Choice(SECURITY_TYPES, case_sensitive=False), 
+@option("--resolution", type=Choice(RESOLUTIONS, case_sensitive=False),
+        help="Specify the resolution of the historical data")
+@option("--security-type", type=Choice(SECURITY_TYPES, case_sensitive=False),
     help="Specify the security type of the historical data")
-@option("--market", type=str, default="USA", help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
+@option("--market", type=str, default="USA",
+        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
 @option("--tickers",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
@@ -514,7 +517,7 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
         help="Pull the LEAN engine image before running the Downloader Data Provider")
 @pass_context
 def download(ctx: Context,
-             data_provider_historical: Optional[str], 
+             data_provider_historical: Optional[str],
              dataset: Optional[str],
              overwrite: bool,
              force: bool,
@@ -566,7 +569,7 @@ def download(ctx: Context,
 
         all_data_files = _get_data_files(organization, products)
         container.data_downloader.download_files(all_data_files, overwrite, organization.id)
-    else:        
+    else:
         data_downloader_provider = next(data_downloader for data_downloader in cli_data_downloaders if data_downloader.get_name() == data_provider_historical)
 
         data_provider_config_json = None
@@ -578,10 +581,14 @@ def download(ctx: Context,
         data_provider_support_resolutions = _get_param_from_config(data_provider_config_json, RESOLUTIONS, "data-resolutions")
         data_provider_support_markets = _get_param_from_config(data_provider_config_json, [ market ], "data-markets")
 
-        security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types, data_provider_historical, "Select a Ticker's security type")  
-        data_type = _get_user_input_or_prompt(data_type, data_provider_support_data_types, data_provider_historical, "Select a Data type")
-        resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions, data_provider_historical, "Select a Resolution")
-        market = _get_user_input_or_prompt(market, data_provider_support_markets, data_provider_historical, "Select a Market")
+        security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
+                                                  data_provider_historical, "Select a Ticker's security type")
+        data_type = _get_user_input_or_prompt(data_type, data_provider_support_data_types,
+                                              data_provider_historical, "Select a Data type")
+        resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions,
+                                               data_provider_historical, "Select a Resolution")
+        market = _get_user_input_or_prompt(market, data_provider_support_markets,
+                                           data_provider_historical,"Select a Market")
 
         if not tickers:
             tickers = ','.join(DatasetTextOption(id="id",
@@ -589,34 +596,36 @@ def download(ctx: Context,
                                description="description",
                                transform=DatasetTextOptionTransform.Lowercase,
                                multiple=True).configure_interactive().value)
-            
+
         start_date = _configure_date_option(start_date, "start", "Start date")
         end_date = _configure_date_option(end_date, "end", "End date")
 
         if start_date.value >= end_date.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
-        
+
         logger = container.logger
         lean_config = container.lean_config_manager.get_lean_config()
 
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=True)
+        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
+                                                         cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
-        # Info: I don't understand why it returns empty result 
+        # Info: I don't understand why it returns empty result
         paths_to_mount = data_downloader_provider.get_paths_to_mount()
-        
+
         engine_image = container.cli_config_manager.get_engine_image(image)
-        
+
         no_update = False
         if str(engine_image) != DEFAULT_ENGINE_IMAGE:
             # Custom engine image should not be updated.
             no_update = True
             logger.warn(f'A custom engine image: "{engine_image}" is being used!')
-            
+
         container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
         downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
-        
+
         # Create config dictionary with credentials
         config: Dict[str, str] = {
             "job-user-id": lean_config.get("job-user-id"),
@@ -624,20 +633,20 @@ def download(ctx: Context,
             "job-organization-id": organization.id
         }
         config.update(data_downloader_provider.get_settings())
-        
+
         config_path = container.temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
-            json.dump(config, file)
-        
+            dump(config, file)
+
         run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config,
                                                                                  debugging_method=None,
                                                                                  detach=False,
                                                                                  image=engine_image,
                                                                                  target_path=downloader_data_provider_path_dll,
                                                                                  paths_to_mount=paths_to_mount)
-        
+
         run_options["working_dir"] = downloader_data_provider_path_dll
-        
+
         dll_arguments = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
                          "--data-downloader", data_downloader_provider.get_settings()[MODULE_DATA_DOWNLOADER],
                          "--data-type", data_type,
@@ -647,9 +656,9 @@ def download(ctx: Context,
                          "--market", market,
                          "--resolution", resolution,
                          "--tickers", tickers]
-        
+
         run_options["commands"].append(' '.join(dll_arguments))
-        
+
         # mount our created above config with work directory
         run_options["mounts"].append(
             Mount(target=f"{downloader_data_provider_path_dll}/config.json",
@@ -659,7 +668,7 @@ def download(ctx: Context,
         )
 
         success = container.docker_manager.run_image(engine_image, **run_options)
-        
+
         if not success:
             raise RuntimeError(
                 "Something went wrong while running the downloader data provider, see the logs above for more information")
