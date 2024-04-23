@@ -218,9 +218,6 @@ def test_interactive_bulk_select():
 
 
 def test_dataset_requirements():
-	organization = create_api_organization()
-	datasource = json.loads(bulk_datasource)
-	testSet = Dataset(name="testSet",
     organization = create_api_organization()
     datasource = json.loads(bulk_datasource)
     testSet = Dataset(name="testSet",
