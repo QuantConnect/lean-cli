@@ -606,7 +606,7 @@ def download(ctx: Context,
         logger = container.logger
         lean_config = container.lean_config_manager.get_lean_config()
 
-        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=True)
+        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
                                                          cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider.ensure_module_installed(organization.id)
