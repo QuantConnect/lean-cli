@@ -412,7 +412,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
     return available_datasets
 
 def _get_historical_data_provider() -> str:
-    return container.logger.prompt_list("Select a downloading mode", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
+    return container.logger.prompt_list("Select a historical data provider", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
 
 def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_param: List[str], key_config_data: str) -> List[str]:
     """
@@ -431,13 +431,15 @@ def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_pa
 
     return data_provider_config_json.get(key_config_data, default_param)
 
-def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_provider_name: str, prompt_message_helper: str) -> str:
+
+def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[str], data_provider_name: str,
+                              prompt_message_helper: str) -> str:
     """
     Get user input or prompt for selection based on data types.
 
     Args:
     - user_input_data (str): User input data.
-    - data_types (List[str]): List of supported data types.
+    - available_input_data (List[str]): List of available input data options.
     - data_provider_name (str): Name of the data provider.
 
     Returns:
@@ -449,14 +451,14 @@ def _get_user_input_or_prompt(user_input_data: str, data_types: List[str], data_
 
     if not user_input_data:
         # Prompt user to select a ticker's security type
-        options = [Option(id=data_type, label=data_type) for data_type in data_types]
+        options = [Option(id=data_type, label=data_type) for data_type in available_input_data]
         return container.logger.prompt_list(prompt_message_helper, options)
 
-    elif user_input_data not in data_types:
+    elif user_input_data not in available_input_data:
         # Raise ValueError for unsupported data type
         raise ValueError(
             f"The {data_provider_name} data provider does not support {user_input_data}. "
-            f"Please choose a supported data from: {data_types}."
+            f"Please choose a supported data from: {available_input_data}."
         )
 
     return user_input_data
@@ -579,7 +581,7 @@ def download(ctx: Context,
         data_provider_support_security_types = _get_param_from_config(data_provider_config_json, SECURITY_TYPES, "data-supported")
         data_provider_support_data_types = _get_param_from_config(data_provider_config_json, DATA_TYPES, "data-types")
         data_provider_support_resolutions = _get_param_from_config(data_provider_config_json, RESOLUTIONS, "data-resolutions")
-        data_provider_support_markets = _get_param_from_config(data_provider_config_json, [ market ], "data-markets")
+        data_provider_support_markets = _get_param_from_config(data_provider_config_json, [market], "data-markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")
@@ -606,7 +608,6 @@ def download(ctx: Context,
         logger = container.logger
         lean_config = container.lean_config_manager.get_lean_config()
 
-        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(), cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
                                                          cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider.ensure_module_installed(organization.id)
