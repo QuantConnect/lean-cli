@@ -17,7 +17,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name
-from lean.constants import DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery, QCResolution, QCSecurityType, QCDataType
 from lean.models.click_options import get_configs_for_options, options_from_json
@@ -517,6 +517,10 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
         is_flag=True,
         default=False,
         help="Pull the LEAN engine image before running the Downloader Data Provider")
+@option("--no-update",
+        is_flag=True,
+        default=False,
+        help="Use the local LEAN engine image instead of pulling the latest version")
 @pass_context
 def download(ctx: Context,
              data_provider_historical: Optional[str],
@@ -533,6 +537,7 @@ def download(ctx: Context,
              end_date: Optional[str],
              image: Optional[str],
              update: bool,
+             no_update: bool,
              **kwargs) -> None:
     """Purchase and download data from QuantConnect Datasets.
 
@@ -623,10 +628,8 @@ def download(ctx: Context,
 
         engine_image = container.cli_config_manager.get_engine_image(image)
 
-        no_update = False
         if str(engine_image) != DEFAULT_ENGINE_IMAGE:
             # Custom engine image should not be updated.
-            no_update = True
             logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
         container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
