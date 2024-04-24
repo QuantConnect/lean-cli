@@ -407,14 +407,53 @@ class QCMinimalOrganization(WrappedBaseModel):
     preferred: bool
 
 
+class QCDataType(str, Enum):
+    Trade = "Trade"
+    Quote = "Quote"
+    OpenInterest = "OpenInterest"
+
+    @classmethod
+    def get_all_members(cls):
+        """
+        Retrieve all members (values) of the QCDataType enumeration.
+
+        Returns:
+        list: A list containing all the values of the QCDataType enumeration.
+
+        Example:
+        >>> all_data_types = QCDataType.get_all_members()
+        >>> print(all_data_types)
+        ['Trade', 'Quote', 'OpenInterest']
+        """
+        return list(cls.__members__.values())
+
 class QCSecurityType(str, Enum):
     Equity = "Equity"
+    Index = "Index"
     Forex = "Forex"
     CFD = "Cfd"
     Future = "Future"
     Crypto = "Crypto"
+    CryptoFuture = "CryptoFuture"
     Option = "Option"
+    IndexOption = "IndexOption"
+    Commodity = "Commodity"
     FutureOption = "FutureOption"
+
+    @classmethod
+    def get_all_members(cls):
+        """
+        Retrieve all members (values) of the QCSecurityType enumeration.
+
+        Returns:
+        list: A list containing all the values of the QCSecurityType enumeration.
+
+        Example:
+        >>> all_security_types = QCSecurityType.get_all_members()
+        >>> print(all_security_types)
+        ['Equity', 'Index', 'Forex', 'Cfd', 'Future', 'Crypto', 'CryptoFuture', 'Option', 'IndexOption', 'Commodity', 'FutureOption']
+        """
+        return list(cls.__members__.values())
 
 
 class QCResolution(str, Enum):
@@ -435,6 +474,21 @@ class QCResolution(str, Enum):
             if k.lower() == name.lower():
                 return v
         raise ValueError(f"QCResolution has no member named '{name}'")
+
+    @classmethod
+    def get_all_members(cls):
+        """
+        Retrieve all members (values) of the QCResolution enumeration.
+
+        Returns:
+        list: A list containing all the values of the QCResolution enumeration.
+
+        Example:
+        >>> all_resolutions = QCResolution.get_all_members()
+        >>> print(all_resolutions)
+        ['Tick', 'Second', 'Minute', 'Hour', 'Daily']
+        """
+        return list(cls.__members__.values())
 
 
 class QCLink(WrappedBaseModel):
