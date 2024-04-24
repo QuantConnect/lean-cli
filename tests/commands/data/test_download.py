@@ -179,7 +179,7 @@ def test_download_data_non_interactive_wrong_security_type(data_provider: str, w
     assert run_data_download.exit_code == 1
 
     error_msg = str(run_data_download.exc_info[1])
-    assert f"The {data_provider} data provider does not support {wrong_security_type}." in error_msg
+    assert f"The {data_provider} data provider does not support QCSecurityType.{wrong_security_type}." in error_msg
 
 
 @pytest.mark.parametrize("data_provider,start_date,end_date",
@@ -202,7 +202,7 @@ def test_download_data_non_interactive_wrong_data_type(wrong_data_type: str):
     assert run_data_download.exit_code == 1
 
     error_msg = str(run_data_download.exc_info[1])
-    assert f"The Polygon data provider does not support {wrong_data_type}." in error_msg
+    assert f"The Polygon data provider does not support QCDataType.{wrong_data_type}." in error_msg
 
 
 def test_non_interactive_bulk_select():

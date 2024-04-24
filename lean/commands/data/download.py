@@ -17,11 +17,11 @@ from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name
-from lean.constants import DATA_TYPES, DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER, RESOLUTIONS, SECURITY_TYPES
+from lean.constants import DEFAULT_ENGINE_IMAGE, MODULE_DATA_DOWNLOADER
 from lean.container import container
-from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
+from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery, QCResolution, QCSecurityType, QCDataType
 from lean.models.click_options import get_configs_for_options, options_from_json
-from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform, OptionResult, Product
+from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform,OptionResult, Product
 from lean.models.logger import Option
 from lean.models.cli import cli_data_downloaders
 
@@ -454,7 +454,7 @@ def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[s
         options = [Option(id=data_type, label=data_type) for data_type in available_input_data]
         return container.logger.prompt_list(prompt_message_helper, options)
 
-    elif user_input_data not in available_input_data:
+    elif user_input_data.lower() not in [available_data.lower() for available_data in available_input_data]:
         # Raise ValueError for unsupported data type
         raise ValueError(
             f"The {data_provider_name} data provider does not support {user_input_data}. "
@@ -494,10 +494,10 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--data-type", type=Choice(DATA_TYPES, case_sensitive=False), help="Specify the type of historical data")
-@option("--resolution", type=Choice(RESOLUTIONS, case_sensitive=False),
+@option("--data-type", type=Choice(QCDataType.get_all_members(), case_sensitive=False), help="Specify the type of historical data")
+@option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
         help="Specify the resolution of the historical data")
-@option("--security-type", type=Choice(SECURITY_TYPES, case_sensitive=False),
+@option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
     help="Specify the security type of the historical data")
 @option("--market", type=str, default="USA",
         help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
@@ -578,9 +578,15 @@ def download(ctx: Context,
         if data_downloader_provider._specifications_url is not None:
             data_provider_config_json = container.api_client.data.download_public_file_json(data_downloader_provider._specifications_url)
 
-        data_provider_support_security_types = _get_param_from_config(data_provider_config_json, SECURITY_TYPES, "data-supported")
-        data_provider_support_data_types = _get_param_from_config(data_provider_config_json, DATA_TYPES, "data-types")
-        data_provider_support_resolutions = _get_param_from_config(data_provider_config_json, RESOLUTIONS, "data-resolutions")
+        data_provider_support_security_types = _get_param_from_config(data_provider_config_json,
+                                                                      QCSecurityType.get_all_members(),
+                                                                      "data-supported")
+        data_provider_support_data_types = _get_param_from_config(data_provider_config_json,
+                                                                  QCDataType.get_all_members(),
+                                                                  "data-types")
+        data_provider_support_resolutions = _get_param_from_config(data_provider_config_json,
+                                                                   QCResolution.get_all_members(),
+                                                                   "data-resolutions")
         data_provider_support_markets = _get_param_from_config(data_provider_config_json, [market], "data-markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
