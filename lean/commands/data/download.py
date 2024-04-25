@@ -657,7 +657,7 @@ def download(ctx: Context,
 
         run_options["working_dir"] = downloader_data_provider_path_dll
 
-        dll_arguments = ["dotnet", "QuantConnect.Lean.DownloaderDataProvider.dll",
+        dll_arguments = ["dotnet", "QuantConnect.DownloaderDataProvider.Launcher.dll",
                          "--data-type", data_type,
                          "--start-date", start_date.value.strftime("%Y%m%d"),
                          "--end-date", end_date.value.strftime("%Y%m%d"),
