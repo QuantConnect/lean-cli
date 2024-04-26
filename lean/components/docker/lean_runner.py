@@ -896,6 +896,8 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         environment = {}
         if "environment" in lean_config and "environments" in lean_config:
             environment = lean_config["environments"][lean_config["environment"]]
+        else:
+            environment = lean_config
         mounts = run_options["mounts"]
 
         for key, pathStr in paths_to_mount.items():
