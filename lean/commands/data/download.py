@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from json import dump
+
 from docker.types import Mount
 from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice
@@ -653,16 +654,16 @@ def download(ctx: Context,
         }
         config.update(data_downloader_provider.get_settings())
 
-        config_path = container.temp_manager.create_temporary_directory() / "config.json"
-        with config_path.open("w+", encoding="utf-8") as file:
-            dump(config, file)
-
-        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config,
+        run_options = container.lean_runner.get_basic_docker_config_without_algo(config,
                                                                                  debugging_method=None,
                                                                                  detach=False,
                                                                                  image=engine_image,
                                                                                  target_path=downloader_data_provider_path_dll,
                                                                                  paths_to_mount=paths_to_mount)
+
+        config_path = container.temp_manager.create_temporary_directory() / "config.json"
+        with config_path.open("w+", encoding="utf-8") as file:
+            dump(config, file)
 
         run_options["working_dir"] = downloader_data_provider_path_dll
 
