@@ -539,7 +539,16 @@ def download(ctx: Context,
              update: bool,
              no_update: bool,
              **kwargs) -> None:
-    """Purchase and download data from QuantConnect Datasets.
+    """Purchase and download data directly from QuantConnect or download from Support Data Providers
+
+    1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.\n
+    2. Streamlined Access from Support Data Providers:\n
+        - Choose your preferred historical data provider.\n
+        - Initiate hassle-free downloads from our supported providers.
+
+    We have 2 options:\n
+        - interactive (follow instruction in lean-cli)\n
+        - no interactive (write arguments in command line)
 
     An interactive wizard will show to walk you through the process of selecting data,
     accepting the CLI API Access and Data Agreement and payment.
@@ -623,7 +632,7 @@ def download(ctx: Context,
                                                          cli_data_downloaders, kwargs, logger, interactive=False)
         data_downloader_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
-        # Info: I don't understand why it returns empty result
+        # mounting additional data_downloader config files
         paths_to_mount = data_downloader_provider.get_paths_to_mount()
 
         engine_image = container.cli_config_manager.get_engine_image(image)
