@@ -904,16 +904,13 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             path = Path(pathStr).resolve()
             target = f"/Files/{Path(path).name}"
 
-            self._logger.info(f"Mounting {path} to {target}")
+            self._logger.debug(f"Mounting {path} to {target}")
 
             mounts.append(Mount(target=target,
                                 source=str(path),
                                 type="bind",
                                 read_only=True))
             environment[key] = target
-            # update target in config too (not only in environment above)
-            if key in lean_config:
-                lean_config[key] = target
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
