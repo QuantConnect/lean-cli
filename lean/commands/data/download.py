@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from datetime import datetime
 from json import dump
 
 from docker.types import Mount
@@ -464,6 +464,7 @@ def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[s
 
     return user_input_data
 
+
 def _configure_date_option(date_value: str, option_id: str, option_label: str) -> OptionResult:
     """
     Configure the date based on the provided date value, option ID, and option label.
@@ -477,10 +478,15 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     - str: Configured date.
     """
 
-    date_option = DatasetDateOption(id=option_id, label=option_label, description=f"Enter the {option_label} for the historical data request in the format YYYYMMDD.")
+    date_option = DatasetDateOption(id=option_id, label=option_label,
+                                    description=f"Enter the {option_label} "
+                                                f"for the historical data request in the format YYYYMMDD.")
 
     if not date_value:
-        return date_option.configure_interactive()
+        if option_id == "end":
+            return date_option.configure_interactive_with_default(datetime.today().strftime("%Y%m%d"))
+        else:
+            return date_option.configure_interactive()
 
     return date_option.configure_non_interactive(date_value)
 
@@ -620,8 +626,8 @@ def download(ctx: Context,
                                transform=DatasetTextOptionTransform.Lowercase,
                                multiple=True).configure_interactive().value)
 
-        start_date = _configure_date_option(start_date, "start", "Start date")
-        end_date = _configure_date_option(end_date, "end", "End date")
+        start_date = _configure_date_option(start_date, "start", "Please enter a Start Date in the format")
+        end_date = _configure_date_option(end_date, "end", "Please enter a End Date in the format")
 
         if start_date.value >= end_date.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")

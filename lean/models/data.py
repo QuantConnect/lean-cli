@@ -230,6 +230,11 @@ class DatasetDateOption(DatasetOption):
         date = prompt(f"{self.label} (yyyyMMdd)", type=DateParameter())
         return OptionResult(value=date, label=date.strftime("%Y-%m-%d"))
 
+    def configure_interactive_with_default(self, default_date: str) -> OptionResult:
+        date = prompt(f"{self.label} (yyyyMMdd) or just press Enter to use the default date [{default_date}]",
+                      show_default=False, default=default_date, type=DateParameter())
+        return OptionResult(value=date, label=date.strftime("%Y-%m-%d"))
+
     def configure_non_interactive(self, user_input: str) -> OptionResult:
         for date_format in ["%Y%m%d", "%Y-%m-%d"]:
             try:
