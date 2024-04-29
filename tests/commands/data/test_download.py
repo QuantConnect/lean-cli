@@ -51,19 +51,25 @@ def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]
 
     if is_crypto_configs:
         return {
-            "data-types": ["Trade", "Quote"],
-            "data-resolutions": ["Minute", "Hour", "Daily"],
-            "data-supported": ["Crypto", "CryptoFuture"],
-            "data-markets": ["Binance", "Kraken"]
+            "module-specification": {
+                "download": {
+                    "data-types": ["Trade", "Quote"],
+                    "data-resolutions": ["Minute", "Hour", "Daily"],
+                    "data-supported": ["Crypto", "CryptoFuture"],
+                    "data-markets": ["Binance", "Kraken"]
+                }
+            }
         }
 
     data_provider_config_file_json: Dict[str, Any] = {
-        "data-types": ["Trade", "Quote"],  # Supported data types: Trade and Quote
-        "data-resolutions": ["Second", "Minute", "Hour", "Daily"],
-        # Supported data resolutions: Second, Minute, Hour, Daily
-        "data-supported": ["Equity", "Option", "Index", "IndexOption"],
-        # Supported asset classes: Equity, Equity Options, Indexes, Index Options
-        "data-markets": ["NYSE", "USA"]
+        "module-specification": {
+            "download": {
+                "data-types": ["Trade", "Quote"],
+                "data-resolutions": ["Second", "Minute", "Hour", "Daily"],
+                "data-supported": ["Equity", "Option", "Index", "IndexOption"],
+                "data-markets": ["NYSE", "USA"]
+            }
+        }
     }
 
     return data_provider_config_file_json

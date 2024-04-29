@@ -262,6 +262,10 @@ class JsonModule(ABC):
         from lean.container import container
         container.lean_config_manager.set_properties(settings)
 
+    @property
+    def specifications_url(self):
+        return self._specifications_url
+
 
 class LiveInitialStateInput(str, Enum):
     Required = "required"

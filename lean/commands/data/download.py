@@ -415,7 +415,9 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 def _get_historical_data_provider() -> str:
     return container.logger.prompt_list("Select a historical data provider", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
 
-def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_param: List[str], key_config_data: str) -> List[str]:
+
+def _get_download_specification_from_config(data_provider_config_json: Dict[str, Any], default_param: List[str],
+                                            key_config_data: str) -> List[str]:
     """
     Get parameter from data provider config JSON or return default parameters.
 
@@ -427,10 +429,12 @@ def _get_param_from_config(data_provider_config_json: Dict[str, Any], default_pa
     Returns:
     - List[str]: List of parameters.
     """
-    if data_provider_config_json is None:
-        return default_param
 
-    return data_provider_config_json.get(key_config_data, default_param)
+    if data_provider_config_json and "module-specification" in data_provider_config_json:
+        if "download" in data_provider_config_json["module-specification"]:
+            return data_provider_config_json["module-specification"]["download"].get(key_config_data, default_param)
+
+    return default_param
 
 
 def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[str], data_provider_name: str,
@@ -593,22 +597,25 @@ def download(ctx: Context,
         all_data_files = _get_data_files(organization, products)
         container.data_downloader.download_files(all_data_files, overwrite, organization.id)
     else:
-        data_downloader_provider = next(data_downloader for data_downloader in cli_data_downloaders if data_downloader.get_name() == data_provider_historical)
+        data_downloader_provider = next(data_downloader for data_downloader in cli_data_downloaders
+                                        if data_downloader.get_name() == data_provider_historical)
 
         data_provider_config_json = None
-        if data_downloader_provider._specifications_url is not None:
-            data_provider_config_json = container.api_client.data.download_public_file_json(data_downloader_provider._specifications_url)
+        if data_downloader_provider.specifications_url is not None:
+            data_provider_config_json = container.api_client.data.download_public_file_json(
+                data_downloader_provider.specifications_url)
 
-        data_provider_support_security_types = _get_param_from_config(data_provider_config_json,
-                                                                      QCSecurityType.get_all_members(),
-                                                                      "data-supported")
-        data_provider_support_data_types = _get_param_from_config(data_provider_config_json,
-                                                                  QCDataType.get_all_members(),
-                                                                  "data-types")
-        data_provider_support_resolutions = _get_param_from_config(data_provider_config_json,
-                                                                   QCResolution.get_all_members(),
-                                                                   "data-resolutions")
-        data_provider_support_markets = _get_param_from_config(data_provider_config_json, [market], "data-markets")
+        data_provider_support_security_types = _get_download_specification_from_config(data_provider_config_json,
+                                                                                       QCSecurityType.get_all_members(),
+                                                                                       "data-supported")
+        data_provider_support_data_types = _get_download_specification_from_config(data_provider_config_json,
+                                                                                   QCDataType.get_all_members(),
+                                                                                   "data-types")
+        data_provider_support_resolutions = _get_download_specification_from_config(data_provider_config_json,
+                                                                                    QCResolution.get_all_members(),
+                                                                                    "data-resolutions")
+        data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
+                                                                                [market], "data-markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")
