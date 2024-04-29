@@ -146,21 +146,6 @@ def test_download_data_non_interactive(data_provider: str, market: str, is_crypt
     assert run_data_download.exit_code == 0
 
 
-@pytest.mark.parametrize("data_provider,market,is_crypto,security_type,missed_parameters",
-                         [("Polygon", "NYSE", False, "Equity", "--polygon-api-key"),
-                          ("Binance", "Binance", True, "Crypto", "--binance-exchange-name"),
-                          ("Interactive Brokers", "USA", False, "Equity",
-                           "--ib-user-name, --ib-account, --ib-password")])
-def test_download_data_non_interactive_data_provider_missed_param(data_provider: str, market: str, is_crypto: bool,
-                                                                  security_type: str, missed_parameters: str):
-    run_data_download = _create_lean_data_download(data_provider, "Trade", "Minute", security_type, ["AAPL"],
-                                                   "20240101", "20240202", _get_data_provider_config(is_crypto), market)
-    assert run_data_download.exit_code == 1
-
-    error_msg = str(run_data_download.exc_info[1])
-    assert missed_parameters in error_msg
-
-
 @pytest.mark.parametrize("data_type,resolution",
                          [("Trade", "Hour"), ("trade", "hour"), ("TRADE", "HOUR"), ("TrAdE", "HoUr")])
 def test_download_data_non_interactive_insensitive_input_param(data_type: str, resolution: str):

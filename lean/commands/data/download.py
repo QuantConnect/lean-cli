@@ -633,10 +633,10 @@ def download(ctx: Context,
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
 
         logger = container.logger
-        lean_config = container.lean_config_manager.get_lean_config()
+        lean_config = container.lean_config_manager.get_complete_lean_config(None, None, None)
 
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
-                                                         cli_data_downloaders, kwargs, logger, interactive=False)
+                                                         cli_data_downloaders, kwargs, logger, interactive=True)
         data_downloader_provider.ensure_module_installed(organization.id)
         container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
         # mounting additional data_downloader config files
@@ -652,15 +652,7 @@ def download(ctx: Context,
 
         downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
 
-        # Create config dictionary with credentials
-        config: Dict[str, str] = {
-            "job-user-id": lean_config.get("job-user-id"),
-            "api-access-token": lean_config.get("api-access-token"),
-            "job-organization-id": organization.id
-        }
-        config.update(data_downloader_provider.get_settings())
-
-        run_options = container.lean_runner.get_basic_docker_config_without_algo(config,
+        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config,
                                                                                  debugging_method=None,
                                                                                  detach=False,
                                                                                  image=engine_image,
@@ -669,7 +661,7 @@ def download(ctx: Context,
 
         config_path = container.temp_manager.create_temporary_directory() / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
-            dump(config, file)
+            dump(lean_config, file)
 
         run_options["working_dir"] = downloader_data_provider_path_dll
 
