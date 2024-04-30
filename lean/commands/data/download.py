@@ -607,15 +607,15 @@ def download(ctx: Context,
 
         data_provider_support_security_types = _get_download_specification_from_config(data_provider_config_json,
                                                                                        QCSecurityType.get_all_members(),
-                                                                                       "data-supported")
+                                                                                       "security-types")
         data_provider_support_data_types = _get_download_specification_from_config(data_provider_config_json,
                                                                                    QCDataType.get_all_members(),
                                                                                    "data-types")
         data_provider_support_resolutions = _get_download_specification_from_config(data_provider_config_json,
                                                                                     QCResolution.get_all_members(),
-                                                                                    "data-resolutions")
+                                                                                    "resolutions")
         data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
-                                                                                [market], "data-markets")
+                                                                                [market], "markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")

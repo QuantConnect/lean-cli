@@ -54,9 +54,9 @@ def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]
             "module-specification": {
                 "download": {
                     "data-types": ["Trade", "Quote"],
-                    "data-resolutions": ["Minute", "Hour", "Daily"],
-                    "data-supported": ["Crypto", "CryptoFuture"],
-                    "data-markets": ["Binance", "Kraken"]
+                    "resolutions": ["Minute", "Hour", "Daily"],
+                    "security-types": ["Crypto", "CryptoFuture"],
+                    "markets": ["Binance", "Kraken"]
                 }
             }
         }
@@ -65,9 +65,9 @@ def _get_data_provider_config(is_crypto_configs: bool = False) -> Dict[str, Any]
         "module-specification": {
             "download": {
                 "data-types": ["Trade", "Quote"],
-                "data-resolutions": ["Second", "Minute", "Hour", "Daily"],
-                "data-supported": ["Equity", "Option", "Index", "IndexOption"],
-                "data-markets": ["NYSE", "USA"]
+                "resolutions": ["Second", "Minute", "Hour", "Daily"],
+                "security-types": ["Equity", "Option", "Index", "IndexOption"],
+                "markets": ["NYSE", "USA"]
             }
         }
     }
