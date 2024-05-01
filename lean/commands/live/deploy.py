@@ -71,16 +71,6 @@ def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name:
     sleep(10)
 
 
-def _try_get_data_downloader_name(data_downloader_name: str, data_provider_live_names: [str]) -> str:
-    """ Get name for data downloader provider based on data provider live (if exist)
-
-    :param data_downloader_name: the current (default) data provider historical
-    :param data_provider_live_names: the current data provider live names
-    """
-    return next((live_data_historical.get_name() for live_data_historical in cli_data_downloaders
-                 if live_data_historical.get_name() in data_provider_live_names), data_downloader_name)
-
-
 def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
     """ Get name for history providers based on the live data providers
 
@@ -268,7 +258,7 @@ def deploy(project: Path,
     # based on the live data providers we set up the history providers
     data_provider_live = [provider.get_name() for provider in data_provider_live_instances]
     if data_provider_historical is None:
-        data_provider_historical = _try_get_data_downloader_name("Local", data_provider_live)
+        data_provider_historical = "Local"
     data_downloader_instances = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                                       cli_data_downloaders, kwargs, logger,
                                                                       environment_name)
