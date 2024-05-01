@@ -781,12 +781,26 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean data download`
 
-Purchase and download data from QuantConnect Datasets.
+Purchase and download data directly from QuantConnect or download from Support Data Providers
 
 ```
 Usage: lean data download [OPTIONS]
 
-  Purchase and download data from QuantConnect Datasets.
+  Purchase and download data directly from QuantConnect or download from Support Data Providers
+
+  1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.
+
+  2. Streamlined Access from Support Data Providers:
+
+      - Choose your preferred historical data provider.
+
+      - Initiate hassle-free downloads from our supported providers.
+
+  We have 2 options:
+
+      - interactive (follow instruction in lean-cli)
+
+      - no interactive (write arguments in command line)
 
   An interactive wizard will show to walk you through the process of selecting data, accepting the CLI API Access and
   Data Agreement and payment. After this wizard the selected data will be downloaded automatically.
@@ -799,12 +813,90 @@ Usage: lean data download [OPTIONS]
   https://www.quantconnect.com/datasets
 
 Options:
-  --dataset TEXT      The name of the dataset to download non-interactively
-  --overwrite         Overwrite existing local data
-  -y, --yes           Automatically confirm payment confirmation prompts
-  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose           Enable debug logging
-  --help              Show this message and exit.
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit]
+                                  The name of the downloader data provider.
+  --ib-user-name TEXT             Your Interactive Brokers username
+  --ib-account TEXT               Your Interactive Brokers account id
+  --ib-password TEXT              Your Interactive Brokers password
+  --ib-weekly-restart-utc-time TEXT
+                                  Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
+                                  this time, and will require 2FA verification. This is required by Interactive Brokers.
+                                  Use this option explicitly to override the default value.
+  --oanda-account-id TEXT         Your OANDA account id
+  --oanda-access-token TEXT       Your OANDA API token
+  --oanda-environment [Practice|Trade]
+                                  The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
+  --bitfinex-api-key TEXT         Your Bitfinex API key
+  --bitfinex-api-secret TEXT      Your Bitfinex API secret
+  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
+  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+                                  Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
+  --binance-api-key TEXT          Your Binance API key
+  --binanceus-api-key TEXT        Your Binance API key
+  --binance-api-secret TEXT       Your Binance API secret
+  --binanceus-api-secret TEXT     Your Binance API secret
+  --kraken-api-key TEXT           Your Kraken API key
+  --kraken-api-secret TEXT        Your Kraken API secret
+  --kraken-verification-tier [Starter|Intermediate|Pro]
+                                  Your Kraken Verification Tier
+  --iqfeed-iqconnect TEXT         The path to the IQConnect binary
+  --iqfeed-username TEXT          Your IQFeed username
+  --iqfeed-password TEXT          Your IQFeed password
+  --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address
+  --polygon-api-key TEXT          Your Polygon.io API Key
+  --factset-auth-config-file FILE
+                                  The path to the FactSet authentication configuration file
+  --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
+  --iex-price-plan [Launch|Grow|Enterprise]
+                                  Your IEX Cloud Price plan
+  --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
+  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+                                  Your Alpha Vantage Premium API Key plan
+  --coinapi-api-key TEXT          Your coinapi.io Api Key
+  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+                                  CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
+  --thetadata-ws-url TEXT         The ThetaData host address
+  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+                                  Your ThetaData subscription price plan
+  --terminal-link-connection-type [DAPI|SAPI]
+                                  Terminal Link Connection Type [DAPI, SAPI]
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
+  --terminal-link-environment [Production|Beta]
+                                  The environment to run in
+  --terminal-link-server-host TEXT
+                                  The host of the TerminalLink server
+  --terminal-link-server-port INTEGER
+                                  The port of the TerminalLink server
+  --terminal-link-openfigi-api-key TEXT
+                                  The Open FIGI API key to use for mapping options
+  --bybit-api-key TEXT            Your Bybit API key
+  --bybit-api-secret TEXT         Your Bybit API secret
+  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+                                  Your Bybit VIP Level
+  --dataset TEXT                  The name of the dataset to download non-interactively
+  --overwrite                     Overwrite existing local data
+  -y, --yes                       Automatically confirm payment confirmation prompts
+  --data-type [Trade|Quote|OpenInterest]
+                                  Specify the type of historical data
+  --resolution [Tick|Second|Minute|Hour|Daily]
+                                  Specify the resolution of the historical data
+  --security-type [Equity|Index|Forex|Cfd|Future|Crypto|CryptoFuture|Option|IndexOption|Commodity|FutureOption]
+                                  Specify the security type of the historical data
+  --market TEXT                   Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')
+  --tickers TEXT                  Specify comma separated list of tickers to use for historical data request.
+  --start-date TEXT               Specify the start date for the historical data request in the format yyyyMMdd.
+  --end-date TEXT                 Specify the end date for the historical data request in the format yyyyMMdd. (defaults
+                                  to today)
+  --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
+  --update                        Pull the LEAN engine image before running the Downloader Data Provider
+  --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/data/download.py](lean/commands/data/download.py)_

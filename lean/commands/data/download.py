@@ -10,15 +10,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from datetime import datetime
+from json import dump
 
-from typing import Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context
-
+from docker.types import Mount
+from typing import Any, Dict, Iterable, List, Optional
+from click import command, option, confirm, pass_context, Context, Choice
 from lean.click import LeanCommand, ensure_options
+from lean.components.util.json_modules_handler import config_build_for_name
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
-from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery
-from lean.models.data import Dataset, DataFile, Product
+from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery, QCResolution, QCSecurityType, QCDataType
+from lean.models.click_options import get_configs_for_options, options_from_json
+from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform,OptionResult, Product
 from lean.models.logger import Option
+from lean.models.cli import cli_data_downloaders
 
 _data_information: Optional[QCDataInformation] = None
 _presigned_terms="""
@@ -95,7 +101,6 @@ def _get_data_files(organization: QCFullOrganization, products: List[Product]) -
     unique_data_files = sorted(list(set(chain(*[product.get_data_files() for product in products]))))
     return _map_data_files_to_vendors(organization, unique_data_files)
 
-
 def _display_products(organization: QCFullOrganization, products: List[Product]) -> None:
     """Previews a list of products in pretty tables.
 
@@ -158,7 +163,6 @@ def _get_security_master_warn(url: str) -> str:
                       f" result in inaccurate and misleading backtest results. Use this override flag at your own risk.",
                       f"You can add the subscription at https://www.quantconnect.com/datasets/{url}/pricing"
                       ])
-
 
 def _select_products_interactive(organization: QCFullOrganization, datasets: List[Dataset], force: bool,
                                  ask_for_more_data: bool) -> List[Product]:
@@ -408,16 +412,154 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     return available_datasets
 
+def _get_historical_data_provider() -> str:
+    return container.logger.prompt_list("Select a historical data provider", [Option(id=data_downloader.get_name(), label=data_downloader.get_name()) for data_downloader in cli_data_downloaders])
 
-@command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True)
+
+def _get_download_specification_from_config(data_provider_config_json: Dict[str, Any], default_param: List[str],
+                                            key_config_data: str) -> List[str]:
+    """
+    Get parameter from data provider config JSON or return default parameters.
+
+    Args:
+    - data_provider_config_json (Dict[str, Any]): Configuration JSON.
+    - default_param (List[str]): Default parameters.
+    - key_config_data (str): Key to look for in the config JSON.
+
+    Returns:
+    - List[str]: List of parameters.
+    """
+
+    if data_provider_config_json and "module-specification" in data_provider_config_json:
+        if "download" in data_provider_config_json["module-specification"]:
+            return data_provider_config_json["module-specification"]["download"].get(key_config_data, default_param)
+
+    return default_param
+
+
+def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[str], data_provider_name: str,
+                              prompt_message_helper: str) -> str:
+    """
+    Get user input or prompt for selection based on data types.
+
+    Args:
+    - user_input_data (str): User input data.
+    - available_input_data (List[str]): List of available input data options.
+    - data_provider_name (str): Name of the data provider.
+
+    Returns:
+    - str: Selected data type or prompted choice.
+
+    Raises:
+    - ValueError: If user input data is not in supported data types.
+    """
+
+    if not user_input_data:
+        # Prompt user to select a ticker's security type
+        options = [Option(id=data_type, label=data_type) for data_type in available_input_data]
+        return container.logger.prompt_list(prompt_message_helper, options)
+
+    elif user_input_data.lower() not in [available_data.lower() for available_data in available_input_data]:
+        # Raise ValueError for unsupported data type
+        raise ValueError(
+            f"The {data_provider_name} data provider does not support {user_input_data}. "
+            f"Please choose a supported data from: {available_input_data}."
+        )
+
+    return user_input_data
+
+
+def _configure_date_option(date_value: str, option_id: str, option_label: str) -> OptionResult:
+    """
+    Configure the date based on the provided date value, option ID, and option label.
+
+    Args:
+    - date_value (str): Existing date value.
+    - option_id (str): Identifier for the date option.
+    - option_label (str): Label for the date option.
+
+    Returns:
+    - str: Configured date.
+    """
+
+    date_option = DatasetDateOption(id=option_id, label=option_label,
+                                    description=f"Enter the {option_label} "
+                                                f"for the historical data request in the format YYYYMMDD.")
+
+    if not date_value:
+        if option_id == "end":
+            return date_option.configure_interactive_with_default(datetime.today().strftime("%Y%m%d"))
+        else:
+            return date_option.configure_interactive()
+
+    return date_option.configure_non_interactive(date_value)
+
+
+@command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
+@option("--data-provider-historical",
+        type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
+        help="The name of the downloader data provider.")
+@options_from_json(get_configs_for_options("download"))
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
 @option("--overwrite", is_flag=True, default=False, help="Overwrite existing local data")
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
+@option("--data-type", type=Choice(QCDataType.get_all_members(), case_sensitive=False), help="Specify the type of historical data")
+@option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
+        help="Specify the resolution of the historical data")
+@option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
+    help="Specify the security type of the historical data")
+@option("--market", type=str, default="USA",
+        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
+@option("--tickers",
+        type=str,
+        help="Specify comma separated list of tickers to use for historical data request.")
+@option("--start-date",
+        type=str,
+        help="Specify the start date for the historical data request in the format yyyyMMdd.")
+@option("--end-date",
+        type=str,
+        help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
+@option("--image",
+        type=str,
+        help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
+@option("--update",
+        is_flag=True,
+        default=False,
+        help="Pull the LEAN engine image before running the Downloader Data Provider")
+@option("--no-update",
+        is_flag=True,
+        default=False,
+        help="Use the local LEAN engine image instead of pulling the latest version")
 @pass_context
-def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool, auto_confirm: bool, **kwargs) -> None:
-    """Purchase and download data from QuantConnect Datasets.
+def download(ctx: Context,
+             data_provider_historical: Optional[str],
+             dataset: Optional[str],
+             overwrite: bool,
+             force: bool,
+             auto_confirm: bool,
+             data_type: Optional[str],
+             resolution: Optional[str],
+             security_type: Optional[str],
+             market: Optional[str],
+             tickers: Optional[str],
+             start_date: Optional[str],
+             end_date: Optional[str],
+             image: Optional[str],
+             update: bool,
+             no_update: bool,
+             **kwargs) -> None:
+    """Purchase and download data directly from QuantConnect or download from Support Data Providers
+
+    1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.\n
+    2. Streamlined Access from Support Data Providers:\n
+        - Choose your preferred historical data provider.\n
+        - Initiate hassle-free downloads from our supported providers.
+
+    We have 2 options:\n
+        - interactive (follow instruction in lean-cli)\n
+        - no interactive (write arguments in command line)
 
     An interactive wizard will show to walk you through the process of selecting data,
     accepting the CLI API Access and Data Agreement and payment.
@@ -433,20 +575,124 @@ def download(ctx: Context, dataset: Optional[str], overwrite: bool, force: bool,
     """
     organization = _get_organization()
 
-    is_interactive = dataset is None
-    if not is_interactive:
-        ensure_options(["dataset"])
-        datasets = _get_available_datasets(organization)
-        products = _select_products_non_interactive(organization, datasets, ctx, force)
+    if data_provider_historical is None:
+        data_provider_historical = _get_historical_data_provider()
+
+    if data_provider_historical == 'QuantConnect':
+        is_interactive = dataset is None
+        if not is_interactive:
+            ensure_options(["dataset"])
+            datasets = _get_available_datasets(organization)
+            products = _select_products_non_interactive(organization, datasets, ctx, force)
+        else:
+            datasets = _get_available_datasets(organization)
+            products = _select_products_interactive(organization, datasets, force, ask_for_more_data=not auto_confirm)
+
+        _confirm_organization_balance(organization, products)
+        _verify_accept_agreement(organization, is_interactive)
+
+        if is_interactive and not auto_confirm:
+            _confirm_payment(organization, products)
+
+        all_data_files = _get_data_files(organization, products)
+        container.data_downloader.download_files(all_data_files, overwrite, organization.id)
     else:
-        datasets = _get_available_datasets(organization)
-        products = _select_products_interactive(organization, datasets, force, ask_for_more_data=not auto_confirm)
+        data_downloader_provider = next(data_downloader for data_downloader in cli_data_downloaders
+                                        if data_downloader.get_name() == data_provider_historical)
 
-    _confirm_organization_balance(organization, products)
-    _verify_accept_agreement(organization, is_interactive)
+        data_provider_config_json = None
+        if data_downloader_provider.specifications_url is not None:
+            data_provider_config_json = container.api_client.data.download_public_file_json(
+                data_downloader_provider.specifications_url)
 
-    if is_interactive and not auto_confirm:
-        _confirm_payment(organization, products)
+        data_provider_support_security_types = _get_download_specification_from_config(data_provider_config_json,
+                                                                                       QCSecurityType.get_all_members(),
+                                                                                       "security-types")
+        data_provider_support_data_types = _get_download_specification_from_config(data_provider_config_json,
+                                                                                   QCDataType.get_all_members(),
+                                                                                   "data-types")
+        data_provider_support_resolutions = _get_download_specification_from_config(data_provider_config_json,
+                                                                                    QCResolution.get_all_members(),
+                                                                                    "resolutions")
+        data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
+                                                                                [market], "markets")
 
-    all_data_files = _get_data_files(organization, products)
-    container.data_downloader.download_files(all_data_files, overwrite, organization.id)
+        security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
+                                                  data_provider_historical, "Select a Ticker's security type")
+        data_type = _get_user_input_or_prompt(data_type, data_provider_support_data_types,
+                                              data_provider_historical, "Select a Data type")
+        resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions,
+                                               data_provider_historical, "Select a Resolution")
+        market = _get_user_input_or_prompt(market, data_provider_support_markets,
+                                           data_provider_historical,"Select a Market")
+
+        if not tickers:
+            tickers = ','.join(DatasetTextOption(id="id",
+                               label="Enter comma separated list of tickers to use for historical data request.",
+                               description="description",
+                               transform=DatasetTextOptionTransform.Lowercase,
+                               multiple=True).configure_interactive().value)
+
+        start_date = _configure_date_option(start_date, "start", "Please enter a Start Date in the format")
+        end_date = _configure_date_option(end_date, "end", "Please enter a End Date in the format")
+
+        if start_date.value >= end_date.value:
+            raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
+
+        logger = container.logger
+        lean_config = container.lean_config_manager.get_complete_lean_config(None, None, None)
+
+        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
+                                                         cli_data_downloaders, kwargs, logger, interactive=True)
+        data_downloader_provider.ensure_module_installed(organization.id)
+        container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
+        # mounting additional data_downloader config files
+        paths_to_mount = data_downloader_provider.get_paths_to_mount()
+
+        engine_image = container.cli_config_manager.get_engine_image(image)
+
+        if str(engine_image) != DEFAULT_ENGINE_IMAGE:
+            # Custom engine image should not be updated.
+            logger.warn(f'A custom engine image: "{engine_image}" is being used!')
+
+        container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
+        downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
+
+        run_options = container.lean_runner.get_basic_docker_config_without_algo(lean_config,
+                                                                                 debugging_method=None,
+                                                                                 detach=False,
+                                                                                 image=engine_image,
+                                                                                 target_path=downloader_data_provider_path_dll,
+                                                                                 paths_to_mount=paths_to_mount)
+
+        config_path = container.temp_manager.create_temporary_directory() / "config.json"
+        with config_path.open("w+", encoding="utf-8") as file:
+            dump(lean_config, file)
+
+        run_options["working_dir"] = downloader_data_provider_path_dll
+
+        dll_arguments = ["dotnet", "QuantConnect.DownloaderDataProvider.Launcher.dll",
+                         "--data-type", data_type,
+                         "--start-date", start_date.value.strftime("%Y%m%d"),
+                         "--end-date", end_date.value.strftime("%Y%m%d"),
+                         "--security-type", security_type,
+                         "--market", market,
+                         "--resolution", resolution,
+                         "--tickers", tickers]
+
+        run_options["commands"].append(' '.join(dll_arguments))
+
+        # mount our created above config with work directory
+        run_options["mounts"].append(
+            Mount(target=f"{downloader_data_provider_path_dll}/config.json",
+                  source=str(config_path),
+                  type="bind",
+                  read_only=True)
+        )
+
+        success = container.docker_manager.run_image(engine_image, **run_options)
+
+        if not success:
+            raise RuntimeError(
+                "Something went wrong while running the downloader data provider, see the logs above for more information")

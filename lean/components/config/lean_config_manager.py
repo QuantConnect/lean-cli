@@ -223,7 +223,9 @@ class LeanConfigManager:
         """
         config = self.get_lean_config()
 
-        config["environment"] = environment
+        if environment and len(environment) > 0:
+            config["environment"] = environment
+
         config["close-automatically"] = True
 
         config["composer-dll-directory"] = "."
@@ -241,7 +243,6 @@ class LeanConfigManager:
         config_defaults = {
             "job-user-id": self._cli_config_manager.user_id.get_value(default="0"),
             "api-access-token": self._cli_config_manager.api_token.get_value(default=""),
-            "job-project-id": self._project_config_manager.get_local_id(algorithm_file.parent),
             "job-organization-id": get_organization(config),
 
             "ib-host": "127.0.0.1",
@@ -256,29 +257,32 @@ class LeanConfigManager:
             if config.get(key, "") == "":
                 config[key] = value
 
-        if algorithm_file.name.endswith(".py"):
-            config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
-            config["algorithm-language"] = "Python"
-            config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
-        else:
-            from re import findall
-            algorithm_text = algorithm_file.read_text(encoding="utf-8")
-            config["algorithm-type-name"] = findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
-            config["algorithm-language"] = "CSharp"
-            config["algorithm-location"] = f"{algorithm_file.parent.name}.dll"
+        if algorithm_file and len(algorithm_file.name) > 0:
+            config.get("job-project-id", self._project_config_manager.get_local_id(algorithm_file.parent))
 
-        project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
-        config["parameters"] = project_config.get("parameters", {})
+            if algorithm_file.name.endswith(".py"):
+                config["algorithm-type-name"] = algorithm_file.name.split(".")[0]
+                config["algorithm-language"] = "Python"
+                config["algorithm-location"] = f"/LeanCLI/{algorithm_file.name}"
+            else:
+                from re import findall
+                algorithm_text = algorithm_file.read_text(encoding="utf-8")
+                config["algorithm-type-name"] = findall(r"class\s*([^\s:]+)\s*:\s*QCAlgorithm", algorithm_text)[0]
+                config["algorithm-language"] = "CSharp"
+                config["algorithm-location"] = f"{algorithm_file.parent.name}.dll"
 
-        # Add libraries paths to python project
-        project_language = project_config.get("algorithm-language", None)
-        if project_language == "Python":
-            library_references = project_config.get("libraries", [])
-            python_paths = config.get("python-additional-paths", [])
-            python_paths.extend([(Path("/") / library["path"]).as_posix() for library in library_references])
-            if len(python_paths) > 0:
-                python_paths.append("/Library")
-            config["python-additional-paths"] = python_paths
+            project_config = self._project_config_manager.get_project_config(algorithm_file.parent)
+            config["parameters"] = project_config.get("parameters", {})
+
+            # Add libraries paths to python project
+            project_language = project_config.get("algorithm-language", None)
+            if project_language == "Python":
+                library_references = project_config.get("libraries", [])
+                python_paths = config.get("python-additional-paths", [])
+                python_paths.extend([(Path("/") / library["path"]).as_posix() for library in library_references])
+                if len(python_paths) > 0:
+                    python_paths.append("/Library")
+                config["python-additional-paths"] = python_paths
 
         # No real limit for the object store by default
         if "storage-limit-mb" not in config:
