@@ -352,7 +352,8 @@ def _select_products_non_interactive(organization: QCFullOrganization,
         if option.condition is not None and not option.condition.check(option_results):
             continue
 
-        user_input = ctx.params.get(option.id, None)
+        # if the option id has a '-' in its name, and it's a click option, in the click context it's available with '_'
+        user_input = ctx.params.get(option.id.replace('-', '_'), ctx.params.get(option.id, None))
 
         if user_input is None:
             missing_options.append(f"--{option.id} <{option.get_placeholder()}>: {option.description}")
@@ -512,13 +513,13 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     help="Specify the security type of the historical data")
 @option("--market", type=str,
         help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
-@option("--tickers",
+@option("--ticker",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
-@option("--start-date",
+@option("--start",
         type=str,
         help="Specify the start date for the historical data request in the format yyyyMMdd.")
-@option("--end-date",
+@option("--end",
         type=str,
         help="Specify the end date for the historical data request in the format yyyyMMdd. (defaults to today)")
 @option("--image",
@@ -543,9 +544,9 @@ def download(ctx: Context,
              resolution: Optional[str],
              security_type: Optional[str],
              market: Optional[str],
-             tickers: Optional[str],
-             start_date: Optional[str],
-             end_date: Optional[str],
+             ticker: Optional[str],
+             start: Optional[str],
+             end: Optional[str],
              image: Optional[str],
              update: bool,
              no_update: bool,
@@ -574,6 +575,9 @@ def download(ctx: Context,
     https://www.quantconnect.com/datasets
     """
     organization = _get_organization()
+
+    if dataset:
+        data_provider_historical = 'QuantConnect'
 
     if data_provider_historical is None:
         data_provider_historical = _get_historical_data_provider()
@@ -626,17 +630,21 @@ def download(ctx: Context,
         market = _get_user_input_or_prompt(market, data_provider_support_markets,
                                            data_provider_historical, "Select a Market")
 
-        if not tickers:
-            tickers = ','.join(DatasetTextOption(id="id",
-                               label="Enter comma separated list of tickers to use for historical data request.",
-                               description="description",
-                               transform=DatasetTextOptionTransform.Lowercase,
-                               multiple=True).configure_interactive().value)
+        if not ticker:
+            ticker = ','.join(DatasetTextOption(id="id",
+                                                label="Enter comma separated list of tickers to use for historical data request.",
+                                                description="description",
+                                                transform=DatasetTextOptionTransform.Uppercase,
+                                                multiple=True).configure_interactive().value)
+        else:
+            split_tickers = ticker.split(',')
+            # don't trust user provider tickers without spaces in between
+            ticker = ','.join([a_ticker.strip().upper() for a_ticker in split_tickers])
 
-        start_date = _configure_date_option(start_date, "start", "Please enter a Start Date in the format")
-        end_date = _configure_date_option(end_date, "end", "Please enter a End Date in the format")
+        start = _configure_date_option(start, "start", "Please enter a Start Date in the format")
+        end = _configure_date_option(end, "end", "Please enter a End Date in the format")
 
-        if start_date.value >= end_date.value:
+        if start.value >= end.value:
             raise ValueError("Historical start date cannot be greater than or equal to historical end date.")
 
         logger = container.logger
@@ -674,12 +682,12 @@ def download(ctx: Context,
 
         dll_arguments = ["dotnet", "QuantConnect.DownloaderDataProvider.Launcher.dll",
                          "--data-type", data_type,
-                         "--start-date", start_date.value.strftime("%Y%m%d"),
-                         "--end-date", end_date.value.strftime("%Y%m%d"),
+                         "--start-date", start.value.strftime("%Y%m%d"),
+                         "--end-date", end.value.strftime("%Y%m%d"),
                          "--security-type", security_type,
                          "--market", market,
                          "--resolution", resolution,
-                         "--tickers", tickers]
+                         "--tickers", ticker]
 
         run_options["commands"].append(' '.join(dll_arguments))
 

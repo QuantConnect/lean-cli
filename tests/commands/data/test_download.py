@@ -123,9 +123,9 @@ def _create_lean_data_download(data_provider_name: str,
                     "--data-type", data_type,
                     "--resolution", resolution,
                     "--security-type", security_type,
-                    "--tickers", ','.join(tickers),
-                    "--start-date", start_date,
-                    "--end-date", end_date,
+                    "--ticker", ','.join(tickers),
+                    "--start", start_date,
+                    "--end", end_date,
                 ]
                 if market:
                     run_parameters.extend(["--market", market])
@@ -135,7 +135,7 @@ def _create_lean_data_download(data_provider_name: str,
                 return CliRunner().invoke(lean, run_parameters)
 
 
-@pytest.mark.parametrize("data_provider,market,is_crypto,security_type,tickers,data_provider_parameters",
+@pytest.mark.parametrize("data_provider,market,is_crypto,security_type,ticker,data_provider_parameters",
                          [("Polygon", "NYSE", False, "Equity", ["AAPL"], ["--polygon-api-key", "123"]),
                           ("Binance", "Binance", True, "CryptoFuture", ["BTCUSDT"],
                            ["--binance-exchange-name", "BinanceUS", "--binanceus-api-key", "123",
@@ -145,9 +145,9 @@ def _create_lean_data_download(data_provider_name: str,
                           ("Interactive Brokers", "USA", False, "Index", ["INTL", "NVDA"],
                            ["--ib-user-name", "123", "--ib-account", "Individual", "--ib-password", "123"])])
 def test_download_data_non_interactive(data_provider: str, market: str, is_crypto: bool, security_type: str,
-                                       tickers: List[str], data_provider_parameters: List[str]):
+                                       ticker: List[str], data_provider_parameters: List[str]):
     run_data_download = _create_lean_data_download(
-        data_provider, "Trade", "Minute", security_type, tickers, "20240101", "20240202",
+        data_provider, "Trade", "Minute", security_type, ticker, "20240101", "20240202",
         _get_data_provider_config(is_crypto), market, data_provider_parameters)
     assert run_data_download.exit_code == 0
 
@@ -174,11 +174,11 @@ def test_download_data_non_interactive_wrong_security_type(data_provider: str, w
     assert wrong_security_type in error_msg
 
 
-@pytest.mark.parametrize("data_provider,start_date,end_date",
+@pytest.mark.parametrize("data_provider,start,end",
                          [("Polygon", "20240101", "20230202"), ("Polygon", "2024-01-01", "2023-02-02")])
-def test_download_data_non_interactive_wrong_start_end_date(data_provider: str, start_date: str, end_date: str):
-    run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", "Equity", ["AAPL"], start_date,
-                                                   end_date, _get_data_provider_config(), "USA",
+def test_download_data_non_interactive_wrong_start_end_date(data_provider: str, start: str, end: str):
+    run_data_download = _create_lean_data_download(data_provider, "Trade", "Hour", "Equity", ["AAPL"], start,
+                                                   end, _get_data_provider_config(), "USA",
                                                    extra_run_command=["--polygon-api-key", "123"])
     assert run_data_download.exit_code == 1
 
