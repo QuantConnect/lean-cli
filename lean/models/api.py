@@ -410,6 +410,7 @@ class QCMinimalOrganization(WrappedBaseModel):
 class QCDataType(str, Enum):
     Trade = "Trade"
     Quote = "Quote"
+    Bulk = "Bulk"
     OpenInterest = "OpenInterest"
 
     @classmethod

@@ -352,7 +352,8 @@ def _select_products_non_interactive(organization: QCFullOrganization,
         if option.condition is not None and not option.condition.check(option_results):
             continue
 
-        user_input = ctx.params.get(option.id, None)
+        # if the option id has a '-' in its name, and it's a click option, in the click context it's available with '_'
+        user_input = ctx.params.get(option.id.replace('-', '_'), ctx.params.get(option.id, None))
 
         if user_input is None:
             missing_options.append(f"--{option.id} <{option.get_placeholder()}>: {option.description}")
