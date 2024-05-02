@@ -880,16 +880,16 @@ Options:
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
-  --data-type [Trade|Quote|OpenInterest]
+  --data-type [Trade|Quote|Bulk|OpenInterest]
                                   Specify the type of historical data
   --resolution [Tick|Second|Minute|Hour|Daily]
                                   Specify the resolution of the historical data
   --security-type [Equity|Index|Forex|Cfd|Future|Crypto|CryptoFuture|Option|IndexOption|Commodity|FutureOption]
                                   Specify the security type of the historical data
   --market TEXT                   Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')
-  --tickers TEXT                  Specify comma separated list of tickers to use for historical data request.
-  --start-date TEXT               Specify the start date for the historical data request in the format yyyyMMdd.
-  --end-date TEXT                 Specify the end date for the historical data request in the format yyyyMMdd. (defaults
+  --ticker TEXT                   Specify comma separated list of tickers to use for historical data request.
+  --start TEXT                    Specify the start date for the historical data request in the format yyyyMMdd.
+  --end TEXT                      Specify the end date for the historical data request in the format yyyyMMdd. (defaults
                                   to today)
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the Downloader Data Provider
