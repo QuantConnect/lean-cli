@@ -615,10 +615,7 @@ def download(ctx: Context,
                                                                                     QCResolution.get_all_members(),
                                                                                     "resolutions")
         data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
-                                                                                [market], "markets")
-        # take default market
-        if not data_provider_support_markets:
-            data_provider_support_markets = ["USA"]
+                                                                                ["USA"], "markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")
