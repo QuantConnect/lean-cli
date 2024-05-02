@@ -510,7 +510,7 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
         help="Specify the resolution of the historical data")
 @option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
     help="Specify the security type of the historical data")
-@option("--market", type=str, default="USA",
+@option("--market", type=str,
         help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
 @option("--tickers",
         type=str,
@@ -615,7 +615,7 @@ def download(ctx: Context,
                                                                                     QCResolution.get_all_members(),
                                                                                     "resolutions")
         data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
-                                                                                [market], "markets")
+                                                                                ["USA"], "markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")
@@ -624,7 +624,7 @@ def download(ctx: Context,
         resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions,
                                                data_provider_historical, "Select a Resolution")
         market = _get_user_input_or_prompt(market, data_provider_support_markets,
-                                           data_provider_historical,"Select a Market")
+                                           data_provider_historical, "Select a Market")
 
         if not tickers:
             tickers = ','.join(DatasetTextOption(id="id",
