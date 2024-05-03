@@ -494,6 +494,14 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     return date_option.configure_non_interactive(date_value)
 
 
+class QCDataTypeCustomChoice(Choice):
+    def get_metavar(self, param) -> str:
+        choices_str = "|".join(QCDataType.get_all_members_except('Open Interest'))
+
+        # Use square braces to indicate an option or optional argument.
+        return f"[{choices_str}]"
+
+
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
@@ -504,7 +512,8 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--data-type", type=Choice(QCDataType.get_all_members(), case_sensitive=False), help="Specify the type of historical data")
+@option("--data-type", type=QCDataTypeCustomChoice(QCDataType.get_all_members(), case_sensitive=False),
+        help="Specify the type of historical data")
 @option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
         help="Specify the resolution of the historical data")
 @option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),

@@ -429,6 +429,10 @@ class QCDataType(str, Enum):
         """
         return list(cls.__members__.values())
 
+    @classmethod
+    def get_all_members_except(cls, skip_value:str):
+        return [value for value in QCDataType.__members__.values() if value != skip_value]
+
 class QCSecurityType(str, Enum):
     Equity = "Equity"
     Index = "Index"
