@@ -502,6 +502,17 @@ class QCDataTypeCustomChoice(Choice):
         return f"[{choices_str}]"
 
 
+def _replace_data_type(ctx, param, value):
+    dataset = ctx.params.get('dataset')
+    if dataset:
+        if value == QCDataType.OpenInterest:
+            return QCDataType.Open_Interest
+        return value
+    elif value == QCDataType.Open_Interest:
+        return QCDataType.OpenInterest
+    return value
+
+
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
@@ -512,7 +523,8 @@ class QCDataTypeCustomChoice(Choice):
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--data-type", type=QCDataTypeCustomChoice(QCDataType.get_all_members(), case_sensitive=False),
+@option("--data-type", callback=_replace_data_type,
+        type=QCDataTypeCustomChoice(QCDataType.get_all_members(), case_sensitive=False),
         help="Specify the type of historical data")
 @option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
         help="Specify the resolution of the historical data")
@@ -588,14 +600,6 @@ def download(ctx: Context,
 
     if data_provider_historical is None:
         data_provider_historical = _get_historical_data_provider()
-
-    # use "Open Interest" with spacing for ata_provider_historical == 'QuantConnect' (back compatibility)
-    user_input = ctx.params.get('data_type')
-    if user_input and dataset and user_input == QCDataType.OpenInterest:
-        ctx.params['data_type'] = QCDataType.Open_Interest
-    # use "OpenInterest" without spacing for data_provider_historical != 'QuantConnect'
-    elif user_input and data_type == QCDataType.Open_Interest:
-        data_type = QCDataType.OpenInterest
 
     if data_provider_historical == 'QuantConnect':
         is_interactive = dataset is None
