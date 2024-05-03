@@ -195,7 +195,6 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
 
     while True:
         category = logger.prompt_list("Select a category", category_options)
-
         available_datasets = sorted((d for d in datasets if category in d.categories), key=lambda d: d.name)
         dataset: Dataset = logger.prompt_list("Select a dataset",
                                               [Option(id=d, label=d.name) for d in available_datasets])
@@ -215,7 +214,6 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         for dataset_option in dataset.options:
             if dataset_option.condition is None or dataset_option.condition.check(option_results):
                 option_results[dataset_option.id] = dataset_option.configure_interactive()
-
         products.append(Product(dataset=dataset, option_results=option_results))
 
         logger.info("Selected data:")
@@ -581,6 +579,14 @@ def download(ctx: Context,
 
     if data_provider_historical is None:
         data_provider_historical = _get_historical_data_provider()
+
+    # use "Open Interest" with spacing for ata_provider_historical == 'QuantConnect' (back compatibility)
+    user_input = ctx.params.get('data_type')
+    if user_input and dataset and user_input == QCDataType.OpenInterest:
+        ctx.params['data_type'] = QCDataType.Open_Interest
+    # use "OpenInterest" without spacing for data_provider_historical != 'QuantConnect'
+    elif user_input and data_type == QCDataType.Open_Interest:
+        data_type = QCDataType.OpenInterest
 
     if data_provider_historical == 'QuantConnect':
         is_interactive = dataset is None
