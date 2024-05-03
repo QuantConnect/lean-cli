@@ -195,7 +195,6 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
 
     while True:
         category = logger.prompt_list("Select a category", category_options)
-
         available_datasets = sorted((d for d in datasets if category in d.categories), key=lambda d: d.name)
         dataset: Dataset = logger.prompt_list("Select a dataset",
                                               [Option(id=d, label=d.name) for d in available_datasets])
@@ -215,7 +214,6 @@ def _select_products_interactive(organization: QCFullOrganization, datasets: Lis
         for dataset_option in dataset.options:
             if dataset_option.condition is None or dataset_option.condition.check(option_results):
                 option_results[dataset_option.id] = dataset_option.configure_interactive()
-
         products.append(Product(dataset=dataset, option_results=option_results))
 
         logger.info("Selected data:")
@@ -496,6 +494,25 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     return date_option.configure_non_interactive(date_value)
 
 
+class QCDataTypeCustomChoice(Choice):
+    def get_metavar(self, param) -> str:
+        choices_str = "|".join(QCDataType.get_all_members_except('Open Interest'))
+
+        # Use square braces to indicate an option or optional argument.
+        return f"[{choices_str}]"
+
+
+def _replace_data_type(ctx, param, value):
+    dataset = ctx.params.get('dataset')
+    if dataset:
+        if value == QCDataType.OpenInterest:
+            return QCDataType.Open_Interest
+        return value
+    elif value == QCDataType.Open_Interest:
+        return QCDataType.OpenInterest
+    return value
+
+
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
         type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
@@ -506,7 +523,9 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 @option("--force", is_flag=True, default=False, hidden=True)
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
-@option("--data-type", type=Choice(QCDataType.get_all_members(), case_sensitive=False), help="Specify the type of historical data")
+@option("--data-type", callback=_replace_data_type,
+        type=QCDataTypeCustomChoice(QCDataType.get_all_members(), case_sensitive=False),
+        help="Specify the type of historical data")
 @option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
         help="Specify the resolution of the historical data")
 @option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),

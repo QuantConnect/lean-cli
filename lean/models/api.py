@@ -412,6 +412,7 @@ class QCDataType(str, Enum):
     Quote = "Quote"
     Bulk = "Bulk"
     OpenInterest = "OpenInterest"
+    Open_Interest = "Open Interest"
 
     @classmethod
     def get_all_members(cls):
@@ -427,6 +428,10 @@ class QCDataType(str, Enum):
         ['Trade', 'Quote', 'OpenInterest']
         """
         return list(cls.__members__.values())
+
+    @classmethod
+    def get_all_members_except(cls, skip_value:str):
+        return [value for value in QCDataType.__members__.values() if value != skip_value]
 
 class QCSecurityType(str, Enum):
     Equity = "Equity"
