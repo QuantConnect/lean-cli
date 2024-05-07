@@ -5,6 +5,6 @@
 
 wheel
 pytest==7.1.2
-pyfakefs==4.6.3
+pyfakefs==5.4.1
 responses==0.21.0
 lxml-stubs==0.4.0

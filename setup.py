@@ -90,7 +90,8 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11"
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12"
     ],
     project_urls={
         "Documentation": "https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started",
