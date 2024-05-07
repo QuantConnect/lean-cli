@@ -283,6 +283,8 @@ def _ensure_rider_debugger_config_files_exist(project_dir: Path) -> None:
                                                     ("PTVSD", DebuggingMethod.PTVSD),
                                                     ("vsdbg", DebuggingMethod.VSDBG),
                                                     ("VSDBG", DebuggingMethod.VSDBG),
+                                                    ("debugpy", DebuggingMethod.DebugPy),
+                                                    ("DebugPy", DebuggingMethod.DebugPy),
                                                     ("rider", DebuggingMethod.Rider),
                                                     ("Rider", DebuggingMethod.Rider)])
 def test_backtest_passes_correct_debugging_method_to_lean_runner(value: str, debugging_method: DebuggingMethod) -> None:
@@ -348,7 +350,8 @@ def test_backtest_auto_updates_outdated_python_pycharm_debug_config() -> None:
     assert workspace_xml.find(".//mapping[@remote-root='/Lean/Launcher/bin/Debug']") is None
 
 
-def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
+@pytest.mark.parametrize("value", ["ptvsd", "debugpy"])
+def test_backtest_auto_updates_outdated_python_vscode_debug_config(value) -> None:
     create_fake_lean_cli_directory()
 
     lean_config_manager = container.lean_config_manager
@@ -380,7 +383,7 @@ def test_backtest_auto_updates_outdated_python_vscode_debug_config() -> None:
         ]
     }))
 
-    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", "ptvsd"])
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--debug", value])
 
     assert result.exit_code == 0
 

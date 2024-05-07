@@ -234,7 +234,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
 @option("--debug",
-              type=Choice(["pycharm", "ptvsd", "vsdbg", "rider", "local-platform"], case_sensitive=False),
+              type=Choice(["pycharm", "ptvsd", "debugpy", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
