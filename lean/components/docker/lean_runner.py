@@ -107,8 +107,8 @@ class LeanRunner:
         # Add known additional run options from the extra docker config
         self.parse_extra_docker_config(run_options, extra_docker_config)
 
-        # Set up PTVSD debugging
-        if debugging_method == DebuggingMethod.PTVSD:
+        # Set up PTVSD or DebugPy debugging
+        if debugging_method == DebuggingMethod.PTVSD or debugging_method == DebuggingMethod.DebugPy:
             run_options["ports"]["5678"] = "5678"
 
         # Set up VSDBG debugging

@@ -331,6 +331,11 @@ def backtest(project: Path,
     elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
         _migrate_python_vscode(algorithm_file.parent)
+        logger.warn("The PTVSD debugging method is deprecated and might be removed in a future version of LEAN. "
+                    "Consider using DebugPy instead.")
+    elif debug == "debugpy":
+        debugging_method = DebuggingMethod.DebugPy
+        _migrate_python_vscode(algorithm_file.parent)
     elif debug == "vsdbg":
         debugging_method = DebuggingMethod.VSDBG
         _migrate_csharp_vscode(algorithm_file.parent)
