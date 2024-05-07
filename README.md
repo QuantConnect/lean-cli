@@ -143,7 +143,7 @@ Usage: lean backtest [OPTIONS] PROJECT
 Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
-  --debug [pycharm|ptvsd|vsdbg|rider|local-platform]
+  --debug [pycharm|ptvsd|debugpy|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
   --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider

@@ -234,7 +234,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
 @option("--debug",
-              type=Choice(["pycharm", "ptvsd", "vsdbg", "rider", "local-platform"], case_sensitive=False),
+              type=Choice(["pycharm", "ptvsd", "debugpy", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
@@ -330,6 +330,11 @@ def backtest(project: Path,
         _migrate_python_pycharm(logger, algorithm_file.parent)
     elif debug == "ptvsd":
         debugging_method = DebuggingMethod.PTVSD
+        _migrate_python_vscode(algorithm_file.parent)
+        logger.warn("The PTVSD debugging method is deprecated and might be removed in a future version of LEAN. "
+                    "Consider using DebugPy instead.")
+    elif debug == "debugpy":
+        debugging_method = DebuggingMethod.DebugPy
         _migrate_python_vscode(algorithm_file.parent)
     elif debug == "vsdbg":
         debugging_method = DebuggingMethod.VSDBG
