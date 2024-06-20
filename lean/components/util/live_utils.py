@@ -25,7 +25,11 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from json import loads
     from datetime import datetime
 
-    cloud_deployment_list = api_client.get("live/read")
+    if not project_id:
+        # Project is not initialized in the cloud, hence project_id is None
+        return None
+
+    cloud_deployment_list = api_client.get("live/read", { "projectId": project_id })
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
                              if instance["projectId"] == project_id]
     cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else utc.localize(datetime.min)
