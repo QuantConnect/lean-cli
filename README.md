@@ -382,6 +382,7 @@ Options:
                                   The EMSX broker to use
   --terminal-link-emsx-account TEXT
                                   The EMSX account to use
+  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
@@ -1290,6 +1291,7 @@ Options:
                                   The EMSX broker to use
   --terminal-link-emsx-account TEXT
                                   The EMSX account to use
+  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
