@@ -42,16 +42,47 @@ class VerboseOption(ClickOption):
         from platform import platform
         from sys import version as sys_version
         from lean import __version__ as lean_cli_version
+        from subprocess import run
+        from os import getcwd
+        from lean.container import container
 
         logger = container.logger
         logger.debug_logging_enabled = True
 
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
+        try:
+            dotnet_version = run("dotnet --version", capture_output=True).stdout.decode("utf").replace("\n", "")
+        except:
+            dotnet_version = "Not installed"
+
+        try:
+            vscode_version = run("code --version", shell=True, capture_output=True).stdout.decode("utf").replace("\n", "-")[:-1]
+        except:
+            vscode_version = "Not installed"
+
+        try:
+            vscode_installed_extensions = run("code --list-extensions --show-versions", shell=True, capture_output=True).stdout.decode("utf")
+            vscode_installed_extensions = vscode_installed_extensions[:-1].replace("\n", "\n" + (" " * len("  VS Code installed versions: ")))
+        except:
+            vscode_installed_extensions = "Not installed"
+
+        project_config = container.project_config_manager.get_project_config(Path(getcwd()))
+        engine_image = container.cli_config_manager.get_engine_image(project_config.get("engine-image", None))
+        try:
+            container.docker_manager.get_image_label(engine_image, 'strict_python_version', "3.11.7")
+            container.docker_manager.get_image_label(engine_image, 'python_version', "3.11.7")
+            container.docker_manager.get_image_label(engine_image, 'target_framework', "net6.0")
+        except:
+            pass
+
         logger.debug(f"Context information:\n"
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
-                     f"  Lean CLI version: {lean_cli_version}")
+                     f"  Lean CLI version: {lean_cli_version}\n"
+                     f"  .NET version: {dotnet_version}\n"
+                     f"  VS Code version: {vscode_version}\n"
+                     f"  VS Code installed versions: {vscode_installed_extensions}")
 
 
 def verbose_option() -> Callable[[FC], FC]:
