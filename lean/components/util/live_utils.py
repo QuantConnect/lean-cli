@@ -24,12 +24,14 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from os import listdir, path
     from json import loads
     from datetime import datetime
-
-    if not project_id:
-        # Project is not initialized in the cloud, hence project_id is None
-        return None
+    from lean.container import container
 
     cloud_deployment_list = api_client.get("live/read", { "projectId": project_id })
+    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment_list}')
+
+    if "live" not in cloud_deployment_list:
+        return None
+
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
                              if instance["projectId"] == project_id]
     cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else utc.localize(datetime.min)
@@ -68,10 +70,14 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     :param project: the name of the project
     :return: the options of initial cash/holdings setting, and the latest portfolio cash/holdings from the last deployment
     """
+    from lean.container import container
     last_cash = []
     last_holdings = []
+    container.logger.info(f'brokerage_instance: {brokerage_instance}')
     cash_balance_option = brokerage_instance._initial_cash_balance
     holdings_option = brokerage_instance._initial_holdings
+    container.logger.info(f'cash_balance_option: {cash_balance_option}')
+    container.logger.info(f'holdings_option: {holdings_option}')
     if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = _get_last_portfolio(api_client, project_id, project)
         last_cash = last_portfolio["cash"] if last_portfolio else None

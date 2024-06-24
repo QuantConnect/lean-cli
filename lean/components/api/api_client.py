@@ -142,6 +142,12 @@ class APIClient:
             version = 99999999
         headers["User-Agent"] = f"Lean CLI {version}"
 
+        self._logger.info(f'full_url: {full_url}')
+        self._logger.info(f'headers: {headers}')
+        self._logger.info(f'self._user_id: {self._user_id}')
+        self._logger.info(f'password: {password}')
+        self._logger.info(f'options: {options}')
+
         response = self._http_client.request(method,
                                              full_url,
                                              headers=headers,
@@ -149,8 +155,8 @@ class APIClient:
                                              raise_for_status=False,
                                              **options)
 
-        if self._logger.debug_logging_enabled:
-            self._logger.debug(f"Request response: {response.text}")
+        self._logger.debug(f"Request response: {response.text}")
+        # if self._logger.debug_logging_enabled:
 
         if 500 <= response.status_code < 600 and retry_http_5xx:
             return self._request(method, endpoint, options, False)
