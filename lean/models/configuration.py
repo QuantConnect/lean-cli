@@ -175,6 +175,8 @@ class UserInputConfiguration(Configuration, ABC):
             self._prompt_info = config_json_object["prompt-info"]
         if "help" in config_json_object:
             self._help = config_json_object["help"]
+            if self._optional:
+                self._help += " (Optional)."
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
 
