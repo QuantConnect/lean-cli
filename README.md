@@ -320,7 +320,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation]
                                   The brokerage to use
   --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit]
                                   The live data provider to use
@@ -406,6 +406,15 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
+  --trade-station-api-key TEXT    Your Trade Station api key
+  --trade-station-api-secret TEXT
+                                  Your Trade Station api secret
+  --trade-station-redirect-url TEXT
+                                  Your Trade Station redirect url for authorization
+  --trade-station-refresh-token TEXT
+                                  Your Trade Station OAuth Refresh Token
+  --trade-station-account-type [Cash|Margin|Futures|DVP]
+                                  Specifies the type of account on TradeStation
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -1225,7 +1234,7 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation]
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit]
                                   The live data provider to use
@@ -1328,6 +1337,17 @@ Options:
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
+  --trade-station-api-key TEXT    Your Trade Station api key
+  --trade-station-api-secret TEXT
+                                  Your Trade Station api secret
+  --trade-station-redirect-url TEXT
+                                  Your Trade Station redirect url for authorization
+  --trade-station-refresh-token TEXT
+                                  Your Trade Station OAuth Refresh Token
+  --trade-station-use-simulator [live|paper]
+                                  Whether the testnet should be used
+  --trade-station-account-type [Cash|Margin|Futures|DVP]
+                                  Specifies the type of account on TradeStation
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
