@@ -67,12 +67,12 @@ class VerboseOption(ClickOption):
         except:
             vscode_installed_extensions = "Not installed"
 
-        project_config = container.project_config_manager.get_project_config(Path(getcwd()))
-        engine_image = container.cli_config_manager.get_engine_image(project_config.get("engine-image", None))
         try:
-            container.docker_manager.get_image_label(engine_image, 'strict_python_version', "3.11.7")
-            container.docker_manager.get_image_label(engine_image, 'python_version', "3.11.7")
-            container.docker_manager.get_image_label(engine_image, 'target_framework', "net6.0")
+            project_config = container.project_config_manager.get_project_config(Path(getcwd()))
+            engine_image = container.cli_config_manager.get_engine_image(project_config.get("engine-image", None))
+            container.docker_manager.get_image_label(engine_image, 'strict_python_version', "Unknown")
+            container.docker_manager.get_image_label(engine_image, 'python_version', "Unknown")
+            container.docker_manager.get_image_label(engine_image, 'target_framework', "Unknown")
         except:
             pass
 
