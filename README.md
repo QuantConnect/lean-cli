@@ -153,7 +153,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -189,8 +189,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address
-  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
+  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -330,7 +330,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
@@ -379,9 +379,10 @@ Options:
   --terminal-link-server-port INTEGER
                                   The port of the SAPI server
   --terminal-link-emsx-broker TEXT
-                                  The EMSX broker to use
+                                  The EMSX broker to use (Optional).
   --terminal-link-emsx-account TEXT
-                                  The EMSX account to use
+                                  The EMSX account to use (Optional).
+  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from (Optional).
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
@@ -821,7 +822,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -857,8 +858,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address
-  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
+  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -1236,7 +1237,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
@@ -1287,9 +1288,10 @@ Options:
   --terminal-link-server-port INTEGER
                                   The port of the TerminalLink server
   --terminal-link-emsx-broker TEXT
-                                  The EMSX broker to use
+                                  The EMSX broker to use (Optional).
   --terminal-link-emsx-account TEXT
-                                  The EMSX account to use
+                                  The EMSX account to use (Optional).
+  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from (Optional).
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
@@ -1310,7 +1312,7 @@ Options:
                                   The order routing target comp id to use
   --tt-order-routing-host TEXT    The host of the order routing server
   --tt-order-routing-port TEXT    The port of the order routing server
-  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged
+  --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged (Optional).
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
@@ -1328,7 +1330,7 @@ Options:
                                   Whether the testnet should be used
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
-                                  don't have a market data subscription for
+                                  don't have a market data subscription for (Optional).
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1341,8 +1343,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address
-  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
+  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --factset-auth-config-file FILE
@@ -1676,7 +1678,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -1712,8 +1714,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address
-  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
+  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -1843,7 +1845,7 @@ Options:
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
-                                  Use this option explicitly to override the default value.
+                                  Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
   --oanda-environment [Practice|Trade]
@@ -1879,8 +1881,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address
-  --thetadata-rest-url TEXT       The ThetaData host address
+  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
+  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
