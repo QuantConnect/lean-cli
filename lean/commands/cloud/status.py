@@ -31,7 +31,7 @@ def status(project: str) -> None:
     cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, False)
 
-    live_algorithm = next((d for d in api_client.live.get_all() if d.projectId == cloud_project.projectId), None)
+    live_algorithm = api_client.live.get_project_by_id(cloud_project.projectId)
 
     logger.info(f"Project id: {cloud_project.projectId}")
     logger.info(f"Project name: {cloud_project.name}")

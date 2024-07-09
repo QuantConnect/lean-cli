@@ -26,11 +26,12 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from datetime import datetime
     from lean.container import container
 
-    cloud_deployment_list = api_client.get("live/read", { "projectId": project_id })
-    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment_list}')
-
-    if "live" not in cloud_deployment_list:
+    if not project_id:
+        # Project is not initialized in the cloud, hence project_id is None
         return None
+
+    cloud_deployment_list = api_client.get("live/read", {"projectId": project_id})
+    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment_list}')
 
     cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
                              if instance["projectId"] == project_id]
