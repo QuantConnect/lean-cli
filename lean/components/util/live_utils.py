@@ -30,12 +30,9 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
         # Project is not initialized in the cloud, hence project_id is None
         return None
 
-    cloud_deployment_list = api_client.get("live/read", {"projectId": project_id})
-    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment_list}')
-
-    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
-                             if instance["projectId"] == project_id]
-    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else utc.localize(datetime.min)
+    cloud_deployment = api_client.get("live/read", {"projectId": project_id})
+    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment}')
+    cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
 
     local_last_time = utc.localize(datetime.min)
     live_deployment_path = f"{project_name}/live"
@@ -45,7 +42,7 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
     if cloud_last_time > local_last_time:
-        last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
+        last_state = api_client.get("live/portfolio/read", {"projectId": project_id})
         previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
         from lean.container import container
@@ -91,8 +88,8 @@ def _configure_initial_cash_interactively(logger: Logger, cash_input_option: Liv
     previous_cash_balance = []
     if previous_cash_state:
         for cash_state in previous_cash_state.values():
-            currency = cash_state["Symbol"]
-            amount = cash_state["Amount"]
+            currency = cash_state["symbol"]
+            amount = cash_state["amount"]
             previous_cash_balance.append({"currency": currency, "amount": amount})
 
     if cash_input_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial cash balance?", default=False):
@@ -140,10 +137,10 @@ def _configure_initial_holdings_interactively(logger: Logger, holdings_option: L
     last_holdings = []
     if previous_holdings:
         for holding in previous_holdings.values():
-            symbol = holding["Symbol"]
-            quantity = int(holding["Quantity"])
-            avg_price = float(holding["AveragePrice"])
-            last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
+            symbol = holding["symbol"]
+            quantity = int(holding["quantity"])
+            avg_price = float(holding["averagePrice"])
+            last_holdings.append({"symbol": symbol["value"], "symbolId": symbol["id"], "quantity": quantity, "averagePrice": avg_price})
 
     if holdings_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial portfolio holdings?", default=False):
         if confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):
