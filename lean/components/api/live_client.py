@@ -37,8 +37,6 @@ class LiveClient:
         :param project_id: the project id
         :return: a live algorithm which match the given filters
         """
-        from lean.container import container
-
         parameters = {"projectId": project_id}
 
         if status is not None:

@@ -26,10 +26,6 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from datetime import datetime
     from lean.container import container
 
-    if not project_id:
-        # Project is not initialized in the cloud, hence project_id is None
-        return None
-
     cloud_deployment = api_client.get("live/read", {"projectId": project_id})
     container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment}')
     cloud_last_time = utc.localize(datetime.min)
@@ -73,11 +69,11 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     from lean.container import container
     last_cash = []
     last_holdings = []
-    container.logger.info(f'brokerage_instance: {brokerage_instance}')
+    container.logger.debug(f'brokerage_instance: {brokerage_instance}')
     cash_balance_option = brokerage_instance._initial_cash_balance
     holdings_option = brokerage_instance._initial_holdings
-    container.logger.info(f'cash_balance_option: {cash_balance_option}')
-    container.logger.info(f'holdings_option: {holdings_option}')
+    container.logger.debug(f'cash_balance_option: {cash_balance_option}')
+    container.logger.debug(f'holdings_option: {holdings_option}')
     if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = _get_last_portfolio(api_client, project_id, project)
         last_cash = last_portfolio["cash"] if last_portfolio else None
