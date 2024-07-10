@@ -13,6 +13,7 @@
 
 from typing import Any, Dict
 
+from lean.components.api.auth0_client import Auth0Client
 from lean.components.api.account_client import AccountClient
 from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
@@ -52,6 +53,7 @@ class APIClient:
         self.set_user_token(user_id, api_token)
 
         # Create the clients containing the methods to send requests to the various API endpoints
+        self.auth0 = Auth0Client(self)
         self.accounts = AccountClient(self)
         self.backtests = BacktestClient(self)
         self.compiles = CompileClient(self)
