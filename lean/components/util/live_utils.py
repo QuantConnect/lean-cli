@@ -26,11 +26,12 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from datetime import datetime
     from lean.container import container
 
-    cloud_deployment = api_client.get("live/read", {"projectId": project_id})
-    container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment}')
     cloud_last_time = utc.localize(datetime.min)
-    if cloud_deployment["success"]:
-        cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
+    if project_id:
+        cloud_deployment = api_client.get("live/read", {"projectId": project_id})
+        container.logger.info(f'----- After cloud_deployment_list: {cloud_deployment}')
+        if cloud_deployment["success"]:
+            cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
 
     local_last_time = utc.localize(datetime.min)
     live_deployment_path = f"{project_name}/live"
