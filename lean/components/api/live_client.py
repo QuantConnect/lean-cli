@@ -32,7 +32,6 @@ class LiveClient:
                           project_id: str) -> QCFullLiveAlgorithm:
         """Retrieves all live algorithms.
 
-        :param status: the status to filter by or None if no status filter should be applied
         :param project_id: the project id
         :return: a live algorithm which match the given filters
         """
