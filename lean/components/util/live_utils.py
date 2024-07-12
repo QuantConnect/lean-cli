@@ -18,6 +18,22 @@ from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.json_module import LiveInitialStateInput, JsonModule
+from collections import UserDict
+from typing import Any
+
+
+class InsensitiveCaseDict(UserDict):
+    def __getitem__(self, key: Any) -> Any:
+        if type(key) is str:
+            return super().__getitem__(key.lower())
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: Any, item: Any) -> Any:
+        if type(key) is str:
+            self.data[key.lower()] = item
+            return
+        self.data[key] = item
+
 
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
     from pytz import utc, UTC
@@ -29,7 +45,10 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     if project_id:
         cloud_deployment = api_client.get("live/read", {"projectId": project_id})
         if cloud_deployment["success"] and cloud_deployment["status"] != "Undefined":
-            cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
+            if cloud_deployment["stopped"] is not None:
+                cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
+            else:
+                cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC)
 
     local_last_time = utc.localize(datetime.min)
     live_deployment_path = f"{project_name}/live"
@@ -66,8 +85,8 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     :return: the options of initial cash/holdings setting, and the latest portfolio cash/holdings from the last deployment
     """
     from lean.container import container
-    last_cash = []
-    last_holdings = []
+    last_cash = {}
+    last_holdings = {}
     container.logger.debug(f'brokerage_instance: {brokerage_instance}')
     cash_balance_option = brokerage_instance._initial_cash_balance
     holdings_option = brokerage_instance._initial_holdings
@@ -75,8 +94,15 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     container.logger.debug(f'holdings_option: {holdings_option}')
     if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = _get_last_portfolio(api_client, project_id, project)
-        last_cash = last_portfolio["cash"] if last_portfolio else None
-        last_holdings = last_portfolio["holdings"] if last_portfolio else None
+        if last_portfolio is not None:
+            for key, value in last_portfolio["cash"].items():
+                last_cash[key] = InsensitiveCaseDict(value)
+            for key, value in last_portfolio["holdings"].items():
+                last_holdings[key] = InsensitiveCaseDict(value)
+                last_holdings[key]["symbol"] = InsensitiveCaseDict(last_holdings[key]["symbol"])
+        else:
+            last_cash = None
+            last_holdings = None
     return cash_balance_option, holdings_option, last_cash, last_holdings
 
 
@@ -85,8 +111,8 @@ def _configure_initial_cash_interactively(logger: Logger, cash_input_option: Liv
     previous_cash_balance = []
     if previous_cash_state:
         for cash_state in previous_cash_state.values():
-            currency = cash_state["symbol"]
-            amount = cash_state["amount"]
+            currency = cash_state["Symbol"]
+            amount = cash_state["Amount"]
             previous_cash_balance.append({"currency": currency, "amount": amount})
 
     if cash_input_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial cash balance?", default=False):
@@ -134,10 +160,10 @@ def _configure_initial_holdings_interactively(logger: Logger, holdings_option: L
     last_holdings = []
     if previous_holdings:
         for holding in previous_holdings.values():
-            symbol = holding["symbol"]
-            quantity = int(holding["quantity"])
-            avg_price = float(holding["averagePrice"])
-            last_holdings.append({"symbol": symbol["value"], "symbolId": symbol["id"], "quantity": quantity, "averagePrice": avg_price})
+            symbol = holding["Symbol"]
+            quantity = int(holding["Quantity"])
+            avg_price = float(holding["AveragePrice"])
+            last_holdings.append({"symbol": symbol["Value"], "symbolId": symbol["ID"], "quantity": quantity, "averagePrice": avg_price})
 
     if holdings_option == LiveInitialStateInput.Required or confirm("Do you want to set the initial portfolio holdings?", default=False):
         if confirm(f"Do you want to use the last portfolio holdings? {last_holdings}", default=False):

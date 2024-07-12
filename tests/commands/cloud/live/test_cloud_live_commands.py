@@ -254,7 +254,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
         "status": "stopped",
         "stopped": "2024-07-10 19:12:20",
         "success": True,
-        "portfolio": {}}
+        "portfolio": {"cash": {}, "holdings": {}}}
     container.api_client = api_client
 
     cloud_runner = mock.Mock()
@@ -335,7 +335,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
         "status": "stopped",
         "stopped": "2024-07-10 19:12:20",
         "success": True,
-        "portfolio": {}}
+        "portfolio": {"cash": {}, "holdings": {}}}
     container.api_client = api_client
 
     cloud_runner = mock.Mock()
