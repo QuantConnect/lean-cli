@@ -59,7 +59,3 @@ def status(project: str) -> None:
 
     if live_algorithm.stopped is not None:
         logger.info(f"Stopped: {live_algorithm.stopped.strftime('%Y-%m-%d %H:%M:%S')} UTC")
-
-    if live_algorithm.error != "":
-        logger.info("Error:")
-        logger.info(live_algorithm.error)

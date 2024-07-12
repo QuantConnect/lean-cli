@@ -24,7 +24,6 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from os import listdir, path
     from json import loads
     from datetime import datetime
-    from lean.container import container
 
     cloud_last_time = utc.localize(datetime.min)
     if project_id:

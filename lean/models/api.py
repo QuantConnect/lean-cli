@@ -291,8 +291,6 @@ class QCFullLiveAlgorithm(QCMinimalLiveAlgorithm):
     launched: datetime
     stopped: Optional[datetime]
     brokerage: str
-    subscription: str
-    error: str
 
 
 class QCEmailNotificationMethod(WrappedBaseModel):

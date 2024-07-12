@@ -65,7 +65,11 @@ def test_cloud_live_deploy() -> None:
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
@@ -98,7 +102,11 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
@@ -155,7 +163,11 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'portfolio': {"cash": {}}, 'live': []}
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
     cloud_project_manager = mock.Mock()
@@ -238,7 +250,11 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'live': [], 'portfolio': {}}
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {}}
     container.api_client = api_client
 
     cloud_runner = mock.Mock()
@@ -315,7 +331,11 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
 
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
-    api_client.get.return_value = {'live': [], 'portfolio': {}}
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {}}
     container.api_client = api_client
 
     cloud_runner = mock.Mock()

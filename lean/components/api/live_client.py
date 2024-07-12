@@ -45,7 +45,8 @@ class LiveClient:
         response = self._api.get("live/read", parameters)
 
         if response:
-            return QCFullLiveAlgorithm(data=response)
+            response["projectId"] = project_id
+            return QCFullLiveAlgorithm(**response)
 
         return None
 
