@@ -19,7 +19,6 @@ from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.json_module import LiveInitialStateInput, JsonModule
 from collections import UserDict
-from typing import Any
 
 
 class InsensitiveCaseDict(UserDict):
