@@ -212,7 +212,7 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
-def get_latest_result_json_file(output_directory: Path, is_previous_state_file: bool = False) -> Optional[Path]:
+def get_latest_result_json_file(output_directory: Path, is_live_trading: bool = False) -> Optional[Path]:
     from lean.container import container
 
     output_config_manager = container.output_config_manager
@@ -222,7 +222,7 @@ def get_latest_result_json_file(output_directory: Path, is_previous_state_file: 
         return None
 
     prefix = ""
-    if is_previous_state_file:
+    if is_live_trading:
         prefix = "L-"
 
     result_file = output_directory / f"{prefix}{output_id}.json"
