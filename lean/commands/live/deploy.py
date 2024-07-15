@@ -292,16 +292,13 @@ def deploy(project: Path,
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
-    if not output.exists():
-        output.mkdir(parents=True)
-
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, brokerage_instance,
                                                                                                       project_config.get("cloud-id", None), project)
 
-    if environment is None and brokerage is None and len(data_provider_live) == 0:   # condition for using interactive panel
+    if environment is None and brokerage is None:   # condition for using interactive panel
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
 
@@ -340,6 +337,9 @@ def deploy(project: Path,
             given_algorithm_id = int(value)
         else:
             lean_config[key] = value
+
+    if not output.exists():
+        output.mkdir(parents=True)
 
     output_config_manager = container.output_config_manager
     lean_config["algorithm-id"] = f"L-{output_config_manager.get_live_deployment_id(output, given_algorithm_id)}"

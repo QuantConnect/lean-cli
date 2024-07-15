@@ -70,7 +70,7 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
         output_directory = container.output_config_manager.get_latest_output_directory("live")
         if not output_directory:
             return None
-        previous_state_file = get_latest_result_json_file(output_directory)
+        previous_state_file = get_latest_result_json_file(output_directory, True)
         if not previous_state_file:
             return None
         previous_portfolio_state = {x.lower(): y for x, y in loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
@@ -111,7 +111,7 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     return cash_balance_option, holdings_option, last_cash, last_holdings
 
 
-def _configure_initial_cash_interactively(logger: Logger, cash_input_option: LiveInitialStateInput, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def _configure_initial_cash_interactively(logger: Logger, cash_input_option: LiveInitialStateInput, previous_cash_state: Dict[str, Any]) -> List[Dict[str, float]]:
     cash_list = []
     previous_cash_balance = []
     if previous_cash_state:
@@ -140,7 +140,7 @@ def _configure_initial_cash_interactively(logger: Logger, cash_input_option: Liv
         return []
 
 
-def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
+def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: Dict[str, Any])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
@@ -160,7 +160,7 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitia
         return _configure_initial_cash_interactively(logger, cash_input_option, previous_cash_state)
 
 
-def _configure_initial_holdings_interactively(logger: Logger, holdings_option: LiveInitialStateInput, previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def _configure_initial_holdings_interactively(logger: Logger, holdings_option: LiveInitialStateInput, previous_holdings: Dict[str, Any]) -> List[Dict[str, float]]:
     holdings = []
     last_holdings = []
     if previous_holdings:
@@ -192,7 +192,7 @@ def _configure_initial_holdings_interactively(logger: Logger, holdings_option: L
         return []
 
 
-def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: List[Dict[str, Any]])\
+def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: Dict[str, Any])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial portfolio holdings.
 
@@ -212,7 +212,7 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
-def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
+def get_latest_result_json_file(output_directory: Path, is_previous_state_file: bool = False) -> Optional[Path]:
     from lean.container import container
 
     output_config_manager = container.output_config_manager
@@ -221,7 +221,11 @@ def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
     if output_id is None:
         return None
 
-    result_file = output_directory / f"{output_id}.json"
+    prefix = ""
+    if is_previous_state_file:
+        prefix = "L-"
+
+    result_file = output_directory / f"{prefix}{output_id}.json"
     if not result_file.exists():
         return None
 
