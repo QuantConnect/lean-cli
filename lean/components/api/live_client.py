@@ -28,29 +28,21 @@ class LiveClient:
         """
         self._api = api_client
 
-    def get_all(self,
-                status: Optional[QCLiveAlgorithmStatus] = None,
-                # Values less than 86400 cause errors on Windows: https://bugs.python.org/issue37527
-                start: datetime = datetime.fromtimestamp(86400),
-                end: datetime = datetime.now()) -> List[QCFullLiveAlgorithm]:
+    def get_project_by_id(self,
+                          project_id: str) -> QCFullLiveAlgorithm:
         """Retrieves all live algorithms.
 
-        :param status: the status to filter by or None if no status filter should be applied
-        :param start: the earliest launch time the returned algorithms should have
-        :param end: the latest launch time the returned algorithms should have
-        :return: a list of live algorithms which match the given filters
+        :param project_id: the project id
+        :return: a live algorithm which match the given filters
         """
-        from math import floor
-        parameters = {
-            "start": floor(start.timestamp()),
-            "end": floor(end.timestamp())
-        }
+        parameters = {"projectId": project_id}
+        response = self._api.get("live/read", parameters)
 
-        if status is not None:
-            parameters["status"] = status.value
+        if response:
+            response["projectId"] = project_id
+            return QCFullLiveAlgorithm(**response)
 
-        data = self._api.get("live/read", parameters)
-        return [QCFullLiveAlgorithm(**algorithm) for algorithm in data["live"]]
+        return None
 
     def start(self,
               project_id: int,

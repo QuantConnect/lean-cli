@@ -279,7 +279,7 @@ class QCMinimalLiveAlgorithm(WrappedBaseModel):
     def get_url(self) -> str:
         """Returns the url of the live deployment in the cloud.
 
-        :return: a url which when visited opens an Algorithm Lab tab containing the live deployment
+        :return: an url which when visited opens an Algorithm Lab tab containing the live deployment
         """
         return f"https://www.quantconnect.com/project/{self.projectId}/live"
 
@@ -291,8 +291,6 @@ class QCFullLiveAlgorithm(QCMinimalLiveAlgorithm):
     launched: datetime
     stopped: Optional[datetime]
     brokerage: str
-    subscription: str
-    error: str
 
 
 class QCEmailNotificationMethod(WrappedBaseModel):

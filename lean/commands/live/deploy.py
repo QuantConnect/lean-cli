@@ -292,16 +292,19 @@ def deploy(project: Path,
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
-    if not output.exists():
-        output.mkdir(parents=True)
-
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
     cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, brokerage_instance,
                                                                                                       project_config.get("cloud-id", None), project)
 
-    if environment is None and brokerage is None and len(data_provider_live) == 0:   # condition for using interactive panel
+    # We cannot create the output directory before calling get_last_portfolio_holdings, since then the most recently
+    # deployment would be always the local one (it has the current time in its name), and we would never be able to
+    # use the cash and holdings from a cloud deployment (see live_utils._get_last_portfolio() method)
+    if not output.exists():
+        output.mkdir(parents=True)
+
+    if environment is None and brokerage is None:   # condition for using interactive panel
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
 

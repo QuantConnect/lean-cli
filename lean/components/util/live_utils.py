@@ -18,6 +18,21 @@ from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
 from lean.models.json_module import LiveInitialStateInput, JsonModule
+from collections import UserDict
+
+
+class InsensitiveCaseDict(UserDict):
+    def __getitem__(self, key: Any) -> Any:
+        if type(key) is str:
+            return super().__getitem__(key.lower())
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: Any, item: Any) -> Any:
+        if type(key) is str:
+            self.data[key.lower()] = item
+            return
+        self.data[key] = item
+
 
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
     from pytz import utc, UTC
@@ -25,10 +40,19 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from json import loads
     from datetime import datetime
 
-    cloud_deployment_list = api_client.get("live/read")
-    cloud_deployment_time = [datetime.strptime(instance["launched"], "%Y-%m-%d %H:%M:%S").astimezone(UTC) for instance in cloud_deployment_list["live"]
-                             if instance["projectId"] == project_id]
-    cloud_last_time = sorted(cloud_deployment_time, reverse = True)[0] if cloud_deployment_time else utc.localize(datetime.min)
+    cloud_last_time = utc.localize(datetime.min)
+    if project_id:
+        cloud_deployment = api_client.get("live/read", {"projectId": project_id})
+        if cloud_deployment["success"] and cloud_deployment["status"] != "Undefined":
+            if cloud_deployment["stopped"] is not None:
+                cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S")
+            else:
+                cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S")
+    cloud_last_time = datetime(cloud_last_time.year, cloud_last_time.month,
+                               cloud_last_time.day, cloud_last_time.hour,
+                               cloud_last_time.minute,
+                               cloud_last_time.second,
+                               tzinfo=UTC)
 
     local_last_time = utc.localize(datetime.min)
     live_deployment_path = f"{project_name}/live"
@@ -38,14 +62,14 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
     if cloud_last_time > local_last_time:
-        last_state = api_client.get("live/read/portfolio", {"projectId": project_id})
+        last_state = api_client.get("live/portfolio/read", {"projectId": project_id})
         previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
         from lean.container import container
         output_directory = container.output_config_manager.get_latest_output_directory("live")
         if not output_directory:
             return None
-        previous_state_file = get_latest_result_json_file(output_directory)
+        previous_state_file = get_latest_result_json_file(output_directory, True)
         if not previous_state_file:
             return None
         previous_portfolio_state = {x.lower(): y for x, y in loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
@@ -64,18 +88,29 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     :param project: the name of the project
     :return: the options of initial cash/holdings setting, and the latest portfolio cash/holdings from the last deployment
     """
-    last_cash = []
-    last_holdings = []
+    from lean.container import container
+    last_cash = {}
+    last_holdings = {}
+    container.logger.debug(f'brokerage_instance: {brokerage_instance}')
     cash_balance_option = brokerage_instance._initial_cash_balance
     holdings_option = brokerage_instance._initial_holdings
+    container.logger.debug(f'cash_balance_option: {cash_balance_option}')
+    container.logger.debug(f'holdings_option: {holdings_option}')
     if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = _get_last_portfolio(api_client, project_id, project)
-        last_cash = last_portfolio["cash"] if last_portfolio else None
-        last_holdings = last_portfolio["holdings"] if last_portfolio else None
+        if last_portfolio is not None:
+            for key, value in last_portfolio["cash"].items():
+                last_cash[key] = InsensitiveCaseDict(value)
+            for key, value in last_portfolio["holdings"].items():
+                last_holdings[key] = InsensitiveCaseDict(value)
+                last_holdings[key]["symbol"] = InsensitiveCaseDict(last_holdings[key]["symbol"])
+        else:
+            last_cash = None
+            last_holdings = None
     return cash_balance_option, holdings_option, last_cash, last_holdings
 
 
-def _configure_initial_cash_interactively(logger: Logger, cash_input_option: LiveInitialStateInput, previous_cash_state: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def _configure_initial_cash_interactively(logger: Logger, cash_input_option: LiveInitialStateInput, previous_cash_state: Dict[str, Any]) -> List[Dict[str, float]]:
     cash_list = []
     previous_cash_balance = []
     if previous_cash_state:
@@ -104,7 +139,7 @@ def _configure_initial_cash_interactively(logger: Logger, cash_input_option: Liv
         return []
 
 
-def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: List[Dict[str, Any]])\
+def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitialStateInput, live_cash_balance: str, previous_cash_state: Dict[str, Any])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial cash balance.
 
@@ -124,7 +159,7 @@ def configure_initial_cash_balance(logger: Logger, cash_input_option: LiveInitia
         return _configure_initial_cash_interactively(logger, cash_input_option, previous_cash_state)
 
 
-def _configure_initial_holdings_interactively(logger: Logger, holdings_option: LiveInitialStateInput, previous_holdings: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+def _configure_initial_holdings_interactively(logger: Logger, holdings_option: LiveInitialStateInput, previous_holdings: Dict[str, Any]) -> List[Dict[str, float]]:
     holdings = []
     last_holdings = []
     if previous_holdings:
@@ -156,7 +191,7 @@ def _configure_initial_holdings_interactively(logger: Logger, holdings_option: L
         return []
 
 
-def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: List[Dict[str, Any]])\
+def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialStateInput, live_holdings: str, previous_holdings: Dict[str, Any])\
     -> List[Dict[str, float]]:
     """Interactively configures the intial portfolio holdings.
 
@@ -176,7 +211,7 @@ def configure_initial_holdings(logger: Logger, holdings_option: LiveInitialState
         return _configure_initial_holdings_interactively(logger, holdings_option, previous_holdings)
 
 
-def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
+def get_latest_result_json_file(output_directory: Path, is_live_trading: bool = False) -> Optional[Path]:
     from lean.container import container
 
     output_config_manager = container.output_config_manager
@@ -185,7 +220,11 @@ def get_latest_result_json_file(output_directory: Path) -> Optional[Path]:
     if output_id is None:
         return None
 
-    result_file = output_directory / f"{output_id}.json"
+    prefix = ""
+    if is_live_trading:
+        prefix = "L-"
+
+    result_file = output_directory / f"{prefix}{output_id}.json"
     if not result_file.exists():
         return None
 
