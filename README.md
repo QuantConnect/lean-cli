@@ -322,7 +322,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit|TradeStation]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -410,7 +410,7 @@ Options:
   --trade-station-api-secret TEXT
                                   Your Trade Station api secret
   --trade-station-redirect-url TEXT
-                                  Your Trade Station redirect url for authorization
+                                  Your Trade Station redirect url for authorization (Optional).
   --trade-station-refresh-token TEXT
                                   Your Trade Station OAuth Refresh Token
   --trade-station-account-type [Cash|Margin|Futures|DVP]
@@ -1236,7 +1236,7 @@ Options:
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit|TradeStation]
                                   The live data provider to use
   --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
@@ -1341,7 +1341,7 @@ Options:
   --trade-station-api-secret TEXT
                                   Your Trade Station api secret
   --trade-station-redirect-url TEXT
-                                  Your Trade Station redirect url for authorization
+                                  Your Trade Station redirect url for authorization (Optional).
   --trade-station-refresh-token TEXT
                                   Your Trade Station OAuth Refresh Token
   --trade-station-use-simulator [live|paper]
