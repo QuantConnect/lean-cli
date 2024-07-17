@@ -1004,7 +1004,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("Trading Technologies", ""),
                                                 ("Trading Technologies", "A:A 2T:1:145.1"),
                                                 ("Binance", ""),
-                                                #("Binance", "A:A 2T:1:145.1"),
+                                                ("Binance", "A:A 2T:1:145.1"),
                                                 ("Bitfinex", ""),
                                                 ("Bitfinex", "A:A 2T:1:145.1"),
                                                 ("Coinbase Advanced Trade", ""),
