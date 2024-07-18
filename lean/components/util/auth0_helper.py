@@ -15,27 +15,30 @@ from lean.models.api import QCAuth0Authorization
 from lean.components.api.api_client import Auth0Client
 from lean.components.util.logger import Logger
 
+
 def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger) -> QCAuth0Authorization:
-        """Gets the authorization data for a brokerage, authorizing if necessary.
+    """Gets the authorization data for a brokerage, authorizing if necessary.
 
-        :param brokerage_id: the id of the brokerage to get the authorization data for
-        :return: the authorization data for the specified brokerage
-        """
-        from time import time, sleep
+    :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.
+    :param brokerage_id: The ID of the brokerage to get the authorization data for.
+    :param logger: An instance of Logger, handling all output printing.
+    :return: The authorization data for the specified brokerage.
+    """
+    from time import time, sleep
 
+    data = auth0_client.read(brokerage_id)
+    if data.authorization is not None:
+        return data
+
+    start_time = time()
+    auth0_client.authorize(brokerage_id, logger)
+
+    # keep checking for new data every 5 seconds for 7 minutes
+    while time() - start_time < 420:
+        sleep(5)
         data = auth0_client.read(brokerage_id)
-        if data.authorization is not None:
-            return data
+        if data.authorization is None:
+            continue
+        return data
 
-        start_time = time()
-        auth0_client.authorize(brokerage_id, logger)
-
-        # keep checking for new data every 5 seconds for 7 minutes
-        while time() - start_time < 420:
-            sleep(5)
-            data = auth0_client.read(brokerage_id)
-            if data.authorization is None:
-                continue
-            return data
-
-        raise Exception("Authorization failed")
+    raise Exception("Authorization failed")

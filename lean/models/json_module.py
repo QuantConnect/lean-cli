@@ -17,11 +17,12 @@ from typing import Any, Dict, List, Type
 from click import get_current_context
 from click.core import ParameterSource
 
+from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
-    PathParameterUserInput
+    PathParameterUserInput, AuthConfiguration
 from copy import copy
 from abc import ABC
 
@@ -222,6 +223,9 @@ class JsonModule(ABC):
                             user_choice = configuration._input_default
                         else:
                             missing_options.append(f"--{configuration._id}")
+
+            if isinstance(configuration, AuthConfiguration) and user_choice.lower() == "yes":
+                auth_authorization = get_authorization(container.api_client.auth0, self._display_name, logger)
 
             configuration._value = user_choice
 
