@@ -406,13 +406,19 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
-  --trade-station-api-key TEXT    Your Trade Station api key
-  --trade-station-api-secret TEXT
-                                  Your Trade Station api secret
+  --trade-station-oath-token [Yes|No]
+                                  Select 'Yes' if you want to use OAuth authentication to connect to QuantConnect
+                                  securely. This will allow you to access TradeStation's brokerage services through
+                                  QuantConnect. Select 'No' if you do not want to use OAuth authentication.
+  --trade-station-client-id TEXT  Your TradeStation Client ID is a unique identifier provided by TradeStation when you
+                                  register for an account. This ID is required to authenticate your access to
+                                  TradeStation's brokerage services
+  --trade-station-client-secret TEXT
+                                  Your Trade Station api secret (Optional).
   --trade-station-redirect-url TEXT
                                   Your Trade Station redirect url for authorization (Optional).
   --trade-station-refresh-token TEXT
-                                  Your Trade Station OAuth Refresh Token
+                                  Your Trade Station OAuth Refresh Token (Optional).
   --trade-station-account-type [Cash|Margin|Futures|DVP]
                                   Specifies the type of account on TradeStation
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -1337,13 +1343,19 @@ Options:
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
-  --trade-station-api-key TEXT    Your Trade Station api key
-  --trade-station-api-secret TEXT
-                                  Your Trade Station api secret
+  --trade-station-oath-token [Yes|No]
+                                  Select 'Yes' if you want to use OAuth authentication to connect to QuantConnect
+                                  securely. This will allow you to access TradeStation's brokerage services through
+                                  QuantConnect. Select 'No' if you do not want to use OAuth authentication.
+  --trade-station-client-id TEXT  Your TradeStation Client ID is a unique identifier provided by TradeStation when you
+                                  register for an account. This ID is required to authenticate your access to
+                                  TradeStation's brokerage services
+  --trade-station-client-secret TEXT
+                                  Your Trade Station api secret (Optional).
   --trade-station-redirect-url TEXT
                                   Your Trade Station redirect url for authorization (Optional).
   --trade-station-refresh-token TEXT
-                                  Your Trade Station OAuth Refresh Token
+                                  Your Trade Station OAuth Refresh Token (Optional).
   --trade-station-use-simulator [live|paper]
                                   Whether the testnet should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
