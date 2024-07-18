@@ -143,7 +143,7 @@ class JsonModule(ABC):
 
     def get_all_input_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
         return [copy(config) for config in self._lean_configs if config._is_required_from_user
-                if type(config) not in filters
+                if not isinstance(config, tuple(filters))
                 and self._check_if_config_passes_filters(config, all_for_platform_type=True)]
 
     def convert_lean_key_to_variable(self, lean_key: str) -> str:

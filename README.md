@@ -406,8 +406,6 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
-  --trade-station-oath-token TEXT
-                                  Using OAuth authentication with QuantConnect.
   --trade-station-environment [live|paper]
                                   Whether the testnet should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
@@ -1334,8 +1332,6 @@ Options:
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
-  --trade-station-oath-token TEXT
-                                  Using OAuth authentication with QuantConnect.
   --trade-station-environment [live|paper]
                                   Whether the testnet should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
