@@ -40,7 +40,7 @@ class Auth0Client:
             }
 
             data = self._api.post("live/auth0/read", payload)
-            return QCAuth0Authorization(**data["authorization"])
+            return QCAuth0Authorization(**data)
         except RequestFailedError as e:
             return QCAuth0Authorization(authorization=None)
 

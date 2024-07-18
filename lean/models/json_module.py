@@ -133,7 +133,11 @@ class JsonModule(ABC):
         for configuration in self._lean_configs:
             if not self._check_if_config_passes_filters(configuration, all_for_platform_type=False):
                 continue
-            settings[configuration._id] = str(configuration._value).replace("\\", "/")
+            if isinstance(configuration, AuthConfiguration) and isinstance(configuration._value, dict):
+                for key, value in configuration._value.items():
+                    settings[key] = str(value)
+            else:
+                settings[configuration._id] = str(configuration._value).replace("\\", "/")
 
         return settings
 
@@ -196,6 +200,11 @@ class JsonModule(ABC):
                     _logged_messages.add(log_message)
             if type(configuration) is InternalInputUserInput:
                 continue
+            elif isinstance(configuration, AuthConfiguration):
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
+                logger.debug(f'auth: {auth_authorizations}')
+                configuration._value = auth_authorizations.authorization
+                continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option
@@ -223,9 +232,6 @@ class JsonModule(ABC):
                             user_choice = configuration._input_default
                         else:
                             missing_options.append(f"--{configuration._id}")
-
-            if isinstance(configuration, AuthConfiguration) and user_choice.lower() == "yes":
-                auth_authorization = get_authorization(container.api_client.auth0, self._display_name, logger)
 
             configuration._value = user_choice
 
