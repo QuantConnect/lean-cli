@@ -51,7 +51,11 @@ class Auth0Client:
         :param brokerage_id: the id of the brokerage to start the authorization process for
         :param logger: the logger instance to use
         """
+        from webbrowser import open
 
         full_url = f"{API_BASE_URL}live/auth0/authorize?brokerage={brokerage_id}"
         logger.info(f"Please open the following URL in your browser to authorize the LEAN CLI.")
         logger.info(full_url)
+        open(full_url)
+
+
