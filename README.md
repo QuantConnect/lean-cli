@@ -320,9 +320,9 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation|Alpaca]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Polygon|IEX|CoinApi|Bybit|TradeStation|Alpaca]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -406,6 +406,12 @@ Options:
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
+  --trade-station-account-type [Cash|Margin|Futures|DVP]
+                                  Specifies the type of account on TradeStation
+  --alpaca-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -413,6 +419,8 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
+  --alpaca-api-key TEXT           Your Alpaca Api Key
+  --alpaca-api-secret TEXT        Your Alpaca Api Secret
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
@@ -1225,9 +1233,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|Bybit|TradeStation|Alpaca]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|TDAmeritrade|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca]
                                   The live data provider to use
   --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit]
                                   Update the Lean configuration file to retrieve data from the given historical provider
@@ -1328,6 +1336,12 @@ Options:
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
+  --trade-station-account-type [Cash|Margin|Futures|DVP]
+                                  Specifies the type of account on TradeStation
+  --alpaca-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
@@ -1347,6 +1361,8 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
+  --alpaca-api-key TEXT           Your Alpaca Api Key
+  --alpaca-api-secret TEXT        Your Alpaca Api Secret
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key

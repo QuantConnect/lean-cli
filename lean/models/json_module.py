@@ -17,11 +17,12 @@ from typing import Any, Dict, List, Type
 from click import get_current_context
 from click.core import ParameterSource
 
+from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
-    PathParameterUserInput
+    PathParameterUserInput, AuthConfiguration
 from copy import copy
 from abc import ABC
 
@@ -132,13 +133,17 @@ class JsonModule(ABC):
         for configuration in self._lean_configs:
             if not self._check_if_config_passes_filters(configuration, all_for_platform_type=False):
                 continue
-            settings[configuration._id] = str(configuration._value).replace("\\", "/")
+            if isinstance(configuration, AuthConfiguration) and isinstance(configuration._value, dict):
+                for key, value in configuration._value.items():
+                    settings[key] = str(value)
+            else:
+                settings[configuration._id] = str(configuration._value).replace("\\", "/")
 
         return settings
 
     def get_all_input_configs(self, filters: List[Type[Configuration]] = []) -> List[Configuration]:
         return [copy(config) for config in self._lean_configs if config._is_required_from_user
-                if type(config) not in filters
+                if not isinstance(config, tuple(filters))
                 and self._check_if_config_passes_filters(config, all_for_platform_type=True)]
 
     def convert_lean_key_to_variable(self, lean_key: str) -> str:
@@ -194,6 +199,11 @@ class JsonModule(ABC):
                     # make sure we log these messages once, we could use the same module for different functionalities
                     _logged_messages.add(log_message)
             if type(configuration) is InternalInputUserInput:
+                continue
+            elif isinstance(configuration, AuthConfiguration):
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
+                logger.debug(f'auth: {auth_authorizations}')
+                configuration._value = auth_authorizations.authorization
                 continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)

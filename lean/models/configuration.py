@@ -119,6 +119,8 @@ class Configuration(ABC):
             return UserInputConfiguration.factory(config_json_object)
         elif config_json_object["type"] == "filter-env":
             return BrokerageEnvConfiguration.factory(config_json_object)
+        elif config_json_object["type"] == "oauth-token":
+            return AuthConfiguration.factory(config_json_object)
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
@@ -386,6 +388,35 @@ class BrokerageEnvConfiguration(PromptUserInput, ChoiceUserInput, ConfirmUserInp
             return PromptUserInput.ask_user_for_input(self, default_value, logger)
         else:
             raise ValueError(f"Undefined input method type {self._input_method}")
+
+
+class AuthConfiguration(InternalInputUserInput):
+
+    def __init__(self, config_json_object):
+        super().__init__(config_json_object)
+
+    def factory(config_json_object) -> 'AuthConfiguration':
+        """Creates an instance of the child classes.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: An instance of AuthConfiguration.
+        """
+        if config_json_object["type"] == "oauth-token":
+            return AuthConfiguration(config_json_object)
+        else:
+            raise ValueError(
+                f'Undefined input method type {config_json_object["type"]}')
+
+    def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
+        """Prompts user to provide input while validating the type of input
+        against the expected type
+
+        :param default_value: The default to prompt to the user.
+        :param logger: The instance of logger class.
+        :param hide_input: Whether to hide the input (not used for this type of input, which is never hidden).
+        :return: The value provided by the user.
+        """
+        raise ValueError(f'user input not allowed with {self.__class__.__name__}')
 
 
 class FilterEnvConfiguration(BrokerageEnvConfiguration):
