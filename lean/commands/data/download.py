@@ -706,7 +706,8 @@ def download(ctx: Context,
                          "--security-type", security_type,
                          "--market", market,
                          "--resolution", resolution,
-                         "--tickers", ticker]
+                         "--tickers", ticker,
+                         "--data-downloader-brokerage", data_downloader_provider.get_id()]
 
         run_options["commands"].append(' '.join(dll_arguments))
 
