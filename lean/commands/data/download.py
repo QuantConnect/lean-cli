@@ -710,8 +710,7 @@ def download(ctx: Context,
                          "--end-date", end.value.strftime("%Y%m%d"),
                          "--security-type", security_type,
                          "--resolution", resolution,
-                         "--tickers", ticker,
-                         "--data-downloader-brokerage", data_downloader_provider.get_id()]
+                         "--tickers", ticker]
         # If no market is specified, Lean will use a default market value based on the SecurityType
         if market != "":
             dll_arguments.extend(["--market", market])
