@@ -15,7 +15,7 @@ from json import dump
 
 from docker.types import Mount
 from typing import Any, Dict, Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context, Choice
+from click import command, option, confirm, pass_context, Context, Choice, prompt
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name
 from lean.constants import DEFAULT_ENGINE_IMAGE
@@ -437,7 +437,7 @@ def _get_download_specification_from_config(data_provider_config_json: Dict[str,
 
 
 def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[str], data_provider_name: str,
-                              prompt_message_helper: str) -> str:
+                              prompt_message_helper: str, skip_validation: Optional[bool] = False) -> str:
     """
     Get user input or prompt for selection based on data types.
 
@@ -445,6 +445,7 @@ def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[s
     - user_input_data (str): User input data.
     - available_input_data (List[str]): List of available input data options.
     - data_provider_name (str): Name of the data provider.
+    - skip_validation (Optional[bool]): Whether to skip validation of user input data. Default is False.
 
     Returns:
     - str: Selected data type or prompted choice.
@@ -454,11 +455,15 @@ def _get_user_input_or_prompt(user_input_data: str, available_input_data: List[s
     """
 
     if not user_input_data:
+        if skip_validation:
+            return prompt(prompt_message_helper, "")
         # Prompt user to select a ticker's security type
         options = [Option(id=data_type, label=data_type) for data_type in available_input_data]
         return container.logger.prompt_list(prompt_message_helper, options)
 
     elif user_input_data.lower() not in [available_data.lower() for available_data in available_input_data]:
+        if skip_validation:
+            return user_input_data
         # Raise ValueError for unsupported data type
         raise ValueError(
             f"The {data_provider_name} data provider does not support {user_input_data}. "
@@ -531,7 +536,8 @@ def _replace_data_type(ctx, param, value):
 @option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
     help="Specify the security type of the historical data")
 @option("--market", type=str,
-        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
+        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')"
+             " (if not provided or empty the default market for the requested security type will be used)")
 @option("--ticker",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
@@ -638,7 +644,7 @@ def download(ctx: Context,
                                                                                     QCResolution.get_all_members(),
                                                                                     "resolutions")
         data_provider_support_markets = _get_download_specification_from_config(data_provider_config_json,
-                                                                                ["USA"], "markets")
+                                                                                [""], "markets")
 
         security_type = _get_user_input_or_prompt(security_type, data_provider_support_security_types,
                                                   data_provider_historical, "Select a Ticker's security type")
@@ -647,7 +653,7 @@ def download(ctx: Context,
         resolution = _get_user_input_or_prompt(resolution, data_provider_support_resolutions,
                                                data_provider_historical, "Select a Resolution")
         market = _get_user_input_or_prompt(market, data_provider_support_markets,
-                                           data_provider_historical, "Select a Market")
+                                           data_provider_historical, "Select a Market", True)
 
         if not ticker:
             ticker = ','.join(DatasetTextOption(id="id",
@@ -704,9 +710,11 @@ def download(ctx: Context,
                          "--start-date", start.value.strftime("%Y%m%d"),
                          "--end-date", end.value.strftime("%Y%m%d"),
                          "--security-type", security_type,
-                         "--market", market,
                          "--resolution", resolution,
                          "--tickers", ticker]
+        # If no market is specified, Lean will use a default market value based on the SecurityType
+        if market != "":
+            dll_arguments.extend(["--market", market])
 
         run_options["commands"].append(' '.join(dll_arguments))
 
