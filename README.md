@@ -907,7 +907,8 @@ Options:
                                   Specify the resolution of the historical data
   --security-type [Equity|Index|Forex|Cfd|Future|Crypto|CryptoFuture|Option|IndexOption|Commodity|FutureOption]
                                   Specify the security type of the historical data
-  --market TEXT                   Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')
+  --market TEXT                   Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance') (if not provided
+                                  or empty the default market for the requested security type will be used)
   --ticker TEXT                   Specify comma separated list of tickers to use for historical data request.
   --start TEXT                    Specify the start date for the historical data request in the format yyyyMMdd.
   --end TEXT                      Specify the end date for the historical data request in the format yyyyMMdd. (defaults

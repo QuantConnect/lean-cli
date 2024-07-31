@@ -536,7 +536,8 @@ def _replace_data_type(ctx, param, value):
 @option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
     help="Specify the security type of the historical data")
 @option("--market", type=str,
-        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')")
+        help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')"
+             " (if not provided or empty the default market for the requested security type will be used)")
 @option("--ticker",
         type=str,
         help="Specify comma separated list of tickers to use for historical data request.")
