@@ -189,8 +189,6 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
-  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -872,8 +870,6 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
-  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -1370,8 +1366,6 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
-  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --alpaca-api-key TEXT           Your Alpaca Api Key
@@ -1743,8 +1737,6 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
-  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
@@ -1916,8 +1908,6 @@ Options:
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
-  --thetadata-ws-url TEXT         The ThetaData host address (Optional).
-  --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
