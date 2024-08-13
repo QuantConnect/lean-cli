@@ -26,6 +26,9 @@ DEFAULT_LEAN_PYTHON_VERSION = "3.11"
 DEFAULT_LEAN_STRICT_PYTHON_VERSION = f"{DEFAULT_LEAN_PYTHON_VERSION}.7"
 DEFAULT_LEAN_DOTNET_FRAMEWORK = "net6.0"
 
+# Label name used in Docker containers to specify the version of Lean being used
+CONTAINER_LABEL_LEAN_VERSION_NAME = "lean_version"
+
 # The path to the root python directory in docker image
 DOCKER_PYTHON_SITE_PACKAGES_PATH = "/root/.local/lib/python{LEAN_PYTHON_VERSION}/site-packages"
 

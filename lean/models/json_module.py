@@ -246,11 +246,21 @@ class JsonModule(ABC):
                 if (isinstance(config, PathParameterUserInput)
                     and self._check_if_config_passes_filters(config, all_for_platform_type=False))}
 
-    def ensure_module_installed(self, organization_id: str) -> None:
+    def ensure_module_installed(self, organization_id: str, module_version: str = None) -> None:
+        """
+        Ensures that the specified module is installed. If the module is not installed, it will be installed.
+
+        Args:
+            organization_id (str): The ID of the organization where the module should be installed.
+            module_version (str, optional): The version of the module to install. If not provided,
+            the latest version will be installed.
+
+        Returns:
+            None
+        """
         if not self._is_module_installed and self._installs:
             container.logger.debug(f"JsonModule.ensure_module_installed(): installing module {self}: {self._product_id}")
-            container.module_manager.install_module(
-                self._product_id, organization_id)
+            container.module_manager.install_module(self._product_id, organization_id, module_version)
             self._is_module_installed = True
 
     def get_default(self, lean_config: Dict[str, Any], key: str, environment_name: str, logger: Logger):

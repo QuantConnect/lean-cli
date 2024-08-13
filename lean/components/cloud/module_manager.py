@@ -37,14 +37,18 @@ class ModuleManager:
         self._installed_product_ids: Set[int] = set()
         self._installed_packages: Dict[int, List[NuGetPackage]] = {}
 
-    def install_module(self, product_id: int, organization_id: str) -> None:
-        """Installs a module into the global modules directory.
+    def install_module(self, product_id: int, organization_id: str, module_version: str = None) -> None:
+        """
+        Installs a module into the global modules' directory.
 
-        If an outdated version is already installed, it is automatically updated.
-        If the organization does not have a subscription for the given module, an error is raised.
+        If an outdated version is already installed, it is automatically updated. If a specific version
+        is provided and is different from the installed version, it will be updated. If the organization
+        does not have a subscription for the given module, an error is raised.
 
-        :param product_id: the product id of the module to download
-        :param organization_id: the id of the organization that has a license for the module
+        Args:
+        product_id (int): The product id of the module to download.
+        organization_id (str): The id of the organization that has a license for the module.
+        module_version (str, optional): The specific version of the module to install. If None, installs the latest version.
         """
         if product_id in self._installed_product_ids:
             return
@@ -57,8 +61,14 @@ class ModuleManager:
 
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
+                self._logger.debug(f'module_manager.install_module: {package.version}')
+                if module_version and package.version.split('.')[-1] == module_version:
+                    self._logger.debug(f'module_manager.install_module:'
+                                       f'Found requested version {module_version} for module {product_id}.')
+                    break
 
         for package in packages_to_download.values():
+            self._logger.info(f'install_module.package: {package}')
             self._download_file(product_id, organization_id, package)
 
         self._installed_product_ids.add(product_id)
