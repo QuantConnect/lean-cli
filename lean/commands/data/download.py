@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice, prompt
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery, QCResolution, QCSecurityType, QCDataType
 from lean.models.click_options import get_configs_for_options, options_from_json
@@ -675,13 +675,6 @@ def download(ctx: Context,
         logger = container.logger
         lean_config = container.lean_config_manager.get_complete_lean_config(None, None, None)
 
-        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
-                                                         cli_data_downloaders, kwargs, logger, interactive=True)
-        data_downloader_provider.ensure_module_installed(organization.id)
-        container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
-        # mounting additional data_downloader config files
-        paths_to_mount = data_downloader_provider.get_paths_to_mount()
-
         engine_image = container.cli_config_manager.get_engine_image(image)
 
         if str(engine_image) != DEFAULT_ENGINE_IMAGE:
@@ -689,6 +682,17 @@ def download(ctx: Context,
             logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
         container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
+        container_module_version = container.docker_manager.get_image_label(engine_image,
+                                                                            CONTAINER_LABEL_LEAN_VERSION_NAME,
+                                                                            "Unknown")
+
+        data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
+                                                         cli_data_downloaders, kwargs, logger, interactive=True)
+        data_downloader_provider.ensure_module_installed(organization.id, container_module_version)
+        container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
+        # mounting additional data_downloader config files
+        paths_to_mount = data_downloader_provider.get_paths_to_mount()
 
         downloader_data_provider_path_dll = "/Lean/DownloaderDataProvider/bin/Debug"
 
