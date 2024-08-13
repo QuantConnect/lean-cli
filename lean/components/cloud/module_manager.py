@@ -61,7 +61,6 @@ class ModuleManager:
 
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
-                self._logger.debug(f'module_manager.install_module: {package.version}')
                 if module_version and package.version.split('.')[-1] == module_version:
                     self._logger.debug(f'module_manager.install_module:'
                                        f'Found requested version {module_version} for module {product_id}.')
