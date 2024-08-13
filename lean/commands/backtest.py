@@ -366,7 +366,7 @@ def backtest(project: Path,
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, "Unknown")
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,

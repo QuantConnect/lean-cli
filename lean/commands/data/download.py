@@ -684,8 +684,7 @@ def download(ctx: Context,
         container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
         container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                            CONTAINER_LABEL_LEAN_VERSION_NAME,
-                                                                            "Unknown")
+                                                                            CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
                                                          cli_data_downloaders, kwargs, logger, interactive=True)

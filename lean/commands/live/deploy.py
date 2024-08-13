@@ -278,7 +278,7 @@ def deploy(project: Path,
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
     container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, "Unknown")
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = {}

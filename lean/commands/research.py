@@ -122,7 +122,7 @@ def research(project: Path,
     container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
 
     container_module_version = container.docker_manager.get_image_label(research_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, "Unknown")
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
     if str(research_image) != DEFAULT_RESEARCH_IMAGE:
         logger.warn(f'A custom research image: "{research_image}" is being used!')
