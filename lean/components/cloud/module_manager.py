@@ -63,8 +63,6 @@ class ModuleManager:
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
                 if module_version and package.version.split('.')[-1] <= module_version:
-                    self._logger.debug(f'module_manager.install_module:'
-                                       f'Found requested version {module_version} for module {product_id}.')
                     packages_to_download_specific_version[package.name] = package
 
         # Replace version packages based on module_version if available
@@ -72,6 +70,9 @@ class ModuleManager:
             packages_to_download[package_name] = package_specific_version
 
         for package in packages_to_download.values():
+            if module_version and package.version.split('.')[-1] != module_version:
+                self._logger.debug(f'Package "{package.name}" does not have the specified version {module_version}. '
+                                   f'Using available version {package.version} instead.')
             self._download_file(product_id, organization_id, package)
 
         self._installed_product_ids.add(product_id)
