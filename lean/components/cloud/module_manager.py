@@ -72,7 +72,6 @@ class ModuleManager:
             packages_to_download[package_name] = package_specific_version
 
         for package in packages_to_download.values():
-            self._logger.info(f'install_module.package: {package}')
             self._download_file(product_id, organization_id, package)
 
         self._installed_product_ids.add(product_id)
