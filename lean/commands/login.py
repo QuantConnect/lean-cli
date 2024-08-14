@@ -11,17 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from click import command, option, prompt
 
 from lean.click import LeanCommand
 from lean.container import container
 from lean.models.errors import MoreInfoError
-from lean.components.api.api_client import APIClient
 
 
-def get_lean_config_credentials() -> tuple[str, str]:
+def get_lean_config_credentials() -> Tuple[str, str]:
     """Retrieve the QuantConnect credentials from the Lean CLI configuration.
 
     This function accesses the Lean CLI configuration manager to obtain the
@@ -39,7 +38,7 @@ def get_lean_config_credentials() -> tuple[str, str]:
     return user_id, api_token
 
 
-def get_credentials(user_id: Optional[str], api_token: Optional[str], show_secrets: bool) -> tuple[str, str]:
+def get_credentials(user_id: Optional[str], api_token: Optional[str], show_secrets: bool) -> Tuple[str, str]:
     """Fetch user credentials, prompting the user if necessary."""
     logger = container.logger
     credentials_storage = container.credentials_storage

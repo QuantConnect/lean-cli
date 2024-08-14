@@ -136,7 +136,6 @@ def init(organization: Optional[str], language: Optional[str]) -> None:
     validate_credentials(user_id, api_token)
 
     # Select and set organization
-
     if organization is not None:
         organization_id, organization_name = _get_organization_id(organization)
     else:
