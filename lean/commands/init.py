@@ -17,6 +17,7 @@ from typing import Optional, Tuple
 from click import command, option, Choice, confirm, prompt
 
 from lean.click import LeanCommand
+from lean.commands.login import get_credentials, validate_credentials, get_lean_config_credentials
 from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
@@ -127,6 +128,12 @@ def init(organization: Optional[str], language: Optional[str]) -> None:
 
     from shutil import copytree
     from zipfile import ZipFile
+
+    # Retrieve current credentials from the Lean CLI configuration
+    # If credentials are not available, prompt the user to provide them
+    current_user_id, current_api_token = get_lean_config_credentials()
+    user_id, api_token = get_credentials(current_user_id, current_api_token, False)
+    validate_credentials(user_id, api_token)
 
     # Select and set organization
 
