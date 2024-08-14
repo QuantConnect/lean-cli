@@ -176,7 +176,6 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -207,8 +206,6 @@ Options:
                                   The Open FIGI API key to use for mapping options
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
-                                  Your Bybit VIP Level
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
@@ -859,7 +856,6 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -890,8 +886,6 @@ Options:
                                   The Open FIGI API key to use for mapping options
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
-                                  Your Bybit VIP Level
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
@@ -1362,7 +1356,6 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -1730,7 +1723,6 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -1761,8 +1753,6 @@ Options:
                                   The Open FIGI API key to use for mapping options
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
-                                  Your Bybit VIP Level
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
@@ -1903,7 +1893,6 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
-  --iqfeed-host TEXT              The IQFeed host address
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -1934,8 +1923,6 @@ Options:
                                   The Open FIGI API key to use for mapping options
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
-                                  Your Bybit VIP Level
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-type [Cash|Margin|Futures|DVP]
