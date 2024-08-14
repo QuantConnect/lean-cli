@@ -246,13 +246,13 @@ class JsonModule(ABC):
                 if (isinstance(config, PathParameterUserInput)
                     and self._check_if_config_passes_filters(config, all_for_platform_type=False))}
 
-    def ensure_module_installed(self, organization_id: str, module_version: str = None) -> None:
+    def ensure_module_installed(self, organization_id: str, module_version: str) -> None:
         """
         Ensures that the specified module is installed. If the module is not installed, it will be installed.
 
         Args:
             organization_id (str): The ID of the organization where the module should be installed.
-            module_version (str, optional): The version of the module to install. If not provided,
+            module_version (str): The version of the module to install. If not provided,
             the latest version will be installed.
 
         Returns:
