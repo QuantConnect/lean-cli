@@ -55,16 +55,21 @@ class ModuleManager:
 
         module_files = self._api_client.modules.list_files(product_id, organization_id)
         packages_to_download: Dict[str, NuGetPackage] = {}
+        packages_to_download_specific_version: Dict[str, NuGetPackage] = {}
 
         for file_name in module_files:
             package = NuGetPackage.parse(file_name)
 
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
-                if module_version and package.version.split('.')[-1] == module_version:
+                if module_version and package.version.split('.')[-1] <= module_version:
                     self._logger.debug(f'module_manager.install_module:'
                                        f'Found requested version {module_version} for module {product_id}.')
-                    break
+                    packages_to_download_specific_version[package.name] = package
+
+        # Replace version packages based on module_version if available
+        for package_name, package_specific_version in packages_to_download_specific_version.items():
+            packages_to_download[package_name] = package_specific_version
 
         for package in packages_to_download.values():
             self._logger.info(f'install_module.package: {package}')
