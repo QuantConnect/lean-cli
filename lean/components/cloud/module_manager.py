@@ -53,15 +53,21 @@ class ModuleManager:
         if product_id in self._installed_product_ids:
             return
 
+        # Retrieve the list of module files for the specified product and organization
         module_files = self._api_client.modules.list_files(product_id, organization_id)
+        # Dictionaries to store the latest packages to download and specific version packages
         packages_to_download: Dict[str, NuGetPackage] = {}
         packages_to_download_specific_version: Dict[str, NuGetPackage] = {}
 
-        for file_name in module_files:
-            package = NuGetPackage.parse(file_name)
+        # Parse the module files into NuGetPackage objects and sort them by version
+        packages = [NuGetPackage.parse(file_name) for file_name in module_files]
+        sorted_packages = sorted(packages, key=lambda p: p.version)
 
+        for package in sorted_packages:
+            # Store the latest version of each package
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
+                # If a specific version is requested, keep track of the highest version <= module_version
                 if module_version and package.version.split('.')[-1] <= module_version:
                     packages_to_download_specific_version[package.name] = package
 
