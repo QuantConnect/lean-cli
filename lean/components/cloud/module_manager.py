@@ -37,28 +37,48 @@ class ModuleManager:
         self._installed_product_ids: Set[int] = set()
         self._installed_packages: Dict[int, List[NuGetPackage]] = {}
 
-    def install_module(self, product_id: int, organization_id: str) -> None:
-        """Installs a module into the global modules directory.
+    def install_module(self, product_id: int, organization_id: str, module_version: str) -> None:
+        """
+        Installs a module into the global modules' directory.
 
-        If an outdated version is already installed, it is automatically updated.
-        If the organization does not have a subscription for the given module, an error is raised.
+        If an outdated version is already installed, it is automatically updated. If a specific version
+        is provided and is different from the installed version, it will be updated. If the organization
+        does not have a subscription for the given module, an error is raised.
 
-        :param product_id: the product id of the module to download
-        :param organization_id: the id of the organization that has a license for the module
+        Args:
+        product_id (int): The product id of the module to download.
+        organization_id (str): The id of the organization that has a license for the module.
+        module_version (str): The specific version of the module to install. If None, installs the latest version.
         """
         if product_id in self._installed_product_ids:
             return
 
+        # Retrieve the list of module files for the specified product and organization
         module_files = self._api_client.modules.list_files(product_id, organization_id)
+        # Dictionaries to store the latest packages to download and specific version packages
         packages_to_download: Dict[str, NuGetPackage] = {}
+        packages_to_download_specific_version: Dict[str, NuGetPackage] = {}
 
-        for file_name in module_files:
-            package = NuGetPackage.parse(file_name)
+        # Parse the module files into NuGetPackage objects and sort them by version
+        packages = [NuGetPackage.parse(file_name) for file_name in module_files]
+        sorted_packages = sorted(packages, key=lambda p: p.version)
 
+        for package in sorted_packages:
+            # Store the latest version of each package
             if package.name not in packages_to_download or package.version > packages_to_download[package.name].version:
                 packages_to_download[package.name] = package
+                # If a specific version is requested, keep track of the highest version <= module_version
+                if module_version and package.version.split('.')[-1] <= module_version:
+                    packages_to_download_specific_version[package.name] = package
+
+        # Replace version packages based on module_version if available
+        for package_name, package_specific_version in packages_to_download_specific_version.items():
+            packages_to_download[package_name] = package_specific_version
 
         for package in packages_to_download.values():
+            if module_version and package.version.split('.')[-1] != module_version:
+                self._logger.debug(f'Package "{package.name}" does not have the specified version {module_version}. '
+                                   f'Using available version {package.version} instead.')
             self._download_file(product_id, organization_id, package)
 
         self._installed_product_ids.add(product_id)

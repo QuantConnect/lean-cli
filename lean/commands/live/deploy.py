@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.cli import (cli_brokerages, cli_data_queue_handlers, cli_data_downloaders,
                              cli_addon_modules, cli_history_provider)
@@ -271,22 +271,25 @@ def deploy(project: Path,
                                                                  kwargs, logger, interactive=True,
                                                                  environment_name=environment_name))
 
-    organization_id = container.organization_manager.try_get_working_organization_id()
-    paths_to_mount = {}
-    for module in (data_provider_live_instances + [data_downloader_instances, brokerage_instance]
-                   + history_providers_instances):
-        module.ensure_module_installed(organization_id)
-        paths_to_mount.update(module.get_paths_to_mount())
-
-    if not lean_config["environments"][environment_name]["live-mode"]:
-        raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
-                            "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
-
     project_config_manager = container.project_config_manager
     cli_config_manager = container.cli_config_manager
 
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
+
+    container_module_version = container.docker_manager.get_image_label(engine_image,
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
+
+    organization_id = container.organization_manager.try_get_working_organization_id()
+    paths_to_mount = {}
+    for module in (data_provider_live_instances + [data_downloader_instances, brokerage_instance]
+                   + history_providers_instances):
+        module.ensure_module_installed(organization_id, container_module_version)
+        paths_to_mount.update(module.get_paths_to_mount())
+
+    if not lean_config["environments"][environment_name]["live-mode"]:
+        raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
+                            "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
     container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 

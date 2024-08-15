@@ -19,7 +19,7 @@ from click import command, argument, option, Choice, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.components.docker.lean_runner import LeanRunner
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.click_options import options_from_json, get_configs_for_options
@@ -307,10 +307,13 @@ def optimize(project: Path,
 
     paths_to_mount = None
 
+    container_module_version = container.docker_manager.get_image_label(engine_image,
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
+
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
-        data_provider.ensure_module_installed(organization_id)
+        data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
 

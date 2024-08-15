@@ -16,7 +16,7 @@ from typing import Optional, Tuple
 from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.docker.lean_runner import LeanRunner
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.cli import cli_data_downloaders
 from lean.components.util.name_extraction import convert_to_class_name
@@ -113,13 +113,27 @@ def research(project: Path,
     if download_data:
         data_provider_historical = "QuantConnect"
 
+    project_config_manager = container.project_config_manager
+    cli_config_manager = container.cli_config_manager
+
+    project_config = project_config_manager.get_project_config(algorithm_file.parent)
+    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
+
+    container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
+
+    container_module_version = container.docker_manager.get_image_label(research_image,
+                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
+
+    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
+        logger.warn(f'A custom research image: "{research_image}" is being used!')
+
     paths_to_mount = None
 
     if data_provider_historical is not None:
         organization_id = container.organization_manager.try_get_working_organization_id()
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
-        data_provider.ensure_module_installed(organization_id)
+        data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
@@ -130,17 +144,6 @@ def research(project: Path,
     # Set extra config
     for key, value in extra_config:
         lean_config[key] = value
-
-    project_config_manager = container.project_config_manager
-    cli_config_manager = container.cli_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
-
-    container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
-
-    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
-        logger.warn(f'A custom research image: "{research_image}" is being used!')
 
     run_options = lean_runner.get_basic_docker_config(lean_config,
                                                       algorithm_file,
