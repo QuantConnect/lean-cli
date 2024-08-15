@@ -176,6 +176,7 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -856,6 +857,7 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -1356,6 +1358,7 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -1723,6 +1726,7 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
@@ -1893,6 +1897,7 @@ Options:
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
   --iqfeed-version TEXT           The product version of your IQFeed developer account
+  --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
