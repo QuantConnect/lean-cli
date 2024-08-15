@@ -80,6 +80,9 @@ def set_mock_organizations(set_unauthenticated) -> None:
 
     # container.api_client is already a mock from set_unauthenticated()
     api_client = container.api_client
+    container.cli_config_manager.user_id.set_value("123")
+    container.cli_config_manager.api_token.set_value("456")
+    api_client.is_authenticated.return_value = True
     api_client.organizations.get_all.side_effect = _get_all_organizations
     api_client.organizations.get.side_effect = mock_get_organization
 
