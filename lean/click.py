@@ -120,8 +120,10 @@ class VerboseOption(ClickOption):
                      f"  .NET version: {dotnet_version}\n"
                      f"  VS Code version: {vscode_version}\n"
                      f"  VS Code installed versions: {vscode_installed_extensions}")
-
-        logger.debug(get_whoami_message())
+        try:
+            logger.debug(get_whoami_message())
+        except:
+            logger.debug("Unable to retrieve login information. The user might not be logged in.")
 
 
 def verbose_option() -> Callable[[FC], FC]:
