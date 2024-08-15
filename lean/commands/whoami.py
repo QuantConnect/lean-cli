@@ -13,33 +13,11 @@
 
 from click import command
 
-from lean.click import LeanCommand
+from lean.click import LeanCommand, get_whoami_message
 from lean.container import container
-from lean.models.errors import AuthenticationError
 
 
 @command(cls=LeanCommand)
 def whoami() -> None:
     """Display who is logged in."""
-    logger = container.logger
-    api_client = container.api_client
-    cli_config_manager = container.cli_config_manager
-
-    if cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None:
-        try:
-            organizations = api_client.organizations.get_all()
-            logged_in = True
-        except AuthenticationError:
-            logged_in = False
-    else:
-        logged_in = False
-
-    if not logged_in:
-        logger.info("You are not logged in")
-        return
-
-    personal_organization_id = next(o.id for o in organizations if o.ownerName == "You")
-    personal_organization = api_client.organizations.get(personal_organization_id)
-    member = next(m for m in personal_organization.members if m.isAdmin)
-
-    logger.info(f"You are logged in as {member.name} ({member.email})")
+    container.logger.info(f'You are {get_whoami_message()}')
