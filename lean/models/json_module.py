@@ -223,15 +223,17 @@ class JsonModule(ABC):
                     if interactive:
                         default_value = configuration._input_default
                         user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
-
-                        if not isinstance(configuration, BrokerageEnvConfiguration):
-                            self._save_property({f"{configuration._id}": user_choice})
                     else:
                         if configuration._input_default != None and configuration._optional:
                             # if optional and we have a default input value and the user didn't provider it we use it
                             user_choice = configuration._input_default
                         else:
                             missing_options.append(f"--{configuration._id}")
+
+            if not isinstance(configuration, BrokerageEnvConfiguration):
+                logger.debug(f"Retaining configuration ID '{configuration._id}' as '{user_choice}' "
+                             f"in the configuration file.")
+                self._save_property({f"{configuration._id}": user_choice})
 
             configuration._value = user_choice
 
