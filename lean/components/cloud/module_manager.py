@@ -37,7 +37,7 @@ class ModuleManager:
         self._installed_product_ids: Set[int] = set()
         self._installed_packages: Dict[int, List[NuGetPackage]] = {}
 
-    def install_module(self, product_id: int, organization_id: str, module_version: str = None) -> None:
+    def install_module(self, product_id: int, organization_id: str, module_version: str) -> None:
         """
         Installs a module into the global modules' directory.
 
@@ -48,7 +48,7 @@ class ModuleManager:
         Args:
         product_id (int): The product id of the module to download.
         organization_id (str): The id of the organization that has a license for the module.
-        module_version (str, optional): The specific version of the module to install. If None, installs the latest version.
+        module_version (str): The specific version of the module to install. If None, installs the latest version.
         """
         if product_id in self._installed_product_ids:
             return
