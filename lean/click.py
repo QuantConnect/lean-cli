@@ -17,7 +17,7 @@ from typing import Optional, List, Callable
 from click import Command, Context, Parameter, ParamType, Option as ClickOption
 from click.decorators import FC, option
 
-from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
@@ -73,6 +73,7 @@ class VerboseOption(ClickOption):
             container.docker_manager.get_image_label(engine_image, 'strict_python_version', "Unknown")
             container.docker_manager.get_image_label(engine_image, 'python_version', "Unknown")
             container.docker_manager.get_image_label(engine_image, 'target_framework', "Unknown")
+            container.docker_manager.get_image_label(engine_image, CONTAINER_LABEL_LEAN_VERSION_NAME, None)
         except:
             pass
 
