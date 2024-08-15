@@ -89,6 +89,7 @@ def logs(backtest: bool, live: bool, optimization: bool, project: Optional[Path]
                 most_recent_timestamp = log_file_timestamp
 
     if most_recent_file is None:
-        raise RuntimeError(f"No {mode} log file exists")
+        raise RuntimeError(f"Unable to locate the {mode} log file."
+                           f"Please ensure the '--project' argument is specified, e.g., --project '.\\<Project_name>'.")
 
     print(most_recent_file.read_text(encoding="utf-8").strip())
