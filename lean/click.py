@@ -17,11 +17,47 @@ from typing import Optional, List, Callable
 from click import Command, Context, Parameter, ParamType, Option as ClickOption
 from click.decorators import FC, option
 
-from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME
+from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.container import container
 from lean.models.errors import MoreInfoError
 from lean.models.logger import Option
+from lean.models.errors import AuthenticationError
 
+
+def get_whoami_message() -> str:
+    """
+    Retrieves a message indicating the currently logged-in user's name and email.
+
+    This function checks if the user is logged in by verifying the presence of a user ID
+    and API token. If the user is logged in, it retrieves the user's personal organization
+    and finds the admin member associated with that organization. It then returns a message
+    containing the admin member's name and email address. If the user is not logged in,
+    it returns a message indicating that the user is not logged in.
+
+    Returns:
+        str: A message indicating the logged-in user's name and email,
+             or a message stating that the user is not logged in.
+    """
+    api_client = container.api_client
+    cli_config_manager = container.cli_config_manager
+
+    if cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None:
+        try:
+            organizations = api_client.organizations.get_all()
+            logged_in = True
+        except AuthenticationError:
+            logged_in = False
+    else:
+        logged_in = False
+
+    if not logged_in:
+        return "not logged in"
+
+    personal_organization_id = next(o.id for o in organizations if o.ownerName == "You")
+    personal_organization = api_client.organizations.get(personal_organization_id)
+    member = next(m for m in personal_organization.members if m.isAdmin)
+
+    return f"logged in as {member.name} ({member.email})"
 
 class VerboseOption(ClickOption):
     def __init__(self, *args, **kwargs):
@@ -73,6 +109,7 @@ class VerboseOption(ClickOption):
             container.docker_manager.get_image_label(engine_image, 'strict_python_version', "Unknown")
             container.docker_manager.get_image_label(engine_image, 'python_version', "Unknown")
             container.docker_manager.get_image_label(engine_image, 'target_framework', "Unknown")
+            container.docker_manager.get_image_label(engine_image, CONTAINER_LABEL_LEAN_VERSION_NAME, None)
         except:
             pass
 
@@ -83,6 +120,10 @@ class VerboseOption(ClickOption):
                      f"  .NET version: {dotnet_version}\n"
                      f"  VS Code version: {vscode_version}\n"
                      f"  VS Code installed versions: {vscode_installed_extensions}")
+        try:
+            logger.debug(get_whoami_message())
+        except:
+            logger.debug("Unable to retrieve login information. The user might not be logged in.")
 
 
 def verbose_option() -> Callable[[FC], FC]:
