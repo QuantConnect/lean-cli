@@ -160,8 +160,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -345,8 +346,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -841,8 +843,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1265,8 +1268,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1710,8 +1714,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
@@ -1881,8 +1886,9 @@ Options:
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
-  --coinbase-api-key TEXT         Your Coinbase Advanced Trade API key
-  --coinbase-api-secret TEXT      Your Coinbase Advanced Trade API secret
+  --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
+  --coinbase-api-private-key TEXT
+                                  Your Coinbase Advanced Trade API private key from file.
   --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
