@@ -137,7 +137,7 @@ class JsonModule(ABC):
                 for key, value in configuration._value.items():
                     settings[key] = str(value)
             else:
-                settings[configuration._id] = str(configuration._value).replace("\\", "/")
+                settings[configuration._id] = str(configuration._value).replace("\\n", "\n").replace("\\", "/")
 
         return settings
 
