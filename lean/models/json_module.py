@@ -137,7 +137,14 @@ class JsonModule(ABC):
                 for key, value in configuration._value.items():
                     settings[key] = str(value)
             else:
-                settings[configuration._id] = str(configuration._value).replace("\\", "/")
+                # Replace escaped newline characters and backslashes in the configuration value.
+                # When reading the JSON configuration through Python, newline characters ('\n') and backslashes ('\')
+                # may be escaped, causing issues in scenarios where these characters are expected to be interpreted
+                # literally (e.g., file paths, multi-line strings). This replace operation ensures that:
+                # 1. Escaped newline characters ('\\n') are correctly interpreted as actual newlines ('\n').
+                # 2. Backslashes ('\\') in file paths are converted to forward slashes ('/'), making paths
+                #    more consistent across different operating systems.
+                settings[configuration._id] = str(configuration._value).replace("\\n", "\n").replace("\\", "/")
 
         return settings
 
