@@ -43,6 +43,7 @@ def decrypt(project: Path,
     decryption_key = get_and_validate_user_input_encryption_key(key, decryption_key)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
+
     source_files = project_manager.get_source_files(project)
     try:
         from lean.components.util.encryption_helper import get_decrypted_file_content_for_local_project
