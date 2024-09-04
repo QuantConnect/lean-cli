@@ -363,8 +363,8 @@ brokerage_required_options = {
         "bitfinex-api-secret": "456",
     },
     "Coinbase Advanced Trade": {
-        "coinbase-api-key": "123",
-        "coinbase-api-secret": "456",
+        "coinbase-api-name": "123",
+        "coinbase-api-private-key": "456",
     },
     "Binance": {
         "binance-exchange-name": "binance",
