@@ -52,7 +52,7 @@ def encrypt(project: Path,
     except Exception as e:
         raise RuntimeError(f"Could not encrypt project {project}: {e}")
     for file, encrypted in zip(source_files, encrypted_data):
-        with open(file, 'w') as f:
+        with open(file, 'w', encoding="utf-8") as f:
             f.write(encrypted)
     
     # Mark the project as encrypted
