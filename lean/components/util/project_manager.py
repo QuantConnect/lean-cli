@@ -58,12 +58,14 @@ class ProjectManager:
         self._cli_config_manager = cli_config_manager
         self._docker_manager = docker_manager
 
-    def find_algorithm_file(self, input: Path) -> Path:
+    def find_algorithm_file(self, input: Path, not_throw: bool = False) -> Path:
         """Returns the path to the file containing the algorithm.
 
         Raises an error if the algorithm file cannot be found.
 
         :param input: the path to the algorithm or the path to the project
+        :param not_throw: a flag indicating whether this method should
+        raise an exception if the file is not found
         :return: the path to the file containing the algorithm
         """
         if input.is_file():
@@ -74,6 +76,8 @@ class ProjectManager:
             if target_file.exists():
                 return target_file
 
+        if not_throw:
+            return None
         raise ValueError("The specified project does not contain a main.py or Main.cs file")
 
     def get_project_by_id(self, local_id: int) -> Path:

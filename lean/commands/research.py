@@ -101,7 +101,12 @@ def research(project: Path,
     logger = container.logger
 
     project_manager = container.project_manager
-    algorithm_file = project_manager.find_algorithm_file(project)
+    algorithm_file = project_manager.find_algorithm_file(project, not_throw = True)
+
+    # We just need the algorithm file name to create the configurations for lean and
+    # the docker container. We do not need an algorithm file to run a research project
+    if algorithm_file is None:
+        algorithm_file = project / 'main.py'
     algorithm_name = convert_to_class_name(project)
 
     environment_name = "backtesting"
