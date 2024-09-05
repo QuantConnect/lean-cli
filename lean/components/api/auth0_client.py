@@ -27,6 +27,7 @@ class Auth0Client:
         :param api_client: the APIClient instance to use when making requests
         """
         self._api = api_client
+        self._cache = {}
 
     def read(self, brokerage_id: str) -> QCAuth0Authorization:
         """Reads the authorization data for a brokerage.
@@ -35,12 +36,18 @@ class Auth0Client:
         :return: the authorization data for the specified brokerage
         """
         try:
+            # First check cache
+            if brokerage_id in self._cache.keys():
+                return self._cache[brokerage_id]
             payload = {
                 "brokerage": brokerage_id
             }
 
             data = self._api.post("live/auth0/read", payload)
-            return QCAuth0Authorization(**data)
+            # Store in cache
+            result = QCAuth0Authorization(**data)
+            self._cache[brokerage_id] = result
+            return result
         except RequestFailedError as e:
             return QCAuth0Authorization(authorization=None)
 
