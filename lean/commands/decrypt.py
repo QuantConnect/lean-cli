@@ -47,13 +47,13 @@ def decrypt(project: Path,
     source_files = project_manager.get_source_files(project)
     try:
         from lean.components.util.encryption_helper import get_decrypted_file_content_for_local_project
-        decrypted_data = get_decrypted_file_content_for_local_project(project, 
+        decrypted_data = get_decrypted_file_content_for_local_project(project,
                                 source_files, decryption_key, project_config_manager, organization_id)
     except Exception as e:
         raise RuntimeError(f"Could not decrypt project {project}: {e}")
 
     for file, decrypted in zip(source_files, decrypted_data):
-        with open(file, 'w') as f:
+        with open(file, 'w', encoding="utf-8") as f:
             f.write(decrypted)
 
     # Mark the project as decrypted

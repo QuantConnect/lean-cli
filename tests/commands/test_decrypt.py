@@ -49,6 +49,36 @@ def test_decrypt_decrypts_file_in_case_project_not_in_decrypt_state() -> None:
     assert project_config.get("encrypted", False) == False
     assert project_config.get("encryption-key-path", None) == None
 
+def test_decrypt_decrypts_file_that_has_a_chinese_character() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    source_files = container.project_manager.get_source_files(project_path)
+    file_contents_map = {file.name: file.read_text() for file in source_files}
+
+    encryption_file_path = project_path / "encryption_x.txt"
+    encryption_file_path.write_text("是一的", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["encrypt", "Python Project", "--key", encryption_file_path])
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted", False) != False
+    assert project_config.get("encryption-key-path", None) != None
+    for file in source_files:
+        assert file_contents_map[file.name] != file.read_text()
+
+    result = CliRunner().invoke(lean, ["decrypt", "Python Project", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+
+    source_files = container.project_manager.get_source_files(project_path)
+    for file in source_files:
+        assert file_contents_map[file.name] == file.read_text()
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted", False) == False
+    assert project_config.get("encryption-key-path", None) == None
+
 
 def test_decrypt_does_not_change_file_in_case_project_already_in_decrypt_state() -> None:
     create_fake_lean_cli_directory()

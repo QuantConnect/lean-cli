@@ -103,7 +103,7 @@ def get_decrypted_file_content_for_local_project(project: Path, source_files: Li
     for file in source_files:
         try:
             # lets read and decrypt the file
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding="utf-8") as f:
                 encrypted = f.read()
                 if not areProjectFilesAlreadyEncrypted:
                     decrypted = encrypted
@@ -131,7 +131,7 @@ def get_encrypted_file_content_for_local_project(project: Path, source_files: Li
     for file in source_files:
         try:
             # lets read and decrypt the file
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding= "utf-8") as f:
                 plain_text = f.read()
                 if areProjectFilesAlreadyEncrypted:
                     encrypted = plain_text
