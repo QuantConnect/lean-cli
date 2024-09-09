@@ -34,6 +34,7 @@ def build_and_configure_modules(target_modules: List[str], module_list: List[Jso
     for target_module_name in target_modules:
         module = non_interactive_config_build_for_name(lean_config, target_module_name, module_list, properties,
                                                        logger, environment_name)
+        # Ensures extra modules (not brokerage or data feeds) are installed.
         module.ensure_module_installed(organization_id, module_version)
         lean_config["environments"][environment_name].update(module.get_settings())
 
