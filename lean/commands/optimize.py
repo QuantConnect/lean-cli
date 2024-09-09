@@ -340,7 +340,7 @@ def optimize(project: Path,
 
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
-                                kwargs, logger, environment_name)
+                                kwargs, logger, environment_name, container_module_version)
 
     container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 

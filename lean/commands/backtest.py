@@ -405,7 +405,7 @@ def backtest(project: Path,
 
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
-                                kwargs, logger, environment_name)
+                                kwargs, logger, environment_name, container_module_version)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
