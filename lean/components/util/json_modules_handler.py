@@ -19,7 +19,7 @@ from lean.models.logger import Option
 
 def build_and_configure_modules(target_modules: List[str], module_list: List[JsonModule], organization_id: str,
                                 lean_config: Dict[str, Any], properties: Dict[str, Any], logger: Logger,
-                                environment_name: str):
+                                environment_name: str, module_version: str):
     """Builds and configures the given modules
 
     :param target_modules: the requested modules
@@ -29,10 +29,13 @@ def build_and_configure_modules(target_modules: List[str], module_list: List[Jso
     :param properties: the user provided arguments
     :param logger: the logger instance
     :param environment_name: the environment name to use
+    :param module_version: The version of the module to install. If not provided, the latest version will be installed.
     """
     for target_module_name in target_modules:
         module = non_interactive_config_build_for_name(lean_config, target_module_name, module_list, properties,
                                                        logger, environment_name)
+        # Ensures extra modules (not brokerage or data feeds) are installed.
+        module.ensure_module_installed(organization_id, module_version)
         lean_config["environments"][environment_name].update(module.get_settings())
 
 
