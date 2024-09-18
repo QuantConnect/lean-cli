@@ -216,12 +216,9 @@ class JsonModule(ABC):
             elif isinstance(configuration, AccountIdsConfiguration):
                 account_ids = get_authorization(container.api_client.auth0, self._display_name.lower(), logger).accountIds
                 if account_ids and len(account_ids) > 0:
-                    logger.debug(f'accountIds: {account_ids}')
-                    options = [Option(id=data_type, label=data_type) for data_type in account_ids]
-                    account_id = container.logger.prompt_list(f"Chosen {self._display_name.lower()} account ID", options)
-                    logger.debug(f'user choose account ID: {account_id}')
-                    configuration._value = account_id
-                continue
+                    configuration._choices = account_ids
+                elif configuration._optional:
+                    continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
             # Only ask for user input if the config wasn't given as an option

@@ -421,7 +421,7 @@ class AuthConfiguration(InternalInputUserInput):
         raise ValueError(f'user input not allowed with {self.__class__.__name__}')
 
 
-class AccountIdsConfiguration(InternalInputUserInput):
+class AccountIdsConfiguration(ChoiceUserInput):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
@@ -447,7 +447,10 @@ class AccountIdsConfiguration(InternalInputUserInput):
         :param hide_input: Whether to hide the input (not used for this type of input, which is never hidden).
         :return: The value provided by the user.
         """
-        raise ValueError(f'user input not allowed with {self.__class__.__name__}')
+        if self._input_method == "choice":
+            return ChoiceUserInput.ask_user_for_input(self, default_value, logger)
+        else:
+            raise ValueError(f"Undefined input method type {self._input_method}")
 
 
 class FilterEnvConfiguration(BrokerageEnvConfiguration):
