@@ -23,6 +23,7 @@ from lean.models.pydantic import WrappedBaseModel, validator
 
 class QCAuth0Authorization(WrappedBaseModel):
     authorization: Optional[Dict[str, str]]
+    accountIds: Optional[List[str]]
 
 class ProjectEncryptionKey(WrappedBaseModel):
     id: str
