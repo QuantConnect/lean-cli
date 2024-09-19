@@ -212,15 +212,30 @@ class JsonModule(ABC):
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.authorization
-                for config in self._lean_configs:
-                    if isinstance(config, AccountIdsConfiguration):
-                        account_ids = auth_authorizations.accountIds
-                        if account_ids and len(account_ids) > 0:
-                            config._choices = account_ids
+                for inner_config in self._lean_configs:
+                    if isinstance(inner_config, AccountIdsConfiguration):
+                        api_account_ids = auth_authorizations.accountIds
+                        config_dash = inner_config._id.replace('-', '_')
+                        if user_provided_options and config_dash in user_provided_options:
+                            user_provide_account_id = user_provided_options[config_dash]
+                            if any(account_id.lower() == user_provide_account_id.lower() for account_id in
+                                   api_account_ids):
+                                logger.info(f'The account ID: {user_provide_account_id}')
+                                inner_config._value = user_provide_account_id
+                            else:
+                                raise ValueError(f"The account ID '{user_provide_account_id}' "
+                                                 f"you provided is not valid in the configuration '{inner_config._id}'."
+                                                 f"Please double-check the account ID and try again.")
+                        if api_account_ids and len(api_account_ids) > 0:
+                            if len(api_account_ids) == 1:
+                                logger.info(f'The account ID: {api_account_ids[0]}')
+                                inner_config._value = api_account_ids[0]
+                            else:
+                                inner_config._input_method = "choice"
+                                inner_config._choices = api_account_ids
                         break
                 continue
-            elif (isinstance(configuration, AccountIdsConfiguration) and configuration._optional
-                  and not configuration._choices):
+            elif isinstance(configuration, AccountIdsConfiguration) and inner_config._input_method != "choice":
                 continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
