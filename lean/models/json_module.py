@@ -218,14 +218,15 @@ class JsonModule(ABC):
                         config_dash = inner_config._id.replace('-', '_')
                         if user_provided_options and config_dash in user_provided_options:
                             user_provide_account_id = user_provided_options[config_dash]
-                            if any(account_id.lower() == user_provide_account_id.lower() for account_id in
-                                   api_account_ids):
+                            if (api_account_ids and len(api_account_ids) > 0 and
+                                any(account_id.lower() == user_provide_account_id.lower()
+                                    for account_id in api_account_ids)):
                                 logger.info(f'The account ID: {user_provide_account_id}')
                                 inner_config._value = user_provide_account_id
                             else:
                                 raise ValueError(f"The provided account id '{user_provide_account_id} is not valid, "
                                                  f"available: {api_account_ids}")
-                        if api_account_ids and len(api_account_ids) > 0:
+                        elif api_account_ids and len(api_account_ids) > 0:
                             if len(api_account_ids) == 1:
                                 logger.info(f'The account ID: {api_account_ids[0]}')
                                 inner_config._value = api_account_ids[0]
