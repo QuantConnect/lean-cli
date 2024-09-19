@@ -223,9 +223,8 @@ class JsonModule(ABC):
                                 logger.info(f'The account ID: {user_provide_account_id}')
                                 inner_config._value = user_provide_account_id
                             else:
-                                raise ValueError(f"The account ID '{user_provide_account_id}' "
-                                                 f"you provided is not valid in the configuration '{inner_config._id}'."
-                                                 f"Please double-check the account ID and try again.")
+                                raise ValueError(f"The provided account id '{user_provide_account_id} is not valid, "
+                                                 f"available: {api_account_ids}")
                         if api_account_ids and len(api_account_ids) > 0:
                             if len(api_account_ids) == 1:
                                 logger.info(f'The account ID: {api_account_ids[0]}')
@@ -233,9 +232,12 @@ class JsonModule(ABC):
                             else:
                                 inner_config._input_method = "choice"
                                 inner_config._choices = api_account_ids
+                                inner_config._value = inner_config.ask_user_for_input(inner_config._input_default,
+                                                                                      logger,
+                                                                                      hide_input=hide_input)
                         break
                 continue
-            elif isinstance(configuration, AccountIdsConfiguration) and inner_config._input_method != "choice":
+            elif isinstance(configuration, AccountIdsConfiguration):
                 continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
