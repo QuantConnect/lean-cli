@@ -223,6 +223,10 @@ class JsonModule(ABC):
                                     for account_id in api_account_ids)):
                                 logger.info(f'The account ID: {user_provide_account_id}')
                                 inner_config._value = user_provide_account_id
+                            elif not api_account_ids:
+                                logger.warn(f"The '{self._display_name}' oauth authentication returned no account id, "
+                                            f"using provided account id: '{user_provide_account_id}'")
+                                inner_config._value = user_provide_account_id
                             else:
                                 raise ValueError(f"The provided account id '{user_provide_account_id} is not valid, "
                                                  f"available: {api_account_ids}")
