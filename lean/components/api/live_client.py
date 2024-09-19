@@ -123,3 +123,15 @@ class LiveClient:
             "projectId": project_id
         })
         return QCRestResponse(**data)
+
+    def command_create(self, project_id: int, command: dict) -> QCRestResponse:
+        """Sends a command to a live trading deployment
+
+        :param project_id: the id of the project
+        :param command: the command to send
+        """
+        data = self._api.post("live/commands/create", {
+            "projectId": project_id,
+            "command": command
+        })
+        return QCRestResponse(**data)

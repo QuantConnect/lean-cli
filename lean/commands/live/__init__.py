@@ -14,6 +14,7 @@
 from lean.commands.live.live import live
 from lean.commands.live.deploy import deploy
 from lean.commands.live.stop import stop
+from lean.commands.live.command import command
 from lean.commands.live.liquidate import liquidate
 from lean.commands.live.submit_order import submit_order
 from lean.commands.live.cancel_order import cancel_order
@@ -22,6 +23,7 @@ from lean.commands.live.update_order import update_order
 
 live.add_command(deploy)
 live.add_command(stop)
+live.add_command(command)
 live.add_command(liquidate)
 live.add_command(submit_order)
 live.add_command(cancel_order)

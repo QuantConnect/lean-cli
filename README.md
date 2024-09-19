@@ -72,6 +72,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean build`](#lean-build)
 - [`lean cloud backtest`](#lean-cloud-backtest)
 - [`lean cloud live`](#lean-cloud-live)
+- [`lean cloud live command`](#lean-cloud-live-command)
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
 - [`lean cloud live stop`](#lean-cloud-live-stop)
@@ -101,6 +102,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean live`](#lean-live)
 - [`lean live add-security`](#lean-live-add-security)
 - [`lean live cancel-order`](#lean-live-cancel-order)
+- [`lean live command`](#lean-live-command)
 - [`lean live deploy`](#lean-live-deploy)
 - [`lean live liquidate`](#lean-live-liquidate)
 - [`lean live stop`](#lean-live-stop)
@@ -303,10 +305,29 @@ Options:
   --help  Show this message and exit.
 
 Commands:
+  command    Send a command to a running cloud live trading project.
   deploy     Start live trading for a project in the cloud.
   liquidate  Stops live trading and liquidates existing positions for a certain project.
   stop       Stops live trading for a certain project without liquidating existing positions.
 ```
+
+### `lean cloud live command`
+
+Send a command to a running cloud live trading project.
+
+```
+Usage: lean cloud live command [OPTIONS] PROJECT
+
+  Send a command to a running cloud live trading project.
+
+Options:
+  --data TEXT  The command to send, 'str' representation of a 'dict' e.g. "{ \"target\": \"BTCUSD\",
+               \"$type\":\"MyCommand\" }"
+  --verbose    Enable debug logging
+  --help       Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/live/command.py](lean/commands/cloud/live/command.py)_
 
 ### `lean cloud live deploy`
 
@@ -1165,6 +1186,7 @@ Options:
 Commands:
   add-security  Represents a command to add a security to the algorithm.
   cancel-order  Represents a command to cancel a specific order by id.
+  command       Send a command to a local running live trading project.
   deploy        Start live trading a project locally using Docker.
   liquidate     Liquidate the given symbol from the latest deployment of the given project.
   stop          Stop an already running local live trading project.
@@ -1215,6 +1237,25 @@ Options:
 ```
 
 _See code: [lean/commands/live/cancel_order.py](lean/commands/live/cancel_order.py)_
+
+### `lean live command`
+
+Send a command to a local running live trading project.
+
+```
+Usage: lean live command [OPTIONS] PROJECT
+
+  Send a command to a local running live trading project.
+
+Options:
+  --data TEXT         The command to send, 'str' representation of a 'dict' e.g. "{ \"target\": \"BTCUSD\",
+                      \"$type\":\"MyCommand\" }"
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
+```
+
+_See code: [lean/commands/live/command.py](lean/commands/live/command.py)_
 
 ### `lean live deploy`
 
