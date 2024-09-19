@@ -14,9 +14,11 @@
 from lean.commands.cloud.live.live import live
 from lean.commands.cloud.live.deploy import deploy
 from lean.commands.cloud.live.stop import stop
+from lean.commands.cloud.live.command import command
 from lean.commands.cloud.live.liquidate import liquidate
 
 
 live.add_command(deploy)
 live.add_command(stop)
+live.add_command(command)
 live.add_command(liquidate)
