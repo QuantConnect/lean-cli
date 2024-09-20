@@ -56,6 +56,9 @@ def get_click_option_type(configuration: Configuration):
     if configuration._input_method == "confirm":
         return bool
     elif configuration._input_method == "choice":
+        # Skip validation if no predefined choices in config and user provided input manually
+        if not configuration._choices:
+            return str
         return Choice(configuration._choices, case_sensitive=False)
     elif configuration._input_method == "prompt":
         return configuration.get_input_type()
