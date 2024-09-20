@@ -217,36 +217,19 @@ class JsonModule(ABC):
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.authorization
                 for inner_config in self._lean_configs:
-                    if isinstance(inner_config, AccountIdsConfiguration):
+                    if any(condition._dependent_config_id == configuration._id for condition in
+                           inner_config._filter._conditions):
                         api_account_ids = auth_authorizations.accountIds
                         config_dash = inner_config._id.replace('-', '_')
+                        inner_config._choices = api_account_ids
                         if user_provided_options and config_dash in user_provided_options:
                             user_provide_account_id = user_provided_options[config_dash]
                             if (api_account_ids and len(api_account_ids) > 0 and
-                                any(account_id.lower() == user_provide_account_id.lower()
-                                    for account_id in api_account_ids)):
-                                logger.info(f'The account ID: {user_provide_account_id}')
-                                inner_config._value = user_provide_account_id
-                            elif not api_account_ids:
-                                logger.warn(f"The '{self._display_name}' oauth authentication returned no account id, "
-                                            f"using provided account id: '{user_provide_account_id}'")
-                                inner_config._value = user_provide_account_id
-                            else:
-                                raise ValueError(f"The provided account id '{user_provide_account_id} is not valid, "
+                                not any(account_id.lower() == user_provide_account_id.lower()
+                                        for account_id in api_account_ids)):
+                                raise ValueError(f"The provided account id '{user_provide_account_id}' is not valid, "
                                                  f"available: {api_account_ids}")
-                        elif api_account_ids and len(api_account_ids) > 0:
-                            if len(api_account_ids) == 1:
-                                logger.info(f'The account ID: {api_account_ids[0]}')
-                                inner_config._value = api_account_ids[0]
-                            else:
-                                inner_config._input_method = "choice"
-                                inner_config._choices = api_account_ids
-                                inner_config._value = inner_config.ask_user_for_input(inner_config._input_default,
-                                                                                      logger,
-                                                                                      hide_input=hide_input)
                         break
-                continue
-            elif isinstance(configuration, AccountIdsConfiguration):
                 continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)
