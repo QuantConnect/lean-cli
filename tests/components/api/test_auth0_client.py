@@ -11,16 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import responses
+from unittest import mock
 from lean.constants import API_BASE_URL
-from components.api.test_clients import create_api_client
+from lean.components.api.api_client import APIClient
+from lean.components.util.http_client import HTTPClient
 
 
 @responses.activate
 def test_auth0client() -> None:
-    os.environ.setdefault("QC_API", "local")
-    api_clint = create_api_client()
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
 
     responses.add(
         responses.POST,
