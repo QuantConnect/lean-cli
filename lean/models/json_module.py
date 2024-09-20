@@ -21,7 +21,6 @@ from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
-from lean.models.logger import Option
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
     PathParameterUserInput, AuthConfiguration
 from copy import copy
