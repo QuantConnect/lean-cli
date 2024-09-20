@@ -87,7 +87,11 @@ class JsonModule(ABC):
                     # skip, we want all configurations that match type and platform, for help
                     continue
                 target_value = self.get_config_value_from_name(condition._dependent_config_id)
-            if not target_value or not condition.check(target_value):
+            if not target_value:
+                return False
+            elif isinstance(target_value, dict):
+                    return all(condition.check(value) for value in target_value.values())
+            elif not condition.check(target_value):
                 return False
         return True
 
