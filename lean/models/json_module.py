@@ -89,7 +89,7 @@ class JsonModule(ABC):
             if not target_value:
                 return False
             elif isinstance(target_value, dict):
-                    return all(condition.check(value) for value in target_value.values())
+                return all(condition.check(value) for value in target_value.values())
             elif not condition.check(target_value):
                 return False
         return True
