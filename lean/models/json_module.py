@@ -22,7 +22,7 @@ from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
-    PathParameterUserInput, AuthConfiguration
+    PathParameterUserInput, AuthConfiguration, ChoiceUserInput
 from copy import copy
 from abc import ABC
 
@@ -210,6 +210,9 @@ class JsonModule(ABC):
                     # make sure we log these messages once, we could use the same module for different functionalities
                     _logged_messages.add(log_message)
             if type(configuration) is InternalInputUserInput:
+                continue
+            if isinstance(configuration, ChoiceUserInput) and len(configuration._choices) == 0:
+                logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
