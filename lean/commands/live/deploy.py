@@ -277,6 +277,8 @@ def deploy(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
     container_module_version = container.docker_manager.get_image_label(engine_image,
                                                                         CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
@@ -290,8 +292,6 @@ def deploy(project: Path,
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     _start_iqconnect_if_necessary(lean_config, environment_name)
 

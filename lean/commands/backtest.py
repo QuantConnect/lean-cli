@@ -365,6 +365,8 @@ def backtest(project: Path,
     project_config = project_config_manager.get_project_config(algorithm_file.parent)
     engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
 
+    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
+
     container_module_version = container.docker_manager.get_image_label(engine_image,
                                                                         CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
@@ -379,8 +381,6 @@ def backtest(project: Path,
 
     if str(engine_image) != DEFAULT_ENGINE_IMAGE:
         logger.warn(f'A custom engine image: "{engine_image}" is being used!')
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     if not output.exists():
         output.mkdir(parents=True)
