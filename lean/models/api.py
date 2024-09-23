@@ -21,9 +21,28 @@ from lean.models.pydantic import WrappedBaseModel, validator
 # The models in this module are all parts of responses from the QuantConnect API
 # The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 
+
+class Account(WrappedBaseModel):
+    id: str
+    name: str
+
+
 class QCAuth0Authorization(WrappedBaseModel):
     authorization: Optional[Dict[str, str]]
-    accountIds: Optional[List[str]]
+    accounts: Optional[List[Account]]
+
+    def get_account_ids(self) -> List[str]:
+        """
+        Retrieves a list of account IDs from the list of Account objects.
+
+        This method returns only the 'id' values from each account in the 'accounts' list.
+        If there are no accounts, it returns an empty list.
+
+        Returns:
+            List[str]: A list of account IDs.
+        """
+        return [account.id for account in self.accounts] if self.accounts else []
+
 
 class ProjectEncryptionKey(WrappedBaseModel):
     id: str

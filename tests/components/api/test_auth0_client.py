@@ -30,7 +30,10 @@ def test_auth0client() -> None:
                 "test-brokerage-client-id": "123",
                 "test-brokerage-refresh-token": "123"
             },
-            "accountIds": ["123", "321"],
+            "accounts": [
+                {"name": "account_1", "id": "123"},
+                {"name": "account_2", "id": "456"}
+            ],
             "success": "true"
         },
         status=200
@@ -43,5 +46,6 @@ def test_auth0client() -> None:
     assert result
     assert result.authorization
     assert len(result.authorization) > 0
-    assert result.accountIds
-    assert len(result.accountIds) > 0
+    assert result.accounts
+    assert len(result.accounts) > 0
+    assert len(result.get_account_ids()) > 0
