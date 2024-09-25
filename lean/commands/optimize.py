@@ -19,7 +19,7 @@ from click import command, argument, option, Choice, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.components.docker.lean_runner import LeanRunner
-from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.click_options import options_from_json, get_configs_for_options
@@ -227,6 +227,8 @@ def optimize(project: Path,
     if optimizer_config is not None and strategy is not None:
         raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
 
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
+                                                                                           algorithm_file)
     if optimizer_config is not None:
         config = loads(optimizer_config.read_text(encoding="utf-8"))
 
@@ -242,8 +244,6 @@ def optimize(project: Path,
         optimization_parameters = optimizer_config_manager.parse_parameters(parameter)
         optimization_constraints = optimizer_config_manager.parse_constraints(constraint)
     else:
-        project_config_manager = container.project_config_manager
-        project_config = project_config_manager.get_project_config(algorithm_file.parent)
         project_parameters = [QCParameter(key=k, value=v) for k, v in project_config.get("parameters", {}).items()]
 
         if len(project_parameters) == 0:
@@ -286,16 +286,7 @@ def optimize(project: Path,
     with config_path.open("w+", encoding="utf-8") as file:
         file.write(dumps(config, indent=4) + "\n")
 
-    project_config_manager = container.project_config_manager
-    cli_config_manager = container.cli_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
-
     logger = container.logger
-
-    if str(engine_image) != DEFAULT_ENGINE_IMAGE:
-        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
     lean_config_manager = container.lean_config_manager
     lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
@@ -306,9 +297,6 @@ def optimize(project: Path,
         data_provider_historical = "QuantConnect"
 
     paths_to_mount = None
-
-    container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
 
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
@@ -341,8 +329,6 @@ def optimize(project: Path,
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
                                 kwargs, logger, environment_name, container_module_version)
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach,
                                                       engine_image, paths_to_mount)

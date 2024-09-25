@@ -208,9 +208,7 @@ def generate(start: datetime,
         }
     }
 
-    engine_image = container.cli_config_manager.get_engine_image(image)
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    engine_image, container_module_version = container.manage_docker_image(image, update, no_update=False)
 
     success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:
