@@ -228,7 +228,7 @@ def optimize(project: Path,
         raise RuntimeError("--optimizer-config and --strategy are mutually exclusive")
 
     engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
-                                                                                           algorithm_file)
+                                                                                           algorithm_file.parent)
     if optimizer_config is not None:
         config = loads(optimizer_config.read_text(encoding="utf-8"))
 

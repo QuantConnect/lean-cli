@@ -360,7 +360,7 @@ def backtest(project: Path,
     paths_to_mount = None
 
     engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
-                                                                                           algorithm_file)
+                                                                                           algorithm_file.parent)
 
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,

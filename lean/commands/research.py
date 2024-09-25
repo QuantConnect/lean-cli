@@ -16,7 +16,7 @@ from typing import Optional, Tuple
 from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.docker.lean_runner import LeanRunner
-from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH, CONTAINER_LABEL_LEAN_VERSION_NAME
+from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.cli import cli_data_downloaders
 from lean.components.util.name_extraction import convert_to_class_name
@@ -118,19 +118,9 @@ def research(project: Path,
     if download_data:
         data_provider_historical = "QuantConnect"
 
-    project_config_manager = container.project_config_manager
-    cli_config_manager = container.cli_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    research_image = cli_config_manager.get_research_image(image or project_config.get("research-image", None))
-
-    container.update_manager.pull_docker_image_if_necessary(research_image, update, no_update)
-
-    container_module_version = container.docker_manager.get_image_label(research_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
-
-    if str(research_image) != DEFAULT_RESEARCH_IMAGE:
-        logger.warn(f'A custom research image: "{research_image}" is being used!')
+    research_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
+                                                                                             algorithm_file.parent,
+                                                                                             False)
 
     paths_to_mount = None
 

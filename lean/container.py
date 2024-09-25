@@ -42,7 +42,7 @@ from lean.components.util.task_manager import TaskManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.update_manager import UpdateManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH
+from lean.constants import CACHE_PATH, CREDENTIALS_CONFIG_PATH, GENERAL_CONFIG_PATH, DEFAULT_RESEARCH_IMAGE
 from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
 from lean.models.docker import DockerImage
 
@@ -167,36 +167,43 @@ class Container:
         self.update_manager = UpdateManager(self.logger, self.http_client, self.cache_storage, self.docker_manager)
 
     def manage_docker_image(self, image: Optional[str], update: bool, no_update: bool,
-                            algorithm_file: Path = None) -> Tuple[DockerImage, str, Optional[Storage]]:
+                            project_directory: Path = None,
+                            is_engine_image: bool = True) -> Tuple[DockerImage, str, Optional[Storage]]:
         """
         Manages the Docker image for the LEAN engine by:
         1. Retrieving the engine image from the provided image or project config.
         2. Pulling the image if necessary based on the update flags.
         3. Logging a warning if a custom image is used.
 
-        :param algorithm_file: Path to the algorithm file, used to get the project configuration.
+        :param project_directory: Path to the project directory, used to get the project configuration.
         :param image: Optional custom Docker image. Defaults to the project configuration if not provided.
         :param update: Whether to update the Docker image.
         :param no_update: Whether to skip updating the Docker image.
+        :param is_engine_image: True to manage the 'engine-image', False to manage the 'research-image'.
         :return: A tuple containing the engine image, its version label, and the project configuration.
         """
 
         project_config = None
         image_project_config = None
-        if algorithm_file:
-            project_config = self.project_config_manager.get_project_config(algorithm_file.parent)
-            image_project_config = project_config.get("engine-image", None)
+        image_type_name = "engine-image" if is_engine_image else "research-image"
+        if project_directory:
+            project_config = self.project_config_manager.get_project_config(project_directory)
+            image_project_config = project_config.get(image_type_name, None)
 
-        engine_image = self.cli_config_manager.get_engine_image(image or image_project_config)
+        if is_engine_image:
+            engine_image = self.cli_config_manager.get_engine_image(image or image_project_config)
+        else:
+            engine_image = self.cli_config_manager.get_research_image(image or image_project_config)
 
         container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
-        container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                            CONTAINER_LABEL_LEAN_VERSION_NAME,
-                                                                            None)
+        container_module_version = container.docker_manager.get_image_label(
+            engine_image, CONTAINER_LABEL_LEAN_VERSION_NAME, None
+        )
 
-        if str(engine_image) != DEFAULT_ENGINE_IMAGE:
-            self.logger.warn(f'A custom engine image: "{engine_image}" is being used!')
+        default_image_name = DEFAULT_ENGINE_IMAGE if is_engine_image else DEFAULT_RESEARCH_IMAGE
+        if str(engine_image) != default_image_name:
+            self.logger.warn(f'A custom {image_type_name} image: "{engine_image}" is being used!')
 
         return engine_image, container_module_version, project_config
 

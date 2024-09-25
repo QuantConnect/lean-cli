@@ -272,7 +272,7 @@ def deploy(project: Path,
                                                                  environment_name=environment_name))
 
     engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
-                                                                                           algorithm_file)
+                                                                                           algorithm_file.parent)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = {}
