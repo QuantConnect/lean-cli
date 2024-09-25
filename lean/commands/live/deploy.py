@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
-from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.cli import (cli_brokerages, cli_data_queue_handlers, cli_data_downloaders,
                              cli_addon_modules, cli_history_provider)
@@ -271,14 +271,8 @@ def deploy(project: Path,
                                                                  kwargs, logger, interactive=True,
                                                                  environment_name=environment_name))
 
-    project_config_manager = container.project_config_manager
-    cli_config_manager = container.cli_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
-
-    container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
+                                                                                           algorithm_file.parent)
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = {}
@@ -291,15 +285,13 @@ def deploy(project: Path,
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
-
     _start_iqconnect_if_necessary(lean_config, environment_name)
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
 
-    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(container.api_client, brokerage_instance,
-                                                                                                      project_config.get("cloud-id", None), project)
+    cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(
+        container.api_client, brokerage_instance, project_config.get("cloud-id", None), project)
 
     # We cannot create the output directory before calling get_last_portfolio_holdings, since then the most recently
     # deployment would be always the local one (it has the current time in its name), and we would never be able to
@@ -335,9 +327,6 @@ def deploy(project: Path,
             "Quantity": holding["quantity"],
             "AveragePrice": holding["averagePrice"]
         } for holding in live_holdings]
-
-    if str(engine_image) != DEFAULT_ENGINE_IMAGE:
-        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
 
     # Set extra config
     given_algorithm_id = None

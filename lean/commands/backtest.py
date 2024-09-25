@@ -16,7 +16,7 @@ from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
 
 from lean.click import LeanCommand, PathParameter
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, CONTAINER_LABEL_LEAN_VERSION_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
 from lean.models.cli import cli_data_downloaders, cli_addon_modules
@@ -359,14 +359,8 @@ def backtest(project: Path,
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = None
 
-    cli_config_manager = container.cli_config_manager
-    project_config_manager = container.project_config_manager
-
-    project_config = project_config_manager.get_project_config(algorithm_file.parent)
-    engine_image = cli_config_manager.get_engine_image(image or project_config.get("engine-image", None))
-
-    container_module_version = container.docker_manager.get_image_label(engine_image,
-                                                                        CONTAINER_LABEL_LEAN_VERSION_NAME, None)
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
+                                                                                           algorithm_file.parent)
 
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
@@ -376,11 +370,6 @@ def backtest(project: Path,
         paths_to_mount = data_provider.get_paths_to_mount()
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
-
-    if str(engine_image) != DEFAULT_ENGINE_IMAGE:
-        logger.warn(f'A custom engine image: "{engine_image}" is being used!')
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update, no_update)
 
     if not output.exists():
         output.mkdir(parents=True)

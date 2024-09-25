@@ -258,17 +258,8 @@ def report(backtest_results: Optional[Path],
                                            type="bind",
                                            read_only=True))
 
-    cli_config_manager = container.cli_config_manager
-    engine_image_override = image
-
-    if engine_image_override is None and project_directory is not None:
-        project_config_manager = container.project_config_manager
-        project_config = project_config_manager.get_project_config(project_directory)
-        engine_image_override = project_config.get("engine-image", None)
-
-    engine_image = cli_config_manager.get_engine_image(engine_image_override)
-
-    container.update_manager.pull_docker_image_if_necessary(engine_image, update)
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, False,
+                                                                                           project_directory)
 
     success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:
