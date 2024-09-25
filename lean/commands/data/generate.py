@@ -208,7 +208,7 @@ def generate(start: datetime,
         }
     }
 
-    engine_image, container_module_version = container.manage_docker_image(image, update, no_update=False)
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update=False)
 
     success = container.docker_manager.run_image(engine_image, **run_options)
     if not success:

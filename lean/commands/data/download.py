@@ -675,7 +675,7 @@ def download(ctx: Context,
         logger = container.logger
         lean_config = container.lean_config_manager.get_complete_lean_config(None, None, None)
 
-        engine_image, container_module_version = container.manage_docker_image(image, update, no_update)
+        engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update)
 
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
                                                          cli_data_downloaders, kwargs, logger, interactive=True)
