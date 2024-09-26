@@ -506,8 +506,10 @@ class DockerManager:
         if success:
             result = loads(output)
             success = result["Success"]
-            if not success:
+            if success is False:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
+            else:
+                success = True
         if not success and not error_message:
             error_message = f"Failed to read result from docker file {docker_file.name} within {timeout} seconds. This could be due to an action taking longer than expected. Run 'docker logs {docker_container_name}' for more information."
 
