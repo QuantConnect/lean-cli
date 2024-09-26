@@ -99,11 +99,13 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
     if cash_balance_option != LiveInitialStateInput.NotSupported or holdings_option != LiveInitialStateInput.NotSupported:
         last_portfolio = _get_last_portfolio(api_client, project_id, project)
         if last_portfolio is not None:
-            for key, value in last_portfolio["cash"].items():
-                last_cash[key] = InsensitiveCaseDict(value)
-            for key, value in last_portfolio["holdings"].items():
-                last_holdings[key] = InsensitiveCaseDict(value)
-                last_holdings[key]["symbol"] = InsensitiveCaseDict(last_holdings[key]["symbol"])
+            if "cash" in last_portfolio:
+                for key, value in last_portfolio["cash"].items():
+                    last_cash[key] = InsensitiveCaseDict(value)
+            if "holdings" in last_portfolio:
+                for key, value in last_portfolio["holdings"].items():
+                    last_holdings[key] = InsensitiveCaseDict(value)
+                    last_holdings[key]["symbol"] = InsensitiveCaseDict(last_holdings[key]["symbol"])
         else:
             last_cash = None
             last_holdings = None

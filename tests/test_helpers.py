@@ -104,6 +104,7 @@ def create_fake_lean_cli_directory() -> None:
 
     _write_fake_directory(files)
 
+
 def create_fake_lean_cli_project(name: str, language: str) -> None:
     """Creates a directory structure similar to the one created by `lean init` with a given project info"""
     (Path.cwd() / "data").mkdir()
@@ -120,6 +121,7 @@ def create_fake_lean_cli_project(name: str, language: str) -> None:
     files.update(project_data)
 
     _write_fake_directory(files)
+
 
 def create_fake_lean_cli_directory_with_subdirectories(depth: int) -> None:
     """Creates a directory structure similar to the one created by `lean init` with a Python and a C# project,
@@ -228,6 +230,7 @@ def create_lean_environments() -> List[QCLeanEnvironment]:
                           description="",
                           public=True)
     ]
+
 
 def reset_state_installed_modules() -> None:
     for data_provider in (cli_brokerages + cli_data_downloaders + cli_data_queue_handlers

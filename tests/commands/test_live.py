@@ -1139,10 +1139,15 @@ def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -
     assert "--oanda-environment" in error_msg
     assert "--iex-price-plan" not in error_msg
 
-def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, api_client: any) -> Result:
+
+def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str,
+                       api_client: any, environment_modifier=None) -> Result:
     reset_state_installed_modules()
     create_fake_lean_cli_directory()
     create_fake_environment("live-paper", True)
+
+    if environment_modifier:
+        environment_modifier()
 
     initialize_container(api_client_to_use=api_client)
 
@@ -1249,3 +1254,33 @@ def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provide
             is_exist = True
 
     assert is_exist
+
+
+@pytest.mark.parametrize("brokerage_name,data_provider_live_name,existing_cash,existing_holdings",
+                         [("Paper Trading", "Polygon", "True", "True"),
+                          ("Paper Trading", "Polygon", "True", "False"),
+                          ("Paper Trading", "Polygon", "False", "True"),
+                          ("Paper Trading", "Polygon", "False", "False")])
+def test_live_state_file(brokerage_name: str, data_provider_live_name: str,
+                    existing_cash: bool, existing_holdings: bool) -> None:
+    api_client = mock.MagicMock()
+
+    def environment_modifier():
+        result_directory = Path.cwd() / "Python Project" / "live" / "2024-09-26_17-25-28"
+        result_file = result_directory / f"L-3875119070.json"
+        result_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(result_file, "w+") as out_file:
+            state = {}
+            if existing_cash:
+                state["cash"] = {"USD": {"symbol": "USD", "amount": 100000.0}}
+            if existing_holdings:
+                state["holdings"] = {"BTCUSD 2XR":{"symbol":{"value":"BTCUSD","id":"BTCUSD 2XR","permtick":"BTCUSD"},
+                                                   "type":7,"currencySymbol":"$","averagePrice":64778.92,"quantity":0.3,
+                                                   "marketPrice":63425.05,"conversionRate":1.0,"marketValue":19027.515,
+                                                   "unrealizedPnl":-25.98,"unrealizedPnLPercent":-0.13}}
+            json.dump(state, out_file)
+        with open(result_directory / "config", "w+") as out_file:
+            json.dump({"algorithm-language": "Python", "parameters": {}, "id": "3875119070"}, out_file)
+
+    create_lean_option(brokerage_name, data_provider_live_name, None, api_client,
+                       environment_modifier=environment_modifier)
