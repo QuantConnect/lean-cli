@@ -19,7 +19,7 @@ from lean.components.util.http_client import HTTPClient
 
 
 @responses.activate
-def test_auth0client() -> None:
+def test_auth0client_trade_station() -> None:
     api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
 
     responses.add(
@@ -45,4 +45,32 @@ def test_auth0client() -> None:
     assert result
     assert result.authorization
     assert len(result.authorization) > 0
+    assert len(result.get_authorization_config_without_account()) > 0
+    assert len(result.get_account_ids()) > 0
+
+
+@responses.activate
+def test_auth0client_alpaca() -> None:
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "alpaca-access-token": "XXXX-XXX-XXX-XXX-XXXXX-XX",
+                "accounts": [{"id": "XXXX-XXX-XXX-XXX-XXXXX-XX", "name": " |USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+
+    brokerage_id = "TestBrokerage"
+
+    result = api_clint.auth0.read(brokerage_id)
+
+    assert result
+    assert result.authorization
+    assert len(result.authorization) > 0
+    assert len(result.get_authorization_config_without_account()) > 0
     assert len(result.get_account_ids()) > 0
