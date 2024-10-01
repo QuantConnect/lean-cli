@@ -60,13 +60,17 @@ class JsonModule(ABC):
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
+        filter_configs = []
         brokerage_configs = []
         for config in self._lean_configs:
             if isinstance(config, BrokerageEnvConfiguration):
                 brokerage_configs.append(config)
             else:
-                sorted_configs.append(config)
-        return brokerage_configs + sorted_configs
+                if config.has_filter_dependency:
+                    filter_configs.append(config)
+                else:
+                    sorted_configs.append(config)
+        return brokerage_configs + sorted_configs + filter_configs
 
     def get_name(self) -> str:
         """Returns the user-friendly name which users can identify this object by.
