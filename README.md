@@ -198,8 +198,6 @@ Options:
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -208,12 +206,14 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
@@ -435,8 +435,8 @@ Options:
                                   Your Bybit VIP Level
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -900,8 +900,6 @@ Options:
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -910,12 +908,14 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --dataset TEXT                  The name of the dataset to download non-interactively
@@ -1341,8 +1341,6 @@ Options:
                                   commodities on MCX
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1356,20 +1354,22 @@ Options:
   --terminal-link-emsx-team TEXT  The EMSX team to receive order events from (Optional).
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
   --tt-rest-app-key TEXT          Your Trading Technologies REST app key
   --tt-rest-app-secret TEXT       Your Trading Technologies REST app secret
   --tt-rest-environment TEXT      The REST environment to run in
+  --tt-order-routing-sender-comp-id TEXT
+                                  The order routing sender comp id to use
   --tt-market-data-sender-comp-id TEXT
                                   The market data sender comp id to use
   --tt-market-data-target-comp-id TEXT
                                   The market data target comp id to use
   --tt-market-data-host TEXT      The host of the market data server
   --tt-market-data-port TEXT      The port of the market data server
-  --tt-order-routing-sender-comp-id TEXT
-                                  The order routing sender comp id to use
   --tt-order-routing-target-comp-id TEXT
                                   The order routing target comp id to use
   --tt-order-routing-host TEXT    The host of the order routing server
@@ -1392,8 +1392,8 @@ Options:
                                   Whether the testnet should be used
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --ib-enable-delayed-streaming-data BOOLEAN
@@ -1791,8 +1791,6 @@ Options:
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1801,12 +1799,14 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -1963,8 +1963,6 @@ Options:
                                   Your ThetaData subscription price plan
   --terminal-link-connection-type [DAPI|SAPI]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
   --terminal-link-environment [Production|Beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
@@ -1973,12 +1971,14 @@ Options:
                                   The port of the TerminalLink server
   --terminal-link-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
+  --terminal-link-server-auth-id TEXT
+                                  The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
+  --trade-station-account-id TEXT
+                                  The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias

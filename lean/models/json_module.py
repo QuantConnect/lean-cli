@@ -22,7 +22,7 @@ from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
-    PathParameterUserInput, AuthConfiguration
+    PathParameterUserInput, AuthConfiguration, ChoiceUserInput
 from copy import copy
 from abc import ABC
 
@@ -60,13 +60,17 @@ class JsonModule(ABC):
 
     def sort_configs(self) -> List[Configuration]:
         sorted_configs = []
+        filter_configs = []
         brokerage_configs = []
         for config in self._lean_configs:
             if isinstance(config, BrokerageEnvConfiguration):
                 brokerage_configs.append(config)
             else:
-                sorted_configs.append(config)
-        return brokerage_configs + sorted_configs
+                if config.has_filter_dependency:
+                    filter_configs.append(config)
+                else:
+                    sorted_configs.append(config)
+        return brokerage_configs + sorted_configs + filter_configs
 
     def get_name(self) -> str:
         """Returns the user-friendly name which users can identify this object by.
@@ -86,7 +90,11 @@ class JsonModule(ABC):
                     # skip, we want all configurations that match type and platform, for help
                     continue
                 target_value = self.get_config_value_from_name(condition._dependent_config_id)
-            if not target_value or not condition.check(target_value):
+            if not target_value:
+                return False
+            elif isinstance(target_value, dict):
+                return all(condition.check(value) for value in target_value.values())
+            elif not condition.check(target_value):
                 return False
         return True
 
@@ -207,10 +215,27 @@ class JsonModule(ABC):
                     _logged_messages.add(log_message)
             if type(configuration) is InternalInputUserInput:
                 continue
+            if isinstance(configuration, ChoiceUserInput) and len(configuration._choices) == 0:
+                logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
+                continue
             elif isinstance(configuration, AuthConfiguration):
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
                 logger.debug(f'auth: {auth_authorizations}')
-                configuration._value = auth_authorizations.authorization
+                configuration._value = auth_authorizations.get_authorization_config_without_account()
+                for inner_config in self._lean_configs:
+                    if any(condition._dependent_config_id == configuration._id for condition in
+                           inner_config._filter._conditions):
+                        api_account_ids = auth_authorizations.get_account_ids()
+                        config_dash = inner_config._id.replace('-', '_')
+                        inner_config._choices = api_account_ids
+                        if user_provided_options and config_dash in user_provided_options:
+                            user_provide_account_id = user_provided_options[config_dash]
+                            if (api_account_ids and len(api_account_ids) > 0 and
+                                not any(account_id.lower() == user_provide_account_id.lower()
+                                        for account_id in api_account_ids)):
+                                raise ValueError(f"The provided account id '{user_provide_account_id}' is not valid, "
+                                                 f"available: {api_account_ids}")
+                        break
                 continue
 
             property_name = self.convert_lean_key_to_variable(configuration._id)

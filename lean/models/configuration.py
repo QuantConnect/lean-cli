@@ -96,10 +96,12 @@ class Configuration(ABC):
         self._is_required_from_user = False
         self._save_persistently_in_lean = False
         self._log_message: str = ""
+        self.has_filter_dependency: bool = False
         if "log-message" in config_json_object.keys():
             self._log_message = config_json_object["log-message"]
         if "filters" in config_json_object.keys():
             self._filter = Filter(config_json_object["filters"])
+            self.has_filter_dependency = Filter.has_conditions
         else:
             self._filter = Filter([])
         self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
@@ -137,6 +139,10 @@ class Filter:
         self._conditions: List[BaseCondition] = [BaseCondition.factory(
             condition["condition"]) for condition in filter_conditions]
 
+    @property
+    def has_conditions(self) -> bool:
+        """Returns True if there are any conditions, False otherwise."""
+        return bool(self._conditions)
 
 class InfoConfiguration(Configuration):
     """Configuration class used for informational configurations.
