@@ -44,6 +44,5 @@ def test_auth0client() -> None:
 
     assert result
     assert result.authorization
-    assert len(result.authorization.client_info) > 0
-    assert len(result.authorization.accounts) > 0
-    assert len(result.authorization.get_account_ids()) > 0
+    assert len(result.authorization) > 0
+    assert len(result.get_account_ids()) > 0

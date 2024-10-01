@@ -22,25 +22,8 @@ from lean.models.pydantic import WrappedBaseModel, validator
 # The keys of properties are not changed, so they don't obey the rest of the project's naming conventions
 
 
-class Account(WrappedBaseModel):
-    id: str
-    name: str
-
-
-class Authorization(WrappedBaseModel):
-    client_info: Dict[str, str]  # Holds flexible client data like client ID and tokens
-    accounts: List[Account]  # Holds account information
-
-    @classmethod
-    def from_raw(cls, raw_data: Dict[str, any]) -> 'Authorization':
-        """
-        Custom constructor to preprocess raw authorization data
-        Separates client info from accounts.
-        """
-        # Separate the client info (non-list values) from accounts (list of accounts)
-        client_info = {k: v for k, v in raw_data.items() if not isinstance(v, list)}
-        accounts = raw_data.get('accounts', [])
-        return cls(client_info=client_info, accounts=accounts)
+class QCAuth0Authorization(WrappedBaseModel):
+    authorization: Optional[Dict[str, Any]]
 
     def get_account_ids(self) -> List[str]:
         """
@@ -52,20 +35,19 @@ class Authorization(WrappedBaseModel):
         Returns:
             List[str]: A list of account IDs.
         """
-        return [account.id for account in self.accounts] if self.accounts else []
+        accounts = self.authorization.get('accounts', [])
+        return [account["id"] for account in accounts] if accounts else []
 
-
-class QCAuth0Authorization(WrappedBaseModel):
-    authorization: Optional[Authorization]
-
-    @classmethod
-    def from_raw(cls, raw_data: Dict[str, any]) -> 'QCAuth0Authorization':
+    def get_authorization_config_without_account(self) -> Dict[str, str]:
         """
-        Custom constructor to preprocess raw QCAuth0Authorization data
+        Returns the authorization data without the 'accounts' key.
+
+        Iterates through the 'authorization' dictionary and excludes the 'accounts' entry.
+
+        Returns:
+            Dict[str, str]: Authorization details excluding 'accounts'.
         """
-        authorization_data = raw_data.get('authorization', {})
-        authorization = Authorization.from_raw(authorization_data) if authorization_data else None
-        return cls(authorization=authorization)
+        return {key: value for key, value in self.authorization.items() if key != 'accounts'}
 
 
 class ProjectEncryptionKey(WrappedBaseModel):
