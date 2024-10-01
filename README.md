@@ -214,8 +214,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
@@ -439,8 +437,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -920,8 +916,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --dataset TEXT                  The name of the dataset to download non-interactively
@@ -1400,8 +1394,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --ib-enable-delayed-streaming-data BOOLEAN
@@ -1815,8 +1807,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -1989,8 +1979,6 @@ Options:
                                   The TradeStation account Id (Optional).
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --trade-station-account-type [Cash|Margin|Futures|DVP]
-                                  Specifies the type of account on TradeStation
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
