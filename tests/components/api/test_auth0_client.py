@@ -27,15 +27,14 @@ def test_auth0client() -> None:
         f"{API_BASE_URL}live/auth0/read",
         json={
             "authorization": {
-                "test-brokerage-client-id": "123",
-                "test-brokerage-refresh-token": "123"
+                "trade-station-client-id": "123",
+                "trade-station-refresh-token": "456",
+                "accounts": [
+                    {"id": "11223344", "name": "11223344 | Margin | USD"},
+                    {"id": "55667788", "name": "55667788 | Futures | USD"}
+                ]
             },
-            "accounts": [
-                {"name": "account_1", "id": "123"},
-                {"name": "account_2", "id": "456"}
-            ],
-            "success": "true"
-        },
+            "success": "true"},
         status=200
     )
 
@@ -45,7 +44,6 @@ def test_auth0client() -> None:
 
     assert result
     assert result.authorization
-    assert len(result.authorization) > 0
-    assert result.accounts
-    assert len(result.accounts) > 0
-    assert len(result.get_account_ids()) > 0
+    assert len(result.authorization.client_info) > 0
+    assert len(result.authorization.accounts) > 0
+    assert len(result.authorization.get_account_ids()) > 0

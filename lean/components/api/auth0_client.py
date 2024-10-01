@@ -45,7 +45,7 @@ class Auth0Client:
 
             data = self._api.post("live/auth0/read", payload)
             # Store in cache
-            result = QCAuth0Authorization(**data)
+            result = QCAuth0Authorization.from_raw(data)
             self._cache[brokerage_id] = result
             return result
         except RequestFailedError as e:

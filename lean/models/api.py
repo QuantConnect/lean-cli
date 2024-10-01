@@ -27,9 +27,20 @@ class Account(WrappedBaseModel):
     name: str
 
 
-class QCAuth0Authorization(WrappedBaseModel):
-    authorization: Optional[Dict[str, str]]
-    accounts: Optional[List[Account]]
+class Authorization(WrappedBaseModel):
+    client_info: Dict[str, str]  # Holds flexible client data like client ID and tokens
+    accounts: List[Account]  # Holds account information
+
+    @classmethod
+    def from_raw(cls, raw_data: Dict[str, any]) -> 'Authorization':
+        """
+        Custom constructor to preprocess raw authorization data
+        Separates client info from accounts.
+        """
+        # Separate the client info (non-list values) from accounts (list of accounts)
+        client_info = {k: v for k, v in raw_data.items() if not isinstance(v, list)}
+        accounts = raw_data.get('accounts', [])
+        return cls(client_info=client_info, accounts=accounts)
 
     def get_account_ids(self) -> List[str]:
         """
@@ -42,6 +53,19 @@ class QCAuth0Authorization(WrappedBaseModel):
             List[str]: A list of account IDs.
         """
         return [account.id for account in self.accounts] if self.accounts else []
+
+
+class QCAuth0Authorization(WrappedBaseModel):
+    authorization: Optional[Authorization]
+
+    @classmethod
+    def from_raw(cls, raw_data: Dict[str, any]) -> 'QCAuth0Authorization':
+        """
+        Custom constructor to preprocess raw QCAuth0Authorization data
+        """
+        authorization_data = raw_data.get('authorization', {})
+        authorization = Authorization.from_raw(authorization_data) if authorization_data else None
+        return cls(authorization=authorization)
 
 
 class ProjectEncryptionKey(WrappedBaseModel):
