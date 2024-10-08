@@ -108,8 +108,9 @@ class DockerManager:
         on_output = kwargs.pop("on_output", lambda chunk: None)
         format_output = kwargs.pop("format_output", lambda chunk: None)
         commands = kwargs.pop("commands", None)
+        verify_stability = kwargs.pop("verify_stability", False)
 
-        if commands is not None:
+        if commands:
             shell_script_commands = ["#!/usr/bin/env bash", "set -e"]
             if self._logger.debug_logging_enabled:
                 shell_script_commands.append("set -x")
@@ -174,6 +175,23 @@ class DockerManager:
         docker_client = self._get_docker_client()
         container = docker_client.containers.run(str(image), None, **kwargs)
 
+        if verify_stability:
+            from time import sleep
+            i = 0
+            self._logger.info(f'Verifying deployment \'{container.name}\' is stable...')
+            while i < 30:
+                i += 1
+                container.reload()
+                if (container.status != "running" and container.attrs and "State" in container.attrs and "ExitCode"
+                        in container.attrs["State"] and container.attrs["State"]["ExitCode"] != 0):
+                    # container is failing
+                    self._logger.debug(f'Deployment \'{container.name}\' last logs: {str(container.logs(tail=10).decode("utf-8"))}')
+                    exit_code = container.attrs["State"]["ExitCode"]
+                    raise RuntimeError(f'Deployment \'{container.name}\' is failing, exit code {exit_code}.'
+                                       f' Please validate your subscription is valid, you can check your product'
+                                       f' subscriptions on our website.')
+                sleep(0.5)
+            self._logger.info(f'Deployment \'{container.name}\' is stable')
         if detach:
             return True
 
@@ -400,11 +418,23 @@ class DockerManager:
         :param container_name: the name of the container to find
         :return: the container with the given name, or None if it does not exist
         """
+        containers = self.get_containers_by_name(container_name, starts_with=False)
+        return None if len(containers) == 0 else containers[0]
+
+    def get_containers_by_name(self, container_name: str, starts_with: bool = False):
+        """Finds a container with a given name.
+
+        :param container_name: the name of the container to find
+        :param starts_with: optionally match by starts_with
+        :return: the container with the given name, or None if it does not exist
+        """
+        result = []
         for container in self._get_docker_client().containers.list(all=True):
             if container.name.lstrip("/") == container_name:
-                return container
-
-        return None
+                result.append(container)
+            elif starts_with and container.name.lstrip("/").startswith(container_name):
+                result.append(container)
+        return result
 
     def show_logs(self, container_name: str, follow: bool = False) -> None:
         """Shows the logs of a Docker container in the terminal.

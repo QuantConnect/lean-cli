@@ -250,7 +250,8 @@ class LeanRunner:
                                              detach: bool,
                                              image: DockerImage,
                                              target_path: str,
-                                             paths_to_mount: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+                                             paths_to_mount: Optional[Dict[str, str]] = None,
+                                             config_local_path: Path = None) -> Dict[str, Any]:
         """Creates a basic Docker config to run the engine with.
 
         This method constructs the parts of the Docker config that is the same for both the engine and the optimizer.
@@ -261,6 +262,7 @@ class LeanRunner:
         :param image: The docker image that will be used
         :param target_path: The target path inside the Docker container where the C# project should be located.
         :param paths_to_mount: additional paths to mount to the container
+        :param config_local_path: optional config local path
         :return: the Docker configuration containing basic configuration to run Lean
         """
 
@@ -276,7 +278,6 @@ class LeanRunner:
         lean_config.update({
             "debug-mode": self._logger.debug_logging_enabled,
             "data-folder": "/Lean/Data",
-            "results-destination-folder": "/Results",
             "object-store-root": "/Storage"
         })
 
@@ -296,18 +297,23 @@ class LeanRunner:
         # Set up modules
         self._setup_installed_packages(run_options, image, target_path)
 
-        self._mount_lean_config_and_finalize(run_options, lean_config, None)
+        self._mount_lean_config_and_finalize(run_options, lean_config, None, config_local_path)
 
         return run_options
 
-    def _mount_lean_config_and_finalize(self, run_options: Dict[str, Any], lean_config: Dict[str, Any], output_dir: Optional[Path]):
+    def _mount_lean_config_and_finalize(self, run_options: Dict[str, Any], lean_config: Dict[str, Any],
+                                        output_dir: Optional[Path], config_local_path: Path = None):
         """Mounts Lean config and finalizes."""
         from docker.types import Mount
         from uuid import uuid4
         from json import dumps
+        from os import makedirs
 
         # Save the final Lean config to a temporary file so we can mount it into the container
-        config_path = self._temp_manager.create_temporary_directory() / "config.json"
+        if not config_local_path:
+            config_local_path = self._temp_manager.create_temporary_directory()
+        makedirs(config_local_path, exist_ok=True)
+        config_path = config_local_path / "config.json"
         with config_path.open("w+", encoding="utf-8") as file:
             file.write(dumps(lean_config, indent=4))
 
@@ -914,16 +920,29 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
     @staticmethod
     def parse_extra_docker_config(run_options: Dict[str, Any], extra_docker_config: Optional[Dict[str, Any]]) -> None:
-        from docker.types import DeviceRequest
         # Add known additional run options from the extra docker config.
         # For now, only device_requests is supported
         if extra_docker_config is not None:
             if "device_requests" in extra_docker_config:
+                from docker.types import DeviceRequest
                 run_options["device_requests"] = [DeviceRequest(**device_request)
                                                   for device_request in extra_docker_config["device_requests"]]
 
             if "volumes" in extra_docker_config:
-                volumes = run_options.get("volumes")
-                if not volumes:
-                    volumes = run_options["volumes"] = {}
-                volumes.update(extra_docker_config["volumes"])
+                target = run_options.get("volumes")
+                if not target:
+                    target = run_options["volumes"] = {}
+                target.update(extra_docker_config["volumes"])
+
+            if "mounts" in extra_docker_config:
+                from docker.types import Mount
+
+                target = run_options.get("mounts")
+                if not target:
+                    target = run_options["mounts"] = []
+
+                for mount in extra_docker_config["mounts"]:
+                    read_only = True
+                    if "read_only" in mount:
+                        read_only = mount["read_only"]
+                    target.append(Mount(target=mount["target"], source=mount["source"], type="bind", read_only=read_only))
