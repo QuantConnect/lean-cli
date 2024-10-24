@@ -389,8 +389,8 @@ def optimize(project: Path,
                                               created=datetime.now(),
                                               completed=True,
                                               progress=1.0,
-                                              runtimeStatistics=optimal_results["RuntimeStatistics"],
-                                              statistics=optimal_results["Statistics"])
+                                              runtimeStatistics=optimal_results["runtimeStatistics"],
+                                              statistics=optimal_results["statistics"])
 
                 logger.info(f"Optimal parameters: {optimal_parameters.replace(':', ': ').replace(',', ', ')}")
                 logger.info(f"Optimal backtest results:")
