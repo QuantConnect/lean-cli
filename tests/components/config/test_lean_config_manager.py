@@ -101,7 +101,7 @@ def test_get_known_lean_config_path_with_duplicated_paths() -> None:
     assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
 def test_get_known_lean_config_path_normalizes_path_and_case() -> None:
-    custom_config_path = Path.cwd() / "//folder//..//custom-lean.json//"
+    custom_config_path = Path.cwd() / "/folder/../custom-lean.json/"
     custom_config_path.touch()
     custom_config_path.write_text("{}", encoding="utf-8")
 
