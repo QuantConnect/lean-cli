@@ -27,10 +27,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run normal tests
-        run: pytest -s -rs
+        run: python -m pytest -s -rs
 
       - name: Run API tests
-        run: pytest -s tests/components/api/test_clients.py
+        run: python -m pytest -s tests/components/api/test_clients.py
         env:
           QC_USER_ID: ${{ secrets.QC_USER_ID }}
           QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
       # Before running the tests we free up some disk space to prevent issues.
       # Removing /usr/local/lib/android frees up ~10GB, which we can safely do because we don't use Android.
       - name: Run CLI tests
-        run: sudo rm -rf /usr/local/lib/android && pytest -s tests/test_cli.py
+        run: sudo rm -rf /usr/local/lib/android && python -m pytest -s tests/test_cli.py
         if: runner.os == 'Linux'
         env:
           QC_USER_ID: ${{ secrets.QC_USER_ID }}
