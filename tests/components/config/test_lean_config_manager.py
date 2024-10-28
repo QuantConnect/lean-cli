@@ -30,18 +30,11 @@ from tests.test_helpers import create_fake_lean_cli_directory
 
 
 def _create_lean_config_manager(cli_config_manager: Optional[CLIConfigManager] = None, storage: Storage = None) -> LeanConfigManager:
-    if storage is None:
-        return LeanConfigManager(mock.Mock(),
-                             cli_config_manager or mock.Mock(),
-                             ProjectConfigManager(XMLManager()),
-                             mock.Mock(),
-                             Storage(str(Path("~/.lean/cache").expanduser())))
-
     return LeanConfigManager(mock.Mock(),
                              cli_config_manager or mock.Mock(),
                              ProjectConfigManager(XMLManager()),
                              mock.Mock(),
-                             storage)
+                             Storage(str(Path("~/.lean/cache").expanduser())) if storage is None else storage)
 
 def test_get_lean_config_path_returns_closest_config_file() -> None:
     lean_config_path = Path.cwd() / "lean.json"
