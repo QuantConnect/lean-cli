@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 from unittest import mock
@@ -100,6 +101,9 @@ def test_get_known_lean_config_path_with_duplicated_paths() -> None:
 
     assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
+@pytest.mark.skipif(
+    sys.platform !="win32", reason="Custom config path is only valid for Windows."
+)
 def test_get_known_lean_config_path_normalizes_path_and_case() -> None:
     custom_config_path = Path.cwd() / "/folder/../custom-lean.json/"
     custom_config_path.touch()
