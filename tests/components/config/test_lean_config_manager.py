@@ -100,6 +100,16 @@ def test_get_known_lean_config_path_with_duplicated_paths() -> None:
 
     assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
+def test_get_known_lean_config_path_normalizes_path_and_case() -> None:
+    custom_config_path = Path.cwd() / "//folder//..//custom-lean.json//"
+    custom_config_path.touch()
+    custom_config_path.write_text("{}", encoding="utf-8")
+
+    manager = _create_lean_config_manager()
+    manager.set_default_lean_config_path(custom_config_path)
+
+    assert manager.get_known_lean_config_paths() == [Path(os.path.normcase(Path.cwd() / "/custom-lean.json"))]
+
 def test_get_cli_root_directory_returns_path_to_directory_containing_config_file() -> None:
     create_fake_lean_cli_directory()
 
