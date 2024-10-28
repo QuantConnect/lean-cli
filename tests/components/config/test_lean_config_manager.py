@@ -86,6 +86,9 @@ def test_get_known_lean_config_path_returns_previously_used_custom_default() -> 
 
     assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
+@pytest.mark.skipif(
+    sys.platform !="win32", reason="Custom config path is only valid for Windows."
+)
 def test_get_known_lean_config_path_with_duplicated_paths() -> None:
     custom_config_path = Path.cwd() / "custom-Lean.json"
     custom_config_path.touch()
