@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from os.path import normcase
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -98,9 +98,10 @@ class LeanConfigManager:
         """
         lean_config_paths = self._cache_storage.get("known-lean-config-paths", [])
         lean_config_paths = [Path(p) for p in lean_config_paths]
+        lean_config_paths = list(set(lean_config_paths))
         lean_config_paths = [p for p in lean_config_paths if p.is_file()]
 
-        self._cache_storage.set("known-lean-config-paths", [str(p) for p in lean_config_paths])
+        self._cache_storage.set("known-lean-config-paths", [normcase(p) for p in lean_config_paths])
 
         return lean_config_paths
 
