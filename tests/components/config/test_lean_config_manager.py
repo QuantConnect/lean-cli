@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 from unittest import mock
@@ -29,13 +30,12 @@ from lean.models.utils import DebuggingMethod
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
-def _create_lean_config_manager(cli_config_manager: Optional[CLIConfigManager] = None) -> LeanConfigManager:
+def _create_lean_config_manager(cli_config_manager: Optional[CLIConfigManager] = None, storage: Storage = None) -> LeanConfigManager:
     return LeanConfigManager(mock.Mock(),
                              cli_config_manager or mock.Mock(),
                              ProjectConfigManager(XMLManager()),
                              mock.Mock(),
-                             Storage(str(Path("~/.lean/cache").expanduser())))
-
+                             Storage(str(Path("~/.lean/cache").expanduser())) if storage is None else storage)
 
 def test_get_lean_config_path_returns_closest_config_file() -> None:
     lean_config_path = Path.cwd() / "lean.json"
@@ -86,6 +86,36 @@ def test_get_known_lean_config_path_returns_previously_used_custom_default() -> 
 
     assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
 
+@pytest.mark.skipif(
+    sys.platform !="win32", reason="Custom config path is only valid for Windows."
+)
+def test_get_known_lean_config_path_with_duplicated_paths() -> None:
+    custom_config_path = Path.cwd() / "custom-Lean.json"
+    custom_config_path.touch()
+    custom_config_path.write_text("{}", encoding="utf-8")
+
+    custom_config_path_second = Path.cwd() / "Custom-lean.json"
+    custom_config_path_second.touch()
+    custom_config_path_second.write_text("{}", encoding="utf-8")
+
+    storage = Storage(str(Path("~/.lean/cache").expanduser()))
+    storage.set("known-lean-config-paths", [custom_config_path.__str__(), custom_config_path_second.__str__()])
+    manager = _create_lean_config_manager(storage = storage)
+
+    assert manager.get_known_lean_config_paths() == [Path.cwd() / "custom-lean.json"]
+
+@pytest.mark.skipif(
+    sys.platform !="win32", reason="Custom config path is only valid for Windows."
+)
+def test_get_known_lean_config_path_normalizes_path_and_case() -> None:
+    custom_config_path = Path.cwd() / "/folder/../custom-lean.json/"
+    custom_config_path.touch()
+    custom_config_path.write_text("{}", encoding="utf-8")
+
+    manager = _create_lean_config_manager()
+    manager.set_default_lean_config_path(custom_config_path)
+
+    assert manager.get_known_lean_config_paths() == [Path(os.path.normcase(Path.cwd() / "/custom-lean.json"))]
 
 def test_get_cli_root_directory_returns_path_to_directory_containing_config_file() -> None:
     create_fake_lean_cli_directory()

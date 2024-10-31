@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os.path import normcase, normpath
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -97,8 +98,8 @@ class LeanConfigManager:
         :return: a list of paths to Lean config files that were used in the past
         """
         lean_config_paths = self._cache_storage.get("known-lean-config-paths", [])
-        lean_config_paths = [Path(p) for p in lean_config_paths]
-        lean_config_paths = [p for p in lean_config_paths if p.is_file()]
+        lean_config_paths = [Path(normpath(normcase(p))) for p in lean_config_paths if Path(p).is_file()]
+        lean_config_paths = list(set(lean_config_paths))
 
         self._cache_storage.set("known-lean-config-paths", [str(p) for p in lean_config_paths])
 
