@@ -118,6 +118,8 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean object-store properties`](#lean-object-store-properties)
 - [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
+- [`lean private-cloud start`](#lean-private-cloud-start)
+- [`lean private-cloud stop`](#lean-private-cloud-stop)
 - [`lean project-create`](#lean-project-create)
 - [`lean project-delete`](#lean-project-delete)
 - [`lean report`](#lean-report)
@@ -1815,6 +1817,50 @@ Options:
 ```
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
+
+### `lean private-cloud start`
+
+Start a new private cloud
+
+```
+Usage: lean private-cloud start [OPTIONS]
+
+  Start a new private cloud
+
+Options:
+  --master                    Run in master mode
+  --slave                     Run in slave mode
+  --token TEXT                The master server token
+  --master-ip TEXT            The master server ip address
+  --master-port INTEGER       The master server port
+  --slave-ip TEXT             The slave server ip address
+  --update                    Pull the latest image before starting
+  --no-update                 Do not update to the latest version
+  --compute TEXT              Compute configuration to use
+  --extra-docker-config TEXT  Extra docker configuration as a JSON string
+  --stop                      Stop any existing deployment
+  --lean-config FILE          The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                   Enable debug logging
+  --help                      Show this message and exit.
+```
+
+_See code: [lean/commands/private_cloud/start.py](lean/commands/private_cloud/start.py)_
+
+### `lean private-cloud stop`
+
+Stops a running private cloud
+
+```
+Usage: lean private-cloud stop [OPTIONS]
+
+  Stops a running private cloud
+
+Options:
+  --verbose  Enable debug logging
+  --help     Show this message and exit.
+```
+
+_See code: [lean/commands/private_cloud/stop.py](lean/commands/private_cloud/stop.py)_
 
 ### `lean project-create`
 

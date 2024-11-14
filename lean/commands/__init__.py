@@ -33,6 +33,7 @@ from lean.commands.research import research
 from lean.commands.whoami import whoami
 from lean.commands.gui import gui
 from lean.commands.object_store import object_store
+from lean.commands.private_cloud import private_cloud
 
 lean.add_command(config)
 lean.add_command(cloud)
@@ -55,3 +56,4 @@ lean.add_command(build)
 lean.add_command(logs)
 lean.add_command(gui)
 lean.add_command(object_store)
+lean.add_command(private_cloud)

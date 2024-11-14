@@ -13,7 +13,7 @@
 from typing import List
 
 from lean.constants import MODULE_BROKERAGE, MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM, \
-    MODULE_DATA_DOWNLOADER, MODULE_HISTORY_PROVIDER, MODULE_DATA_QUEUE_HANDLER, MODULE_ADDON
+    MODULE_DATA_DOWNLOADER, MODULE_HISTORY_PROVIDER, MODULE_DATA_QUEUE_HANDLER, MODULE_ADDON, MODULE_COMPUTE
 from lean.models import json_modules
 from lean.models.json_module import JsonModule
 
@@ -23,6 +23,7 @@ cli_addon_modules: List[JsonModule] = []
 cli_data_downloaders: List[JsonModule] = []
 cli_history_provider: List[JsonModule] = []
 cli_data_queue_handlers: List[JsonModule] = []
+cli_compute: List[JsonModule] = []
 
 for json_module in json_modules:
     module_type = json_module[MODULE_TYPE]
@@ -39,5 +40,5 @@ for json_module in json_modules:
             cli_data_queue_handlers.append(JsonModule(json_module, MODULE_DATA_QUEUE_HANDLER, MODULE_CLI_PLATFORM))
         if MODULE_ADDON in module_type:
             cli_addon_modules.append(JsonModule(json_module, MODULE_ADDON, MODULE_CLI_PLATFORM))
-
-
+        if MODULE_COMPUTE in module_type:
+            cli_compute.append(JsonModule(json_module, MODULE_COMPUTE, MODULE_CLI_PLATFORM))

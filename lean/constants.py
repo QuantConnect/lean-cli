@@ -96,11 +96,17 @@ UPDATE_CHECK_INTERVAL_ANNOUNCEMENTS = 24
 # The name of the Docker network which all Lean CLI containers are ran on
 DOCKER_NETWORK = "lean_cli"
 
+PRIVATE_CLOUD = "private-cloud-"
+COMPUTE_MASTER = PRIVATE_CLOUD + "master"
+COMPUTE_MESSAGING = PRIVATE_CLOUD + "messaging"
+COMPUTE_SLAVE = PRIVATE_CLOUD + "compute-"
+
 # Module constants
 MODULE_TYPE = "type"
 MODULE_PLATFORM = "platform"
 
 # types
+MODULE_COMPUTE = "compute"
 MODULE_ADDON = "addon-module"
 MODULE_BROKERAGE = "brokerage"
 MODULE_DATA_DOWNLOADER = "data-downloader"
