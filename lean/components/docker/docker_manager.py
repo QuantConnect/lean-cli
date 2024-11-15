@@ -179,17 +179,23 @@ class DockerManager:
             from time import sleep
             i = 0
             self._logger.info(f'Verifying deployment \'{container.name}\' is stable...')
-            while i < 30:
+            while i < 35:
                 i += 1
                 container.reload()
                 if (container.status != "running" and container.attrs and "State" in container.attrs and "ExitCode"
                         in container.attrs["State"] and container.attrs["State"]["ExitCode"] != 0):
                     # container is failing
-                    self._logger.debug(f'Deployment \'{container.name}\' last logs: {str(container.logs(tail=10).decode("utf-8"))}')
+                    last_logs = str(container.logs(tail=10).decode("utf-8"))
                     exit_code = container.attrs["State"]["ExitCode"]
-                    raise RuntimeError(f'Deployment \'{container.name}\' is failing, exit code {exit_code}.'
-                                       f' Please validate your subscription is valid, you can check your product'
-                                       f' subscriptions on our website.')
+                    if exit_code == 15:
+                        self._logger.debug(f'Deployment \'{container.name}\' last logs:\n{last_logs}')
+                        raise RuntimeError(f'Deployment \'{container.name}\' is failing, exit code {exit_code}.'
+                                           f' Please validate your subscription is valid, you can check your product'
+                                           f' subscriptions on our website.')
+                    else:
+                        raise RuntimeError(f'Deployment \'{container.name}\' is failing, exit code {exit_code}.'
+                                           f' Please review deployment logs and associated documentation.'
+                                           f' Last logs:\n{last_logs}')
                 sleep(0.5)
             self._logger.info(f'Deployment \'{container.name}\' is stable')
         if detach:
