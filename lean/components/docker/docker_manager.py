@@ -38,10 +38,12 @@ class DockerManager:
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
 
-    def get_image_label(self, image: DockerImage, label: str, default: str) -> str:
-        docker_image = self._get_docker_client().images.get(str(image))
+    def get_image_labels(self, image: str) -> str:
+        docker_image = self._get_docker_client().images.get(image)
+        return docker_image.labels.items()
 
-        for name, value in docker_image.labels.items():
+    def get_image_label(self, image: DockerImage, label: str, default: str) -> str:
+        for name, value in self.get_image_labels(str(image)):
             if name == label:
                 self._logger.debug(f"Label '{label}' found in image '{image.name}', value {value}")
                 return value
@@ -179,7 +181,7 @@ class DockerManager:
             from time import sleep
             i = 0
             self._logger.info(f'Verifying deployment \'{container.name}\' is stable...')
-            while i < 35:
+            while i < 60:
                 i += 1
                 container.reload()
                 if (container.status != "running" and container.attrs and "State" in container.attrs and "ExitCode"
