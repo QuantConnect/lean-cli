@@ -1831,9 +1831,9 @@ Options:
   --master                    Run in master mode
   --slave                     Run in slave mode
   --token TEXT                The master server token
-  --master-ip TEXT            The master server ip address
+  --master-domain TEXT        The master server domain
   --master-port INTEGER       The master server port
-  --slave-ip TEXT             The slave server ip address
+  --slave-domain TEXT         The slave server domain
   --update                    Pull the latest image before starting
   --no-update                 Do not update to the latest version
   --compute TEXT              Compute configuration to use
