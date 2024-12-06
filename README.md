@@ -118,6 +118,7 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean object-store properties`](#lean-object-store-properties)
 - [`lean object-store set`](#lean-object-store-set)
 - [`lean optimize`](#lean-optimize)
+- [`lean private-cloud add-compute`](#lean-private-cloud-add-compute)
 - [`lean private-cloud start`](#lean-private-cloud-start)
 - [`lean private-cloud stop`](#lean-private-cloud-stop)
 - [`lean project-create`](#lean-project-create)
@@ -1818,6 +1819,34 @@ Options:
 
 _See code: [lean/commands/optimize.py](lean/commands/optimize.py)_
 
+### `lean private-cloud add-compute`
+
+Add private cloud compute
+
+```
+Usage: lean private-cloud add-compute [OPTIONS]
+
+  Add private cloud compute
+
+Options:
+  --token TEXT                    The master server token
+  --master-domain, --master-ip TEXT
+                                  The master server domain
+  --master-port INTEGER           The master server port
+  --slave-domain, --slave-ip TEXT
+                                  The slave server domain
+  --update                        Pull the latest image before starting
+  --no-update                     Do not update to the latest version
+  --compute TEXT                  Compute configuration to use
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string
+  --stop                          Stop any existing deployment
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
+```
+
+_See code: [lean/commands/private_cloud/add_compute.py](lean/commands/private_cloud/add_compute.py)_
+
 ### `lean private-cloud start`
 
 Start a new private cloud
@@ -1828,20 +1857,22 @@ Usage: lean private-cloud start [OPTIONS]
   Start a new private cloud
 
 Options:
-  --master                    Run in master mode
-  --slave                     Run in slave mode
-  --token TEXT                The master server token
-  --master-domain TEXT        The master server domain
-  --master-port INTEGER       The master server port
-  --slave-domain TEXT         The slave server domain
-  --update                    Pull the latest image before starting
-  --no-update                 Do not update to the latest version
-  --compute TEXT              Compute configuration to use
-  --extra-docker-config TEXT  Extra docker configuration as a JSON string
-  --stop                      Stop any existing deployment
-  --lean-config FILE          The Lean configuration file that should be used (defaults to the nearest lean.json)
-  --verbose                   Enable debug logging
-  --help                      Show this message and exit.
+  --master                        Run in master mode
+  --slave                         Run in slave mode
+  --token TEXT                    The master server token
+  --master-domain, --master-ip TEXT
+                                  The master server domain
+  --master-port INTEGER           The master server port
+  --slave-domain, --slave-ip TEXT
+                                  The slave server domain
+  --update                        Pull the latest image before starting
+  --no-update                     Do not update to the latest version
+  --compute TEXT                  Compute configuration to use
+  --extra-docker-config TEXT      Extra docker configuration as a JSON string
+  --stop                          Stop any existing deployment
+  --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose                       Enable debug logging
+  --help                          Show this message and exit.
 ```
 
 _See code: [lean/commands/private_cloud/start.py](lean/commands/private_cloud/start.py)_
