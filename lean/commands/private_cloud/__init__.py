@@ -15,6 +15,7 @@ from click import group
 
 from lean.commands.private_cloud.start import start
 from lean.commands.private_cloud.stop import stop
+from lean.commands.private_cloud.add_compute import add_compute
 
 
 @group()
@@ -27,3 +28,4 @@ def private_cloud() -> None:
 
 private_cloud.add_command(start)
 private_cloud.add_command(stop)
+private_cloud.add_command(add_compute)
