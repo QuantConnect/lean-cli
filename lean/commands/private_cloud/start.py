@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional
 from json import loads
 
-from click import command, option
+from click import command, option, prompt
 from docker.errors import APIError
 from docker.types import Mount
 
@@ -106,9 +106,9 @@ def get_ip_address():
 @option("--master", is_flag=True, default=False, help="Run in master mode")
 @option("--slave", is_flag=True, default=False, help="Run in slave mode")
 @option("--token", type=str, required=False, help="The master server token")
-@option("--master-domain", type=str, required=False, help="The master server domain")
+@option("--master-domain", "--master-ip", type=str, required=False, help="The master server domain")
 @option("--master-port", type=int, required=False, default=443, help="The master server port")
-@option("--slave-domain", type=str, required=False, help="The slave server domain")
+@option("--slave-domain", "--slave-ip", type=str, required=False, help="The slave server domain")
 @option("--update", is_flag=True, default=False, help="Pull the latest image before starting")
 @option("--no-update", is_flag=True, default=False, help="Do not update to the latest version")
 @option("--compute", type=str, required=False, help="Compute configuration to use")
@@ -116,6 +116,32 @@ def get_ip_address():
 @option("--image", type=str, hidden=True)
 @option("--stop", is_flag=True, default=False, help="Stop any existing deployment")
 def start(master: bool,
+          slave: bool,
+          token: str,
+          master_domain: str,
+          slave_domain: str,
+          master_port: int,
+          update: bool,
+          no_update: bool,
+          compute: Optional[str],
+          extra_docker_config: Optional[str],
+          image: Optional[str],
+          stop: bool) -> None:
+    start_command(master,
+                  slave,
+                  token,
+                  master_domain,
+                  slave_domain,
+                  master_port,
+                  update,
+                  no_update,
+                  compute,
+                  extra_docker_config,
+                  image,
+                  stop)
+
+
+def start_command(master: bool,
           slave: bool,
           token: str,
           master_domain: str,
@@ -139,8 +165,7 @@ def start(master: bool,
         slave = True
 
     if not master_domain:
-        master_domain = get_ip_address()
-        logger.info(f"'--master-domain' was not provided using '{master_domain}'")
+        master_domain = prompt("Master domain", get_ip_address())
 
     str_mode = 'slave' if slave else 'master'
     logger.info(f'Start running in {str_mode} mode')
@@ -157,7 +182,7 @@ def start(master: bool,
 
     if slave:
         if not token:
-            raise RuntimeError(f"Master token '--token' is required when running as slave")
+            token = prompt("Master token")
     else:
         if not token:
             from uuid import uuid4
@@ -199,7 +224,8 @@ def start(master: bool,
                 try:
                     from requests import get
                     resp = get(f'http://{master_domain}:{master_port}', stream=True)
-                    slave_domain = resp.raw._connection.sock.getsockname()[0]
+                    potential_slave_domain = resp.raw._connection.sock.getsockname()[0]
+                    slave_domain = prompt("Slave domain", potential_slave_domain)
                     break
                 except Exception as e:
                     from time import sleep
