@@ -27,7 +27,7 @@ from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.project_manager import ProjectManager
 from lean.components.util.temp_manager import TempManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_DOTNET_FRAMEWORK
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from lean.models.modules import NuGetPackage
@@ -97,6 +97,7 @@ def test_run_lean_compiles_csharp_project_in_correct_configuration(release: bool
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
 
     lean_runner = create_lean_runner(docker_manager)
 
@@ -123,6 +124,7 @@ def test_run_lean_runs_lean_container_detached() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
 
     lean_runner = create_lean_runner(docker_manager)
 
@@ -384,6 +386,7 @@ def test_run_lean_sets_image_name_when_debugging_with_vsdbg() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
 
     lean_runner = create_lean_runner(docker_manager)
 
@@ -407,6 +410,7 @@ def test_run_lean_exposes_ssh_when_debugging_with_rider() -> None:
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
 
     lean_runner = create_lean_runner(docker_manager)
 
@@ -556,6 +560,7 @@ EndGlobal
 
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
 
     root_dir = Path.cwd()
     lean_runner = create_lean_runner(docker_manager)

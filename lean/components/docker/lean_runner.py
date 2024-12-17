@@ -585,13 +585,14 @@ class LeanRunner:
                 "mode": "rw"
             }
 
+        framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                             DEFAULT_LEAN_DOTNET_FRAMEWORK)
+
         # Ensure all .csproj files refer to the version of LEAN in the Docker container
         csproj_temp_dir = self._temp_manager.create_temporary_directory()
         for path in compile_root.rglob("*.csproj"):
-            self._ensure_csproj_uses_correct_lean(compile_root, path, csproj_temp_dir, run_options)
+            self._ensure_csproj_is_valid(compile_root, path, csproj_temp_dir, run_options, framework_ver)
 
-        framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                             DEFAULT_LEAN_DOTNET_FRAMEWORK)
         # Set up the MSBuild properties
         msbuild_properties = {
             "Configuration": "Release" if release else "Debug",
@@ -601,8 +602,6 @@ class LeanRunner:
             "GenerateAssemblyInfo": "false",
             "GenerateTargetFrameworkAttribute": "false",
             "AppendTargetFrameworkToOutputPath": "false",
-            "AutoGenerateBindingRedirects": "true",
-            "GenerateBindingRedirectsOutputType": "true",
             "AutomaticallyUseReferenceAssemblyPackages": "false",
             "CopyLocalLockFileAssemblies": "true",
             "PathMap": f"/LeanCLI={str(compile_root)}",
@@ -770,11 +769,12 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
         return project_dir
 
-    def _ensure_csproj_uses_correct_lean(self,
-                                         compile_root: Path,
-                                         csproj_path: Path,
-                                         temp_dir: Path,
-                                         run_options: Dict[str, Any]) -> None:
+    def _ensure_csproj_is_valid(self,
+                                compile_root: Path,
+                                csproj_path: Path,
+                                temp_dir: Path,
+                                run_options: Dict[str, Any],
+                                net_framework: str) -> None:
         """Ensures a C# project is compiled using the version of LEAN in the Docker container.
 
         When a .csproj file refers to the NuGet version of LEAN,
@@ -790,6 +790,18 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         from docker.types import Mount
         csproj = self._xml_manager.parse(csproj_path.read_text(encoding="utf-8"))
         include_added = False
+
+        if net_framework:
+            target_framework_iter = csproj.iter("TargetFramework")
+            if target_framework_iter:
+                target_frameworks = [framework.text for framework in target_framework_iter]
+                if target_frameworks:
+                    if net_framework not in target_frameworks:
+                        raise RuntimeError(f"This project is targeting {target_frameworks[0].replace('net', 'Net ')}"
+                                           f" and {net_framework.replace('net', 'Net ')} is required. Please"
+                                           f" update the \"Target Framework\" project setting in VSCode to"
+                                           f" the new SDK or modify the csproj file directly to "
+                                           f"\"<TargetFramework>{net_framework}</TargetFramework>\".")
 
         for package_reference in csproj.iter("PackageReference"):
             if not package_reference.get("Include", "").lower().startswith("quantconnect."):
