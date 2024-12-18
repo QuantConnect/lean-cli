@@ -128,10 +128,12 @@ DEFAULT_CSHARP_MAIN = """
     using QuantConnect.Algorithm.Framework.Portfolio.SignalExports;
     using QuantConnect.Algorithm.Framework.Execution;
     using QuantConnect.Algorithm.Framework.Risk;
+    using QuantConnect.Algorithm.Selection;
     using QuantConnect.Api;
     using QuantConnect.Parameters;
     using QuantConnect.Benchmarks;
     using QuantConnect.Brokerages;
+    using QuantConnect.Commands;
     using QuantConnect.Configuration;
     using QuantConnect.Util;
     using QuantConnect.Interfaces;
@@ -164,12 +166,14 @@ DEFAULT_CSHARP_MAIN = """
     using QuantConnect.Securities.Forex;
     using QuantConnect.Securities.Crypto;
     using QuantConnect.Securities.CryptoFuture;
+    using QuantConnect.Securities.IndexOption;
     using QuantConnect.Securities.Interfaces;
     using QuantConnect.Securities.Volatility;
     using QuantConnect.Storage;
     using QuantConnect.Statistics;
     using QCAlgorithmFramework = QuantConnect.Algorithm.QCAlgorithm;
     using QCAlgorithmFrameworkBridge = QuantConnect.Algorithm.QCAlgorithm;
+    using Calendar = QuantConnect.Data.Consolidators.Calendar;
 #endregion
 namespace QuantConnect.Algorithm.CSharp
 {
