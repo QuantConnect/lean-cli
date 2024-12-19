@@ -58,9 +58,6 @@ def get_project_id(project_config: Storage):
         str: The 'cloud-id' if it exists, otherwise the 'local-id'.
              If neither is found, returns None.
     """
-    if not project_config:
-        container.logger.debug("get_project_id: Project configuration is missing. Using default project ID: '0'")
-        return '0'
     return project_config.get("cloud-id") or project_config.get("local-id")
 
 
