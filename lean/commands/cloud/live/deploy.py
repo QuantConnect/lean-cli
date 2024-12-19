@@ -245,7 +245,7 @@ def deploy(project: str,
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = non_interactive_config_build_for_name(lean_config, brokerage, cloud_brokerages,
-                                                                   kwargs, logger, cloud_project.projectId)
+                                                                   kwargs, logger)
         notify_methods = []
         if notify_emails is not None:
             for config in notify_emails.split(","):
@@ -287,13 +287,11 @@ def deploy(project: str,
     else:
         # let the user choose the brokerage
         brokerage_instance = interactive_config_build(lean_config, cloud_brokerages, logger, kwargs, show_secrets,
-                                                      "Select a brokerage", multiple=False,
-                                                      project_id=cloud_project.projectId)
+                                                      "Select a brokerage", multiple=False)
 
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
-        cash_balance_option, holdings_option, last_cash, last_holdings = (
-            get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project))
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
         if holdings_option != LiveInitialStateInput.NotSupported:
@@ -305,15 +303,13 @@ def deploy(project: str,
         # the user sent the live data provider to use
         for data_provider in data_provider_live:
             data_provider_instance = non_interactive_config_build_for_name(lean_config, data_provider,
-                                                                           cloud_data_queue_handlers, kwargs, logger,
-                                                                           cloud_project.projectId)
+                                                                           cloud_data_queue_handlers, kwargs, logger)
 
             live_data_provider_settings.update({data_provider_instance.get_id(): data_provider_instance.get_settings()})
     else:
         # let's ask the user which live data providers to use
         data_feed_instances = interactive_config_build(lean_config, cloud_data_queue_handlers, logger, kwargs,
-                                                       show_secrets, "Select a live data feed",
-                                                       multiple=True, project_id=cloud_project.projectId)
+                                                       show_secrets, "Select a live data feed", multiple=True)
         for data_feed in data_feed_instances:
             settings = data_feed.get_settings()
 

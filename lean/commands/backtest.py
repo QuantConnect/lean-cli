@@ -17,7 +17,7 @@ from click import command, option, argument, Choice
 
 from lean.click import LeanCommand, PathParameter
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
-from lean.container import container, Logger, get_project_id
+from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
 from lean.models.cli import cli_data_downloaders, cli_addon_modules
 from lean.components.util.json_modules_handler import build_and_configure_modules, non_interactive_config_build_for_name
@@ -362,11 +362,9 @@ def backtest(project: Path,
     engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
                                                                                            algorithm_file.parent)
 
-    project_id = get_project_id(project_config)
-
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                              cli_data_downloaders, kwargs, logger, project_id, environment_name)
+                                                              cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
@@ -396,7 +394,7 @@ def backtest(project: Path,
 
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
-                                kwargs, logger, environment_name, container_module_version, project_id)
+                                kwargs, logger, environment_name, container_module_version)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,

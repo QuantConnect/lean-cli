@@ -179,7 +179,6 @@ class JsonModule(ABC):
                      lean_config: Dict[str, Any],
                      logger: Logger,
                      interactive: bool,
-                     project_id: str,
                      properties: Dict[str, Any] = {},
                      hide_input: bool = False,
                      environment_name: str = None) -> 'JsonModule':
@@ -188,7 +187,6 @@ class JsonModule(ABC):
         :param lean_config: the Lean configuration dict to read defaults from
         :param logger: the logger to use
         :param interactive: true if running in interactive mode
-        :param project_id: The local or cloud project_id.
         :param properties: the properties that passed as options
         :param hide_input: whether to hide secrets inputs
         :param environment_name: the target environment name
@@ -221,8 +219,7 @@ class JsonModule(ABC):
                 logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
-                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
-                                                        project_id, logger)
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
