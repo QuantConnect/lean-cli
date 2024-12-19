@@ -207,6 +207,26 @@ class Container:
 
         return engine_image, container_module_version, project_config
 
+    def get_project_id(self, project_directory: Path) -> str:
+        """
+        Retrieves the project ID from the configuration.
+
+        Args:
+            project_directory (Path): The directory of the project.
+
+        Returns:
+            str: Returns the 'cloud-id' if available, otherwise the 'local-id'.
+                 If neither is found nor the configuration is missing, returns '0'.
+        """
+        project_config = self.project_config_manager.get_project_config(project_directory)
+
+        if not project_config:
+            container.logger.debug(
+                f"Project configuration for {project_directory} is missing. Using default project ID: '0'")
+            return '0'
+
+        return project_config.get("cloud-id") or project_config.get("local-id")
+
 
 container = Container()
 container.data_downloader.update_database_files()
