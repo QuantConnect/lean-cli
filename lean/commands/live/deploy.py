@@ -17,7 +17,7 @@ from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
 from lean.constants import DEFAULT_ENGINE_IMAGE
-from lean.container import container
+from lean.container import container, get_project_id
 from lean.models.cli import (cli_brokerages, cli_data_queue_handlers, cli_data_downloaders,
                              cli_addon_modules, cli_history_provider)
 from lean.models.errors import MoreInfoError
@@ -194,6 +194,11 @@ def deploy(project: Path,
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 
+    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
+                                                                                           algorithm_file.parent)
+
+    project_id = get_project_id(project_config)
+
     if output is None:
         output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -238,21 +243,22 @@ def deploy(project: Path,
     if brokerage:
         # user provided brokerage, check all arguments were provided
         brokerage_instance = non_interactive_config_build_for_name(lean_config, brokerage, cli_brokerages, kwargs,
-                                                                   logger, environment_name)
+                                                                   logger, project_id, environment_name)
     else:
         # let the user choose the brokerage
         brokerage_instance = interactive_config_build(lean_config, cli_brokerages, logger, kwargs, show_secrets,
                                                       "Select a brokerage", multiple=False,
-                                                      environment_name=environment_name)
+                                                      project_id=project_id, environment_name=environment_name)
 
     if data_provider_live and len(data_provider_live) > 0:
         for data_feed_name in data_provider_live:
             data_feed = non_interactive_config_build_for_name(lean_config, data_feed_name, cli_data_queue_handlers,
-                                                              kwargs, logger, environment_name)
+                                                              kwargs, logger, project_id, environment_name)
             data_provider_live_instances.append(data_feed)
     else:
         data_provider_live_instances = interactive_config_build(lean_config, cli_data_queue_handlers, logger, kwargs,
-                                                                show_secrets, "Select a live data feed", multiple=True,
+                                                                show_secrets, "Select a live data feed",
+                                                                multiple=True, project_id=project_id,
                                                                 environment_name=environment_name)
 
     # based on the live data providers we set up the history providers
@@ -260,7 +266,7 @@ def deploy(project: Path,
     if data_provider_historical is None:
         data_provider_historical = "Local"
     data_downloader_instances = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                                      cli_data_downloaders, kwargs, logger,
+                                                                      cli_data_downloaders, kwargs, logger, project_id,
                                                                       environment_name)
     if history_providers is None or len(history_providers) == 0:
         history_providers = _get_history_provider_name(data_provider_live)
@@ -268,11 +274,8 @@ def deploy(project: Path,
         if history_provider in ["BrokerageHistoryProvider", "SubscriptionDataReaderHistoryProvider"]:
             continue
         history_providers_instances.append(config_build_for_name(lean_config, history_provider, cli_history_provider,
-                                                                 kwargs, logger, interactive=True,
-                                                                 environment_name=environment_name))
-
-    engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
-                                                                                           algorithm_file.parent)
+                                                                 kwargs, logger, True, project_id,
+                                                                 environment_name))
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = {}
@@ -341,7 +344,7 @@ def deploy(project: Path,
 
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
-                                kwargs, logger, environment_name, container_module_version)
+                                kwargs, logger, environment_name, container_module_version, project_id)
 
     if container.platform_manager.is_host_arm():
         if "InteractiveBrokersBrokerage" in lean_config["environments"][environment_name]["live-mode-brokerage"] \

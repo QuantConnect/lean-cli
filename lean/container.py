@@ -47,6 +47,23 @@ from lean.constants import DEFAULT_ENGINE_IMAGE, CONTAINER_LABEL_LEAN_VERSION_NA
 from lean.models.docker import DockerImage
 
 
+def get_project_id(project_config: Storage):
+    """
+    Retrieves the ID from the project configuration.
+
+    Args:
+        project_config (dict): A dictionary containing project configuration with potential keys 'cloud-id' and 'local-id'.
+
+    Returns:
+        str: The 'cloud-id' if it exists, otherwise the 'local-id'.
+             If neither is found, returns None.
+    """
+    if not project_config:
+        container.logger.debug("get_project_id: Project configuration is missing. Using default project ID: '0'")
+        return '0'
+    return project_config.get("cloud-id") or project_config.get("local-id")
+
+
 class Container:
 
     def __init__(self):

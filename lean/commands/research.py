@@ -17,7 +17,7 @@ from click import command, argument, option, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
-from lean.container import container
+from lean.container import container, get_project_id
 from lean.models.cli import cli_data_downloaders
 from lean.components.util.name_extraction import convert_to_class_name
 from lean.components.util.json_modules_handler import non_interactive_config_build_for_name
@@ -121,13 +121,14 @@ def research(project: Path,
     research_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
                                                                                              algorithm_file.parent,
                                                                                              False)
-
+    project_id = get_project_id(project_config)
     paths_to_mount = None
 
     if data_provider_historical is not None:
         organization_id = container.organization_manager.try_get_working_organization_id()
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                              cli_data_downloaders, kwargs, logger, environment_name)
+                                                              cli_data_downloaders, kwargs, logger, project_id,
+                                                              environment_name)
         data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
