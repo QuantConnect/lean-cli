@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Type
 
 from click import get_current_context
@@ -219,7 +221,10 @@ class JsonModule(ABC):
                 logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
-                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
+                project_id = container.get_project_id(
+                    Path.cwd() / os.path.splitext(lean_config.get('algorithm-location'))[0])
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
+                                                        project_id, logger)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
