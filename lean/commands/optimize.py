@@ -20,7 +20,7 @@ from click import command, argument, option, Choice, IntRange
 from lean.click import LeanCommand, PathParameter, ensure_options
 from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_ENGINE_IMAGE
-from lean.container import container, get_project_id
+from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.click_options import options_from_json, get_configs_for_options
 from lean.models.cli import cli_data_downloaders, cli_addon_modules
@@ -298,12 +298,9 @@ def optimize(project: Path,
 
     paths_to_mount = None
 
-    project_id = get_project_id(project_config)
-
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                              cli_data_downloaders, kwargs, logger, project_id,
-                                                              environment_name)
+                                                              cli_data_downloaders, kwargs, logger, environment_name)
         data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
@@ -331,7 +328,7 @@ def optimize(project: Path,
 
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
-                                kwargs, logger, environment_name, container_module_version, project_id)
+                                kwargs, logger, environment_name, container_module_version)
 
     run_options = lean_runner.get_basic_docker_config(lean_config, algorithm_file, output, None, release, should_detach,
                                                       engine_image, paths_to_mount)

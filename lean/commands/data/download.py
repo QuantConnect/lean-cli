@@ -19,7 +19,7 @@ from click import command, option, confirm, pass_context, Context, Choice, promp
 from lean.click import LeanCommand, ensure_options
 from lean.components.util.json_modules_handler import config_build_for_name
 from lean.constants import DEFAULT_ENGINE_IMAGE
-from lean.container import container, get_project_id
+from lean.container import container
 from lean.models.api import QCDataInformation, QCDataVendor, QCFullOrganization, QCDatasetDelivery, QCResolution, QCSecurityType, QCDataType
 from lean.models.click_options import get_configs_for_options, options_from_json
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform,OptionResult, Product
@@ -677,11 +677,8 @@ def download(ctx: Context,
 
         engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update)
 
-        project_id = get_project_id(project_config)
-
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
-                                                         cli_data_downloaders, kwargs, logger, interactive=True,
-                                                         project_id=project_id)
+                                                         cli_data_downloaders, kwargs, logger, interactive=True)
         data_downloader_provider.ensure_module_installed(organization.id, container_module_version)
         container.lean_config_manager.set_properties(data_downloader_provider.get_settings())
         # mounting additional data_downloader config files

@@ -19,7 +19,7 @@ from lean.models.logger import Option
 
 def build_and_configure_modules(target_modules: List[str], module_list: List[JsonModule], organization_id: str,
                                 lean_config: Dict[str, Any], properties: Dict[str, Any], logger: Logger,
-                                environment_name: str, module_version: str, project_id: str):
+                                environment_name: str, module_version: str):
     """Builds and configures the given modules
 
     :param target_modules: the requested modules
@@ -30,11 +30,10 @@ def build_and_configure_modules(target_modules: List[str], module_list: List[Jso
     :param logger: the logger instance
     :param environment_name: the environment name to use
     :param module_version: The version of the module to install. If not provided, the latest version will be installed.
-    :param project_id: The cloud or local project_id
     """
     for target_module_name in target_modules:
         module = non_interactive_config_build_for_name(lean_config, target_module_name, module_list, properties,
-                                                       logger, project_id, environment_name)
+                                                       logger, environment_name)
         # Ensures extra modules (not brokerage or data feeds) are installed.
         module.ensure_module_installed(organization_id, module_version)
         lean_config["environments"][environment_name].update(module.get_settings())
@@ -42,9 +41,9 @@ def build_and_configure_modules(target_modules: List[str], module_list: List[Jso
 
 def non_interactive_config_build_for_name(lean_config: Dict[str, Any], target_module_name: str,
                                           module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger,
-                                          project_id: str, environment_name: str = None) -> JsonModule:
+                                          environment_name: str = None) -> JsonModule:
     return config_build_for_name(lean_config, target_module_name, module_list, properties, logger, interactive=False,
-                                 project_id=project_id, environment_name=environment_name)
+                                 environment_name=environment_name)
 
 
 def find_module(target_module_name: str, module_list: List[JsonModule], logger: Logger) -> JsonModule:
@@ -79,18 +78,18 @@ def find_module(target_module_name: str, module_list: List[JsonModule], logger: 
 
 
 def config_build_for_name(lean_config: Dict[str, Any], target_module_name: str, module_list: List[JsonModule],
-                          properties: Dict[str, Any], logger: Logger, interactive: bool, project_id: str,
+                          properties: Dict[str, Any], logger: Logger, interactive: bool,
                           environment_name: str = None) -> JsonModule:
     target_module = find_module(target_module_name, module_list, logger)
-    target_module.config_build(lean_config, logger, interactive=interactive, project_id=project_id,
-                               properties=properties, environment_name=environment_name)
+    target_module.config_build(lean_config, logger, interactive=interactive, properties=properties,
+                               environment_name=environment_name)
     _update_settings(logger, environment_name, target_module, lean_config)
     return target_module
 
 
 def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], logger: Logger,
                              user_provided_options: Dict[str, Any], show_secrets: bool, select_message: str,
-                             multiple: bool, project_id: str, environment_name: str = None) -> [JsonModule]:
+                             multiple: bool, environment_name: str = None) -> [JsonModule]:
     """Interactively configures the brokerage to use.
 
     :param lean_config: the LEAN configuration that should be used
@@ -100,7 +99,6 @@ def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], 
     :param show_secrets: whether to show secrets on input
     :param select_message: the user facing selection message
     :param multiple: true if multiple selections are allowed
-    :param project_id: The local or cloud project_id.
     :param environment_name: the target environment name
     :return: the brokerage the user configured
     """
@@ -114,9 +112,8 @@ def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], 
         modules.append(module)
 
     for module in modules:
-        module.config_build(lean_config, logger, interactive=True, project_id=project_id,
-                            properties=user_provided_options, hide_input=not show_secrets,
-                            environment_name=environment_name)
+        module.config_build(lean_config, logger, interactive=True, properties=user_provided_options,
+                            hide_input=not show_secrets, environment_name=environment_name)
         _update_settings(logger, environment_name, module, lean_config)
     if multiple:
         return modules
