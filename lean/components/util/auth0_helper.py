@@ -16,7 +16,7 @@ from lean.components.api.api_client import Auth0Client
 from lean.components.util.logger import Logger
 
 
-def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: str = None) -> QCAuth0Authorization:
+def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int) -> QCAuth0Authorization:
     """Gets the authorization data for a brokerage, authorizing if necessary.
 
     :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.

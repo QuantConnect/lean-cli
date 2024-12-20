@@ -52,7 +52,7 @@ class Auth0Client:
             return QCAuth0Authorization(authorization=None)
 
     @staticmethod
-    def authorize(brokerage_id: str, logger: Logger,  project_id: str = None) -> None:
+    def authorize(brokerage_id: str, logger: Logger,  project_id: int) -> None:
         """Starts the authorization process for a brokerage.
 
         :param brokerage_id: the id of the brokerage to start the authorization process for
@@ -63,7 +63,7 @@ class Auth0Client:
 
         full_url = f"{API_BASE_URL}live/auth0/authorize?brokerage={brokerage_id}"
 
-        if project_id:
+        if project_id > 0:
             full_url += f"&projectId={project_id}"
 
         logger.info(f"Please open the following URL in your browser to authorize the LEAN CLI.")

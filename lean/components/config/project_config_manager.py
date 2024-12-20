@@ -81,7 +81,7 @@ class ProjectConfigManager:
         """
         project_config = self.get_project_config(project_directory)
 
-        return project_config.get("cloud-id", default=0)
+        return project_config.get("cloud-id") or -project_config.get("local-id")
 
     def get_latest_live_directory(self, project_directory: Path) -> Path:
         """Returns the path of the latest live directory.
