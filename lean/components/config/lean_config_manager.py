@@ -260,6 +260,7 @@ class LeanConfigManager:
 
         if algorithm_file and len(algorithm_file.name) > 0:
             config.get("job-project-id", self._project_config_manager.get_local_id(algorithm_file.parent))
+            config["project-id"] = self._project_config_manager.get_cloud_id(algorithm_file.parent)
 
             if algorithm_file.name.endswith(".py"):
                 config["algorithm-type-name"] = algorithm_file.name.split(".")[0]

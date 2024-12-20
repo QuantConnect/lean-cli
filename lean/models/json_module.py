@@ -177,6 +177,27 @@ class JsonModule(ABC):
         """
         return variable_key.replace('_', '-')
 
+    def validate_project_id(self, project_id: int, display_name: str) -> str:
+        """
+        Validates the given project ID and raises an exception for specific conditions.
+
+        Args:
+            project_id (int): The project ID to validate.
+            display_name (str): The display name of the module.
+
+        Returns:
+            int: The validated project ID.
+
+        Raises:
+            NotImplementedError: If the project ID is 0 and the display name is "CharlesSchwab".
+        """
+        if project_id == 0 and display_name.strip().lower() == "CharlesSchwab".lower():
+            raise NotImplementedError(
+                "Cloud ID is missing from the project configuration for the module 'CharlesSchwabBrokerage'. "
+                "Please ensure the project is synchronized with the cloud by pushing or pulling the project."
+            )
+        return str(project_id)
+
     def config_build(self,
                      lean_config: Dict[str, Any],
                      logger: Logger,
@@ -221,10 +242,9 @@ class JsonModule(ABC):
                 logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
-                project_id = container.get_project_id(
-                    Path.cwd() / os.path.splitext(lean_config.get('algorithm-location'))[0])
+                project_id = self.validate_project_id(lean_config.get("project-id"), self._display_name.lower())
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
-                                                        project_id, logger)
+                                                        logger, project_id)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
