@@ -61,10 +61,7 @@ class Auth0Client:
         """
         from webbrowser import open
 
-        full_url = f"{API_BASE_URL}live/auth0/authorize?brokerage={brokerage_id}"
-
-        if project_id > 0:
-            full_url += f"&projectId={project_id}"
+        full_url = f"{API_BASE_URL}live/auth0/authorize?brokerage={brokerage_id}&projectId={project_id}"
 
         logger.info(f"Please open the following URL in your browser to authorize the LEAN CLI.")
         logger.info(full_url)

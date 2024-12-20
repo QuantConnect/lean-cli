@@ -68,7 +68,7 @@ class ProjectConfigManager:
 
         return project_id
 
-    def get_cloud_id(self, project_directory: Path) -> int:
+    def get_project_id_from_project_config(self, project_directory: Path) -> int:
         """
         Retrieves the project ID from the configuration.
 
