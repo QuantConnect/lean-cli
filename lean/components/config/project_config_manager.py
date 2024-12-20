@@ -68,6 +68,21 @@ class ProjectConfigManager:
 
         return project_id
 
+    def get_project_id_from_project_config(self, project_directory: Path) -> int:
+        """
+        Retrieves the project ID from the configuration.
+
+        Args:
+            project_directory (Path): The directory of the project.
+
+        Returns:
+            str: Returns the 'cloud-id' if available, otherwise the 'local-id'.
+                 If neither is found nor the configuration is missing, returns '0'.
+        """
+        project_config = self.get_project_config(project_directory)
+
+        return project_config.get("cloud-id") or -project_config.get("local-id")
+
     def get_latest_live_directory(self, project_directory: Path) -> Path:
         """Returns the path of the latest live directory.
 
