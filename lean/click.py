@@ -79,7 +79,7 @@ class VerboseOption(ClickOption):
         from sys import version as sys_version
         from lean import __version__ as lean_cli_version
         from subprocess import run
-        from os import getcwd
+        from os import getcwd, getlogin
         from lean.container import container
 
         logger = container.logger
@@ -87,6 +87,9 @@ class VerboseOption(ClickOption):
 
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
+        hostname = run("hostname", shell=True, capture_output=True).stdout.decode("utf")
+        username = getlogin()
+
         try:
             dotnet_version = run("dotnet --version", capture_output=True).stdout.decode("utf").replace("\n", "")
         except:
@@ -113,13 +116,21 @@ class VerboseOption(ClickOption):
         except:
             pass
 
+        try:
+            docker_version = run("docker --version", shell=True, capture_output=True).stdout.decode("utf").replace("Docker version ", "")
+        except:
+            docker_version = "Not installed"
+
         logger.debug(f"Context information:\n"
+                     f"  Hostname: {hostname}"
+                     f"  Username: {username}\n"
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
                      f"  Lean CLI version: {lean_cli_version}\n"
                      f"  .NET version: {dotnet_version}\n"
                      f"  VS Code version: {vscode_version}\n"
-                     f"  VS Code installed versions: {vscode_installed_extensions}")
+                     f"  VS Code installed versions: {vscode_installed_extensions}\n"
+                     f"  Docker version: {docker_version}\n")
         try:
             logger.debug(get_whoami_message())
         except:
