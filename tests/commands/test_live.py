@@ -958,7 +958,9 @@ def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
                                                  {},
                                                  {})
 
-
+@pytest.mark.skipif(
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
+)
 @pytest.mark.parametrize("python_venv", ["Custom-venv",
                                         "/Custom-venv",
                                         None])
