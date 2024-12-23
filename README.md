@@ -178,7 +178,7 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -430,7 +430,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -881,7 +880,7 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -1386,7 +1385,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -1422,6 +1420,7 @@ Options:
                                   Your ThetaData subscription price plan
   --alpaca-api-key TEXT           Your Alpaca Api Key
   --alpaca-api-secret TEXT        Your Alpaca Api Secret
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
@@ -1773,7 +1772,7 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -2022,7 +2021,7 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID is required for OAuth process.
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
