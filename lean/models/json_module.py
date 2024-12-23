@@ -219,8 +219,8 @@ class JsonModule(ABC):
                 logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
-                project_id = next((config._value for config in self._lean_configs if config._id == "project-id"),
-                                  lean_config["project-id"])
+                project_id = next((config._value for config in self._lean_configs
+                                   if config._id == "project-id" and config._value != ""), lean_config["project-id"])
                 logger.debug(f'project_id: {project_id}')
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
                                                         logger, project_id)
