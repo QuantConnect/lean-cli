@@ -1,4 +1,5 @@
 import json
+import sys
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -135,6 +136,9 @@ def _create_lean_data_download(data_provider_name: str,
                 return CliRunner().invoke(lean, run_parameters)
 
 
+@pytest.mark.skipif(
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
+)
 @pytest.mark.parametrize("data_provider,market,is_crypto,security_type,ticker,data_provider_parameters",
                          [("Polygon", "NYSE", False, "Equity", ["AAPL"], ["--polygon-api-key", "123"]),
                           ("Binance", "Binance", True, "CryptoFuture", ["BTCUSDT"],
@@ -146,6 +150,9 @@ def _create_lean_data_download(data_provider_name: str,
                            ["--ib-user-name", "123", "--ib-account", "Individual", "--ib-password", "123"])])
 def test_download_data_non_interactive(data_provider: str, market: str, is_crypto: bool, security_type: str,
                                        ticker: List[str], data_provider_parameters: List[str]):
+    if (data_provider == "Interactive Brokers" and sys.platform == "darwin"):
+        pytest.skip("MacOS does not support IB tests")
+
     run_data_download = _create_lean_data_download(
         data_provider, "Trade", "Minute", security_type, ticker, "20240101", "20240202",
         _get_data_provider_config(is_crypto), market, data_provider_parameters)

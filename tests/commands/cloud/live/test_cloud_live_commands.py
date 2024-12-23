@@ -14,6 +14,7 @@
 from unittest import mock
 from click.testing import CliRunner
 import pytest
+import sys
 from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod
@@ -97,6 +98,9 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY,
                                                   mock.ANY)
 
+@pytest.mark.skipif(
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
+)
 def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
     create_fake_lean_cli_directory()
 
@@ -243,6 +247,9 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Zerodha", "USD:100"),
                                             ("TDAmeritrade", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
+    if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
+        pytest.skip("MacOS does not support IB tests")
+
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()
@@ -324,6 +331,9 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("TDAmeritrade", ""),
                                                 ("TDAmeritrade", "A:A 2T:1:145.1")])
 def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
+    if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
+        pytest.skip("MacOS does not support IB tests")
+
     create_fake_lean_cli_directory()
 
     cloud_project_manager = mock.Mock()
