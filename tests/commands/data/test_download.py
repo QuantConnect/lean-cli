@@ -137,7 +137,7 @@ def _create_lean_data_download(data_provider_name: str,
 
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
 )
 @pytest.mark.parametrize("data_provider,market,is_crypto,security_type,ticker,data_provider_parameters",
                          [("Polygon", "NYSE", False, "Equity", ["AAPL"], ["--polygon-api-key", "123"]),

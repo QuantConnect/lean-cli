@@ -97,7 +97,7 @@ def create_fake_binance_environment(name: str, live_mode: bool) -> None:
     path.write_text(config, encoding="utf-8")
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
     # TODO: currently it is not using the live-paper envrionment
@@ -123,7 +123,7 @@ def test_live_calls_lean_runner_with_correct_algorithm_file() -> None:
                                                  {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_extra_docker_config() -> None:
     # TODO: currently it is not using the live-paper environment
@@ -160,7 +160,7 @@ def test_live_calls_lean_runner_with_extra_docker_config() -> None:
                                                            {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_paths_to_mount() -> None:
     create_fake_lean_cli_directory()
@@ -206,7 +206,7 @@ def test_live_aborts_when_environment_has_live_mode_set_to_false() -> None:
     container.lean_runner.run_lean.assert_not_called()
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_default_output_directory() -> None:
     create_fake_lean_cli_directory()
@@ -224,7 +224,7 @@ def test_live_calls_lean_runner_with_default_output_directory() -> None:
     args[3].relative_to(Path("Python Project/live").resolve())
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     create_fake_lean_cli_directory()
@@ -245,7 +245,7 @@ def test_live_calls_lean_runner_with_custom_output_directory() -> None:
     args[3].relative_to(Path("Python Project/custom").resolve())
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_release_mode() -> None:
     create_fake_lean_cli_directory()
@@ -268,7 +268,7 @@ def test_live_calls_lean_runner_with_release_mode() -> None:
                                                  {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_calls_lean_runner_with_detach() -> None:
     create_fake_lean_cli_directory()
@@ -483,7 +483,7 @@ data_providers_required_options = {
 
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 @pytest.mark.parametrize("data_provider", data_providers_required_options.keys())
 def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
@@ -887,7 +887,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                                                          {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_forces_update_when_update_option_given() -> None:
     create_fake_lean_cli_directory()
@@ -910,7 +910,7 @@ def test_live_forces_update_when_update_option_given() -> None:
                                                  {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
     create_fake_lean_cli_directory()
@@ -934,7 +934,7 @@ def test_live_passes_custom_image_to_lean_runner_when_set_in_config() -> None:
                                                  {})
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
 )
 def test_live_passes_custom_image_to_lean_runner_when_given_as_option() -> None:
     create_fake_lean_cli_directory()

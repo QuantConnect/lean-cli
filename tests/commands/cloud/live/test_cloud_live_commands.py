@@ -99,7 +99,7 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY)
 
 @pytest.mark.skipif(
-    sys.platform !="darwin", reason="MacOS does not support IB tests."
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
 )
 def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
     create_fake_lean_cli_directory()
