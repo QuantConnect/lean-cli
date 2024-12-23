@@ -150,7 +150,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|debugpy|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -178,6 +178,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -219,8 +223,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -351,9 +353,9 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|Polygon|IEX|CoinApi|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|IEX|CoinApi|Bybit|TradeStation|Alpaca]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -429,6 +431,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
@@ -439,8 +445,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -851,7 +855,7 @@ Usage: lean data download [OPTIONS]
   https://www.quantconnect.com/datasets
 
 Options:
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca]
                                   The name of the downloader data provider.
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -879,6 +883,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -920,8 +928,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
@@ -1290,11 +1296,11 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|IEX|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca]
                                   The live data provider to use
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1383,6 +1389,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
@@ -1395,8 +1405,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
@@ -1728,7 +1736,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1769,6 +1777,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1810,8 +1822,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -1989,7 +1999,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|CharlesSchwab]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|IEX|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -2017,6 +2027,10 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --project-id TEXT               This is the ID of your cloud project. (https://www.quantconnect.com/docs/v2/lean-
+                                  cli/live-trading/brokerages/charles-schwab)
+  --charles-schwab-account-number TEXT
+                                  The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -2058,8 +2072,6 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --charles-schwab-account-number TEXT
-                                  The CharlesSchwab account number
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
