@@ -88,8 +88,15 @@ class VerboseOption(ClickOption):
 
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
-        hostname = gethostname()
-        username = getlogin()
+        try:
+            hostname = gethostname()
+        except:
+            hostname = None
+
+        try:
+            username = getlogin()
+        except:
+            username = None
 
         try:
             dotnet_version = run("dotnet --version", capture_output=True).stdout.decode("utf").replace("\n", "")
@@ -123,8 +130,8 @@ class VerboseOption(ClickOption):
             docker_version = "Not installed"
 
         logger.debug(f"Context information:\n"
-                     f"  Hostname: {hostname}\n"
-                     f"  Username: {username}\n"
+                     f"  Hostname: {hostname}\n" if hostname else ""
+                     f"  Username: {username}\n" if username else ""
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
                      f"  Lean CLI version: {lean_cli_version}\n"
