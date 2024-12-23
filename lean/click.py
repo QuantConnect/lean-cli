@@ -80,6 +80,7 @@ class VerboseOption(ClickOption):
         from lean import __version__ as lean_cli_version
         from subprocess import run
         from os import getcwd, getlogin
+        from socket import gethostname
         from lean.container import container
 
         logger = container.logger
@@ -87,7 +88,7 @@ class VerboseOption(ClickOption):
 
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
-        hostname = run("hostname", shell=True, capture_output=True).stdout.decode("utf")
+        hostname = gethostname()
         username = getlogin()
 
         try:
@@ -122,7 +123,7 @@ class VerboseOption(ClickOption):
             docker_version = "Not installed"
 
         logger.debug(f"Context information:\n"
-                     f"  Hostname: {hostname}"
+                     f"  Hostname: {hostname}\n"
                      f"  Username: {username}\n"
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
