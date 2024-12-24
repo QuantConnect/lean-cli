@@ -183,7 +183,7 @@ class JsonModule(ABC):
         :return: A valid project ID.
         """
         from click import prompt
-        project_id = default_project_id
+        project_id: int = default_project_id
         if require_project_id and project_id <= 0:
             project_id = prompt("Please enter any cloud project ID to proceed with Auth0 authentication",
                                 -1, show_default=False)
