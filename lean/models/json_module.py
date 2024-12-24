@@ -14,7 +14,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from click import get_current_context, prompt
+from click import get_current_context
 from click.core import ParameterSource
 
 from lean.components.util.auth0_helper import get_authorization
@@ -182,6 +182,7 @@ class JsonModule(ABC):
         :param require_project_id: Flag to determine if prompting is necessary.
         :return: A valid project ID.
         """
+        from click import prompt
         project_id = default_project_id
         if require_project_id and project_id <= 0:
             project_id = prompt("Please enter any cloud project ID to proceed with Auth0 authentication",
