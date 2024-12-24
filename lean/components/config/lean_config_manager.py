@@ -245,6 +245,8 @@ class LeanConfigManager:
             "job-user-id": self._cli_config_manager.user_id.get_value(default="0"),
             "api-access-token": self._cli_config_manager.api_token.get_value(default=""),
             "job-organization-id": get_organization(config),
+            "project-id": self._project_config_manager.get_project_id_from_project_config(
+                algorithm_file.parent if algorithm_file else None),
 
             "ib-host": "127.0.0.1",
             "ib-port": "4002",
@@ -260,8 +262,6 @@ class LeanConfigManager:
 
         if algorithm_file and len(algorithm_file.name) > 0:
             config.get("job-project-id", self._project_config_manager.get_local_id(algorithm_file.parent))
-            config["project-id"] = (self._project_config_manager
-                                    .get_project_id_from_project_config(algorithm_file.parent))
 
             if algorithm_file.name.endswith(".py"):
                 config["algorithm-type-name"] = algorithm_file.name.split(".")[0]

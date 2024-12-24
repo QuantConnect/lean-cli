@@ -178,7 +178,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -220,6 +219,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
@@ -440,6 +440,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -880,7 +881,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -922,6 +922,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --dataset TEXT                  The name of the dataset to download non-interactively
@@ -1397,6 +1398,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --ib-enable-delayed-streaming-data BOOLEAN
@@ -1420,7 +1422,6 @@ Options:
                                   Your ThetaData subscription price plan
   --alpaca-api-key TEXT           Your Alpaca Api Key
   --alpaca-api-secret TEXT        Your Alpaca Api Secret
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
@@ -1772,7 +1773,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -1814,6 +1814,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -2021,7 +2022,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -2063,6 +2063,7 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
+  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
