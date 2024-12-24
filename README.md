@@ -219,7 +219,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
@@ -440,7 +439,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -922,7 +920,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --dataset TEXT                  The name of the dataset to download non-interactively
@@ -1398,7 +1395,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --ib-enable-delayed-streaming-data BOOLEAN
@@ -1814,7 +1810,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
@@ -2063,7 +2058,6 @@ Options:
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --project-id TEXT               The cloud project ID may be required for OAuth process.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
