@@ -175,6 +175,20 @@ class JsonModule(ABC):
         """
         return variable_key.replace('_', '-')
 
+    def get_project_id(self, default_project_id: int, require_project_id: bool) -> int:
+        """Retrieve the project ID, prompting the user if required and default is invalid.
+
+        :param default_project_id: The default project ID to use.
+        :param require_project_id: Flag to determine if prompting is necessary.
+        :return: A valid project ID.
+        """
+        from click import prompt
+        project_id: int = default_project_id
+        if require_project_id and project_id <= 0:
+            project_id = prompt("Please enter any cloud project ID to proceed with Auth0 authentication",
+                                -1, show_default=False)
+        return project_id
+
     def config_build(self,
                      lean_config: Dict[str, Any],
                      logger: Logger,
@@ -219,7 +233,11 @@ class JsonModule(ABC):
                 logger.debug(f"skipping configuration '{configuration._id}': no choices available.")
                 continue
             elif isinstance(configuration, AuthConfiguration):
-                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(), logger)
+                lean_config["project-id"] = self.get_project_id(lean_config["project-id"],
+                                                                configuration.require_project_id)
+                logger.debug(f'project_id: {lean_config["project-id"]}')
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
+                                                        logger, lean_config["project-id"])
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
