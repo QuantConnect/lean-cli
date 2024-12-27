@@ -240,6 +240,7 @@ def deploy(project: str,
 
     live_data_provider_settings = {}
     lean_config = container.lean_config_manager.get_lean_config()
+    lean_config["project-id"] = cloud_project.projectId
 
     if brokerage is not None:
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
