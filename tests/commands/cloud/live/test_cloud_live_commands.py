@@ -12,12 +12,14 @@
 # limitations under the License.
 
 from unittest import mock
+import responses
 from click.testing import CliRunner
 import pytest
 import sys
 from lean.commands import lean
 from lean.container import container
-from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, QCTelegramNotificationMethod
+from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, \
+    QCTelegramNotificationMethod, QCAuth0Authorization
 from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes
 from tests.commands.test_live import brokerage_required_options
 
@@ -245,7 +247,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                             ("Terminal Link", "USD:100"),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", "USD:100"),
-                                            ("TDAmeritrade", "USD:100")])
+                                            ("CharlesSchwab", "USD:100")])
 def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> None:
     if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
@@ -303,6 +305,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 mock.ANY)
 
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
                                                 ("Paper Trading", "A:A 2T:1:145.1"),
                                                 ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
@@ -328,18 +331,23 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
                                                 ("Zerodha", "A:A 2T:1:145.1"),
-                                                ("TDAmeritrade", ""),
-                                                ("TDAmeritrade", "A:A 2T:1:145.1")])
+                                                ("CharlesSchwab", ""),
+                                                ("CharlesSchwab", "A:A 2T:1:145.1")])
 def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> None:
     if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
-
-    cloud_project_manager = mock.Mock()
-    container.cloud_project_manager = cloud_project_manager
+    container.cloud_project_manager = mock.Mock(get_cloud_project=mock.Mock(return_value=mock.Mock(projectId=123)))
 
     api_client = mock.Mock()
+    api_client.auth0.read.return_value = QCAuth0Authorization(
+        authorization={
+            "accounts": [
+                {"id": "123", "name": "123 | Margin | USD"}
+            ]
+        }
+    )
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
         "status": "stopped",
