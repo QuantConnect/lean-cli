@@ -12,11 +12,15 @@
 # limitations under the License.
 
 import json
+import responses
 from datetime import datetime
 from pathlib import Path
 from typing import List
+from unittest import mock
 
-from lean.constants import DEFAULT_LEAN_DOTNET_FRAMEWORK
+from lean.components.util.http_client import HTTPClient
+from lean.components.api.api_client import APIClient
+from lean.constants import DEFAULT_LEAN_DOTNET_FRAMEWORK, API_BASE_URL
 from lean.models.cli import (cli_brokerages, cli_data_downloaders, cli_data_queue_handlers,
                              cli_addon_modules, cli_history_provider)
 
@@ -85,7 +89,9 @@ def _get_lean_config_file_content() -> str:
     "data-folder": "data",
 
     // organization-id documentation
-    "organization-id": "abc"
+    "organization-id": "abc",
+
+    "project-id": 123
 }
 """
 
@@ -103,6 +109,33 @@ def create_fake_lean_cli_directory() -> None:
     }
 
     _write_fake_directory(files)
+
+
+def setup_mock_api_client_and_responses() -> APIClient:
+    """
+    Sets up a mock API client and configures a mock response for API calls.
+
+    - Creates a mock `APIClient` with test credentials.
+    - Adds a mock POST response to the `live/auth0/read` endpoint with sample authorization data.
+
+    Returns:
+        APIClient: A mock API client for testing.
+    """
+    api_client = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "accounts": [
+                    {"id": "123", "name": "123 | Margin | USD"}
+                ]
+            },
+            "success": "true"
+        },
+        status=200
+    )
+    return api_client
 
 
 def create_fake_lean_cli_project(name: str, language: str) -> None:

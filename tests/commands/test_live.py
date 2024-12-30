@@ -19,6 +19,7 @@ import traceback
 from unittest import mock
 
 import pytest
+import responses
 from click.testing import CliRunner
 
 from lean.commands import lean
@@ -26,7 +27,8 @@ from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
 from lean.models.json_module import JsonModule
-from tests.test_helpers import create_fake_lean_cli_directory, reset_state_installed_modules
+from tests.test_helpers import create_fake_lean_cli_directory, reset_state_installed_modules, \
+    setup_mock_api_client_and_responses
 from tests.conftest import initialize_container
 from click.testing import Result
 
@@ -428,10 +430,8 @@ brokerage_required_options = {
         "tt-order-routing-port": "abc",
         "tt-log-fix-messages": "no"
     },
-    "TDAmeritrade": {
-        "tdameritrade-account-number": "123",
-        "tdameritrade-api-key": "abc",
-        "tdameritrade-access-token": "abc",
+    "CharlesSchwab": {
+        "charles-schwab-account-number": "123"
     },
     "Bybit": {
         "bybit-api-key": "abc",
@@ -439,10 +439,6 @@ brokerage_required_options = {
         "bybit-vip-level": "VIP0",
         "bybit-use-testnet": "paper",
     }
-}
-
-brokerage_required_options_not_persistently_save_in_lean_config = {
-    "TDAmeritrade": ["tdameritrade-access-token"]
 }
 
 data_feed_required_options = {
@@ -456,7 +452,7 @@ data_feed_required_options = {
     "Samco": brokerage_required_options["Samco"],
     "Terminal Link": terminal_link_required_options,
     "Kraken": brokerage_required_options["Kraken"],
-    "TDAmeritrade": brokerage_required_options["TDAmeritrade"],
+    "CharlesSchwab": brokerage_required_options["CharlesSchwab"],
     "Bybit": brokerage_required_options["Bybit"],
 }
 
@@ -589,6 +585,7 @@ def test_live_non_interactive_aborts_when_missing_data_feed_options(data_feed: s
             container.lean_runner.run_lean.assert_not_called()
 
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_config(brokerage: str, data_feed: str) -> None:
@@ -596,6 +593,8 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
+    container.api_client = setup_mock_api_client_and_responses()
+
     lean_runner = container.lean_runner
 
     options = []
@@ -630,11 +629,9 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
                                                  {})
 
     config = container.lean_config_manager.get_lean_config()
-    if brokerage in brokerage_required_options_not_persistently_save_in_lean_config:
-        for key in brokerage_required_options_not_persistently_save_in_lean_config[brokerage]:
-            assert key not in config
 
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,data_feed",
                          itertools.product(brokerage_required_options.keys(), data_feed_required_options.keys()))
 def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: str, data_feed: str) -> None:
@@ -642,6 +639,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
+    container.api_client = setup_mock_api_client_and_responses()
     lean_runner = container.lean_runner
 
     options = []
@@ -675,6 +673,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
                                                  {},
                                                  {})
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,data_feed1,data_feed2",[(brokerage, *data_feeds) for brokerage, data_feeds in
                          itertools.product(brokerage_required_options.keys(), itertools.combinations(data_feed_required_options.keys(), 2))])
 def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multiple_data_feeds(brokerage: str, data_feed1: str, data_feed2: str) -> None:
@@ -682,6 +681,7 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
+    container.api_client = setup_mock_api_client_and_responses()
     lean_runner = container.lean_runner
 
     options = []
@@ -833,12 +833,14 @@ def test_live_non_interactive_falls_back_to_lean_config_for_data_feed_settings(d
                                                          {})
 
 
+@responses.activate
 @pytest.mark.parametrize("data_feed1,data_feed2", itertools.combinations(data_feed_required_options.keys(), 2))
 def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_settings(data_feed1: str, data_feed2: str) -> None:
     if ((data_feed1 == "Interactive Brokers" or data_feed2 == "Interactive Brokers") and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
+    mock_api_client = setup_mock_api_client_and_responses()
 
     required_options = list(data_feed_required_options[data_feed1].items()) + list(data_feed_required_options[data_feed2].items())
     if len(required_options) > 8:
@@ -848,7 +850,7 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
         for current_options in itertools.combinations(required_options, length):
             lean_runner = mock.Mock()
             # refresh so we assert we are called once
-            initialize_container(None, lean_runner)
+            initialize_container(None, lean_runner,api_client_to_use=mock_api_client)
 
             options = []
 
@@ -983,6 +985,7 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
         assert "python-venv" not in args[0]
 
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", ""),
                                             ("Paper Trading", "USD:100"),
                                             ("Paper Trading", "USD:100,EUR:200"),
@@ -1009,14 +1012,15 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", ""),
                                             ("Zerodha", "USD:100"),
-                                            ("TDAmeritrade", ""),
-                                            ("TDAmeritrade", "USD:100")])
+                                            ("CharlesSchwab", ""),
+                                            ("CharlesSchwab", "USD:100")])
 def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(brokerage: str, cash: str) -> None:
     if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
-    lean_runner= container.lean_runner
+    container.api_client = setup_mock_api_client_and_responses()
+    lean_runner = container.lean_runner
 
     options = []
     required_options = brokerage_required_options[brokerage].items()
@@ -1051,6 +1055,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
     assert args[0]["live-cash-balance"] == cash_list
 
 
+@responses.activate
 @pytest.mark.parametrize("brokerage,holdings", [("Paper Trading", ""),
                                                 ("Paper Trading", "A:A 2T:1:145.1"),
                                                 ("Paper Trading", "A:A 2T:1:145.1,AA:AA 2T:2:20.35"),
@@ -1076,14 +1081,15 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
                                                 ("Zerodha", "A:A 2T:1:145.1"),
-                                                ("TDAmeritrade", ""),
-                                                ("TDAmeritrade", "A:A 2T:1:145.1")])
+                                                ("CharlesSchwab", ""),
+                                                ("CharlesSchwab", "A:A 2T:1:145.1")])
 def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage: str, holdings: str) -> None:
     if (brokerage == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
-    lean_runner= container.lean_runner
+    container.api_client = setup_mock_api_client_and_responses()
+    lean_runner = container.lean_runner
 
     options = []
     required_options = brokerage_required_options[brokerage].items()
