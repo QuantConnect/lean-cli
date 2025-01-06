@@ -178,6 +178,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -439,6 +441,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -899,6 +903,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -1413,6 +1419,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -1812,6 +1820,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -2070,6 +2080,8 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
+  --charles-schwab-use-quantconnect-auth [Yes|No]
+                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
