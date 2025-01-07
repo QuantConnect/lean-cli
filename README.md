@@ -1400,6 +1400,9 @@ Options:
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
+  --charles-schwab-enable-delayed-streaming-data BOOLEAN
+                                  Whether delayed data may be used when your algorithm subscribes to a security you
+                                  don't have a market data subscription for (Optional).
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
@@ -1416,6 +1419,9 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
+  --trade-station-enable-delayed-streaming-data BOOLEAN
+                                  Whether delayed data may be used when your algorithm subscribes to a security you
+                                  don't have a market data subscription for (Optional).
   --alpaca-api-key TEXT           Your Alpaca Api Key
   --alpaca-api-secret TEXT        Your Alpaca Api Secret
   --factset-auth-config-file FILE
