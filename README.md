@@ -216,8 +216,6 @@ Options:
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
@@ -439,8 +437,6 @@ Options:
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
@@ -923,8 +919,6 @@ Options:
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
@@ -1401,8 +1395,6 @@ Options:
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
@@ -1822,8 +1814,6 @@ Options:
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
@@ -2073,8 +2063,6 @@ Options:
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
-  --trade-station-client-secret TEXT
-                                  Enter the Client Secret associated with your TradeStation application
   --trade-station-environment [live|paper]
                                   Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
