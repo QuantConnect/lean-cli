@@ -178,8 +178,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -217,22 +215,15 @@ Options:
                                   The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -441,30 +432,21 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
                                   Your Bybit VIP Level
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --polygon-api-key TEXT          Your Polygon.io API Key
   --iex-cloud-api-key TEXT        Your iexcloud.io API token publishable key
   --iex-price-plan [Launch|Grow|Enterprise]
@@ -903,8 +885,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -942,22 +922,15 @@ Options:
                                   The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
@@ -1419,8 +1392,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -1429,22 +1400,15 @@ Options:
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
@@ -1820,8 +1784,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -1859,22 +1821,15 @@ Options:
                                   The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -2080,8 +2035,6 @@ Options:
   --kraken-api-secret TEXT        Your Kraken API secret
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
-  --charles-schwab-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -2119,22 +2072,15 @@ Options:
                                   The Auth ID of the TerminalLink server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --trade-station-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
-  --trade-station-environment [live|paper]
-                                  Whether Live or Paper environment should be used
-  --trade-station-refresh-token TEXT
-                                  Enter your TradeStation refresh token to authenticate
   --trade-station-client-id TEXT  Enter the Client ID associated with your TradeStation application
   --trade-station-client-secret TEXT
                                   Enter the Client Secret associated with your TradeStation application
+  --trade-station-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --trade-station-account-id TEXT
                                   The TradeStation account Id
-  --alpaca-use-quantconnect-auth [Yes|No]
-                                  Select 'Yes' to use QuantConnect's OAuth authentication or 'No' to proceed without it.
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --alpaca-access-token TEXT      Enter your Alpaca access token to authenticate
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
