@@ -1400,6 +1400,9 @@ Options:
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
+  --charles-schwab-enable-delayed-streaming-data BOOLEAN
+                                  Whether delayed data may be used when your algorithm subscribes to a security you
+                                  don't have a market data subscription for (Optional).
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
   --iqfeed-username TEXT          Your IQFeed username
   --iqfeed-password TEXT          Your IQFeed password
