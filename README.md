@@ -828,7 +828,7 @@ Usage: lean data download [OPTIONS]
 
   1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.
 
-  2. Streamlined Access from Support Data Providers:
+  2. Streamlined Access from supported data providers:
 
       - Choose your preferred historical data provider.
 
