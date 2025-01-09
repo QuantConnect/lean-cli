@@ -579,7 +579,7 @@ def download(ctx: Context,
     """Purchase and download data directly from QuantConnect or download from supported data providers
 
     1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.\n
-    2. Streamlined Access from Support Data Providers:\n
+    2. Streamlined Access from supported data providers:\n
         - Choose your preferred historical data provider.\n
         - Initiate hassle-free downloads from our supported providers.
 
