@@ -813,16 +813,16 @@ _See code: [lean/commands/create_project.py](lean/commands/create_project.py)_
 
 ### `lean data download`
 
-Purchase and download data directly from QuantConnect or download from Support Data Providers
+Purchase and download data directly from QuantConnect or download from supported data providers
 
 ```
 Usage: lean data download [OPTIONS]
 
-  Purchase and download data directly from QuantConnect or download from Support Data Providers
+  Purchase and download data directly from QuantConnect or download from supported data providers
 
   1. Acquire Data from QuantConnect Datasets: Purchase and seamlessly download data directly from QuantConnect.
 
-  2. Streamlined Access from Support Data Providers:
+  2. Streamlined Access from supported data providers:
 
       - Choose your preferred historical data provider.
 
