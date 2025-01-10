@@ -47,6 +47,7 @@ class CloudRunner:
         """
         try:
             if backtest_data.error or backtest_data.stacktrace:
+                self._mismatch_counter = 0
                 return True
 
             is_complete = backtest_data.is_complete()
@@ -54,15 +55,18 @@ class CloudRunner:
 
             if is_complete:
                 if backtest_data.totalPerformance:
+                    self._mismatch_counter = 0
                     return True
 
                 if self._mismatch_counter >= 6:
-                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}]")
+                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}] Backtest could not retrieve "
+                                       f"total performance data after several attempts. Please run the backtest again.")
+                    self._mismatch_counter = 0
                     return True
 
                 self._mismatch_counter += 1
                 self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Incremented mismatch counter to "
-                                   f"{self._mismatch_counter}. Will re-check after delay.")
+                                   f"{self._mismatch_counter}. Will re-check after {delay} seconds.")
                 import time
                 time.sleep(delay)
 
