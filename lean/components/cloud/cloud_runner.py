@@ -36,6 +36,44 @@ class CloudRunner:
         self._logger = logger
         self._api_client = api_client
         self._task_manager = task_manager
+        self._mismatch_counter = 0
+
+    def is_backtest_done(self, backtest_data: QCBacktest, delay: float = 10.0):
+        """Checks if the backtest is complete.
+
+        :param backtest_data: The current state of the backtest.
+        :param delay: The delay in seconds between consecutive checks. Default is 60 seconds (1 minute).
+        :return: True if the backtest is complete and the state has changed, False otherwise.
+        """
+        try:
+            if backtest_data.error or backtest_data.stacktrace:
+                self._mismatch_counter = 0
+                return True
+
+            is_complete = backtest_data.is_complete()
+            self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Completion status: {is_complete}")
+
+            if is_complete:
+                if backtest_data.totalPerformance:
+                    self._mismatch_counter = 0
+                    return True
+
+                if self._mismatch_counter >= 6:
+                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}] We could not retrieve "
+                                       f"the complete backtest results, please try again later.")
+                    self._mismatch_counter = 0
+                    return True
+
+                self._mismatch_counter += 1
+                self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Incremented mismatch counter to "
+                                   f"{self._mismatch_counter}. Will re-check after {delay} seconds.")
+                import time
+                time.sleep(delay)
+
+            return False
+        except Exception as e:
+            self._logger.error(f"Error checking backtest completion status for ID {backtest_data.backtestId}: {e}")
+            raise
 
     def run_backtest(self, project: QCProject, name: str) -> QCBacktest:
         """Runs a backtest in the cloud.
@@ -53,7 +91,7 @@ class CloudRunner:
         try:
             return self._task_manager.poll(
                 make_request=lambda: self._api_client.backtests.get(project.projectId, created_backtest.backtestId),
-                is_done=lambda data: data.is_complete(),
+                is_done=self.is_backtest_done,
                 get_progress=lambda data: data.progress
             )
         except KeyboardInterrupt as e:
