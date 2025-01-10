@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from typing import List
+import time
 
 from click import confirm
 
@@ -36,32 +37,31 @@ class CloudRunner:
         self._logger = logger
         self._api_client = api_client
         self._task_manager = task_manager
-        self._backtest_data = None
         self._mismatch_counter = 0
 
-    def is_backtest_done(self, backtest_data: QCBacktest):
+    def is_backtest_done(self, backtest_data: QCBacktest, delay: float = 60.0):
         """Checks if the backtest is complete.
 
         :param backtest_data: The current state of the backtest.
+        :param delay: The delay in seconds between consecutive checks. Default is 60 seconds (1 minute).
         :return: True if the backtest is complete and the state has changed, False otherwise.
         """
         try:
             is_complete = backtest_data.is_complete()
-            self._logger.debug(f"Backtest completion status for ID {backtest_data.backtestId}: {is_complete}")
+            self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Completion status: {is_complete}")
 
-            if self._backtest_data is None or not is_complete:
-                self._logger.debug("Initializing backtest data tracking.")
-                self._backtest_data = backtest_data
+            if is_complete and backtest_data.totalPerformance:
+                return True
 
-            if is_complete:
-                if self._backtest_data != backtest_data:
-                    self._logger.debug("Backtest state has changed and is now complete.")
-                    return True
-                if self._mismatch_counter >= 5:
-                    raise RuntimeError(f"Backtest data mismatch or completion detected 5 times for ID "
-                                       f"{backtest_data.backtestId}. Raising an exception to halt processing.")
-                self._mismatch_counter += 1
-                self._logger.debug("Backtest is complete but state has not changed.")
+            if self._mismatch_counter >= 6:
+                raise RuntimeError(f"[Backtest ID: {backtest_data.backtestId}] "
+                                   f"Mismatch counter exceeded limit (current: {self._mismatch_counter})")
+
+            self._mismatch_counter += 1
+            self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Incremented mismatch counter to "
+                               f"{self._mismatch_counter}. Will re-check after delay.")
+
+            time.sleep(delay)
 
             return False
         except Exception as e:
