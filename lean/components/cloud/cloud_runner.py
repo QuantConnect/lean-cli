@@ -59,8 +59,8 @@ class CloudRunner:
                     return True
 
                 if self._mismatch_counter >= 6:
-                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}] Backtest could not retrieve "
-                                       f"total performance data after several attempts. Please run the backtest again.")
+                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}] We could not retrieve "
+                                       f"the complete backtest results, please try again later.")
                     self._mismatch_counter = 0
                     return True
 
