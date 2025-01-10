@@ -12,7 +12,6 @@
 # limitations under the License.
 
 from typing import List
-import time
 
 from click import confirm
 
@@ -39,7 +38,7 @@ class CloudRunner:
         self._task_manager = task_manager
         self._mismatch_counter = 0
 
-    def is_backtest_done(self, backtest_data: QCBacktest, delay: float = 60.0):
+    def is_backtest_done(self, backtest_data: QCBacktest, delay: float = 10.0):
         """Checks if the backtest is complete.
 
         :param backtest_data: The current state of the backtest.
@@ -47,21 +46,25 @@ class CloudRunner:
         :return: True if the backtest is complete and the state has changed, False otherwise.
         """
         try:
+            if backtest_data.error or backtest_data.stacktrace:
+                return True
+
             is_complete = backtest_data.is_complete()
             self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Completion status: {is_complete}")
 
-            if is_complete and backtest_data.totalPerformance:
-                return True
+            if is_complete:
+                if backtest_data.totalPerformance:
+                    return True
 
-            if self._mismatch_counter >= 6:
-                raise RuntimeError(f"[Backtest ID: {backtest_data.backtestId}] "
-                                   f"Mismatch counter exceeded limit (current: {self._mismatch_counter})")
+                if self._mismatch_counter >= 6:
+                    self._logger.error(f"[Backtest ID: {backtest_data.backtestId}]")
+                    return True
 
-            self._mismatch_counter += 1
-            self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Incremented mismatch counter to "
-                               f"{self._mismatch_counter}. Will re-check after delay.")
-
-            time.sleep(delay)
+                self._mismatch_counter += 1
+                self._logger.debug(f"[Backtest ID: {backtest_data.backtestId}] Incremented mismatch counter to "
+                                   f"{self._mismatch_counter}. Will re-check after delay.")
+                import time
+                time.sleep(delay)
 
             return False
         except Exception as e:
