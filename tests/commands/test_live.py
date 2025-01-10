@@ -457,9 +457,8 @@ data_feed_required_options = {
 }
 
 data_provider_required_options = {
-    "IEX": {
-        "iex-cloud-api-key": "123",
-        "iex-price-plan": "Launch",
+    "ThetaData": {
+        "thetadata-subscription-plan": "Pro",
     },
     "Polygon": {
         "polygon-api-key": "123",
@@ -1130,9 +1129,7 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_hi
 
     container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
 
-    provider_live_option = ["--data-provider-live", "IEX",
-                            "--iex-cloud-api-key", "123",
-                            "--iex-price-plan", "Launch"]
+    provider_live_option = ["--data-provider-live", "Polygon" ]
 
     provider_history_option = ["--data-provider-historical", "Polygon"]
                                # "--polygon-api-key", "123"]
@@ -1145,7 +1142,6 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_hi
     error_msg = str(result.exc_info[1]).split()
 
     assert "--polygon-api-key" in error_msg
-    assert "--iex-cloud-api-key" not in error_msg
 
     assert result.exit_code == 1
 
@@ -1155,11 +1151,9 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_li
 
     container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
 
-    provider_live_option = ["--data-provider-live", "IEX",
-                            "--iex-cloud-api-key", "123"]
-                            #"--iex-price-plan", "Launch"]
+    provider_live_option = ["--data-provider-live", "Polygon", "--polygon-api-key", "123"]
 
-    provider_history_option = ["--data-provider-historical", "Polygon", "--polygon-api-key", "123"]
+    provider_history_option = ["--data-provider-historical", "Polygon"]
 
     result = CliRunner().invoke(lean, ["live", "deploy", "--brokerage", "Paper Trading",
                                        *provider_live_option,
@@ -1169,10 +1163,9 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_li
 
     error_msg = str(result.exc_info[1]).split()
 
-    assert "--iex-price-plan" in error_msg
     assert "--polygon-api-key" not in error_msg
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
 
 def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -> None:
     create_fake_lean_cli_directory()
@@ -1183,9 +1176,7 @@ def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -
     # create fake environment has IB configs already
     brokerage = ["--brokerage", "OANDA"]
 
-    provider_live_option = ["--data-provider-live", "IEX",
-                            "--iex-cloud-api-key", "123",
-                            "--iex-price-plan", "Launch"]
+    provider_live_option = ["--data-provider-live", "Polygon", "--polygon-api-key", "123"]
 
     result = CliRunner().invoke(lean, ["live", "deploy",
                                        *brokerage,
@@ -1199,7 +1190,6 @@ def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -
     assert "--oanda-account-id" in error_msg
     assert "--oanda-access-token" in error_msg
     assert "--oanda-environment" in error_msg
-    assert "--iex-price-plan" not in error_msg
 
 
 def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str,
@@ -1239,10 +1229,10 @@ def create_lean_option(brokerage_name: str, data_provider_live_name: str, data_p
     return result
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_historical_name,brokerage_product_id,data_provider_live_product_id,data_provider_historical_id",
-                         [("Interactive Brokers", "IEX", "Polygon", "181", "333", "306"),
-                          ("Paper Trading", "IEX", "Polygon", None, "333", "306"),
-                          ("Tradier", "IEX", "AlphaVantage", "185", "333", "334"),
-                          ("Paper Trading", "IEX", "Local", None, "333", "222")])
+                         [("Interactive Brokers", "ThetaData", "Polygon", "181", "344", "306"),
+                          ("Paper Trading", "ThetaData", "Polygon", None, "344", "306"),
+                          ("Tradier", "ThetaData", "AlphaVantage", "185", "344", "334"),
+                          ("Paper Trading", "ThetaData", "Local", None, "344", "222")])
 def test_live_deploy_with_different_brokerage_and_different_live_data_provider_and_historical_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_historical_name: str, brokerage_product_id: str, data_provider_live_product_id: str, data_provider_historical_id: str) -> None:
     if (brokerage_name == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
@@ -1257,10 +1247,10 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
             if id in m_c[1]:
                 is_exists.append(True)
         assert is_exists
-        assert len(is_exists) == 2
+        assert len(is_exists) == 1
     elif brokerage_product_id is None and data_provider_historical_name == "Local":
         assert len(api_client.method_calls) == 1
-        if data_provider_live_product_id in api_client.method_calls[0][1]:
+        if int(data_provider_live_product_id) in api_client.method_calls[0][1]:
             is_exists.append(True)
         assert is_exists
         assert len(is_exists) == 1
@@ -1273,8 +1263,8 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
         assert len(is_exists) == 3
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,brokerage_product_id,data_provider_live_product_id",
-                         [("Interactive Brokers", "IEX", "181", "333"),
-                          ("Tradier", "IEX", "185", "333")])
+                         [("Interactive Brokers", "Polygon", "181", "306"),
+                          ("Tradier", "Polygon", "185", "306")])
 def test_live_non_interactive_deploy_with_different_brokerage_and_different_live_data_provider(brokerage_name: str, data_provider_live_name: str, brokerage_product_id: str, data_provider_live_product_id: str) -> None:
     if (brokerage_name == "Interactive Brokers" and sys.platform == "darwin"):
         pytest.skip("MacOS does not support IB tests")
@@ -1313,7 +1303,7 @@ def test_live_non_interactive_deploy_with_different_brokerage_with_the_same_live
     assert is_exist
 
 @pytest.mark.parametrize("brokerage_name,data_provider_live_name,data_provider_live_product_id",
-                         [("Paper Trading", "IEX", "333"),
+                         [("Paper Trading", "ThetaData", "344"),
                           ("Paper Trading", "Polygon", "306")])
 def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provider(brokerage_name: str, data_provider_live_name: str, data_provider_live_product_id: str) -> None:
     api_client = mock.MagicMock()
@@ -1321,7 +1311,7 @@ def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provide
 
     assert len(api_client.method_calls) == 1
     for m_c in api_client.method_calls:
-        if data_provider_live_product_id in m_c[1]:
+        if data_provider_live_product_id in str(m_c[1]):
             is_exist = True
 
     assert is_exist
