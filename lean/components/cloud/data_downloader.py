@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from typing import Any, List, Callable
 
 from lean.components.api.api_client import APIClient
+from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 from lean.models.errors import MoreInfoError, RequestFailedError
@@ -30,16 +31,22 @@ def _store_local_file(file_content: bytes, file_path: Path):
 class DataDownloader:
     """The DataDownloader is responsible for downloading data from QuantConnect Datasets."""
 
-    def __init__(self, logger: Logger, api_client: APIClient, lean_config_manager: LeanConfigManager):
+    def __init__(self,
+                 logger: Logger,
+                 api_client: APIClient,
+                 lean_config_manager: LeanConfigManager,
+                 cli_config_manager: CLIConfigManager):
         """Creates a new CloudBacktestRunner instance.
 
         :param logger: the logger to use to log messages with
         :param api_client: the APIClient instance to use when communicating with the QuantConnect API
         :param lean_config_manager: the LeanConfigManager instance to retrieve the data directory from
+        :param cli_config_manager: the CLIConfigManager instance to retrieve the database-update-frequency value
         """
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
+        self._cli_config_manager = cli_config_manager
 
     def update_database_files(self):
         """Will update lean data folder database files if required
@@ -49,7 +56,14 @@ class DataDownloader:
             now = datetime.now()
             config = self._lean_config_manager.get_lean_config()
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
-            if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > timedelta(days=1):
+            raw_frequency = self._cli_config_manager.database_update_frequency.get_value()
+            if raw_frequency == "None": # The user manually set it to None so that no more updates will be done
+                return
+            elif raw_frequency is None: # The user has not set this parameter yet
+                raw_frequency = "1:00:00:00"
+            days, hours, minutes, seconds = map(int, raw_frequency.split(":"))
+            frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+            if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
 

@@ -55,13 +55,21 @@ class CLIConfigManager:
                                      f"The Docker image used when running the research environment ({DEFAULT_RESEARCH_IMAGE} if not set).",
                                      False,
                                      general_storage)
+        self.database_update_frequency = Option("database-update-frequency",
+                                                "How often the database is updated. "
+                                                "The format is a timespan i.e. 1:00:00:00 stands for one day. "
+                                                "Update can be disabled by setting this option to None. "
+                                                "The default value is 1:00:00:00.",
+                                                False,
+                                                general_storage)
 
         self.all_options = [
             self.user_id,
             self.api_token,
             self.default_language,
             self.engine_image,
-            self.research_image
+            self.research_image,
+            self.database_update_frequency
         ]
 
     def get_option_by_key(self, key: str) -> Option:
