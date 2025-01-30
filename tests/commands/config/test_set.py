@@ -27,30 +27,29 @@ def test_config_set_updates_the_value_of_the_option() -> None:
     assert container.cli_config_manager.user_id.get_value() == "12345"
 
 
-@pytest.mark.parametrize("frequency, expected", [("1:0:0:0", timedelta(days=1)),
-                                                 ("0:1:0:0", timedelta(hours=1)),
-                                                 ("0:0:1:0", timedelta(minutes=1)),
-                                                 ("0:0:0:1", timedelta(seconds=1)),
-                                                 ("01:00:00:00", timedelta(days=1)),
-                                                 ("00:01:00:00", timedelta(hours=1)),
-                                                 ("00:00:01:00", timedelta(minutes=1)),
-                                                 ("00:00:00:01", timedelta(seconds=1)),
-                                                 ("1:00:00:00", timedelta(days=1)),
-                                                 ("00:1:00:00", timedelta(hours=1)),
-                                                 ("00:00:1:00", timedelta(minutes=1)),
-                                                 ("00:00:00:1", timedelta(seconds=1)),
-                                                 ("00:1:00:1", timedelta(hours=1, seconds=1)),
-                                                 ("00:1:1:1", timedelta(hours=1, minutes=1, seconds=1)),
-                                                 ("1:1:1:1", timedelta(days=1, hours=1, minutes=1, seconds=1)),
-                                                 ("10:20:30:40", timedelta(days=10, hours=20, minutes=30, seconds=40)),
-                                                 ("30:23:59:59", timedelta(days=30, hours=23, minutes=59, seconds=59)),
-                                                 ("60:23:59:59", timedelta(days=60, hours=23, minutes=59, seconds=59))])
-def test_set_database_update_frequency_works_with_different_timespans(frequency: str, expected: timedelta) -> None:
-    result = CliRunner().invoke(lean, ["config", "set", "database-update-frequency", frequency])
+@pytest.mark.parametrize("raw_frequency, expected", [("1 days", timedelta(days=1)),
+                                                 ("1 hours", timedelta(hours=1)),
+                                                 ("1 minutes", timedelta(minutes=1)),
+                                                 ("1 seconds", timedelta(seconds=1)),
+                                                 ("500 milliseconds", timedelta(milliseconds=500)),
+                                                 ("0.5 days", timedelta(hours=12)),
+                                                 ("12:30:45", timedelta(hours=12, minutes=30, seconds=45)),
+                                                 ("10us", timedelta(microseconds=10)),
+                                                 ("365 days", timedelta(days=365)),
+                                                 ("10 days 20:30:40", timedelta(days=10, hours=20, minutes=30, seconds=40)),
+                                                 ("30 days 23:59:59", timedelta(days=30, hours=23, minutes=59, seconds=59)),
+                                                 ("60 days 23:59:59", timedelta(days=60, hours=23, minutes=59, seconds=59)),
+                                                 ("1 day 12:30:45", timedelta(days= 1, hours=12, minutes=30, seconds=45)),
+                                                 ("2 hours 30 minutes 15 seconds", timedelta(hours=2, minutes=30, seconds=15)),
+                                                 ("6 days 23 hours 59 minutes 59 seconds", timedelta(days=6, hours=23, minutes=59, seconds=59)),
+                                                 ("1D 5h 30m 45s 10ms 5us", timedelta(days=1, hours=5, minutes=30, seconds=45, milliseconds=10, microseconds=5))])
+def test_set_database_update_frequency_works_with_different_timespans(raw_frequency: str, expected: timedelta) -> None:
+    result = CliRunner().invoke(lean, ["config", "set", "database-update-frequency", raw_frequency])
 
     assert result.exit_code == 0
-    days, hours, minutes, seconds = map(int, container.cli_config_manager.database_update_frequency.get_value().split(":"))
-    frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+    from pandas import Timedelta
+    frequency = Timedelta(raw_frequency)
     assert frequency == expected
 
 

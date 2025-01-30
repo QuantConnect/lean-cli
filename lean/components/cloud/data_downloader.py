@@ -49,6 +49,7 @@ class DataDownloader:
         self._cli_config_manager = cli_config_manager
 
     def update_database_files(self):
+        from pandas import Timedelta
         """Will update lean data folder database files if required
 
         """
@@ -57,12 +58,9 @@ class DataDownloader:
             config = self._lean_config_manager.get_lean_config()
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
             raw_frequency = self._cli_config_manager.database_update_frequency.get_value()
-            if raw_frequency == "None": # The user manually set it to None so that no more updates will be done
-                return
-            elif raw_frequency is None: # The user has not set this parameter yet
-                raw_frequency = "1:00:00:00"
-            days, hours, minutes, seconds = map(int, raw_frequency.split(":"))
-            frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+            if raw_frequency is None:  # The user has not set this parameter yet
+                raw_frequency = "1 days"
+            frequency = Timedelta(raw_frequency)
             if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
@@ -78,6 +76,9 @@ class DataDownloader:
                 pass
             else:
                 self._logger.error(str(e))
+        except ValueError as e:
+            self._logger.error(f"Value of config option database-update-frequency is invalid: {str(e)}. "
+                               f"Database update will be skipped")
         except Exception as e:
             self._logger.error(str(e))
 
