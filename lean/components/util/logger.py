@@ -138,7 +138,7 @@ class Logger:
         """
         from platform import uname
         from sys import stdin
-        from maskpass import askpass
+        from getpass import getpass
 
         if default is not None:
             text = f"{text} [{'*' * len(default)}]"
@@ -148,7 +148,7 @@ class Logger:
             return prompt(text, default=default, show_default=False, hide_input=hide_input)
 
         while True:
-            user_input = askpass(f"{text}: ")
+            user_input = getpass(f"{text}: ")
 
             if len(user_input) == 0 and default is not None:
                 return default
