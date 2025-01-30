@@ -149,6 +149,14 @@ def research(project: Path,
                                                       research_image,
                                                       paths_to_mount)
 
+    # Mount project dir to the Notebooks directory first, avoid using volumes to prevent overwriting mounting logic for /LeanCLI
+    run_options["mounts"].append(Mount(
+        target=f"{LEAN_ROOT_PATH}/Notebooks",
+        source=str(project),
+        type="bind",
+        read_only=False
+    ))
+
     # Mount the config in the notebooks directory as well
     local_config_path = next(m["Source"] for m in run_options["mounts"] if m["Target"].endswith("config.json"))
     run_options["mounts"].append(Mount(target=f"{LEAN_ROOT_PATH}/Notebooks/config.json",
@@ -165,12 +173,6 @@ def research(project: Path,
 
     # Make Ctrl+C stop Jupyter Lab immediately
     run_options["stop_signal"] = "SIGKILL"
-
-    # Mount the project to the notebooks directory
-    run_options["volumes"][str(project)] = {
-        "bind": f"{LEAN_ROOT_PATH}/Notebooks",
-        "mode": "rw"
-    }
 
     # Allow notebooks to be embedded in iframes
     run_options["commands"].append("mkdir -p ~/.jupyter")
