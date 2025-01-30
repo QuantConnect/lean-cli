@@ -54,7 +54,6 @@ install_requires = [
     "pydantic>=1.8.2",
     "python-dateutil>=2.8.2",
     "lxml>=4.9.0",
-    "maskpass>=0.3.6",
     "joblib>=1.1.0",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}",
