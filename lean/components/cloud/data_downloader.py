@@ -35,18 +35,18 @@ class DataDownloader:
                  logger: Logger,
                  api_client: APIClient,
                  lean_config_manager: LeanConfigManager,
-                 cli_config_manager: CLIConfigManager):
+                 database_update_frequency: str):
         """Creates a new CloudBacktestRunner instance.
 
         :param logger: the logger to use to log messages with
         :param api_client: the APIClient instance to use when communicating with the QuantConnect API
         :param lean_config_manager: the LeanConfigManager instance to retrieve the data directory from
-        :param cli_config_manager: the CLIConfigManager instance to retrieve the database-update-frequency value
+        :param database_update_frequency: the value of the config option database-update-frequency
         """
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
-        self._cli_config_manager = cli_config_manager
+        self.database_update_frequency = database_update_frequency
 
     def update_database_files(self):
         from pandas import Timedelta
@@ -57,13 +57,15 @@ class DataDownloader:
             now = datetime.now()
             config = self._lean_config_manager.get_lean_config()
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
-            raw_frequency = self._cli_config_manager.database_update_frequency.get_value()
-            if raw_frequency is None:  # The user has not set this parameter yet
-                raw_frequency = "1 days"
-            frequency = Timedelta(raw_frequency)
-            if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > frequency:
+
+            # The last_update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
+            last_update = self.parse_last_update_date(last_update)
+            if self.database_update_frequency is None:  # The user has not set this parameter yet
+                self.database_update_frequency = "1 days"
+            frequency = Timedelta(self.database_update_frequency)
+            if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
-                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
+                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y %H:%M:%S')})
 
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
@@ -127,6 +129,15 @@ class DataDownloader:
         tar.close()
         from os import remove
         remove(file)
+
+    def parse_last_update_date(self, last_update_date: str) -> datetime:
+        formats = ['%m/%d/%Y', '%m/%d/%Y %H:%M:%S']
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(last_update_date, fmt)
+            except ValueError:
+                continue
 
     def remove_suffix(self,input_string, suffix):
         if suffix and input_string.endswith(suffix):
