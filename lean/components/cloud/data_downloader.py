@@ -58,10 +58,12 @@ class DataDownloader:
             config = self._lean_config_manager.get_lean_config()
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
 
-            # The last_update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
+            # The last update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
             last_update = self.parse_last_update_date(last_update)
+
             if self.database_update_frequency is None:  # The user has not set this parameter yet
                 self.database_update_frequency = "1 days"
+
             frequency = Timedelta(self.database_update_frequency)
             if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
