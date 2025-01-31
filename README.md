@@ -64,6 +64,18 @@ A locally-focused workflow (local development, local execution) with the CLI may
 5. Run `lean backtest "Project Name"` to run a backtest whenever there's something to test. This runs your strategy in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
 ## Commands
+Every time a command is called, it will try to update the database based on the config option `database-update-frequency`.
+To define how often the database will be updated, set this configuration option to the desired frequency. The possible unit
+values are:
+    - 'D', 'days' and 'day'
+    - 'hours', 'hour', 'hr' or 'h'
+    - 'minutes', 'minute', 'min', or 'm'
+    - 'seconds', 'second', 'sec', or 's'
+    - 'milliseconds', 'millisecond', 'millis', 'milli', or 'ms'
+    - 'microseconds', 'microsecond','micros', 'micro', or 'us'
+    - 'nanoseconds', 'nanosecond', 'nanos', 'nano', or 'ns'
+Furthermore, update can be disabled by setting this option to a non-date (None, NULL,..., etc.). If unset, default value
+is 1 day.
 
 *Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started) for more comprehensive documentation.*
 

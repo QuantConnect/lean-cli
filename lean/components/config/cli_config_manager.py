@@ -67,7 +67,7 @@ class CLIConfigManager:
                                                 "\t- 'nanoseconds', 'nanosecond', 'nanos', 'nano', or 'ns'\n"
                                                 "Update can be disabled by setting this option to a non-date"
                                                 " value, i.e. NULL,None,'', etc. "
-                                                "The default value is 1 day",
+                                                "If unset, default value is 1 day",
                                                 False,
                                                 general_storage)
 

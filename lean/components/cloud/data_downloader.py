@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 from typing import Any, List, Callable
 
 from lean.components.api.api_client import APIClient
-from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 from lean.models.errors import MoreInfoError, RequestFailedError
@@ -81,7 +80,7 @@ class DataDownloader:
             else:
                 self._logger.error(str(e))
         except ValueError as e:
-            self._logger.error(f"Value of config option database-update-frequency is invalid: {str(e)}. "
+            self._logger.debug(f"Value of config option database-update-frequency is invalid: {str(e)}. "
                                f"Database update will be skipped")
         except Exception as e:
             self._logger.error(str(e))
