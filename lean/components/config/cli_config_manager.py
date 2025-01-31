@@ -59,10 +59,11 @@ class CLIConfigManager:
                                                 "How often the database is updated. "
                                                 "The format is DD:HH:MM:SS, where D stands for days, "
                                                 "H for hours, M for minutes and S for seconds. If the frequency "
-                                                "is less than a day can be just HH:MM:SS. For example, if the update "
-                                                "is every 8 hours and half, the format would be 08:30:00. "
+                                                "is less than a day can be just HH:MM:SS. For example, if the "
+                                                "update were every week, the format would be 07:00:00:00 and "
+                                                "if it were every 8 hours and half, the format would be 08:30:00. "
                                                 "Update can be disabled by setting this option to a non-date"
-                                                " value, i.e. NULL,None,'', etc. "
+                                                " value (None, NULL,..., etc.). "
                                                 "If unset, default value is 1 day",
                                                 False,
                                                 general_storage)
