@@ -30,8 +30,7 @@ def test_config_list_lists_all_options(size) -> None:
 
     for option in container.cli_config_manager.all_options:
         assert option.key in result.output
-        for word in option.description.replace("\t"," ").replace("\n", " ").split(" "):
-            assert word in result.output
+        assert option.description in result.output
 
 
 @mock.patch("rich.console.Console.size", new_callable=mock.PropertyMock)

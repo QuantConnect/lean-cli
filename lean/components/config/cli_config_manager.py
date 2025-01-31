@@ -57,14 +57,10 @@ class CLIConfigManager:
                                      general_storage)
         self.database_update_frequency = Option("database-update-frequency",
                                                 "How often the database is updated. "
-                                                "The possible unit values are:\n"
-                                                "\t- 'D', 'days' and 'day'\n"
-                                                "\t- 'hours', 'hour', 'hr' or 'h'\n"
-                                                "\t- 'minutes', 'minute', 'min', or 'm'\n"
-                                                "\t- 'seconds', 'second', 'sec', or 's'\n"
-                                                "\t- 'milliseconds', 'millisecond', 'millis', 'milli', or 'ms'\n"
-                                                "\t- 'microseconds', 'microsecond','micros', 'micro', or 'us'\n"
-                                                "\t- 'nanoseconds', 'nanosecond', 'nanos', 'nano', or 'ns'\n"
+                                                "The format is DD:HH:MM:SS, where D stands for days, "
+                                                "H for hours, M for minutes and S for seconds. If the frequency "
+                                                "is less than a day can be just HH:MM:SS. For example, if the update "
+                                                "is every 8 hours and half, the format would be 08:30:00. "
                                                 "Update can be disabled by setting this option to a non-date"
                                                 " value, i.e. NULL,None,'', etc. "
                                                 "If unset, default value is 1 day",

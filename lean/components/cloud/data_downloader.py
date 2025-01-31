@@ -48,7 +48,6 @@ class DataDownloader:
         self.database_update_frequency = database_update_frequency
 
     def update_database_files(self):
-        from pandas import Timedelta
         """Will update lean data folder database files if required
 
         """
@@ -59,11 +58,16 @@ class DataDownloader:
 
             # The last update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
             last_update = self.parse_last_update_date(last_update)
-
             if self.database_update_frequency is None:  # The user has not set this parameter yet
-                self.database_update_frequency = "1 days"
+                self.database_update_frequency = "01:00:00:00"
 
-            frequency = Timedelta(self.database_update_frequency)
+            if self.database_update_frequency.count(":") == 3:  # Ideally, the format is DD:HH:MM:SS
+                days, hours, minutes, seconds = map(int, self.database_update_frequency.split(":"))
+            else:  # However, the format can also be HH:MM:SS
+                days = 0
+                hours, minutes, seconds = map(int, self.database_update_frequency.split(":"))
+
+            frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
             if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y %H:%M:%S')})
