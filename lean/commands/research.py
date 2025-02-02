@@ -184,6 +184,9 @@ def research(project: Path,
     run_options["commands"].append(
         'echo "#header-container { display: none !important; }" > ~/.ipython/profile_default/static/custom/custom.css')
 
+    # Update the Initialize.csx to load the compiled project DLL as well, once we added this line, the documentation would not need to be changed
+    run_options["commands"].append(f'echo "\nAssembly.LoadFrom(\"{project.name}\");" >> {LEAN_ROOT_PATH}/Initialize.csx')
+
     # Run the script that starts Jupyter Lab when all set up has been done
     run_options["commands"].append("./start.sh")
 
