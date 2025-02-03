@@ -290,7 +290,13 @@ def test_research_mounts_project_directory_to_leancli_and_notebooks() -> None:
     project_dir = Path.cwd() / "CSharp Project"
     (project_dir / "Main.cs").touch()
     original_csproj = project_dir / "CSharp Project.csproj"
-    original_csproj.write_text("<Project><PropertyGroup></PropertyGroup></Project>")
+    original_csproj.write_text("""
+<Project>
+    <PropertyGroup></PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean.Engine" Version="2.5.*" />
+    </ItemGroup>
+</Project>""")
 
     result = CliRunner().invoke(lean, ["research", "CSharp Project"])
 
@@ -307,15 +313,10 @@ def test_research_mounts_project_directory_to_leancli_and_notebooks() -> None:
     assert leancli_volume[0] == str(project_dir)
     assert notebooks_mount["Source"] == str(project_dir)
 
-    # NOTE:
-    # `/LeanCLI` directory is mounted as `volume`, but `/LeanCLI/<project_name>.csproj` would be mounted using `mounts`
-    # temp_csproj_mounts = [
-    #     m for m in kwargs["mounts"]
-    #     if m["Target"].startswith(f"/LeanCLI") and m["Target"].endswith(".csproj")
-    # ]
-    # 
-    # Theoretically, we want to test if the shadowing of mounting logic is working as expected, but
-    # the following line does not run due to unknown reasons, so we comment it out
-    # ./lean/components/docker/lean_runner.py:829:        run_options["mounts"].append(Mount(target=f"/LeanCLI/{csproj_path.relative_to(compile_root).as_posix()}",
-    # assert len(temp_csproj_mounts) > 0, "No temporary csproj file mounts detected"
-    # assert all(m["Source"] != str(original_csproj) for m in temp_csproj_mounts), "Temporary csproj did not correctly overwrite user file"
+    temp_csproj_mounts = [
+        m for m in kwargs["mounts"]
+        if m["Target"].startswith(f"/LeanCLI") and m["Target"].endswith(".csproj")
+    ]
+
+    assert len(temp_csproj_mounts) > 0, "No temporary csproj file mounts detected"
+    assert all(m["Source"] != str(original_csproj) for m in temp_csproj_mounts), "Temporary csproj did not correctly overwrite user file"
