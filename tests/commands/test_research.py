@@ -280,3 +280,43 @@ def test_research_runs_lean_container_with_paths_to_mount() -> None:
 
     assert mount is not None
     assert mount["Target"] == "/Files/file.json"
+
+def test_research_mounts_project_directory_to_leancli_and_notebooks() -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.MagicMock()
+    container.initialize(docker_manager)
+
+    project_dir = Path.cwd() / "CSharp Project"
+    (project_dir / "Main.cs").touch()
+    original_csproj = project_dir / "CSharp Project.csproj"
+    original_csproj.write_text("""
+<Project>
+    <PropertyGroup></PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="QuantConnect.Lean.Engine" Version="2.5.*" />
+    </ItemGroup>
+</Project>""")
+
+    result = CliRunner().invoke(lean, ["research", "CSharp Project"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    leancli_volume = next(((k, v) for (k, v) in kwargs["volumes"].items() if v['bind'] == f"/LeanCLI"), None)
+    notebooks_mount = next((m for m in kwargs["mounts"] if m["Target"] == f"{LEAN_ROOT_PATH}/Notebooks"), None)
+
+    assert leancli_volume is not None, "/LeanCLI is not mounted"
+    assert notebooks_mount is not None, "/Notebooks is not mounted"
+    assert leancli_volume[0] == str(project_dir)
+    assert notebooks_mount["Source"] == str(project_dir)
+
+    temp_csproj_mounts = [
+        m for m in kwargs["mounts"]
+        if m["Target"].startswith(f"/LeanCLI") and m["Target"].endswith(".csproj")
+    ]
+
+    assert len(temp_csproj_mounts) > 0, "No temporary csproj file mounts detected"
+    assert all(m["Source"] != str(original_csproj) for m in temp_csproj_mounts), "Temporary csproj did not correctly overwrite user file"
