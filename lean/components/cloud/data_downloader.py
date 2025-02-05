@@ -27,19 +27,38 @@ def _store_local_file(file_content: bytes, file_path: Path):
         f.write(file_content)
 
 
+def parse_timedelta(database_update_frequency: str):
+    if '.' not in database_update_frequency and ':' not in database_update_frequency:
+        return None
+    if database_update_frequency.count(".") == 1:  # Ideally, the format is DD.HH:MM:SS
+        days_component, time_component = map(str, database_update_frequency.split("."))
+        days = int(days_component)
+        hours, minutes, seconds = map(int, time_component.split(":"))
+    else:  # However, the format can also be HH:MM:SS
+        days = 0
+        hours, minutes, seconds = map(int, database_update_frequency.split(":"))
+    return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+
 class DataDownloader:
     """The DataDownloader is responsible for downloading data from QuantConnect Datasets."""
 
-    def __init__(self, logger: Logger, api_client: APIClient, lean_config_manager: LeanConfigManager):
+    def __init__(self,
+                 logger: Logger,
+                 api_client: APIClient,
+                 lean_config_manager: LeanConfigManager,
+                 database_update_frequency: str):
         """Creates a new CloudBacktestRunner instance.
 
         :param logger: the logger to use to log messages with
         :param api_client: the APIClient instance to use when communicating with the QuantConnect API
         :param lean_config_manager: the LeanConfigManager instance to retrieve the data directory from
+        :param database_update_frequency: the value of the config option database-update-frequency
         """
         self._logger = logger
         self._api_client = api_client
         self._lean_config_manager = lean_config_manager
+        self.database_update_frequency = database_update_frequency
 
     def update_database_files(self):
         """Will update lean data folder database files if required
@@ -49,9 +68,21 @@ class DataDownloader:
             now = datetime.now()
             config = self._lean_config_manager.get_lean_config()
             last_update = config["file-database-last-update"] if "file-database-last-update" in config else ''
-            if not last_update or now - datetime.strptime(last_update, '%m/%d/%Y') > timedelta(days=1):
+
+            # The last update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
+            last_update = self.parse_last_update_date(last_update)
+            if self.database_update_frequency is None:  # The user has not set this parameter yet
+                self.database_update_frequency = "1.00:00:00"
+
+            frequency = parse_timedelta(self.database_update_frequency)
+            if not frequency:
+                self._logger.debug(f"Skipping database-update-frequency, frequency is:"
+                                   f" {str(self.database_update_frequency)}")
+                return
+            self._logger.debug(f"database-update-frequency is: {str(frequency)}")
+            if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
-                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y')})
+                self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y %H:%M:%S')})
 
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
@@ -64,6 +95,9 @@ class DataDownloader:
                 pass
             else:
                 self._logger.error(str(e))
+        except ValueError as e:
+            self._logger.debug(f"Value of config option database-update-frequency is invalid: {str(e)}. "
+                               f"Database update will be skipped")
         except Exception as e:
             self._logger.error(str(e))
 
@@ -112,6 +146,15 @@ class DataDownloader:
         tar.close()
         from os import remove
         remove(file)
+
+    def parse_last_update_date(self, last_update_date: str) -> datetime:
+        formats = ['%m/%d/%Y', '%m/%d/%Y %H:%M:%S']
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(last_update_date, fmt)
+            except ValueError:
+                continue
 
     def remove_suffix(self,input_string, suffix):
         if suffix and input_string.endswith(suffix):

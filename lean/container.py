@@ -141,7 +141,10 @@ class Container:
                                             self.project_manager,
                                             self.project_config_manager,
                                             self.organization_manager)
-        self.data_downloader = DataDownloader(self.logger, self.api_client, self.lean_config_manager)
+        self.data_downloader = DataDownloader(self.logger,
+                                              self.api_client,
+                                              self.lean_config_manager,
+                                              self.cli_config_manager.database_update_frequency.get_value())
         self.cloud_project_manager = CloudProjectManager(self.api_client,
                                                          self.project_config_manager,
                                                          self.pull_manager,
