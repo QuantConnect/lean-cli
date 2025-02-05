@@ -27,6 +27,19 @@ def _store_local_file(file_content: bytes, file_path: Path):
         f.write(file_content)
 
 
+def parse_timedelta(database_update_frequency: str):
+    if '.' not in database_update_frequency and ':' not in database_update_frequency:
+        return None
+    if database_update_frequency.count(".") == 1:  # Ideally, the format is DD.HH:MM:SS
+        days_component, time_component = map(str, database_update_frequency.split("."))
+        days = int(days_component)
+        hours, minutes, seconds = map(int, time_component.split(":"))
+    else:  # However, the format can also be HH:MM:SS
+        days = 0
+        hours, minutes, seconds = map(int, database_update_frequency.split(":"))
+    return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+
 class DataDownloader:
     """The DataDownloader is responsible for downloading data from QuantConnect Datasets."""
 
@@ -59,15 +72,14 @@ class DataDownloader:
             # The last update date can be in '%m/%d/%Y'(old format) or '%m/%d/%Y %H:%M:%S'(new format)
             last_update = self.parse_last_update_date(last_update)
             if self.database_update_frequency is None:  # The user has not set this parameter yet
-                self.database_update_frequency = "01:00:00:00"
+                self.database_update_frequency = "1.00:00:00"
 
-            if self.database_update_frequency.count(":") == 3:  # Ideally, the format is DD:HH:MM:SS
-                days, hours, minutes, seconds = map(int, self.database_update_frequency.split(":"))
-            else:  # However, the format can also be HH:MM:SS
-                days = 0
-                hours, minutes, seconds = map(int, self.database_update_frequency.split(":"))
-
-            frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+            frequency = parse_timedelta(self.database_update_frequency)
+            if not frequency:
+                self._logger.debug(f"Skipping database-update-frequency, frequency is:"
+                                   f" {str(self.database_update_frequency)}")
+                return
+            self._logger.debug(f"database-update-frequency is: {str(frequency)}")
             if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y %H:%M:%S')})

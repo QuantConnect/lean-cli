@@ -14,6 +14,7 @@
 from click.testing import CliRunner
 
 from lean.commands import lean
+from lean.components.cloud.data_downloader import parse_timedelta
 from lean.container import container
 from datetime import timedelta
 import pytest
@@ -27,35 +28,36 @@ def test_config_set_updates_the_value_of_the_option() -> None:
     assert container.cli_config_manager.user_id.get_value() == "12345"
 
 
-@pytest.mark.parametrize("raw_frequency, expected", [("1:0:0:0", timedelta(days=1)),
-                                                 ("0:1:0:0", timedelta(hours=1)),
-                                                 ("0:0:1:0", timedelta(minutes=1)),
-                                                 ("0:0:0:1", timedelta(seconds=1)),
+@pytest.mark.parametrize("raw_frequency, expected", [("_", None), ("=", None), ("_", None),
+                                                 ("1.0:0:0", timedelta(days=1)),
+                                                 ("0.1:0:0", timedelta(hours=1)),
+                                                 ("0.0:1:0", timedelta(minutes=1)),
+                                                 ("0.0:0:1", timedelta(seconds=1)),
                                                  ("1:0:0", timedelta(hours=1)),
                                                  ("0:1:0", timedelta(minutes=1)),
                                                  ("0:0:1", timedelta(seconds=1)),
-                                                 ("01:00:00:00", timedelta(days=1)),
-                                                 ("00:01:00:00", timedelta(hours=1)),
-                                                 ("00:00:01:00", timedelta(minutes=1)),
-                                                 ("00:00:00:01", timedelta(seconds=1)),
+                                                 ("01.00:00:00", timedelta(days=1)),
+                                                 ("00.01:00:00", timedelta(hours=1)),
+                                                 ("00.00:01:00", timedelta(minutes=1)),
+                                                 ("00.00:00:01", timedelta(seconds=1)),
                                                  ("01:00:00", timedelta(hours=1)),
                                                  ("00:01:00", timedelta(minutes=1)),
                                                  ("00:00:01", timedelta(seconds=1)),
-                                                 ("1:00:00:00", timedelta(days=1)),
-                                                 ("00:1:00:00", timedelta(hours=1)),
-                                                 ("00:00:1:00", timedelta(minutes=1)),
-                                                 ("00:00:00:1", timedelta(seconds=1)),
+                                                 ("1.00:00:00", timedelta(days=1)),
+                                                 ("00.1:00:00", timedelta(hours=1)),
+                                                 ("00.00:1:00", timedelta(minutes=1)),
+                                                 ("00.00:00:1", timedelta(seconds=1)),
                                                  ("1:00:00", timedelta(hours=1)),
                                                  ("00:1:00", timedelta(minutes=1)),
                                                  ("00:00:1", timedelta(seconds=1)),
-                                                 ("00:1:00:1", timedelta(hours=1, seconds=1)),
-                                                 ("00:1:1:1", timedelta(hours=1, minutes=1, seconds=1)),
+                                                 ("00.1:00:1", timedelta(hours=1, seconds=1)),
+                                                 ("00.1:1:1", timedelta(hours=1, minutes=1, seconds=1)),
                                                  ("1:00:1", timedelta(hours=1, seconds=1)),
                                                  ("1:1:1", timedelta(hours=1, minutes=1, seconds=1)),
-                                                 ("1:1:1:1", timedelta(days=1, hours=1, minutes=1, seconds=1)),
-                                                 ("10:20:30:40", timedelta(days=10, hours=20, minutes=30, seconds=40)),
-                                                 ("30:23:59:59", timedelta(days=30, hours=23, minutes=59, seconds=59)),
-                                                 ("60:23:59:59", timedelta(days=60, hours=23, minutes=59, seconds=59)),
+                                                 ("1.1:1:1", timedelta(days=1, hours=1, minutes=1, seconds=1)),
+                                                 ("10.20:30:40", timedelta(days=10, hours=20, minutes=30, seconds=40)),
+                                                 ("30.23:59:59", timedelta(days=30, hours=23, minutes=59, seconds=59)),
+                                                 ("60.23:59:59", timedelta(days=60, hours=23, minutes=59, seconds=59)),
                                                  ("20:30:40", timedelta(hours=20, minutes=30, seconds=40)),
                                                  ("00:59:59", timedelta(minutes=59, seconds=59)),
                                                  ("00:00:59", timedelta(seconds=59))])
@@ -64,13 +66,7 @@ def test_set_database_update_frequency_works_with_different_timespans(raw_freque
 
     assert result.exit_code == 0
 
-    if raw_frequency.count(":") == 3:  # Ideally, the format is DD:HH:MM:SS
-        days, hours, minutes, seconds = map(int, raw_frequency.split(":"))
-    else:  # However, the format can also be HH:MM:SS
-        days = 0
-        hours, minutes, seconds = map(int, raw_frequency.split(":"))
-
-    frequency = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+    frequency = parse_timedelta(raw_frequency)
     assert frequency == expected
 
 
