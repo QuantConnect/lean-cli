@@ -104,8 +104,12 @@ def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: 
                     last_cash[key] = InsensitiveCaseDict(value)
             if "holdings" in last_portfolio:
                 for key, value in last_portfolio["holdings"].items():
-                    last_holdings[key] = InsensitiveCaseDict(value)
-                    last_holdings[key]["symbol"] = InsensitiveCaseDict(last_holdings[key]["symbol"])
+                    new_dic = InsensitiveCaseDict(value)
+                    new_dic["averagePrice"] = new_dic.get("averagePrice", new_dic.get("a",  0))
+                    new_dic["quantity"] = new_dic.get("quantity", new_dic.get("q",  0))
+                    new_dic["symbol"] = InsensitiveCaseDict(
+                        new_dic.get("symbol", { "ID": key, "Value": key.split(' ')[0]}))
+                    last_holdings[key] = new_dic
         else:
             last_cash = None
             last_holdings = None
