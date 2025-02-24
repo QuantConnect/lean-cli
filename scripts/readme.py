@@ -96,14 +96,12 @@ def generate_configurations_table(configurations: List[dict]) -> str:
 
 def main() -> None:
     named_commands = get_commands(lean)
-    #print(named_commands)
     named_commands = sorted(named_commands, key=lambda c: c.name)
 
     table_of_contents = []
     command_sections = []
 
     for c in named_commands:
-        #print(c)
         header = f"### `{c.name}`"
         help_str = c.command.get_short_help_str(limit=120)
 
