@@ -28,7 +28,7 @@ from click.testing import CliRunner
 from lean.commands import lean
 from lean.models.pydantic import WrappedBaseModel
 from lean.components.util.click_group_default_command import DefaultCommandGroup
-
+from lean.container import container
 
 class NamedCommand(WrappedBaseModel):
     name: str
@@ -71,15 +71,39 @@ def get_header_id(name: str) -> str:
     name = re.sub(r"[^a-zA-Z0-9-]", "", name)
     return name
 
+def get_configurations() -> List[dict]:
+    """Returns all available configurations with their keys and descriptions."""
+    config_manager = container.cli_config_manager
+    configurations = []
+
+    for option in config_manager.all_options:
+        configurations.append({
+            "key": option.key,
+            "description": option.description
+        })
+
+    return configurations
+
+def generate_configurations_table(configurations: List[dict]) -> str:
+    """Generates a Markdown table for the given configurations."""
+    table = ["| Key | Description |", "| --- | --- |"]
+
+    for config in configurations:
+        table.append(f"| `{config['key']}` | {config['description']} |")
+
+    return "\n".join(table)
+
 
 def main() -> None:
     named_commands = get_commands(lean)
+    #print(named_commands)
     named_commands = sorted(named_commands, key=lambda c: c.name)
 
     table_of_contents = []
     command_sections = []
 
     for c in named_commands:
+        #print(c)
         header = f"### `{c.name}`"
         help_str = c.command.get_short_help_str(limit=120)
 
@@ -96,7 +120,11 @@ def main() -> None:
         table_of_contents.append(f"- [`{c.name}`](#{get_header_id(c.name)})")
         command_sections.append("\n\n".join(filter(None, section_parts)))
 
-    full_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)
+    configurations = get_configurations()
+    configurations_table = generate_configurations_table(configurations)
+    full_text = "\n".join(table_of_contents) + "\n\n"
+    full_text += "## Configurations\n\n" + configurations_table + "\n\n"
+    full_text += "\n\n".join(command_sections)
     full_text = "\n".join(["<!-- commands start -->", full_text, "<!-- commands end -->"])
 
     readme_path = Path.cwd() / "README.md"
@@ -112,3 +140,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    
