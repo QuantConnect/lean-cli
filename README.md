@@ -63,6 +63,19 @@ A locally-focused workflow (local development, local execution) with the CLI may
 4. Run `lean research "Project Name"` to start a Jupyter Lab session to perform research in.
 5. Run `lean backtest "Project Name"` to run a backtest whenever there's something to test. This runs your strategy in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
+## CLI Configurations
+
+The following CLI configurations are available. Use the [`lean config list`](#lean-config-list) command to list them at any time.
+
+| Key | Description |
+| --- | --- |
+| `user-id` | The user id used when making authenticated requests to the QuantConnect API. |
+| `api-token` | The API token used when making authenticated requests to the QuantConnect API. |
+| `default-language` | The default language used when creating new projects (allowed values: python, csharp). |
+| `engine-image` | The Docker image used when running the LEAN engine (quantconnect/lean:latest if not set). |
+| `research-image` | The Docker image used when running the research environment (quantconnect/research:latest if not set). |
+| `database-update-frequency` | How often the databases are updated. The format is DD.HH:MM:SS. If the frequency is less than a day can just be HH:MM:SS. Update can be disabled by setting this option to a non-date value (-, _, ..., etc.). If unset, default value is 1 day |
+
 ## Commands
 
 *Note: the readme only contains the `--help` text of all commands. Visit the [documentation website](https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started) for more comprehensive documentation.*
@@ -126,17 +139,6 @@ A locally-focused workflow (local development, local execution) with the CLI may
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
 - [`lean whoami`](#lean-whoami)
-
-## Configurations
-
-| Key | Description |
-| --- | --- |
-| `user-id` | The user id used when making authenticated requests to the QuantConnect API. |
-| `api-token` | The API token used when making authenticated requests to the QuantConnect API. |
-| `default-language` | The default language used when creating new projects (allowed values: python, csharp). |
-| `engine-image` | The Docker image used when running the LEAN engine (quantconnect/lean:latest if not set). |
-| `research-image` | The Docker image used when running the research environment (quantconnect/research:latest if not set). |
-| `database-update-frequency` | How often the databases are updated. The format is DD.HH:MM:SS. If the frequency is less than a day can just be HH:MM:SS. Update can be disabled by setting this option to a non-date value (-, _, ..., etc.). If unset, default value is 1 day |
 
 ### `lean backtest`
 
