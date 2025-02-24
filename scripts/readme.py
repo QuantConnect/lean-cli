@@ -97,10 +97,6 @@ def generate_configurations_table(configurations: List[dict]) -> str:
 def main() -> None:
     configurations = get_configurations()
     configurations_table = generate_configurations_table(configurations)
-    configurations_intro = (
-    "## CLI Configurations\n\n"
-    "The following CLI configurations are available. Use the [`lean config list`](#lean-config-list) command to list them at any time.\n\n"
-    )
 
     named_commands = get_commands(lean)
     named_commands = sorted(named_commands, key=lambda c: c.name)
@@ -126,15 +122,19 @@ def main() -> None:
         command_sections.append("\n\n".join(filter(None, section_parts)))
 
     
-    configuration_text = configurations_intro + configurations_table + "\n\n"
+    configuration_text = "\n".join(["<!-- configuration table start -->", configurations_table, "<!-- configuration table end -->"])
     commands_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)
     commands_text = "\n".join(["<!-- commands start -->", commands_text, "<!-- commands end -->"])
 
     readme_path = Path.cwd() / "README.md"
     readme_content = readme_path.read_text(encoding="utf-8")
 
-    if "## CLI Configurations" not in readme_content:
-        readme_content = readme_content.replace("## Commands", configuration_text + "## Commands", 1)
+    # CLI Configurations
+    readme_content = re.sub(r"<!-- configuration table start -->.*<!-- configuration table end -->",
+                            configuration_text,
+                            readme_content,
+                            flags=re.DOTALL)
+    # Commands
     readme_content = re.sub(r"<!-- commands start -->.*<!-- commands end -->",
                             commands_text,
                             readme_content,
