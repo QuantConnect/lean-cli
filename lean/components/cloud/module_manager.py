@@ -19,6 +19,8 @@ from lean.components.util.http_client import HTTPClient
 from lean.components.util.logger import Logger
 from lean.constants import MODULES_DIRECTORY
 from lean.models.modules import NuGetPackage
+import zipfile
+import os
 
 
 class ModuleManager:
@@ -117,8 +119,23 @@ class ModuleManager:
         :param package: the NuGet package to download
         """
         package_file = Path(MODULES_DIRECTORY) / package.get_file_name()
-
+        
         if package_file.is_file():
+            try:
+                with zipfile.ZipFile(package_file, 'r') as zip_ref:
+                    # Verify the integrity of the file
+                    result = zip_ref.testzip()
+                    if result is None:
+                        self._logger.info(f"{package_file.name} exists and passed the integrity check.")
+                    else:
+                        self._logger.info(f"{package_file.name} exists but is corrupted. Downloading again...")
+                        os.remove(package_file)
+                        self._download_file(product_id, organization_id, package)
+            except zipfile.BadZipFile:
+                self._logger.info(f"{package_file.name} exists but is corrupted. Downloading again...")
+                os.remove(package_file)
+                self._download_file(product_id, organization_id, package)
+            
             if product_id not in self._installed_packages:
                 self._installed_packages[product_id] = []
             self._installed_packages[product_id].append(package)
