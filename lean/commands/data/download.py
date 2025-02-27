@@ -25,6 +25,7 @@ from lean.models.click_options import get_configs_for_options, options_from_json
 from lean.models.data import Dataset, DataFile, DatasetDateOption, DatasetTextOption, DatasetTextOptionTransform,OptionResult, Product
 from lean.models.logger import Option
 from lean.models.cli import cli_data_downloaders
+from lean.constants import LIST_PENDING_DATASETS
 
 _data_information: Optional[QCDataInformation] = None
 _presigned_terms="""
@@ -390,7 +391,7 @@ def _get_available_datasets(organization: QCFullOrganization) -> List[Dataset]:
 
     available_datasets = []
     for cloud_dataset in cloud_datasets:
-        if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly or cloud_dataset.pending:
+        if cloud_dataset.delivery == QCDatasetDelivery.CloudOnly or (not LIST_PENDING_DATASETS and cloud_dataset.pending):
             continue
 
         datasource = data_information.datasources.get(str(cloud_dataset.id), None)

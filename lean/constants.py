@@ -116,3 +116,6 @@ MODULE_DATA_QUEUE_HANDLER = "data-queue-handler"
 # platforms
 MODULE_CLI_PLATFORM = "cli"
 MODULE_CLOUD_PLATFORM = "cloud"
+
+# List pending datasets
+LIST_PENDING_DATASETS = environ.get("LIST_PENDING_DATASETS", "false").lower() == "true"
