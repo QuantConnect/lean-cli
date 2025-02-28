@@ -183,6 +183,7 @@ class LeanCommand(Command):
         self.context_settings["allow_extra_args"] = allow_unknown_options
 
     def invoke(self, ctx: Context):
+        container.data_downloader.update_database_files()
         if self._requires_lean_config:
             lean_config_manager = container.lean_config_manager
             try:
