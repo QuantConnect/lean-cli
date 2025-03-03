@@ -491,7 +491,7 @@ def test_report_writes_to_given_report_destination() -> None:
 
     assert (Path.cwd() / "path" / "to" / "report.html").is_file()
 
-@pytest.mark.parametrize("report_destination", reserved_names + output_reserved_names)
+@pytest.mark.parametrize("report_destination", reserved_names)
 def test_report_fails_when_given_report_destination_is_invalid(report_destination: str) -> None:
     invalid_names = reserved_names + output_reserved_names
     docker_manager = mock.Mock()

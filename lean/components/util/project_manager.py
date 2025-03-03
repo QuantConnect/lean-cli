@@ -14,7 +14,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union, Tuple
-from lean.components import reserved_names
+from lean.components import reserved_names, output_reserved_names
 from lean.components.config.cli_config_manager import CLIConfigManager
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -134,7 +134,7 @@ class ProjectManager:
 
         for obj in directory.iterdir():
             if obj.is_dir():
-                if (obj.name in reserved_names or
+                if (obj.name in reserved_names + output_reserved_names or
                         obj.name.startswith(".") or
                         # ignore python virtual environments
                         (obj / "pyvenv.cfg").is_file()):

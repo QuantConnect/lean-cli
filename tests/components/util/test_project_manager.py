@@ -216,7 +216,7 @@ def test_copy_code_copies_source_files_to_output_directory_() -> None:
     project_path.mkdir()
 
     valid_files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.py"]
-    invalid_files = [f"{x}/test.txt" for x in reserved_names]
+    invalid_files = [f"{x}/test.txt" for x in reserved_names + output_reserved_names]
     files = valid_files + invalid_files
     files_paths = [project_path / file for file in files]
 

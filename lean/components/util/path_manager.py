@@ -66,9 +66,11 @@ class PathManager:
         invalid_names = reserved_names
         try:
             # This call fails if the path contains invalid characters
-            if not path.exists():
-                invalid_names += output_reserved_names
+            path.exists()
         except OSError:
+            return False
+
+        if path.name in output_reserved_names:
             return False
 
         # On Windows path.exists() doesn't throw for paths like CON/file.txt
