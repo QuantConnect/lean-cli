@@ -134,7 +134,7 @@ class ProjectManager:
 
         for obj in directory.iterdir():
             if obj.is_dir():
-                if (obj.name in ["bin", "obj", ".ipynb_checkpoints", "backtests", "live", "optimizations"] or
+                if (obj.name in reserved_names or
                         obj.name.startswith(".") or
                         # ignore python virtual environments
                         (obj / "pyvenv.cfg").is_file()):

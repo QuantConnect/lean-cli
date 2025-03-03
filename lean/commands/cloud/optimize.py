@@ -215,7 +215,7 @@ def optimize(project: str,
     cloud_project_manager = container.cloud_project_manager
     cloud_project = cloud_project_manager.get_cloud_project(project, push)
 
-    if name is None:
+    if not container.path_manager.is_name_valid(name):
         name = container.name_generator.generate_name()
 
     cloud_runner = container.cloud_runner

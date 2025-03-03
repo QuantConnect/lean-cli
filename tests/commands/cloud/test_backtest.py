@@ -16,8 +16,10 @@ from unittest import mock
 
 from click.testing import CliRunner
 
+import pytest
 from lean.commands import lean
 from lean.container import container
+from lean.components import reserved_names
 from lean.models.api import QCBacktest
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
@@ -99,6 +101,28 @@ def test_cloud_backtest_uses_given_name() -> None:
 
     assert args[1] == "My Name"
 
+@pytest.mark.parametrize("name", reserved_names)
+def test_cloud_backtest_uses_generated_name_when_given_is_invalid(name) -> None:
+    create_fake_lean_cli_directory()
+
+    project = create_api_project(1, "My Project")
+    backtest = create_api_backtest()
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [project]
+    cloud_runner = mock.Mock()
+    cloud_runner.run_backtest.return_value = backtest
+
+    initialize_container(api_client_to_use=api_client, cloud_runner_to_use=cloud_runner)
+
+    result = CliRunner().invoke(lean, ["cloud", "backtest", "My Project", "--name", name])
+
+    assert result.exit_code == 0
+
+    cloud_runner.run_backtest.assert_called_once()
+    args, kwargs = cloud_runner.run_backtest.call_args
+
+    assert args[1] != name
 
 def test_cloud_backtest_logs_statistics() -> None:
     create_fake_lean_cli_directory()

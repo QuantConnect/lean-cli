@@ -23,6 +23,7 @@ import responses
 from click.testing import CliRunner
 
 from lean.commands import lean
+from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
@@ -1166,6 +1167,27 @@ def test_live_non_interactive_deploy_with_live_and_historical_provider_missed_li
     assert "--polygon-api-key" not in error_msg
 
     assert result.exit_code == 0
+
+@pytest.mark.parametrize("output_name", reserved_names + output_reserved_names)
+def test_live_non_interactive_deploy_fails_when_given_is_invalid(output_name: str) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+
+    container.initialize(docker_manager=mock.Mock(), lean_runner=mock.Mock(), api_client = mock.MagicMock())
+
+    provider_live_option = ["--data-provider-live", "Polygon", "--polygon-api-key", "123"]
+
+    provider_history_option = ["--data-provider-historical", "Polygon"]
+
+    result = CliRunner().invoke(lean, ["live", "deploy", "--brokerage", "Paper Trading",
+                                       *provider_live_option,
+                                       *provider_history_option,
+                                       "Python Project",
+                                       "--output",
+                                       output_name
+                                       ])
+
+    assert result.output == f"Usage: lean live deploy [OPTIONS] PROJECT\nTry 'lean live deploy --help' for help.\n\nError: Invalid value for '--output': Directory '{output_name}' is not a valid path.\n"
 
 def test_live_non_interactive_deploy_with_real_brokerage_without_credentials() -> None:
     create_fake_lean_cli_directory()

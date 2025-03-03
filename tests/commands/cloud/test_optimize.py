@@ -18,6 +18,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.config.optimizer_config_manager import NodeType, OptimizerConfigManager
+from lean.components import reserved_names
 from lean.container import container
 from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizationEstimate
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
@@ -161,6 +162,33 @@ def test_cloud_optimize_uses_given_name() -> None:
     args, kwargs = cloud_runner.run_optimization.call_args
 
     assert args[2] == "My Name"
+
+@pytest.mark.parametrize("name", reserved_names)
+def test_cloud_optimize_uses_a_generated_name_when_given_is_invalid(name: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project = create_api_project(1, "My Project")
+    optimization = create_api_optimization()
+
+    api_client = mock.MagicMock()
+    api_client.projects.get_all.return_value = [project]
+    api_client.optimizations.estimate.return_value = QCOptimizationEstimate(estimateId="x", time=10, balance=1000)
+    api_client.organizations.get.return_value = create_api_organization()
+
+    cloud_runner = mock.MagicMock()
+    cloud_runner.run_optimization.return_value = optimization
+
+    container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
+
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", name])
+
+    assert result.exit_code == 0
+
+    cloud_runner.run_optimization.assert_called_once()
+    args, kwargs = cloud_runner.run_optimization.call_args
+
+    assert args[2] != name
 
 
 def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> None:

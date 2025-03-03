@@ -20,6 +20,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
+from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
@@ -489,6 +490,19 @@ def test_report_writes_to_given_report_destination() -> None:
     assert result.exit_code == 0
 
     assert (Path.cwd() / "path" / "to" / "report.html").is_file()
+
+@pytest.mark.parametrize("report_destination", reserved_names + output_reserved_names)
+def test_report_fails_when_given_report_destination_is_invalid(report_destination: str) -> None:
+    invalid_names = reserved_names + output_reserved_names
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--report-destination", f"{report_destination}/path/to/report.html"])
+
+    assert result.exit_code != 0
+    assert result.output == f"Usage: lean report [OPTIONS]\nTry 'lean report --help' for help.\n\nError: Invalid value for '--report-destination': File '{report_destination}/path/to/report.html' is not a valid path.\n"
 
 
 def test_report_aborts_when_report_destination_already_exists() -> None:

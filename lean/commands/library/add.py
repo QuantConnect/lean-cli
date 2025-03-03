@@ -296,6 +296,8 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
     $ lean library add "My Python Project" tensorflow --version 2.5.0
     $ lean library add "My Python Project" "Library/My Python Library"
     """
+    from lean.components import reserved_names
+
     logger = container.logger
     project_config = container.project_config_manager.get_project_config(project)
     project_language = project_config.get("algorithm-language", None)
@@ -305,6 +307,12 @@ def add(project: Path, name: str, version: Optional[str], no_local: bool) -> Non
                             "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
 
     library_manager = container.library_manager
+
+    if not container.path_manager.is_path_valid(Path(name)):
+        raise MoreInfoError(
+            f"Invalid path name. Can only contain letters, numbers & spaces. Can not start with empty char ' ' or be a reserved name [ {', '.join(reserved_names)} ]",
+            "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
+
     library_dir = Path(name).expanduser().resolve()
 
     if library_manager.is_lean_library(library_dir):
