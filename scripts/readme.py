@@ -28,7 +28,7 @@ from click.testing import CliRunner
 from lean.commands import lean
 from lean.models.pydantic import WrappedBaseModel
 from lean.components.util.click_group_default_command import DefaultCommandGroup
-
+from lean.container import container
 
 class NamedCommand(WrappedBaseModel):
     name: str
@@ -71,8 +71,33 @@ def get_header_id(name: str) -> str:
     name = re.sub(r"[^a-zA-Z0-9-]", "", name)
     return name
 
+def get_configurations() -> List[dict]:
+    """Returns all available configurations with their keys and descriptions."""
+    config_manager = container.cli_config_manager
+    configurations = []
+
+    for option in config_manager.all_options:
+        configurations.append({
+            "key": option.key,
+            "description": option.description
+        })
+
+    return configurations
+
+def generate_configurations_table(configurations: List[dict]) -> str:
+    """Generates a Markdown table for the given configurations."""
+    table = ["| Key | Description |", "| --- | --- |"]
+
+    for config in configurations:
+        table.append(f"| `{config['key']}` | {config['description']} |")
+
+    return "\n".join(table)
+
 
 def main() -> None:
+    configurations = get_configurations()
+    configurations_table = generate_configurations_table(configurations)
+
     named_commands = get_commands(lean)
     named_commands = sorted(named_commands, key=lambda c: c.name)
 
@@ -96,14 +121,22 @@ def main() -> None:
         table_of_contents.append(f"- [`{c.name}`](#{get_header_id(c.name)})")
         command_sections.append("\n\n".join(filter(None, section_parts)))
 
-    full_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)
-    full_text = "\n".join(["<!-- commands start -->", full_text, "<!-- commands end -->"])
+    
+    configuration_text = "\n".join(["<!-- configuration table start -->", configurations_table, "<!-- configuration table end -->"])
+    commands_text = "\n".join(table_of_contents) + "\n\n" + "\n\n".join(command_sections)
+    commands_text = "\n".join(["<!-- commands start -->", commands_text, "<!-- commands end -->"])
 
     readme_path = Path.cwd() / "README.md"
     readme_content = readme_path.read_text(encoding="utf-8")
 
+    # CLI Configurations
+    readme_content = re.sub(r"<!-- configuration table start -->.*<!-- configuration table end -->",
+                            configuration_text,
+                            readme_content,
+                            flags=re.DOTALL)
+    # Commands
     readme_content = re.sub(r"<!-- commands start -->.*<!-- commands end -->",
-                            full_text,
+                            commands_text,
                             readme_content,
                             flags=re.DOTALL)
 
@@ -112,3 +145,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    
