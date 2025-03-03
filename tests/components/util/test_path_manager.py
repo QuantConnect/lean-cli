@@ -100,7 +100,7 @@ def test_is_path_valid_returns_true_for_valid_path() -> None:
                                         ("My Path./file.txt", False),
                                         (" My Path/file.txt", False),
                                         ("My Path/CON.txt", False),
-                                        ("My Path/CON.tmp.txt", False)] + list(map(lambda x: (f"MyPath/{x}/file.txt", False), output_reserved_names)))
+                                        ("My Path/CON.tmp.txt", False)] + list(map(lambda x: (f"MyPath/{x}/", False), output_reserved_names)))
 def test_is_path_valid_windows(path: str, valid: bool) -> None:
     if platform.system() != "Windows":
         pytest.skip("This test requires Windows")
