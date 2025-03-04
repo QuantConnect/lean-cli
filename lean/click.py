@@ -71,20 +71,27 @@ class VerboseOption(ClickOption):
 
     @staticmethod
     def _parse_verbose_option(ctx: Context, param: Parameter, value: Optional[bool]) -> None:
+        from lean.container import container
         """Parses the --verbose option."""
-        if not value:
+        if not container.logger.debug_logging_enabled and not value:
+            # First execution: Enable debug logging to mark that this callback has been executed once
+            container.logger.debug_logging_enabled = True
+            return
+        if container.logger.debug_logging_enabled and not value:
+            # Second execution without --verbose: Disable logging and update database.
+            container.logger.debug_logging_enabled = False
+            container.data_downloader.update_database_files()
             return
         
+        # Second execution with --verbose: Keep logging enabled and update database.
         from platform import platform
         from sys import version as sys_version
         from lean import __version__ as lean_cli_version
         from subprocess import run
         from os import getcwd, getlogin
         from socket import gethostname
-        from lean.container import container
 
         logger = container.logger
-        logger.debug_logging_enabled = True
         container.data_downloader.update_database_files()
 
         # show additional context information
