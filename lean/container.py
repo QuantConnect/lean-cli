@@ -212,3 +212,4 @@ class Container:
 
 
 container = Container()
+container.data_downloader.update_database_files()
