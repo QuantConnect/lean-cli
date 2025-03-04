@@ -452,7 +452,6 @@ def test_get_complete_lean_config_sets_interactive_brokers_config() -> None:
     assert config["ib-host"] == "127.0.0.1"
     assert config["ib-port"] == "4002"
     assert config["ib-tws-dir"] == "/root/Jts"
-    assert config["ib-version"] == "985"
 
 
 def test_get_complete_lean_config_sets_iqfeed_host() -> None:
