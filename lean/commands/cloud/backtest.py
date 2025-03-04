@@ -51,7 +51,7 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
             error_message = f'No project with the given name or id "{project}" found in your cloud or local projects.'
         raise RuntimeError(error_message)
 
-    if not container.path_manager.is_name_valid(name):
+    if name is None:
         name = container.name_generator.generate_name()
 
     cloud_runner = container.cloud_runner

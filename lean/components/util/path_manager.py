@@ -50,8 +50,8 @@ class PathManager:
         if name is None:
             return False
 
-        import re
-        return (re.match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None) and (name not in reserved_names + output_reserved_names)
+        from re import match
+        return (match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None) and (name not in reserved_names + output_reserved_names)
 
     def is_path_valid(self, path: Path) -> bool:
         """Returns whether the given path is a valid project path in the current operating system.
