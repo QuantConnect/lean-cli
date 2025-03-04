@@ -74,7 +74,7 @@ class VerboseOption(ClickOption):
         """Parses the --verbose option."""
         if not value:
             return
-
+        
         from platform import platform
         from sys import version as sys_version
         from lean import __version__ as lean_cli_version
@@ -85,6 +85,7 @@ class VerboseOption(ClickOption):
 
         logger = container.logger
         logger.debug_logging_enabled = True
+        container.data_downloader.update_database_files()
 
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
@@ -183,7 +184,6 @@ class LeanCommand(Command):
         self.context_settings["allow_extra_args"] = allow_unknown_options
 
     def invoke(self, ctx: Context):
-        container.data_downloader.update_database_files()
         if self._requires_lean_config:
             lean_config_manager = container.lean_config_manager
             try:
