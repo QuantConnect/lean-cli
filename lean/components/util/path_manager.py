@@ -47,9 +47,6 @@ class PathManager:
         :param name: the name to validate
         :return: True if the name is valid on Windows operating system, False if not
         """
-        if name is None:
-            return False
-
         from re import match
         return (match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None) and (name not in reserved_names + output_reserved_names)
 
@@ -63,7 +60,6 @@ class PathManager:
         :param path: the path to validate
         :return: True if the path is valid on the current operating system, False if not
         """
-        invalid_names = reserved_names
         try:
             # This call fails if the path contains invalid characters
             path.exists()
@@ -81,7 +77,7 @@ class PathManager:
             if component.startswith(" ") or component.endswith(" ") or component.endswith("."):
                 return False
 
-            for reserved_name in invalid_names:
+            for reserved_name in reserved_names:
                 if component == reserved_name or component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
                     return False
 
