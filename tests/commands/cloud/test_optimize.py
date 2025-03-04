@@ -18,7 +18,6 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.config.optimizer_config_manager import NodeType, OptimizerConfigManager
-from lean.container import container
 from lean.models.api import QCOptimization, QCOptimizationBacktest, QCOptimizationEstimate
 from lean.models.optimizer import (OptimizationConstraint, OptimizationExtremum, OptimizationParameter,
                                    OptimizationTarget)

@@ -17,7 +17,6 @@ from unittest import mock
 from click.testing import CliRunner
 
 from lean.commands import lean
-from lean.container import container
 from lean.models.api import QCBacktest
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container

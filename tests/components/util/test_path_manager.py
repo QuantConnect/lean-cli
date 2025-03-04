@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components import reserved_names, output_reserved_names
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 
@@ -99,7 +100,7 @@ def test_is_path_valid_returns_true_for_valid_path() -> None:
                                         ("My Path./file.txt", False),
                                         (" My Path/file.txt", False),
                                         ("My Path/CON.txt", False),
-                                        ("My Path/CON.tmp.txt", False)])
+                                        ("My Path/CON.tmp.txt", False)] + list(map(lambda x: (f"MyPath/{x}/", False), output_reserved_names)))
 def test_is_path_valid_windows(path: str, valid: bool) -> None:
     if platform.system() != "Windows":
         pytest.skip("This test requires Windows")
@@ -117,7 +118,7 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
                                          ("1 a/2_b/3-c", True),
                                          ("1a2b3c$", False),
                                          ("abc:123", False),
-                                         ("abc.def", False)])
+                                         ("abc.def", False)] + list(map(lambda x: (x, False), reserved_names + output_reserved_names)))
 def test_is_name_valid(name: str, valid: bool) -> None:
     path_manager = _get_path_manager()
 

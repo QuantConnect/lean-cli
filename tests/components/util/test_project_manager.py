@@ -210,6 +210,32 @@ def test_copy_code_copies_source_files_to_output_directory() -> None:
         assert (output_dir / file).is_file()
         assert (output_dir / file).read_text(encoding="utf-8") == file.name
 
+def test_copy_code_copies_source_files_to_output_directory_() -> None:
+    from lean.components import reserved_names, output_reserved_names
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    valid_files = ["Main.cs", "main.py", "research.ipynb", "path/to/Alpha.cs", "path/to/alpha.py"]
+    invalid_files = [f"{x}/test.txt" for x in reserved_names + output_reserved_names]
+    files = valid_files + invalid_files
+    files_paths = [project_path / file for file in files]
+
+    output_dir = Path.cwd() / "code"
+
+    for file in files_paths:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.touch()
+        file.write_text(file.name, encoding="utf-8")
+
+    project_manager = _create_project_manager()
+    project_manager.copy_code(project_path, output_dir)
+
+    for file in files:
+        if file in valid_files:
+            assert (output_dir / file).is_file()
+            assert (output_dir / file).read_text(encoding="utf-8") == (project_path / file).name
+        else:
+            assert not (output_dir / file).is_file()
 
 @pytest.mark.parametrize(
     "directory",
