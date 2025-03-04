@@ -251,7 +251,6 @@ class LeanConfigManager:
             "ib-host": "127.0.0.1",
             "ib-port": "4002",
             "ib-tws-dir": "/root/Jts",
-            "ib-version": "985",
 
             "iqfeed-host": "host.docker.internal"
         }
