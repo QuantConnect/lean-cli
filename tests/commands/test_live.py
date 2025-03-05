@@ -1240,23 +1240,25 @@ def test_live_deploy_with_different_brokerage_and_different_live_data_provider_a
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, data_provider_historical_name, api_client)
 
+    # Filter method calls to include only 'modules.list_files' calls
+    filtered_calls = [call for call in api_client.method_calls if call[0] == 'modules.list_files']
     is_exists = []
     if brokerage_product_id is None and data_provider_historical_name != "Local":
-        assert len(api_client.method_calls) == 2
-        for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, data_provider_historical_id]):
+        assert len(api_client.method_calls) == 3
+        for m_c, id in zip(filtered_calls, [data_provider_live_product_id, data_provider_historical_id]):
             if id in m_c[1]:
                 is_exists.append(True)
         assert is_exists
         assert len(is_exists) == 1
     elif brokerage_product_id is None and data_provider_historical_name == "Local":
-        assert len(api_client.method_calls) == 1
-        if int(data_provider_live_product_id) in api_client.method_calls[0][1]:
+        assert len(api_client.method_calls) == 2
+        if int(data_provider_live_product_id) in filtered_calls[0][1]:
             is_exists.append(True)
         assert is_exists
         assert len(is_exists) == 1
     else:
-        assert len(api_client.method_calls) == 3
-        for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, data_provider_historical_id, brokerage_product_id]):
+        assert len(api_client.method_calls) == 4
+        for m_c, id in zip(filtered_calls, [data_provider_live_product_id, data_provider_historical_id, brokerage_product_id]):
             if id in f"{m_c[1]}":
                 is_exists.append(True)
         assert is_exists
@@ -1272,12 +1274,14 @@ def test_live_non_interactive_deploy_with_different_brokerage_and_different_live
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
 
-    assert len(api_client.method_calls) == 2
+    assert len(api_client.method_calls) == 3
+
+    # Filter method calls to include only 'modules.list_files' calls
+    filtered_calls = [call for call in api_client.method_calls if call[0] == 'modules.list_files']
     is_exists = []
-    for m_c, id in zip(api_client.method_calls, [data_provider_live_product_id, brokerage_product_id]):
+    for m_c, id in zip(filtered_calls, [data_provider_live_product_id, brokerage_product_id]):
         if id in m_c[1]:
             is_exists.append(True)
-
     assert is_exists
     assert len(is_exists) == 2
 
@@ -1309,7 +1313,7 @@ def test_live_non_interactive_deploy_paper_brokerage_different_live_data_provide
     api_client = mock.MagicMock()
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client)
 
-    assert len(api_client.method_calls) == 1
+    assert len(api_client.method_calls) == 2
     for m_c in api_client.method_calls:
         if data_provider_live_product_id in str(m_c[1]):
             is_exist = True

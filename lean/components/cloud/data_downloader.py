@@ -76,9 +76,10 @@ class DataDownloader:
 
             frequency = parse_timedelta(self.database_update_frequency)
             if not frequency:
-                self._logger.log_buffer += f"\nSkipping database-update-frequency, frequency is: {self.database_update_frequency}"
+                self._logger.debug(f"Skipping database-update-frequency, frequency is:"
+                                   f" {str(self.database_update_frequency)}")
                 return
-            self._logger.log_buffer += f"database-update-frequency is: {str(frequency)}"
+            self._logger.debug(f"database-update-frequency is: {str(frequency)}")
             if not last_update or now - last_update > frequency:
                 data_dir = self._lean_config_manager.get_data_directory()
                 self._lean_config_manager.set_properties({"file-database-last-update": now.strftime('%m/%d/%Y %H:%M:%S')})
@@ -95,8 +96,8 @@ class DataDownloader:
             else:
                 self._logger.error(str(e))
         except ValueError as e:
-            self._logger.log_buffer += f"Value of config option database-update-frequency is invalid: {str(e)}. " \
-                                       f"Database update will be skipped"
+            self._logger.debug(f"Value of config option database-update-frequency is invalid: {str(e)}. "
+                               f"Database update will be skipped")
         except Exception as e:
             self._logger.error(str(e))
 

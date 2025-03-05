@@ -34,6 +34,12 @@ def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, ap
     api_client.organizations.get_all.return_value = [
         QCMinimalOrganization(id="abc", name="abc", type="type", ownerName="You", members=1, preferred=True)
     ]
+
+    # Configure download_public_file to return bytes
+    mock_csv_content = b"symbol,property\nAAPL,value\n"
+    mock_json_content = b'{"market": "hours"}'
+    api_client.data.download_public_file = mock.MagicMock(side_effect=[mock_csv_content, mock_json_content])
+
     if api_client_to_use:
         api_client = api_client_to_use
 

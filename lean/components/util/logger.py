@@ -25,13 +25,8 @@ class Logger:
         """Creates a new Logger instance."""
         from rich.console import Console
         self._console = Console(markup=False, highlight=False, emoji=False, width=None)
-        self.log_buffer = ''
         self.debug_logging_enabled = False
 
-    def show_log_buffer(self):
-        self.debug(self.log_buffer)
-        self.log_buffer = ''
-        
     def debug(self, message: Any) -> None:
         """Logs a debug message if debug logging is enabled.
 

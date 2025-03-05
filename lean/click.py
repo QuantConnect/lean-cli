@@ -86,9 +86,6 @@ class VerboseOption(ClickOption):
         logger = container.logger
         logger.debug_logging_enabled = True
 
-        # Display log buffer
-        logger.show_log_buffer()
-
         # show additional context information
         python_version = sys_version.replace("\n", ". ")
         try:
@@ -186,6 +183,7 @@ class LeanCommand(Command):
         self.context_settings["allow_extra_args"] = allow_unknown_options
 
     def invoke(self, ctx: Context):
+        container.data_downloader.update_database_files()
         if self._requires_lean_config:
             lean_config_manager = container.lean_config_manager
             try:
