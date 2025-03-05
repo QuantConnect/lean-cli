@@ -21,6 +21,7 @@ from click.testing import CliRunner
 from lean.commands import lean
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.storage import Storage
+from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
 from lean.models.docker import DockerImage
@@ -203,6 +204,23 @@ def test_optimize_creates_output_directory_when_not_existing_yet() -> None:
     assert result.exit_code == 0
 
     assert (Path.cwd() / "output").is_dir()
+
+@pytest.mark.parametrize("output_directory", reserved_names + output_reserved_names)
+def test_optimize_fails_when_output_directory_is_invalid(output_directory: str) -> None:
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    container.initialize(docker_manager=docker_manager)
+    container.optimizer_config_manager = _get_optimizer_config_manager_mock()
+
+    Storage(str(Path.cwd() / "Python Project" / "config.json")).set("parameters", {"param1": "1"})
+
+    result = CliRunner().invoke(lean, ["optimize", "Python Project", "--output", f"Python Project/custom/{output_directory}"])
+
+    assert result.exit_code != 0
+
+    assert result.output == f"Usage: lean optimize [OPTIONS] PROJECT\nTry 'lean optimize --help' for help.\n\nError: Invalid value for '--output': Directory 'Python Project/custom/{output_directory}' is not a valid path.\n"
 
 
 def test_optimize_copies_code_to_output_directory() -> None:

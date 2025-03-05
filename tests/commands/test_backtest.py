@@ -21,6 +21,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.util.xml_manager import XMLManager
+from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.api import QCLanguage
@@ -95,6 +96,13 @@ def test_backtest_calls_lean_runner_with_custom_output_directory() -> None:
                                                            {},
                                                            {})
 
+@pytest.mark.parametrize("output_name", reserved_names + output_reserved_names)
+def test_backtest_fails_when_given_is_invalid(output_name: str) -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["backtest", "Python Project", "--output", f"Python Project/custom/{output_name}"])
+
+    assert result.output == f"Usage: lean backtest [OPTIONS] PROJECT\nTry 'lean backtest --help' for help.\n\nError: Invalid value for '--output': Directory 'Python Project/custom/{output_name}' is not a valid path.\n"
 
 def test_backtest_calls_lean_runner_with_release_mode() -> None:
     create_fake_lean_cli_directory()

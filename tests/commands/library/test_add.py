@@ -20,6 +20,7 @@ from lean.commands import lean
 from lean.container import container
 from lean.models.utils import LeanLibraryReference
 from tests.test_helpers import create_fake_lean_cli_directory, create_fake_lean_cli_directory_with_subdirectories
+from lean.components import reserved_names
 
 
 def _assert_library_reference_was_added_to_project_config_file(project_dir: Path, library_dir: Path) -> None:
@@ -123,3 +124,12 @@ def test_library_add_fails_when_library_directory_is_not_valid(library_dir: str)
 
     assert result.exit_code != 0
 
+@pytest.mark.parametrize("library_name", reserved_names)
+def test_library_add_fails_when_library_directory_is_not_valid(library_name) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path("CSharp Project")
+    library_dir = Path(f"Library/{library_name}")
+    result = CliRunner().invoke(lean, ["library", "add", str(project_dir), str(library_dir), "--no-local"])
+    assert result.exit_code != 0
+    assert result.exception.args[0] == f"Invalid path name. Can only contain letters, numbers & spaces. Can not start with empty char ' ' or be a reserved name [ {', '.join(reserved_names)} ]"
