@@ -13,7 +13,7 @@
 
 from pathlib import Path
 
-from lean.components import reserved_names, forbidden_characters
+from lean.components import reserved_names, output_reserved_names, forbidden_characters
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.platform_manager import PlatformManager
 
@@ -47,8 +47,8 @@ class PathManager:
         :param name: the name to validate
         :return: True if the name is valid on Windows operating system, False if not
         """
-        import re
-        return re.match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None
+        from re import match
+        return (match(r'^[-_a-zA-Z0-9/\s]*$', name) is not None) and (name not in reserved_names + output_reserved_names)
 
     def is_path_valid(self, path: Path) -> bool:
         """Returns whether the given path is a valid project path in the current operating system.
@@ -66,6 +66,9 @@ class PathManager:
         except OSError:
             return False
 
+        if path.name in output_reserved_names:
+            return False
+
         # On Windows path.exists() doesn't throw for paths like CON/file.txt
         # Trying to create them does raise errors, so we manually validate path components
         # We follow the rules of windows for every OS
@@ -75,7 +78,7 @@ class PathManager:
                 return False
 
             for reserved_name in reserved_names:
-                if component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
+                if component == reserved_name or component.upper() == reserved_name or component.upper().startswith(reserved_name + "."):
                     return False
 
             for forbidden_character in forbidden_characters:
