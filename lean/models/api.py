@@ -439,6 +439,7 @@ class QCDataType(str, Enum):
     Bulk = "Bulk"
     OpenInterest = "OpenInterest"
     Open_Interest = "Open Interest"
+    Universe = "Universe"
 
     @classmethod
     def get_all_members(cls):
