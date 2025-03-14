@@ -916,7 +916,7 @@ Options:
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
-  --data-type [Trade|Quote|Bulk|OpenInterest]
+  --data-type [Trade|Quote|Bulk|OpenInterest|Universe]
                                   Specify the type of historical data
   --resolution [Tick|Second|Minute|Hour|Daily]
                                   Specify the resolution of the historical data
