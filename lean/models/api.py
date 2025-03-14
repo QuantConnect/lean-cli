@@ -437,7 +437,6 @@ class QCDataType(str, Enum):
     Trade = "Trade"
     Quote = "Quote"
     Bulk = "Bulk"
-    Universe = "Universe"
     OpenInterest = "OpenInterest"
     Open_Interest = "Open Interest"
 
