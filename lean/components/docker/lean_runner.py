@@ -935,6 +935,10 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         # Add known additional run options from the extra docker config.
         # For now, only device_requests is supported
         if extra_docker_config is not None:
+            
+            if "environment" in extra_docker_config:
+                run_options["environment"] = [f"{item[0]}={item[1]}" for item in extra_docker_config["environment"]]
+
             if "device_requests" in extra_docker_config:
                 from docker.types import DeviceRequest
                 run_options["device_requests"] = [DeviceRequest(**device_request)
