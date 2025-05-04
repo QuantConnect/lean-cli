@@ -940,7 +940,10 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                 run_options["name"] = extra_docker_config["name"]
             
             if "environment" in extra_docker_config:
-                run_options["environment"] = [f"{item[0]}={item[1]}" for item in extra_docker_config["environment"]]
+                target = run_options.get("environment")
+                if not target:
+                    target = run_options["environment"] = {}
+                target.update(extra_docker_config["environment"])
 
             if "device_requests" in extra_docker_config:
                 from docker.types import DeviceRequest
