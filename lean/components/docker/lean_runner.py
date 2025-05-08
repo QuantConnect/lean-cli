@@ -935,6 +935,23 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         # Add known additional run options from the extra docker config.
         # For now, only device_requests is supported
         if extra_docker_config is not None:
+
+            if "name" in extra_docker_config:
+                run_options["name"] = extra_docker_config["name"]
+            
+            if "environment" in extra_docker_config:
+                target = run_options.get("environment")
+                if not target:
+                    target = run_options["environment"] = {}
+                if isinstance(extra_docker_config["environment"], list):
+                    target.update({item[0]: item[1] for item in [
+                        item if not isinstance(item, str) else (item.split("=")[0], item.split("=")[1]) for item in extra_docker_config["environment"]
+                    ]})
+                elif isinstance(extra_docker_config["environment"], dict): 
+                    target.update(extra_docker_config["environment"])
+                else:
+                    raise ValueError("Additional environment variables can be passed to the container in a dictionary, list of '{key}={value}' strings, or list of '(key, value)' tuples.")
+
             if "device_requests" in extra_docker_config:
                 from docker.types import DeviceRequest
                 run_options["device_requests"] = [DeviceRequest(**device_request)
