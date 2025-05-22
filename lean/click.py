@@ -131,11 +131,30 @@ class VerboseOption(ClickOption):
         except:
             docker_version = "Not installed"
 
+        try:
+            import tempfile
+            import shutil
+            from pathlib import Path
+            temp_dir = Path(tempfile.gettempdir())
+            usage = shutil.disk_usage(temp_dir)
+            space_info = (
+                f"Space in temporary location - "
+                f"Total: {usage.total / (1024 ** 3):.2f} GB, "
+                f"Used: {usage.used / (1024 ** 3):.2f} GB, "
+                f"Free: {usage.free / (1024 ** 3):.2f} GB"
+            )
+        except:
+            temp_dir = ""
+            space_info = ""
+
+
         logger.debug(f"Context information:\n" +
                      hostname +
                      username +
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
+                     f"  Temporary directory: {temp_dir}\n"
+                     f"  {space_info}\n"
                      f"  Lean CLI version: {lean_cli_version}\n"
                      f"  .NET version: {dotnet_version}\n"
                      f"  VS Code version: {vscode_version}\n"
