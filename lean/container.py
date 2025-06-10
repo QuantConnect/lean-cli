@@ -68,7 +68,7 @@ class Container:
         self.platform_manager = PlatformManager()
         self.task_manager = TaskManager(self.logger)
         self.name_generator = NameGenerator()
-        self.temp_manager = TempManager()
+        self.temp_manager = TempManager(self.logger)
         self.xml_manager = XMLManager()
         self.http_client = HTTPClient(self.logger)
 

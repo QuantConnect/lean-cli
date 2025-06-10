@@ -59,6 +59,21 @@ def get_whoami_message() -> str:
 
     return f"logged in as {member.name} ({member.email})"
 
+def get_disk_space_info(path: Path) -> str:
+    try:
+        from shutil import disk_usage
+        usage = disk_usage(str(path))
+        total, used, free = usage.total, usage.used, usage.free
+
+        return (
+            f"Space in temporary location - "
+            f"Total: {total / (1024 ** 3):.2f} GB, "
+            f"Used: {used / (1024 ** 3):.2f} GB, "
+            f"Free: {free / (1024 ** 3):.2f} GB"
+        )
+    except Exception as e:
+        return f"Error getting disk space: {str(e)}"
+
 class VerboseOption(ClickOption):
     def __init__(self, *args, **kwargs):
         super().__init__(["--verbose"],
@@ -130,12 +145,21 @@ class VerboseOption(ClickOption):
             docker_version = run("docker --version", shell=True, capture_output=True).stdout.decode("utf").replace("Docker version ", "")
         except:
             docker_version = "Not installed"
+        
+        try:
+            temp_dir = container.temp_manager.create_temporary_directory().parent
+            space_info = get_disk_space_info(temp_dir)
+        except:
+            temp_dir = ""
+            space_info = ""
 
         logger.debug(f"Context information:\n" +
                      hostname +
                      username +
                      f"  Python version: {python_version}\n"
                      f"  OS: {platform()}\n"
+                     f"  Temporary directory: {temp_dir}\n"
+                     f"  {space_info}\n"
                      f"  Lean CLI version: {lean_cli_version}\n"
                      f"  .NET version: {dotnet_version}\n"
                      f"  VS Code version: {vscode_version}\n"

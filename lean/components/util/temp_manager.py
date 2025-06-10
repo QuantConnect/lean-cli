@@ -12,14 +12,16 @@
 # limitations under the License.
 
 from pathlib import Path
+from lean.components.util.logger import Logger
 
 class TempManager:
     """The TempManager class provides access to temporary directories."""
 
-    def __init__(self) -> None:
+    def __init__(self, logger: Logger) -> None:
         """Creates a new TempManager instance."""
         self._temporary_directories = []
         self.delete_temporary_directories_when_done = True
+        self._logger = logger
 
     def create_temporary_directory(self) -> Path:
         """Returns the path to an empty temporary directory.
@@ -29,6 +31,7 @@ class TempManager:
         from tempfile import mkdtemp
         path = Path(mkdtemp(prefix="lean-cli-"))
         self._temporary_directories.append(path)
+        self._logger.debug(f"Created temporary directory: {path}")
         return path
 
     def delete_temporary_directories(self) -> None:
