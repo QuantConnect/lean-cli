@@ -133,7 +133,7 @@ def _create_lean_data_download(data_provider_name: str,
                 if extra_run_command:
                     run_parameters += extra_run_command
 
-                return CliRunner().invoke(lean, run_parameters)
+                return CliRunner().invoke(lean, run_parameters, input="\n")
 
 
 @pytest.mark.skipif(

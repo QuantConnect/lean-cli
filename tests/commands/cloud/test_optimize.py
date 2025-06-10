@@ -99,7 +99,7 @@ def test_cloud_optimize_runs_optimization_by_project_id() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "1"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "1"], input="\n")
 
     assert result.exit_code == 0
 
@@ -125,7 +125,7 @@ def test_cloud_optimize_runs_optimization_by_project_name() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"], input="\n")
 
     assert result.exit_code == 0
 
@@ -152,7 +152,7 @@ def test_cloud_optimize_uses_given_name() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"], input="\n")
 
     assert result.exit_code == 0
 
@@ -181,7 +181,7 @@ def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> 
                          push_manager_to_use=push_manager)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--push"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--push"], input="\n")
 
     assert result.exit_code == 0
 
@@ -204,7 +204,7 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project", "--name", "My Name"], input="\n")
 
     assert result.exit_code == 0
 
@@ -252,7 +252,7 @@ def test_cloud_optimize_displays_optimal_backtest_results(target: str,
         extremum=extremum,
     )
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"], input="\n")
 
     assert result.exit_code == 0
 
@@ -280,7 +280,7 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_succeed() ->
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"], input="\n")
 
     assert result.exit_code == 0
 
@@ -306,7 +306,7 @@ def test_cloud_optimize_does_not_display_backtest_results_when_none_meet_constra
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"], input="\n")
 
     assert result.exit_code == 0
 
@@ -332,7 +332,7 @@ def test_cloud_optimize_aborts_when_optimization_fails() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "My Project"], input="\n")
 
     assert result.exit_code != 0
 

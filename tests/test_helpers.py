@@ -122,6 +122,31 @@ def setup_mock_api_client_and_responses() -> APIClient:
         APIClient: A mock API client for testing.
     """
     api_client = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.GET,
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv",
+        body="",
+        status=200
+    )
+
+    responses.add(
+        responses.GET,
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json",
+        body="",
+        status=200
+    )
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}modules/list",
+        json={
+            "files": [],
+            "success": "true"
+        },
+        status=200
+    )
+
     responses.add(
         responses.POST,
         f"{API_BASE_URL}live/auth0/read",

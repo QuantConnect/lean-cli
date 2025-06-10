@@ -611,7 +611,8 @@ def test_live_non_interactive_do_not_store_non_persistent_properties_in_lean_con
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
                                        "--data-provider-live", data_feed,
-                                       *options])
+                                       *options],
+                                input="\n")
 
     traceback.print_exception(*result.exc_info)
 
@@ -656,7 +657,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given(brokerage: s
     result = CliRunner().invoke(lean, ["live", "Python Project",
                                        "--brokerage", brokerage,
                                        "--data-provider-live", data_feed,
-                                       *options])
+                                       *options],
+                                input="\n")
 
     traceback.print_exception(*result.exc_info)
 
@@ -702,7 +704,8 @@ def test_live_non_interactive_calls_run_lean_when_all_options_given_with_multipl
                                        "--brokerage", brokerage,
                                        "--data-provider-live", data_feed1,
                                        "--data-provider-live", data_feed2,
-                                       *options])
+                                       *options],
+                                input="\n")
 
     traceback.print_exception(*result.exc_info)
 
@@ -873,7 +876,8 @@ def test_live_non_interactive_falls_back_to_lean_config_for_multiple_data_feed_s
                                                "--data-provider-live", data_feed1,
                                                "--data-provider-live", data_feed2,
                                                "--live-cash-balance", "USD:100",
-                                               *options])
+                                               *options],
+                                        input="\n\n")
 
             assert result.exit_code == 0
 
