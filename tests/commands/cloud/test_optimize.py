@@ -99,7 +99,7 @@ def test_cloud_optimize_runs_optimization_by_project_id() -> None:
     container = initialize_container(cloud_runner_to_use=cloud_runner, api_client_to_use=api_client)
     container.optimizer_config_manager = _get_optimizer_config_manager_mock()
 
-    result = CliRunner().invoke(lean, ["cloud", "optimize", "1"])
+    result = CliRunner().invoke(lean, ["cloud", "optimize", "1"], input="\n")
 
     assert result.exit_code == 0
 

@@ -164,7 +164,7 @@ def test_init_prompts_for_organization_if_option_not_passed() -> None:
     organization = _get_test_organization()
 
     with mock.patch.object(Logger, 'prompt_list', return_value=organization.id) as mock_prompt_list:
-        result = CliRunner().invoke(lean, ["init"])
+        result = CliRunner().invoke(lean, ["init"], input="\n")
 
     assert result.exit_code == 0
 
@@ -178,7 +178,8 @@ def test_init_uses_organization_given_as_option(use_name: bool) -> None:
 
     with mock.patch.object(Logger, 'prompt_list', return_value=None) as mock_prompt_list:
         result = CliRunner().invoke(lean,
-                                    ["init", "--organization", organization.name if use_name else organization.id])
+                                    ["init", "--organization", organization.name if use_name else organization.id],
+                                    input="\n")
 
     assert result.exit_code == 0
 
