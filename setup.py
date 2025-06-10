@@ -57,7 +57,7 @@ install_requires = [
     "joblib>=1.1.0",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}",
-    "pandas==2.1.4",
+    "pandas==2.1.4;python_version>'3.8'",
     "cryptography>=41.0.4",
 ]
 
