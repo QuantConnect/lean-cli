@@ -57,8 +57,6 @@ install_requires = [
     "joblib>=1.1.0",
     "setuptools",
     f"quantconnect-stubs{get_stubs_version_range()}",
-    # Match pandas version to use same as Lean (2.1.4). Except that 2.1.* is only supported on Python 3.9+.
-    "pandas==2.1.4;python_version>'3.8'",
     "cryptography>=41.0.4",
 ]
 
