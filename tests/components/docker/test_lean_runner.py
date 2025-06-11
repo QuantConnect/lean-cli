@@ -87,7 +87,7 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
                       docker_manager,
                       module_manager,
                       project_manager,
-                      TempManager(),
+                      TempManager(logger),
                       xml_manager)
 
 
