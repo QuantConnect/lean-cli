@@ -139,7 +139,7 @@ class CloudRunner:
         try:
             return self._task_manager.poll(
                 make_request=lambda: self._api_client.optimizations.get(created_optimization.optimizationId),
-                is_done=lambda data: data.status != "active" and data.status != "running",
+                is_done=lambda data: data.status != "active" and data.status != "running" and data.status != "new",
                 get_progress=lambda data: data.get_progress()
             )
         except KeyboardInterrupt as e:
