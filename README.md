@@ -363,9 +363,9 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
