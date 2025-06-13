@@ -453,6 +453,10 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
+  --tastytrade-environment [live|sandbox]
+                                  Whether Live or Sandbox environment should be used
+  --tastytrade-account-number TEXT
+                                  The Tastytrade account number
   --polygon-api-key TEXT          Your Polygon.io API Key
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
@@ -1296,9 +1300,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade]
                                   The live data provider to use
   --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca]
                                   Update the Lean configuration file to retrieve data from the given historical provider
@@ -1403,6 +1407,10 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
+  --tastytrade-environment [live|sandbox]
+                                  Whether Live or Sandbox environment should be used
+  --tastytrade-account-number TEXT
+                                  The Tastytrade account number
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
