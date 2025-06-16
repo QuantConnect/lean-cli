@@ -453,8 +453,8 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --tastytrade-environment [live|sandbox]
-                                  Whether Live or Sandbox environment should be used
+  --tastytrade-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
   --polygon-api-key TEXT          Your Polygon.io API Key
@@ -1407,8 +1407,8 @@ Options:
                                   The TradeStation account Id
   --alpaca-environment [live|paper]
                                   Whether Live or Paper environment should be used
-  --tastytrade-environment [live|sandbox]
-                                  Whether Live or Sandbox environment should be used
+  --tastytrade-environment [live|paper]
+                                  Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
   --ib-enable-delayed-streaming-data BOOLEAN
