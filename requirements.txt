@@ -8,5 +8,5 @@ pytest>=7.1.2,<8
 pyfakefs>=5.4.1,<6
 responses~=0.21
 lxml-stubs==0.4.0
-# Match pandas version to use same as Lean (2.1.4). Except that 2.1.* is only supported on Python 3.9+.
-pandas==2.1.4;python_version>='3.9'
+# Match pandas version to use same as Lean. Except that 2.1.* is only supported on Python 3.9+.
+pandas==2.2.3;python_version>='3.9'
