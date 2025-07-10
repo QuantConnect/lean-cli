@@ -377,8 +377,8 @@ Options:
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
   --ib-financial-advisors-group-filter TEXT
-                                  Use this field to filter data by a specific financial advisor group within your
-                                  Interactive Brokers account. Leave blank to include all groups. (Optional).
+                                  Filter Interactive Brokers orders by a specific Financial Advisor (FA) group.
+                                  (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
@@ -1319,8 +1319,8 @@ Options:
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
   --ib-financial-advisors-group-filter TEXT
-                                  Use this field to filter data by a specific financial advisor group within your
-                                  Interactive Brokers account. Leave blank to include all groups. (Optional).
+                                  Filter Interactive Brokers orders by a specific Financial Advisor (FA) group.
+                                  (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
