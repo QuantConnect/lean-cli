@@ -376,6 +376,9 @@ Options:
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
+  --ib-financial-advisors-group-filter TEXT
+                                  Use this field to filter data by a specific financial advisor group within your
+                                  Interactive Brokers account. Leave blank to include all groups. (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
@@ -1315,6 +1318,9 @@ Options:
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
+  --ib-financial-advisors-group-filter TEXT
+                                  Use this field to filter data by a specific financial advisor group within your
+                                  Interactive Brokers account. Leave blank to include all groups. (Optional).
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
