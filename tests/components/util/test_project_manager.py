@@ -164,7 +164,7 @@ def test_get_source_files_ignores_python_virtual_environments(directory: str) ->
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()
 
-    files = [project_path / "main.py", project_path / directory / "pyvenv.cfg"]
+    files = [project_path / "main.py", project_path / directory / "script.py", project_path / directory / "pyvenv.cfg"]
     for file in files:
         file.parent.mkdir(parents=True, exist_ok=True)
         file.touch()
@@ -174,6 +174,24 @@ def test_get_source_files_ignores_python_virtual_environments(directory: str) ->
 
     assert files_to_sync == [files[0]]
 
+@pytest.mark.parametrize("directory", ["conda", "my_conda"])
+def test_get_source_files_ignores_conda_virtual_environment(directory: str) -> None:
+    project_path = Path.cwd() / "My Project"
+    project_path.mkdir()
+
+    main_file = project_path / "main.py"
+    main_file.parent.mkdir(parents=True, exist_ok=True)
+    main_file.touch()
+
+    conda_meta_dir = project_path / directory / "conda-meta"
+    conda_meta_dir.mkdir(parents=True, exist_ok=True)
+    conda_script_file = project_path / directory / "script.py"
+    conda_script_file.touch()
+
+    project_manager = _create_project_manager()
+    files_to_sync = project_manager.get_source_files(project_path)
+
+    assert files_to_sync == [main_file]
 
 def test_update_last_modified_time_updates_file_properties() -> None:
     local_file = Path.cwd() / "file.txt"

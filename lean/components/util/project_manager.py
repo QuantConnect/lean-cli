@@ -137,7 +137,9 @@ class ProjectManager:
                 if (obj.name in reserved_names + output_reserved_names or
                         obj.name.startswith(".") or
                         # ignore python virtual environments
-                        (obj / "pyvenv.cfg").is_file()):
+                        (obj / "pyvenv.cfg").is_file() or
+                        (obj / "conda-meta").is_dir()
+                    ):
                     continue
 
                 source_files.extend(self.get_source_files(obj))
