@@ -36,7 +36,7 @@ def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logg
 
     # keep checking for new data every 5 seconds for 7 minutes
     while time() - start_time < 420:
-        logger.info("Will sleep 5 seconds and retry fetching authorization...")
+        logger.debug("Will sleep 5 seconds and retry fetching authorization...")
         sleep(5)
         data = auth0_client.read(brokerage_id)
         if data.authorization is None:
