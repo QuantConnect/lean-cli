@@ -40,16 +40,21 @@ _environment_skeleton = {
 }
 
 
-def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name: str) -> None:
-    """Starts IQConnect if the given environment uses IQFeed as data queue handler.
+def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], data_provider_type: str) -> None:
+    """Starts IQConnect if the specified data provider is IQFeed.
 
     :param lean_config: the LEAN configuration that should be used
-    :param environment_name: the name of the environment
+    :param data_provider_type: The fully qualified name of the data provider or data downloader.
     """
     from subprocess import Popen
 
-    environment = lean_config["environments"][environment_name]
-    if environment["data-queue-handler"] != "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler":
+    # Normalize and parse possible list
+    cleaned = data_provider_type.strip('[]')
+    types = [t.strip(' "\'') for t in cleaned.split(',')]
+
+    if not any(t.startswith("QuantConnect.Lean.DataSource.IQFeed.") for t in types):
+        container.logger.debug(
+            f"Exiting _start_iqconnect_if_necessary because data_provider_type does not use IQFeed: {data_provider_type}")
         return
 
     args = [lean_config["iqfeed-iqconnect"],
@@ -285,7 +290,7 @@ def deploy(project: Path,
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
 
-    _start_iqconnect_if_necessary(lean_config, environment_name)
+    _start_iqconnect_if_necessary(lean_config, lean_config["environments"][environment_name]["data-queue-handler"])
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
