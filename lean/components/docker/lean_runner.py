@@ -1018,6 +1018,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                 " - IQFeed is installed.\n"
                 " - You have permission to access the file."
             )
+            return
 
         self._logger.info("Waiting 10 seconds for IQFeed to start")
         from time import sleep
