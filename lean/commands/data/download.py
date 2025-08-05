@@ -17,7 +17,6 @@ from docker.types import Mount
 from typing import Any, Dict, Iterable, List, Optional
 from click import command, option, confirm, pass_context, Context, Choice, prompt
 from lean.click import LeanCommand, ensure_options
-from lean.commands.live.deploy import _start_iqconnect_if_necessary
 from lean.components.util.json_modules_handler import config_build_for_name
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -721,9 +720,6 @@ def download(ctx: Context,
                   type="bind",
                   read_only=True)
         )
-
-        # Run IQConnect if using the IQFeed data downloader
-        _start_iqconnect_if_necessary(lean_config, data_downloader_provider.get_settings()["data-downloader"])
 
         success = container.docker_manager.run_image(engine_image, **run_options)
 

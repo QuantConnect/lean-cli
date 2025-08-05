@@ -39,43 +39,6 @@ _environment_skeleton = {
     "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 }
 
-
-def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], data_provider_type: str) -> None:
-    """Starts IQConnect if the specified data provider is IQFeed.
-
-    :param lean_config: the LEAN configuration that should be used
-    :param data_provider_type: The fully qualified name of the data provider or data downloader.
-    """
-    from subprocess import Popen
-
-    # Normalize and parse possible list
-    cleaned = data_provider_type.strip('[]')
-    types = [t.strip(' "\'') for t in cleaned.split(',')]
-
-    if not any(t.startswith("QuantConnect.Lean.DataSource.IQFeed.") for t in types):
-        container.logger.debug(
-            f"Exiting _start_iqconnect_if_necessary because data_provider_type does not use IQFeed: {data_provider_type}")
-        return
-
-    args = [lean_config["iqfeed-iqconnect"],
-            "-product", lean_config["iqfeed-productName"],
-            "-version", lean_config["iqfeed-version"]]
-
-    username = lean_config.get("iqfeed-username", "")
-    if username != "":
-        args.extend(["-login", username])
-
-    password = lean_config.get("iqfeed-password", "")
-    if password != "":
-        args.extend(["-password", password])
-
-    Popen(args)
-
-    container.logger.info("Waiting 10 seconds for IQFeed to start")
-    from time import sleep
-    sleep(10)
-
-
 def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
     """ Get name for history providers based on the live data providers
 
@@ -289,8 +252,6 @@ def deploy(project: Path,
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
-
-    _start_iqconnect_if_necessary(lean_config, lean_config["environments"][environment_name]["data-queue-handler"])
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'
