@@ -1012,7 +1012,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         try:
             process = Popen(args)
         except FileNotFoundError:
-            raise RuntimeError(
+            self._logger.warn(
                 "IQFeed executable not found. Please check:\n"
                 " - The path in 'args' is correct.\n"
                 " - IQFeed is installed.\n"
@@ -1024,7 +1024,8 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         sleep(10)
 
         if process.poll() is not None:
-            raise RuntimeError(
+            self._logger.warn(
                 f"IQFeed failed to start (exit code {process.returncode}). "
-                "Check if IQFeed is installed, path is correct, and no other instance is running."
+                "It might already be running, or there was an error starting it. "
+                "Check if IQFeed is installed, the path is correct, and no issues with permissions."
             )
