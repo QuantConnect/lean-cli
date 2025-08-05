@@ -39,38 +39,6 @@ _environment_skeleton = {
     "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
 }
 
-
-def _start_iqconnect_if_necessary(lean_config: Dict[str, Any], environment_name: str) -> None:
-    """Starts IQConnect if the given environment uses IQFeed as data queue handler.
-
-    :param lean_config: the LEAN configuration that should be used
-    :param environment_name: the name of the environment
-    """
-    from subprocess import Popen
-
-    environment = lean_config["environments"][environment_name]
-    if environment["data-queue-handler"] != "QuantConnect.ToolBox.IQFeed.IQFeedDataQueueHandler":
-        return
-
-    args = [lean_config["iqfeed-iqconnect"],
-            "-product", lean_config["iqfeed-productName"],
-            "-version", lean_config["iqfeed-version"]]
-
-    username = lean_config.get("iqfeed-username", "")
-    if username != "":
-        args.extend(["-login", username])
-
-    password = lean_config.get("iqfeed-password", "")
-    if password != "":
-        args.extend(["-password", password])
-
-    Popen(args)
-
-    container.logger.info("Waiting 10 seconds for IQFeed to start")
-    from time import sleep
-    sleep(10)
-
-
 def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
     """ Get name for history providers based on the live data providers
 
@@ -284,8 +252,6 @@ def deploy(project: Path,
     if not lean_config["environments"][environment_name]["live-mode"]:
         raise MoreInfoError(f"The '{environment_name}' is not a live trading environment (live-mode is set to false)",
                             "https://www.lean.io/docs/v2/lean-cli/live-trading/brokerages/quantconnect-paper-trading")
-
-    _start_iqconnect_if_necessary(lean_config, environment_name)
 
     if python_venv is not None and python_venv != "":
         lean_config["python-venv"] = f'{"/" if python_venv[0] != "/" else ""}{python_venv}'

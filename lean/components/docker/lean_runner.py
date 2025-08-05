@@ -233,7 +233,7 @@ class LeanRunner:
                 lean_config[key] = "host.docker.internal"
 
         # Set up modules
-        set_up_common_csharp_options_called = self._setup_installed_packages(run_options, image)
+        set_up_common_csharp_options_called = self._setup_installed_packages(run_options, image, lean_config)
 
         # Set up language-specific run options
         self.setup_language_specific_run_options(run_options, project_dir, algorithm_file,
@@ -295,7 +295,7 @@ class LeanRunner:
                 lean_config[key] = "host.docker.internal"
 
         # Set up modules
-        self._setup_installed_packages(run_options, image, target_path)
+        self._setup_installed_packages(run_options, image, lean_config, target_path)
 
         self._mount_lean_config_and_finalize(run_options, lean_config, None, config_local_path)
 
@@ -340,7 +340,8 @@ class LeanRunner:
                 if "live-mode-brokerage" in environment:
                     output_config.set("brokerage", environment["live-mode-brokerage"].split(".")[-1])
 
-    def _setup_installed_packages(self, run_options: Dict[str, Any], image: DockerImage, target_path: str = "/Lean/Launcher/bin/Debug"):
+    def _setup_installed_packages(self, run_options: Dict[str, Any], image: DockerImage,
+                                  lean_config: Dict[str, Any], target_path: str = "/Lean/Launcher/bin/Debug"):
         """Sets up installed packages."""
         installed_packages = self._module_manager.get_installed_packages()
         if installed_packages:
@@ -364,6 +365,7 @@ class LeanRunner:
             for package in installed_packages:
                 self._logger.debug(f"LeanRunner._setup_installed_packages(): Adding module {package} to the project")
                 run_options["commands"].append(f"rm -rf /root/.nuget/packages/{package.name.lower()}")
+                self._ensure_iqconnect_running(lean_config, package.name)
                 run_options["commands"].append(f"dotnet add /ModulesProject package {package.name} --version {package.version}")
 
             # Copy all module files to /Lean/Launcher/bin/Debug, but don't overwrite anything that already exists
@@ -938,7 +940,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
 
             if "name" in extra_docker_config:
                 run_options["name"] = extra_docker_config["name"]
-            
+
             if "environment" in extra_docker_config:
                 target = run_options.get("environment")
                 if not target:
@@ -947,7 +949,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                     target.update({item[0]: item[1] for item in [
                         item if not isinstance(item, str) else (item.split("=")[0], item.split("=")[1]) for item in extra_docker_config["environment"]
                     ]})
-                elif isinstance(extra_docker_config["environment"], dict): 
+                elif isinstance(extra_docker_config["environment"], dict):
                     target.update(extra_docker_config["environment"])
                 else:
                     raise ValueError("Additional environment variables can be passed to the container in a dictionary, list of '{key}={value}' strings, or list of '(key, value)' tuples.")
@@ -975,3 +977,56 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                     if "read_only" in mount:
                         read_only = mount["read_only"]
                     target.append(Mount(target=mount["target"], source=mount["source"], type="bind", read_only=read_only))
+
+    def _ensure_iqconnect_running(self, lean_config: Dict[str, Any], data_provider_package_name: str) -> None:
+        """
+        Starts the IQConnect client if the given data provider is IQFeed.
+
+        :param lean_config: The LEAN configuration dictionary to use.
+        :param data_provider_package_name: The fully qualified name of the data provider or data downloader.
+        """
+
+        if data_provider_package_name != "QuantConnect.Lean.DataSource.IQFeed":
+            self._logger.debug(
+                f"Skipped starting IQConnect: data provider '{data_provider_package_name}' is not IQFeed."
+            )
+            return
+
+        args = [
+            lean_config["iqfeed-iqconnect"],
+            "-product", lean_config["iqfeed-productName"],
+            "-version", lean_config["iqfeed-version"],
+            "-autoconnect"
+        ]
+
+        username = lean_config.get("iqfeed-username", "")
+        if username != "":
+            args.extend(["-login", username])
+
+        password = lean_config.get("iqfeed-password", "")
+        if password != "":
+            args.extend(["-password", password])
+
+        from subprocess import Popen
+
+        try:
+            process = Popen(args)
+        except FileNotFoundError:
+            self._logger.warn(
+                "IQFeed executable not found. Please check:\n"
+                " - The path in 'args' is correct.\n"
+                " - IQFeed is installed.\n"
+                " - You have permission to access the file."
+            )
+            return
+
+        self._logger.info("Waiting 10 seconds for IQFeed to start")
+        from time import sleep
+        sleep(10)
+
+        if process.poll() is not None:
+            self._logger.warn(
+                f"IQFeed failed to start (exit code {process.returncode}). "
+                "It might already be running, or there was an error starting it. "
+                "Check if IQFeed is installed, the path is correct, and no issues with permissions."
+            )
