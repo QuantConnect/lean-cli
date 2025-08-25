@@ -235,10 +235,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -464,10 +464,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --eze-trading-account TEXT      Format: BANK;BRANCH;CUSTOMER;DEPOSIT
   --polygon-api-key TEXT          Your Polygon.io API Key
   --coinapi-api-key TEXT          Your coinapi.io Api Key
@@ -946,10 +946,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
@@ -1430,10 +1430,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --eze-trading-account TEXT      Format: BANK;BRANCH;CUSTOMER;DEPOSIT
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
@@ -1852,10 +1852,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -2103,10 +2103,10 @@ Options:
                                   Whether Live or Paper environment should be used
   --tastytrade-account-number TEXT
                                   The Tastytrade account number
-  --eze-domain TEXT               Possible values: LIGHTSPEED, LIGHTSPEEDDELAY
-  --eze-locale TEXT               Examples: global, americas, Live, Delayed, Americas
-  --eze-user-name TEXT            Provided by your broker
-  --eze-password TEXT             Provided by your broker
+  --eze-domain TEXT               Examples (broker provided): LIGHTSPEED, LIGHTSPEEDDELAY
+  --eze-locale TEXT               Examples (broker provided): GLOBAL, AMERICAS, LIVE, DELAYED
+  --eze-user-name TEXT            Your Eze Brokers username
+  --eze-password TEXT             Your Eze Brokers password
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
