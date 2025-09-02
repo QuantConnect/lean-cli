@@ -201,6 +201,8 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
@@ -470,6 +472,8 @@ Options:
   --eze-password TEXT             Your Eze Brokers password
   --eze-trading-account TEXT      Format: BANK;BRANCH;CUSTOMER;DEPOSIT
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
@@ -912,6 +916,8 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
@@ -1447,6 +1453,8 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --coinapi-api-key TEXT          Your coinapi.io Api Key
   --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
@@ -1818,6 +1826,8 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
@@ -2069,6 +2079,8 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
+  --polygon-license-type [Individual|Business]
+                                  Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
