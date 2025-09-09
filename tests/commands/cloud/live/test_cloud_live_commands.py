@@ -70,7 +70,7 @@ def test_cloud_live_deploy() -> None:
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
         "status": "stopped",
-        "stopped": "2024-07-10 19:12:20",
+        "stopped": "2024-07-10T19:12:20Z",
         "success": True,
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
@@ -171,7 +171,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
         "status": "stopped",
-        "stopped": "2024-07-10 19:12:20",
+        "stopped": "2024-07-10T19:12:20Z",
         "success": True,
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
@@ -261,7 +261,7 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
         "status": "stopped",
-        "stopped": "2024-07-10 19:12:20",
+        "stopped": "2024-07-10T19:12:20Z",
         "success": True,
         "portfolio": {"cash": {}, "holdings": {}}}
     container.api_client = api_client
@@ -351,7 +351,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
     api_client.nodes.get_all.return_value = create_qc_nodes()
     api_client.get.return_value = {
         "status": "stopped",
-        "stopped": "2024-07-10 19:12:20",
+        "stopped": "2024-07-10T19:12:20Z",
         "success": True,
         "portfolio": {"cash": {}, "holdings": {}}}
     container.api_client = api_client
