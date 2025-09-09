@@ -45,9 +45,9 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
         cloud_deployment = api_client.get("live/read", {"projectId": project_id})
         if cloud_deployment["success"] and cloud_deployment["status"] != "Undefined":
             if cloud_deployment["stopped"] is not None:
-                cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S")
+                cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%dT%H:%M:%SZ")
             else:
-                cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S")
+                cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%dT%H:%M:%SZ")
     cloud_last_time = datetime(cloud_last_time.year, cloud_last_time.month,
                                cloud_last_time.day, cloud_last_time.hour,
                                cloud_last_time.minute,
