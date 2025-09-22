@@ -34,7 +34,10 @@ from lean.models.encryption import ActionType
 @option("--key",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the encryption key to use")
-def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[bool], key: Optional[Path]) -> None:
+@option("--force",
+        is_flag=True, default=False,
+        help="Force push even if there's a lock conflict")
+def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[bool], key: Optional[Path], force: Optional[bool]) -> None:
     """Push local projects to QuantConnect.
 
     This command overrides the content of cloud files with the content of their respective local counterparts.
@@ -61,11 +64,11 @@ def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[boo
 
         if encrypt and key is not None:
             from lean.components.util.encryption_helper import validate_encryption_key_registered_with_cloud
-            validate_encryption_key_registered_with_cloud(key, container.organization_manager, container.api_client) 
+            validate_encryption_key_registered_with_cloud(key, container.organization_manager, container.api_client)
 
-        push_manager.push_project(project, encryption_action, key)
+        push_manager.push_project(project, encryption_action, key, force)
     else:
         if key is not None:
             raise RuntimeError(f"Encryption key can only be specified when pushing a single project.")
         projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
-        push_manager.push_projects(projects_to_push, [], encryption_action, key)
+        push_manager.push_projects(projects_to_push, [], encryption_action, key, force)

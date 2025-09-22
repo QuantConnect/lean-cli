@@ -82,7 +82,7 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
 
     assert result.exit_code == 0
 
-    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None, None)
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None, None, False)
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
@@ -469,3 +469,29 @@ Oae0ese2fAU8lmosUY95ghYxEOGrMHg5ZPklje/afjpxwKAAgTfWqozYPdpNL+MJEqrVA9YRq5wSvjuX
 UGw0ehtO8qY5FmPGcUlkBGuqmd7r6aLE4mosoZrc/UyZb+clWNYJITRLFJbQpWm3EU/Xrt5UM8uWwEdV
 bFWAAkX56MyDHwJefC1nkA=="""
 }
+
+def test_cloud_push_sets_code_source_id_to_cli() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "Python Project"
+
+    api_client = mock.Mock()
+    cloud_project = create_api_project(1, "Python Project")
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[
+        QCFullFile(name="file.py", content="print(123)", modified=datetime.now(), isLibrary=False)
+    ])
+
+    init_container(api_client_to_use=api_client)
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path])
+
+    assert result.exit_code == 0
+    expected_arguments = {
+        "name": "Python Project",
+        "description": "",
+        "files": mock.ANY,
+        "libraries": [],
+        "encryption_key": "",
+        "codeSourceId": "cli"
+    }
+    api_client.projects.update.assert_called_once_with(1, **expected_arguments)
