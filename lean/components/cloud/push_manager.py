@@ -148,7 +148,7 @@ class PushManager:
             if cloud_project.name != project_name:
                 # cloud project name was changed. Repeat steps to validate the new name locally.
                 self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
-                self._push_project(project_path, organization_id, encryption_action, encryption_key, Path.cwd() / cloud_project.name)
+                self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
                 return
 
             self._cloud_projects.append(cloud_project)
@@ -256,7 +256,6 @@ class PushManager:
 
         if not force:
             update_args["code_source_id"] = "cli"
-
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
 
