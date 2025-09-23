@@ -254,13 +254,15 @@ class PushManager:
                 encryption_key_id = get_project_key_hash(encryption_key)
                 update_args["encryption_key"] = encryption_key_id
 
+        if not force:
+            update_args["code_source_id"] = "cli"
+
         if update_args != {}:
             self._api_client.projects.update(cloud_project.projectId, **update_args)
 
             if "encryption_key" in update_args:
                 del update_args["encryption_key"]
-            if not force:
-                update_args["code_source_id"] = "cli"
+
             updated_keys = list(update_args)
             if len(updated_keys) == 1:
                 updated_keys_str = updated_keys[0]
