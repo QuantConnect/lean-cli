@@ -84,7 +84,7 @@ class ProjectClient:
                files: Optional[List[Dict[str, str]]] = None,
                libraries: Optional[List[int]] = None,
                encryption_key: Optional[str] = None,
-               code_source_id: Optional[str] = "cli") -> None:
+               code_source_id: Optional[str] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
