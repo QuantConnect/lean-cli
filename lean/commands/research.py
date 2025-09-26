@@ -112,6 +112,13 @@ def research(project: Path,
     environment_name = "backtesting"
     lean_config_manager = container.lean_config_manager
     lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, None)
+    
+    # If --verbose is given, we use the CompositeLogHandler
+    if container.logger.debug_logging_enabled:
+        lean_config["log-handler"] = "QuantConnect.Logging.CompositeLogHandler"
+    else:
+        lean_config["log-handler"] = "QuantConnect.Logging.FileLogHandler"
+
     lean_config["composer-dll-directory"] = LEAN_ROOT_PATH
     lean_config["research-object-store-name"] = algorithm_name
 
