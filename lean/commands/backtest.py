@@ -285,7 +285,9 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
 @option("--parameter",
               type=(str, str),
               multiple=True,
-              help="Key-value pairs to pass as backtest parameters")
+              help="Key-value pairs to pass as backtest parameters. "
+                    "Values can be string, int, or float.\n"
+                    "Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -402,9 +404,9 @@ def backtest(project: Path,
                                 kwargs, logger, environment_name, container_module_version)
 
     if parameter:
-        from lean.models.utils import parse_parameters
-        parameters = parse_parameters(parameter)
-        logger.info(f"Using parameters from command line: {parameters}")
+        from lean.components.config.lean_config_manager import LeanConfigManager
+        parameters = LeanConfigManager.parse_parameters(parameter)
+        logger.debug(f"Using parameters from command line: {parameters}")
         lean_config["parameters"] = parameters
 
     lean_runner = container.lean_runner

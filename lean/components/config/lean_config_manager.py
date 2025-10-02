@@ -13,8 +13,7 @@
 
 from os.path import normcase, normpath
 from pathlib import Path
-from typing import Any, Dict, Optional, List
-
+from typing import Any, Dict, Optional, List, Tuple, Union
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
@@ -353,3 +352,16 @@ class LeanConfigManager:
             # just in case slower fallback
             from json5 import loads
             return loads(content)
+
+    @staticmethod
+    def parse_parameters(parameters: List[Tuple[str, str]]) -> Dict[str, Union[int, float, str]]:
+        """Parse parameters from command line to appropriate types."""
+        parsed: Dict[str, Union[int, float, str]] = {}
+        for key, value in parameters:
+            try:
+                num = float(value)
+                parsed_value = int(num) if num.is_integer() else num
+            except ValueError:
+                parsed_value = value
+            parsed[key] = parsed_value
+        return parsed

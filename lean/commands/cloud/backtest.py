@@ -30,7 +30,9 @@ from lean.container import container
 @option("--parameter",
               type=(str, str),
               multiple=True,
-              help="Key-value pairs to pass as backtest parameters")
+              help="Key-value pairs to pass as backtest parameters. "
+                    "Values can be string, int, or float.\n"
+                    "Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05")
 def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, parameter: List[Tuple[str, str]]) -> None:
     """Backtest a project in the cloud.
 
@@ -58,8 +60,8 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, 
     if name is None:
         name = container.name_generator.generate_name()
 
-    from lean.models.utils import parse_parameters
-    parameters = parse_parameters(parameter)
+    from lean.components.config.lean_config_manager import LeanConfigManager
+    parameters = LeanConfigManager.parse_parameters(parameter)
 
     cloud_runner = container.cloud_runner
     finished_backtest = cloud_runner.run_backtest(cloud_project, name, parameters)

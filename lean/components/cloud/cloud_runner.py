@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from click import confirm
 
@@ -75,7 +75,7 @@ class CloudRunner:
             self._logger.error(f"Error checking backtest completion status for ID {backtest_data.backtestId}: {e}")
             raise
 
-    def run_backtest(self, project: QCProject, name: str, parameters: Dict[str, any] = None) -> QCBacktest:
+    def run_backtest(self, project: QCProject, name: str, parameters: Dict[str, Union[int, float, str]] = None) -> QCBacktest:
         """Runs a backtest in the cloud.
 
         :param project: the project to backtest
@@ -88,7 +88,7 @@ class CloudRunner:
 
         self._logger.info(f"Started backtest named '{name}' for project '{project.name}'")
         if parameters:
-            self._logger.info(f"Using parameters: {parameters}")
+            self._logger.debug(f"Using parameters: {parameters}")
         self._logger.info(f"Backtest url: {created_backtest.get_url()}")
 
         try:

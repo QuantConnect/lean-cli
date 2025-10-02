@@ -13,7 +13,6 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import List, Tuple, Dict
 
 from lean.models.pydantic import WrappedBaseModel
 
@@ -49,15 +48,3 @@ class LeanLibraryReference(WrappedBaseModel):
     """The information of a library reference in a project's config.json file"""
     name: str
     path: Path
-
-def parse_parameters(parameters: List[Tuple[str, str]]) -> Dict[str, any]:
-    """Parse parameters from command line to appropriate types."""
-    parsed = {}
-    for key, value in parameters:
-        try:
-            num = float(value)
-            parsed_value = int(num) if num.is_integer() else num
-        except ValueError:
-            parsed_value = value
-        parsed[key] = parsed_value
-    return parsed
