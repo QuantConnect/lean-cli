@@ -13,7 +13,7 @@
 
 from typing import List, Optional, Tuple
 from click import command, argument, option
-from lean.click import LeanCommand
+from lean.click import LeanCommand, backtest_parameter_option
 from lean.container import container
 
 @command(cls=LeanCommand)
@@ -27,12 +27,7 @@ from lean.container import container
               is_flag=True,
               default=False,
               help="Automatically open the results in the browser when the backtest is finished")
-@option("--parameter",
-              type=(str, str),
-              multiple=True,
-              help="Key-value pairs to pass as backtest parameters. "
-                    "Values can be string, int, or float.\n"
-                    "Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05")
+@backtest_parameter_option
 def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, parameter: List[Tuple[str, str]]) -> None:
     """Backtest a project in the cloud.
 

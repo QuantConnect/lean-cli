@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
 
-from lean.click import LeanCommand, PathParameter
+from lean.click import LeanCommand, PathParameter, backtest_parameter_option
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
@@ -282,12 +282,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
-@option("--parameter",
-              type=(str, str),
-              multiple=True,
-              help="Key-value pairs to pass as backtest parameters. "
-                    "Values can be string, int, or float.\n"
-                    "Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05")
+@backtest_parameter_option
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
