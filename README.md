@@ -253,6 +253,8 @@ Options:
   --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
                                   py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --parameter <TEXT TEXT>...      Key-value pairs to pass as backtest parameters. Values can be string, int, or float.
+                                  Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -308,11 +310,13 @@ Usage: lean cloud backtest [OPTIONS] PROJECT
   use the --push option to push local modifications to the cloud before running the backtest.
 
 Options:
-  --name TEXT  The name of the backtest (a random one is generated if not specified)
-  --push       Push local modifications to the cloud before running the backtest
-  --open       Automatically open the results in the browser when the backtest is finished
-  --verbose    Enable debug logging
-  --help       Show this message and exit.
+  --name TEXT                 The name of the backtest (a random one is generated if not specified)
+  --push                      Push local modifications to the cloud before running the backtest
+  --open                      Automatically open the results in the browser when the backtest is finished
+  --parameter <TEXT TEXT>...  Key-value pairs to pass as backtest parameters. Values can be string, int, or float.
+                              Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05
+  --verbose                   Enable debug logging
+  --help                      Show this message and exit.
 ```
 
 _See code: [lean/commands/cloud/backtest.py](lean/commands/cloud/backtest.py)_
