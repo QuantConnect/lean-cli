@@ -727,3 +727,85 @@ def test_backtest_calls_lean_runner_with_paths_to_mount() -> None:
                                                            False,
                                                            {},
                                                            {"some-config": "/path/to/file.json"})
+
+
+def test_backtest_with_parameters() -> None:
+    create_fake_lean_cli_directory()
+
+    # Run backtest with --parameter option
+    result = CliRunner().invoke(lean, [
+        "backtest", "Python Project",
+        "--parameter", "integer", "123",
+        "--parameter", "float", "456.789",
+        "--parameter", "string", "hello world",
+        "--parameter", "negative", "-42.5"
+    ])
+
+    assert result.exit_code == 0
+
+    container.lean_runner.run_lean.assert_called_once()
+    args, _ = container.lean_runner.run_lean.call_args
+
+    lean_config = args[0]
+    parameters = lean_config["parameters"]
+
+    # --parameter values should be parsed correctly
+    assert parameters["integer"] == 123.0
+    assert parameters["float"] == 456.789
+    assert parameters["string"] == "hello world"
+    assert parameters["negative"] == -42.5
+
+
+def test_backtest_parameters_override_config_json() -> None:
+    create_fake_lean_cli_directory()
+
+    # Add parameters in config.json
+    project_config_path = Path.cwd() / "Python Project" / "config.json"
+    current_content = project_config_path.read_text(encoding="utf-8")
+    config_dict = json.loads(current_content)
+    config_dict["parameters"] = {
+        "param1": 789,
+        "param2": 789.12
+    }
+    project_config_path.write_text(json.dumps(config_dict, indent=4))
+
+    # Run backtest without --parameter -> uses config.json parameters
+    result = CliRunner().invoke(lean, [
+        "backtest", "Python Project",
+    ])
+
+    assert result.exit_code == 0
+    assert container.lean_runner.run_lean.call_count == 1
+
+    args, _ = container.lean_runner.run_lean.call_args
+
+    lean_config = args[0]
+    parameters = lean_config["parameters"]
+
+    # parameters from config.json should be used
+    assert parameters["param1"] == 789
+    assert parameters["param2"] == 789.12
+
+    # Run backtest with --parameter -> should override config.json
+    result = CliRunner().invoke(lean, [
+        "backtest", "Python Project",
+        "--parameter", "integer", "123",
+        "--parameter", "float", "456.789",
+        "--parameter", "string", "hello world",
+        "--parameter", "negative", "-42.5"
+    ])
+
+    assert result.exit_code == 0
+    assert container.lean_runner.run_lean.call_count == 2
+
+    args, _ = container.lean_runner.run_lean.call_args
+    lean_config = args[0]
+    parameters = lean_config["parameters"]
+
+    # Only CLI --parameter values should remain
+    assert "param1" not in parameters
+    assert "param2" not in parameters
+    assert parameters["integer"] == 123
+    assert parameters["float"] == 456.789
+    assert parameters["string"] == "hello world"
+    assert parameters["negative"] == -42.5

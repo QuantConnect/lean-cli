@@ -53,7 +53,7 @@ def test_cloud_backtest_runs_project_by_id() -> None:
 
     assert result.exit_code == 0
 
-    cloud_runner.run_backtest.assert_called_once_with(project, mock.ANY)
+    cloud_runner.run_backtest.assert_called_once_with(project, mock.ANY, mock.ANY)
 
 
 def test_cloud_backtest_runs_project_by_name() -> None:
@@ -73,7 +73,7 @@ def test_cloud_backtest_runs_project_by_name() -> None:
 
     assert result.exit_code == 0
 
-    cloud_runner.run_backtest.assert_called_once_with(project, mock.ANY)
+    cloud_runner.run_backtest.assert_called_once_with(project, mock.ANY, mock.ANY)
 
 
 def test_cloud_backtest_uses_given_name() -> None:
@@ -240,3 +240,38 @@ def test_cloud_backtest_aborts_when_input_matches_no_cloud_project() -> None:
     assert result.exit_code != 0
 
     cloud_runner.run_backtest.assert_not_called()
+
+
+def test_cloud_backtest_with_parameters() -> None:
+    create_fake_lean_cli_directory()
+
+    project = create_api_project(1, "My Project")
+    backtest = create_api_backtest()
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [project]
+
+    cloud_runner = mock.Mock()
+    cloud_runner.run_backtest.return_value = backtest
+    initialize_container(api_client_to_use=api_client, cloud_runner_to_use=cloud_runner)
+
+    # Run cloud backtest with --parameter option
+    result = CliRunner().invoke(lean, [
+        "cloud", "backtest", "My Project",
+        "--parameter", "integer", "123",
+        "--parameter", "float", "456.789",
+        "--parameter", "string", "hello world",
+        "--parameter", "negative", "-42.5"
+    ])
+
+    assert result.exit_code == 0
+
+    cloud_runner.run_backtest.assert_called_once()
+    args, _ = cloud_runner.run_backtest.call_args
+    parameters = args[2]
+
+    # --parameter values should be parsed correctly
+    assert parameters["integer"] == 123.0
+    assert parameters["float"] == 456.789
+    assert parameters["string"] == "hello world"
+    assert parameters["negative"] == -42.5

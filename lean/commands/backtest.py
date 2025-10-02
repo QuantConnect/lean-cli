@@ -282,6 +282,10 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
+@option("--parameter",
+              type=(str, str),
+              multiple=True,
+              help="Key-value pairs to pass as backtest parameters")
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -298,6 +302,7 @@ def backtest(project: Path,
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
              no_update: bool,
+             parameter: List[Tuple[str, str]] = None,
              **kwargs) -> None:
     """Backtest a project locally using Docker.
 
@@ -395,6 +400,12 @@ def backtest(project: Path,
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
                                 kwargs, logger, environment_name, container_module_version)
+
+    if parameter:
+        from lean.models.utils import parse_parameters
+        parameters = parse_parameters(parameter)
+        logger.info(f"Using parameters from command line: {parameters}")
+        lean_config["parameters"] = parameters
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,

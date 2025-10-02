@@ -39,21 +39,27 @@ class BacktestClient:
 
         return QCBacktest(**data["backtest"])
 
-    def create(self, project_id: int, compile_id: str, name: str) -> QCBacktest:
+    def create(self, project_id: int, compile_id: str, name: str, parameters: Dict[str, any] = None) -> QCBacktest:
         """Creates a new backtest.
 
         :param project_id: the id of the project to create a backtest for
         :param compile_id: the id of a compilation of the given project
         :param name: the name of the new backtest
+        :param parameters: optional key-value parameters for the backtest
         :return: the created backtest
         """
         from lean import __version__
-        data = self._api.post("backtests/create", {
+        payload = {
             "projectId": project_id,
             "compileId": compile_id,
             "backtestName": name,
             "requestSource": f"CLI {__version__}"
-        })
+        }
+
+        if parameters:
+            payload["parameters"] = parameters
+
+        data = self._api.post("backtests/create", payload)
 
         return QCBacktest(**data["backtest"])
 
