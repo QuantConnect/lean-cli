@@ -299,7 +299,7 @@ def backtest(project: Path,
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
              no_update: bool,
-             parameter: List[Tuple[str, str]] = None,
+             parameter: List[Tuple[str, str]],
              **kwargs) -> None:
     """Backtest a project locally using Docker.
 
@@ -399,8 +399,7 @@ def backtest(project: Path,
                                 kwargs, logger, environment_name, container_module_version)
 
     if parameter:
-        from lean.components.config.lean_config_manager import LeanConfigManager
-        parameters = LeanConfigManager.parse_parameters(parameter)
+        parameters = dict(parameter)
         logger.debug(f"Using parameters from command line: {parameters}")
         lean_config["parameters"] = parameters
 

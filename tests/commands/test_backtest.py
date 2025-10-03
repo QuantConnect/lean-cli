@@ -750,10 +750,10 @@ def test_backtest_with_parameters() -> None:
     parameters = lean_config["parameters"]
 
     # --parameter values should be parsed correctly
-    assert parameters["integer"] == 123.0
-    assert parameters["float"] == 456.789
+    assert parameters["integer"] == "123"
+    assert parameters["float"] == "456.789"
     assert parameters["string"] == "hello world"
-    assert parameters["negative"] == -42.5
+    assert parameters["negative"] == "-42.5"
 
 
 def test_backtest_parameters_override_config_json() -> None:
@@ -805,7 +805,7 @@ def test_backtest_parameters_override_config_json() -> None:
     # Only CLI --parameter values should remain
     assert "param1" not in parameters
     assert "param2" not in parameters
-    assert parameters["integer"] == 123
-    assert parameters["float"] == 456.789
+    assert parameters["integer"] == "123"
+    assert parameters["float"] == "456.789"
     assert parameters["string"] == "hello world"
-    assert parameters["negative"] == -42.5
+    assert parameters["negative"] == "-42.5"

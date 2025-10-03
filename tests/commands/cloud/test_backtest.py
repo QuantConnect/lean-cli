@@ -271,7 +271,7 @@ def test_cloud_backtest_with_parameters() -> None:
     parameters = args[2]
 
     # --parameter values should be parsed correctly
-    assert parameters["integer"] == 123.0
-    assert parameters["float"] == 456.789
+    assert parameters["integer"] == "123"
+    assert parameters["float"] == "456.789"
     assert parameters["string"] == "hello world"
-    assert parameters["negative"] == -42.5
+    assert parameters["negative"] == "-42.5"

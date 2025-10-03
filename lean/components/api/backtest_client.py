@@ -10,7 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Union
 
 from lean.components.api.api_client import *
 from lean.models.api import QCBacktest
@@ -40,7 +39,7 @@ class BacktestClient:
 
         return QCBacktest(**data["backtest"])
 
-    def create(self, project_id: int, compile_id: str, name: str, parameters: Dict[str, Union[int, float, str]] = None) -> QCBacktest:
+    def create(self, project_id: int, compile_id: str, name: str, parameters: Dict[str, str] = None) -> QCBacktest:
         """Creates a new backtest.
 
         :param project_id: the id of the project to create a backtest for

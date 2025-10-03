@@ -55,8 +55,10 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, 
     if name is None:
         name = container.name_generator.generate_name()
 
-    from lean.components.config.lean_config_manager import LeanConfigManager
-    parameters = LeanConfigManager.parse_parameters(parameter)
+    parameters = None
+    if parameter:
+        parameters = dict(parameter)
+        logger.debug(f"Using parameters: {parameters}")
 
     cloud_runner = container.cloud_runner
     finished_backtest = cloud_runner.run_backtest(cloud_project, name, parameters)
