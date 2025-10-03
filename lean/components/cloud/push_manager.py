@@ -171,6 +171,13 @@ class PushManager:
         :param project: the local project to push the files of
         """
         paths = self._project_manager.get_source_files(project)
+
+        # First validate all file sizes
+        for path in paths:
+            is_valid, error_message = self._validate_file_size(path)
+            if not is_valid:
+                self._logger.error(error_message)
+
         if encryption_key:
             from lean.components.util.encryption_helper import get_appropriate_files_from_local_project
             organization_id = self._organization_manager.try_get_working_organization_id()
@@ -276,3 +283,27 @@ class PushManager:
             self._cloud_projects.append(project)
 
         return project
+
+    def _validate_file_size(self, file_path: Path) -> (bool, str):
+        """Validates that a file does not exceed the 10MB limit.
+
+        :param file_path: the path to the file being validated
+        :return: tuple (is_valid, error_message).
+                 is_valid is False if the file exceeds the 10MB limit,
+                 and error_message contains the details;
+                 otherwise, is_valid is True and error_message is empty.
+        """
+        max_file_size = 10 * 1024 * 1024  # 10MB in bytes
+
+        # Get file size directly from filesystem
+        size_in_bytes = file_path.stat().st_size
+
+        if size_in_bytes > max_file_size:
+            size_mb = size_in_bytes / (1024 * 1024)
+            error_msg = (
+                f"The file '{file_path.name}' exceeds the 10MB limit. "
+                f"Current size: {size_mb:.2f}MB"
+            )
+            return False, error_msg
+
+        return True, ''
