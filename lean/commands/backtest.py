@@ -399,9 +399,8 @@ def backtest(project: Path,
                                 kwargs, logger, environment_name, container_module_version)
 
     if parameter:
-        parameters = dict(parameter)
-        logger.debug(f"Using parameters from command line: {parameters}")
-        lean_config["parameters"] = parameters
+        # Override existing parameters if any are provided via --parameter
+        lean_config["parameters"] = lean_config_manager.get_parameters(parameter)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,

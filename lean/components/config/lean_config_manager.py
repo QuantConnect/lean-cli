@@ -13,8 +13,7 @@
 
 from os.path import normcase, normpath
 from pathlib import Path
-from typing import Any, Dict, Optional, List
-
+from typing import Any, Dict, Optional, List, Tuple
 
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.config.cli_config_manager import CLIConfigManager
@@ -353,3 +352,10 @@ class LeanConfigManager:
             # just in case slower fallback
             from json5 import loads
             return loads(content)
+
+    def get_parameters(self, parameters: List[Tuple[str, str]]) -> Dict[str, str]:
+        """Convert a list of (key, value) pairs into a dictionary."""
+        params_dict = dict(parameters)
+        if parameters:
+            self._logger.debug(f"Using parameters: {params_dict}")
+        return params_dict

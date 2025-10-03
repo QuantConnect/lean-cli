@@ -55,11 +55,7 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, 
     if name is None:
         name = container.name_generator.generate_name()
 
-    parameters = None
-    if parameter:
-        parameters = dict(parameter)
-        logger.debug(f"Using parameters: {parameters}")
-
+    parameters = container.lean_config_manager.get_parameters(parameter)
     cloud_runner = container.cloud_runner
     finished_backtest = cloud_runner.run_backtest(cloud_project, name, parameters)
 
