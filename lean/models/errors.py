@@ -26,6 +26,8 @@ class RequestFailedError(Exception):
         if message is None:
             request = response.request
             message = f"{request.method} request to {request.url} failed with status code {response.status_code}"
+            if response.status_code == 413:
+                message += "\nThe uploaded files exceed the allowed size limit. Please upload smaller files"
 
         super().__init__(message)
 
