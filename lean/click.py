@@ -404,3 +404,24 @@ def ensure_options(options: List[str]) -> None:
 You are missing the following option{"s" if len(missing_options) > 1 else ""}:
 {''.join(help_formatter.buffer)}
     """.strip())
+
+def backtest_parameter_option(func: FC) -> FC:
+    """Decorator that adds the --parameter option to Click commands.
+
+    This decorator can be used with both cloud and local backtest commands
+    to add support for passing parameters via command line.
+
+    Example usage:
+        @parameter_option
+        def backtest(...):
+            ...
+    """
+    func = option(
+        "--parameter",
+        type=(str, str),
+        multiple=True,
+        help="Key-value pairs to pass as backtest parameters. "
+             "Values can be string, int, or float.\n"
+             "Example: --parameter symbol AAPL --parameter period 10 --parameter threshold 0.05"
+    )(func)
+    return func

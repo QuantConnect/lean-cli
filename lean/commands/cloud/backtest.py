@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import List, Optional, Tuple
 from click import command, argument, option
-from lean.click import LeanCommand
+from lean.click import LeanCommand, backtest_parameter_option
 from lean.container import container
 
 @command(cls=LeanCommand)
@@ -27,7 +27,8 @@ from lean.container import container
               is_flag=True,
               default=False,
               help="Automatically open the results in the browser when the backtest is finished")
-def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) -> None:
+@backtest_parameter_option
+def backtest(project: str, name: Optional[str], push: bool, open_browser: bool, parameter: List[Tuple[str, str]]) -> None:
     """Backtest a project in the cloud.
 
     PROJECT must be the name or id of the project to run a backtest for.
@@ -54,8 +55,9 @@ def backtest(project: str, name: Optional[str], push: bool, open_browser: bool) 
     if name is None:
         name = container.name_generator.generate_name()
 
+    parameters = container.lean_config_manager.get_parameters(parameter)
     cloud_runner = container.cloud_runner
-    finished_backtest = cloud_runner.run_backtest(cloud_project, name)
+    finished_backtest = cloud_runner.run_backtest(cloud_project, name, parameters)
 
     if finished_backtest.error is None and finished_backtest.stacktrace is None:
         logger.info(finished_backtest.get_statistics_table())

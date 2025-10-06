@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
 
-from lean.click import LeanCommand, PathParameter
+from lean.click import LeanCommand, PathParameter, backtest_parameter_option
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
@@ -282,6 +282,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
+@backtest_parameter_option
 def backtest(project: Path,
              output: Optional[Path],
              detach: bool,
@@ -298,6 +299,7 @@ def backtest(project: Path,
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
              no_update: bool,
+             parameter: List[Tuple[str, str]],
              **kwargs) -> None:
     """Backtest a project locally using Docker.
 
@@ -395,6 +397,10 @@ def backtest(project: Path,
     # Configure addon modules
     build_and_configure_modules(addon_module, cli_addon_modules, organization_id, lean_config,
                                 kwargs, logger, environment_name, container_module_version)
+
+    if parameter:
+        # Override existing parameters if any are provided via --parameter
+        lean_config["parameters"] = lean_config_manager.get_parameters(parameter)
 
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
