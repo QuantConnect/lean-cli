@@ -284,7 +284,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
                    "This is recommended over --extra-docker-config on Windows to avoid shell quote issues.")
 @option("--docker-timeout",
               type=int,
-              help="Docker client timeout in seconds (default: 60). "
+              help="Timeout in seconds for Docker operations (default: 60). "
                    "Increase this for slow connections or large image pulls. "
                    "Can also be set via DOCKER_CLIENT_TIMEOUT environment variable.")
 @option("--no-update",
@@ -333,7 +333,8 @@ def backtest(project: Path,
     
     # Set Docker timeout if specified
     if docker_timeout is not None:
-        container.docker_manager._timeout = docker_timeout
+        container.docker_manager.set_timeout(docker_timeout)
+    
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager

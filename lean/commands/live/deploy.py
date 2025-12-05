@@ -172,8 +172,8 @@ def deploy(project: Path,
     
     # Set Docker timeout if specified
     if docker_timeout is not None:
-        container.docker_manager._timeout = docker_timeout
-
+        container.docker_manager.set_timeout(docker_timeout)
+    
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 

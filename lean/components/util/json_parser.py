@@ -37,18 +37,11 @@ def parse_json_safely(json_string: str) -> Dict[str, Any]:
         original_error = str(e)
     
     # Try fixing common Windows shell issues
-    # 1. Try adding back quotes that may have been stripped
-    attempts = [
-        json_string,
-        json_string.replace("'", '"'),  # Single quotes to double quotes
-        '{"' + json_string.strip('{}').replace(':', '":').replace(',', ',"') + '}',  # Add missing quotes
-    ]
-    
-    for attempt in attempts[1:]:  # Skip first as we already tried it
-        try:
-            return loads(attempt)
-        except JSONDecodeError:
-            continue
+    # Try single quotes to double quotes (common Windows PowerShell issue)
+    try:
+        return loads(json_string.replace("'", '"'))
+    except JSONDecodeError:
+        pass
     
     # If all attempts fail, provide helpful error message
     raise ValueError(
@@ -67,11 +60,18 @@ def load_json_from_file_or_string(
     """
     Loads JSON configuration from either a string or a file.
     
+    If both json_file and json_string are provided, json_file takes precedence.
+    
     :param json_string: JSON string to parse (optional)
     :param json_file: Path to JSON file (optional)
-    :return: Parsed dictionary
-    :raises ValueError: If both parameters are None or if parsing fails
+    :return: Parsed dictionary, or empty dict if both parameters are None
+    :raises ValueError: If parsing fails or if file doesn't exist
     """
+    # Validate that both parameters aren't provided (though we allow it, file takes precedence)
+    if json_file is not None and json_string is not None:
+        # Log a warning would be ideal, but we'll prioritize file as documented
+        pass
+    
     if json_file is not None:
         if not json_file.exists():
             raise ValueError(f"Configuration file not found: {json_file}")
@@ -91,4 +91,4 @@ def load_json_from_file_or_string(
     if json_string is not None:
         return parse_json_safely(json_string)
     
-    return {}
+    return {}

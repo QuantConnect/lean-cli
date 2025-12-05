@@ -40,6 +40,13 @@ class DockerManager:
         self._platform_manager = platform_manager
         self._timeout = timeout
 
+    def set_timeout(self, timeout: int) -> None:
+        """Set the timeout for Docker client operations.
+        
+        :param timeout: The timeout in seconds for Docker client operations
+        """
+        self._timeout = timeout
+
     def get_image_labels(self, image: str) -> str:
         docker_image = self._get_docker_client().images.get(image)
         return docker_image.labels.items()
@@ -575,7 +582,11 @@ class DockerManager:
             from os import environ
             
             # Check for environment variable override
-            timeout = int(environ.get("DOCKER_CLIENT_TIMEOUT", self._timeout))
+            try:
+                timeout = int(environ.get("DOCKER_CLIENT_TIMEOUT", self._timeout))
+            except ValueError:
+                # Fall back to instance timeout on invalid value
+                timeout = self._timeout
             
             docker_client = from_env(timeout=timeout)
         except Exception:
