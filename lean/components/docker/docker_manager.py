@@ -27,16 +27,18 @@ from lean.components.util.custom_json_encoder import DecimalEncoder
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
 
-    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager) -> None:
+    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager, timeout: int = 60) -> None:
         """Creates a new DockerManager instance.
 
         :param logger: the logger to use when printing messages
         :param temp_manager: the TempManager instance used when creating temporary directories
         :param platform_manager: the PlatformManager used when checking which operating system is in use
+        :param timeout: the timeout in seconds for Docker client operations (default: 60)
         """
         self._logger = logger
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
+        self._timeout = timeout
 
     def get_image_labels(self, image: str) -> str:
         docker_image = self._get_docker_client().images.get(image)
@@ -570,7 +572,12 @@ class DockerManager:
 
         try:
             from docker import from_env
-            docker_client = from_env()
+            from os import environ
+            
+            # Check for environment variable override
+            timeout = int(environ.get("DOCKER_CLIENT_TIMEOUT", self._timeout))
+            
+            docker_client = from_env(timeout=timeout)
         except Exception:
             raise error
 

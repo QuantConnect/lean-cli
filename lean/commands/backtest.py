@@ -278,6 +278,15 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               default="{}",
               help="Extra docker configuration as a JSON string. "
                    "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
+@option("--extra-docker-config-file",
+              type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+              help="Path to a JSON file with extra docker configuration. "
+                   "This is recommended over --extra-docker-config on Windows to avoid shell quote issues.")
+@option("--docker-timeout",
+              type=int,
+              help="Docker client timeout in seconds (default: 60). "
+                   "Increase this for slow connections or large image pulls. "
+                   "Can also be set via DOCKER_CLIENT_TIMEOUT environment variable.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -298,6 +307,8 @@ def backtest(project: Path,
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
+             extra_docker_config_file: Optional[Path],
+             docker_timeout: Optional[int],
              no_update: bool,
              parameter: List[Tuple[str, str]],
              **kwargs) -> None:
@@ -316,9 +327,13 @@ def backtest(project: Path,
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from datetime import datetime
-    from json import loads
+    from lean.components.util.json_parser import load_json_from_file_or_string
 
     logger = container.logger
+    
+    # Set Docker timeout if specified
+    if docker_timeout is not None:
+        container.docker_manager._timeout = docker_timeout
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager
@@ -402,6 +417,12 @@ def backtest(project: Path,
         # Override existing parameters if any are provided via --parameter
         lean_config["parameters"] = lean_config_manager.get_parameters(parameter)
 
+    # Parse extra Docker configuration from string or file
+    parsed_extra_docker_config = load_json_from_file_or_string(
+        json_string=extra_docker_config if extra_docker_config != "{}" else None,
+        json_file=extra_docker_config_file
+    )
+    
     lean_runner = container.lean_runner
     lean_runner.run_lean(lean_config,
                          environment_name,
@@ -411,5 +432,5 @@ def backtest(project: Path,
                          debugging_method,
                          release,
                          detach,
-                         loads(extra_docker_config),
+                         parsed_extra_docker_config,
                          paths_to_mount)

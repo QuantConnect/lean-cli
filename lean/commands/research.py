@@ -71,6 +71,15 @@ def _check_docker_output(chunk: str, port: int) -> None:
               default="{}",
               help="Extra docker configuration as a JSON string. "
                    "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
+@option("--extra-docker-config-file",
+              type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+              help="Path to a JSON file with extra docker configuration. "
+                   "This is recommended over --extra-docker-config on Windows to avoid shell quote issues.")
+@option("--docker-timeout",
+              type=int,
+              help="Timeout in seconds for Docker operations (default: 60). "
+                   "Increase this for slow connections or large image pulls. "
+                   "Can also be set via DOCKER_CLIENT_TIMEOUT environment variable.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -86,6 +95,8 @@ def research(project: Path,
              update: bool,
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
+             extra_docker_config_file: Optional[Path],
+             docker_timeout: Optional[int],
              no_update: bool,
              **kwargs) -> None:
     """Run a Jupyter Lab environment locally using Docker.
@@ -96,9 +107,13 @@ def research(project: Path,
     """
     from docker.types import Mount
     from docker.errors import APIError
-    from json import loads
+    from lean.components.util.json_parser import load_json_from_file_or_string
 
     logger = container.logger
+    
+    # Set Docker timeout if specified
+    if docker_timeout is not None:
+        container.docker_manager._timeout = docker_timeout
 
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(project, not_throw = True)
@@ -195,7 +210,12 @@ def research(project: Path,
     run_options["commands"].append("./start.sh")
 
     # Add known additional run options from the extra docker config
-    LeanRunner.parse_extra_docker_config(run_options, loads(extra_docker_config))
+    # Parse extra Docker configuration from string or file
+    parsed_extra_docker_config = load_json_from_file_or_string(
+        json_string=extra_docker_config if extra_docker_config != "{}" else None,
+        json_file=extra_docker_config_file
+    )
+    LeanRunner.parse_extra_docker_config(run_options, parsed_extra_docker_config)
 
     try:
         container.docker_manager.run_image(research_image, **run_options)

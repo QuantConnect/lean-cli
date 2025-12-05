@@ -110,6 +110,15 @@ def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
               default="{}",
               help="Extra docker configuration as a JSON string. "
                    "For more information https://docker-py.readthedocs.io/en/stable/containers.html")
+@option("--extra-docker-config-file",
+              type=PathParameter(exists=True, file_okay=True, dir_okay=False),
+              help="Path to a JSON file with extra docker configuration. "
+                   "This is recommended over --extra-docker-config on Windows to avoid shell quote issues.")
+@option("--docker-timeout",
+              type=int,
+              help="Timeout in seconds for Docker operations (default: 60). "
+                   "Increase this for slow connections or large image pulls. "
+                   "Can also be set via DOCKER_CLIENT_TIMEOUT environment variable.")
 @option("--no-update",
               is_flag=True,
               default=False,
@@ -131,6 +140,8 @@ def deploy(project: Path,
            addon_module: Optional[List[str]],
            extra_config: Optional[Tuple[str, str]],
            extra_docker_config: Optional[str],
+           extra_docker_config_file: Optional[Path],
+           docker_timeout: Optional[int],
            no_update: bool,
            **kwargs) -> None:
     """Start live trading a project locally using Docker.
@@ -155,9 +166,13 @@ def deploy(project: Path,
     """
     from copy import copy
     from datetime import datetime
-    from json import loads
+    from lean.components.util.json_parser import load_json_from_file_or_string
 
     logger = container.logger
+    
+    # Set Docker timeout if specified
+    if docker_timeout is not None:
+        container.docker_manager._timeout = docker_timeout
 
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
@@ -323,5 +338,8 @@ def deploy(project: Path,
                          None,
                          release,
                          detach,
-                         loads(extra_docker_config),
+                         load_json_from_file_or_string(
+                             json_string=extra_docker_config if extra_docker_config != "{}" else None,
+                             json_file=extra_docker_config_file
+                         ),
                          paths_to_mount)
