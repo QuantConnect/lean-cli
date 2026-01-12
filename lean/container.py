@@ -102,7 +102,10 @@ class Container:
 
         self.docker_manager = docker_manager
         if not self.docker_manager:
-            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager)
+            from os import environ
+            # Get timeout from environment variable, default to 60 seconds
+            timeout = int(environ.get("DOCKER_CLIENT_TIMEOUT", 60))
+            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager, timeout)
 
         self.project_manager = ProjectManager(self.logger,
                                               self.project_config_manager,
