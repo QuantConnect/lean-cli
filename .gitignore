@@ -9,6 +9,9 @@ __pycache__/
 # JetBrains Rider
 .idea/
 
+# OS Files
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
