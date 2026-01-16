@@ -139,6 +139,7 @@ DEFAULT_CSHARP_MAIN = """
     using QuantConnect.Interfaces;
     using QuantConnect.Algorithm;
     using QuantConnect.Indicators;
+    using QuantConnect.Indicators.CandlestickPatterns;
     using QuantConnect.Data;
     using QuantConnect.Data.Auxiliary;
     using QuantConnect.Data.Consolidators;
