@@ -33,14 +33,18 @@ def list(key: str):
     try:
         headers = ["key", "size", "folder", "name"]
         display_headers = ["Key", "Bytes", "Folder", "Filename"]
-        rows = [[str(obj.get(header, "")) for header in headers] for obj in data['objects']]
+        objects = data.get('objects')
+
+        if objects is None or not objects:
+            logger.info(f"No objects found at '{key}'.")
+            return
+
+        rows = [[str(obj.get(header, "")) for header in headers] for obj in objects]
         # sort rows by key
         rows.sort(key=lambda x: x[0])
         all_rows = [display_headers] + rows
         column_widths = [max(len(row[i]) for row in all_rows) for i in range(len(all_rows[0]))]
         for row in all_rows:
             logger.info("  ".join(value.ljust(width) for value, width in zip(row, column_widths)))
-    except KeyError as e:
-        logger.error(f"Key {key} not found.")
     except Exception as e:
         logger.error(f"Error: {e}")
