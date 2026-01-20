@@ -117,7 +117,7 @@ def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
 @option("--no-browser",
         is_flag=True,
         default=False,
-        help="Display OAuth URL without opening browser.")
+        help="Display OAuth URL without opening the browser.")
 def deploy(project: Path,
            environment: Optional[str],
            output: Optional[Path],
