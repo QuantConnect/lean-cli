@@ -16,13 +16,14 @@ from lean.components.api.api_client import Auth0Client
 from lean.components.util.logger import Logger
 
 
-def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int) -> QCAuth0Authorization:
+def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int, no_browser: bool = False) -> QCAuth0Authorization:
     """Gets the authorization data for a brokerage, authorizing if necessary.
 
     :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.
     :param brokerage_id: The ID of the brokerage to get the authorization data for.
     :param logger: An instance of Logger, handling all output printing.
     :param project_id: The local or cloud project_id.
+    :param no_browser: whether to disable opening the browser
     :return: The authorization data for the specified brokerage.
     """
     from time import time, sleep
@@ -32,7 +33,7 @@ def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logg
         return data
 
     start_time = time()
-    auth0_client.authorize(brokerage_id, logger, project_id)
+    auth0_client.authorize(brokerage_id, logger, project_id, no_browser)
 
     # keep checking for new data every 5 seconds for 7 minutes
     while time() - start_time < 420:

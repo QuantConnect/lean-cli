@@ -52,12 +52,13 @@ class Auth0Client:
             return QCAuth0Authorization(authorization=None)
 
     @staticmethod
-    def authorize(brokerage_id: str, logger: Logger,  project_id: int) -> None:
+    def authorize(brokerage_id: str, logger: Logger,  project_id: int, no_browser: bool = False) -> None:
         """Starts the authorization process for a brokerage.
 
         :param brokerage_id: the id of the brokerage to start the authorization process for
         :param logger: the logger instance to use
         :param project_id: The local or cloud project_id
+        :param no_browser: whether to disable opening the browser
         """
         from webbrowser import open
 
@@ -65,6 +66,10 @@ class Auth0Client:
 
         logger.info(f"Please open the following URL in your browser to authorize the LEAN CLI.")
         logger.info(full_url)
+
+        if no_browser:
+            return
+
         open(full_url)
 
 

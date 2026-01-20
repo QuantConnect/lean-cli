@@ -195,7 +195,8 @@ class JsonModule(ABC):
                      interactive: bool,
                      properties: Dict[str, Any] = {},
                      hide_input: bool = False,
-                     environment_name: str = None) -> 'JsonModule':
+                     environment_name: str = None,
+                     no_browser: bool = False) -> 'JsonModule':
         """Builds a new instance of this class, prompting the user for input when necessary.
 
         :param lean_config: the Lean configuration dict to read defaults from
@@ -204,6 +205,7 @@ class JsonModule(ABC):
         :param properties: the properties that passed as options
         :param hide_input: whether to hide secrets inputs
         :param environment_name: the target environment name
+        :param no_browser: whether to disable opening the browser
         :return: self
         """
         logger.debug(f'Configuring {self._display_name}')
@@ -237,7 +239,7 @@ class JsonModule(ABC):
                                                                 configuration.require_project_id)
                 logger.debug(f'project_id: {lean_config["project-id"]}')
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
-                                                        logger, lean_config["project-id"])
+                                                        logger, lean_config["project-id"], no_browser=no_browser)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:

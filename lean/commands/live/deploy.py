@@ -114,6 +114,10 @@ def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
               is_flag=True,
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
+@option("--no-browser",
+        is_flag=True,
+        default=False,
+        help="Display OAuth URL without opening browser.")
 def deploy(project: Path,
            environment: Optional[str],
            output: Optional[Path],
@@ -132,6 +136,7 @@ def deploy(project: Path,
            extra_config: Optional[Tuple[str, str]],
            extra_docker_config: Optional[str],
            no_update: bool,
+           no_browser: bool,
            **kwargs) -> None:
     """Start live trading a project locally using Docker.
 
@@ -206,22 +211,22 @@ def deploy(project: Path,
     if brokerage:
         # user provided brokerage, check all arguments were provided
         brokerage_instance = non_interactive_config_build_for_name(lean_config, brokerage, cli_brokerages, kwargs,
-                                                                   logger, environment_name)
+                                                                   logger, environment_name, no_browser=no_browser)
     else:
         # let the user choose the brokerage
         brokerage_instance = interactive_config_build(lean_config, cli_brokerages, logger, kwargs, show_secrets,
                                                       "Select a brokerage", multiple=False,
-                                                      environment_name=environment_name)
+                                                      environment_name=environment_name, no_browser=no_browser)
 
     if data_provider_live and len(data_provider_live) > 0:
         for data_feed_name in data_provider_live:
             data_feed = non_interactive_config_build_for_name(lean_config, data_feed_name, cli_data_queue_handlers,
-                                                              kwargs, logger, environment_name)
+                                                              kwargs, logger, environment_name, no_browser=no_browser)
             data_provider_live_instances.append(data_feed)
     else:
         data_provider_live_instances = interactive_config_build(lean_config, cli_data_queue_handlers, logger, kwargs,
                                                                 show_secrets, "Select a live data feed", multiple=True,
-                                                                environment_name=environment_name)
+                                                                environment_name=environment_name, no_browser=no_browser)
 
     # based on the live data providers we set up the history providers
     data_provider_live = [provider.get_name() for provider in data_provider_live_instances]
@@ -229,7 +234,7 @@ def deploy(project: Path,
         data_provider_historical = "Local"
     data_downloader_instances = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                                       cli_data_downloaders, kwargs, logger,
-                                                                      environment_name)
+                                                                      environment_name, no_browser=no_browser)
     if history_providers is None or len(history_providers) == 0:
         history_providers = _get_history_provider_name(data_provider_live)
     for history_provider in history_providers:
