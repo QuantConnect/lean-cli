@@ -41,14 +41,12 @@ jobs:
             --ignore-missing-imports \
             --check-untyped-defs \
             --show-error-codes \
-            --no-error-summary 2>&1)
+            --no-error-summary 2>&1 || true)
           
-          missing_args=$(echo "$mypy_output" | grep -E "Missing positional argument|\[call-arg\]")
-          
-          if [ -n "$missing_args" ]; then
-            echo "❌ ERROR: Missing function arguments detected:"
+          if echo "$mypy_output" | grep -q -E "Missing positional argument|\[call-arg\]"; then
+            echo "ERROR: Missing function arguments detected:"
             echo ""
-            echo "$missing_args"
+            echo "$mypy_output" | grep -E "Missing positional argument|\[call-arg\]"
             echo ""
             echo "When adding/removing parameters from methods, ensure all call sites are updated."
             exit 1
