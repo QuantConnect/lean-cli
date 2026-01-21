@@ -25,6 +25,25 @@ jobs:
           pip install setuptools==69.5.1 wheel
           pip install -r requirements.txt
 
+      # Static analysis tools
+      - name: Install static analysis tools
+        if: runner.os == 'Linux'
+        run: |
+          pip install mypy==1.8.0
+          pip install flake8==7.0.0
+          pip install black==24.1.1
+
+      - name: Run static code analysis
+        if: runner.os == 'Linux'
+        run: |
+          # Critical checks
+          mypy lean/ --ignore-missing-imports --check-untyped-defs
+          flake8 lean/ --select=F821 --ignore=ALL
+          
+          # Warning checks (don't fail the build)
+          flake8 lean/ --select=F401 --ignore=ALL --exit-zero
+          black --check lean/ --quiet || true
+
       - name: Run tests
         run: python -m pytest -s -rs
 
