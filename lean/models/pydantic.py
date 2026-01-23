@@ -16,9 +16,9 @@ if pydantic_version.startswith("1."):
     # We keep all this imports here, even if not used like validator, so other files can import them through this file
     # to avoid having to check the pydantic version in every file.
     # All imports should be done through this file to avoid pydantic version related errors.
-    from pydantic import BaseModel, ValidationError
+    from pydantic import BaseModel, ValidationError, Field, validator
 else:
-    from pydantic.v1 import BaseModel, ValidationError
+    from pydantic.v1 import BaseModel, ValidationError, Field, validator
 
 class WrappedBaseModel(BaseModel):
     """A version of Pydantic's BaseModel which makes the input data accessible in case of a validation error."""
