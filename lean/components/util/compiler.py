@@ -111,12 +111,13 @@ def _compile() -> Dict[str, Any]:
         "mounts": [],
         "volumes": {}
     }
-    lean_runner.mount_project_and_library_directories(project_dir, run_options)
-    lean_runner.setup_language_specific_run_options(run_options, project_dir, algorithm_file, False, False)
 
     project_config = project_config_manager.get_project_config(project_dir)
     engine_image = cli_config_manager.get_engine_image(
         project_config.get("engine-image", None))
+
+    lean_runner.mount_project_and_library_directories(project_dir, run_options)
+    lean_runner.setup_language_specific_run_options(run_options, project_dir, algorithm_file, False, False, engine_image)
 
     message["result"] = docker_manager.run_image(engine_image, **run_options)
     temp_manager.delete_temporary_directories_when_done = False
@@ -153,8 +154,7 @@ def _parse_python_errors(python_output: str, color_coding_required: bool) -> lis
                 errors.append(f"{bcolors.FAIL}Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}{bcolors.ENDC}\n")
             else:
                 errors.append(f"Build Error File: {match[0]} Line {match[1]} Column {match[2]} - {match[3]}\n")
-
-        for match in re.findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
+        for match in findall(r"\*\*\* Sorry: ([^(]+) \(([^,]+), line (\d+)\)", python_output):
             if color_coding_required:
                 errors.append(f"{bcolors.FAIL}Build Error File: {match[1]} Line {match[2]} Column 0 - {match[0]}{bcolors.ENDC}\n")
             else:

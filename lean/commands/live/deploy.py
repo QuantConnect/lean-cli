@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from click import option, argument, Choice
 from lean.click import LeanCommand, PathParameter
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
