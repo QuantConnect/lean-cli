@@ -29,7 +29,7 @@ jobs:
       - name: Static Code Analysis
         if: runner.os == 'Linux'
         run: |
-          pip install mypy==1.15.0 flake8==7.0.0
+          pip install mypy==1.14.1 flake8==7.0.0
           python static_analysis.py
 
       - name: Run tests
