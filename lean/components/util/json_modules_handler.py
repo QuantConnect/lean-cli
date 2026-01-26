@@ -41,9 +41,9 @@ def build_and_configure_modules(target_modules: List[str], module_list: List[Jso
 
 def non_interactive_config_build_for_name(lean_config: Dict[str, Any], target_module_name: str,
                                           module_list: List[JsonModule], properties: Dict[str, Any], logger: Logger,
-                                          environment_name: str = None) -> JsonModule:
+                                          environment_name: str = None, no_browser: bool = False) -> JsonModule:
     return config_build_for_name(lean_config, target_module_name, module_list, properties, logger, interactive=False,
-                                 environment_name=environment_name)
+                                 environment_name=environment_name, no_browser=no_browser)
 
 
 def find_module(target_module_name: str, module_list: List[JsonModule], logger: Logger) -> JsonModule:
@@ -79,17 +79,17 @@ def find_module(target_module_name: str, module_list: List[JsonModule], logger: 
 
 def config_build_for_name(lean_config: Dict[str, Any], target_module_name: str, module_list: List[JsonModule],
                           properties: Dict[str, Any], logger: Logger, interactive: bool,
-                          environment_name: str = None) -> JsonModule:
+                          environment_name: str = None, no_browser: bool = False) -> JsonModule:
     target_module = find_module(target_module_name, module_list, logger)
     target_module.config_build(lean_config, logger, interactive=interactive, properties=properties,
-                               environment_name=environment_name)
+                               environment_name=environment_name, no_browser=no_browser)
     _update_settings(logger, environment_name, target_module, lean_config)
     return target_module
 
 
 def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], logger: Logger,
                              user_provided_options: Dict[str, Any], show_secrets: bool, select_message: str,
-                             multiple: bool, environment_name: str = None) -> [JsonModule]:
+                             multiple: bool, environment_name: str = None, no_browser: bool = False) -> [JsonModule]:
     """Interactively configures the brokerage to use.
 
     :param lean_config: the LEAN configuration that should be used
@@ -100,6 +100,7 @@ def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], 
     :param select_message: the user facing selection message
     :param multiple: true if multiple selections are allowed
     :param environment_name: the target environment name
+    :param no_browser: whether to disable opening the browser
     :return: the brokerage the user configured
     """
     options = [Option(id=b, label=b.get_name()) for b in models]
@@ -113,7 +114,7 @@ def interactive_config_build(lean_config: Dict[str, Any], models: [JsonModule], 
 
     for module in modules:
         module.config_build(lean_config, logger, interactive=True, properties=user_provided_options,
-                            hide_input=not show_secrets, environment_name=environment_name)
+                            hide_input=not show_secrets, environment_name=environment_name, no_browser=no_browser)
         _update_settings(logger, environment_name, module, lean_config)
     if multiple:
         return modules

@@ -202,6 +202,10 @@ def _configure_auto_restart(logger: Logger) -> bool:
               default=False,
               help="Automatically open the live results in the browser once the deployment starts")
 @option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
+@option("--no-browser",
+        is_flag=True,
+        default=False,
+        help="Display OAuth URL without opening the browser")
 def deploy(project: str,
            brokerage: str,
            data_provider_live: Optional[str],
@@ -218,6 +222,7 @@ def deploy(project: str,
            push: bool,
            open_browser: bool,
            show_secrets: bool,
+           no_browser: bool,
            **kwargs) -> None:
     """Start live trading for a project in the cloud.
 
@@ -246,7 +251,7 @@ def deploy(project: str,
         ensure_options(["brokerage", "node", "auto_restart", "notify_order_events", "notify_insights"])
 
         brokerage_instance = non_interactive_config_build_for_name(lean_config, brokerage, cloud_brokerages,
-                                                                   kwargs, logger)
+                                                                   kwargs, logger, no_browser=no_browser)
         notify_methods = []
         if notify_emails is not None:
             for config in notify_emails.split(","):
@@ -288,7 +293,7 @@ def deploy(project: str,
     else:
         # let the user choose the brokerage
         brokerage_instance = interactive_config_build(lean_config, cloud_brokerages, logger, kwargs, show_secrets,
-                                                      "Select a brokerage", multiple=False)
+                                                      "Select a brokerage", multiple=False, no_browser=no_browser)
 
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
@@ -304,13 +309,13 @@ def deploy(project: str,
         # the user sent the live data provider to use
         for data_provider in data_provider_live:
             data_provider_instance = non_interactive_config_build_for_name(lean_config, data_provider,
-                                                                           cloud_data_queue_handlers, kwargs, logger)
+                                                                           cloud_data_queue_handlers, kwargs, logger, no_browser=no_browser)
 
             live_data_provider_settings.update({data_provider_instance.get_id(): data_provider_instance.get_settings()})
     else:
         # let's ask the user which live data providers to use
         data_feed_instances = interactive_config_build(lean_config, cloud_data_queue_handlers, logger, kwargs,
-                                                       show_secrets, "Select a live data feed", multiple=True)
+                                                       show_secrets, "Select a live data feed", multiple=True, no_browser=no_browser)
         for data_feed in data_feed_instances:
             settings = data_feed.get_settings()
 
@@ -354,7 +359,6 @@ def deploy(project: str,
                                            live_holdings)
 
     logger.info(f"Live url: {live_algorithm.get_url()}")
-
     if open_browser:
         from webbrowser import open
         open(live_algorithm.get_url())

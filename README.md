@@ -509,6 +509,7 @@ Options:
   --push                          Push local modifications to the cloud before starting live trading
   --open                          Automatically open the live results in the browser once the deployment starts
   --show-secrets                  Show secrets as they are input
+  --no-browser                    Display OAuth URL without opening the browser
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
 ```
@@ -1507,6 +1508,7 @@ Options:
   --extra-docker-config TEXT      Extra docker configuration as a JSON string. For more information https://docker-
                                   py.readthedocs.io/en/stable/containers.html
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
+  --no-browser                    Display OAuth URL without opening the browser
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
