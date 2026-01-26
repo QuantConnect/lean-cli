@@ -97,7 +97,7 @@ def main() -> None:
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
     except Exception as exception:
-        from traceback import format_exc, print_exc
+        from traceback import format_exc
         from click import UsageError, Abort
         from requests import exceptions
         from io import StringIO

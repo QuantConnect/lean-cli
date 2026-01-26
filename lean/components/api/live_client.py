@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from typing import List, Optional
 
 from lean.components.api.api_client import *
-from lean.models.api import QCFullLiveAlgorithm, QCLiveAlgorithmStatus, QCMinimalLiveAlgorithm, QCNotificationMethod, QCRestResponse
+from lean.models.api import QCFullLiveAlgorithm, QCMinimalLiveAlgorithm, QCNotificationMethod, QCRestResponse
 
 
 class LiveClient:

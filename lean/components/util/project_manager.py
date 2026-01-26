@@ -366,7 +366,6 @@ class ProjectManager:
         """
         from shutil import which
         from subprocess import run, STDOUT, PIPE
-        from lean.models.errors import MoreInfoError
 
         if no_local:
             return
