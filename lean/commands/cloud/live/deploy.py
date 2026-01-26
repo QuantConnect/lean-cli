@@ -205,7 +205,7 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @option("--no-browser",
         is_flag=True,
         default=False,
-        help="Display OAuth URL without opening the browser.")
+        help="Display OAuth URL without opening the browser")
 def deploy(project: str,
            brokerage: str,
            data_provider_live: Optional[str],
