@@ -14,25 +14,15 @@
 import subprocess
 import sys
 
-def display_warning_summary(warnings):
-    print("\nWarnings:")
-    unused_count = sum(1 for e in warnings if e.startswith('F401:'))
-    if unused_count > 0:
-        print(f"  - Unused imports: {unused_count}")
+MYPY_IGNORE_PATTERNS = [
+    'click.', 'subprocess.', 'Module "',
+    'has incompatible type "Optional',
+    'validator', 'pydantic', '__call__',
+    'OnlyValueValidator', 'V1Validator',
+    'QCParameter', 'QCBacktest'
+]
 
-    print("  Consider addressing warnings in future updates.")
-
-def run_analysis():
-    print("Running static analysis...")
-    print("=" * 60)
-
-    all_critical_errors = []
-    all_warnings = []
-
-    # Check for missing arguments with mypy - CRITICAL
-    print("\n1. Checking for missing function arguments...")
-    print("-" * 40)
-
+def run_mypy_check():
     result = subprocess.run(
         ["python", "-m", "mypy", "lean/",
          "--show-error-codes",
@@ -43,119 +33,97 @@ def run_analysis():
         text=True
     )
 
-    # Filter for critical call argument mismatches
-    call_arg_errors = []
-
-    for line in (result.stdout + result.stderr).split('\n'):
-        if not line.strip():
+    errors = []
+    for line in result.stdout.splitlines() + result.stderr.splitlines():
+        if not line.strip() or '[call-arg]' not in line:
             continue
 
-        # Look for call-arg errors (this covers both "too many" and "missing" arguments)
-        if '[call-arg]' in line:
-            # Skip false positives
-            if any(pattern in line for pattern in
-                   ['click.', 'subprocess.', 'Module "', 'has incompatible type "Optional',
-                    'validator', 'pydantic', '__call__', 'OnlyValueValidator', 'V1Validator',
-                    'QCParameter', 'QCBacktest']):
-                continue
-            call_arg_errors.append(line.strip())
+        # Skip false positives
+        if any(pattern in line for pattern in MYPY_IGNORE_PATTERNS):
+            continue
 
-    # Display call argument mismatches
-    if call_arg_errors:
-        print("CRITICAL: Missing function arguments found:")
-        for error in call_arg_errors:
-            # Clean path for better display
-            clean_error = error.replace('/home/runner/work/lean-cli/lean-cli/', '')
-            print(f"  {clean_error}")
+        errors.append(line.strip())
 
-        all_critical_errors.extend(call_arg_errors)
-    else:
-        print("No argument mismatch errors found")
+    return errors
 
-    # Check for undefined variables with flake8 - CRITICAL
-    print("\n2. Checking for undefined variables...")
-    print("-" * 40)
-
+def run_flake8_check(select_code):
     result = subprocess.run(
         ["python", "-m", "flake8", "lean/",
-         "--select=F821",
+         f"--select={select_code}",
          "--ignore=ALL",
-         "--count"],
-        capture_output=True,
-        text=True
-    )
-
-    if result.stdout.strip() and result.stdout.strip() != "0":
-        detail = subprocess.run(
-            ["python", "-m", "flake8", "lean/", "--select=F821", "--ignore=ALL"],
-            capture_output=True,
-            text=True
-        )
-
-        undefined_errors = [e.strip() for e in detail.stdout.split('\n') if e.strip()]
-        print(f"CRITICAL: {len(undefined_errors)} undefined variable(s) found:")
-
-        for error in undefined_errors:
-            print(f"  {error}")
-
-        all_critical_errors.extend([f"F821: {e}" for e in undefined_errors])
-    else:
-        print("No undefined variables found")
-
-    # Check for unused imports with flake8 - WARNING
-    print("\n3. Checking for unused imports...")
-    print("-" * 40)
-
-    result = subprocess.run(
-        ["python", "-m", "flake8", "lean/",
-         "--select=F401",
-         "--ignore=ALL",
-         "--count",
          "--exit-zero"],
         capture_output=True,
         text=True
     )
 
-    if result.stdout.strip() and result.stdout.strip() != "0":
-        detail = subprocess.run(
-            ["python", "-m", "flake8", "lean/", "--select=F401", "--ignore=ALL", "--exit-zero"],
-            capture_output=True,
-            text=True
-        )
+    errors = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return errors, len(errors)
 
-        unused_imports = [e.strip() for e in detail.stdout.split('\n') if e.strip()]
-        if unused_imports:
-            print(f"WARNING: {len(unused_imports)} unused import(s) found:")
-
-            for error in unused_imports:
-                print(f"  {error}")
-
-            all_warnings.extend([f"F401: {e}" for e in unused_imports])
-        else:
-            print("No unused imports found")
+def display_errors(title, errors, is_critical = True):
+    level = "CRITICAL" if is_critical else "WARNING"
+    if errors:
+        print(f"{level}: {len(errors)} {title} found:")
+        for error in errors:
+            # Clean path for better display
+            clean_error = error.replace('/home/runner/work/lean-cli/lean-cli/', '')
+            print(f"  {clean_error}")
     else:
-        print("No unused imports found")
+        print(f"No {title} found")
 
-    print("\n" + "=" * 60)
+def display_warning_summary(unused_count):
+    print("\nWarnings:")
+    if unused_count > 0:
+        print(f"  - Unused imports: {unused_count}")
+    print("  Consider addressing warnings in future updates.")
+
+def run_analysis() -> int:
+    print("Running static analysis...")
+    print("=" * 60)
+
+    critical_error_count = 0
+    warning_count = 0
+
+    # Check for missing function arguments with mypy
+    print("\n1. Checking for missing function arguments...")
+    print("-" * 40)
+
+    call_arg_errors = run_mypy_check()
+    display_errors("function call argument mismatch(es)", call_arg_errors)
+    critical_error_count += len(call_arg_errors)
+
+    # Check for undefined variables with flake8
+    print("\n2. Checking for undefined variables...")
+    print("-" * 40)
+
+    undefined_errors, undefined_count = run_flake8_check("F821")
+    display_errors("undefined variable(s)", undefined_errors)
+    critical_error_count += undefined_count
+
+    # Check for unused imports with flake8
+    print("\n3. Checking for unused imports...")
+    print("-" * 40)
+
+    unused_imports, unused_count = run_flake8_check("F401")
+    display_errors("unused import(s)", unused_imports, is_critical=False)
+    warning_count += unused_count
 
     # Summary
-    if all_critical_errors:
-        total_errors = len(all_critical_errors)
-        print(f"BUILD FAILED: Found {total_errors} critical error(s)")
+    print("\n" + "=" * 60)
 
+    if critical_error_count > 0:
+        print(f"BUILD FAILED: Found {critical_error_count} critical error(s)")
         print("\nSummary of critical errors:")
         print(f"  - Function call argument mismatches: {len(call_arg_errors)}")
-        undefined_count = sum(1 for e in all_critical_errors if e.startswith('F821:'))
         print(f"  - Undefined variables: {undefined_count}")
 
-        if all_warnings:
-            display_warning_summary(all_warnings)
+        if warning_count > 0:
+            display_warning_summary(unused_count)
 
         return 1
 
-    if all_warnings:
-        print(f"BUILD PASSED with {len(all_warnings)} warning(s)")
-        display_warning_summary(all_warnings)
+    if warning_count > 0:
+        print(f"BUILD PASSED with {warning_count} warning(s)")
+        display_warning_summary(unused_count)
         return 0
 
     print("SUCCESS: All checks passed with no warnings")
