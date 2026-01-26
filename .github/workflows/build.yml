@@ -27,7 +27,7 @@ jobs:
 
       # Static analysis tools
       - name: Static Code Analysis
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.python-version != '3.8'
         run: |
           pip install mypy==1.19.1 flake8==7.3.0
           python static_analysis.py
