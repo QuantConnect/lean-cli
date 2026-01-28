@@ -83,7 +83,8 @@ class ProjectClient:
                python_venv: Optional[int] = None,
                files: Optional[List[Dict[str, str]]] = None,
                libraries: Optional[List[int]] = None,
-               encryption_key: Optional[str] = None) -> None:
+               encryption_key: Optional[str] = None,
+               code_source_id: Optional[str] = None) -> None:
         """Updates an existing project.
 
         :param project_id: the id of the project to update
@@ -94,6 +95,7 @@ class ProjectClient:
         :param python_venv: the python venv id for the project, or None if the python venv shouldn't be changed
         :param files: the list of files for the project
         :param libraries: the list of libraries referenced by the project
+        :param code_source_id: the source of the code changes (e.g., "cli")
         """
         request_parameters = {
             "projectId": project_id
@@ -136,7 +138,10 @@ class ProjectClient:
 
         if encryption_key is not None:
             request_parameters["encryptionKey"] = encryption_key
-            
+
+        if code_source_id is not None:
+            request_parameters["codeSourceId"] = code_source_id
+
         self._api.post("projects/update", request_parameters, data_as_json=False)
 
     def delete(self, project_id: int) -> None:
