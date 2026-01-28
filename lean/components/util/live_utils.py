@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.util.logger import Logger
+from lean.models.errors import RequestFailedError
 from lean.models.json_module import LiveInitialStateInput, JsonModule
 from collections import UserDict
 
@@ -41,13 +42,19 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from datetime import datetime
 
     cloud_last_time = utc.localize(datetime.min)
+
     if project_id:
-        cloud_deployment = api_client.get("live/read", {"projectId": project_id})
-        if cloud_deployment["success"] and cloud_deployment["status"] != "Undefined":
-            if cloud_deployment["stopped"] is not None:
-                cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S")
-            else:
-                cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S")
+        try:
+            cloud_deployment = api_client.get("live/read", {"projectId": project_id})
+            if cloud_deployment["success"] and cloud_deployment["status"] != "Undefined":
+                if cloud_deployment["stopped"] is not None:
+                    cloud_last_time = datetime.strptime(cloud_deployment["stopped"], "%Y-%m-%d %H:%M:%S")
+                else:
+                    cloud_last_time = datetime.strptime(cloud_deployment["launched"], "%Y-%m-%d %H:%M:%S")
+        except RequestFailedError as e:
+            if "No live deployment found" not in str(e):
+                raise
+
     cloud_last_time = datetime(cloud_last_time.year, cloud_last_time.month,
                                cloud_last_time.day, cloud_last_time.hour,
                                cloud_last_time.minute,
