@@ -20,7 +20,6 @@ from lean.components.util.logger import Logger
 from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
-from lean.models.errors import RequestFailedError
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
 
@@ -84,6 +83,8 @@ class PushManager:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
+                if "write permission" in str(ex).lower():
+                    self._logger.info("Please pull any required changes and push with --force")
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -258,11 +259,7 @@ class PushManager:
         if not force:
             update_args["code_source_id"] = "cli"
         if update_args != {}:
-            try:
-                self._api_client.projects.update(cloud_project.projectId, **update_args)
-            except RequestFailedError as e:
-                self._logger.info("Please pull any required changes and push with --force")
-                raise
+            self._api_client.projects.update(cloud_project.projectId, **update_args)
 
             if "encryption_key" in update_args:
                 del update_args["encryption_key"]
