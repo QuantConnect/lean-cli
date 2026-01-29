@@ -15,6 +15,7 @@ from pathlib import Path
 from unittest import mock
 from datetime import datetime
 
+import pytest
 from click.testing import CliRunner
 
 from lean.commands import lean
@@ -82,7 +83,7 @@ def test_cloud_push_pushes_single_project_when_project_option_given() -> None:
 
     assert result.exit_code == 0
 
-    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None, None)
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project", None, None, False)
 
 
 def test_cloud_push_aborts_when_given_directory_is_not_lean_project() -> None:
@@ -203,7 +204,8 @@ def test_cloud_push_sends_encrypted_files_and_turns_on_encryption_with_encrypted
         "description": "",
         "files":[{'name': name, 'content': content} for name, content in expected_encrypted_files.items()],
         "libraries": [],
-        "encryption_key": key_hash
+        "encryption_key": key_hash,
+        "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
@@ -272,7 +274,8 @@ def test_cloud_push_sends_decrypted_files_and_turns_off_encryption_with_decrypte
         "description": "",
         "files": [{'name': 'main.py', 'content': '# region imports\nfrom AlgorithmImports import *\n# endregion\n\nclass PythonProject(QCAlgorithm):\n\n    def initialize(self):\n        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data\n        self.set_start_date(2013, 10, 7)  # Set Start Date\n        self.set_end_date(2013, 10, 11)  # Set End Date\n        self.set_cash(100000)  # Set Strategy Cash\n        self.add_equity("SPY", Resolution.MINUTE)\n\n    def on_data(self, data: Slice):\n        """on_data event is the primary entry point for your algorithm. Each new data point will be pumped in here.\n            Arguments:\n                data: Slice object keyed by symbol containing the stock data\n        """\n        if not self.portfolio.invested:\n            self.set_holdings("SPY", 1)\n            self.debug("Purchased Stock")\n'}, {'name': 'research.ipynb', 'content': '{\n    "cells": [\n        {\n            "cell_type": "markdown",\n            "metadata": {},\n            "source": [\n                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",\n                "<hr>"\n            ]\n        },\n        {\n            "cell_type": "code",\n            "execution_count": null,\n            "metadata": {},\n            "outputs": [],\n            "source": [\n                "# QuantBook Analysis Tool \\n",\n                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",\n                "qb = QuantBook()\\n",\n                "spy = qb.add_equity(\\"SPY\\")\\n",\n                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",\n                "qb.set_start_date(2013, 10, 11)\\n",\n                "history = qb.history(qb.securities.keys(), 360, Resolution.DAILY)\\n",\n                "\\n",\n                "# Indicator Analysis\\n",\n                "bbdf = qb.indicator(BollingerBands(30, 2), spy.symbol, 360, Resolution.DAILY)\\n",\n                "bbdf.drop(\'standarddeviation\', axis=1).plot()"\n            ]\n        }\n    ],\n    "metadata": {\n        "kernelspec": {\n            "display_name": "Python 3",\n            "language": "python",\n            "name": "python3"\n        }\n    },\n    "nbformat": 4,\n    "nbformat_minor": 2\n}\n'}],
         "libraries": [],
-        "encryption_key": ''
+        "encryption_key": '',
+        "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
@@ -314,7 +317,8 @@ def test_cloud_push_sends_decrypted_files_when_project_in_encrypted_state_with_d
         "description": "",
         "files": [{'name': 'main.py', 'content': '# region imports\nfrom AlgorithmImports import *\n# endregion\n\nclass PythonProject(QCAlgorithm):\n\n    def initialize(self):\n        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data\n        self.set_start_date(2013, 10, 7)  # Set Start Date\n        self.set_end_date(2013, 10, 11)  # Set End Date\n        self.set_cash(100000)  # Set Strategy Cash\n        self.add_equity("SPY", Resolution.MINUTE)\n\n    def on_data(self, data: Slice):\n        """on_data event is the primary entry point for your algorithm. Each new data point will be pumped in here.\n            Arguments:\n                data: Slice object keyed by symbol containing the stock data\n        """\n        if not self.portfolio.invested:\n            self.set_holdings("SPY", 1)\n            self.debug("Purchased Stock")\n'}, {'name': 'research.ipynb', 'content': '{\n    "cells": [\n        {\n            "cell_type": "markdown",\n            "metadata": {},\n            "source": [\n                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",\n                "<hr>"\n            ]\n        },\n        {\n            "cell_type": "code",\n            "execution_count": null,\n            "metadata": {},\n            "outputs": [],\n            "source": [\n                "# QuantBook Analysis Tool \\n",\n                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",\n                "qb = QuantBook()\\n",\n                "spy = qb.add_equity(\\"SPY\\")\\n",\n                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",\n                "qb.set_start_date(2013, 10, 11)\\n",\n                "history = qb.history(qb.securities.keys(), 360, Resolution.DAILY)\\n",\n                "\\n",\n                "# Indicator Analysis\\n",\n                "bbdf = qb.indicator(BollingerBands(30, 2), spy.symbol, 360, Resolution.DAILY)\\n",\n                "bbdf.drop(\'standarddeviation\', axis=1).plot()"\n            ]\n        }\n    ],\n    "metadata": {\n        "kernelspec": {\n            "display_name": "Python 3",\n            "language": "python",\n            "name": "python3"\n        }\n    },\n    "nbformat": 4,\n    "nbformat_minor": 2\n}\n'}],
         "libraries": [],
-        "encryption_key": ''
+        "encryption_key": '',
+        "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
@@ -359,7 +363,8 @@ def test_cloud_push_encrypts_when_local_files_in_encrypted_state_and_cloud_proje
         "description": "",
         "files":[{'name': name, 'content': content} for name, content in expected_encrypted_files.items()],
         "libraries": [],
-        "encryption_key": key_hash
+        "encryption_key": key_hash,
+        "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
@@ -388,7 +393,8 @@ def test_cloud_push_decrypted_when_local_files_in_decrypted_state_and_cloud_proj
         "description": "",
         "files": [{'name': 'main.py', 'content': '# region imports\nfrom AlgorithmImports import *\n# endregion\n\nclass PythonProject(QCAlgorithm):\n\n    def initialize(self):\n        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data\n        self.set_start_date(2013, 10, 7)  # Set Start Date\n        self.set_end_date(2013, 10, 11)  # Set End Date\n        self.set_cash(100000)  # Set Strategy Cash\n        self.add_equity("SPY", Resolution.MINUTE)\n\n    def on_data(self, data: Slice):\n        """on_data event is the primary entry point for your algorithm. Each new data point will be pumped in here.\n            Arguments:\n                data: Slice object keyed by symbol containing the stock data\n        """\n        if not self.portfolio.invested:\n            self.set_holdings("SPY", 1)\n            self.debug("Purchased Stock")\n'}, {'name': 'research.ipynb', 'content': '{\n    "cells": [\n        {\n            "cell_type": "markdown",\n            "metadata": {},\n            "source": [\n                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",\n                "<hr>"\n            ]\n        },\n        {\n            "cell_type": "code",\n            "execution_count": null,\n            "metadata": {},\n            "outputs": [],\n            "source": [\n                "# QuantBook Analysis Tool \\n",\n                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",\n                "qb = QuantBook()\\n",\n                "spy = qb.add_equity(\\"SPY\\")\\n",\n                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",\n                "qb.set_start_date(2013, 10, 11)\\n",\n                "history = qb.history(qb.securities.keys(), 360, Resolution.DAILY)\\n",\n                "\\n",\n                "# Indicator Analysis\\n",\n                "bbdf = qb.indicator(BollingerBands(30, 2), spy.symbol, 360, Resolution.DAILY)\\n",\n                "bbdf.drop(\'standarddeviation\', axis=1).plot()"\n            ]\n        }\n    ],\n    "metadata": {\n        "kernelspec": {\n            "display_name": "Python 3",\n            "language": "python",\n            "name": "python3"\n        }\n    },\n    "nbformat": 4,\n    "nbformat_minor": 2\n}\n'}],
         "libraries": [],
-        "encryption_key": ''
+        "encryption_key": '',
+        "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
@@ -469,3 +475,40 @@ Oae0ese2fAU8lmosUY95ghYxEOGrMHg5ZPklje/afjpxwKAAgTfWqozYPdpNL+MJEqrVA9YRq5wSvjuX
 UGw0ehtO8qY5FmPGcUlkBGuqmd7r6aLE4mosoZrc/UyZb+clWNYJITRLFJbQpWm3EU/Xrt5UM8uWwEdV
 bFWAAkX56MyDHwJefC1nkA=="""
 }
+
+@pytest.mark.parametrize("force_flag, expected_code_source_id", [
+    (False, "cli"),
+    (True, None),
+])
+def test_cloud_push_code_source_id_behavior(force_flag: bool, expected_code_source_id: str) -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "Python Project"
+
+    api_client = mock.Mock()
+    cloud_project = create_api_project(1, "Python Project")
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[
+        QCFullFile(name="file.py", content="print(123)", modified=datetime.now(), isLibrary=False)
+    ])
+
+    init_container(api_client_to_use=api_client)
+
+    command = ["cloud", "push", "--project", project_path]
+    if force_flag:
+        command.append("--force")
+
+    result = CliRunner().invoke(lean, command)
+    assert result.exit_code == 0
+
+    expected_arguments = {
+        "name": "Python Project",
+        "description": "",
+        "files": [{'name': 'main.py', 'content': '# region imports\nfrom AlgorithmImports import *\n# endregion\n\nclass PythonProject(QCAlgorithm):\n\n    def initialize(self):\n        # Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data\n        self.set_start_date(2013, 10, 7)  # Set Start Date\n        self.set_end_date(2013, 10, 11)  # Set End Date\n        self.set_cash(100000)  # Set Strategy Cash\n        self.add_equity("SPY", Resolution.MINUTE)\n\n    def on_data(self, data: Slice):\n        """on_data event is the primary entry point for your algorithm. Each new data point will be pumped in here.\n            Arguments:\n                data: Slice object keyed by symbol containing the stock data\n        """\n        if not self.portfolio.invested:\n            self.set_holdings("SPY", 1)\n            self.debug("Purchased Stock")\n'}, {'name': 'research.ipynb', 'content': '{\n    "cells": [\n        {\n            "cell_type": "markdown",\n            "metadata": {},\n            "source": [\n                "![QuantConnect Logo](https://cdn.quantconnect.com/web/i/icon.png)\\n",\n                "<hr>"\n            ]\n        },\n        {\n            "cell_type": "code",\n            "execution_count": null,\n            "metadata": {},\n            "outputs": [],\n            "source": [\n                "# QuantBook Analysis Tool \\n",\n                "# For more information see [https://www.quantconnect.com/docs/v2/our-platform/research/getting-started]\\n",\n                "qb = QuantBook()\\n",\n                "spy = qb.add_equity(\\"SPY\\")\\n",\n                "# Locally Lean installs free sample data, to download more data please visit https://www.quantconnect.com/docs/v2/lean-cli/datasets/downloading-data \\n",\n                "qb.set_start_date(2013, 10, 11)\\n",\n                "history = qb.history(qb.securities.keys(), 360, Resolution.DAILY)\\n",\n                "\\n",\n                "# Indicator Analysis\\n",\n                "bbdf = qb.indicator(BollingerBands(30, 2), spy.symbol, 360, Resolution.DAILY)\\n",\n                "bbdf.drop(\'standarddeviation\', axis=1).plot()"\n            ]\n        }\n    ],\n    "metadata": {\n        "kernelspec": {\n            "display_name": "Python 3",\n            "language": "python",\n            "name": "python3"\n        }\n    },\n    "nbformat": 4,\n    "nbformat_minor": 2\n}\n'}],
+        "libraries": [],
+        "encryption_key": "",
+    }
+
+    if expected_code_source_id is not None:
+        expected_arguments["code_source_id"] = expected_code_source_id
+
+    api_client.projects.update.assert_called_once_with(1, **expected_arguments)
