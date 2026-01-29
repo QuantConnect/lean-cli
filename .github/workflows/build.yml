@@ -70,7 +70,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-latest]
+        os: [ubuntu-22.04, macos-14, windows-latest]
         python-version: ["3.10"]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
@@ -103,7 +103,7 @@ jobs:
         shell: bash
 
       - name: Create Portable Macos
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-14'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -130,7 +130,7 @@ jobs:
         shell: bash
 
       - name: Zip package and notarize Macos
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-14'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
