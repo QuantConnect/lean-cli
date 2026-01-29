@@ -743,6 +743,7 @@ Options:
   --encrypt            Push your local files and encrypt them before saving on the cloud
   --decrypt            Push your local files and decrypt them before saving on the cloud
   --key FILE           Path to the encryption key to use
+  --force              Force push even if there's a lock conflict
   --verbose            Enable debug logging
   --help               Show this message and exit.
 ```
