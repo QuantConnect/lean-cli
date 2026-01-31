@@ -340,6 +340,20 @@ class DataServerClient:
         """
         return self._backtest_request("get", f"/{backtest_id}/results")
 
+    def get_backtest_insights(self, backtest_id: str) -> List[Dict[str, Any]]:
+        """Gets the alpha insights for a backtest.
+
+        :param backtest_id: the backtest UUID
+        :return: list of insights from the Alpha Framework
+        """
+        url = f"{self._base_url}/api/v1/backtests/{backtest_id}/insights"
+        response = self._http_client.request("get", url, headers=self._get_headers(), raise_for_status=False)
+
+        if response.status_code < 200 or response.status_code >= 300:
+            raise RequestFailedError(response)
+
+        return response.json()
+
     def get_latest_backtest(self, status: str = "completed") -> Optional[Dict[str, Any]]:
         """Gets the most recent backtest with the given status.
 
