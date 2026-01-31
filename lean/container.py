@@ -15,12 +15,15 @@ from pathlib import Path
 from typing import Union, Any, Optional, Tuple
 
 from lean.components.api.api_client import APIClient
+from lean.components.api.data_server_client import DataServerClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.path_manager import PathManager
 from lean.components.cloud.cloud_project_manager import CloudProjectManager
 from lean.components.cloud.cloud_runner import CloudRunner
 from lean.components.cloud.data_downloader import DataDownloader
+from lean.components.cloud.data_server_pull_manager import DataServerPullManager
+from lean.components.cloud.data_server_push_manager import DataServerPushManager
 from lean.components.cloud.module_manager import ModuleManager
 from lean.components.cloud.pull_manager import PullManager
 from lean.components.cloud.push_manager import PushManager
@@ -168,6 +171,50 @@ class Container:
         self.market_hours_database = MarketHoursDatabase(self.lean_config_manager)
 
         self.update_manager = UpdateManager(self.logger, self.http_client, self.cache_storage, self.docker_manager)
+
+        # Data server components (lazy-loaded based on config)
+        self._data_server_client = None
+        self._data_server_push_manager = None
+        self._data_server_pull_manager = None
+
+    @property
+    def data_server_client(self) -> Optional[DataServerClient]:
+        """Returns the data server client, creating it if needed and credentials are available."""
+        if self._data_server_client is None:
+            data_server_url = self.cli_config_manager.data_server_url.get_value()
+            data_server_api_key = self.cli_config_manager.data_server_api_key.get_value()
+            if data_server_url and data_server_api_key:
+                self._data_server_client = DataServerClient(
+                    self.logger,
+                    self.http_client,
+                    data_server_url,
+                    data_server_api_key
+                )
+        return self._data_server_client
+
+    @property
+    def data_server_push_manager(self) -> Optional[DataServerPushManager]:
+        """Returns the data server push manager, creating it if needed."""
+        if self._data_server_push_manager is None and self.data_server_client is not None:
+            self._data_server_push_manager = DataServerPushManager(
+                self.logger,
+                self.data_server_client,
+                self.project_manager,
+                self.project_config_manager
+            )
+        return self._data_server_push_manager
+
+    @property
+    def data_server_pull_manager(self) -> Optional[DataServerPullManager]:
+        """Returns the data server pull manager, creating it if needed."""
+        if self._data_server_pull_manager is None and self.data_server_client is not None:
+            self._data_server_pull_manager = DataServerPullManager(
+                self.logger,
+                self.data_server_client,
+                self.project_manager,
+                self.project_config_manager
+            )
+        return self._data_server_pull_manager
 
     def manage_docker_image(self, image: Optional[str], update: bool, no_update: bool,
                             project_directory: Path = None,

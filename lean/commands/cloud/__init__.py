@@ -14,6 +14,7 @@
 from click import group
 
 from lean.commands.cloud.backtest import backtest
+from lean.commands.cloud.list import list_projects
 from lean.commands.cloud.live.live import live
 from lean.commands.cloud.optimize import optimize
 from lean.commands.cloud.pull import pull
@@ -29,6 +30,7 @@ def cloud() -> None:
     pass
 
 
+cloud.add_command(list_projects)
 cloud.add_command(pull)
 cloud.add_command(push)
 cloud.add_command(backtest)

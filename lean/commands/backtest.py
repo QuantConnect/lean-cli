@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 from click import command, option, argument, Choice
@@ -22,6 +24,106 @@ from lean.models.utils import DebuggingMethod
 from lean.models.cli import cli_data_downloaders, cli_addon_modules
 from lean.components.util.json_modules_handler import build_and_configure_modules, non_interactive_config_build_for_name
 from lean.models.click_options import options_from_json, get_configs_for_options
+
+
+def _list_local_backtests(project: Optional[Path]) -> None:
+    """List locally saved backtests.
+
+    :param project: optional project path to filter by
+    """
+    logger = container.logger
+
+    # Find all backtest directories
+    if project:
+        search_path = project
+        if search_path.is_file():
+            search_path = search_path.parent
+        backtest_dirs = list(search_path.glob("backtests/*"))
+    else:
+        # Search from current directory
+        backtest_dirs = list(Path.cwd().rglob("backtests/*"))
+
+    # Filter to only directories that contain result files
+    valid_backtests = []
+    for bt_dir in backtest_dirs:
+        if not bt_dir.is_dir():
+            continue
+
+        # Look for result JSON files (format: {id}.json)
+        result_files = list(bt_dir.glob("*.json"))
+        if not result_files:
+            continue
+
+        # Get the config file if it exists
+        config_file = bt_dir / "config"
+        config_data = {}
+        if config_file.exists():
+            try:
+                config_data = json.loads(config_file.read_text())
+            except Exception:
+                pass
+
+        # Get modification time and result data
+        result_file = result_files[0]
+        try:
+            result_data = json.loads(result_file.read_text())
+        except Exception:
+            result_data = {}
+
+        valid_backtests.append({
+            "path": bt_dir,
+            "name": config_data.get("backtest-name", bt_dir.name),
+            "id": config_data.get("id", result_file.stem),
+            "created": datetime.fromtimestamp(bt_dir.stat().st_mtime),
+            "result_file": result_file,
+            "result_data": result_data,
+            "project": bt_dir.parent.parent.name,
+        })
+
+    # Sort by creation time (newest first)
+    valid_backtests.sort(key=lambda x: x["created"], reverse=True)
+
+    if not valid_backtests:
+        logger.info("No local backtests found.")
+        return
+
+    logger.info(f"Found {len(valid_backtests)} local backtest(s):\n")
+
+    for bt in valid_backtests:
+        name = bt["name"]
+        bt_id = bt["id"]
+        created = bt["created"].strftime("%Y-%m-%d %H:%M:%S")
+        project_name = bt["project"]
+
+        # Check if backtest completed successfully
+        stats = bt["result_data"].get("Statistics", {})
+        runtime_stats = bt["result_data"].get("RuntimeStatistics", {})
+
+        if stats or runtime_stats:
+            status_display = "✓ completed"
+        else:
+            status_display = "○ no results"
+
+        logger.info(f"  {name}")
+        logger.info(f"    ID: {bt_id}")
+        logger.info(f"    Project: {project_name}")
+        logger.info(f"    Status: {status_display}")
+        logger.info(f"    Created: {created}")
+        logger.info(f"    Path: {bt['path']}")
+
+        # Show some key stats if available
+        if stats:
+            total_return = stats.get("Total Return", stats.get("Equity", "N/A"))
+            sharpe = stats.get("Sharpe Ratio", "N/A")
+            if total_return != "N/A" or sharpe != "N/A":
+                logger.info(f"    Return: {total_return}, Sharpe: {sharpe}")
+
+        # Check for HTML report
+        report_file = bt["path"] / "report.html"
+        if report_file.exists():
+            logger.info(f"    Report: {report_file}")
+
+        logger.info("")
 
 # The _migrate_* methods automatically update launch configurations for a given debugging method.
 #
@@ -225,7 +327,11 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
 
 
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
-@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True))
+@argument("project", type=PathParameter(exists=True, file_okay=True, dir_okay=True), required=False)
+@option("--list", "list_backtests",
+              is_flag=True,
+              default=False,
+              help="List locally saved backtests instead of running one")
 @option("--output",
               type=PathParameter(exists=False, file_okay=False, dir_okay=True),
               help="Directory to store results in (defaults to PROJECT/backtests/TIMESTAMP)")
@@ -238,8 +344,8 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
-              default="Local",
-              help="Update the Lean configuration file to retrieve data from the given historical provider")
+              default=None,
+              help="Update the Lean configuration file to retrieve data from the given historical provider (defaults to ThetaData if configured, otherwise Local)")
 @options_from_json(get_configs_for_options("backtest"))
 @option("--download-data",
               is_flag=True,
@@ -265,6 +371,12 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
 @option("--backtest-name",
               type=str,
               help="Backtest name")
+@option("--start-date",
+              type=str,
+              help="Override algorithm start date (format: YYYY-MM-DD)")
+@option("--end-date",
+              type=str,
+              help="Override algorithm end date (format: YYYY-MM-DD)")
 @option("--addon-module",
               type=str,
               multiple=True,
@@ -283,7 +395,8 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               default=False,
               help="Use the local LEAN engine image instead of pulling the latest version")
 @backtest_parameter_option
-def backtest(project: Path,
+def backtest(project: Optional[Path],
+             list_backtests: bool,
              output: Optional[Path],
              detach: bool,
              debug: Optional[str],
@@ -295,6 +408,8 @@ def backtest(project: Path,
              python_venv: Optional[str],
              update: bool,
              backtest_name: str,
+             start_date: Optional[str],
+             end_date: Optional[str],
              addon_module: Optional[List[str]],
              extra_config: Optional[Tuple[str, str]],
              extra_docker_config: Optional[str],
@@ -308,6 +423,9 @@ def backtest(project: Path,
     If PROJECT is a file, the algorithm in the specified file will be executed.
 
     \b
+    Use --list to see previously run backtests.
+
+    \b
     Go to the following url to learn how to debug backtests locally using the Lean CLI:
     https://www.lean.io/docs/v2/lean-cli/backtesting/debugging
 
@@ -315,10 +433,18 @@ def backtest(project: Path,
     You can override this using the --image option.
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
-    from datetime import datetime
     from json import loads
 
     logger = container.logger
+
+    # Handle --list mode
+    if list_backtests:
+        _list_local_backtests(project)
+        return
+
+    # For running a backtest, project is required
+    if not project:
+        raise RuntimeError("PROJECT argument is required. Use --list to see existing backtests.")
     project_manager = container.project_manager
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager
@@ -355,8 +481,48 @@ def backtest(project: Path,
 
     lean_config = lean_config_manager.get_complete_lean_config(environment_name, algorithm_file, debugging_method)
 
+    # Apply start/end date overrides (command line > CLI config > algorithm default)
+    # These are injected as parameters that the algorithm can read with get_parameter()
+    cli_config_manager = container.cli_config_manager
+    effective_start_date = start_date or cli_config_manager.default_start_date.get_value()
+    effective_end_date = end_date or cli_config_manager.default_end_date.get_value()
+
+    if effective_start_date or effective_end_date:
+        if "parameters" not in lean_config:
+            lean_config["parameters"] = {}
+        if effective_start_date:
+            lean_config["parameters"]["cli-start-date"] = effective_start_date
+            logger.info(f"Using start date: {effective_start_date}")
+        if effective_end_date:
+            lean_config["parameters"]["cli-end-date"] = effective_end_date
+            logger.info(f"Using end date: {effective_end_date}")
+
     if download_data:
         data_provider_historical = "QuantConnect"
+
+    # Handle CascadeThetaData/ThetaData as default when configured
+    thetadata_url = cli_config_manager.thetadata_url.get_value()
+    thetadata_api_key = cli_config_manager.thetadata_api_key.get_value()
+
+    if data_provider_historical is None:
+        if thetadata_url:
+            # Use CascadeThetaData module for cascadelabs endpoints
+            if "cascadelabs" in thetadata_url:
+                data_provider_historical = "CascadeThetaData"
+                logger.info(f"Using CascadeThetaData as historical data provider: {thetadata_url}")
+            else:
+                data_provider_historical = "ThetaData"
+                logger.info(f"Using ThetaData as historical data provider: {thetadata_url}")
+        else:
+            data_provider_historical = "Local"
+
+    # Inject ThetaData configuration into lean_config
+    if data_provider_historical in ["ThetaData", "CascadeThetaData"] and thetadata_url:
+        lean_config["thetadata-rest-url"] = thetadata_url
+        lean_config["thetadata-ws-url"] = ""  # REST only, no WebSocket
+        lean_config["thetadata-subscription-plan"] = "Pro"  # Default to Pro
+        if thetadata_api_key:
+            lean_config["thetadata-auth-token"] = thetadata_api_key
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = None
@@ -367,7 +533,9 @@ def backtest(project: Path,
     if data_provider_historical is not None:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
-        data_provider.ensure_module_installed(organization_id, container_module_version)
+        # CascadeThetaData is built into custom image, no module installation needed
+        if data_provider_historical != "CascadeThetaData":
+            data_provider.ensure_module_installed(organization_id, container_module_version)
         container.lean_config_manager.set_properties(data_provider.get_settings())
         paths_to_mount = data_provider.get_paths_to_mount()
 

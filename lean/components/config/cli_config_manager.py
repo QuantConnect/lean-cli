@@ -65,13 +65,49 @@ class CLIConfigManager:
                                                 False,
                                                 general_storage)
 
+        self.data_server_url = Option("data-server-url",
+                                      "The URL of the data server.",
+                                      False,
+                                      credentials_storage)
+
+        self.data_server_api_key = Option("data-server-api-key",
+                                          "The API key for the data server.",
+                                          True,
+                                          credentials_storage)
+
+        self.default_start_date = Option("default-start-date",
+                                         "The default start date for backtests (format: YYYY-MM-DD).",
+                                         False,
+                                         general_storage)
+
+        self.default_end_date = Option("default-end-date",
+                                       "The default end date for backtests (format: YYYY-MM-DD).",
+                                       False,
+                                       general_storage)
+
+        self.thetadata_url = Option("thetadata-url",
+                                    "The ThetaData REST API URL.",
+                                    False,
+                                    credentials_storage)
+
+        self.thetadata_api_key = Option("thetadata-api-key",
+                                        "The API key for ThetaData (Bearer token).",
+                                        True,
+                                        credentials_storage)
+
         self.all_options = [
             self.user_id,
             self.api_token,
             self.default_language,
             self.engine_image,
             self.research_image,
-            self.database_update_frequency
+            self.database_update_frequency,
+            self.data_server_url,
+            self.data_server_api_key,
+            self.default_start_date,
+            self.default_end_date,
+            self.thetadata_url,
+            self.thetadata_api_key
         ]
 
     def get_option_by_key(self, key: str) -> Option:

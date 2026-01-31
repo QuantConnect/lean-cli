@@ -32,18 +32,54 @@ from lean.models.encryption import ActionType
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help="Path to the encryption key to use")
 def pull(project: Optional[str], pull_bootcamp: bool, encrypt: Optional[bool], decrypt: Optional[bool], key: Optional[Path]) -> None:
-    """Pull projects from QuantConnect to the local drive.
+    """Pull projects from the data server (or QuantConnect if not configured) to the local drive.
 
     This command overrides the content of local files with the content of their respective counterparts in the cloud.
 
     This command will not delete local files for which there is no counterpart in the cloud.
     """
+    # Check if data server is configured
+    data_server_pull_manager = container.data_server_pull_manager
+    data_server_client = container.data_server_client
+    if data_server_pull_manager is not None and data_server_client is not None:
+        # Use data server for pull
+        if encrypt or decrypt or key:
+            raise RuntimeError("Encryption options are not supported when pulling from the data server.")
 
+        if pull_bootcamp:
+            raise RuntimeError("Boot Camp projects are not available on the data server.")
+
+        projects_to_pull = []
+
+        if project is not None:
+            # Try to get project by name
+            try:
+                cloud_project = data_server_client.get_project_by_name(project)
+                projects_to_pull.append(cloud_project)
+            except Exception:
+                # Try by ID
+                try:
+                    cloud_project = data_server_client.get_project(project)
+                    projects_to_pull.append(cloud_project)
+                except Exception as e:
+                    raise RuntimeError(f"Project '{project}' not found in data server: {e}")
+        else:
+            # Get all projects
+            all_projects = data_server_client.list_projects()
+            # Fetch full project details with files
+            for proj in all_projects:
+                full_project = data_server_client.get_project(proj.id)
+                projects_to_pull.append(full_project)
+
+        data_server_pull_manager.pull_projects(projects_to_pull)
+        return
+
+    # Fall back to QuantConnect pull
     encryption_action = None
 
     from lean.components.util.encryption_helper import validate_user_inputs_for_cloud_push_pull_commands
     validate_user_inputs_for_cloud_push_pull_commands(encrypt, decrypt, key)
-    
+
     if encrypt:
         encryption_action = ActionType.ENCRYPT
     if decrypt:

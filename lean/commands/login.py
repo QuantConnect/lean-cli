@@ -11,80 +11,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Optional
 
 from click import command, option, prompt
 
 from lean.click import LeanCommand
 from lean.container import container
-from lean.models.errors import MoreInfoError
 
-
-def get_lean_config_credentials() -> Tuple[str, str]:
-    """Retrieve the QuantConnect credentials from the Lean CLI configuration.
-
-    This function accesses the Lean CLI configuration manager to obtain the
-    stored user ID and API token. The credentials are retrieved from the
-    configuration settings managed by the Lean CLI.
-
-    Returns:
-        tuple[str, str]: A tuple containing the user ID and API token as strings.
-    """
-    cli_config_manager = container.cli_config_manager
-
-    user_id = cli_config_manager.user_id.get_value()
-    api_token = cli_config_manager.api_token.get_value()
-
-    return user_id, api_token
-
-
-def get_credentials(user_id: Optional[str], api_token: Optional[str], show_secrets: bool) -> Tuple[str, str]:
-    """Fetch user credentials, prompting the user if necessary."""
-    logger = container.logger
-    credentials_storage = container.credentials_storage
-    current_user_id, current_api_token = get_lean_config_credentials()
-
-    if user_id is None or api_token is None:
-        logger.info("Your user id and API token are needed to make authenticated requests to the QuantConnect API")
-        logger.info("You can request these credentials on https://www.quantconnect.com/account")
-        logger.info(f"Both will be saved in {credentials_storage.file}")
-
-    if user_id is None:
-        user_id = prompt("User id", current_user_id)
-
-    if api_token is None:
-        api_token = logger.prompt_password("API token", current_api_token, hide_input=not show_secrets)
-
-    return user_id, api_token
-
-
-def validate_credentials(user_id: str, api_token: str) -> None:
-    """Validate the user credentials by attempting to authenticate with the QuantConnect API."""
-    container.api_client.set_user_token(user_id=user_id, api_token=api_token)
-
-    if not container.api_client.is_authenticated():
-        raise MoreInfoError(
-            "Credentials are invalid. Please ensure your computer clock is correct, or try using another terminal, or enter API token manually instead of copy-pasting.",
-            "https://www.lean.io/docs/v2/lean-cli"
-        )
-
-    cli_config_manager = container.cli_config_manager
-    cli_config_manager.user_id.set_value(user_id)
-    cli_config_manager.api_token.set_value(api_token)
-
-    container.logger.info("Successfully logged in")
 
 @command(cls=LeanCommand)
-@option("--user-id", "-u", type=str, help="QuantConnect user id")
-@option("--api-token", "-t", type=str, help="QuantConnect API token")
+@option("--user-id", "-U", type=str, help="QuantConnect user ID (numeric, defaults to '0')")
+@option("--url", "-u", type=str, help="Data server URL")
+@option("--api-key", "-k", type=str, help="API key for data server")
+@option("--thetadata-url", "-t", type=str, help="ThetaData REST API URL")
+@option("--thetadata-api-key", "-T", type=str, help="ThetaData API key (Bearer token)")
 @option("--show-secrets", is_flag=True, show_default=True, default=False, help="Show secrets as they are input")
-def login(user_id: Optional[str], api_token: Optional[str], show_secrets: bool) -> None:
-    """Log in with a QuantConnect account.
+def login(user_id: Optional[str],
+          url: Optional[str],
+          api_key: Optional[str],
+          thetadata_url: Optional[str],
+          thetadata_api_key: Optional[str],
+          show_secrets: bool) -> None:
+    """Log in to the data server and configure ThetaData.
 
-    If user id or API token is not provided an interactive prompt will show.
+    If URL or API key is not provided an interactive prompt will show.
 
     Credentials are stored in ~/.lean/credentials and are removed upon running `lean logout`.
     """
+    logger = container.logger
+    cli_config_manager = container.cli_config_manager
 
-    user_id, api_token = get_credentials(user_id, api_token, show_secrets)
-    validate_credentials(user_id, api_token)
+    # Set default user-id if not already set
+    # Note: user-id must be numeric as LEAN expects an integer for job-user-id
+    current_user_id = cli_config_manager.user_id.get_value()
+    if user_id is None:
+        # Ensure we use a numeric value (fix any non-numeric stored values)
+        if current_user_id and current_user_id.isdigit():
+            user_id = current_user_id
+        else:
+            user_id = "0"
+    cli_config_manager.user_id.set_value(user_id)
+
+    # Set a placeholder API token if not already set (needed to avoid validation errors)
+    current_api_token = cli_config_manager.api_token.get_value()
+    if current_api_token is None:
+        cli_config_manager.api_token.set_value("placeholder")
+
+    current_url = cli_config_manager.data_server_url.get_value() if hasattr(cli_config_manager, 'data_server_url') else None
+    current_api_key = cli_config_manager.data_server_api_key.get_value() if hasattr(cli_config_manager, 'data_server_api_key') else None
+
+    if url is None:
+        url = prompt("Data server URL", default=current_url or "http://0.0.0.0:5067")
+
+    if api_key is None:
+        api_key = logger.prompt_password("API key", current_api_key, hide_input=not show_secrets)
+
+    cli_config_manager.data_server_url.set_value(url)
+    cli_config_manager.data_server_api_key.set_value(api_key)
+
+    logger.info(f"Successfully configured data server: {url}")
+
+    # ThetaData configuration
+    current_thetadata_url = cli_config_manager.thetadata_url.get_value()
+    current_thetadata_api_key = cli_config_manager.thetadata_api_key.get_value()
+
+    if thetadata_url is None:
+        thetadata_url = prompt("ThetaData REST API URL", default=current_thetadata_url or "https://thetadata.cascadelabs.io")
+
+    if thetadata_api_key is None:
+        thetadata_api_key = logger.prompt_password("ThetaData API key", current_thetadata_api_key, hide_input=not show_secrets)
+
+    cli_config_manager.thetadata_url.set_value(thetadata_url)
+    cli_config_manager.thetadata_api_key.set_value(thetadata_api_key)
+
+    logger.info(f"Successfully configured ThetaData: {thetadata_url}")

@@ -38,12 +38,32 @@ from lean.models.encryption import ActionType
         is_flag=True, default=False,
         help="Force push even if there's a lock conflict")
 def push(project: Optional[Path], encrypt: Optional[bool], decrypt: Optional[bool], key: Optional[Path], force: Optional[bool]) -> None:
-    """Push local projects to QuantConnect.
+    """Push local projects to the data server (or QuantConnect if not configured).
 
     This command overrides the content of cloud files with the content of their respective local counterparts.
 
     This command will delete cloud files which don't have a local counterpart.
     """
+    # Check if data server is configured
+    data_server_push_manager = container.data_server_push_manager
+    if data_server_push_manager is not None:
+        # Use data server for push
+        if encrypt or decrypt or key:
+            raise RuntimeError("Encryption options are not supported when pushing to the data server.")
+
+        # Parse which projects need to be pushed
+        if project is not None:
+            project_config_manager = container.project_config_manager
+            project_config = project_config_manager.get_project_config(project)
+            if not project_config.file.exists():
+                raise RuntimeError(f"'{project}' is not a Lean project")
+            data_server_push_manager.push_project(project)
+        else:
+            projects_to_push = [p.parent for p in Path.cwd().rglob(PROJECT_CONFIG_FILE_NAME)]
+            data_server_push_manager.push_projects(projects_to_push)
+        return
+
+    # Fall back to QuantConnect push
     push_manager = container.push_manager
     encryption_action = None
 
