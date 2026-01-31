@@ -331,3 +331,32 @@ class DataServerClient:
             raise RequestFailedError(response)
 
         return response.content
+
+    def get_backtest_results(self, backtest_id: str) -> Dict[str, Any]:
+        """Gets the JSON results for a backtest (for report generation).
+
+        :param backtest_id: the backtest UUID
+        :return: the backtest results JSON
+        """
+        return self._backtest_request("get", f"/{backtest_id}/results")
+
+    def get_latest_backtest(self, status: str = "completed") -> Optional[Dict[str, Any]]:
+        """Gets the most recent backtest with the given status.
+
+        :param status: filter by status (default: completed)
+        :return: the latest backtest or None if none found
+        """
+        backtests = self.list_backtests(status=status, limit=1)
+        return backtests[0] if backtests else None
+
+    def get_backtest_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Gets a backtest by name.
+
+        :param name: the backtest name
+        :return: the backtest or None if not found
+        """
+        backtests = self.list_backtests(limit=100)
+        for bt in backtests:
+            if bt.get("name") == name:
+                return bt
+        return None

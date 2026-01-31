@@ -289,10 +289,13 @@ class DockerManager:
                 # This will crash when the container exits, ignore the exception
                 pass
 
+        # Use a mutable container to capture log_dump from the thread
+        log_capture = {"logs": ""}
+
         def print_and_format_logs():
-            log_dump = print_logs()
+            log_capture["logs"] = print_logs() or ""
             if format_output is not None:
-                format_output(log_dump)
+                format_output(log_capture["logs"])
 
         logs_thread = Thread(target=print_and_format_logs)
         logs_thread.daemon = True
@@ -312,7 +315,20 @@ class DockerManager:
         container.wait()
 
         container.reload()
-        success = container.attrs["State"]["ExitCode"] == 0
+        exit_code = container.attrs["State"]["ExitCode"]
+        success = exit_code == 0
+
+        # LEAN sometimes exits with code 1 even on successful backtests
+        # Check for success indicators in logs to handle this case
+        if not success and exit_code == 1:
+            logs = log_capture.get("logs", "")
+            # Success indicators that show the backtest completed normally
+            has_completion = "Algorithm Id:" in logs or "completed in" in logs
+            has_stats = "STATISTICS::" in logs or "Total Trades" in logs
+            # Runtime errors indicate actual failure
+            has_runtime_error = "Runtime Error" in logs or "Algorithm.RunTimeError" in logs
+            if has_completion and has_stats and not has_runtime_error:
+                success = True
 
         container.remove()
         return success

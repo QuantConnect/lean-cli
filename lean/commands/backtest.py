@@ -531,13 +531,17 @@ def backtest(project: Optional[Path],
                                                                                            algorithm_file.parent)
 
     if data_provider_historical is not None:
-        data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                              cli_data_downloaders, kwargs, logger, environment_name)
-        # CascadeThetaData is built into custom image, no module installation needed
-        if data_provider_historical != "CascadeThetaData":
+        if data_provider_historical == "CascadeThetaData":
+            # CascadeThetaData is built into custom image - configure data provider and downloader
+            lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
+            lean_config["data-downloader"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataDownloader"
+            lean_config["history-provider"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataProvider"
+        else:
+            data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
+                                                                  cli_data_downloaders, kwargs, logger, environment_name)
             data_provider.ensure_module_installed(organization_id, container_module_version)
-        container.lean_config_manager.set_properties(data_provider.get_settings())
-        paths_to_mount = data_provider.get_paths_to_mount()
+            container.lean_config_manager.set_properties(data_provider.get_settings())
+            paths_to_mount = data_provider.get_paths_to_mount()
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
