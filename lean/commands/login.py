@@ -114,13 +114,17 @@ def login(user_id: Optional[str],
 
     # Authenticate with GHCR
     docker_manager = container.docker_manager
-    docker_manager.login_registry(GHCR_REGISTRY, "ghcr", ghcr_token)
+    try:
+        docker_manager.login_registry(GHCR_REGISTRY, "ghcr", ghcr_token)
+        logger.info(f"Successfully authenticated with {GHCR_REGISTRY}")
+    except Exception as e:
+        logger.warn(f"Could not authenticate with Docker registry: {e}")
+        logger.warn("Token saved. You may need to run manually: docker login ghcr.io -u ghcr -p <token>")
 
     # Set the engine and research images to use the private registry
     cli_config_manager.engine_image.set_value(GHCR_ENGINE_IMAGE)
     cli_config_manager.research_image.set_value(GHCR_RESEARCH_IMAGE)
 
-    logger.info(f"Successfully configured private container registry")
     logger.info(f"Engine image: {GHCR_ENGINE_IMAGE}")
     logger.info(f"Research image: {GHCR_RESEARCH_IMAGE}")
 

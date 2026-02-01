@@ -124,21 +124,22 @@ def init(language: Optional[str]) -> None:
 
     # Create the config file
     lean_config_manager = container.lean_config_manager
-    config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")
-    config = lean_config_manager.clean_lean_config(config)
+    config_text = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")
+    config_text = lean_config_manager.clean_lean_config(config_text)
     lean_config_manager.store_known_lean_config_path(lean_config_path)
 
     # Update the data-folder configuration
-    config = config.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
+    config_text = config_text.replace('"data-folder": "../../../Data/"', f'"data-folder": "{DEFAULT_DATA_DIRECTORY_NAME}"')
 
     # Add default organization ID for CascadeLabs
     import json
-    config_dict = lean_config_manager.parse_json(config)
+    import json5
+    config_dict = json5.loads(config_text)
     config_dict["job-organization-id"] = "cascadelabs"
     config_dict["organization-id"] = "cascadelabs"
-    config = json.dumps(config_dict, indent=4)
+    config_text = json.dumps(config_dict, indent=4)
 
-    safe_save(path=lean_config_path, data=config)
+    safe_save(path=lean_config_path, data=config_text)
 
     # Prompt for some general configuration if not set yet
     cli_config_manager = container.cli_config_manager
