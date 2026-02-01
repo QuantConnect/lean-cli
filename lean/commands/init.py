@@ -133,7 +133,7 @@ def init(language: Optional[str]) -> None:
 
     # Add default organization ID for CascadeLabs
     import json
-    config_dict = json.loads(config)
+    config_dict = lean_config_manager.parse_json(config)
     config_dict["job-organization-id"] = "cascadelabs"
     config_dict["organization-id"] = "cascadelabs"
     config = json.dumps(config_dict, indent=4)
