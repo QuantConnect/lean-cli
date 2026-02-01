@@ -52,6 +52,9 @@ class MarketHoursDatabase:
     def _get_all_entries(self) -> Dict[str, MarketHoursDatabaseEntry]:
         """Reads the market hours database and returns all unparsed entries by name.
 
+        Merges entries from the main database with any custom entries from
+        market-hours-database-custom.json. Custom entries take precedence.
+
         :return: a dict containing all unparsed market hours database entries by name
         """
         from re import sub, DOTALL
@@ -60,11 +63,25 @@ class MarketHoursDatabase:
             return self._entries
 
         data_dir = self._lean_config_manager.get_data_directory()
-        market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
 
+        # Load main database
+        market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
         market_hours_database = market_hours_database_path.read_text(encoding="utf-8")
         market_hours_database = sub(r"(/\*.*\*/)", "", market_hours_database, flags=DOTALL)
         market_hours_database = loads(market_hours_database)
 
         self._entries = market_hours_database["entries"]
+
+        # Merge custom entries (custom takes precedence)
+        custom_database_path = data_dir / "market-hours" / "market-hours-database-custom.json"
+        if custom_database_path.exists():
+            try:
+                custom_database = custom_database_path.read_text(encoding="utf-8")
+                custom_database = sub(r"(/\*.*\*/)", "", custom_database, flags=DOTALL)
+                custom_database = loads(custom_database)
+                if "entries" in custom_database:
+                    self._entries.update(custom_database["entries"])
+            except Exception:
+                pass  # Silently ignore malformed custom database
+
         return self._entries

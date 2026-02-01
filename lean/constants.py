@@ -68,6 +68,11 @@ DEFAULT_ENGINE_IMAGE = "quantconnect/lean:latest"
 # The default Docker image used when running a Jupyter Lab environment locally
 DEFAULT_RESEARCH_IMAGE = "quantconnect/research:latest"
 
+# Cascade Labs private container registry images
+GHCR_ENGINE_IMAGE = "ghcr.io/cascade-labs/cascadelabs-lean/engine:latest"
+GHCR_RESEARCH_IMAGE = "ghcr.io/cascade-labs/cascadelabs-lean/research:latest"
+GHCR_REGISTRY = "ghcr.io"
+
 # When we install custom Python libraries, we first mount a volume to the user site packages directory
 # This caches the installation and makes subsequent backtests much faster
 # Because the site packages are not versioned, we cannot reuse the volume between algorithms with different requirements

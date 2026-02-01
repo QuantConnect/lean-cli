@@ -111,6 +111,17 @@ def init(language: Optional[str]) -> None:
     # Copy the data directory
     copytree(tmp_directory / "master" / "Lean-master" / "Data", data_dir)
 
+    # Download custom market hours database for Polymarket and Kalshi
+    try:
+        custom_market_hours_url = "https://raw.githubusercontent.com/cascade-labs/lean-cli/master/lean/data/market-hours-database-custom.json"
+        response = container.http_client.get(custom_market_hours_url)
+        if response.status_code == 200:
+            custom_market_hours_dst = data_dir / "market-hours" / "market-hours-database-custom.json"
+            custom_market_hours_dst.write_bytes(response.content)
+            logger.info("Added custom market hours for Polymarket and Kalshi")
+    except Exception:
+        pass  # Custom database is optional
+
     # Create the config file
     lean_config_manager = container.lean_config_manager
     config = (tmp_directory / "master" / "Lean-master" / "Launcher" / "config.json").read_text(encoding="utf-8")

@@ -90,6 +90,15 @@ class DataDownloader:
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json"),
                     data_dir / "market-hours" / "market-hours-database.json")
+                # Download custom market hours database (Polymarket, Kalshi, etc.)
+                try:
+                    from lean.container import container as lean_container
+                    custom_url = "https://raw.githubusercontent.com/cascade-labs/lean-cli/master/lean/data/market-hours-database-custom.json"
+                    response = lean_container.http_client.get(custom_url)
+                    if response.status_code == 200:
+                        _store_local_file(response.content, data_dir / "market-hours" / "market-hours-database-custom.json")
+                except Exception:
+                    pass  # Custom database is optional
         except MoreInfoError as e:
             if "not found" in str(e):
                 pass

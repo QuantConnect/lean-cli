@@ -95,6 +95,46 @@ class CLIConfigManager:
                                         True,
                                         credentials_storage)
 
+        self.ghcr_token = Option("ghcr-token",
+                                 "The GitHub Container Registry token for pulling private LEAN images.",
+                                 True,
+                                 credentials_storage)
+
+        self.kalshi_api_key = Option("kalshi-api-key",
+                                     "The API key for Kalshi.",
+                                     True,
+                                     credentials_storage)
+
+        self.kalshi_private_key = Option("kalshi-private-key",
+                                         "The private key for Kalshi API authentication.",
+                                         True,
+                                         credentials_storage)
+
+        self.tradealert_s3_access_key = Option("tradealert-s3-access-key",
+                                               "The TradeAlert S3 access key.",
+                                               True,
+                                               credentials_storage)
+
+        self.tradealert_s3_secret_key = Option("tradealert-s3-secret-key",
+                                               "The TradeAlert S3 secret key.",
+                                               True,
+                                               credentials_storage)
+
+        self.tradealert_s3_endpoint = Option("tradealert-s3-endpoint",
+                                             "The TradeAlert S3-compatible endpoint.",
+                                             False,
+                                             general_storage)
+
+        self.tradealert_s3_bucket = Option("tradealert-s3-bucket",
+                                           "The TradeAlert S3 bucket name.",
+                                           False,
+                                           general_storage)
+
+        self.tradealert_s3_region = Option("tradealert-s3-region",
+                                           "The TradeAlert S3 region.",
+                                           False,
+                                           general_storage)
+
         self.all_options = [
             self.user_id,
             self.api_token,
@@ -107,7 +147,15 @@ class CLIConfigManager:
             self.default_start_date,
             self.default_end_date,
             self.thetadata_url,
-            self.thetadata_api_key
+            self.thetadata_api_key,
+            self.ghcr_token,
+            self.kalshi_api_key,
+            self.kalshi_private_key,
+            self.tradealert_s3_access_key,
+            self.tradealert_s3_secret_key,
+            self.tradealert_s3_endpoint,
+            self.tradealert_s3_bucket,
+            self.tradealert_s3_region
         ]
 
     def get_option_by_key(self, key: str) -> Option:

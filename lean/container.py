@@ -105,7 +105,8 @@ class Container:
 
         self.docker_manager = docker_manager
         if not self.docker_manager:
-            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager)
+            self.docker_manager = DockerManager(self.logger, self.temp_manager, self.platform_manager,
+                                                self.cli_config_manager)
 
         self.project_manager = ProjectManager(self.logger,
                                               self.project_config_manager,

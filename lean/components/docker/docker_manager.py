@@ -18,7 +18,7 @@ from lean.components.util.logger import Logger
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.temp_manager import TempManager
 from lean.constants import SITE_PACKAGES_VOLUME_LIMIT, \
-    DOCKER_NETWORK, CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE
+    DOCKER_NETWORK, CUSTOM_FOUNDATION, CUSTOM_RESEARCH, CUSTOM_ENGINE, GHCR_REGISTRY
 
 from lean.models.docker import DockerImage
 from lean.models.errors import MoreInfoError
@@ -27,16 +27,19 @@ from lean.components.util.custom_json_encoder import DecimalEncoder
 class DockerManager:
     """The DockerManager contains methods to manage and run Docker images."""
 
-    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager) -> None:
+    def __init__(self, logger: Logger, temp_manager: TempManager, platform_manager: PlatformManager,
+                 cli_config_manager=None) -> None:
         """Creates a new DockerManager instance.
 
         :param logger: the logger to use when printing messages
         :param temp_manager: the TempManager instance used when creating temporary directories
         :param platform_manager: the PlatformManager used when checking which operating system is in use
+        :param cli_config_manager: the CLIConfigManager for accessing stored credentials (optional)
         """
         self._logger = logger
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
+        self._cli_config_manager = cli_config_manager
 
     def get_image_labels(self, image: str) -> str:
         docker_image = self._get_docker_client().images.get(image)
@@ -50,6 +53,34 @@ class DockerManager:
         self._logger.info(f"Label '{label}' not found in image '{image.name}', using default {default}")
         return default
 
+    def login_registry(self, registry: str, username: str, password: str) -> None:
+        """Logs in to a Docker registry.
+
+        :param registry: the registry URL (e.g., ghcr.io)
+        :param username: the username for authentication
+        :param password: the password or token for authentication
+        """
+        from shutil import which
+        from subprocess import run, PIPE
+
+        self._logger.info(f"Logging in to {registry}...")
+
+        if which("docker") is not None:
+            process = run(
+                ["docker", "login", registry, "-u", username, "--password-stdin"],
+                input=password.encode(),
+                capture_output=True
+            )
+            if process.returncode != 0:
+                error_msg = process.stderr.decode() if process.stderr else "Unknown error"
+                raise RuntimeError(f"Failed to log in to {registry}: {error_msg}")
+            self._logger.info(f"Successfully logged in to {registry}")
+        else:
+            # Use Docker SDK if CLI is not available
+            docker_client = self._get_docker_client()
+            docker_client.login(username=username, password=password, registry=registry)
+            self._logger.info(f"Successfully logged in to {registry}")
+
     def pull_image(self, image: DockerImage) -> None:
         """Pulls a Docker image.
 
@@ -61,6 +92,16 @@ class DockerManager:
         if image.name == CUSTOM_RESEARCH or image.name == CUSTOM_ENGINE or image.name == CUSTOM_FOUNDATION:
             self._logger.info(f"Skip pulling local image {image}...")
             return
+
+        # Authenticate to GHCR if this is a GHCR image and we have stored credentials
+        if image.name.startswith(GHCR_REGISTRY) and self._cli_config_manager is not None:
+            ghcr_token = self._cli_config_manager.ghcr_token.get_value()
+            if ghcr_token:
+                try:
+                    self.login_registry(GHCR_REGISTRY, "ghcr", ghcr_token)
+                except Exception as e:
+                    self._logger.warn(f"GHCR authentication failed: {e}")
+                    self._logger.info("Run 'lean login' to update your GitHub Container Registry token.")
 
         self._logger.info(f"Pulling {image}...")
         # We cannot really use docker_client.images.pull() here as it doesn't let us log the progress
