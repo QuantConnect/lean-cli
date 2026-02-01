@@ -10,6 +10,12 @@ The Lean CLI is a cross-platform CLI aimed at making it easier to develop with t
 
 Visit the [documentation website](https://www.lean.io/docs/v2/lean-cli/key-concepts/getting-started) for comprehensive and up-to-date documentation.
 
+## Quick Install
+
+```bash
+uv tool install lean
+```
+
 ## Highlights
 
 - [Project scaffolding](https://www.lean.io/docs/v2/lean-cli/projects/project-management)
