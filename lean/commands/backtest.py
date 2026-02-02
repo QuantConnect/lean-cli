@@ -344,7 +344,7 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               type=Choice(["pycharm", "ptvsd", "debugpy", "vsdbg", "rider", "local-platform"], case_sensitive=False),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
+              type=Choice([dp.get_name() for dp in cli_data_downloaders] + ["CascadeThetaData", "CascadeKalshiData"], case_sensitive=False),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("backtest"))
@@ -545,6 +545,11 @@ def backtest(project: Optional[Path],
         lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
         lean_config["data-downloader"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataDownloader"
         lean_config["history-provider"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataProvider"
+    elif data_provider_historical == "CascadeKalshiData":
+        # CascadeKalshiData is built into custom image - configure for Kalshi prediction markets
+        lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
+        lean_config["data-downloader"] = "QuantConnect.Lean.DataSource.CascadeKalshiData.CascadeKalshiDataDownloader"
+        lean_config["history-provider"] = "QuantConnect.Lean.DataSource.CascadeKalshiData.CascadeKalshiDataProvider"
     else:
         data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
                                                               cli_data_downloaders, kwargs, logger, environment_name)
