@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import json
 from datetime import datetime
 from pathlib import Path
@@ -510,6 +511,28 @@ def backtest(project: Optional[Path],
         lean_config["thetadata-subscription-plan"] = "Pro"  # Default to Pro
         if thetadata_api_key:
             lean_config["thetadata-auth-token"] = thetadata_api_key
+
+    # Inject Kalshi API credentials if configured
+    kalshi_api_key = cli_config_manager.kalshi_api_key.get_value()
+    kalshi_private_key = cli_config_manager.kalshi_private_key.get_value()
+    kalshi_private_key_path = cli_config_manager.kalshi_private_key_path.get_value()
+
+    if kalshi_api_key:
+        lean_config["kalshi-api-key"] = kalshi_api_key
+
+        # If path is set, read and base64 encode the key
+        if kalshi_private_key_path and not kalshi_private_key:
+            key_path = Path(kalshi_private_key_path).expanduser()
+            if key_path.exists():
+                with open(key_path, "r") as f:
+                    pem_content = f.read()
+                kalshi_private_key = base64.b64encode(pem_content.encode()).decode()
+                logger.info(f"Loaded Kalshi private key from {key_path}")
+            else:
+                logger.warning(f"Kalshi private key path not found: {key_path}")
+
+        if kalshi_private_key:
+            lean_config["kalshi-private-key"] = kalshi_private_key
 
     organization_id = container.organization_manager.try_get_working_organization_id()
     paths_to_mount = None

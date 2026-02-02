@@ -101,12 +101,17 @@ class CLIConfigManager:
                                  credentials_storage)
 
         self.kalshi_api_key = Option("kalshi-api-key",
-                                     "The API key for Kalshi.",
+                                     "The API key (key ID) for Kalshi.",
                                      True,
                                      credentials_storage)
 
+        self.kalshi_private_key_path = Option("kalshi-private-key-path",
+                                              "Path to the Kalshi private key file (PEM format).",
+                                              False,
+                                              general_storage)
+
         self.kalshi_private_key = Option("kalshi-private-key",
-                                         "The private key for Kalshi API authentication.",
+                                         "The base64-encoded Kalshi private key (auto-set from path).",
                                          True,
                                          credentials_storage)
 
@@ -150,6 +155,7 @@ class CLIConfigManager:
             self.thetadata_api_key,
             self.ghcr_token,
             self.kalshi_api_key,
+            self.kalshi_private_key_path,
             self.kalshi_private_key,
             self.tradealert_s3_access_key,
             self.tradealert_s3_secret_key,
