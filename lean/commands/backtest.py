@@ -344,8 +344,8 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
               type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
-              default=None,
-              help="Update the Lean configuration file to retrieve data from the given historical provider (defaults to ThetaData if configured, otherwise Local)")
+              default="Local",
+              help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("backtest"))
 @option("--download-data",
               is_flag=True,
@@ -400,7 +400,7 @@ def backtest(project: Optional[Path],
              output: Optional[Path],
              detach: bool,
              debug: Optional[str],
-             data_provider_historical: Optional[str],
+             data_provider_historical: str,
              download_data: bool,
              data_purchase_limit: Optional[int],
              release: bool,
@@ -500,23 +500,10 @@ def backtest(project: Optional[Path],
     if download_data:
         data_provider_historical = "QuantConnect"
 
-    # Handle CascadeThetaData/ThetaData as default when configured
+    # Inject ThetaData configuration when that provider is explicitly selected
     thetadata_url = cli_config_manager.thetadata_url.get_value()
     thetadata_api_key = cli_config_manager.thetadata_api_key.get_value()
 
-    if data_provider_historical is None:
-        if thetadata_url:
-            # Use CascadeThetaData module for cascadelabs endpoints
-            if "cascadelabs" in thetadata_url:
-                data_provider_historical = "CascadeThetaData"
-                logger.info(f"Using CascadeThetaData as historical data provider: {thetadata_url}")
-            else:
-                data_provider_historical = "ThetaData"
-                logger.info(f"Using ThetaData as historical data provider: {thetadata_url}")
-        else:
-            data_provider_historical = "Local"
-
-    # Inject ThetaData configuration into lean_config
     if data_provider_historical in ["ThetaData", "CascadeThetaData"] and thetadata_url:
         lean_config["thetadata-rest-url"] = thetadata_url
         lean_config["thetadata-ws-url"] = ""  # REST only, no WebSocket
@@ -530,18 +517,17 @@ def backtest(project: Optional[Path],
     engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update,
                                                                                            algorithm_file.parent)
 
-    if data_provider_historical is not None:
-        if data_provider_historical == "CascadeThetaData":
-            # CascadeThetaData is built into custom image - configure data provider and downloader
-            lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
-            lean_config["data-downloader"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataDownloader"
-            lean_config["history-provider"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataProvider"
-        else:
-            data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
-                                                                  cli_data_downloaders, kwargs, logger, environment_name)
-            data_provider.ensure_module_installed(organization_id, container_module_version)
-            container.lean_config_manager.set_properties(data_provider.get_settings())
-            paths_to_mount = data_provider.get_paths_to_mount()
+    if data_provider_historical == "CascadeThetaData":
+        # CascadeThetaData is built into custom image - configure data provider and downloader
+        lean_config["data-provider"] = "QuantConnect.Lean.Engine.DataFeeds.DownloaderDataProvider"
+        lean_config["data-downloader"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataDownloader"
+        lean_config["history-provider"] = "QuantConnect.Lean.DataSource.CascadeThetaData.CascadeThetaDataProvider"
+    else:
+        data_provider = non_interactive_config_build_for_name(lean_config, data_provider_historical,
+                                                              cli_data_downloaders, kwargs, logger, environment_name)
+        data_provider.ensure_module_installed(organization_id, container_module_version)
+        container.lean_config_manager.set_properties(data_provider.get_settings())
+        paths_to_mount = data_provider.get_paths_to_mount()
 
     lean_config_manager.configure_data_purchase_limit(lean_config, data_purchase_limit)
 
