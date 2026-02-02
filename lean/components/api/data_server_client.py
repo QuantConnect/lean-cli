@@ -254,7 +254,8 @@ class DataServerClient:
         parameters: Optional[Dict[str, Any]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        initial_capital: float = 100000
+        initial_capital: float = 100000,
+        data_provider_historical: Optional[str] = None
     ) -> Dict[str, Any]:
         """Creates a new backtest job.
 
@@ -264,6 +265,7 @@ class DataServerClient:
         :param start_date: optional start date (ISO format)
         :param end_date: optional end date (ISO format)
         :param initial_capital: initial capital (default 100000)
+        :param data_provider_historical: optional historical data provider
         :return: the created backtest
         """
         data = {
@@ -276,6 +278,8 @@ class DataServerClient:
             data["start_date"] = start_date
         if end_date:
             data["end_date"] = end_date
+        if data_provider_historical:
+            data["data_provider_historical"] = data_provider_historical
 
         return self._backtest_request("post", "", data)
 

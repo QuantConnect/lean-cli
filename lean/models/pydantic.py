@@ -13,15 +13,27 @@
 
 from pydantic import __version__ as pydantic_version
 if pydantic_version.startswith("1."):
-    # We keep all this imports here, even if not used like validator, so other files can import them through this file
-    # to avoid having to check the pydantic version in every file.
-    # All imports should be done through this file to avoid pydantic version related errors.
+    # Pydantic v1 - use direct imports
     from pydantic import BaseModel, ValidationError, Field, validator
+    field_validator = None  # Not available in v1
 else:
-    from pydantic.v1 import BaseModel, ValidationError, Field, validator
+    # Pydantic v2 - use native v2 API (required for Python 3.14+)
+    from pydantic import BaseModel, ValidationError, Field, field_validator
+
+    # Provide a validator alias for backwards compatibility during migration
+    # This is a simple wrapper that converts v1-style validators to v2-style
+    def validator(*fields, pre=False, **kwargs):
+        """Backwards-compatible validator wrapper for Pydantic v2."""
+        mode = 'before' if pre else 'after'
+        def decorator(func):
+            return field_validator(*fields, mode=mode, **kwargs)(classmethod(func))
+        return decorator
 
 class WrappedBaseModel(BaseModel):
     """A version of Pydantic's BaseModel which makes the input data accessible in case of a validation error."""
+
+    if not pydantic_version.startswith("1."):
+        model_config = {"extra": "ignore"}
 
     def __init__(self, *args, **kwargs) -> None:
         """Creates a new WrappedBaseModel instance.

@@ -100,6 +100,7 @@ def _run_cascade_backtest(
     start_date: Optional[str],
     end_date: Optional[str],
     initial_capital: float,
+    data_provider_historical: Optional[str] = None,
 ) -> None:
     """Run a backtest using the Cascade data server.
 
@@ -152,6 +153,7 @@ def _run_cascade_backtest(
         start_date=start_date,
         end_date=end_date,
         initial_capital=initial_capital,
+        data_provider_historical=data_provider_historical,
     )
 
     backtest_id = backtest["id"]
@@ -230,6 +232,10 @@ def _run_cascade_backtest(
               type=float,
               default=100000,
               help="Initial capital for the backtest (default: 100000)")
+@option("--data-provider-historical",
+              type=str,
+              default=None,
+              help="Historical data provider (e.g., Local, CascadeThetaData, ThetaData). Defaults to CascadeThetaData for cloud backtests.")
 @backtest_parameter_option
 def backtest(
     project: Optional[str],
@@ -242,6 +248,7 @@ def backtest(
     start_date: Optional[str],
     end_date: Optional[str],
     initial_capital: float,
+    data_provider_historical: Optional[str],
     parameter: List[Tuple[str, str]],
 ) -> None:
     """Backtest a project in the cloud.
@@ -290,6 +297,7 @@ def backtest(
             start_date=start_date,
             end_date=end_date,
             initial_capital=initial_capital,
+            data_provider_historical=data_provider_historical,
         )
         return
 
