@@ -251,7 +251,18 @@ class LeanConfigManager:
             "ib-port": "4002",
             "ib-tws-dir": "/root/Jts",
 
-            "iqfeed-host": "host.docker.internal"
+            "iqfeed-host": "host.docker.internal",
+
+            # Cascade data provider credentials
+            "thetadata-url": self._cli_config_manager.thetadata_url.get_value(default=""),
+            "thetadata-api-key": self._cli_config_manager.thetadata_api_key.get_value(default=""),
+            "kalshi-api-key": self._cli_config_manager.kalshi_api_key.get_value(default=""),
+            "kalshi-private-key": self._cli_config_manager.kalshi_private_key.get_value(default=""),
+            "tradealert-s3-access-key": self._cli_config_manager.tradealert_s3_access_key.get_value(default=""),
+            "tradealert-s3-secret-key": self._cli_config_manager.tradealert_s3_secret_key.get_value(default=""),
+            "tradealert-s3-endpoint": self._cli_config_manager.tradealert_s3_endpoint.get_value(default=""),
+            "tradealert-s3-bucket": self._cli_config_manager.tradealert_s3_bucket.get_value(default=""),
+            "tradealert-s3-region": self._cli_config_manager.tradealert_s3_region.get_value(default=""),
         }
 
         for key, value in config_defaults.items():
