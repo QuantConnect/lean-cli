@@ -14,7 +14,7 @@
 from datetime import datetime
 from typing import List, Dict, Any
 
-from lean.models.pydantic import WrappedBaseModel, validator
+from lean.models.pydantic import WrappedBaseModel, field_validator
 
 class MarketHoursSegment(WrappedBaseModel):
     start: str
@@ -36,7 +36,8 @@ class MarketHoursDatabaseEntry(WrappedBaseModel):
     earlyCloses: Dict[str, str] = {}
     lateOpens: Dict[str, str] = {}
 
-    @validator("holidays", pre=True)
+    @field_validator("holidays", mode='before')
+    @classmethod
     def parse_holidays(cls, value: Any) -> Any:
         if isinstance(value, list):
             return [datetime.strptime(x, "%m/%d/%Y") for x in value]

@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from lean.models.pydantic import WrappedBaseModel, validator
+from lean.models.pydantic import WrappedBaseModel, field_validator
 
 
 # The models in this module are all parts of responses from the QuantConnect API
@@ -112,7 +112,8 @@ class QCProject(WrappedBaseModel):
     encrypted: Optional[bool] = False
     encryptionKey: Optional[ProjectEncryptionKey] = None
 
-    @validator("parameters", pre=True)
+    @field_validator("parameters", mode='before')
+    @classmethod
     def process_parameters_dict(cls, value: Any) -> Any:
         if isinstance(value, dict):
             return list(value.values())
@@ -544,7 +545,8 @@ class QCOptimization(WrappedBaseModel):
     backtests: Dict[str, QCOptimizationBacktest] = {}
     runtimeStatistics: Dict[str, str] = {}
 
-    @validator("backtests", "runtimeStatistics", pre=True)
+    @field_validator("backtests", "runtimeStatistics", mode='before')
+    @classmethod
     def parse_empty_lists(cls, value: Any) -> Any:
         # If these fields have no data, they are assigned an array by default
         # For consistency we convert those empty arrays to empty dicts
@@ -578,7 +580,8 @@ class QCDataVendor(WrappedBaseModel):
     # Price in QCC
     price: Optional[float]
 
-    @validator("regex", pre=True)
+    @field_validator("regex", mode='before')
+    @classmethod
     def parse_regex(cls, value: Any) -> Any:
         from re import compile
         if isinstance(value, str):
