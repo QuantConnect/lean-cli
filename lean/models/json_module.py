@@ -28,6 +28,7 @@ from abc import ABC
 
 _logged_messages = set()
 
+
 class JsonModule(ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
