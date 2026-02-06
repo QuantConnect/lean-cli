@@ -28,9 +28,6 @@ from abc import ABC
 
 _logged_messages = set()
 
-# Cache OAuth tokens to prevent duplicate API calls
-_auth_cache = {}
-
 class JsonModule(ABC):
     """The JsonModule class is the base class extended for all json modules."""
 
@@ -240,7 +237,7 @@ class JsonModule(ABC):
                 # Create a unique cache key based on brokerage + project_id
                 cache_key = f"{self._display_name.lower()}_{lean_config.get('project-id', 0)}"
 
-                if cache_key not in _auth_cache:
+                if cache_key not in lean_config:
                     # Only get the token if it's not in the cache
                     lean_config["project-id"] = self.get_project_id(lean_config["project-id"],
                                                                     configuration.require_project_id)
@@ -248,13 +245,14 @@ class JsonModule(ABC):
                     auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
                                                             logger, lean_config["project-id"], no_browser=no_browser)
                     logger.debug(f'auth: {auth_authorizations}')
-                    _auth_cache[cache_key] = auth_authorizations
+                    lean_config[cache_key] = auth_authorizations
 
-                configuration._value = _auth_cache[cache_key].get_authorization_config_without_account()
+                cached_auth = lean_config[cache_key]
+                configuration._value = cached_auth.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
                     if any(condition._dependent_config_id == configuration._id for condition in
                            inner_config._filter._conditions):
-                        api_account_ids = _auth_cache[cache_key].get_account_ids()
+                        api_account_ids = cached_auth.get_account_ids()
                         config_dash = inner_config._id.replace('-', '_')
                         inner_config._choices = api_account_ids
                         if user_provided_options and config_dash in user_provided_options:
