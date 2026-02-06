@@ -245,14 +245,17 @@ class JsonModule(ABC):
                     auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
                                                             logger, lean_config["project-id"], no_browser=no_browser)
                     logger.debug(f'auth: {auth_authorizations}')
-                    lean_config[cache_key] = auth_authorizations
+                    lean_config[cache_key] = {
+                        "config": auth_authorizations.get_authorization_config_without_account(),
+                        "account_ids": auth_authorizations.get_account_ids()
+                    }
 
                 cached_auth = lean_config[cache_key]
-                configuration._value = cached_auth.get_authorization_config_without_account()
+                configuration._value = cached_auth["config"]
                 for inner_config in self._lean_configs:
                     if any(condition._dependent_config_id == configuration._id for condition in
                            inner_config._filter._conditions):
-                        api_account_ids = cached_auth.get_account_ids()
+                        api_account_ids = cached_auth["account_ids"]
                         config_dash = inner_config._id.replace('-', '_')
                         inner_config._choices = api_account_ids
                         if user_provided_options and config_dash in user_provided_options:
