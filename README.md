@@ -382,7 +382,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
 Options:
   --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -494,7 +494,6 @@ Options:
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --alpaca-api-key TEXT           Your Alpaca Api Key
   --alpaca-api-secret TEXT        Your Alpaca Api Secret
-  --databento-api-key TEXT        Your Databento.com API Key
   --node TEXT                     The name or id of the live node to run on
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
