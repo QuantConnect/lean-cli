@@ -3,20 +3,33 @@ name: Build
 on: [push, pull_request]
 
 jobs:
+  load-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.set-matrix.outputs.python }}
+      os: ${{ steps.set-matrix.outputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          echo "python=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/python-versions.txt)" >> $GITHUB_OUTPUT
+          echo "os=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/os-versions.txt)" >> $GITHUB_OUTPUT
+
   test:
+    needs: load-matrix
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, macos-15, macos-14, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: ${{ fromJson(needs.load-matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.load-matrix.outputs.python) }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -43,10 +56,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -79,10 +92,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -189,10 +202,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 

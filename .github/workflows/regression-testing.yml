@@ -1,25 +1,43 @@
 name: Regression Testing
 
 on:
+  push:
+    branches: ['*']
+    tags: ['*']
+  pull_request:
+    branches: [ master ]
   schedule:
     - cron: 0 0 * * *
 
 jobs:
+  load-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.set-matrix.outputs.python }}
+      os: ${{ steps.set-matrix.outputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          echo "python=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/python-versions.txt)" >> $GITHUB_OUTPUT
+          echo "os=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/os-versions.txt)" >> $GITHUB_OUTPUT
+
   test:
+    needs: load-matrix
     runs-on: ${{ matrix.os }}
 
     strategy:
       max-parallel: 1
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        os: ${{ fromJson(needs.load-matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.load-matrix.outputs.python) }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
