@@ -16,8 +16,8 @@ from pathlib import Path
 from unittest import mock
 
 import certifi
+import pkg_resources
 import pytest
-import setuptools
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
 
@@ -95,9 +95,6 @@ def fake_filesystem(fs: FakeFilesystem) -> FakeFilesystem:
     # Proxy access to certifi's certificate authority bundle to the real filesystem
     # This is required to be able to send HTTP requests using requests
     fs.add_real_file(certifi.where())
-
-    # Proxy access to setuptools to the real filesystem
-    fs.add_real_directory(os.path.dirname(setuptools.__file__), read_only=True)
 
     # Proxy access to package data to the real filesystem
     fs.add_real_directory(os.path.join(os.path.dirname(__file__), "../lean/ssh"))
