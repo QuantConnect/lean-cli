@@ -19,8 +19,13 @@ jobs:
       - uses: actions/checkout@v4
       - id: set-matrix
         run: |
-          echo "python=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/python-versions.txt)" >> $GITHUB_OUTPUT
-          echo "os=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/os-versions.txt)" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "python=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/python-versions.txt)" >> $GITHUB_OUTPUT
+            echo "os=$(jq -Rsc 'split("\n") | map(select(length > 0))' .github/workflows-config/os-versions.txt)" >> $GITHUB_OUTPUT
+          else
+            echo 'python=["3.13"]' >> $GITHUB_OUTPUT
+            echo 'os=["ubuntu-24.04","macos-15","windows-latest"]' >> $GITHUB_OUTPUT
+          fi
 
   test:
     needs: load-matrix
