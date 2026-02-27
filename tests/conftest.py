@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest import mock
 
 import certifi
-import pkg_resources
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from responses import RequestsMock
