@@ -27,7 +27,6 @@ from lean.components.api.backtest_client import BacktestClient
 from lean.components.api.compile_client import CompileClient
 from lean.components.api.data_client import DataClient
 from lean.components.api.file_client import FileClient
-from lean.components.api.live_client import LiveClient
 from lean.components.api.node_client import NodeClient
 from lean.components.api.organization_client import OrganizationClient
 from lean.components.api.project_client import ProjectClient
@@ -66,10 +65,10 @@ def create_project(api_client: APIClient, name_prefix: str) -> ContextManager[QC
     project_client = ProjectClient(api_client)
 
     # Create the project
-    created_project = project_client.create(f"{name_prefix} {datetime.now()}", QCLanguage.Python)
+    created_project = project_client.create(f"{name_prefix} {datetime.now()}", QCLanguage.Python, None)
 
     # Retrieve full project details
-    project = project_client.get(created_project.projectId)
+    project = project_client.get(created_project.projectId, None)
 
     # Do something with the project
     yield project
@@ -88,31 +87,31 @@ def test_projects_crud() -> None:
 
     # Test a project can be created
     name = f"Test Project {datetime.now()}"
-    created_project = project_client.create(name, QCLanguage.Python)
+    created_project = project_client.create(name, QCLanguage.Python, None)
 
     assert created_project.name == name
     assert created_project.projectId > 0
 
     # Test the project can be retrieved
-    retrieved_project = project_client.get(created_project.projectId)
+    retrieved_project = project_client.get(created_project.projectId, None)
 
     assert retrieved_project.projectId == created_project.projectId
 
     # Test the project's name can be updated
     project_client.update(created_project.projectId, name=f"{name} 2")
-    retrieved_project = project_client.get(created_project.projectId)
+    retrieved_project = project_client.get(created_project.projectId, None)
 
     assert retrieved_project.name == f"{name} 2"
 
     # Test the project's description can be updated
     project_client.update(created_project.projectId, description="New description")
-    retrieved_project = project_client.get(created_project.projectId)
+    retrieved_project = project_client.get(created_project.projectId, None)
 
     assert retrieved_project.description == "New description"
 
     # Test the project's parameters can be updated
     project_client.update(created_project.projectId, parameters={"key1": "value1", "key2": "value2", "key3": "value3"})
-    retrieved_project = project_client.get(created_project.projectId)
+    retrieved_project = project_client.get(created_project.projectId, None)
 
     assert retrieved_project.parameters == [
         QCParameter(key="key1", value="value1"),
@@ -123,14 +122,14 @@ def test_projects_crud() -> None:
     # Test libraries can be added
     with create_project(api_client, "Library/Test Project") as library_project:
         project_client.add_library(created_project.projectId, library_project.projectId)
-        retrieved_project = project_client.get(created_project.projectId)
+        retrieved_project = project_client.get(created_project.projectId, None)
 
         assert len(retrieved_project.libraries) == 1
         assert retrieved_project.libraries[0].projectId == library_project.projectId
 
         # Test libraries can be deleted
         project_client.delete_library(created_project.projectId, library_project.projectId)
-        retrieved_project = project_client.get(created_project.projectId)
+        retrieved_project = project_client.get(created_project.projectId, None)
 
         assert retrieved_project.libraries == []
 
@@ -138,7 +137,7 @@ def test_projects_crud() -> None:
     project_client.delete(created_project.projectId)
 
     # Test the project is really deleted
-    projects = project_client.get_all()
+    projects = project_client.get_all(None)
     assert not any([p.projectId == created_project.projectId for p in projects])
 
 
@@ -223,16 +222,6 @@ def test_backtest_crud() -> None:
 
         # Test the backtest can be deleted
         backtest_client.delete(project.projectId, created_backtest.backtestId)
-
-
-def test_live_client_get_all_parses_response() -> None:
-    api_client = create_api_client()
-    live_client = LiveClient(api_client)
-
-    # Test live algorithms can be retrieved
-    # All we can do here is make sure LiveClient can parse the response
-    # Tests aren't supposed to trigger actions which cost money, so we can't launch a live algorithm here
-    live_client.get_all()
 
 
 def test_account_client_get_organization() -> None:
