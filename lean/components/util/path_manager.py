@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Optional
 
 from lean.components import reserved_names, output_reserved_names, forbidden_characters
 from lean.components.config.lean_config_manager import LeanConfigManager
@@ -29,13 +30,15 @@ class PathManager:
         self._lean_config_manager = lean_config_manager
         self._platform_manager = platform_manager
 
-    def get_relative_path(self, destination: Path, source: Path = Path.cwd()) -> Path:
+    def get_relative_path(self, destination: Path, source: Optional[Path] = None) -> Path:
         """Returns a path relative to another one.
 
         :param destination: the path to point to
         :param source: the root where the relative path is relative to
         :return: the destination path relative to the source path, or destination path if it is not relative
         """
+        if source is None:
+            source = Path.cwd()
         try:
             return destination.relative_to(source)
         except ValueError:
