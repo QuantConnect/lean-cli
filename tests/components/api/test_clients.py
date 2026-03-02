@@ -65,7 +65,7 @@ def create_project(api_client: APIClient, name_prefix: str) -> ContextManager[QC
     project_client = ProjectClient(api_client)
 
     # Create the project
-    created_project = project_client.create(f"{name_prefix} {datetime.now()}", QCLanguage.Python, None)
+    created_project = project_client.create(f"{name_prefix} {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}", QCLanguage.Python, None)
 
     # Retrieve full project details
     project = project_client.get(created_project.projectId, None)
@@ -86,7 +86,7 @@ def test_projects_crud() -> None:
     project_client = ProjectClient(api_client)
 
     # Test a project can be created
-    name = f"Test Project {datetime.now()}"
+    name = f"Test Project {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
     created_project = project_client.create(name, QCLanguage.Python, None)
 
     assert created_project.name == name
@@ -120,7 +120,7 @@ def test_projects_crud() -> None:
     ]
 
     # Test libraries can be added
-    with create_project(api_client, "Library/Test Project") as library_project:
+    with create_project(api_client, "Test Library") as library_project:
         project_client.add_library(created_project.projectId, library_project.projectId)
         retrieved_project = project_client.get(created_project.projectId, None)
 
@@ -203,7 +203,7 @@ def test_backtest_crud() -> None:
             sleep(1)
 
         # Test a backtest can be started
-        backtest_name = f"Test Backtest {datetime.now()}"
+        backtest_name = f"Test Backtest {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
         created_backtest = backtest_client.create(project.projectId, created_compile.compileId, backtest_name)
 
         assert created_backtest.name == backtest_name
