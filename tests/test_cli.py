@@ -264,13 +264,13 @@ def test_cli() -> None:
 
     # Generate reports
     python_results_file = next(f for f in python_backtest_dirs[0].iterdir() if
-                               f.name.endswith(".json") and not f.name.endswith("-order-events.json"))
+                               f.suffix == ".json" and f.stem.isdigit())
     run_command(["lean", "report",
                  "--backtest-results", str(python_results_file),
                  "--report-destination", "python.html"], cwd=test_dir)
 
     csharp_results_file = next(f for f in csharp_backtest_dirs[0].iterdir() if
-                               f.name.endswith(".json") and not f.name.endswith("-order-events.json"))
+                               f.suffix == ".json" and f.stem.isdigit())
     run_command(["lean", "report",
                  "--backtest-results", str(csharp_results_file),
                  "--report-destination", "csharp.html"], cwd=test_dir)
