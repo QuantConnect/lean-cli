@@ -74,3 +74,4 @@ jobs:
         env:
           QC_USER_ID: ${{ secrets.QC_USER_ID }}
           QC_API_TOKEN: ${{ secrets.QC_API_TOKEN }}
+          QC_ORGANIZATION_ID: ${{ secrets.QC_ORGANIZATION_ID }}

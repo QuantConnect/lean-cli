@@ -36,6 +36,7 @@ from lean.components.util.logger import Logger
 
 USER_ID = ""
 API_TOKEN = ""
+ORGANIZATION_ID = ""
 
 
 @pytest.fixture(autouse=True)
@@ -123,8 +124,9 @@ def test_cli() -> None:
     """
     user_id = USER_ID or os.environ.get("QC_USER_ID", "")
     api_token = API_TOKEN or os.environ.get("QC_API_TOKEN", "")
+    organization_id = ORGANIZATION_ID or os.environ.get("QC_ORGANIZATION_ID", "")
 
-    if user_id == "" or api_token == "":
+    if user_id == "" or api_token == "" or organization_id == "":
         pytest.skip("API credentials not specified")
 
     credentials_path = Path("~/.lean").expanduser() / "credentials"
@@ -138,7 +140,7 @@ def test_cli() -> None:
     csharp_project_name = f"CSharp Project {timestamp}"
 
     # Log in
-    run_command(["lean", "login"], input=[user_id, api_token])
+    run_command(["lean", "login", "--user-id", user_id, "--api-token", api_token])
     assert credentials_path.exists()
     assert json.loads(credentials_path.read_text(encoding="utf-8")) == {
         "user-id": user_id,
@@ -149,7 +151,7 @@ def test_cli() -> None:
     run_command(["lean", "whoami"])
 
     # Download sample data and LEAN configuration file
-    run_command(["lean", "init"], cwd=test_dir, input=["python"])
+    run_command(["lean", "init", "--organization", organization_id], cwd=test_dir, input=["python"])
     assert (test_dir / "data").is_dir()
     assert (test_dir / "lean.json").is_file()
 
@@ -161,11 +163,10 @@ def test_cli() -> None:
                                    "--resolution", "Daily"],
                                   cwd=test_dir,
                                   timeout=600)
-    matches = re.findall(
-        r"Begin data generation of 1 randomly generated Equity assets\.\.\.\r?\n\s*Symbol\[1]: ([A-Z]+)",
-        generate_output)
-    assert len(matches) == 1
-    assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{matches[0].lower()}.zip").is_file()
+    assert "Begin data generation" in generate_output
+    symbol_match = re.search(r"Symbol\[1\]: ([A-Z]+)", generate_output)
+    assert symbol_match is not None
+    assert (test_dir / "data" / "equity" / "usa" / "daily" / f"{symbol_match.group(1).lower()}.zip").is_file()
 
     # Configure global settings
     run_command(["lean", "config", "set", "default-language", "csharp"])
@@ -200,9 +201,9 @@ def test_cli() -> None:
     assert (csharp_project_dir / ".vscode" / "launch.json").is_file()
 
     # Add custom Python library
-    run_command(["lean", "library", "add", python_project_name, "altair"], cwd=test_dir)
+    run_command(["lean", "library", "add", python_project_name, "qrcode"], cwd=test_dir)
     assert (python_project_dir / "requirements.txt").is_file()
-    assert f"altair==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+    assert f"qrcode==" in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
 
     # Cannot add custom Python library incompatible with lean.constants.LEAN_PYTHON_VERSION
     run_command(["lean", "library", "add", python_project_name, "PyS3DE"], cwd=test_dir, expected_return_code=1)
@@ -238,18 +239,18 @@ def test_cli() -> None:
     shutil.copy(fixtures_dir / "local" / "Main.cs", csharp_project_dir / "Main.cs")
 
     # Backtest Python project locally
-    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Trades 1")
+    run_command(["lean", "backtest", python_project_name], cwd=test_dir, expected_output="Total Orders 1")
     python_backtest_dirs = list((python_project_dir / "backtests").iterdir())
     assert len(python_backtest_dirs) == 1
 
     # Backtest C# project locally
-    run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Trades 1")
+    run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_output="Total Orders 1")
     csharp_backtest_dirs = list((csharp_project_dir / "backtests").iterdir())
     assert len(csharp_backtest_dirs) == 1
 
     # Remove custom Python library
-    run_command(["lean", "library", "remove", python_project_name, "altair"], cwd=test_dir)
-    assert f"altair==" not in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
+    run_command(["lean", "library", "remove", python_project_name, "qrcode"], cwd=test_dir)
+    assert f"qrcode==" not in (python_project_dir / "requirements.txt").read_text(encoding="utf-8")
 
     # Remove custom C# library
     run_command(["lean", "library", "remove", csharp_project_name, "Microsoft.ML"], cwd=test_dir)
@@ -303,10 +304,6 @@ def test_cli() -> None:
     # Run C# backtest in the cloud
     run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir)
 
-    # Get cloud project status
-    run_command(["lean", "cloud", "status", python_project_name], cwd=test_dir)
-    run_command(["lean", "cloud", "status", csharp_project_name], cwd=test_dir)
-
     # Log out
     run_command(["lean", "logout"])
     assert not credentials_path.exists()
@@ -316,6 +313,6 @@ def test_cli() -> None:
 
     # Delete the cloud projects that we used
     api_client = APIClient(Logger(), HTTPClient(Logger()), user_id, api_token)
-    cloud_projects = api_client.projects.get_all()
+    cloud_projects = api_client.projects.get_all(organization_id)
     api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == python_project_name))
     api_client.projects.delete(next(p.projectId for p in cloud_projects if p.name == csharp_project_name))

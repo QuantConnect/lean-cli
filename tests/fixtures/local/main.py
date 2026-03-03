@@ -1,4 +1,5 @@
-import altair
+import importlib.metadata
+import qrcode
 from QuantConnect import Resolution
 from QuantConnect.Algorithm import QCAlgorithm
 
@@ -8,7 +9,7 @@ class PythonProject(QCAlgorithm):
         self.SetStartDate(2015, 1, 1)
         self.SetCash(100000)
         self.AddEquity("SPY", Resolution.Daily)
-        self.Debug(f"altair: {altair.__version__}")
+        self.Debug(f"qrcode: {importlib.metadata.version('qrcode')}")
 
     def OnData(self, data):
         """OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
