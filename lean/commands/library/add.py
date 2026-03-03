@@ -247,6 +247,9 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
     requirements_file = project_dir / "requirements.txt"
     logger.info(f"Adding {name} {version} to '{path_manager.get_relative_path(requirements_file)}'")
 
+    original_requirements = None
+    if (requirements_file.is_file()):
+        original_requirements = requirements_file.read_text(encoding="utf-8")
     _add_python_package_to_requirements(requirements_file, name, version)
 
     if not no_local and which("pip") is not None:
@@ -255,6 +258,10 @@ def _add_pypi_package_to_python_project(project_dir: Path, name: str, version: O
         process = run(["pip", "install", f"{name}=={version}"])
 
         if process.returncode != 0:
+            if original_requirements is None:
+                requirements_file.unlink()
+            else:
+                requirements_file.write_text(original_requirements, encoding="utf-8")
             raise RuntimeError(f"Something went wrong while installing {name} {version} "
                                "locally, see the logs above for more information")
 
