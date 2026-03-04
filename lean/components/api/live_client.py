@@ -97,7 +97,7 @@ class LiveClient:
 
             parameters["notification"] = {
                 "events": events,
-                "targets": [{x: y for x, y in method.dict().items() if y} for method in notify_methods]
+                "targets": [{x: y for x, y in method.model_dump().items() if y} for method in notify_methods]
             }
 
         data = self._api.post("live/create", parameters)

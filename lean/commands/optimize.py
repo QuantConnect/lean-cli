@@ -267,8 +267,8 @@ def optimize(project: Path,
                 "target": optimization_target.target,
                 "extremum": optimization_target.extremum.value
             },
-            "parameters": [parameter.dict() for parameter in optimization_parameters],
-            "constraints": [constraint.dict(by_alias=True) for constraint in optimization_constraints]
+            "parameters": [parameter.model_dump() for parameter in optimization_parameters],
+            "constraints": [constraint.model_dump(by_alias=True) for constraint in optimization_constraints]
         }
 
     if max_concurrent_backtests is not None:

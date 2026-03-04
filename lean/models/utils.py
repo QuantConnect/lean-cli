@@ -13,8 +13,9 @@
 
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
-from lean.models.pydantic import WrappedBaseModel
+from lean.models.pydantic import WrappedBaseModel, field_validator
 
 class DebuggingMethod(Enum):
     """The debugging methods supported by the CLI."""
@@ -48,3 +49,11 @@ class LeanLibraryReference(WrappedBaseModel):
     """The information of a library reference in a project's config.json file"""
     name: str
     path: Path
+
+    # Ensure Path is built via Python to avoid filesystem patching issues in tests.
+    @field_validator("path", mode="before")
+    @classmethod
+    def coerce_path(cls, v: Any) -> Any:
+        if isinstance(v, Path):
+            return v
+        return Path(str(v))

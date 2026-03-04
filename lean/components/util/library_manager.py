@@ -119,11 +119,10 @@ class LibraryManager:
             raise RuntimeError("Circular dependency detected between "
                                f"{project_relative_path} and {library_relative_path}")
 
-        from json import loads
-        project_libraries.append(loads(LeanLibraryReference(
+        project_libraries.append(LeanLibraryReference(
             name=library_dir.name,
             path=library_relative_path
-        ).json()))
+        ).model_dump(mode="json"))
         project_config.set("libraries", project_libraries)
 
         return False
