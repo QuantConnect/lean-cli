@@ -53,6 +53,7 @@ install_requires = [
     "rich>=9.10.0",
     "pydantic>=2.0.0",
     "python-dateutil>=2.8.2",
+    "pytz",
     "lxml>=4.9.0",
     "joblib>=1.1.0",
     "setuptools",
