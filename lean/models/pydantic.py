@@ -18,18 +18,3 @@ class WrappedBaseModel(BaseModel):
 
     # Ensures backward compatibility: automatically converts numeric inputs to strings for string fields
     model_config = ConfigDict(coerce_numbers_to_str=True)
-
-    def __init__(self, *args, **kwargs) -> None:
-        """Creates a new WrappedBaseModel instance.
-
-        :param args: args to pass on to the BaseModel constructor
-        :param kwargs: kwargs to pass on to the BaseModel constructor
-        """
-        try:
-            super().__init__(*args, **kwargs)
-        except ValidationError as error:
-            try:
-                error.input_value = kwargs
-            except AttributeError:
-                pass
-            raise error
