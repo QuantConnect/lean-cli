@@ -12,8 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Annotated, Any
-
+from typing import Annotated
 from pydantic import BaseModel, BeforeValidator, ConfigDict, ValidationError, Field, field_validator
 
 # Path field that accepts str | Path. Converts in Python before pydantic-core runs,
