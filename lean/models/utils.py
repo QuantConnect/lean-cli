@@ -12,9 +12,8 @@
 # limitations under the License.
 
 from enum import Enum
-from pathlib import Path
 
-from lean.models.pydantic import WrappedBaseModel
+from lean.models.pydantic import WrappedBaseModel, SafePath
 
 class DebuggingMethod(Enum):
     """The debugging methods supported by the CLI."""
@@ -47,4 +46,4 @@ class CSharpLibrary(WrappedBaseModel):
 class LeanLibraryReference(WrappedBaseModel):
     """The information of a library reference in a project's config.json file"""
     name: str
-    path: Path
+    path: SafePath
