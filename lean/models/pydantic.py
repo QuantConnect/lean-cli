@@ -11,7 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pydantic import BaseModel, ConfigDict, ValidationError, Field, field_validator
+from pathlib import Path
+from typing import Annotated, Any
+
+from pydantic import BaseModel, BeforeValidator, ConfigDict, ValidationError, Field, field_validator
+
+# Path field that accepts str | Path. Converts in Python before pydantic-core runs,
+# avoiding issues when pathlib is patched at runtime (e.g. pyfakefs).
+SafePath = Annotated[Path, BeforeValidator(lambda v: v if isinstance(v, Path) else Path(v))]
+
 
 class WrappedBaseModel(BaseModel):
     """A version of Pydantic's BaseModel which makes the input data accessible in case of a validation error."""
