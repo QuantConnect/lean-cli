@@ -15,6 +15,7 @@ import responses
 from unittest import mock
 from lean.constants import API_BASE_URL
 from lean.components.api.api_client import APIClient
+from lean.components.api.auth0_client import Auth0Client
 from lean.components.util.http_client import HTTPClient
 
 
@@ -47,6 +48,71 @@ def test_auth0client_trade_station() -> None:
     assert len(result.authorization) > 0
     assert len(result.get_authorization_config_without_account()) > 0
     assert len(result.get_account_ids()) > 0
+
+
+def test_auth0client_authorize_with_user_name() -> None:
+    with mock.patch("webbrowser.open") as mock_open:
+        Auth0Client.authorize("charles-schwab", mock.Mock(), 123, user_name="test_login")
+        mock_open.assert_called_once()
+        called_url = mock_open.call_args[0][0]
+        assert "&userId=test_login" in called_url
+
+
+def test_auth0client_authorize_without_user_name() -> None:
+    with mock.patch("webbrowser.open") as mock_open:
+        Auth0Client.authorize("charles-schwab", mock.Mock(), 123)
+        mock_open.assert_called_once()
+        called_url = mock_open.call_args[0][0]
+        assert "userId" not in called_url
+
+
+@responses.activate
+def test_auth0client_read_with_user_name() -> None:
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "charles-schwab-access-token": "abc123",
+                "accounts": [{"id": "ACC001", "name": "ACC001 | Individual | USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+
+    result = api_clint.auth0.read("charles-schwab", user_name="test_login")
+
+    assert result
+    assert result.authorization
+    sent_body = responses.calls[0].request.body.decode()
+    assert "userId" in sent_body
+    assert "test_login" in sent_body
+
+
+@responses.activate
+def test_auth0client_read_without_user_name() -> None:
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "charles-schwab-access-token": "abc123",
+                "accounts": [{"id": "ACC001", "name": "ACC001 | Individual | USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+
+    result = api_clint.auth0.read("charles-schwab")
+
+    assert result
+    assert result.authorization
+    sent_body = responses.calls[0].request.body.decode()
+    assert "userId" not in sent_body
 
 
 @responses.activate

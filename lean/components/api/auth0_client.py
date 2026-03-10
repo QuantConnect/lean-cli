@@ -29,40 +29,47 @@ class Auth0Client:
         self._api = api_client
         self._cache = {}
 
-    def read(self, brokerage_id: str) -> QCAuth0Authorization:
+    def read(self, brokerage_id: str, user_name: str = None) -> QCAuth0Authorization:
         """Reads the authorization data for a brokerage.
 
         :param brokerage_id: the id of the brokerage to read the authorization data for
+        :param user_name: the optional login ID of the user
         :return: the authorization data for the specified brokerage
         """
         try:
             # First check cache
-            if brokerage_id in self._cache.keys():
-                return self._cache[brokerage_id]
+            cache_key = (brokerage_id, user_name)
+            if cache_key in self._cache:
+                return self._cache[cache_key]
             payload = {
                 "brokerage": brokerage_id
             }
+            if user_name:
+                payload["userId"] = user_name
 
             data = self._api.post("live/auth0/read", payload)
             # Store in cache
             result = QCAuth0Authorization(**data)
-            self._cache[brokerage_id] = result
+            self._cache[cache_key] = result
             return result
         except RequestFailedError as e:
             return QCAuth0Authorization(authorization=None)
 
     @staticmethod
-    def authorize(brokerage_id: str, logger: Logger,  project_id: int, no_browser: bool = False) -> None:
+    def authorize(brokerage_id: str, logger: Logger,  project_id: int, no_browser: bool = False, user_name: str = None) -> None:
         """Starts the authorization process for a brokerage.
 
         :param brokerage_id: the id of the brokerage to start the authorization process for
         :param logger: the logger instance to use
         :param project_id: The local or cloud project_id
+        :param user_name: the optional login ID of the user to pre-fill in the authorization page
         :param no_browser: whether to disable opening the browser
         """
         from webbrowser import open
 
         full_url = f"{API_BASE_URL}live/auth0/authorize?brokerage={brokerage_id}&projectId={project_id}"
+        if user_name:
+            full_url += f"&userId={user_name}"
 
         logger.info(f"Please open the following URL in your browser to authorize the LEAN CLI.")
         logger.info(full_url)
