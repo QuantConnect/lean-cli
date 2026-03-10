@@ -9,5 +9,5 @@ pytest>=7.1.2,<8
 pyfakefs>=5.4.1,<6
 responses~=0.21
 lxml-stubs==0.4.0
-# Match pandas version used by LEAN. No prebuilt wheel for Python 3.14+, quantconnect-stubs will install a compatible version.
-pandas==2.2.3;python_version>='3.9' and python_version<'3.14'
+# Match pandas version to use same as Lean. No prebuilt wheel for Python 3.14+
+pandas==2.3.3;python_version>='3.9' and python_version<'3.14'

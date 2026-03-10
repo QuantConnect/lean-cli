@@ -14,7 +14,7 @@
 from abc import ABC
 from datetime import datetime
 from enum import Enum
-import re
+from re import Pattern
 from typing import List, Any, Optional, Dict, Set, Tuple
 
 from click import prompt
@@ -362,7 +362,7 @@ class DataFileAllGroup(DataFileGroup):
 
 
 class DataFileLatestGroup(DataFileGroup):
-    regex: re.Pattern
+    regex: Pattern
 
     def get_valid_files(self, files_with_prefix: Optional[List[str]]) -> Set[str]:
         if files_with_prefix is not None:

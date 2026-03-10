@@ -36,12 +36,11 @@ class InsensitiveCaseDict(UserDict):
 
 
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
-    from pytz import utc, UTC
     from os import listdir, path
     from json import loads
-    from datetime import datetime
+    from datetime import datetime, timezone
 
-    cloud_last_time = utc.localize(datetime.min)
+    cloud_last_time = datetime.min.replace(tzinfo=timezone.utc)
 
     if project_id:
         try:
@@ -59,12 +58,12 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
                                cloud_last_time.day, cloud_last_time.hour,
                                cloud_last_time.minute,
                                cloud_last_time.second,
-                               tzinfo=UTC)
+                               tzinfo=timezone.utc)
 
-    local_last_time = utc.localize(datetime.min)
+    local_last_time = datetime.min.replace(tzinfo=timezone.utc)
     live_deployment_path = f"{project_name}/live"
     if path.isdir(live_deployment_path):
-        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(UTC) for subdir in listdir(live_deployment_path)]
+        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(timezone.utc) for subdir in listdir(live_deployment_path)]
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
