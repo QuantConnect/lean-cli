@@ -193,8 +193,11 @@ class JsonModule(ABC):
             return user_provided_options[user_name_variable]
         if lean_config and lean_config.get(user_name_key):
             return lean_config[user_name_key]
-        return prompt("Please enter your Login ID to proceed with Auth0 authentication",
-                      show_default=False)
+        user_name = prompt("Please enter your Login ID to proceed with Auth0 authentication",
+                           show_default=False)
+        if lean_config is not None:
+            lean_config[user_name_key] = user_name
+        return user_name
 
     def get_project_id(self, default_project_id: int, require_project_id: bool) -> int:
         """Retrieve the project ID, prompting the user if required and default is invalid.

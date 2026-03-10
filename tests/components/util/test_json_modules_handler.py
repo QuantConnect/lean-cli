@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
@@ -47,3 +48,44 @@ def test_is_value_in_config(searching: str, expected: bool) -> None:
     result = module.is_value_in_config(searching)
 
     assert expected == result
+
+
+def test_get_user_name_returns_none_when_not_required() -> None:
+    module = JsonModule({"id": "test", "configurations": [], "display-id": "Test"},
+                        MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+    result = module.get_user_name({}, mock.Mock(), {}, require_user_name=False)
+    assert result is None
+
+
+def test_get_user_name_from_user_provided_options() -> None:
+    module = JsonModule({"id": "test", "configurations": [], "display-id": "Test"},
+                        MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+    config = mock.Mock()
+    config._id = "charles-schwab-oauth-token"
+    result = module.get_user_name({}, config,
+                                  {"charles_schwab_user_name": "cli_login"},
+                                  require_user_name=True)
+    assert result == "cli_login"
+
+
+def test_get_user_name_from_lean_config() -> None:
+    module = JsonModule({"id": "test", "configurations": [], "display-id": "Test"},
+                        MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+    config = mock.Mock()
+    config._id = "charles-schwab-oauth-token"
+    lean_config = {"charles-schwab-user-name": "saved_login"}
+    result = module.get_user_name(lean_config, config, {}, require_user_name=True)
+    assert result == "saved_login"
+
+
+def test_get_user_name_prompts_and_saves_to_lean_config() -> None:
+    module = JsonModule({"id": "test", "configurations": [], "display-id": "Test"},
+                        MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+    config = mock.Mock()
+    config._id = "charles-schwab-oauth-token"
+    lean_config = {}
+    with mock.patch("click.prompt", return_value="prompted_login") as mock_prompt:
+        result = module.get_user_name(lean_config, config, {}, require_user_name=True)
+    assert result == "prompted_login"
+    assert lean_config["charles-schwab-user-name"] == "prompted_login"
+    mock_prompt.assert_called_once()
