@@ -22,8 +22,19 @@ from responses import RequestsMock
 
 from lean.constants import DEFAULT_LEAN_DOTNET_FRAMEWORK
 from lean.models.api import QCMinimalOrganization
+from lean.models.utils import LeanLibraryReference
 
 from lean.container import container
+
+
+# Patch to avoid pyfakefs breaking pydantic-core's Path validator
+_original_lean_library_reference_init = LeanLibraryReference.__init__
+def _patched_lean_library_reference_init(self, **kwargs):
+    if "path" in kwargs and not isinstance(kwargs["path"], Path):
+        kwargs["path"] = Path(kwargs["path"])
+    _original_lean_library_reference_init(self, **kwargs)
+
+LeanLibraryReference.__init__ = _patched_lean_library_reference_init
 
 
 def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, api_client_to_use=None,

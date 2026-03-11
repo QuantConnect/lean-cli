@@ -13,7 +13,6 @@
 
 from enum import Enum
 from pathlib import Path
-
 from lean.models.pydantic import WrappedBaseModel
 
 class DebuggingMethod(Enum):

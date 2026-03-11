@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from lean.models.pydantic import WrappedBaseModel, validator
+from lean.models.pydantic import WrappedBaseModel, field_validator
 
 
 # The models in this module are all parts of responses from the QuantConnect API
@@ -23,7 +23,7 @@ from lean.models.pydantic import WrappedBaseModel, validator
 
 
 class QCAuth0Authorization(WrappedBaseModel):
-    authorization: Optional[Dict[str, Any]]
+    authorization: Optional[Dict[str, Any]] = None
 
     def get_account_ids(self) -> List[str]:
         """
@@ -55,7 +55,7 @@ class ProjectEncryptionKey(WrappedBaseModel):
     name: str
 
 class QCCollaborator(WrappedBaseModel):
-    uid: Optional[int]
+    uid: Optional[int] = None
     liveControl: bool
     permission: str
     profileImage: str
@@ -66,10 +66,10 @@ class QCCollaborator(WrappedBaseModel):
 class QCParameter(WrappedBaseModel):
     key: str
     value: str
-    min: Optional[float]
-    max: Optional[float]
-    step: Optional[float]
-    type: Optional[str]
+    min: Optional[float] = None
+    max: Optional[float] = None
+    step: Optional[float] = None
+    type: Optional[str] = None
 
 
 class QCLanguage(str, Enum):
@@ -112,7 +112,8 @@ class QCProject(WrappedBaseModel):
     encrypted: Optional[bool] = False
     encryptionKey: Optional[ProjectEncryptionKey] = None
 
-    @validator("parameters", pre=True)
+    @field_validator("parameters", mode="before")
+    @classmethod
     def process_parameters_dict(cls, value: Any) -> Any:
         if isinstance(value, dict):
             return list(value.values())
@@ -181,9 +182,9 @@ class QCBacktest(WrappedBaseModel):
     result: Optional[Any] = None
     error: Optional[str] = None
     stacktrace: Optional[str] = None
-    runtimeStatistics: Optional[Dict[str, str]]
-    statistics: Optional[Union[Dict[str, str], List[Any]]]
-    totalPerformance: Optional[Any]
+    runtimeStatistics: Optional[Dict[str, str]] = None
+    statistics: Optional[Union[Dict[str, str], List[Any]]] = None
+    totalPerformance: Optional[Any] = None
 
     def is_complete(self) -> bool:
         """Returns whether the backtest has completed in the cloud.
@@ -271,7 +272,7 @@ class QCNode(WrappedBaseModel):
     cpu: int
     ram: float
     assets: int
-    host: Optional[str]
+    host: Optional[str] = None
 
 
 class QCNodeList(WrappedBaseModel):
@@ -297,7 +298,7 @@ class QCLiveAlgorithmStatus(str, Enum):
 
 class QCRestResponse(WrappedBaseModel):
     success: bool
-    error: Optional[List[str]]
+    error: Optional[List[str]] = None
 
 class QCMinimalLiveAlgorithm(WrappedBaseModel):
     projectId: int
@@ -317,7 +318,7 @@ class QCFullLiveAlgorithm(QCMinimalLiveAlgorithm):
     deployId: str
     status: Optional[QCLiveAlgorithmStatus] = None
     launched: datetime
-    stopped: Optional[datetime]
+    stopped: Optional[datetime] = None
     brokerage: str
 
 
@@ -389,7 +390,7 @@ class QCOrganizationProduct(WrappedBaseModel):
 
 
 class QCOrganizationData(WrappedBaseModel):
-    signedTime: Optional[int]
+    signedTime: Optional[int] = None
     current: bool
 
 
@@ -544,7 +545,8 @@ class QCOptimization(WrappedBaseModel):
     backtests: Dict[str, QCOptimizationBacktest] = {}
     runtimeStatistics: Dict[str, str] = {}
 
-    @validator("backtests", "runtimeStatistics", pre=True)
+    @field_validator("backtests", "runtimeStatistics", mode="before")
+    @classmethod
     def parse_empty_lists(cls, value: Any) -> Any:
         # If these fields have no data, they are assigned an array by default
         # For consistency we convert those empty arrays to empty dicts
@@ -576,9 +578,10 @@ class QCDataVendor(WrappedBaseModel):
     regex: Any
 
     # Price in QCC
-    price: Optional[float]
+    price: Optional[float] = None
 
-    @validator("regex", pre=True)
+    @field_validator("regex", mode="before")
+    @classmethod
     def parse_regex(cls, value: Any) -> Any:
         from re import compile
         if isinstance(value, str):
@@ -614,7 +617,7 @@ class QCDataset(WrappedBaseModel):
 class QCUser(WrappedBaseModel):
     name: str
     profile: str
-    badge: Optional[str]
+    badge: Optional[str] = None
 
 
 class QCTerminalNewsItem(WrappedBaseModel):
@@ -625,8 +628,8 @@ class QCTerminalNewsItem(WrappedBaseModel):
     content: str
     image: str
     link: str
-    year_deleted: Optional[Any]
-    week_deleted: Optional[Any]
+    year_deleted: Optional[Any] = None
+    week_deleted: Optional[Any] = None
     created: datetime
     date: datetime
 
@@ -634,6 +637,6 @@ class QCTerminalNewsItem(WrappedBaseModel):
 class QCLeanEnvironment(WrappedBaseModel):
     id: int
     name: str
-    path: Optional[str]
+    path: Optional[str] = None
     description: str
     public: bool

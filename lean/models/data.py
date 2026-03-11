@@ -14,7 +14,8 @@
 from abc import ABC
 from datetime import datetime
 from enum import Enum
-from typing import List, Any, Optional, Dict, Set, Tuple, Pattern
+from re import Pattern
+from typing import List, Any, Optional, Dict, Set, Tuple
 
 from click import prompt
 
@@ -22,7 +23,7 @@ from lean.click import DateParameter
 from lean.container import container
 from lean.models.api import QCDataVendor
 from lean.models.logger import Option
-from lean.models.pydantic import WrappedBaseModel, validator
+from lean.models.pydantic import WrappedBaseModel, field_validator
 
 class OptionResult(WrappedBaseModel):
     """The OptionResult class represents an option's result with an internal value and a display-friendly label."""
@@ -84,7 +85,8 @@ class DatasetOption(WrappedBaseModel, ABC):
     description: str
     condition: Optional[DatasetCondition] = None
 
-    @validator("condition", pre=True)
+    @field_validator("condition", mode="before")
+    @classmethod
     def parse_condition(cls, value: Optional[Any]) -> Any:
         if value is None or isinstance(value, DatasetCondition):
             return value
@@ -258,7 +260,8 @@ class DatasetPath(WrappedBaseModel):
     condition: Optional[DatasetCondition] = None
     templates: DatasetPathTemplates
 
-    @validator("condition", pre=True)
+    @field_validator("condition", mode="before")
+    @classmethod
     def parse_condition(cls, value: Optional[Any]) -> Any:
         if value is None or isinstance(value, DatasetCondition):
             return value
@@ -290,7 +293,8 @@ class Dataset(WrappedBaseModel):
     paths: List[DatasetPath]
     requirements: Dict[int, str]
 
-    @validator("options", pre=True)
+    @field_validator("options", mode="before")
+    @classmethod
     def parse_options(cls, values: List[Any]) -> List[Any]:
         option_types = {
             "text": DatasetTextOption,
