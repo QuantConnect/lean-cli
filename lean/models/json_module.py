@@ -283,6 +283,12 @@ class JsonModule(ABC):
                                         for account_id in api_account_ids)):
                                 raise ValueError(f"The provided account id '{user_provide_account_id}' is not valid, "
                                                  f"available: {api_account_ids}")
+                        existing_account = lean_config.get(inner_config._id)
+                        if existing_account and (existing_account not in api_account_ids
+                                                 or len(api_account_ids) > 1):
+                            # Clear stale or ambiguous account so the user is prompted
+                            # to select from the current API choices
+                            lean_config.pop(inner_config._id)
                         break
                 continue
 
