@@ -116,6 +116,62 @@ def test_auth0client_read_without_user_name() -> None:
 
 
 @responses.activate
+def test_auth0client_read_caches_without_user_name() -> None:
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "charles-schwab-access-token": "abc123",
+                "accounts": [{"id": "ACC001", "name": "ACC001 | Individual | USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+
+    api_clint.auth0.read("charles-schwab")
+    api_clint.auth0.read("charles-schwab")
+
+    assert len(responses.calls) == 1
+
+
+@responses.activate
+def test_auth0client_read_caches_per_user_name() -> None:
+    api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
+
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "charles-schwab-access-token": "abc123",
+                "accounts": [{"id": "ACC001", "name": "ACC001 | Individual | USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+    responses.add(
+        responses.POST,
+        f"{API_BASE_URL}live/auth0/read",
+        json={
+            "authorization": {
+                "charles-schwab-access-token": "xyz789",
+                "accounts": [{"id": "ACC002", "name": "ACC002 | Individual | USD"}]
+            },
+            "success": "true"},
+        status=200
+    )
+
+    api_clint.auth0.read("charles-schwab", user_name="user_a")
+    api_clint.auth0.read("charles-schwab", user_name="user_a")  # cache hit
+    api_clint.auth0.read("charles-schwab", user_name="user_b")  # different user — new call
+
+    assert len(responses.calls) == 2
+
+
+@responses.activate
 def test_auth0client_alpaca() -> None:
     api_clint = APIClient(mock.Mock(), HTTPClient(mock.Mock()), user_id="123", api_token="abc")
 

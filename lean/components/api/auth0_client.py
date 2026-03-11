@@ -38,7 +38,10 @@ class Auth0Client:
         """
         try:
             # First check cache
-            cache_key = (brokerage_id, user_name)
+            if user_name:
+                cache_key = (brokerage_id, user_name)
+            else:
+                cache_key = brokerage_id
             if cache_key in self._cache:
                 return self._cache[cache_key]
             payload = {
