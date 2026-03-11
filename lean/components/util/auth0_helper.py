@@ -16,7 +16,7 @@ from lean.components.api.api_client import Auth0Client
 from lean.components.util.logger import Logger
 
 
-def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int, no_browser: bool = False) -> QCAuth0Authorization:
+def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int, no_browser: bool = False, user_name: str = None) -> QCAuth0Authorization:
     """Gets the authorization data for a brokerage, authorizing if necessary.
 
     :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.
@@ -28,18 +28,18 @@ def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logg
     """
     from time import time, sleep
 
-    data = auth0_client.read(brokerage_id)
+    data = auth0_client.read(brokerage_id, user_name=user_name)
     if data.authorization is not None:
         return data
 
     start_time = time()
-    auth0_client.authorize(brokerage_id, logger, project_id, no_browser)
+    auth0_client.authorize(brokerage_id, logger, project_id, no_browser, user_name=user_name)
 
     # keep checking for new data every 5 seconds for 7 minutes
     while time() - start_time < 420:
         logger.debug("Will sleep 5 seconds and retry fetching authorization...")
         sleep(5)
-        data = auth0_client.read(brokerage_id)
+        data = auth0_client.read(brokerage_id, user_name=user_name)
         if data.authorization is None:
             continue
         return data
