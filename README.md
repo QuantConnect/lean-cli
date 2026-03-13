@@ -194,7 +194,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -464,7 +464,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -932,7 +932,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -1451,7 +1451,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
@@ -1859,7 +1859,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
@@ -2119,7 +2119,7 @@ Options:
   --kraken-verification-tier [Starter|Intermediate|Pro]
                                   Your Kraken Verification Tier
   --charles-schwab-user-name TEXT
-                                  Your Charles Schwab username used for OAuth authentication
+                                  Your Charles Schwab login ID
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --iqfeed-iqconnect TEXT         The path to the IQConnect binary
