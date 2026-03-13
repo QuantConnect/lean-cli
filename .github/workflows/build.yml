@@ -40,13 +40,19 @@ jobs:
 
       # Static analysis tools
       - name: Static Code Analysis
-        if: runner.os == 'Linux' && matrix.python-version != '3.8'
+        if: runner.os == 'Linux'
         run: |
           pip install mypy==1.19.1 flake8==7.3.0
           python static_analysis.py
 
       - name: Run tests
         run: python -m pytest -s -rs
+
+      - name: Check README
+        if: runner.os == 'Linux'
+        run: |
+          python scripts/readme.py
+          git diff --exit-code README.md
 
   release:
     runs-on: ubuntu-latest

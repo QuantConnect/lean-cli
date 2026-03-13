@@ -24,6 +24,7 @@ from typing import List
 
 from click import Command, Group
 from click.testing import CliRunner
+from pydantic import ConfigDict
 
 from lean.commands import lean
 from lean.models.pydantic import WrappedBaseModel
@@ -31,11 +32,10 @@ from lean.components.util.click_group_default_command import DefaultCommandGroup
 from lean.container import container
 
 class NamedCommand(WrappedBaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     command: Command
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 def get_commands(group: Group, parent_names: List[str] = []) -> List[NamedCommand]:

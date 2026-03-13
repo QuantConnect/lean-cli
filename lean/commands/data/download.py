@@ -501,7 +501,7 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
 
 
 class QCDataTypeCustomChoice(Choice):
-    def get_metavar(self, param) -> str:
+    def get_metavar(self, param, ctx=None) -> str:
         choices_str = "|".join(QCDataType.get_all_members_except('Open Interest'))
 
         # Use square braces to indicate an option or optional argument.
