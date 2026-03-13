@@ -165,7 +165,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|debugpy|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-historical [interactive brokers|oanda|bitfinex|coinbase advanced trade|binance|kraken|charlesschwab|iqfeed|polygon|factset|alphavantage|coinapi|thetadata|quantconnect|local|terminal link|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -176,14 +176,14 @@ Options:
                                   Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -191,7 +191,7 @@ Options:
   --binanceus-api-secret TEXT     Your Binance API secret
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
@@ -201,23 +201,23 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
-  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+  --alpha-vantage-price-plan [free|plan30|plan75|plan150|plan300|plan600|plan1200]
                                   Your Alpha Vantage Premium API Key plan
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --thetadata-ws-url TEXT         The ThetaData host address (Optional).
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
-  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+  --thetadata-subscription-plan [free|value|standard|pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
+  --terminal-link-connection-type [dapi|sapi]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the TerminalLink server
@@ -380,9 +380,9 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
+  --brokerage [paper trading|interactive brokers|tradier|oanda|bitfinex|coinbase advanced trade|binance|zerodha|samco|terminal link|trading technologies|kraken|charlesschwab|bybit|tradestation|alpaca|tastytrade|eze|dydx]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
+  --data-provider-live [quantconnect|interactive brokers|tradier|oanda|bitfinex|coinbase advanced trade|binance|zerodha|samco|terminal link|trading technologies|kraken|charlesschwab|polygon|coinapi|bybit|tradestation|alpaca|tastytrade|eze|dydx]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -400,14 +400,14 @@ Options:
                                   Whether the developer sandbox should be used
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -436,7 +436,7 @@ Options:
                                   commodities on MCX
   --terminal-link-server-auth-id TEXT
                                   The Auth ID of the TerminalLink server
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the SAPI server
@@ -459,13 +459,13 @@ Options:
                                   The order routing sender comp id to use
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+  --bybit-vip-level [vip0|vip1|vip2|vip3|vip4|vip5|supremevip|pro1|pro2|pro3|pro4|pro5]
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
@@ -489,10 +489,10 @@ Options:
   --dydx-environment [live|paper]
                                   Whether the developer sandbox should be used
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --alpaca-api-key TEXT           Your Alpaca Api Key
   --alpaca-api-secret TEXT        Your Alpaca Api Secret
@@ -693,7 +693,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --node [O2-8|O4-12|O8-16]       The node type to run the optimization on
+  --node [o2-8|o4-12|o8-16]       The node type to run the optimization on
   --parallel-nodes INTEGER        The number of nodes that may be run in parallel
   --name TEXT                     The name of the optimization (a random one is generated if not specified)
   --push                          Push local modifications to the cloud before starting the optimization
@@ -899,7 +899,7 @@ Usage: lean data download [OPTIONS]
   https://www.quantconnect.com/datasets
 
 Options:
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-historical [interactive brokers|oanda|bitfinex|coinbase advanced trade|binance|kraken|charlesschwab|iqfeed|polygon|factset|alphavantage|coinapi|thetadata|quantconnect|local|terminal link|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   The name of the downloader data provider.
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -910,14 +910,14 @@ Options:
                                   Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -925,7 +925,7 @@ Options:
   --binanceus-api-secret TEXT     Your Binance API secret
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
@@ -935,23 +935,23 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
-  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+  --alpha-vantage-price-plan [free|plan30|plan75|plan150|plan300|plan600|plan1200]
                                   Your Alpha Vantage Premium API Key plan
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --thetadata-ws-url TEXT         The ThetaData host address (Optional).
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
-  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+  --thetadata-subscription-plan [free|value|standard|pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
+  --terminal-link-connection-type [dapi|sapi]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the TerminalLink server
@@ -985,9 +985,9 @@ Options:
   -y, --yes                       Automatically confirm payment confirmation prompts
   --data-type [Trade|Quote|Bulk|Universe|OpenInterest]
                                   Specify the type of historical data
-  --resolution [Tick|Second|Minute|Hour|Daily]
+  --resolution [tick|second|minute|hour|daily]
                                   Specify the resolution of the historical data
-  --security-type [Equity|Index|Forex|Cfd|Future|Crypto|CryptoFuture|Option|IndexOption|Commodity|FutureOption]
+  --security-type [equity|index|forex|cfd|future|crypto|cryptofuture|option|indexoption|commodity|futureoption]
                                   Specify the security type of the historical data
   --market TEXT                   Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance') (if not provided
                                   or empty the default market for the requested security type will be used)
@@ -1044,11 +1044,11 @@ Options:
   --end [yyyyMMdd]                End date for the data to generate in yyyyMMdd format (defaults to today)
   --symbol-count INTEGER RANGE    The number of symbols to generate data for  [x>=0]
   --tickers TEXT                  Comma separated list of tickers to use for generated data
-  --security-type [Equity|Forex|Cfd|Future|Crypto|Option]
+  --security-type [equity|forex|cfd|future|crypto|option]
                                   The security type to generate data for (defaults to Equity)
-  --resolution [Tick|Second|Minute|Hour|Daily]
+  --resolution [tick|second|minute|hour|daily]
                                   The resolution of the generated data (defaults to Minute)
-  --data-density [Dense|Sparse|VerySparse]
+  --data-density [dense|sparse|verysparse]
                                   The density of the generated data (defaults to Dense)
   --include-coarse BOOLEAN        Whether coarse universe data should be generated for Equity data (defaults to True)
   --market TEXT                   The market to generate data for (defaults to standard market for the security type)
@@ -1073,7 +1073,7 @@ Options:
                                   (defaults to 30.0)
   --option-price-engine TEXT      The stochastic process, and returns new pricing engine to run calculations for that
                                   option (defaults to BaroneAdesiWhaleyApproximationEngine)
-  --volatility-model-resolution [Tick|Second|Minute|Hour|Daily]
+  --volatility-model-resolution [tick|second|minute|hour|daily]
                                   The volatility model period span (defaults to Daily)
   --chain-symbol-count INTEGER RANGE
                                   The size of the option chain (defaults to 10)  [x>=0]
@@ -1348,11 +1348,11 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
+  --brokerage [paper trading|interactive brokers|tradier|oanda|bitfinex|coinbase advanced trade|binance|zerodha|samco|terminal link|trading technologies|kraken|charlesschwab|bybit|tradestation|alpaca|tastytrade|eze|dydx]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-live [interactive brokers|tradier|oanda|bitfinex|coinbase advanced trade|binance|zerodha|samco|terminal link|trading technologies|kraken|charlesschwab|iqfeed|polygon|coinapi|thetadata|custom data only|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   The live data provider to use
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-historical [interactive brokers|oanda|bitfinex|coinbase advanced trade|binance|kraken|charlesschwab|iqfeed|polygon|factset|alphavantage|coinapi|thetadata|quantconnect|local|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1370,14 +1370,14 @@ Options:
                                   Whether the developer sandbox should be used
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -1404,9 +1404,9 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --terminal-link-connection-type [DAPI|SAPI]
+  --terminal-link-connection-type [dapi|sapi]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the TerminalLink server
@@ -1442,13 +1442,13 @@ Options:
   --tt-log-fix-messages BOOLEAN   Whether FIX messages should be logged (Optional).
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
-  --bybit-vip-level [VIP0|VIP1|VIP2|VIP3|VIP4|VIP5|SupremeVIP|Pro1|Pro2|Pro3|Pro4|Pro5]
+  --bybit-vip-level [vip0|vip1|vip2|vip3|vip4|vip5|supremevip|pro1|pro2|pro3|pro4|pro5]
                                   Your Bybit VIP Level
   --bybit-use-testnet [live|paper]
                                   Whether the testnet should be used
@@ -1483,14 +1483,14 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --thetadata-ws-url TEXT         The ThetaData host address (Optional).
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
-  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+  --thetadata-subscription-plan [free|value|standard|pro]
                                   Your ThetaData subscription price plan
   --trade-station-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
@@ -1501,7 +1501,7 @@ Options:
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
-  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+  --alpha-vantage-price-plan [free|plan30|plan75|plan150|plan300|plan600|plan1200]
                                   Your Alpha Vantage Premium API Key plan
   --release                       Compile C# projects in release configuration instead of debug
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
@@ -1802,14 +1802,14 @@ Options:
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/optimizations/TIMESTAMP)
   -d, --detach                    Run the optimization in a detached Docker container and return immediately
   --optimizer-config FILE         The optimizer configuration file that should be used
-  --strategy [Grid Search|Euler Search]
+  --strategy [grid search|euler search]
                                   The optimization strategy to use
   --target TEXT                   The target statistic of the optimization
   --target-direction [min|max]    Whether the target must be minimized or maximized
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-historical [interactive brokers|oanda|bitfinex|coinbase advanced trade|binance|kraken|charlesschwab|iqfeed|polygon|factset|alphavantage|coinapi|thetadata|quantconnect|local|terminal link|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1833,14 +1833,14 @@ Options:
                                   Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -1848,7 +1848,7 @@ Options:
   --binanceus-api-secret TEXT     Your Binance API secret
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
@@ -1858,23 +1858,23 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
-  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+  --alpha-vantage-price-plan [free|plan30|plan75|plan150|plan300|plan600|plan1200]
                                   Your Alpha Vantage Premium API Key plan
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --thetadata-ws-url TEXT         The ThetaData host address (Optional).
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
-  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+  --thetadata-subscription-plan [free|value|standard|pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
+  --terminal-link-connection-type [dapi|sapi]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the TerminalLink server
@@ -2080,7 +2080,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|DataBento]
+  --data-provider-historical [interactive brokers|oanda|bitfinex|coinbase advanced trade|binance|kraken|charlesschwab|iqfeed|polygon|factset|alphavantage|coinapi|thetadata|quantconnect|local|terminal link|bybit|tradestation|alpaca|tastytrade|eze|dydx|databento]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -2091,14 +2091,14 @@ Options:
                                   Use this option explicitly to override the default value. (Optional).
   --oanda-account-id TEXT         Your OANDA account id
   --oanda-access-token TEXT       Your OANDA API token
-  --oanda-environment [Practice|Trade]
+  --oanda-environment [practice|trade]
                                   The environment to run in, Practice for fxTrade Practice, Trade for fxTrade
   --bitfinex-api-key TEXT         Your Bitfinex API key
   --bitfinex-api-secret TEXT      Your Bitfinex API secret
   --coinbase-api-name TEXT        Your Coinbase Advanced Trade API name from file.
   --coinbase-api-private-key TEXT
                                   Your Coinbase Advanced Trade API private key from file.
-  --binance-exchange-name [Binance|BinanceUS|Binance-USDM-Futures|Binance-COIN-Futures]
+  --binance-exchange-name [binance|binanceus|binance-usdm-futures|binance-coin-futures]
                                   Binance exchange name [Binance, BinanceUS, Binance-USDM-Futures, Binance-COIN-Futures]
   --binance-api-key TEXT          Your Binance API key
   --binanceus-api-key TEXT        Your Binance API key
@@ -2106,7 +2106,7 @@ Options:
   --binanceus-api-secret TEXT     Your Binance API secret
   --kraken-api-key TEXT           Your Kraken API key
   --kraken-api-secret TEXT        Your Kraken API secret
-  --kraken-verification-tier [Starter|Intermediate|Pro]
+  --kraken-verification-tier [starter|intermediate|pro]
                                   Your Kraken Verification Tier
   --charles-schwab-account-number TEXT
                                   The CharlesSchwab account number
@@ -2116,23 +2116,23 @@ Options:
   --iqfeed-version TEXT           The product version of your IQFeed developer account
   --iqfeed-host TEXT              The IQFeed host address (Optional).
   --polygon-api-key TEXT          Your Polygon.io API Key
-  --polygon-license-type [Individual|Business]
+  --polygon-license-type [individual|business]
                                   Select your Polygon.io subscription plan (Optional).
   --factset-auth-config-file FILE
                                   The path to the FactSet authentication configuration file
   --alpha-vantage-api-key TEXT    Your Alpha Vantage Api Key
-  --alpha-vantage-price-plan [Free|Plan30|Plan75|Plan150|Plan300|Plan600|Plan1200]
+  --alpha-vantage-price-plan [free|plan30|plan75|plan150|plan300|plan600|plan1200]
                                   Your Alpha Vantage Premium API Key plan
   --coinapi-api-key TEXT          Your coinapi.io Api Key
-  --coinapi-product [Free|Startup|Streamer|Professional|Enterprise]
+  --coinapi-product [free|startup|streamer|professional|enterprise]
                                   CoinApi pricing plan (https://www.coinapi.io/market-data-api/pricing)
   --thetadata-ws-url TEXT         The ThetaData host address (Optional).
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
-  --thetadata-subscription-plan [Free|Value|Standard|Pro]
+  --thetadata-subscription-plan [free|value|standard|pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
+  --terminal-link-connection-type [dapi|sapi]
                                   Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --terminal-link-environment [production|beta]
                                   The environment to run in
   --terminal-link-server-host TEXT
                                   The host of the TerminalLink server

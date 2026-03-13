@@ -352,7 +352,7 @@ class DateParameter(ParamType):
 
     name = "date"
 
-    def get_metavar(self, param: Parameter) -> str:
+    def get_metavar(self, param: Parameter, ctx=None) -> str:
         return "[yyyyMMdd]"
 
     def convert(self, value: str, param: Parameter, ctx: Context):
