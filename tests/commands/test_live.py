@@ -432,7 +432,8 @@ brokerage_required_options = {
         "tt-log-fix-messages": "no"
     },
     "CharlesSchwab": {
-        "charles-schwab-account-number": "123"
+        "charles-schwab-account-number": "123",
+        "charles-schwab-user-name": "user"
     },
     "Bybit": {
         "bybit-api-key": "abc",
