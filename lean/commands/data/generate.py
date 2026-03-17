@@ -14,9 +14,9 @@
 from datetime import datetime
 from typing import Optional
 
-from click import command, option, Choice, IntRange
+from click import command, option, IntRange
 
-from lean.click import DateParameter, LeanCommand, ensure_options
+from lean.click import DateParameter, LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 
@@ -39,15 +39,15 @@ from lean.container import container
         default="",
         help="Comma separated list of tickers to use for generated data")
 @option("--security-type",
-        type=Choice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"], case_sensitive=False),
+        type=CaseInsensitiveChoice(["Equity", "Forex", "Cfd", "Future", "Crypto", "Option"]),
         default="Equity",
         help="The security type to generate data for (defaults to Equity)")
 @option("--resolution",
-        type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
+        type=CaseInsensitiveChoice(["Tick", "Second", "Minute", "Hour", "Daily"]),
         default="Minute",
         help="The resolution of the generated data (defaults to Minute)")
 @option("--data-density",
-        type=Choice(["Dense", "Sparse", "VerySparse"], case_sensitive=False),
+        type=CaseInsensitiveChoice(["Dense", "Sparse", "VerySparse"]),
         default="Dense",
         help="The density of the generated data (defaults to Dense)")
 @option("--include-coarse",
@@ -98,7 +98,7 @@ from lean.container import container
         help="The stochastic process, and returns new pricing engine to run calculations for that option "
              "(defaults to BaroneAdesiWhaleyApproximationEngine)")
 @option("--volatility-model-resolution",
-        type=Choice(["Tick", "Second", "Minute", "Hour", "Daily"], case_sensitive=False),
+        type=CaseInsensitiveChoice(["Tick", "Second", "Minute", "Hour", "Daily"]),
         default="Daily",
         help="The volatility model period span (defaults to Daily)")
 @option("--chain-symbol-count",

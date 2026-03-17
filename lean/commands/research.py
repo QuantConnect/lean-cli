@@ -13,8 +13,8 @@
 
 from pathlib import Path
 from typing import Optional, Tuple
-from click import command, argument, option, Choice
-from lean.click import LeanCommand, PathParameter
+from click import command, argument, option
+from lean.click import LeanCommand, PathParameter, CaseInsensitiveChoice
 from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_RESEARCH_IMAGE, LEAN_ROOT_PATH
 from lean.container import container
@@ -38,7 +38,7 @@ def _check_docker_output(chunk: str, port: int) -> None:
 @argument("project", type=PathParameter(exists=True, file_okay=False, dir_okay=True))
 @option("--port", type=int, default=8888, help="The port to run Jupyter Lab on (defaults to 8888)")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
+              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders]),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("research"))

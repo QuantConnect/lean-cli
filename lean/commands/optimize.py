@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from datetime import datetime, timedelta
 
-from click import command, argument, option, Choice, IntRange
+from click import command, argument, option, IntRange
 
-from lean.click import LeanCommand, PathParameter, ensure_options
+from lean.click import LeanCommand, PathParameter, ensure_options, CaseInsensitiveChoice
 from lean.components.docker.lean_runner import LeanRunner
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -81,13 +81,13 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
               help=f"The optimizer configuration file that should be used")
 @option("--strategy",
-              type=Choice(["Grid Search", "Euler Search"], case_sensitive=False),
+              type=CaseInsensitiveChoice(["Grid Search", "Euler Search"]),
               help="The optimization strategy to use")
 @option("--target",
               type=str,
               help="The target statistic of the optimization")
 @option("--target-direction",
-              type=Choice(["min", "max"], case_sensitive=False),
+              type=CaseInsensitiveChoice(["min", "max"]),
               help="Whether the target must be minimized or maximized")
 @option("--parameter",
               type=(str, float, float, float),
@@ -98,7 +98,7 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
+              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders]),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @option("--download-data",

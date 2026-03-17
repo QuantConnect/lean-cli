@@ -13,7 +13,8 @@
 
 from pathlib import Path
 from typing import Any, Dict, List
-from click import prompt, Choice
+from click import prompt
+from lean.click import CaseInsensitiveChoice
 from abc import ABC, abstractmethod
 from lean.components.util.logger import Logger
 from lean.click import PathParameter
@@ -294,7 +295,7 @@ class ChoiceUserInput(UserInputConfiguration):
         return prompt(
             self._prompt_info,
             default_value,
-            type=Choice(self._choices, case_sensitive=False)
+            type=CaseInsensitiveChoice(self._choices)
         )
 
 

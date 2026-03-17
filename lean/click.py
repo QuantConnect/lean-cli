@@ -14,7 +14,7 @@
 from pathlib import Path
 from typing import Optional, List, Callable
 
-from click import Command, Context, Parameter, ParamType, Option as ClickOption
+from click import Choice, Command, Context, Parameter, ParamType, Option as ClickOption
 from click.decorators import FC, option
 
 from lean.constants import DEFAULT_LEAN_CONFIG_FILE_NAME, CONTAINER_LABEL_LEAN_VERSION_NAME
@@ -305,6 +305,20 @@ class LeanCommand(Command):
 
 
 
+class CaseInsensitiveChoice(Choice):
+    """A click.Choice subclass that matches case-insensitively but displays original casing in help text."""
+
+    def __init__(self, choices, **kwargs):
+        super().__init__(choices, case_sensitive=False, **kwargs)
+
+    def get_metavar(self, param, ctx=None) -> str:
+        import enum
+        choices_str = "|".join(c.value if isinstance(c, enum.Enum) else str(c) for c in self.choices)
+        if param is not None and param.required and param.param_type_name == "argument":
+            return f"{{{choices_str}}}"
+        return f"[{choices_str}]"
+
+
 class PathParameter(ParamType):
     """A limited version of click.Path which uses pathlib.Path."""
 
@@ -352,7 +366,7 @@ class DateParameter(ParamType):
 
     name = "date"
 
-    def get_metavar(self, param: Parameter) -> str:
+    def get_metavar(self, param: Parameter, ctx=None) -> str:
         return "[yyyyMMdd]"
 
     def convert(self, value: str, param: Parameter, ctx: Context):

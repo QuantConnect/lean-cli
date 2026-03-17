@@ -15,8 +15,8 @@ from json import dump
 
 from docker.types import Mount
 from typing import Any, Dict, Iterable, List, Optional
-from click import command, option, confirm, pass_context, Context, Choice, prompt
-from lean.click import LeanCommand, ensure_options
+from click import command, option, confirm, pass_context, Context, prompt
+from lean.click import LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.components.util.json_modules_handler import config_build_for_name
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -500,8 +500,8 @@ def _configure_date_option(date_value: str, option_id: str, option_label: str) -
     return date_option.configure_non_interactive(date_value)
 
 
-class QCDataTypeCustomChoice(Choice):
-    def get_metavar(self, param) -> str:
+class QCDataTypeCustomChoice(CaseInsensitiveChoice):
+    def get_metavar(self, param, ctx=None) -> str:
         choices_str = "|".join(QCDataType.get_all_members_except('Open Interest'))
 
         # Use square braces to indicate an option or optional argument.
@@ -521,7 +521,7 @@ def _replace_data_type(ctx, param, value):
 
 @command(cls=LeanCommand, requires_lean_config=True, allow_unknown_options=True, name="download")
 @option("--data-provider-historical",
-        type=Choice([data_downloader.get_name() for data_downloader in cli_data_downloaders], case_sensitive=False),
+        type=CaseInsensitiveChoice([data_downloader.get_name() for data_downloader in cli_data_downloaders]),
         help="The name of the downloader data provider.")
 @options_from_json(get_configs_for_options("download"))
 @option("--dataset", type=str, help="The name of the dataset to download non-interactively")
@@ -530,11 +530,11 @@ def _replace_data_type(ctx, param, value):
 @option("--yes", "-y", "auto_confirm", is_flag=True, default=False,
         help="Automatically confirm payment confirmation prompts")
 @option("--data-type", callback=_replace_data_type,
-        type=QCDataTypeCustomChoice(QCDataType.get_all_members(), case_sensitive=False),
+        type=QCDataTypeCustomChoice(QCDataType.get_all_members()),
         help="Specify the type of historical data")
-@option("--resolution", type=Choice(QCResolution.get_all_members(), case_sensitive=False),
+@option("--resolution", type=CaseInsensitiveChoice(QCResolution.get_all_members()),
         help="Specify the resolution of the historical data")
-@option("--security-type", type=Choice(QCSecurityType.get_all_members(), case_sensitive=False),
+@option("--security-type", type=CaseInsensitiveChoice(QCSecurityType.get_all_members()),
     help="Specify the security type of the historical data")
 @option("--market", type=str,
         help="Specify the market name for tickers (e.g., 'USA', 'NYMEX', 'Binance')"
