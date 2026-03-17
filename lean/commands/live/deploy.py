@@ -13,8 +13,8 @@
 
 from pathlib import Path
 from typing import List, Optional, Tuple
-from click import option, argument, Choice
-from lean.click import LeanCommand, PathParameter
+from click import option, argument
+from lean.click import LeanCommand, PathParameter, CaseInsensitiveChoice
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
@@ -64,14 +64,14 @@ def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
               default=False,
               help="Run the live deployment in a detached Docker container and return immediately")
 @option("--brokerage",
-              type=Choice([b.get_name() for b in cli_brokerages], case_sensitive=False),
+              type=CaseInsensitiveChoice([b.get_name() for b in cli_brokerages]),
               help="The brokerage to use")
 @option("--data-provider-live",
-              type=Choice([d.get_name() for d in cli_data_queue_handlers], case_sensitive=False),
+              type=CaseInsensitiveChoice([d.get_name() for d in cli_data_queue_handlers]),
               multiple=True,
               help="The live data provider to use")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in cli_data_downloaders if dp.get_id() != "TerminalLinkBrokerage"], case_sensitive=False),
+              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders if dp.get_id() != "TerminalLinkBrokerage"]),
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-cli"))
 @option("--release",

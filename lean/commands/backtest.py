@@ -13,9 +13,9 @@
 
 from pathlib import Path
 from typing import List, Optional, Tuple
-from click import command, option, argument, Choice
+from click import command, option, argument
 
-from lean.click import LeanCommand, PathParameter, backtest_parameter_option
+from lean.click import LeanCommand, PathParameter, backtest_parameter_option, CaseInsensitiveChoice
 from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
 from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
@@ -234,10 +234,10 @@ def _migrate_csharp_csproj(project_dir: Path) -> None:
               default=False,
               help="Run the backtest in a detached Docker container and return immediately")
 @option("--debug",
-              type=Choice(["pycharm", "ptvsd", "debugpy", "vsdbg", "rider", "local-platform"], case_sensitive=False),
+              type=CaseInsensitiveChoice(["pycharm", "ptvsd", "debugpy", "vsdbg", "rider", "local-platform"]),
               help="Enable a certain debugging method (see --help for more information)")
 @option("--data-provider-historical",
-              type=Choice([dp.get_name() for dp in cli_data_downloaders], case_sensitive=False),
+              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders]),
               default="Local",
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("backtest"))

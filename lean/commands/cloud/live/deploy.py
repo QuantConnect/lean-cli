@@ -12,8 +12,8 @@
 # limitations under the License.
 
 from typing import List, Tuple, Optional
-from click import prompt, option, argument, Choice, confirm
-from lean.click import LeanCommand, ensure_options
+from click import prompt, option, argument, confirm
+from lean.click import LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.components.api.api_client import APIClient
 from lean.components.util.json_modules_handler import non_interactive_config_build_for_name, \
     interactive_config_build
@@ -166,10 +166,10 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @live.command(cls=LeanCommand, default_command=True, name="deploy")
 @argument("project", type=str)
 @option("--brokerage",
-              type=Choice([b.get_name() for b in cloud_brokerages], case_sensitive=False),
+              type=CaseInsensitiveChoice([b.get_name() for b in cloud_brokerages]),
               help="The brokerage to use")
 @option("--data-provider-live",
-              type=Choice([d.get_name() for d in cloud_data_queue_handlers], case_sensitive=False),
+              type=CaseInsensitiveChoice([d.get_name() for d in cloud_data_queue_handlers]),
               multiple=True,
               help="The live data provider to use")
 @options_from_json(get_configs_for_options("live-cloud"))
