@@ -175,13 +175,15 @@ class JsonModule(ABC):
         """
         return variable_key.replace('_', '-')
 
-    def get_user_name(self, lean_config: Dict[str, Any], configuration, user_provided_options: Dict[str, Any], require_user_name: bool) -> str:
+    def get_user_name(self, lean_config: Dict[str, Any], configuration, user_provided_options: Dict[str, Any],
+                      require_user_name: bool, interactive: bool) -> str:
         """Retrieve the user name, prompting the user if required and not already set.
 
         :param lean_config: The Lean config dict to read defaults from.
         :param configuration: The AuthConfiguration instance.
         :param user_provided_options: Options passed as command-line arguments.
         :param require_user_name: Flag to determine if prompting is necessary.
+        :param interactive: ask user input parameter manually (interactively)
         :return: The user name, or None if not required.
         """
         if not require_user_name:
@@ -193,6 +195,8 @@ class JsonModule(ABC):
             return user_provided_options[user_name_variable]
         if lean_config and lean_config.get(user_name_key):
             return lean_config[user_name_key]
+        if not interactive:
+            raise RuntimeError(f"You are missing the following option {user_name_key}")
         user_name = prompt("Please enter your Login ID to proceed with Auth0 authentication",
                            show_default=False)
         if lean_config is not None:
@@ -263,7 +267,7 @@ class JsonModule(ABC):
                                                                 configuration.require_project_id)
                 logger.debug(f'project_id: {lean_config["project-id"]}')
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
-                                               configuration.require_user_name)
+                                               configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
                 auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
                                                         logger, lean_config["project-id"], no_browser=no_browser,
