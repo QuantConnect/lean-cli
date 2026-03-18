@@ -277,6 +277,31 @@ def test_show_announcements_does_nothing_when_latest_announcements_shown_before(
     logger.info.assert_not_called()
 
 
+def test_force_refresh_modules_json_downloads_file(requests_mock: RequestsMock) -> None:
+    from lean.models import url as modules_url, file_path as modules_file_path
+    modules_json = {"modules": {"SomeModule": {"version": "1.0"}}}
+    requests_mock.add(requests_mock.GET, modules_url, json=modules_json)
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    update_manager.force_refresh_modules_json()
+
+    assert modules_file_path.is_file()
+    with open(modules_file_path) as f:
+        assert json.load(f) == modules_json
+
+
+def test_force_refresh_modules_json_does_nothing_when_offline(requests_mock: RequestsMock) -> None:
+    from lean.models import url as modules_url
+    from requests.exceptions import ConnectionError as RequestsConnectionError
+    requests_mock.add(requests_mock.GET, modules_url, body=RequestsConnectionError())
+
+    logger, storage, docker_manager, update_manager = create_objects()
+
+    # Should not raise
+    update_manager.force_refresh_modules_json()
+
+
 def test_show_announcements_does_nothing_when_there_are_no_announcements(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET,
                       "https://raw.githubusercontent.com/QuantConnect/lean-cli/master/announcements.json",
