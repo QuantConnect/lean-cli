@@ -28,9 +28,9 @@ url = f"https://cdn.quantconnect.com/cli/{file_name}"
 def _download_modules_json() -> None:
     """Downloads the modules JSON file from the CDN and saves it to disk."""
     from requests import get
-    from json import dump
     res = get(url, timeout=5)
     if res.ok:
+        from json import dump
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
             dump(res.json(), f, ensure_ascii=False, indent=4)
