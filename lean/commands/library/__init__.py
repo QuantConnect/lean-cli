@@ -12,12 +12,13 @@
 # limitations under the License.
 
 from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 from lean.commands.library.add import add
 from lean.commands.library.remove import remove
 
 
-@group()
+@group(cls=AliasedCommandGroup)
 def library() -> None:
     """Manage custom libraries in a project."""
     # This method is intentionally empty
