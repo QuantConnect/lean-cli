@@ -15,7 +15,21 @@ from click import Group
 
 
 class AliasedCommandGroup(Group):
-    """A click.Group wrapper that implements command aliasing."""
+    """A click.Group wrapper that implements command aliasing and auto-completion/prefix matching."""
+
+    def get_command(self, ctx, cmd_name):
+        rv = super().get_command(ctx, cmd_name)
+        if rv is not None:
+            return rv
+
+        matches = [x for x in self.list_commands(ctx) if x.startswith(cmd_name)]
+
+        if not matches:
+            return None
+        elif len(matches) == 1:
+            return super().get_command(ctx, matches[0])
+
+        ctx.fail(f"Too many matches: {', '.join(sorted(matches))}")
 
     def command(self, *args, **kwargs):
         aliases = kwargs.pop('aliases', [])

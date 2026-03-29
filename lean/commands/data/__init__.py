@@ -12,12 +12,13 @@
 # limitations under the License.
 
 from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 from lean.commands.data.download import download
 from lean.commands.data.generate import generate
 
 
-@group()
+@group(cls=AliasedCommandGroup)
 def data() -> None:
     """Download or generate data for local use."""
     # This method is intentionally empty
