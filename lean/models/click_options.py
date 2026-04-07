@@ -13,8 +13,8 @@
 
 
 from typing import List, Dict
-from click import option, Choice
-from lean.click import PathParameter
+from click import option
+from lean.click import PathParameter, CaseInsensitiveChoice
 from lean.models.cli import cli_brokerages, cli_data_downloaders, cli_data_queue_handlers
 from lean.models.cloud import cloud_brokerages, cloud_data_queue_handlers
 from lean.models.configuration import Configuration, InfoConfiguration, InternalInputUserInput
@@ -59,7 +59,7 @@ def get_click_option_type(configuration: Configuration):
         # Skip validation if no predefined choices in config and user provided input manually
         if not configuration._choices:
             return str
-        return Choice(configuration._choices, case_sensitive=False)
+        return CaseInsensitiveChoice(configuration._choices)
     elif configuration._input_method == "prompt":
         return configuration.get_input_type()
     elif configuration._input_method == "prompt-password":

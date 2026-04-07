@@ -16,7 +16,7 @@ from typing import Optional, Tuple
 
 from click import command, option, Choice, confirm, prompt
 
-from lean.click import LeanCommand
+from lean.click import LeanCommand, CaseInsensitiveChoice
 from lean.commands.login import get_credentials, validate_credentials, get_lean_config_credentials
 from lean.constants import DEFAULT_DATA_DIRECTORY_NAME, DEFAULT_LEAN_CONFIG_FILE_NAME
 from lean.container import container
@@ -121,7 +121,7 @@ def _download_repository(output_path: Path) -> None:
 @command(cls=LeanCommand)
 @option("--organization", type=str, help="The name or id of the organization the Lean CLI will be scaffolded for")
 @option("--language", "-l",
-        type=Choice(container.cli_config_manager.default_language.allowed_values, case_sensitive=False),
+        type=CaseInsensitiveChoice(container.cli_config_manager.default_language.allowed_values),
         help="The default language to use for new projects")
 def init(organization: Optional[str], language: Optional[str]) -> None:
     """Scaffold a Lean configuration file and data directory."""

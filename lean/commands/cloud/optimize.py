@@ -13,9 +13,9 @@
 
 from typing import List, Optional, Tuple
 
-from click import command, option, Choice, argument, confirm
+from click import command, option, argument, confirm
 
-from lean.click import LeanCommand, ensure_options
+from lean.click import LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.components.config.optimizer_config_manager import NodeType, available_nodes
 from lean.container import container
 from lean.models.api import QCOptimizationBacktest, QCProject, QCCompileWithLogs, QCFullOrganization
@@ -156,7 +156,7 @@ def _display_estimate(cloud_project: QCProject,
               type=str,
               help="The target statistic of the optimization")
 @option("--target-direction",
-              type=Choice(["min", "max"], case_sensitive=False),
+              type=CaseInsensitiveChoice(["min", "max"]),
               help="Whether the target must be minimized or maximized")
 @option("--parameter",
               type=(str, float, float, float),
@@ -167,7 +167,7 @@ def _display_estimate(cloud_project: QCProject,
               multiple=True,
               help="The 'statistic operator value' pairs configuring the constraints of the optimization")
 @option("--node",
-              type=Choice([node.name for node in available_nodes], case_sensitive=False),
+              type=CaseInsensitiveChoice([node.name for node in available_nodes]),
               help="The node type to run the optimization on")
 @option("--parallel-nodes",
               type=int,

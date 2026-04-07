@@ -12,9 +12,9 @@
 # limitations under the License.
 
 from pathlib import Path
-from click import Choice, option, argument
+from click import option, argument
 
-from lean.click import LeanCommand
+from lean.click import LeanCommand, CaseInsensitiveChoice
 from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCLanguage
@@ -398,7 +398,7 @@ def _not_identifier_char(text):
 @lean.command(cls=LeanCommand, name="project-create", aliases=["create-project"])
 @argument("name", type=str)
 @option("--language", "-l",
-              type=Choice(container.cli_config_manager.default_language.allowed_values, case_sensitive=False),
+              type=CaseInsensitiveChoice(container.cli_config_manager.default_language.allowed_values),
               help="The language of the project to create")
 def create_project(name: str, language: str) -> None:
     """Create a new project containing starter code.
