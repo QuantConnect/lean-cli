@@ -274,6 +274,9 @@ class LeanCommand(Command):
         update_manager = container.update_manager
         update_manager.show_announcements()
 
+        if ctx.params.get("update", False):
+            update_manager.force_refresh_modules_json()
+
         result = super().invoke(ctx)
 
         update_manager.warn_if_cli_outdated()

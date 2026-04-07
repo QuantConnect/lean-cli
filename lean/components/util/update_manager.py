@@ -162,6 +162,15 @@ class UpdateManager:
 
         self._logger.info(Panel.fit(table, title="Announcements", box=box.SQUARE))
 
+    def force_refresh_modules_json(self) -> None:
+        """Forces a re-download of the modules JSON file, bypassing the 24-hour cache interval."""
+        from lean.models import _download_modules_json
+        try:
+            _download_modules_json()
+        except Exception:
+            # No need to do anything if file isn't available
+            pass
+
     def _should_check_for_updates(self, key: str, interval_hours: int) -> bool:
         """Returns whether an update check should be performed.
 
