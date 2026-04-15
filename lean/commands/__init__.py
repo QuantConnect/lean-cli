@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from lean.commands.lean import lean
-from lean.commands.autocomplete import autocomplete, enable_autocomplete, disable_autocomplete
+from lean.commands.completion import completion
 from lean.commands.backtest import backtest
 from lean.commands.build import build
 from lean.commands.cloud import cloud
@@ -37,9 +37,7 @@ from lean.commands.object_store import object_store
 from lean.commands.private_cloud import private_cloud
 
 lean.add_command(config)
-lean.add_command(autocomplete)
-lean.add_command(enable_autocomplete)
-lean.add_command(disable_autocomplete)
+lean.add_command(completion)
 lean.add_command(cloud)
 lean.add_command(data)
 lean.add_command(decrypt)

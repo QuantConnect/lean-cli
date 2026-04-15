@@ -80,3 +80,37 @@ def test_aliased_command_group_creates_command_for_each_alias() -> None:
     assert len(aliases_help) == len(aliases_help)
     assert all(f"Alias for '{command_name}'" in alias_help for alias_help in aliases_help)
     assert main_command_doc in main_command_help
+
+
+def test_aliased_command_group_resolves_unique_prefix_match() -> None:
+    @click.group(cls=AliasedCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command()
+    def cloud() -> None:
+        click.echo("cloud")
+
+    result = CliRunner().invoke(group, ["cl"])
+
+    assert result.exit_code == 0
+    assert result.output == "cloud\n"
+
+
+def test_aliased_command_group_fails_when_prefix_is_ambiguous() -> None:
+    @click.group(cls=AliasedCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command()
+    def cloud() -> None:
+        pass
+
+    @group.command()
+    def config() -> None:
+        pass
+
+    result = CliRunner().invoke(group, ["c"])
+
+    assert result.exit_code != 0
+    assert "Too many matches: cloud, config" in result.output

@@ -88,16 +88,17 @@ from lean.commands import lean
 from lean.container import container
 
 
-import click
 def main() -> None:
     """This function is the entrypoint when running a Lean command in a terminal."""
+    from click.exceptions import Exit
+
     try:
         lean.main(standalone_mode=False)
 
         temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
             temp_manager.delete_temporary_directories()
-    except click.exceptions.Exit as e:
+    except Exit as e:
         exit(e.exit_code)
     except Exception as exception:
         from traceback import format_exc
