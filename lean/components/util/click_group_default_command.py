@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import Group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
-class DefaultCommandGroup(Group):
+class DefaultCommandGroup(AliasedCommandGroup):
     """allow a default command for a group"""
 
     def command(self, *args, **kwargs):

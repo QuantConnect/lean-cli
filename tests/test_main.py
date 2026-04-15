@@ -35,3 +35,26 @@ def test_lean_shows_error_when_running_unknown_command() -> None:
 
     assert result.exit_code != 0
     assert "No such command" in result.output
+
+
+def test_lean_runs_top_level_commands_by_unique_prefix() -> None:
+    result = CliRunner().invoke(lean, ["cl", "--help"])
+
+    assert result.exit_code == 0
+    assert "Interact with the QuantConnect cloud." in result.output
+    assert "backtest" in result.output
+
+
+def test_lean_runs_nested_commands_by_unique_prefix() -> None:
+    result = CliRunner().invoke(lean, ["cloud", "st", "--help"])
+
+    assert result.exit_code == 0
+    assert "Show the live trading status of a project in the cloud." in result.output
+    assert "PROJECT" in result.output
+
+
+def test_lean_reports_ambiguous_prefixes() -> None:
+    result = CliRunner().invoke(lean, ["c"])
+
+    assert result.exit_code != 0
+    assert "Too many matches: cloud, completion, config, create-project" in result.output

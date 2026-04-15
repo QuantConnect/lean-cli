@@ -12,13 +12,14 @@
 # limitations under the License.
 
 from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 from lean.commands.private_cloud.start import start
 from lean.commands.private_cloud.stop import stop
 from lean.commands.private_cloud.add_compute import add_compute
 
 
-@group()
+@group(cls=AliasedCommandGroup)
 def private_cloud() -> None:
     """Interact with a QuantConnect private cloud."""
     # This method is intentionally empty

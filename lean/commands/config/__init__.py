@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from click import group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup
 
 from lean.commands.config.get import get
 from lean.commands.config.list import list
@@ -19,7 +20,7 @@ from lean.commands.config.set import set
 from lean.commands.config.unset import unset
 
 
-@group()
+@group(cls=AliasedCommandGroup)
 def config() -> None:
     """Configure Lean CLI options."""
     # This method is intentionally empty

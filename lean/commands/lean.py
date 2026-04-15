@@ -16,8 +16,11 @@ from click import group, option, Context, pass_context, echo
 from lean import __version__
 from lean.click import verbose_option
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
+from lean.components.util.click_shell_completion import register_shell_completion
 from lean.container import container
 from lean.models.errors import MoreInfoError
+
+register_shell_completion()
 
 
 @group(cls=AliasedCommandGroup, invoke_without_command=True)
