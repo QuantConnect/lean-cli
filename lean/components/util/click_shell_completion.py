@@ -110,3 +110,72 @@ def get_completion_script(shell: Optional[str], prog_name: str = "lean") -> str:
         raise RuntimeError(f"Unsupported shell '{shell_name}'. Supported shells: {supported_shells}")
 
     return completion_class(None, {}, prog_name, complete_var).source()
+
+
+def get_profile_path(shell: Optional[str]) -> Path:
+    shell_name = (shell or detect_shell()).lower()
+
+    if shell_name == "powershell":
+        if system() == "Windows":
+            return Path.home() / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
+
+        return Path.home() / ".config" / "powershell" / "Microsoft.PowerShell_profile.ps1"
+
+    if shell_name == "zsh":
+        return Path.home() / ".zshrc"
+
+    if shell_name == "fish":
+        return Path.home() / ".config" / "fish" / "completions" / "lean.fish"
+
+    return Path.home() / ".bashrc"
+
+
+def install_completion(shell: Optional[str], prog_name: str = "lean") -> Path:
+    profile_path = get_profile_path(shell)
+    marker_start = "# >>> lean completion >>>"
+    marker_end = "# <<< lean completion <<<"
+    script = get_completion_script(shell, prog_name).strip()
+
+    content = profile_path.read_text(encoding="utf-8") if profile_path.exists() else ""
+    if marker_start in content:
+        return profile_path
+
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    block = f"\n{marker_start}\n{script}\n{marker_end}\n"
+
+    with profile_path.open("a", encoding="utf-8") as file:
+        file.write(block)
+
+    return profile_path
+
+
+def uninstall_completion(shell: Optional[str]) -> tuple[Path, bool]:
+    profile_path = get_profile_path(shell)
+    marker_start = "# >>> lean completion >>>"
+    marker_end = "# <<< lean completion <<<"
+
+    if not profile_path.exists():
+        return profile_path, False
+
+    content = profile_path.read_text(encoding="utf-8")
+    start_index = content.find(marker_start)
+    if start_index == -1:
+        return profile_path, False
+
+    end_index = content.find(marker_end, start_index)
+    if end_index == -1:
+        return profile_path, False
+
+    end_index += len(marker_end)
+    new_content = content[:start_index].rstrip("\n")
+    tail = content[end_index:].lstrip("\n")
+
+    if new_content and tail:
+        new_content = f"{new_content}\n{tail}"
+    elif tail:
+        new_content = tail
+    elif new_content:
+        new_content = f"{new_content}\n"
+
+    profile_path.write_text(new_content, encoding="utf-8")
+    return profile_path, True
