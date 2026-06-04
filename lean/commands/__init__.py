@@ -11,7 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import environ
+from copy import copy
+
+if environ.get("_LEAN_COMPLETE", "").startswith("powershell_"):
+    from lean.components.util.click_shell_autocomplete import register_shell_autocomplete
+    register_shell_autocomplete()
+
 from lean.commands.lean import lean
+from lean.commands.autocomplete import autocomplete
 from lean.commands.backtest import backtest
 from lean.commands.build import build
 from lean.commands.cloud import cloud
@@ -36,6 +44,11 @@ from lean.commands.object_store import object_store
 from lean.commands.private_cloud import private_cloud
 
 lean.add_command(config)
+lean.add_command(autocomplete)
+completion = copy(autocomplete)
+completion.name = "completion"
+completion.hidden = True
+lean.add_command(completion)
 lean.add_command(cloud)
 lean.add_command(data)
 lean.add_command(decrypt)
