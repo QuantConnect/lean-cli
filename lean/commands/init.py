@@ -207,7 +207,6 @@ The following documentation pages may be useful:
 - Synchronizing projects with the cloud: https://www.lean.io/docs/v2/lean-cli/projects/cloud-synchronization
 
 Here are some commands to get you going:
-- Run `lean autocomplete --shell powershell | Out-String | Invoke-Expression` to enable PowerShell autocomplete in the current session
 - Run `lean create-project "My Project"` to create a new project with starter code
 - Run `lean cloud pull` to download all your QuantConnect projects to your local drive
 - Run `lean backtest "My Project"` to backtest a project locally with the data in {DEFAULT_DATA_DIRECTORY_NAME}/

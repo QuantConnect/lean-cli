@@ -21,7 +21,7 @@ CommandDecorator = Callable[[CommandCallback], Command]
 
 
 class AliasedCommandGroup(Group):
-    """A click.Group wrapper that implements command aliasing and autocomplete prefix matching."""
+    """A click.Group wrapper that implements command aliasing and prefix matching."""
 
     def get_command(self, ctx: Context, cmd_name: str) -> Optional[Command]:
         rv = super().get_command(ctx, cmd_name)
