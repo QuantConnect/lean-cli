@@ -165,7 +165,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|debugpy|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -253,6 +253,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the backtest when using
@@ -387,7 +390,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public]
                                   The brokerage to use
   --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
@@ -502,6 +505,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --polygon-api-key TEXT          Your Polygon.io API Key
   --polygon-license-type [Individual|Business]
                                   Select your Polygon.io subscription plan (Optional).
@@ -913,7 +919,7 @@ Usage: lean data download [OPTIONS]
   https://www.quantconnect.com/datasets
 
 Options:
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   The name of the downloader data provider.
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1001,6 +1007,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --dataset TEXT                  The name of the dataset to download non-interactively
   --overwrite                     Overwrite existing local data
   -y, --yes                       Automatically confirm payment confirmation prompts
@@ -1369,11 +1378,11 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public]
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento]
                                   The live data provider to use
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1499,6 +1508,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
@@ -1837,7 +1849,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1938,6 +1950,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
@@ -2115,7 +2130,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -2203,6 +2218,9 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --public-secret-key TEXT        Your Public.com API secret key
+  --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
+                                  picks which one to trade.
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
   --data-purchase-limit INTEGER   The maximum amount of QCC to spend on downloading data during the research session
