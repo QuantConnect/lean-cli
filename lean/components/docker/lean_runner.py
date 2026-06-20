@@ -463,12 +463,14 @@ class LeanRunner:
                                                    "map-file-provider",
                                                    "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
                                                    "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
-                                                   data_dir / "equity" / "usa" / "map_files")
+                                                   data_dir,
+                                                   "map_files")
             self._force_disk_provider_if_necessary(lean_config,
                                                    "factor-file-provider",
                                                    "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
                                                    "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-                                                   data_dir / "equity" / "usa" / "factor_files")
+                                                   data_dir,
+                                                   "factor_files")
 
     def set_up_python_options(self, project_dir: Path, run_options: Dict[str, Any], image: DockerImage) -> None:
         """Sets up Docker run options specific to Python projects.
@@ -838,14 +840,24 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                                           config_key: str,
                                           zip_provider: str,
                                           disk_provider: str,
-                                          zip_dir: Path) -> None:
+                                          data_dir: Path,
+                                          auxiliary_dir_name: str) -> None:
         """Updates the Lean config to use the disk provider instead of the zip one if there are no zips to use.
+
+        The map-file/factor-file provider is a single global engine setting that applies to every market.
+        The zip providers read per-market '<securityType>/<market>/<auxiliary_dir_name>/<name>_yyyyMMdd.zip'
+        archives, while the disk providers can only read loose '.csv' files and silently ignore those zip
+        archives. We must therefore only downgrade to the disk provider when there is no recent zip to lose
+        for *any* market, not just 'equity/usa'. Otherwise a futures-only data folder (whose map files ship
+        only inside the zip) would have its zip provider swapped out and silently stop resolving, e.g.
+        continuous futures would never map (Mapped: None) with no error raised.
 
         :param lean_config: the Lean config to update
         :param config_key: the key of the configuration property
         :param zip_provider: the fully classified name of the zip provider for this property
         :param disk_provider: the fully classified name of the disk provider for this property
-        :param zip_dir: the directory where the zip provider looks for zip files
+        :param data_dir: the root data directory
+        :param auxiliary_dir_name: the auxiliary subdirectory the zip provider reads ("map_files"/"factor_files")
         """
         from re import sub
         from datetime import datetime
@@ -853,14 +865,22 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         if lean_config.get(config_key, None) != zip_provider:
             return
 
-        if not zip_dir.exists():
-            lean_config[config_key] = disk_provider
-            return
+        # Find the newest dated zip across every market's <securityType>/<market>/<auxiliary_dir_name>/ folder.
+        newest_zip_date = None
+        for auxiliary_dir in data_dir.glob(f"*/*/{auxiliary_dir_name}"):
+            if not auxiliary_dir.is_dir():
+                continue
+            for file in auxiliary_dir.iterdir():
+                if not file.name.endswith(".zip"):
+                    continue
+                try:
+                    zip_date = datetime.strptime(sub(r"[^\d]", "", file.name), "%Y%m%d")
+                except ValueError:
+                    continue
+                if newest_zip_date is None or zip_date > newest_zip_date:
+                    newest_zip_date = zip_date
 
-        zip_names = sorted([f.name for f in zip_dir.iterdir() if f.name.endswith(".zip")], reverse=True)
-        zip_names = [sub(r"[^\d]", "", name) for name in zip_names]
-
-        if len(zip_names) == 0 or (datetime.now() - datetime.strptime(zip_names[0], "%Y%m%d")).days > 7:
+        if newest_zip_date is None or (datetime.now() - newest_zip_date).days > 7:
             lean_config[config_key] = disk_provider
 
     def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,

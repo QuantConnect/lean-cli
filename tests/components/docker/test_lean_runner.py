@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
@@ -89,6 +90,70 @@ def create_lean_runner(docker_manager: mock.Mock) -> LeanRunner:
                       project_manager,
                       TempManager(logger),
                       xml_manager)
+
+
+def test_handle_data_providers_keeps_zip_providers_for_futures_only_data() -> None:
+    # Regression: a futures-only data folder has fresh map/factor file zips under future/cme but no
+    # equity/usa data. The global zip providers must be kept; downgrading to the disk providers would
+    # silently break futures map-file resolution (continuous futures would never map, Mapped: None).
+    lean_runner = create_lean_runner(mock.Mock())
+
+    data_dir = Path.cwd() / "data"
+    fresh = datetime.now().strftime("%Y%m%d")
+    for auxiliary_dir_name in ["map_files", "factor_files"]:
+        directory = data_dir / "future" / "cme" / auxiliary_dir_name
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / f"{auxiliary_dir_name}_{fresh}.zip").touch()
+
+    lean_config = {
+        "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+        "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
+        "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+    }
+    lean_runner._handle_data_providers(lean_config, data_dir)
+
+    assert lean_config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider"
+    assert lean_config["factor-file-provider"] == "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider"
+
+
+def test_handle_data_providers_downgrades_to_disk_providers_without_any_zip() -> None:
+    # When the data folder only has loose csv auxiliary files (e.g. the free sample data) and no zips
+    # for any market, fall back to the disk providers which read those loose files.
+    lean_runner = create_lean_runner(mock.Mock())
+
+    data_dir = Path.cwd() / "data"
+    directory = data_dir / "equity" / "usa" / "map_files"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "spy.csv").touch()
+
+    lean_config = {
+        "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+        "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
+        "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+    }
+    lean_runner._handle_data_providers(lean_config, data_dir)
+
+    assert lean_config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider"
+    assert lean_config["factor-file-provider"] == "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider"
+
+
+def test_handle_data_providers_downgrades_to_disk_providers_when_zips_are_stale() -> None:
+    # If the newest zip for every market is older than the freshness window, fall back to disk.
+    lean_runner = create_lean_runner(mock.Mock())
+
+    data_dir = Path.cwd() / "data"
+    directory = data_dir / "future" / "cme" / "map_files"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "map_files_20200101.zip").touch()
+
+    lean_config = {
+        "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+        "map-file-provider": "QuantConnect.Data.Auxiliary.LocalZipMapFileProvider",
+        "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalZipFactorFileProvider",
+    }
+    lean_runner._handle_data_providers(lean_config, data_dir)
+
+    assert lean_config["map-file-provider"] == "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider"
 
 
 @pytest.mark.parametrize("release", [False, True])
