@@ -866,7 +866,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
             return
 
         # Find the newest dated zip across every market's <securityType>/<market>/<auxiliary_dir_name>/ folder.
-        newest_zip_date = None
+        newest_zip_date = datetime.min
         for auxiliary_dir in data_dir.glob(f"*/*/{auxiliary_dir_name}"):
             if not auxiliary_dir.is_dir():
                 continue
@@ -877,10 +877,10 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                     zip_date = datetime.strptime(sub(r"[^\d]", "", file.name), "%Y%m%d")
                 except ValueError:
                     continue
-                if newest_zip_date is None or zip_date > newest_zip_date:
+                if zip_date > newest_zip_date:
                     newest_zip_date = zip_date
 
-        if newest_zip_date is None or (datetime.now() - newest_zip_date).days > 7:
+        if (datetime.now() - newest_zip_date).days > 7:
             lean_config[config_key] = disk_provider
 
     def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,
