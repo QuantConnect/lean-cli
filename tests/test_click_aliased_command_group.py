@@ -15,6 +15,7 @@ import click
 from click.testing import CliRunner
 
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
+from lean.components.util.click_group_default_command import DefaultCommandGroup
 
 
 def test_aliased_command_group_takes_named_name_parameter() -> None:
@@ -136,3 +137,38 @@ def test_aliased_command_group_ignores_hidden_commands_for_prefix_matching() -> 
     assert prefix_result.output == "cloud\n"
     assert exact_result.exit_code == 0
     assert exact_result.output == "completion\n"
+
+
+def test_default_command_group_surfaces_ambiguous_prefix() -> None:
+    @click.group(cls=DefaultCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command(default_command=True, name="deploy")
+    @click.argument("project")
+    def deploy(project: str) -> None:
+        click.echo(f"deploy {project}")
+
+    @group.command()
+    def stop() -> None:
+        click.echo("stop")
+
+    @group.command()
+    def submit_order() -> None:
+        click.echo("submit_order")
+
+    unique_result = CliRunner().invoke(group, ["sto"])
+    ambiguous_result = CliRunner().invoke(group, ["s"])
+    fallback_result = CliRunner().invoke(group, ["MyProject"])
+
+    # a unique prefix still resolves
+    assert unique_result.exit_code == 0
+    assert unique_result.output == "stop\n"
+
+    # an ambiguous prefix must surface instead of falling back to the default command
+    assert ambiguous_result.exit_code != 0
+    assert "Too many matches: stop, submit-order" in ambiguous_result.output
+
+    # a non-command argument still falls back to the default command
+    assert fallback_result.exit_code == 0
+    assert fallback_result.output == "deploy MyProject\n"

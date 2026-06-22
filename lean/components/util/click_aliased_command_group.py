@@ -13,11 +13,15 @@
 
 from typing import Any, Callable, Optional, Union, overload
 
-from click import Command, Context, Group
+from click import Command, Context, Group, UsageError
 
 
 CommandCallback = Callable[..., Any]
 CommandDecorator = Callable[[CommandCallback], Command]
+
+
+class AmbiguousCommandError(UsageError):
+    """Raised when a command prefix matches more than one command."""
 
 
 class AliasedCommandGroup(Group):
@@ -39,7 +43,7 @@ class AliasedCommandGroup(Group):
         elif len(matches) == 1:
             return super().get_command(ctx, matches[0])
 
-        ctx.fail(f"Too many matches: {', '.join(sorted(matches))}")
+        raise AmbiguousCommandError(f"Too many matches: {', '.join(sorted(matches))}", ctx)
 
     @overload
     def command(self, __func: CommandCallback) -> Command:
