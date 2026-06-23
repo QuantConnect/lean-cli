@@ -495,10 +495,11 @@ class DockerManager:
             raise ValueError(f"Container {docker_container_name} is not running")
 
         data = dumps(data, cls=DecimalEncoder)
-        data = data.replace('"','\\"')
-        command = f'docker exec {docker_container_name} bash -c "echo \'{data}\' > {docker_file.as_posix()}"'
+        command = ["docker", "exec", docker_container_name, "bash", "-c",
+                   f"echo '{data}' > {docker_file.as_posix()}"]
+        # No shell=True so the host shell does not replace $type with an empty value
         try:
-            run(command, shell=True, check=True)
+            run(command, check=True)
         except CalledProcessError as exception:
             raise ValueError(f"Failed to write to {docker_file.name}: {exception.output.decode('utf-8')}")
         except Exception as e:
@@ -517,7 +518,7 @@ class DockerManager:
         from subprocess import Popen, PIPE, CalledProcessError
         from time import sleep, time
 
-        command = f'docker exec {docker_container_name} bash -c "cat {docker_file.as_posix()}"'
+        command = ["docker", "exec", docker_container_name, "bash", "-c", f"cat {docker_file.as_posix()}"]
         start = time()
         success = False
         error_message = None
@@ -529,7 +530,7 @@ class DockerManager:
                     error_message = f"Container {docker_container_name} does not exist"
                     container_running = False
                     break
-                p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 output = p.stdout.read().decode('utf-8')
                 if output is not None and output != "":
                     success = True
