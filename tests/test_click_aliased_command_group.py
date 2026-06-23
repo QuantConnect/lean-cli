@@ -15,6 +15,7 @@ import click
 from click.testing import CliRunner
 
 from lean.components.util.click_aliased_command_group import AliasedCommandGroup
+from lean.components.util.click_group_default_command import DefaultCommandGroup
 
 
 def test_aliased_command_group_takes_named_name_parameter() -> None:
@@ -80,3 +81,94 @@ def test_aliased_command_group_creates_command_for_each_alias() -> None:
     assert len(aliases_help) == len(aliases_help)
     assert all(f"Alias for '{command_name}'" in alias_help for alias_help in aliases_help)
     assert main_command_doc in main_command_help
+
+
+def test_aliased_command_group_resolves_unique_prefix_match() -> None:
+    @click.group(cls=AliasedCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command()
+    def cloud() -> None:
+        click.echo("cloud")
+
+    result = CliRunner().invoke(group, ["cl"])
+
+    assert result.exit_code == 0
+    assert result.output == "cloud\n"
+
+
+def test_aliased_command_group_fails_when_prefix_is_ambiguous() -> None:
+    @click.group(cls=AliasedCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command()
+    def cloud() -> None:
+        pass
+
+    @group.command()
+    def config() -> None:
+        pass
+
+    result = CliRunner().invoke(group, ["c"])
+
+    assert result.exit_code != 0
+    assert "Too many matches: cloud, config" in result.output
+
+
+def test_aliased_command_group_ignores_hidden_commands_for_prefix_matching() -> None:
+    @click.group(cls=AliasedCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command(hidden=True)
+    def completion() -> None:
+        click.echo("completion")
+
+    @group.command()
+    def cloud() -> None:
+        click.echo("cloud")
+
+    prefix_result = CliRunner().invoke(group, ["c"])
+    exact_result = CliRunner().invoke(group, ["completion"])
+
+    assert prefix_result.exit_code == 0
+    assert prefix_result.output == "cloud\n"
+    assert exact_result.exit_code == 0
+    assert exact_result.output == "completion\n"
+
+
+def test_default_command_group_surfaces_ambiguous_prefix() -> None:
+    @click.group(cls=DefaultCommandGroup)
+    def group() -> None:
+        pass
+
+    @group.command(default_command=True, name="deploy")
+    @click.argument("project")
+    def deploy(project: str) -> None:
+        click.echo(f"deploy {project}")
+
+    @group.command()
+    def stop() -> None:
+        click.echo("stop")
+
+    @group.command()
+    def submit_order() -> None:
+        click.echo("submit_order")
+
+    unique_result = CliRunner().invoke(group, ["sto"])
+    ambiguous_result = CliRunner().invoke(group, ["s"])
+    fallback_result = CliRunner().invoke(group, ["MyProject"])
+
+    # a unique prefix still resolves
+    assert unique_result.exit_code == 0
+    assert unique_result.output == "stop\n"
+
+    # an ambiguous prefix must surface instead of falling back to the default command
+    assert ambiguous_result.exit_code != 0
+    assert "Too many matches: stop, submit-order" in ambiguous_result.output
+
+    # a non-command argument still falls back to the default command
+    assert fallback_result.exit_code == 0
+    assert fallback_result.output == "deploy MyProject\n"

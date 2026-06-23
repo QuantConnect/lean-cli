@@ -63,6 +63,8 @@ A locally-focused workflow (local development, local execution) with the CLI may
 4. Run `lean research "Project Name"` to start a Jupyter Lab session to perform research in.
 5. Run `lean backtest "Project Name"` to run a backtest whenever there's something to test. This runs your strategy in a Docker container containing the same packages as the ones used on QuantConnect.com, but with your own data.
 
+You can save some typing by shortening command names to any unambiguous prefix. For example, `lean clo back` runs `lean cloud backtest`. If a prefix could match more than one command, the CLI shows you the options instead of guessing. They're handy for quick typing, but write out full command names in your scripts. A new command could later share the same prefix and break a shortcut that used to work.
+
 ## CLI Configurations
 
 The following CLI configurations are available. Use the [`lean config list`](#lean-config-list) command to list them at any time.

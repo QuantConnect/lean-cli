@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from click import Group
+from lean.components.util.click_aliased_command_group import AliasedCommandGroup, AmbiguousCommandError
 
-class DefaultCommandGroup(Group):
+class DefaultCommandGroup(AliasedCommandGroup):
     """allow a default command for a group"""
 
     def command(self, *args, **kwargs):
@@ -38,8 +38,11 @@ class DefaultCommandGroup(Group):
             # test if the command parses
             return super(
                 DefaultCommandGroup, self).resolve_command(ctx, args)
+        except AmbiguousCommandError:
+            # an ambiguous prefix must surface, not be absorbed by the default command
+            raise
         except Exception as e:
-            # command did not parse, assume it is the default command
+            # any other parse failure means the first arg isn't a subcommand, so use the default command
             args.insert(0, self.default_command)
             return super(
                 DefaultCommandGroup, self).resolve_command(ctx, args)
