@@ -865,23 +865,25 @@ for library_id, library_data in project_assets["targets"][project_target].items(
         if lean_config.get(config_key, None) != zip_provider:
             return
 
-        # Find the newest dated zip across every market's <securityType>/<market>/<auxiliary_dir_name>/ folder.
-        newest_zip_date = datetime.min
-        for auxiliary_dir in data_dir.glob(f"*/*/{auxiliary_dir_name}"):
-            if not auxiliary_dir.is_dir():
+        # Keep the zip provider as long as any market has a recent map/factor file zip: the disk
+        # provider only reads loose csv, so downgrading would silently drop zip-shipped files (e.g.
+        # futures map files). We only need to know a recent zip exists, so we stop at the first one.
+        now = datetime.now()
+        for zip_file in data_dir.glob(f"*/*/{auxiliary_dir_name}/*.zip"):
+            try:
+                zip_date = datetime.strptime(sub(r"[^\d]", "", zip_file.name), "%Y%m%d")
+            except ValueError:
                 continue
-            for file in auxiliary_dir.iterdir():
-                if not file.name.endswith(".zip"):
-                    continue
-                try:
-                    zip_date = datetime.strptime(sub(r"[^\d]", "", file.name), "%Y%m%d")
-                except ValueError:
-                    continue
-                if zip_date > newest_zip_date:
-                    newest_zip_date = zip_date
+            if (now - zip_date).days <= 7:
+                self._logger.debug(
+                    f"LeanRunner._force_disk_provider_if_necessary(): found recent '{auxiliary_dir_name}' zip "
+                    f"'{zip_file.name}', keeping '{zip_provider}' for '{config_key}'")
+                return
 
-        if (datetime.now() - newest_zip_date).days > 7:
-            lean_config[config_key] = disk_provider
+        self._logger.debug(
+            f"LeanRunner._force_disk_provider_if_necessary(): no '{auxiliary_dir_name}' zip newer than 7 days, "
+            f"using '{disk_provider}' for '{config_key}'")
+        lean_config[config_key] = disk_provider
 
     def setup_language_specific_run_options(self, run_options, project_dir, algorithm_file,
                                             set_up_common_csharp_options_called, release, image: DockerImage) -> None:
