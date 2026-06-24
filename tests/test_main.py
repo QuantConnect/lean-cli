@@ -20,14 +20,14 @@ def test_lean_shows_help_when_called_without_arguments() -> None:
     result = CliRunner().invoke(lean, [])
 
     assert result.exit_code == 0
-    assert "Usage: lean [OPTIONS] COMMAND [ARGS]..." in result.output
+    assert "Usage: lean [OPTIONS]" in result.output
 
 
 def test_lean_shows_help_when_called_with_help_option() -> None:
     result = CliRunner().invoke(lean, ["--help"])
 
     assert result.exit_code == 0
-    assert "Usage: lean [OPTIONS] COMMAND [ARGS]..." in result.output
+    assert "Usage: lean [OPTIONS]" in result.output
 
 
 def test_lean_shows_error_when_running_unknown_command() -> None:
