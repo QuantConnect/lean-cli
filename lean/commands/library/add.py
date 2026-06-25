@@ -110,15 +110,15 @@ def _is_pypi_file_compatible(file: Dict[str, Any], required_python_version) -> b
     :param required_python_version: the Python version to check compatibility for
     :return: True if the file is compatible with the given Python version, False if not
     """
-    from pkg_resources import Requirement
+    from packaging.requirements import Requirement
 
-    major, minor, patch = required_python_version.version
+    major, minor = required_python_version.major, required_python_version.minor
     if file["python_version"] not in [f"py{major}", f"py{major}{minor}", f"cp{major}", f"cp{major}{minor}", "source"]:
         return False
 
     if file["requires_python"] is not None:
         requires_python = file["requires_python"].rstrip(",")
-        if str(required_python_version) not in Requirement.parse(f"python{requires_python}").specifier:
+        if str(required_python_version) not in Requirement(f"python{requires_python}").specifier:
             return False
 
     return True
@@ -135,7 +135,7 @@ def _get_pypi_package(name: str, version: Optional[str], python_version: str) ->
     """
     from json import loads
     from dateutil.parser import isoparse
-    from distutils.version import StrictVersion
+    from packaging.version import Version
 
     response = container.http_client.get(f"https://pypi.org/pypi/{name}/json", raise_for_status=False)
 
@@ -148,7 +148,7 @@ def _get_pypi_package(name: str, version: Optional[str], python_version: str) ->
     pypi_data = loads(response.text)
     name = pypi_data["info"]["name"]
 
-    required_python_version = StrictVersion(python_version)
+    required_python_version = Version(python_version)
 
     last_compatible_version = None
     last_compatible_version_upload_time = None
@@ -187,7 +187,7 @@ def _add_python_package_to_requirements(requirements_file: Path, name: str, vers
     :param name: the name of the package
     :param version: the version of the package
     """
-    from pkg_resources import Requirement
+    from packaging.requirements import Requirement
 
     if not requirements_file.is_file():
         requirements_file.touch()
@@ -199,7 +199,7 @@ def _add_python_package_to_requirements(requirements_file: Path, name: str, vers
 
     for line in requirements_lines:
         try:
-            requirement = Requirement.parse(line)
+            requirement = Requirement(line)
             if requirement.name.lower() == name.lower():
                 new_lines.append(f"{name}=={version}")
                 requirement_added = True

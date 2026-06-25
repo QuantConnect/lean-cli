@@ -557,12 +557,12 @@ class LeanRunner:
         :param requirements_files: the paths to the requirements.txt files
         :return: the normalized requirements from all given requirements.txt files
         """
-        from pkg_resources import Requirement
+        from packaging.requirements import Requirement
         requirements = []
         for file in requirements_files:
             for line in file.read_text(encoding="utf-8").splitlines():
                 try:
-                    requirements.append(Requirement.parse(line))
+                    requirements.append(Requirement(line))
                 except ValueError:
                     pass
 

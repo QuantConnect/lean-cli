@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install setuptools==69.5.1 wheel
+          pip install setuptools wheel
           pip install -r requirements.txt
 
       - name: Run normal tests

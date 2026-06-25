@@ -68,9 +68,9 @@ class UpdateManager:
             return
 
         latest_version = response.json()["info"]["version"]
-        from distutils.version import StrictVersion
+        from packaging.version import Version
 
-        if StrictVersion(latest_version) > StrictVersion(current_version):
+        if Version(latest_version) > Version(current_version):
             self._logger.warn(f"A new release of the Lean CLI is available ({current_version} -> {latest_version})")
             self._logger.warn("Run `pip install --upgrade lean` to update to the latest version")
 
