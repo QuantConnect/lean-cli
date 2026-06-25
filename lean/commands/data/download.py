@@ -559,6 +559,9 @@ def _replace_data_type(ctx, param, value):
         is_flag=True,
         default=False,
         help="Use the local LEAN engine image instead of pulling the latest version")
+@option("--project",
+        type=str,
+        help="Name or id of the cloud project to use for brokerage OAuth authentication")
 @pass_context
 def download(ctx: Context,
              data_provider_historical: Optional[str],
@@ -576,6 +579,7 @@ def download(ctx: Context,
              image: Optional[str],
              update: bool,
              no_update: bool,
+             project: Optional[str],
              **kwargs) -> None:
     """Purchase and download data directly from QuantConnect or download from supported data providers
 
@@ -677,6 +681,15 @@ def download(ctx: Context,
         lean_config = container.lean_config_manager.get_complete_lean_config(None, None, None)
 
         engine_image, container_module_version, project_config = container.manage_docker_image(image, update, no_update)
+
+        # OAuth downloaders need a real cloud project ID for the Auth0 URL, but `data download`
+        # runs outside any project. Take it from --project or prompt instead of the -1 the API rejects.
+        if data_downloader_provider.requires_auth():
+            if project is not None:
+                lean_config["project-id"] = container.cloud_project_manager.get_cloud_project(project, False).projectId
+            else:
+                lean_config["project-id"] = data_downloader_provider.get_project_id(
+                    lean_config["project-id"], require_project_id=True)
 
         data_downloader_provider = config_build_for_name(lean_config, data_downloader_provider.get_name(),
                                                          cli_data_downloaders, kwargs, logger, interactive=True)

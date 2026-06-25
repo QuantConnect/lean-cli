@@ -203,6 +203,13 @@ class JsonModule(ABC):
             lean_config[user_name_key] = user_name
         return user_name
 
+    def requires_auth(self) -> bool:
+        """Returns whether this module uses OAuth (Auth0) authentication.
+
+        :return: True if any of the module's configurations is an AuthConfiguration
+        """
+        return any(isinstance(config, AuthConfiguration) for config in self._lean_configs)
+
     def get_project_id(self, default_project_id: int, require_project_id: bool) -> int:
         """Retrieve the project ID, prompting the user if required and default is invalid.
 
