@@ -225,11 +225,21 @@ def _run_oauth_download(extra_run_command: List[str], cli_input: str = "\n"):
         auth.get_account_ids.return_value = []
         return auth
 
+    def _fake_get_cloud_project(input, push):
+        cloud_project = MagicMock()
+        try:
+            cloud_project.projectId = int(input)
+        except ValueError:
+            cloud_project.projectId = 99999
+        return cloud_project
+
     with mock.patch.object(container.lean_runner, "get_basic_docker_config_without_algo",
                            return_value={"commands": [], "mounts": []}), \
             mock.patch.object(container.api_client.data, "download_public_file_json",
                               return_value=_get_data_provider_config()), \
             mock.patch.object(container.api_client.organizations, "get", return_value=create_api_organization()), \
+            mock.patch.object(container.cloud_project_manager, "get_cloud_project",
+                              side_effect=_fake_get_cloud_project), \
             mock.patch("lean.models.json_module.get_authorization", side_effect=_fake_get_authorization):
         run_parameters = [
             "data", "download",
@@ -254,6 +264,13 @@ def test_download_oauth_provider_uses_provided_project_id():
 
     assert result.exit_code == 0
     assert captured_project_ids == [12345]
+
+
+def test_download_oauth_provider_resolves_project_name():
+    result, captured_project_ids = _run_oauth_download(["--project", "My Project"])
+
+    assert result.exit_code == 0
+    assert captured_project_ids == [99999]
 
 
 def test_download_oauth_provider_prompts_for_project_id_when_missing():

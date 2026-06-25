@@ -1021,7 +1021,7 @@ Options:
   --image TEXT                    The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                        Pull the LEAN engine image before running the Downloader Data Provider
   --no-update                     Use the local LEAN engine image instead of pulling the latest version
-  --project INTEGER               The cloud project ID to use for brokerage OAuth authentication
+  --project TEXT                  Name or id of the cloud project to use for brokerage OAuth authentication
   --lean-config FILE              The Lean configuration file that should be used (defaults to the nearest lean.json)
   --verbose                       Enable debug logging
   --help                          Show this message and exit.
