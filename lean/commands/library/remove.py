@@ -64,7 +64,7 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
     :param project_dir: the path to the project directory
     :param name: the name of the library to remove
     """
-    from pkg_resources import Requirement
+    from packaging.requirements import Requirement
 
     logger = container.logger
     path_manager = container.path_manager
@@ -80,7 +80,7 @@ def _remove_pypi_package_from_python_project(project_dir: Path, name: str) -> No
 
     for line in requirements_content.splitlines():
         try:
-            requirement = Requirement.parse(line)
+            requirement = Requirement(line)
             if requirement.name.lower() != name.lower():
                 new_lines.append(line)
         except ValueError:

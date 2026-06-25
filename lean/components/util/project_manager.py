@@ -707,7 +707,7 @@ class ProjectManager:
         :param project_dir: the directory of the project
         :return: True if the configuration was generated successfully or changes where made, False if otherwise.
         """
-        from pkg_resources import resource_string
+        from importlib.resources import files
 
         ssh_dir = Path("~/.lean/ssh").expanduser()
 
@@ -717,7 +717,7 @@ class ProjectManager:
             file_name = ssh_dir / name
             if not file_name.exists() or file_name.stat().st_size == 0:
                 with (ssh_dir / name).open("wb+") as file:
-                    file.write(resource_string("lean", f"ssh/{name}"))
+                    file.write((files("lean") / "ssh" / name).read_bytes())
 
         made_changes = False
         # Find Rider's global configuration directory for versions < 2022

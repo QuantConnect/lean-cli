@@ -4,32 +4,29 @@
 block_cipher = None
 
 def Entrypoint(dist, group, name, **kwargs):
-    import pkg_resources
+    from importlib.metadata import distribution, entry_points
 
     # get toplevel packages of distribution from metadata
     def get_toplevel(dist):
-        distribution = pkg_resources.get_distribution(dist)
-        if distribution.has_metadata('top_level.txt'):
-            return list(distribution.get_metadata('top_level.txt').split())
-        else:
-            return []
+        top_level = distribution(dist).read_text('top_level.txt')
+        return top_level.split() if top_level else []
 
     kwargs.setdefault('hiddenimports', [])
     packages = []
-    for distribution in kwargs['hiddenimports']:
-        packages += get_toplevel(distribution)
+    for distribution_name in kwargs['hiddenimports']:
+        packages += get_toplevel(distribution_name)
 
     kwargs.setdefault('pathex', [])
     # get the entry point
-    ep = pkg_resources.get_entry_info(dist, group, name)
-    # insert path of the egg at the verify front of the search path
-    kwargs['pathex'] = [ep.dist.location] + kwargs['pathex']
+    ep = next(ep for ep in entry_points(group=group) if ep.name == name)
+    # insert path of the distribution at the verify front of the search path
+    kwargs['pathex'] = [str(distribution(dist).locate_file(''))] + kwargs['pathex']
     # script name must not be a valid module name to avoid name clashes on import
     script_path = os.path.join(workpath, name + '-script.py')
     print("creating script for entry point", dist, group, name)
     with open(script_path, 'w') as fh:
-        print("import", ep.module_name, file=fh)
-        print("%s.%s()" % (ep.module_name, '.'.join(ep.attrs)), file=fh)
+        print("import", ep.module, file=fh)
+        print("%s.%s()" % (ep.module, ep.attr), file=fh)
         for package in packages:
             print("import", package, file=fh)
 

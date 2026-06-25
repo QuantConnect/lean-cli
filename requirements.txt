@@ -1,7 +1,7 @@
 # This file contains development dependencies
 # Production dependencies are stored in setup.py
 
-setuptools==69.5.1
+setuptools
 -e .
 
 wheel

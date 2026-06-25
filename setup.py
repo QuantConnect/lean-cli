@@ -55,7 +55,7 @@ install_requires = [
     "python-dateutil>=2.8.2",
     "lxml>=4.9.0",
     "joblib>=1.1.0",
-    "setuptools",
+    "packaging",
     f"quantconnect-stubs{get_stubs_version_range()}",
     "cryptography>=41.0.4",
 ]
