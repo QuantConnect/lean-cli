@@ -137,7 +137,8 @@ def test_projects_crud() -> None:
     project_client.delete(created_project.projectId)
 
     # Test the project is really deleted
-    projects = project_client.get_all(None)
+    # The API soft deletes projects (moves them to "Recycle Bin/..."), so exclude those
+    projects = [p for p in project_client.get_all(None) if not p.name.startswith("Recycle Bin/")]
     assert not any([p.projectId == created_project.projectId for p in projects])
 
 
