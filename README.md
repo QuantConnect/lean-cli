@@ -255,6 +255,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
@@ -507,6 +508,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
@@ -1009,6 +1011,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
@@ -1511,6 +1514,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
@@ -1953,6 +1957,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
@@ -2221,6 +2226,7 @@ Options:
   --webull-app-key TEXT           Your Webull App Key
   --webull-app-secret TEXT        Your Webull App Secret
   --webull-account-id TEXT        Your Webull account id
+  --webull-use-2fa BOOLEAN        Whether two-factor authentication (2FA) should be used (Optional).
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
