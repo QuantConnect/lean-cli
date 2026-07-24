@@ -13,6 +13,7 @@
 
 from lean.components.api.api_client import *
 from lean.models.api import QCDataInformation
+from lean.models.errors import AuthenticationError
 from typing import List, Callable, cast
 
 
@@ -110,9 +111,15 @@ class DataClient:
         if prefix in DataClient._list_files_cache:
             return DataClient._list_files_cache[prefix]
 
-        data = self._api.post("data/list", {
-            "filePath": prefix
-        })
+        try:
+            data = self._api.post("data/list", {
+                "filePath": prefix
+            })
+        except AuthenticationError:
+            # The API returns a 500 response (which the API client translates into an AuthenticationError)
+            # when the given prefix does not exist, credential issues would have surfaced in earlier requests
+            raise RuntimeError(f"The requested data with prefix '{prefix}' is not available, "
+                               "please contact support@quantconnect.com")
 
         first_part = prefix.split("/")[0]
         files = sorted(f"{first_part}/{obj}" for obj in data["objects"])
