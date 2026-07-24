@@ -115,9 +115,12 @@ class DataClient:
             data = self._api.post("data/list", {
                 "filePath": prefix
             })
-        except AuthenticationError:
-            # The API returns a 500 response (which the API client translates into an AuthenticationError)
-            # when the given prefix does not exist, credential issues would have surfaced in earlier requests
+        except AuthenticationError as error:
+            # The API returns a 500 response with an empty body (which the API client translates into
+            # an AuthenticationError) when the given prefix does not exist, errors caused by genuinely
+            # invalid credentials don't originate from such a response and are re-raised unchanged
+            if error.response is None or error.response.status_code != 500:
+                raise
             raise RuntimeError(f"The requested data with prefix '{prefix}' is not available, "
                                "please contact support@quantconnect.com")
 

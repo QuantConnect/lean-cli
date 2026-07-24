@@ -158,7 +158,7 @@ class APIClient:
             return self._request(method, endpoint, options, False)
 
         if response.status_code == 500:
-            raise AuthenticationError()
+            raise AuthenticationError(response)
 
         if response.status_code < 200 or response.status_code >= 300:
             raise RequestFailedError(response)

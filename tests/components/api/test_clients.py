@@ -270,7 +270,7 @@ def test_data_client_list_files() -> None:
 
 def test_data_client_list_files_raises_data_not_available_error_when_api_returns_500() -> None:
     api_client = mock.Mock()
-    api_client.post.side_effect = AuthenticationError()
+    api_client.post.side_effect = AuthenticationError(mock.Mock(status_code=500))
     data_client = DataClient(api_client, HTTPClient(mock.Mock()))
 
     with pytest.raises(RuntimeError) as error:
@@ -279,6 +279,17 @@ def test_data_client_list_files_raises_data_not_available_error_when_api_returns
     assert "setup/forex/oanda/202" in str(error.value)
     assert "is not available" in str(error.value)
     assert "support@quantconnect.com" in str(error.value)
+
+
+def test_data_client_list_files_raises_authentication_error_when_credentials_are_invalid() -> None:
+    api_client = mock.Mock()
+    api_client.post.side_effect = AuthenticationError()
+    data_client = DataClient(api_client, HTTPClient(mock.Mock()))
+
+    with pytest.raises(AuthenticationError) as error:
+        data_client.list_files("equity/usa/daily")
+
+    assert "Invalid credentials" in str(error.value)
 
 
 def test_data_client_get_info() -> None:
