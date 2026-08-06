@@ -33,6 +33,7 @@ from lean.components.api.project_client import ProjectClient
 from lean.components.util.http_client import HTTPClient
 from lean.constants import API_BASE_URL
 from lean.models.api import QCCompileState, QCLanguage, QCParameter, QCProject
+from lean.models.errors import AuthenticationError
 
 # These tests require a QuantConnect user id and API token
 # The credentials can also be provided using the QC_USER_ID and QC_API_TOKEN environment variables
@@ -265,6 +266,30 @@ def test_data_client_list_files() -> None:
     # Test all files start with the requested prefix
     for file in files:
         assert file.startswith("crypto/coinbase/daily/")
+
+
+def test_data_client_list_files_raises_data_not_available_error_when_api_returns_500() -> None:
+    api_client = mock.Mock()
+    api_client.post.side_effect = AuthenticationError(mock.Mock(status_code=500))
+    data_client = DataClient(api_client, HTTPClient(mock.Mock()))
+
+    with pytest.raises(RuntimeError) as error:
+        data_client.list_files("setup/forex/oanda/202")
+
+    assert "setup/forex/oanda/202" in str(error.value)
+    assert "is not available" in str(error.value)
+    assert "support@quantconnect.com" in str(error.value)
+
+
+def test_data_client_list_files_raises_authentication_error_when_credentials_are_invalid() -> None:
+    api_client = mock.Mock()
+    api_client.post.side_effect = AuthenticationError()
+    data_client = DataClient(api_client, HTTPClient(mock.Mock()))
+
+    with pytest.raises(AuthenticationError) as error:
+        data_client.list_files("equity/usa/daily")
+
+    assert "Invalid credentials" in str(error.value)
 
 
 def test_data_client_get_info() -> None:

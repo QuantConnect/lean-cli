@@ -51,7 +51,12 @@ class MoreInfoError(Exception):
 class AuthenticationError(MoreInfoError):
     """An error indicating that a request has failed because the used credentials were invalid."""
 
-    def __init__(self) -> None:
-        """Creates a new AuthenticationError instance."""
+    def __init__(self, response=None) -> None:
+        """Creates a new AuthenticationError instance.
+
+        :param response: the data of the failed response, if the error was inferred from an HTTP response
+        """
         super().__init__("Invalid credentials, please log in using `lean login`",
                          "https://www.lean.io/docs/v2/lean-cli/initialization/authenticating-accounts#02-Log-In")
+
+        self.response = response
