@@ -89,6 +89,7 @@ The following CLI configurations are available. Use the [`lean config list`](#le
 - [`lean build`](#lean-build)
 - [`lean cloud backtest`](#lean-cloud-backtest)
 - [`lean cloud live`](#lean-cloud-live)
+- [`lean cloud live broadcast`](#lean-cloud-live-broadcast)
 - [`lean cloud live command`](#lean-cloud-live-command)
 - [`lean cloud live deploy`](#lean-cloud-live-deploy)
 - [`lean cloud live liquidate`](#lean-cloud-live-liquidate)
@@ -352,11 +353,34 @@ Options:
   --help  Show this message and exit.
 
 Commands:
+  broadcast  Broadcast a command to all running cloud live trading projects in an organization.
   command    Send a command to a running cloud live trading project.
   deploy     Start live trading for a project in the cloud.
   liquidate  Stops live trading and liquidates existing positions for a certain project.
   stop       Stops live trading for a certain project without liquidating existing positions.
 ```
+
+### `lean cloud live broadcast`
+
+Broadcast a command to all running cloud live trading projects in an organization.
+
+```
+Usage: lean cloud live broadcast [OPTIONS]
+
+  Broadcast a command to all running cloud live trading projects in an organization.
+
+Options:
+  --data TEXT             The command to send, 'str' representation of a 'dict' e.g. "{ \"target\": \"BTCUSD\",
+                          \"$type\":\"MyCommand\" }"  [required]
+  --organization TEXT     The name or id of the organization to broadcast the command to, defaults to the organization
+                          of the current Lean CLI directory
+  --exclude-project TEXT  The name or id of the project to exclude from the broadcast, by default all projects are
+                          included
+  --verbose               Enable debug logging
+  --help                  Show this message and exit.
+```
+
+_See code: [lean/commands/cloud/live/broadcast.py](lean/commands/cloud/live/broadcast.py)_
 
 ### `lean cloud live command`
 
