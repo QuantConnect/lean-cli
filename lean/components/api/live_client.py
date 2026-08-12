@@ -134,3 +134,24 @@ class LiveClient:
             "command": command
         })
         return QCRestResponse(**data)
+
+    def broadcast_command(self,
+                          organization_id: str,
+                          command: dict,
+                          exclude_project_id: Optional[int] = None) -> QCRestResponse:
+        """Broadcasts a command to all live trading deployments in an organization
+
+        :param organization_id: the id of the organization to broadcast the command to
+        :param command: the command to send
+        :param exclude_project_id: the id of the project to exclude from the broadcast, None to include all projects
+        """
+        parameters = {
+            "organizationId": organization_id,
+            "command": command
+        }
+
+        if exclude_project_id is not None:
+            parameters["excludeProjectId"] = exclude_project_id
+
+        data = self._api.post("live/commands/broadcast", parameters)
+        return QCRestResponse(**data)

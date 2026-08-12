@@ -20,7 +20,7 @@ from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, \
     QCTelegramNotificationMethod, QCAuth0Authorization
-from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes
+from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes, create_api_organization
 from tests.commands.test_live import brokerage_required_options
 
 brokerage_required_options = {
@@ -62,6 +62,82 @@ def test_cloud_live_liquidate() -> None:
     result = CliRunner().invoke(lean, ["cloud", "live", "liquidate", "Python Project"])
 
     assert result.exit_code == 0
+
+def test_cloud_live_command() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock(get_cloud_project=mock.Mock(return_value=mock.Mock(projectId=123)))
+    container.cloud_project_manager = cloud_project_manager
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "command", "Python Project",
+                                       "--data", '{ "$type": "MyCommand" }'])
+
+    assert result.exit_code == 0
+
+    api_client.live.command_create.assert_called_once_with(123, {"$type": "MyCommand"})
+
+def test_cloud_live_broadcast() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    container.api_client = api_client
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "broadcast", "--data", '{ "$type": "MyCommand" }'])
+
+    assert result.exit_code == 0
+
+    # "abc" is the organization id of the fake Lean CLI directory
+    api_client.live.broadcast_command.assert_called_once_with("abc", {"$type": "MyCommand"}, None)
+
+def test_cloud_live_broadcast_excludes_given_project() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock(get_cloud_project=mock.Mock(return_value=mock.Mock(projectId=123)))
+    container.cloud_project_manager = cloud_project_manager
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "broadcast", "--data", '{ "$type": "MyCommand" }',
+                                       "--exclude-project", "Python Project"])
+
+    assert result.exit_code == 0
+
+    cloud_project_manager.get_cloud_project.assert_called_once_with("Python Project", False)
+    api_client.live.broadcast_command.assert_called_once_with("abc", {"$type": "MyCommand"}, 123)
+
+def test_cloud_live_broadcast_uses_given_organization() -> None:
+    create_fake_lean_cli_directory()
+
+    organization = create_api_organization()
+
+    api_client = mock.Mock()
+    api_client.organizations.get_all.return_value = [organization]
+    container.api_client = api_client
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "broadcast", "--data", '{ "$type": "MyCommand" }',
+                                       "--organization", organization.name])
+
+    assert result.exit_code == 0
+
+    api_client.live.broadcast_command.assert_called_once_with(organization.id, {"$type": "MyCommand"}, None)
+
+def test_cloud_live_broadcast_aborts_when_organization_not_found() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.organizations.get_all.return_value = [create_api_organization()]
+    container.api_client = api_client
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "broadcast", "--data", '{ "$type": "MyCommand" }',
+                                       "--organization", "not-a-member"])
+
+    assert result.exit_code != 0
+
+    api_client.live.broadcast_command.assert_not_called()
 
 def test_cloud_live_deploy() -> None:
     create_fake_lean_cli_directory()
