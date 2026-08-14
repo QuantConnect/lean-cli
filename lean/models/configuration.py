@@ -13,11 +13,11 @@
 
 from pathlib import Path
 from typing import Any, Dict, List
-from click import prompt
+from click import prompt, ClickException
 from lean.click import CaseInsensitiveChoice
 from abc import ABC, abstractmethod
 from lean.components.util.logger import Logger
-from lean.click import PathParameter
+from lean.click import PathParameter, RegexParameter
 
 
 class BaseCondition(ABC):
@@ -107,6 +107,7 @@ class Configuration(ABC):
             self._filter = Filter([])
         self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
         self._optional = config_json_object["optional"] if "optional" in config_json_object else False
+        self._regex_type = self._create_regex_type(config_json_object)
 
     def factory(config_json_object) -> 'Configuration':
         """Creates an instance of the child classes.
@@ -127,6 +128,41 @@ class Configuration(ABC):
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
+
+    @staticmethod
+    def _create_regex_type(config_json_object):
+        """Creates the click type validating the values of a configuration, as described by the modules json.
+
+        :param config_json_object: the json object dict with configuration info
+        :return: a RegexParameter instance, or None when the modules json doesn't describe a regex
+        """
+        if "input-regex" not in config_json_object.keys():
+            return None
+        message_key = "input-regex-message"
+        message = config_json_object[message_key] if message_key in config_json_object.keys() else None
+        return RegexParameter(config_json_object["input-regex"], message)
+
+    def get_regex_type(self):
+        """Returns the click type validating this configuration against the regex given by the modules json.
+
+        :return: a RegexParameter instance, or None when the modules json doesn't describe a regex
+        """
+        return self._regex_type
+
+    def validate(self, value):
+        """Validates a value which didn't go through a click prompt or option, like the ones read from the Lean config.
+
+        :param value: the value to validate
+        :raises RuntimeError: when the value doesn't match the regex given by the modules json
+        :return: the validated value
+        """
+        regex_type = self.get_regex_type()
+        if value is None or regex_type is None:
+            return value
+        try:
+            return regex_type.convert(value, None, None)
+        except ClickException as e:
+            raise RuntimeError(f"Invalid value for '{self._id}': {e.message}")
 
     def __repr__(self):
         return f'{self._id}: {self._value}'
@@ -273,6 +309,9 @@ class PromptUserInput(UserInputConfiguration):
         return prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
+        regex_type = self.get_regex_type()
+        if regex_type is not None:
+            return regex_type
         return self.map_to_types.get(self._input_type, self._input_type)
 
 

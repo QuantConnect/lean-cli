@@ -22,7 +22,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from lean.click import DateParameter, LeanCommand, PathParameter
+from lean.click import DateParameter, LeanCommand, PathParameter, RegexParameter
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -209,3 +209,51 @@ def test_date_parameter_fails_when_input_not_formatted_as_yyyymmdd(input: str) -
     result = CliRunner().invoke(command, [input])
 
     assert result.exit_code != 0
+
+
+# The regex the modules json uses for ib-weekly-restart-utc-time,
+# Interactive Brokers doesn't support weekly restart times later than 23:30 UTC
+TIME_REGEX = r"^(?:(?:[01][0-9]|2[0-2]):[0-5][0-9]:[0-5][0-9]|23:(?:[0-2][0-9]:[0-5][0-9]|30:00))$"
+TIME_REGEX_MESSAGE = "must be a UTC time in hh:mm:ss format, no later than 23:30:00"
+
+
+@pytest.mark.parametrize("input", ["21:00:00", "00:00:00", "23:29:59", "23:30:00"])
+def test_regex_parameter_returns_input_when_it_matches(input: str) -> None:
+    given_arg: Optional[str] = None
+
+    @click.command()
+    @click.argument("arg", type=RegexParameter(TIME_REGEX, TIME_REGEX_MESSAGE))
+    def command(arg: str) -> None:
+        nonlocal given_arg
+        given_arg = arg
+
+    result = CliRunner().invoke(command, [input])
+
+    assert result.exit_code == 0
+
+    assert given_arg == input
+
+
+@pytest.mark.parametrize("input", ["23:30:01", "23:50:00", "21:00", "25:00:00", "21:60:00", "210000", "invalid"])
+def test_regex_parameter_fails_when_input_does_not_match(input: str) -> None:
+    @click.command()
+    @click.argument("arg", type=RegexParameter(TIME_REGEX, TIME_REGEX_MESSAGE))
+    def command(arg: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, [input])
+
+    assert result.exit_code != 0
+    assert f"'{input}' is not supported, it {TIME_REGEX_MESSAGE}" in result.output
+
+
+def test_regex_parameter_falls_back_to_the_pattern_when_no_message_is_given() -> None:
+    @click.command()
+    @click.argument("arg", type=RegexParameter(TIME_REGEX))
+    def command(arg: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, ["invalid"])
+
+    assert result.exit_code != 0
+    assert f"must match the '{TIME_REGEX}' format" in result.output

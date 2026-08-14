@@ -53,6 +53,9 @@ def get_click_option_type(configuration: Configuration):
     # TODO: handle input can inherit type prompt.
     if configuration._config_type == "internal-input":
         return str
+    regex_type = configuration.get_regex_type()
+    if regex_type is not None:
+        return regex_type
     if configuration._input_method == "confirm":
         return bool
     elif configuration._input_method == "choice":

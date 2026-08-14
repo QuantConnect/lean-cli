@@ -224,6 +224,45 @@ class JsonModule(ABC):
                                 -1, show_default=False)
         return project_id
 
+    def _ask_user_for_input(self, configuration: Configuration, logger: Logger, hide_input: bool):
+        """Prompts the user for the value of a configuration and saves it in the Lean config.
+
+        :param configuration: the configuration to prompt the user for
+        :param logger: the logger to use
+        :param hide_input: whether to hide secrets inputs
+        :return: the value provided by the user
+        """
+        user_choice = configuration.ask_user_for_input(configuration._input_default, logger, hide_input=hide_input)
+
+        if not isinstance(configuration, BrokerageEnvConfiguration):
+            self._save_property({f"{configuration._id}": user_choice})
+
+        return user_choice
+
+    def _validate(self, configuration: Configuration, user_choice, logger: Logger, interactive: bool,
+                  hide_input: bool):
+        """Validates the value of a configuration, prompting the user for a new one when it isn't supported.
+
+        Values which come from the Lean config or from the modules json didn't go through click,
+        so they are validated here instead.
+
+        :param configuration: the configuration the value belongs to
+        :param user_choice: the value to validate
+        :param logger: the logger to use
+        :param interactive: true if running in interactive mode
+        :param hide_input: whether to hide secrets inputs
+        :raises RuntimeError: when the value isn't supported and the user cannot be prompted for a new one
+        :return: the validated value
+        """
+        while True:
+            try:
+                return configuration.validate(user_choice)
+            except RuntimeError as e:
+                if not interactive:
+                    raise
+                logger.info(str(e))
+                user_choice = self._ask_user_for_input(configuration, logger, hide_input)
+
     def config_build(self,
                      lean_config: Dict[str, Any],
                      logger: Logger,
@@ -318,11 +357,7 @@ class JsonModule(ABC):
                 #       in which case we still want to prompt the user.
                 if not user_choice:
                     if interactive:
-                        default_value = configuration._input_default
-                        user_choice = configuration.ask_user_for_input(default_value, logger, hide_input=hide_input)
-
-                        if not isinstance(configuration, BrokerageEnvConfiguration):
-                            self._save_property({f"{configuration._id}": user_choice})
+                        user_choice = self._ask_user_for_input(configuration, logger, hide_input)
                     else:
                         if configuration._input_default != None and configuration._optional:
                             # if optional and we have a default input value and the user didn't provider it we use it
@@ -330,7 +365,8 @@ class JsonModule(ABC):
                         else:
                             missing_options.append(f"--{configuration._id}")
 
-            configuration._value = user_choice
+            # the values that come from the Lean config didn't go through click, so they are validated here
+            configuration._value = self._validate(configuration, user_choice, logger, interactive, hide_input)
 
         if len(missing_options) > 0:
             raise RuntimeError(f"""You are missing the following option{"s" if len(missing_options) > 1 else ""}: {', '
