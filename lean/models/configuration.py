@@ -13,11 +13,11 @@
 
 from pathlib import Path
 from typing import Any, Dict, List
-from click import prompt
+from click import prompt, ClickException, ParamType
 from lean.click import CaseInsensitiveChoice
 from abc import ABC, abstractmethod
 from lean.components.util.logger import Logger
-from lean.click import PathParameter
+from lean.click import PathParameter, TimeParameter
 
 
 class BaseCondition(ABC):
@@ -127,6 +127,14 @@ class Configuration(ABC):
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
+
+    def validate(self, value):
+        """Validates a value which didn't go through a click prompt or option, like the ones read from the Lean config.
+
+        :param value: the value to validate
+        :return: the validated value
+        """
+        return value
 
     def __repr__(self):
         return f'{self._id}: {self._value}'
@@ -255,6 +263,13 @@ class PromptUserInput(UserInputConfiguration):
         "integer": int
     }
 
+    # Configurations that need stricter validation than the modules json describes.
+    # The modules json is fetched from the CDN, so these overrides live here instead of in the json itself.
+    map_id_to_types = {
+        # Interactive Brokers doesn't support weekly restart times later than 23:30 UTC
+        "ib-weekly-restart-utc-time": TimeParameter(maximum="23:30:00")
+    }
+
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
         self._input_type: str = "string"
@@ -273,7 +288,23 @@ class PromptUserInput(UserInputConfiguration):
         return prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
+        if self._id in self.map_id_to_types:
+            return self.map_id_to_types[self._id]
         return self.map_to_types.get(self._input_type, self._input_type)
+
+    def validate(self, value):
+        """Validates a value which didn't go through a click prompt or option, like the ones read from the Lean config.
+
+        :param value: the value to validate
+        :return: the validated value
+        """
+        input_type = self.get_input_type()
+        if value is None or not isinstance(input_type, ParamType):
+            return value
+        try:
+            return input_type.convert(value, None, None)
+        except ClickException as e:
+            raise RuntimeError(f"Invalid value for '{self._id}': {e.message}")
 
 
 class ChoiceUserInput(UserInputConfiguration):

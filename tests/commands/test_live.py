@@ -334,6 +334,28 @@ def test_live_aborts_when_lean_config_is_missing_properties(target: str, replace
 
     lean_runner.run_lean.assert_not_called()
 
+@pytest.mark.skipif(
+    sys.platform == "darwin", reason="MacOS does not support IB tests."
+)
+@pytest.mark.parametrize("weekly_restart_time", ["23:50:00", "invalid"])
+def test_live_aborts_when_lean_config_has_unsupported_ib_weekly_restart_time(weekly_restart_time: str) -> None:
+    create_fake_lean_cli_directory()
+    create_fake_environment("live-paper", True)
+    lean_runner = container.lean_runner
+
+    config_path = Path.cwd() / "lean.json"
+    config = config_path.read_text(encoding="utf-8")
+    config_path.write_text(config.replace("21:00:00", weekly_restart_time), encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["live", "Python Project", "--environment", "live-paper"])
+
+    assert result.exit_code != 0
+    assert "Invalid value for 'ib-weekly-restart-utc-time'" in str(result.exception)
+    assert weekly_restart_time in str(result.exception)
+
+    lean_runner.run_lean.assert_not_called()
+
+
 def test_live_sets_dependent_configurations_from_modules_json_based_on_environment() -> None:
     create_fake_lean_cli_directory()
     create_fake_binance_environment("live-binance", True)
