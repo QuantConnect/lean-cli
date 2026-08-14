@@ -383,6 +383,51 @@ class DateParameter(ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
+class TimeParameter(ParamType):
+    """A click parameter which returns hh:mm:ss strings, the format expected by the API.
+
+    Input without seconds is accepted as well, in which case they default to zero.
+    """
+
+    name = "time"
+
+    def __init__(self, maximum: str = None):
+        """Creates a new TimeParameter instance.
+
+        :param maximum: the latest time that is accepted in hh:mm:ss format, or None if there is no upper bound
+        """
+        self._maximum = maximum
+
+    def get_metavar(self, param: Parameter, ctx=None) -> str:
+        return "[hh:mm:ss]"
+
+    def convert(self, value: str, param: Parameter, ctx: Context) -> str:
+        parsed_value = self._parse(value)
+
+        if parsed_value is None:
+            self.fail(f"'{value}' does not match the hh:mm:ss format.", param, ctx)
+
+        if self._maximum is not None and parsed_value > self._parse(self._maximum):
+            self.fail(f"'{value}' is later than the latest supported time of {self._maximum}.", param, ctx)
+
+        return parsed_value.strftime("%H:%M:%S")
+
+    @staticmethod
+    def _parse(value: str):
+        """Parses a time, returning None when the given value is not formatted as hh:mm:ss or hh:mm.
+
+        :param value: the value to parse
+        :return: the parsed datetime.time, or None when the value cannot be parsed
+        """
+        from datetime import datetime
+        for time_format in ["%H:%M:%S", "%H:%M"]:
+            try:
+                return datetime.strptime(str(value), time_format).time()
+            except ValueError:
+                pass
+        return None
+
+
 def ensure_options(options: List[str]) -> None:
     """Ensures certain options have values, raises an error if not.
 

@@ -330,7 +330,8 @@ class JsonModule(ABC):
                         else:
                             missing_options.append(f"--{configuration._id}")
 
-            configuration._value = user_choice
+            # the values that come from the Lean config didn't go through click, so they are validated here
+            configuration._value = configuration.validate(user_choice)
 
         if len(missing_options) > 0:
             raise RuntimeError(f"""You are missing the following option{"s" if len(missing_options) > 1 else ""}: {', '

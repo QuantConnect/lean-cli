@@ -205,6 +205,57 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
     assert result.exit_code == 0
     assert "Live data providers: QuantConnectBrokerage, InteractiveBrokersBrokerage" in result.output.replace("\n", "")
 
+@pytest.mark.skipif(
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
+)
+@pytest.mark.parametrize("weekly_restart_time", ["23:30:01", "23:50:00", "23:50", "invalid"])
+def test_cloud_live_deploy_with_ib_fails_when_weekly_restart_time_not_supported(weekly_restart_time: str) -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Interactive Brokers", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--ib-user-name", "test_user", "--ib-account", "DU2366417", "--ib-password", "test_password",
+                                       "--ib-weekly-restart-utc-time", weekly_restart_time,
+                                       "--data-provider-live", "Interactive Brokers"])
+
+    assert result.exit_code != 0
+    assert weekly_restart_time in result.output
+
+
+@pytest.mark.skipif(
+    sys.platform =="darwin", reason="MacOS does not support IB tests."
+)
+@pytest.mark.parametrize("weekly_restart_time", ["21:00", "21:00:00"])
+def test_cloud_live_deploy_with_ib_sends_weekly_restart_time_with_seconds(weekly_restart_time: str) -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {"holdings": {}, "cash": {}, "success": True}}
+    container.api_client = api_client
+
+    cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = cloud_project_manager
+
+    cloud_runner = mock.Mock()
+    container.cloud_runner = cloud_runner
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Interactive Brokers", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "no", "--notify-insights", "no",
+                                       "--ib-user-name", "test_user", "--ib-account", "DU2366417", "--ib-password", "test_password",
+                                       "--ib-weekly-restart-utc-time", weekly_restart_time,
+                                       "--data-provider-live", "Interactive Brokers"])
+
+    assert result.exit_code == 0
+
+    args, _ = api_client.live.start.call_args
+    assert args[3]["ib-weekly-restart-utc-time"] == "21:00:00"
+
+
 def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
     create_fake_lean_cli_directory()
 

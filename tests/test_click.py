@@ -22,7 +22,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from lean.click import DateParameter, LeanCommand, PathParameter
+from lean.click import DateParameter, LeanCommand, PathParameter, TimeParameter
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -209,3 +209,47 @@ def test_date_parameter_fails_when_input_not_formatted_as_yyyymmdd(input: str) -
     result = CliRunner().invoke(command, [input])
 
     assert result.exit_code != 0
+
+
+@pytest.mark.parametrize("input,expected", [("21:00:00", "21:00:00"), ("21:00", "21:00:00"), ("9:30", "09:30:00"),
+                                            ("23:30", "23:30:00")])
+def test_time_parameter_returns_time_with_seconds(input: str, expected: str) -> None:
+    given_arg: Optional[str] = None
+
+    @click.command()
+    @click.argument("arg", type=TimeParameter(maximum="23:30:00"))
+    def command(arg: str) -> None:
+        nonlocal given_arg
+        given_arg = arg
+
+    result = CliRunner().invoke(command, [input])
+
+    assert result.exit_code == 0
+
+    assert given_arg == expected
+
+
+@pytest.mark.parametrize("input", ["25:00:00", "21:60", "hh:mm:ss", "210000", "this is invalid input"])
+def test_time_parameter_fails_when_input_not_formatted_as_hhmmss(input: str) -> None:
+    @click.command()
+    @click.argument("arg", type=TimeParameter())
+    def command(arg: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, [input])
+
+    assert result.exit_code != 0
+    assert "does not match the hh:mm:ss format" in result.output
+
+
+@pytest.mark.parametrize("input", ["23:30:01", "23:31", "23:59:59"])
+def test_time_parameter_fails_when_input_later_than_maximum(input: str) -> None:
+    @click.command()
+    @click.argument("arg", type=TimeParameter(maximum="23:30:00"))
+    def command(arg: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, [input])
+
+    assert result.exit_code != 0
+    assert "later than the latest supported time of 23:30:00" in result.output

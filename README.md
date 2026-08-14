@@ -173,7 +173,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
@@ -424,7 +424,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
@@ -952,7 +952,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
@@ -1417,7 +1417,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
@@ -1898,7 +1898,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
@@ -2167,7 +2167,7 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
-  --ib-weekly-restart-utc-time TEXT
+  --ib-weekly-restart-utc-time [hh:mm:ss]
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
                                   Use this option explicitly to override the default value. (Optional).
