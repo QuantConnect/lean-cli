@@ -27,6 +27,7 @@ from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
 from lean.container import container
 from lean.models.utils import DebuggingMethod
+from tests.conftest import initialize_container
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -386,6 +387,21 @@ def test_get_complete_lean_config_returns_dict_with_all_keys_removed_in_clean_le
                 "debugging", "debugging-method",
                 "parameters"]:
         assert key in config
+
+
+def test_get_complete_lean_config_sets_the_project_id_of_the_project_being_run() -> None:
+    create_fake_lean_cli_directory()
+    # the id of the project being run is only used when the Lean config does not set one
+    (Path.cwd() / "lean.json").write_text('{"data-folder": "data", "organization-id": "abc"}', encoding="utf-8")
+    initialize_container()
+
+    project_directory = Path.cwd() / "Python Project"
+    ProjectConfigManager(XMLManager()).get_project_config(project_directory).set("cloud-id", 1234)
+
+    manager = _create_lean_config_manager()
+    config = manager.get_complete_lean_config("backtesting", project_directory / "main.py", None)
+
+    assert config["project-id"] == 1234
 
 
 def test_get_complete_lean_config_sets_environment() -> None:
