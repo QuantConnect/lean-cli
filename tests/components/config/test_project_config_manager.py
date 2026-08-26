@@ -12,8 +12,11 @@
 # limitations under the License.
 
 from pathlib import Path
+from unittest import mock
 
 from lean.components.config.project_config_manager import ProjectConfigManager
+from lean.models.errors import RequestFailedError
+from tests.conftest import initialize_container
 from lean.components.util.xml_manager import XMLManager
 from lean.models.utils import CSharpLibrary
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -118,3 +121,46 @@ def test_get_csharp_libraries_skips_invalid_package_reference_tags() -> None:
 
     assert len(libraries) == 1
     assert CSharpLibrary(name="QuantConnect.Lean", version="2.5.11586") in libraries
+
+
+def test_get_project_id_from_project_config_returns_negative_local_id() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+    project_directory = Path.cwd() / "Python Project"
+    local_id = project_config_manager.get_local_id(project_directory)
+
+    assert project_config_manager.get_project_id_from_project_config(project_directory) == -local_id
+
+
+def test_get_project_id_from_project_config_returns_cloud_id_when_the_cloud_project_exists() -> None:
+    create_fake_lean_cli_directory()
+    initialize_container()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+    project_directory = Path.cwd() / "Python Project"
+    project_config_manager.get_project_config(project_directory).set("cloud-id", 1234)
+
+    assert project_config_manager.get_project_id_from_project_config(project_directory) == 1234
+
+
+def test_get_project_id_from_project_config_falls_back_to_local_id_when_the_cloud_project_is_gone() -> None:
+    """A cloud-id left behind by a project deleted in the cloud identifies nothing."""
+    create_fake_lean_cli_directory()
+    container = initialize_container()
+    container.api_client.projects.get.side_effect = RequestFailedError(mock.MagicMock())
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+    project_directory = Path.cwd() / "Python Project"
+    project_config_manager.get_project_config(project_directory).set("cloud-id", 1234)
+    local_id = project_config_manager.get_local_id(project_directory)
+
+    assert project_config_manager.get_project_id_from_project_config(project_directory) == -local_id
+
+
+def test_get_project_id_from_project_config_returns_minus_one_without_a_project_directory() -> None:
+    create_fake_lean_cli_directory()
+
+    project_config_manager = ProjectConfigManager(XMLManager())
+
+    assert project_config_manager.get_project_id_from_project_config(None) == -1

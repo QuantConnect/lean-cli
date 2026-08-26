@@ -77,8 +77,8 @@ class ProjectConfigManager:
                                       it indicates the directory is unavailable.
 
         Returns:
-            int: Returns the 'cloud-id' if available.
-                 If 'cloud-id' is missing, returns the negative of 'local-id'.
+            int: Returns the 'cloud-id' if available and the project it refers to still exists in the cloud.
+                 Otherwise returns the negative of 'local-id'.
                  If neither is found nor if project_directory is None, returns -1.
         """
         if project_directory is None:
@@ -87,14 +87,30 @@ class ProjectConfigManager:
         project_config = self.get_project_config(project_directory)
 
         cloud_id = project_config.get("cloud-id")
-        if cloud_id is not None:
+        if cloud_id is not None and self._cloud_project_exists(cloud_id):
             return cloud_id
 
-        local_id = project_config.get("local-id")
-        if local_id is not None:
-            return -local_id  # Local ID must be negative.
+        return -abs(int(project_config.get("local-id", 1)))
 
-        return -1  # Return -1 if no valid IDs are found
+    def _cloud_project_exists(self, cloud_id: int) -> bool:
+        """Returns whether a project still exists in the cloud.
+
+        A 'cloud-id' left behind by a project that no longer exists in the cloud identifies nothing,
+        and neither does one this user cannot reach, so it cannot be used as the id of the project that runs.
+
+        :param cloud_id: the cloud id to look up
+        :return: True if the cloud project exists, False if it does not or if it could not be looked up
+        """
+        from lean.container import container
+
+        try:
+            organization_id = container.organization_manager.try_get_working_organization_id()
+            container.api_client.projects.get(cloud_id, organization_id)
+            return True
+        except Exception as e:
+            container.logger.debug(f"ProjectConfigManager._cloud_project_exists(): cloud project {cloud_id} "
+                                   f"is unavailable, falling back to the local id: {e}")
+            return False
 
     def get_latest_live_directory(self, project_directory: Path) -> Path:
         """Returns the path of the latest live directory.
