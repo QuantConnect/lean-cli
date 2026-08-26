@@ -263,17 +263,19 @@ def test_cli() -> None:
     run_command(["lean", "backtest", csharp_project_name], cwd=test_dir, expected_return_code=1)
 
     # Generate reports
+    # Report generation runs in the LEAN Docker image and its rendering time varies a lot between runs,
+    # so we use a larger timeout to avoid spurious failures
     python_results_file = next(f for f in python_backtest_dirs[0].iterdir() if
                                f.suffix == ".json" and f.stem.isdigit())
     run_command(["lean", "report",
                  "--backtest-results", str(python_results_file),
-                 "--report-destination", "python.html"], cwd=test_dir)
+                 "--report-destination", "python.html"], cwd=test_dir, timeout=600)
 
     csharp_results_file = next(f for f in csharp_backtest_dirs[0].iterdir() if
                                f.suffix == ".json" and f.stem.isdigit())
     run_command(["lean", "report",
                  "--backtest-results", str(csharp_results_file),
-                 "--report-destination", "csharp.html"], cwd=test_dir)
+                 "--report-destination", "csharp.html"], cwd=test_dir, timeout=600)
 
     assert (test_dir / "python.html").is_file()
     assert (test_dir / "csharp.html").is_file()
@@ -299,10 +301,11 @@ def test_cli() -> None:
     (csharp_project_dir / "Main.cs").is_file()
 
     # Run Python backtest in the cloud
-    run_command(["lean", "cloud", "backtest", python_project_name], cwd=test_dir)
+    # Cloud backtests depend on the cloud queue and compile times, so we use a larger timeout to avoid spurious failures
+    run_command(["lean", "cloud", "backtest", python_project_name], cwd=test_dir, timeout=600)
 
     # Run C# backtest in the cloud
-    run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir)
+    run_command(["lean", "cloud", "backtest", csharp_project_name], cwd=test_dir, timeout=600)
 
     # Log out
     run_command(["lean", "logout"])
