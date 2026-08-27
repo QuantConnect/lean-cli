@@ -419,7 +419,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
                                   The brokerage to use
   --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
@@ -540,6 +540,9 @@ Options:
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
+  --clearstreet-access-token TEXT
+                                  Your Clear Street API access token
+  --clearstreet-account-id TEXT   Your Clear Street account id, the numeric id of the account the algorithm trades
   --polygon-api-key TEXT          Your Polygon.io API Key
   --polygon-license-type [Individual|Business]
                                   Select your Polygon.io subscription plan (Optional).
@@ -1414,7 +1417,7 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento]
                                   The live data provider to use
@@ -1550,6 +1553,12 @@ Options:
   --public-secret-key TEXT        Your Public.com API secret key
   --public-account-number TEXT    Your Public.com account number. Public lets you have more than one account, so this
                                   picks which one to trade.
+  --clearstreet-access-token TEXT
+                                  Your Clear Street API access token
+  --clearstreet-account-id TEXT   Your Clear Street account id, the numeric id of the account the algorithm trades
+  --clearstreet-order-poll-interval-ms INTEGER
+                                  How long the brokerage waits between two reads of your Clear Street orders, in
+                                  milliseconds (Optional).
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
