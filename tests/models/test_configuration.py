@@ -12,8 +12,9 @@
 # limitations under the License.
 
 import pytest
+from click.types import INT, StringParamType
 
-from lean.click import RegexParameter
+from lean.click import CaseInsensitiveChoice, PathParameter, RegexParameter
 from lean.models.click_options import get_click_option_type
 from lean.models.configuration import Configuration
 
@@ -58,16 +59,22 @@ def test_validate_raises_when_value_does_not_match_the_regex(value: str) -> None
     assert TIME_REGEX_MESSAGE in str(error.value)
 
 
-def test_validate_returns_none_when_there_is_no_value_to_validate() -> None:
+@pytest.mark.parametrize("value", [None, ""])
+def test_validate_returns_the_value_when_there_is_nothing_to_validate(value) -> None:
+    # an empty value means the user didn't provide one, config_build() reports it as a missing option
     configuration = create_configuration(**{"input-regex": TIME_REGEX})
 
-    assert configuration.validate(None) is None
+    assert configuration.validate(value) == value
 
 
 def test_get_input_type_returns_the_regex_type_when_modules_json_has_a_regex() -> None:
-    configuration = create_configuration(**{"input-type": "string", "input-regex": TIME_REGEX})
+    configuration = create_configuration(**{"input-type": "integer", "input-regex": TIME_REGEX})
 
-    assert isinstance(configuration.get_input_type(), RegexParameter)
+    input_type = configuration.get_input_type()
+
+    # the regex is added to the type of the configuration, it doesn't replace it
+    assert isinstance(input_type, RegexParameter)
+    assert input_type._inner_type is INT
 
 
 def test_get_input_type_returns_the_mapped_type_when_modules_json_has_no_regex() -> None:
@@ -76,15 +83,44 @@ def test_get_input_type_returns_the_mapped_type_when_modules_json_has_no_regex()
     assert configuration.get_input_type() is int
 
 
-@pytest.mark.parametrize("input_method", ["prompt", "prompt-password", "path-parameter", "choice"])
-def test_get_click_option_type_returns_the_regex_type_for_all_input_methods(input_method: str) -> None:
+@pytest.mark.parametrize("input_method,inner_type", [("prompt", StringParamType),
+                                                    ("prompt-password", StringParamType),
+                                                    ("path-parameter", PathParameter)])
+def test_get_click_option_type_adds_the_regex_to_the_type_of_the_input_method(input_method: str, inner_type) -> None:
     configuration = create_configuration(**{"input-method": input_method, "input-regex": TIME_REGEX})
 
-    assert get_click_option_type(configuration) is configuration.get_regex_type()
+    option_type = get_click_option_type(configuration)
+
+    # the regex is added to the type of the input method, it doesn't replace it
+    assert isinstance(option_type, RegexParameter)
+    assert isinstance(option_type._inner_type, inner_type)
 
 
-def test_regex_is_not_validated_for_configurations_without_one() -> None:
+def test_get_click_option_type_keeps_the_integer_type_of_a_prompt() -> None:
+    configuration = create_configuration(**{"input-type": "integer", "input-regex": TIME_REGEX})
+
+    assert get_click_option_type(configuration)._inner_type is INT
+
+
+def test_regex_is_ignored_for_a_choice_input() -> None:
+    # the choices already describe the values the configuration accepts
+    configuration = create_configuration(**{"input-method": "choice",
+                                            "input-choices": ["morning", "evening"],
+                                            "input-regex": TIME_REGEX})
+
+    assert isinstance(get_click_option_type(configuration), CaseInsensitiveChoice)
+    assert configuration.validate("morning") == "morning"
+
+
+def test_regex_is_ignored_for_a_confirm_input() -> None:
+    configuration = create_configuration(**{"input-method": "confirm", "input-regex": TIME_REGEX})
+
+    assert get_click_option_type(configuration) is bool
+    assert configuration.validate(True) is True
+
+
+def test_regex_is_not_added_for_configurations_without_one() -> None:
     configuration = create_configuration(**{"input-method": "prompt-password"})
 
-    assert configuration.get_regex_type() is None
+    assert configuration.wrap_with_regex(str) is str
     assert get_click_option_type(configuration) is str

@@ -107,7 +107,9 @@ class Configuration(ABC):
             self._filter = Filter([])
         self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
         self._optional = config_json_object["optional"] if "optional" in config_json_object else False
-        self._regex_type = self._create_regex_type(config_json_object)
+        self._regex_pattern = config_json_object["input-regex"] if "input-regex" in config_json_object else None
+        self._regex_message = (config_json_object["input-regex-message"]
+                               if "input-regex-message" in config_json_object else None)
 
     def factory(config_json_object) -> 'Configuration':
         """Creates an instance of the child classes.
@@ -129,25 +131,16 @@ class Configuration(ABC):
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
 
-    @staticmethod
-    def _create_regex_type(config_json_object):
-        """Creates the click type validating the values of a configuration, as described by the modules json.
+    def wrap_with_regex(self, base_type=None):
+        """Adds the regex given by the modules json to the type a value is converted with.
 
-        :param config_json_object: the json object dict with configuration info
-        :return: a RegexParameter instance, or None when the modules json doesn't describe a regex
+        :param base_type: the type the value is converted with before the regex is checked, str when None
+        :return: base_type itself when the modules json doesn't describe a regex or when it was already added,
+                 a RegexParameter otherwise
         """
-        if "input-regex" not in config_json_object.keys():
-            return None
-        message_key = "input-regex-message"
-        message = config_json_object[message_key] if message_key in config_json_object.keys() else None
-        return RegexParameter(config_json_object["input-regex"], message)
-
-    def get_regex_type(self):
-        """Returns the click type validating this configuration against the regex given by the modules json.
-
-        :return: a RegexParameter instance, or None when the modules json doesn't describe a regex
-        """
-        return self._regex_type
+        if self._regex_pattern is None or isinstance(base_type, RegexParameter):
+            return base_type
+        return RegexParameter(self._regex_pattern, self._regex_message, base_type)
 
     def validate(self, value):
         """Validates a value which didn't go through a click prompt or option, like the ones read from the Lean config.
@@ -156,11 +149,11 @@ class Configuration(ABC):
         :raises RuntimeError: when the value doesn't match the regex given by the modules json
         :return: the validated value
         """
-        regex_type = self.get_regex_type()
-        if value is None or regex_type is None:
+        # an empty value means the user didn't provide one, config_build() reports it as a missing option
+        if not value or self._regex_pattern is None:
             return value
         try:
-            return regex_type.convert(value, None, None)
+            return self.wrap_with_regex().convert(value, None, None)
         except ClickException as e:
             raise RuntimeError(f"Invalid value for '{self._id}': {e.message}")
 
@@ -224,6 +217,11 @@ class UserInputConfiguration(Configuration, ABC):
                 self._help += " (Optional)."
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
+        if self._regex_pattern is not None and self._input_method in ["choice", "confirm"]:
+            from lean.container import container
+            container.logger.debug(f"Configuration '{self._id}': ignoring 'input-regex', "
+                                   f"it is not supported for the '{self._input_method}' input method")
+            self._regex_pattern = None
 
     @abstractmethod
     def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
@@ -309,10 +307,7 @@ class PromptUserInput(UserInputConfiguration):
         return prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
-        regex_type = self.get_regex_type()
-        if regex_type is not None:
-            return regex_type
-        return self.map_to_types.get(self._input_type, self._input_type)
+        return self.wrap_with_regex(self.map_to_types.get(self._input_type, self._input_type))
 
 
 class ChoiceUserInput(UserInputConfiguration):
@@ -361,8 +356,8 @@ class PathParameterUserInput(UserInputConfiguration):
             default_binary = ""
         value = prompt(self._prompt_info,
                              default=default_binary,
-                             type=PathParameter(
-                                 exists=False, file_okay=True, dir_okay=False)
+                             type=self.wrap_with_regex(PathParameter(
+                                 exists=False, file_okay=True, dir_okay=False))
                              )
         return value
 

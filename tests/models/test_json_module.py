@@ -66,6 +66,15 @@ def test_config_build_raises_when_lean_config_value_does_not_match_the_regex(val
     assert TIME_REGEX_MESSAGE in str(error.value)
 
 
+@pytest.mark.parametrize("lean_config", [{}, {"my-time": ""}])
+def test_config_build_reports_the_missing_option_when_there_is_no_value_to_validate(lean_config) -> None:
+    # an empty value is not an unsupported one, the user simply didn't provide it
+    with pytest.raises(RuntimeError) as error:
+        build_config(lean_config)
+
+    assert "You are missing the following option: --my-time" in str(error.value)
+
+
 def test_config_build_prompts_again_when_lean_config_value_does_not_match_the_regex() -> None:
     create_fake_lean_cli_directory()
 
