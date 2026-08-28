@@ -383,6 +383,34 @@ class DateParameter(ParamType):
         self.fail(f"'{value}' does not match the yyyyMMdd format.", param, ctx)
 
 
+class RegexParameter(ParamType):
+    """A click parameter which adds the regular expression of the modules json to another parameter type."""
+
+    def __init__(self, pattern: str, error_message: str = None, inner_type=None):
+        """Creates a new RegexParameter instance.
+
+        :param pattern: the regular expression the value must match completely
+        :param error_message: the message describing the expected value, or None to describe the pattern itself
+        :param inner_type: the type the value is converted with before the regex is checked, str when None
+        """
+        from re import compile
+        from click.types import convert_type
+        self._pattern = compile(pattern)
+        self._error_message = error_message if error_message else f"must match the '{pattern}' format"
+        self._inner_type = convert_type(inner_type)
+
+    @property
+    def name(self) -> str:
+        return self._inner_type.name
+
+    def convert(self, value: str, param: Parameter, ctx: Context) -> str:
+        value = self._inner_type.convert(value, param, ctx)
+        if self._pattern.fullmatch(str(value)) is None:
+            self.fail(f"'{value}' is not supported, it {self._error_message}.", param, ctx)
+
+        return value
+
+
 def ensure_options(options: List[str]) -> None:
     """Ensures certain options have values, raises an error if not.
 

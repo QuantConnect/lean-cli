@@ -49,6 +49,10 @@ def get_configs_for_options(env: str) -> List[Configuration]:
 
 
 def get_click_option_type(configuration: Configuration):
+    return configuration.wrap_with_regex(get_click_option_base_type(configuration))
+
+
+def get_click_option_base_type(configuration: Configuration):
     # get type should be a method of configurations class itself.
     # TODO: handle input can inherit type prompt.
     if configuration._config_type == "internal-input":

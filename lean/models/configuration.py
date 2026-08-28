@@ -13,11 +13,11 @@
 
 from pathlib import Path
 from typing import Any, Dict, List
-from click import prompt
+from click import prompt, ClickException
 from lean.click import CaseInsensitiveChoice
 from abc import ABC, abstractmethod
 from lean.components.util.logger import Logger
-from lean.click import PathParameter
+from lean.click import PathParameter, RegexParameter
 
 
 class BaseCondition(ABC):
@@ -107,6 +107,9 @@ class Configuration(ABC):
             self._filter = Filter([])
         self._input_default = config_json_object["input-default"] if "input-default" in config_json_object else None
         self._optional = config_json_object["optional"] if "optional" in config_json_object else False
+        self._regex_pattern = config_json_object["input-regex"] if "input-regex" in config_json_object else None
+        self._regex_message = (config_json_object["input-regex-message"]
+                               if "input-regex-message" in config_json_object else None)
 
     def factory(config_json_object) -> 'Configuration':
         """Creates an instance of the child classes.
@@ -127,6 +130,32 @@ class Configuration(ABC):
         else:
             raise ValueError(
                 f'Undefined input method type {config_json_object["type"]}')
+
+    def wrap_with_regex(self, base_type=None):
+        """Adds the regex given by the modules json to the type a value is converted with.
+
+        :param base_type: the type the value is converted with before the regex is checked, str when None
+        :return: base_type itself when the modules json doesn't describe a regex or when it was already added,
+                 a RegexParameter otherwise
+        """
+        if self._regex_pattern is None or isinstance(base_type, RegexParameter):
+            return base_type
+        return RegexParameter(self._regex_pattern, self._regex_message, base_type)
+
+    def validate(self, value):
+        """Validates a value which didn't go through a click prompt or option, like the ones read from the Lean config.
+
+        :param value: the value to validate
+        :raises RuntimeError: when the value doesn't match the regex given by the modules json
+        :return: the validated value
+        """
+        # an empty value means the user didn't provide one, config_build() reports it as a missing option
+        if not value or self._regex_pattern is None:
+            return value
+        try:
+            return self.wrap_with_regex().convert(value, None, None)
+        except ClickException as e:
+            raise RuntimeError(f"Invalid value for '{self._id}': {e.message}")
 
     def __repr__(self):
         return f'{self._id}: {self._value}'
@@ -188,6 +217,11 @@ class UserInputConfiguration(Configuration, ABC):
                 self._help += " (Optional)."
         if "save-persistently-in-lean" in config_json_object:
             self._save_persistently_in_lean = config_json_object["save-persistently-in-lean"]
+        if self._regex_pattern is not None and self._input_method in ["choice", "confirm"]:
+            from lean.container import container
+            container.logger.debug(f"Configuration '{self._id}': ignoring 'input-regex', "
+                                   f"it is not supported for the '{self._input_method}' input method")
+            self._regex_pattern = None
 
     @abstractmethod
     def ask_user_for_input(self, default_value, logger: Logger, hide_input: bool = False):
@@ -273,7 +307,7 @@ class PromptUserInput(UserInputConfiguration):
         return prompt(self._prompt_info, default_value, type=self.get_input_type())
 
     def get_input_type(self):
-        return self.map_to_types.get(self._input_type, self._input_type)
+        return self.wrap_with_regex(self.map_to_types.get(self._input_type, self._input_type))
 
 
 class ChoiceUserInput(UserInputConfiguration):
@@ -322,8 +356,8 @@ class PathParameterUserInput(UserInputConfiguration):
             default_binary = ""
         value = prompt(self._prompt_info,
                              default=default_binary,
-                             type=PathParameter(
-                                 exists=False, file_okay=True, dir_okay=False)
+                             type=self.wrap_with_regex(PathParameter(
+                                 exists=False, file_okay=True, dir_okay=False))
                              )
         return value
 
