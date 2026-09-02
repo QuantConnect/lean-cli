@@ -173,6 +173,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
@@ -424,6 +426,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
@@ -952,6 +956,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
@@ -1417,6 +1423,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
@@ -1898,6 +1906,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
@@ -2167,6 +2177,8 @@ Options:
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
   --ib-password TEXT              Your Interactive Brokers password
+  --ib-host TEXT                  External Interactive Brokers Gateway Host (Optional).
+  --ib-port TEXT                  External Interactive Brokers Gateway Port (Optional).
   --ib-weekly-restart-utc-time TEXT
                                   Weekly restart UTC time (hh:mm:ss). Each week on Sunday your algorithm is restarted at
                                   this time, and will require 2FA verification. This is required by Interactive Brokers.
