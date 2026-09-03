@@ -1556,9 +1556,6 @@ Options:
   --clearstreet-access-token TEXT
                                   Your Clear Street API access token
   --clearstreet-account-id TEXT   Your Clear Street account id, the numeric id of the account the algorithm trades
-  --clearstreet-order-poll-interval-ms INTEGER
-                                  How long the brokerage waits between two reads of your Clear Street orders, in
-                                  milliseconds (Optional).
   --ib-enable-delayed-streaming-data BOOLEAN
                                   Whether delayed data may be used when your algorithm subscribes to a security you
                                   don't have a market data subscription for (Optional).
