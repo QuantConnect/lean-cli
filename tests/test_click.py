@@ -22,7 +22,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from lean.click import DateParameter, LeanCommand, PathParameter, RegexParameter
+from lean.click import CaseInsensitiveChoice, DateParameter, LeanCommand, PathParameter, RegexParameter
 from lean.container import container
 from tests.test_helpers import create_fake_lean_cli_directory
 
@@ -257,3 +257,44 @@ def test_regex_parameter_falls_back_to_the_pattern_when_no_message_is_given() ->
 
     assert result.exit_code != 0
     assert f"must match the '{TIME_REGEX}' format" in result.output
+
+
+def test_case_insensitive_choice_shows_original_casing_in_help() -> None:
+    @click.command()
+    @click.option("--brokerage", type=CaseInsensitiveChoice(["Paper Trading", "Interactive Brokers"]))
+    def command(brokerage: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, ["--help"])
+
+    assert result.exit_code == 0
+    assert "[Paper Trading|Interactive Brokers]" in result.output
+
+
+@pytest.mark.parametrize("input", ["Interactive Brokers", "interactive brokers", "INTERACTIVE BROKERS"])
+def test_case_insensitive_choice_returns_original_choice_regardless_of_input_casing(input: str) -> None:
+    given_brokerage: Optional[str] = None
+
+    @click.command()
+    @click.option("--brokerage", type=CaseInsensitiveChoice(["Paper Trading", "Interactive Brokers"]))
+    def command(brokerage: str) -> None:
+        nonlocal given_brokerage
+        given_brokerage = brokerage
+
+    result = CliRunner().invoke(command, ["--brokerage", input])
+
+    assert result.exit_code == 0
+
+    assert given_brokerage == "Interactive Brokers"
+
+
+def test_case_insensitive_choice_shows_original_casing_when_input_not_valid() -> None:
+    @click.command()
+    @click.option("--brokerage", type=CaseInsensitiveChoice(["Paper Trading", "Interactive Brokers"]))
+    def command(brokerage: str) -> None:
+        pass
+
+    result = CliRunner().invoke(command, ["--brokerage", "invalid"])
+
+    assert result.exit_code != 0
+    assert "'invalid' is not one of 'Paper Trading', 'Interactive Brokers'." in result.output
