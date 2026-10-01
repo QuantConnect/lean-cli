@@ -45,7 +45,6 @@ def create_fake_environment(name: str, live_mode: bool) -> None:
     "ib-user-name": "trader777",
     "ib-password": "hunter2",
     "ib-agent-description": "Individual",
-    "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": "no",
     "ib-enable-delayed-streaming-data": "no",
     "ib-weekly-restart-utc-time": "21:00:00",
