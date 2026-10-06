@@ -157,6 +157,22 @@ def test_create_project_preserves_capitals_in_class_name() -> None:
         assert "class MyFIRSTProject(QCAlgorithm)" in file.read()
 
 
+@pytest.mark.parametrize("name,class_name", [("2024 momentum", "_2024Momentum"),
+                                             ("123", "_123")])
+def test_create_project_creates_valid_class_name_when_name_starts_with_digit(name: str, class_name: str) -> None:
+    create_fake_lean_cli_directory()
+
+    result = CliRunner().invoke(lean, ["create-project", "--language", "python", name])
+
+    assert result.exit_code == 0
+
+    with open(Path.cwd() / name / "main.py") as file:
+        content = file.read()
+
+    assert f"class {class_name}(QCAlgorithm)" in content
+    compile(content, "main.py", "exec")
+
+
 def test_create_project_aborts_when_path_invalid() -> None:
     create_fake_lean_cli_directory()
 
