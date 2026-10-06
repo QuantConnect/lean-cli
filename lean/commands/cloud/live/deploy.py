@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 from click import prompt, option, argument, confirm
 from lean.click import LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.components.api.api_client import APIClient
@@ -152,6 +152,24 @@ def _configure_notifications(logger: Logger) -> Tuple[bool, bool, List[QCNotific
     return notify_order_events, notify_insights, notify_methods
 
 
+def _parse_webhook_config(config: str) -> Tuple[str, Dict[str, str]]:
+    """Splits a 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2' webhook configuration into its address and headers.
+
+    The address can contain colons itself (scheme and port), so only the trailing 'NAME=VALUE' parts are headers.
+
+    :param config: the webhook configuration given by the user
+    :return: the address and the headers of the webhook
+    """
+    from re import match
+
+    parts = config.split(":")
+    headers = []
+    while len(parts) > 1 and match(r"^[\w-]+=", parts[-1]):
+        headers.insert(0, parts.pop().split("=", 1))
+
+    return ":".join(parts), dict(headers)
+
+
 def _configure_auto_restart(logger: Logger) -> bool:
     """Interactively configures whether automatic algorithm restarting must be enabled.
 
@@ -260,8 +278,7 @@ def deploy(project: str,
 
         if notify_webhooks is not None:
             for config in notify_webhooks.split(","):
-                address, *headers = config.split(":")
-                headers = {header.split("=")[0]: header.split("=")[1] for header in headers}
+                address, headers = _parse_webhook_config(config)
                 notify_methods.append(QCWebhookNotificationMethod(address=address, headers=headers))
 
         if notify_sms is not None:
