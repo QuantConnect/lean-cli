@@ -231,6 +231,9 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
                                              ("webhooks", "customAddress:header1=value1"),
                                              ("webhooks", "customAddress:header1=value1:header2=value2"),
                                              ("webhooks", "customAddress1:header1=value1:header2=value2,customAddress2:header3=value3"),
+                                             ("webhooks", "https://example.com/hook"),
+                                             ("webhooks", "https://example.com:8080/hook?id=1:header1=value1"),
+                                             ("webhooks", "https://example.com/hook:Authorization=Basic dXNlcjpwYXNz=="),
                                              ("sms", "customNumber"),
                                              ("sms", "customNumber1,customNumber2,customNumber3"),
                                              ("telegram", "customId"),
@@ -241,6 +244,18 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
                                              ("telegram", "customId1:custom:token1,customId2"),
                                              ("telegram", "customId1:custom:token1,customId2:custom:token2")])
 def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) -> None:
+    expected_webhooks = {
+        "customAddress:header1=value1": ("customAddress", {"header1": "value1"}),
+        "customAddress:header1=value1:header2=value2": ("customAddress", {"header1": "value1", "header2": "value2"}),
+        "customAddress1:header1=value1:header2=value2": ("customAddress1", {"header1": "value1", "header2": "value2"}),
+        "customAddress2:header3=value3": ("customAddress2", {"header3": "value3"}),
+        "https://example.com/hook": ("https://example.com/hook", {}),
+        "https://example.com:8080/hook?id=1:header1=value1": ("https://example.com:8080/hook?id=1",
+                                                              {"header1": "value1"}),
+        "https://example.com/hook:Authorization=Basic dXNlcjpwYXNz==": ("https://example.com/hook",
+                                                                        {"Authorization": "Basic dXNlcjpwYXNz=="})
+    }
+
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
@@ -272,12 +287,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
             notification.append(QCEmailNotificationMethod(address=address, subject=subject))
 
         elif notice_method == "webhooks":
-            address, headers = config.split(":", 1)
-            headers_dict = {}
-
-            for header in headers.split(":"):
-                key, value = header.split("=")
-                headers_dict[key] = value
+            address, headers_dict = expected_webhooks[config]
 
             notification.append(QCWebhookNotificationMethod(address=address, headers=headers_dict))
 
