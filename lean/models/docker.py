@@ -25,9 +25,9 @@ class DockerImage(WrappedBaseModel):
         :param image: the input value
         :return: the DockerImage object containing the name and the tag of the image
         """
-        if ":" in image:
-            name, tag = image.split(":")
-        else:
+        # A colon can also separate a registry host from its port, the tag is only what follows the last one
+        name, separator, tag = image.rpartition(":")
+        if separator == "" or "/" in tag:
             name = image
             tag = "latest"
 
