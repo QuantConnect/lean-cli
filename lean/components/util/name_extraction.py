@@ -31,4 +31,10 @@ def convert_to_class_name(file_path: Path):
     :return: returns a valid class name
     """
     from re import sub
-    return sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))
+    class_name = sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))
+
+    # An identifier cannot be empty or start with a digit
+    if class_name == "" or class_name[0].isdigit():
+        class_name = "_" + class_name
+
+    return class_name
