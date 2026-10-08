@@ -21,15 +21,17 @@ from click.testing import CliRunner
 from textual.widgets import TabbedContent
 
 from lean.commands import lean
+from lean.container import container
 from lean.ui import app as ui_app
+from lean.ui import backtest_screen
 from lean.ui.actions import ACTIONS, CLOUD_BACKTEST_URL, format_command
 from lean.ui.app import ConfirmScreen, LeanApp, ProjectTable
 from lean.ui.backtest_screen import BacktestPicker, BacktestScreen
 from lean.ui.projects import UIProject, discover_local_projects, filter_projects, merge_cloud_projects
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from lean.ui.results import CloudBacktest
-from tests.test_ui_results import (BACKTEST_ID, create_cloud_backtest, create_local_backtest, create_result,
-                                   mock_cloud_api)
+from tests.test_ui_results import (BACKTEST_ID, create_cloud_backtest, create_cloud_orders, create_local_backtest,
+                                   create_result, mock_cloud_api)
 
 
 def _discover() -> list:
@@ -442,5 +444,116 @@ def test_projects_can_update_while_another_screen_is_shown() -> None:
         await pilot.pause()
 
         assert app.screen_stack[0].query_one(ProjectTable).row_count == 1
+
+    _run_app(test, logged_in=True)
+
+
+async def _open_cloud_orders(app: LeanApp, pilot, backtest: dict, order_list: list) -> BacktestScreen:
+    """Shows a cloud backtest's orders tab, with the API serving order_list."""
+    project = UIProject("Cloud Project", cloud_id=123)
+    post = mock_cloud_api(backtest, order_list=order_list)
+    post.side_effect = _only_backtest(post.side_effect)
+    app.push_screen(BacktestScreen(project, logged_in=True))
+    await _settle(app, pilot)
+    await pilot.press("2")
+    await _settle(app, pilot)
+    return app.screen
+
+
+def _only_backtest(post):
+    """Lists only the backtest under test, so the screen opens on it."""
+    def answer(endpoint, payload):
+        if endpoint == "backtests/list":
+            return {"backtests": [{"backtestId": BACKTEST_ID, "name": "Logical Red Monkey",
+                                   "created": "2026-10-08 19:45:10"}]}
+        return post(endpoint, payload)
+    return answer
+
+
+def _order_requests() -> list:
+    return [(c.args[1]["start"], c.args[1]["end"]) for c in container.api_client.post.call_args_list
+            if c.args[0] == "backtests/orders/read"]
+
+
+def _orders_label(screen: BacktestScreen) -> str:
+    return str(screen.query_one(TabbedContent).get_tab("orders").label)
+
+
+def test_orders_load_a_page_at_a_time_as_they_are_scrolled_to() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        screen = await _open_cloud_orders(app, pilot, create_cloud_backtest(), create_cloud_orders(250))
+        table = screen.query_one("#orders-table")
+
+        assert table.row_count == 100
+        assert _orders_label(screen) == "Orders (100 of 250)"
+        assert _order_requests() == [(0, 100)]
+
+        table.move_cursor(row=95)
+        await _settle(app, pilot)
+        assert table.row_count == 200
+
+        table.move_cursor(row=195)
+        await _settle(app, pilot)
+        assert table.row_count == 250
+        assert _orders_label(screen) == "Orders (250)"
+        assert _order_requests() == [(0, 100), (100, 200), (200, 300)]
+
+        # Every order is shown, so reaching the end again asks for nothing
+        table.move_cursor(row=249)
+        await _settle(app, pilot)
+        assert len(_order_requests()) == 3
+
+    _run_app(test, logged_in=True)
+
+
+def test_orders_of_a_running_backtest_add_new_orders_on_refresh() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        order_list = create_cloud_orders(3)
+        running = create_cloud_backtest(status="Running", completed=False, progress=0.5)
+        screen = await _open_cloud_orders(app, pilot, running, order_list)
+        assert screen.query_one("#orders-table").row_count == 3
+
+        order_list.extend(create_cloud_orders(2, first_id=4))
+        screen._poll()
+        await _settle(app, pilot)
+
+        assert screen.query_one("#orders-table").row_count == 5
+        assert _order_requests() == [(0, 100), (3, 103)]
+
+    _run_app(test, logged_in=True)
+
+
+def test_orders_reload_when_the_backtest_completes() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        running = create_cloud_backtest(status="Running", completed=False, progress=0.5)
+        screen = await _open_cloud_orders(app, pilot, running, create_cloud_orders(3))
+
+        running.update(create_cloud_backtest())
+        screen._poll()
+        await _settle(app, pilot)
+
+        assert screen.query_one("#orders-table").row_count == 3
+        assert _order_requests()[-1] == (0, 100)
+        assert _orders_label(screen) == "Orders (3)"
+
+    _run_app(test, logged_in=True)
+
+
+def test_orders_that_are_not_readable_yet_are_retried() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        order_list = []
+        backtest = create_cloud_backtest()
+        backtest["statistics"]["Total Orders"] = "2"
+        with mock.patch.object(backtest_screen, "ORDERS_RETRY_SECONDS", 0.1), \
+                mock.patch.object(backtest_screen, "ORDERS_RETRIES", 1000):
+            screen = await _open_cloud_orders(app, pilot, backtest, order_list)
+            assert screen.query_one("#orders-table").row_count == 0
+
+            order_list.extend(create_cloud_orders(2))
+            await pilot.pause(0.3)
+            await _settle(app, pilot)
+
+        assert screen.query_one("#orders-table").row_count == 2
+        assert _orders_label(screen) == "Orders (2)"
 
     _run_app(test, logged_in=True)

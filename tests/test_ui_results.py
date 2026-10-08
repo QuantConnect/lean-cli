@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from unittest import mock
 
+import pytest
+
 from lean.container import container
 from lean.ui.results import (CloudBacktest, LocalBacktest, list_cloud_backtests, list_local_backtests,
                              parse_cloud_backtest, parse_local_result, sort_newest_first)
@@ -94,9 +96,17 @@ def create_cloud_backtest(status: str = "Completed.", completed: bool = True, pr
             "parameterSet": {"roc_window": "150"}}
 
 
-def mock_cloud_api(backtest: Dict[str, Any], orders: int = 0, logs: int = 0) -> mock.Mock:
-    """Makes the API client answer the backtest endpoints, paging orders and logs like the API."""
-    order_list = [dict(create_orders()["1"], id=i + 1) for i in range(orders)]
+def create_cloud_orders(count: int, first_id: int = 1) -> List[Dict[str, Any]]:
+    return [dict(create_orders()["1"], id=first_id + i) for i in range(count)]
+
+
+def mock_cloud_api(backtest: Dict[str, Any], orders: int = 0, logs: int = 0,
+                   order_list: Optional[List[Dict[str, Any]]] = None) -> mock.Mock:
+    """Makes the API client answer the backtest endpoints, paging orders and logs like the API.
+
+    Pass order_list to change the orders the API returns while a test runs.
+    """
+    order_list = order_list if order_list is not None else create_cloud_orders(orders)
     log_lines = [f"line {i}" for i in range(logs)]
 
     def post(endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -182,7 +192,8 @@ def test_local_backtest_finds_its_result_file_from_its_config() -> None:
 
     assert backtest.result_file == output_dir / "1121419604.json"
     assert backtest.load().name == "2026-10-08_16-00-57"
-    assert [o.id for o in backtest.load_orders()] == [1, 2]
+    assert backtest.load_orders(0, 100) == (backtest.load().orders, 2)
+    assert [o.id for o in backtest.load_orders(1, 100)[0]] == [2]
     assert backtest.created == datetime(2026, 10, 8, 16, 0, 57).astimezone(timezone.utc)
 
 
@@ -268,12 +279,23 @@ def test_cloud_backtest_without_a_chart_yet_loads_the_summary() -> None:
     assert all(c.args[0] != "backtests/chart/read" for c in post.call_args_list)
 
 
-def test_cloud_backtest_pages_through_orders() -> None:
-    mock_cloud_api(create_cloud_backtest(), orders=250)
+def test_cloud_backtest_loads_one_page_of_orders_with_the_total() -> None:
+    post = mock_cloud_api(create_cloud_backtest(), orders=250)
 
-    orders = CloudBacktest(123, BACKTEST_ID).load_orders()
+    orders, total = CloudBacktest(123, BACKTEST_ID).load_orders(100, 200)
 
-    assert [o.id for o in orders] == list(range(1, 251))
+    assert [o.id for o in orders] == list(range(101, 201))
+    assert total == 250
+    assert post.call_count == 1
+
+
+def test_cloud_backtest_never_asks_for_more_than_a_page_of_orders() -> None:
+    post = mock_cloud_api(create_cloud_backtest(), orders=250)
+
+    orders, _ = CloudBacktest(123, BACKTEST_ID).load_orders(0, 1000)
+
+    assert len(orders) == 100
+    assert post.call_args.args[1]["end"] == 100
 
 
 def test_cloud_backtest_reads_the_last_log_lines() -> None:
@@ -300,3 +322,26 @@ def test_sort_newest_first_mixes_local_and_cloud_backtests() -> None:
                    CloudBacktest(1, "b" * 32, "New", datetime(2026, 10, 1, tzinfo=timezone.utc))]
 
     assert [b.name for b in sort_newest_first([local] + cloud)] == ["New", "2026-05-01_12-00-00", "Old"]
+
+
+def test_cloud_backtest_waits_while_the_api_prepares_the_orders() -> None:
+    post = mock_cloud_api(create_cloud_backtest(), orders=3)
+    serve = post.side_effect
+    answers = iter([{"status": "loading", "progress": 0.0, "success": True}] * 2)
+    post.side_effect = lambda endpoint, payload: next(answers, None) or serve(endpoint, payload)
+
+    with mock.patch("lean.ui.results.CLOUD_LOADING_DELAY_SECONDS", 0):
+        orders, total = CloudBacktest(123, BACKTEST_ID).load_orders(0, 100)
+
+    assert (len(orders), total) == (3, 3)
+    assert post.call_count == 3
+
+
+def test_cloud_backtest_gives_up_when_the_api_keeps_loading() -> None:
+    container.api_client.post = mock.Mock(return_value={"status": "loading", "progress": 0.5, "success": True})
+
+    with mock.patch("lean.ui.results.CLOUD_LOADING_DELAY_SECONDS", 0), \
+            pytest.raises(RuntimeError, match="still preparing"):
+        CloudBacktest(123, BACKTEST_ID).load_orders(0, 100)
+
+    assert container.api_client.post.call_count == 30
