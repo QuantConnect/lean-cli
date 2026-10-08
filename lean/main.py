@@ -88,10 +88,13 @@ from lean.commands import lean
 from lean.container import container
 
 
-def main() -> None:
-    """This function is the entrypoint when running a Lean command in a terminal."""
+def main(prog_name: str = None) -> None:
+    """This function is the entrypoint when running a Lean command in a terminal.
+
+    :param prog_name: the program name shown in help and error messages, detected from the command line if not set
+    """
     try:
-        lean.main(standalone_mode=False)
+        lean.main(standalone_mode=False, prog_name=prog_name)
 
         temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:

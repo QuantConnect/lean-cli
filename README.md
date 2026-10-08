@@ -143,6 +143,7 @@ The following CLI configurations are available. Use the [`lean config list`](#le
 - [`lean project-delete`](#lean-project-delete)
 - [`lean report`](#lean-report)
 - [`lean research`](#lean-research)
+- [`lean ui`](#lean-ui)
 - [`lean whoami`](#lean-whoami)
 
 ### `lean backtest`
@@ -2289,6 +2290,25 @@ Options:
 ```
 
 _See code: [lean/commands/research.py](lean/commands/research.py)_
+
+### `lean ui`
+
+Browse projects and run commands on them in an interactive terminal UI.
+
+```
+Usage: lean ui [OPTIONS]
+
+  Browse projects and run commands on them in an interactive terminal UI.
+
+  Use the arrow keys or j/k to move, / to filter, enter to pick an action and q to quit.
+
+Options:
+  --lean-config FILE  The Lean configuration file that should be used (defaults to the nearest lean.json)
+  --verbose           Enable debug logging
+  --help              Show this message and exit.
+```
+
+_See code: [lean/commands/ui.py](lean/commands/ui.py)_
 
 ### `lean whoami`
 
