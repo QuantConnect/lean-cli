@@ -574,7 +574,8 @@ class BacktestScreen(Screen):
 
         self._show_orders(orders)
         self._orders_count += len(orders)
-        self._orders_total = max(total or 0, self._orders_count)
+        # A running cloud backtest serves no orders yet but still reports a length, which is only trusted with orders
+        self._orders_total = max(total or 0, self._orders_count) if orders else self._orders_count
         self._label_orders()
 
         if self._orders_total == 0 and self._orders_expected() and self._orders_retries < ORDERS_RETRIES:
@@ -602,6 +603,8 @@ class BacktestScreen(Screen):
             label = "Orders (loading...)"
         elif self._orders_total is None:
             label = "Orders"
+        elif self._orders_total == 0 and self._result is not None and not self._result.finished:
+            label = "Orders (none yet)"
         elif self._orders_count < self._orders_total:
             label = f"Orders ({self._orders_count:,} of {self._orders_total:,})"
         else:

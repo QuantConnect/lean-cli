@@ -577,3 +577,22 @@ def test_orders_that_are_not_readable_yet_are_retried() -> None:
         assert len(_order_requests()) == 3
 
     _run_app(test, logged_in=True)
+
+
+def test_orders_of_a_running_cloud_backtest_ignore_the_length_without_orders() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        running = create_cloud_backtest(status="In Progress...", completed=False, progress=0.26)
+        screen = await _open_cloud_orders(app, pilot, running, [])
+        serve = container.api_client.post.side_effect
+
+        # The cloud serves a running backtest's orders as an empty list with a length of 100
+        container.api_client.post.side_effect = lambda endpoint, payload: \
+            {"orders": [], "length": 100, "success": True} if endpoint == "backtests/orders/read" \
+            else serve(endpoint, payload)
+        screen._poll()
+        await _settle(app, pilot)
+
+        assert screen.query_one("#orders-table").row_count == 0
+        assert _orders_label(screen) == "Orders (none yet)"
+
+    _run_app(test, logged_in=True)
