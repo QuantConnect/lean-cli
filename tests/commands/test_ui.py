@@ -13,6 +13,7 @@
 
 import asyncio
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -390,14 +391,23 @@ def test_backtest_picker_filters_and_opens_a_backtest() -> None:
 
 def test_results_of_a_running_backtest_refresh_until_it_finishes() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        output_dir = create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57",
-                                           create_result(status="Running", equity_points=3))
+        running = create_result(status="Running", equity_points=5)
+        equity = running["charts"]["Strategy Equity"]["series"]["Equity"]
+        equity["values"] = equity["values"][:3]
+        output_dir = create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57", running)
 
         await pilot.press("v")
         await _settle(app, pilot)
         screen = app.screen
         assert screen.query_one("#summary").border_title.startswith("2026-10-08_16-00-57 (local): Running ")
         assert screen._poll_timer is not None
+
+        # The chart spans the whole backtest, so the partial equity only fills part of it
+        chart = screen.query_one("#equity")
+        period = (datetime(2013, 10, 7, tzinfo=timezone.utc).timestamp(),
+                  datetime(2013, 10, 11, 23, 59, 59, tzinfo=timezone.utc).timestamp())
+        assert chart.x_range == period
+        assert chart.points[-1][0] < (period[0] + period[1]) / 2 + 3600
 
         (output_dir / "1121419604.json").write_text(json.dumps(create_result()))
         screen._poll()

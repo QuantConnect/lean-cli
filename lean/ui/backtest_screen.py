@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass, field
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import List, Optional, Sequence, Tuple
 
 from rich.table import Table
@@ -74,19 +74,37 @@ class LiveRun:
 
 
 class EquityChart(PlotextPlot):
-    """The equity of a backtest over time, with dates on the x axis and dollar values on the y axis."""
+    """The equity of a backtest over time, with dates on the x axis and dollar values on the y axis.
+
+    When the backtest's period is known the x axis spans all of it, so a running backtest's equity grows from left
+    to right instead of being stretched over the full width.
+    """
 
     def __init__(self, *, id: Optional[str] = None) -> None:
         super().__init__(id=id)
         self._points: Sequence[Tuple[float, float]] = []
+        self._period: Optional[Tuple[float, float]] = None
         self._message = "No data"
 
     @property
     def points(self) -> Sequence[Tuple[float, float]]:
         return self._points
 
-    def set_points(self, points: Sequence[Tuple[float, float]], message: str = "No data") -> None:
+    @property
+    def x_range(self) -> Optional[Tuple[float, float]]:
+        """The times the x axis spans, or None without points."""
+        if not self._points:
+            return None
+        low, high = self._points[0][0], self._points[-1][0]
+        if self._period is not None:
+            low, high = min(low, self._period[0]), max(high, self._period[1])
+        return low, high
+
+    def set_points(self, points: Sequence[Tuple[float, float]], message: str = "No data",
+                   period: Optional[Tuple[datetime, datetime]] = None) -> None:
+        """Sets the equity points, and the start and end of the backtest if known."""
         self._points = _downsample(points)
+        self._period = (period[0].timestamp(), period[1].timestamp()) if period is not None else None
         self._message = message
         self._replot()
 
@@ -108,7 +126,10 @@ class EquityChart(PlotextPlot):
 
         y_ticks, y_step = value_ticks(min(ys), max(ys), max(3, min(8, self.size.height // 2)))
         plt.yticks(y_ticks, format_value_ticks(y_ticks, y_step, "$"))
-        x_ticks, x_labels = time_ticks(min(xs), max(xs), max(2, self.size.width // 16))
+        x_low, x_high = self.x_range
+        if x_high > x_low:
+            plt.xlim(x_low, x_high)
+        x_ticks, x_labels = time_ticks(x_low, x_high, max(2, self.size.width // 16))
         plt.xticks(x_ticks, x_labels)
 
         self.refresh()
@@ -495,7 +516,9 @@ class BacktestScreen(Screen):
     def _show_chart(self) -> None:
         result = self._result
         message = "Waiting for results..." if result is None or not result.finished else "No equity data"
-        self.query_one("#equity", EquityChart).set_points(result.equity if result is not None else [], message)
+        period = (result.start, result.end) if result is not None and result.start and result.end else None
+        self.query_one("#equity", EquityChart).set_points(result.equity if result is not None else [], message,
+                                                          period)
 
     def _show_statistics(self) -> None:
         table = self.query_one("#statistics-table", Static)
