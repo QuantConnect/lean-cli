@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -24,11 +25,11 @@ from textual.screen import ModalScreen
 from textual.widgets import DataTable, Footer, Header, Input, OptionList, RichLog, Static
 from textual.widgets.option_list import Option
 
-from lean.ui.actions import ACTIONS, CommandProcess, ProjectAction, format_command
-from lean.ui.backtest_screen import BacktestScreen
+from lean.ui.actions import ACTIONS, CLOUD_BACKTEST_URL, CommandProcess, ProjectAction, format_command
+from lean.ui.backtest_screen import BacktestScreen, LiveRun
 from lean.ui.projects import (UIProject, discover_local_projects, fetch_cloud_projects, filter_projects,
                               is_logged_in, merge_cloud_projects)
-from lean.ui.results import list_local_backtests
+from lean.ui.results import BacktestSource, CloudBacktest, LocalBacktest, PendingCloudBacktest
 
 
 class ProjectTable(DataTable):
@@ -106,6 +107,7 @@ class LeanApp(App):
         self._visible: List[UIProject] = []
         self._logged_in = False
         self._process: Optional[CommandProcess] = None
+        self._live_screen: Optional[BacktestScreen] = None
 
     def _query(self, selector, expect_type=None):
         """Queries the projects screen, which stays at the bottom of the stack while other screens are shown."""
@@ -291,7 +293,7 @@ class LeanApp(App):
             return
 
         if action.opens_results:
-            self.push_screen(BacktestScreen(project.name, list_local_backtests(project.path)))
+            self.push_screen(BacktestScreen(project, self._logged_in))
             return
 
         if self._process is not None:
@@ -300,11 +302,32 @@ class LeanApp(App):
 
         args = action.build_args(project)
 
+        if action.live is not None:
+            self._start_backtest(action, project, args)
+            return
+
         def on_confirm(confirmed: Optional[bool]) -> None:
             if confirmed:
                 self._run_command(action, args)
 
         self.push_screen(ConfirmScreen(format_command(args)), on_confirm)
+
+    def _start_backtest(self, action: ProjectAction, project: UIProject, args: List[str]) -> None:
+        """Runs a backtest and opens its results, which fill in as the backtest runs."""
+        source: BacktestSource
+        if action.live == "local":
+            # Choosing the output directory lets the results screen read it while the backtest runs
+            output_dir = project.path / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            args = args + ["--output", str(output_dir)]
+            source = LocalBacktest(output_dir)
+        else:
+            # The backtest id is known once the command has pushed and compiled the project
+            source = PendingCloudBacktest()
+
+        live = LiveRun(source, lines=[f"$ {format_command(args)}"])
+        self._live_screen = BacktestScreen(project, self._logged_in, live)
+        self.push_screen(self._live_screen)
+        self._run_command(action, args)
 
     @work(thread=True, group="command")
     def _run_command(self, action: ProjectAction, args: List[str]) -> None:
@@ -312,15 +335,19 @@ class LeanApp(App):
         self._process = process
         self.call_from_thread(self._command_started, args)
 
-        output = self._query("#output", RichLog)
         try:
-            exit_code = process.run(lambda line: self.call_from_thread(output.write, Text.from_ansi(line)))
+            exit_code = process.run(lambda line: self.call_from_thread(self._command_output, line))
         except Exception as exception:
-            self.call_from_thread(output.write, Text(f"Could not run the command: {exception}", style="red"))
+            self.call_from_thread(self._command_output, f"Could not run the command: {exception}")
             exit_code = -1
 
         self._process = None
         self.call_from_thread(self._command_finished, exit_code, action.refreshes_projects)
+
+    @property
+    def _live_screen_shown(self) -> Optional[BacktestScreen]:
+        """The results screen of the running backtest, unless it was closed."""
+        return self._live_screen if self._live_screen in self.screen_stack else None
 
     def _command_started(self, args: List[str]) -> None:
         output = self._query("#output", RichLog)
@@ -329,10 +356,28 @@ class LeanApp(App):
         output.border_title = f"Output: {format_command(args)}"
         output.border_subtitle = "running, x to stop"
 
+    def _command_output(self, line: str) -> None:
+        self._query("#output", RichLog).write(Text.from_ansi(line))
+
+        live_screen = self._live_screen_shown
+        if live_screen is None:
+            return
+        live_screen.add_live_line(line)
+        match = CLOUD_BACKTEST_URL.search(line)
+        if match is not None and isinstance(live_screen.live_source, PendingCloudBacktest):
+            live_screen.set_live_source(CloudBacktest(int(match.group(1)), match.group(2)))
+
     def _command_finished(self, exit_code: int, refresh_projects: bool) -> None:
         output = self._query("#output", RichLog)
         output.border_subtitle = "done" if exit_code == 0 else f"failed (exit code {exit_code})"
         output.write(Text(output.border_subtitle, style="green" if exit_code == 0 else "red"))
+
+        live_screen = self._live_screen_shown
+        if live_screen is not None:
+            live_screen.add_live_line(output.border_subtitle)
+            live_screen.live_finished(exit_code)
+        self._live_screen = None
+
         if refresh_projects:
             self.action_refresh()
         else:
