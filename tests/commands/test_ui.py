@@ -470,6 +470,24 @@ def _only_backtest(post):
     return answer
 
 
+class _OrdersAfter(list):
+    """Orders that the fake orders endpoint only returns from its request number `after` + 1 on."""
+
+    def __init__(self, after: int, orders: list) -> None:
+        super().__init__(orders)
+        self._after = after
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            self._after -= 1
+            if self._after >= 0:
+                return []
+        return super().__getitem__(index)
+
+    def __len__(self) -> int:
+        return super().__len__() if self._after < 0 else 0
+
+
 def _order_requests() -> list:
     return [(c.args[1]["start"], c.args[1]["end"]) for c in container.api_client.post.call_args_list
             if c.args[0] == "backtests/orders/read"]
@@ -541,19 +559,21 @@ def test_orders_reload_when_the_backtest_completes() -> None:
 
 def test_orders_that_are_not_readable_yet_are_retried() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        order_list = []
         backtest = create_cloud_backtest()
         backtest["statistics"]["Total Orders"] = "2"
-        with mock.patch.object(backtest_screen, "ORDERS_RETRY_SECONDS", 0.1), \
-                mock.patch.object(backtest_screen, "ORDERS_RETRIES", 1000):
-            screen = await _open_cloud_orders(app, pilot, backtest, order_list)
-            assert screen.query_one("#orders-table").row_count == 0
 
-            order_list.extend(create_cloud_orders(2))
-            await pilot.pause(0.3)
-            await _settle(app, pilot)
+        # The endpoint returns no orders the first two times it is asked
+        order_list = _OrdersAfter(2, create_cloud_orders(2))
+        with mock.patch.object(backtest_screen, "ORDERS_RETRY_SECONDS", 0.1):
+            screen = await _open_cloud_orders(app, pilot, backtest, order_list)
+            for _ in range(10):
+                if screen.query_one("#orders-table").row_count:
+                    break
+                await pilot.pause(0.1)
+                await _settle(app, pilot)
 
         assert screen.query_one("#orders-table").row_count == 2
         assert _orders_label(screen) == "Orders (2)"
+        assert len(_order_requests()) == 3
 
     _run_app(test, logged_in=True)
