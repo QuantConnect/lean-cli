@@ -14,86 +14,129 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
+from unittest import mock
 
-from lean.ui.results import LocalBacktest, list_local_backtests, parse_backtest_result
+from lean.container import container
+from lean.ui.results import (CloudBacktest, LocalBacktest, list_cloud_backtests, list_local_backtests,
+                             parse_cloud_backtest, parse_local_result, sort_newest_first)
 
 # 2013-10-07 04:00 UTC to 2013-10-11 20:00 UTC, like the sample data backtests
 START = 1381118400
 END = 1381521600
 
+BACKTEST_ID = "c9c84362d35b5ab2e8bd457446b74d58"
 
-def create_result(status: str = "Completed", equity_points: int = 5) -> Dict[str, Any]:
-    """Returns backtest results in the format LEAN writes them, trimmed to a few points."""
-    step = (END - START) / max(1, equity_points - 1)
-    equity = [[START + i * step, 100000 + i, 100000 + i + 5, 100000 + i - 5, 100000 + i * 10]
-              for i in range(equity_points)]
 
+def create_equity_chart(points: int = 5) -> Dict[str, Any]:
+    """Returns a Strategy Equity chart, whose equity series holds candles."""
+    step = (END - START) / max(1, points - 1)
+    return {"name": "Strategy Equity", "chartType": 0, "series": {
+        "Equity": {"name": "Equity", "unit": "$", "index": 0, "seriesType": 2,
+                   "values": [[START + i * step, 100000 + i, 100000 + i + 5, 100000 + i - 5, 100000 + i * 10]
+                              for i in range(points)]},
+        "Return": {"name": "Return", "unit": "%", "index": 1, "seriesType": 3, "values": [[START, 0.0]]},
+    }}
+
+
+def create_orders() -> Dict[str, Any]:
     return {
-        "charts": {
-            "Strategy Equity": {"name": "Strategy Equity", "chartType": 0, "series": {
-                "Equity": {"name": "Equity", "unit": "$", "index": 0, "seriesType": 2, "values": equity},
-                "Return": {"name": "Return", "unit": "%", "index": 1, "seriesType": 3,
-                           "values": [[START, 0.0], [END, 0.4]]},
-            }},
-            "Drawdown": {"name": "Drawdown", "chartType": 0, "series": {
-                "Equity Drawdown": {"name": "Equity Drawdown", "unit": "%", "seriesType": 0,
-                                    "values": [[START, 0.0], [END, -0.34]]},
-            }},
-            "Benchmark": {"name": "Benchmark", "chartType": 0, "series": {
-                "Benchmark": {"name": "Benchmark", "unit": "$", "seriesType": 0,
-                              "values": [[START, 146.0], [END, 147.0]]},
-            }},
-            "Indicators": {"name": "Indicators", "chartType": 0, "series": {
-                "Fast EMA": {"name": "Fast EMA", "unit": "$", "seriesType": 0,
-                             "values": [[START, 145.0], [START + 60, None], {"x": END, "y": 146.0}]},
-            }},
-        },
-        "orders": {
-            "2": {"type": 0, "id": 2, "symbol": {"value": "SPY", "id": "SPY R735QTJ8XC9X", "permtick": "SPY"},
-                  "price": 145.34, "time": "2013-10-07T14:46:00Z", "quantity": -686.0, "status": 3,
-                  "tag": "Liquidated", "direction": 1, "value": -99705.8},
-            "1": {"type": 0, "id": 1, "symbol": {"value": "SPY", "id": "SPY R735QTJ8XC9X", "permtick": "SPY"},
-                  "price": 145.33, "time": "2013-10-07T14:10:00Z", "quantity": 686.0, "status": 3,
-                  "tag": "", "direction": 0, "value": 99693.94},
-        },
-        "statistics": {"Total Orders": "2", "Net Profit": "-0.160%", "Sharpe Ratio": "1.028"},
-        "runtimeStatistics": {"Equity": "$99,839.57", "Net Profit": "$-294.86", "Return": "-0.16 %"},
-        "state": {"Status": status, "RuntimeError": ""},
-        "algorithmConfiguration": {"startDate": "2013-10-07T00:00:00Z", "endDate": "2013-10-11T23:59:59Z",
-                                   "parameters": {"delay-ms": "30"}},
+        "2": {"type": 0, "id": 2, "symbol": {"value": "SPY", "id": "SPY R735QTJ8XC9X", "permtick": "SPY"},
+              "price": 145.34, "time": "2013-10-07T14:46:00Z", "quantity": -686.0, "status": 3,
+              "tag": "Liquidated", "direction": 1, "value": -99705.8},
+        "1": {"type": 0, "id": 1, "symbol": {"value": "SPY", "id": "SPY R735QTJ8XC9X", "permtick": "SPY"},
+              "price": 145.33, "time": "2013-10-07T14:10:00Z", "quantity": 686.0, "status": 3,
+              "tag": "", "direction": 0, "value": 99693.94},
     }
 
 
-def create_local_backtest(project_dir: Path, name: str, result: Dict[str, Any], backtest_id: int = 1121419604) -> Path:
+def create_result(status: str = "Completed", equity_points: int = 5) -> Dict[str, Any]:
+    """Returns local backtest results in the format LEAN writes them, trimmed to a few points.
+
+    LEAN only adds the algorithm configuration once the backtest has finished.
+    """
+    result = {
+        "charts": {"Strategy Equity": create_equity_chart(equity_points)},
+        "orders": create_orders(),
+        "statistics": {"Total Orders": "2", "Net Profit": "-0.160%", "Sharpe Ratio": "1.028"},
+        "runtimeStatistics": {"Equity": "$99,839.57", "Net Profit": "$-294.86", "Return": "-0.16 %"},
+        "state": {"Status": status, "RuntimeError": ""},
+    }
+    if status != "Running":
+        result["algorithmConfiguration"] = {"startDate": "2013-10-07T00:00:00Z", "endDate": "2013-10-11T23:59:59Z",
+                                            "parameters": {"delay-ms": "30"}}
+    return result
+
+
+def create_local_backtest(project_dir: Path, name: str, result: Optional[Dict[str, Any]],
+                          backtest_id: int = 1121419604) -> Path:
     """Writes a backtest output directory the way `lean backtest` leaves it."""
     output_dir = project_dir / "backtests" / name
-    output_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "config").write_text(json.dumps({"id": backtest_id, "container": "lean_cli_abc"}))
-    (output_dir / f"{backtest_id}.json").write_text(json.dumps(result))
+    if result is not None:
+        (output_dir / f"{backtest_id}.json").write_text(json.dumps(result))
     (output_dir / f"{backtest_id}-order-events.json").write_text("[]")
-    (output_dir / "log.txt").write_text("2026-10-08T20:01:00Z TRACE:: Engine.Run(): start\n")
+    (output_dir / "log.txt").write_text(
+        "2026-10-08T20:01:00Z TRACE:: Engine.Run(): start\n"
+        "2026-10-08T20:01:01Z TRACE:: AlgorithmManager.Run(): Begin DataStream - Start: 10/7/2013 12:00:00 AM "
+        "Stop: 10/11/2013 11:59:59 PM Time: 10/4/2013 3:30:00 PM Warmup: True\n")
     return output_dir
 
 
-def test_parse_backtest_result_reads_charts_and_reduces_candles_to_closes() -> None:
-    result = parse_backtest_result(create_result())
-
-    assert result.equity.unit == "$"
-    assert result.equity.points[0] == (START, 100000)
-    assert result.equity.points[-1] == (END, 100040)
-    assert result.drawdown.points == [(START, 0.0), (END, -0.34)]
-    assert result.benchmark.points[0] == (START, 146.0)
-
-
-def test_parse_backtest_result_skips_empty_points_and_reads_xy_points() -> None:
-    result = parse_backtest_result(create_result())
-
-    assert result.series("Indicators", "Fast EMA").points == [(START, 145.0), (END, 146.0)]
+def create_cloud_backtest(status: str = "Completed.", completed: bool = True, progress: float = 1.0) -> Dict[str, Any]:
+    """Returns a backtest as the backtests/read endpoint returns it, without chart data."""
+    return {"backtestId": BACKTEST_ID, "name": "Logical Red Monkey", "status": status, "completed": completed,
+            "progress": progress, "created": "2026-10-08 19:45:10", "error": None,
+            "backtestStart": "2013-10-07 00:00:00", "backtestEnd": "2013-10-11 23:59:59",
+            "charts": {"Strategy Equity": {"name": "Strategy Equity", "series": {}}},
+            "statistics": {"Net Profit": "136.589%"}, "runtimeStatistics": {"Equity": "$236,588.97"},
+            "parameterSet": {"roc_window": "150"}}
 
 
-def test_parse_backtest_result_reads_orders_sorted_by_id_with_readable_enums() -> None:
-    orders = parse_backtest_result(create_result()).orders
+def mock_cloud_api(backtest: Dict[str, Any], orders: int = 0, logs: int = 0) -> mock.Mock:
+    """Makes the API client answer the backtest endpoints, paging orders and logs like the API."""
+    order_list = [dict(create_orders()["1"], id=i + 1) for i in range(orders)]
+    log_lines = [f"line {i}" for i in range(logs)]
+
+    def post(endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if endpoint == "backtests/read":
+            return {"backtest": backtest}
+        if endpoint == "backtests/chart/read":
+            assert payload["name"] == "Strategy Equity"
+            return {"chart": create_equity_chart()}
+        if endpoint == "backtests/orders/read":
+            assert payload["end"] - payload["start"] <= 100
+            return {"orders": order_list[payload["start"]:payload["end"]], "length": len(order_list)}
+        if endpoint == "backtests/read/log":
+            assert payload["end"] - payload["start"] <= 200
+            return {"logs": log_lines[payload["start"]:payload["end"]], "length": len(log_lines)}
+        if endpoint == "backtests/list":
+            return {"backtests": [{"backtestId": "a" * 32, "name": "Older", "created": "2026-01-01 10:00:00"},
+                                  {"backtestId": "b" * 32, "name": "Newer", "created": "2026-10-08 19:45:10"}]}
+        raise AssertionError(f"Unexpected endpoint {endpoint}")
+
+    container.api_client.post = mock.Mock(side_effect=post)
+    return container.api_client.post
+
+
+def test_parse_local_result_reads_equity_closes() -> None:
+    result = parse_local_result(create_result())
+
+    assert result.equity[0] == (START, 100000)
+    assert result.equity[-1] == (END, 100040)
+
+
+def test_parse_local_result_skips_empty_points_and_reads_xy_points() -> None:
+    data = create_result()
+    data["charts"]["Strategy Equity"]["series"]["Equity"]["values"] = [[START, 1.0], [START + 60, None],
+                                                                       {"x": END, "y": 2.0}]
+
+    assert parse_local_result(data).equity == [(START, 1.0), (END, 2.0)]
+
+
+def test_parse_local_result_reads_orders_sorted_by_id_with_readable_enums() -> None:
+    orders = parse_local_result(create_result()).orders
 
     assert [o.id for o in orders] == [1, 2]
     assert (orders[0].type, orders[0].direction, orders[0].status) == ("Market", "Buy", "Filled")
@@ -102,50 +145,45 @@ def test_parse_backtest_result_reads_orders_sorted_by_id_with_readable_enums() -
     assert orders[0].time == datetime(2013, 10, 7, 14, 10, tzinfo=timezone.utc)
 
 
-def test_parse_backtest_result_reads_statistics_state_and_configuration() -> None:
-    result = parse_backtest_result(create_result())
+def test_parse_local_result_reads_statistics_status_and_configuration() -> None:
+    result = parse_local_result(create_result())
 
     assert result.statistics["Sharpe Ratio"] == "1.028"
     assert result.runtime_statistics["Equity"] == "$99,839.57"
-    assert result.status == "Completed"
+    assert (result.status, result.finished, result.progress) == ("Completed", True, 1.0)
     assert result.parameters == {"delay-ms": "30"}
     assert result.start == datetime(2013, 10, 7, tzinfo=timezone.utc)
 
 
-def test_parse_backtest_result_reads_cloud_backtests_with_list_orders() -> None:
-    data = create_result()
-    data["orders"] = list(data["orders"].values())
-    del data["state"]
+def test_parse_local_result_of_a_running_backtest() -> None:
+    result = parse_local_result(create_result(status="Running"))
 
-    result = parse_backtest_result(data)
-
-    assert [o.id for o in result.orders] == [1, 2]
-    assert result.status == ""
+    assert (result.status, result.finished) == ("Running", False)
+    assert result.start is None
 
 
-def test_progress_of_a_running_backtest_comes_from_its_last_equity_point() -> None:
+def test_local_backtest_progress_uses_the_date_range_from_the_log_while_running() -> None:
     data = create_result(status="Running", equity_points=5)
     data["charts"]["Strategy Equity"]["series"]["Equity"]["values"] = \
         data["charts"]["Strategy Equity"]["series"]["Equity"]["values"][:3]
+    output_dir = create_local_backtest(Path.cwd() / "Project", "2026-10-08_16-00-57", data)
 
-    progress = parse_backtest_result(data).progress
+    result = LocalBacktest(output_dir).load()
 
-    assert 0.45 < progress < 0.55
-
-
-def test_progress_of_a_completed_backtest_is_one() -> None:
-    assert parse_backtest_result(create_result()).progress == 1.0
+    assert result.start == datetime(2013, 10, 7, tzinfo=timezone.utc)
+    assert 0.45 < result.progress < 0.55
 
 
 def test_local_backtest_finds_its_result_file_from_its_config() -> None:
-    project_dir = Path.cwd() / "Project"
-    output_dir = create_local_backtest(project_dir, "2026-10-08_16-00-57", create_result())
+    output_dir = create_local_backtest(Path.cwd() / "Project", "2026-10-08_16-00-57", create_result())
     (output_dir / "9999-summary.json").write_text("{}")
 
     backtest = LocalBacktest(output_dir)
 
     assert backtest.result_file == output_dir / "1121419604.json"
-    assert backtest.load().statistics["Total Orders"] == "2"
+    assert backtest.load().name == "2026-10-08_16-00-57"
+    assert [o.id for o in backtest.load_orders()] == [1, 2]
+    assert backtest.created == datetime(2026, 10, 8, 16, 0, 57).astimezone(timezone.utc)
 
 
 def test_local_backtest_finds_its_result_file_without_a_config() -> None:
@@ -164,6 +202,13 @@ def test_local_backtest_without_results_or_with_a_partially_written_file_loads_n
 
     (output_dir / "1121419604.json").unlink()
     assert backtest.load() is None
+    assert LocalBacktest(Path.cwd() / "Project" / "backtests" / "missing").load() is None
+
+
+def test_local_backtest_reads_its_log() -> None:
+    output_dir = create_local_backtest(Path.cwd() / "Project", "2026-10-08_16-00-57", create_result())
+
+    assert LocalBacktest(output_dir).load_log()[0] == "2026-10-08T20:01:00Z TRACE:: Engine.Run(): start"
 
 
 def test_list_local_backtests_returns_newest_first() -> None:
@@ -175,3 +220,83 @@ def test_list_local_backtests_returns_newest_first() -> None:
 
     assert names == ["2026-10-09_09-30-00", "2026-10-08_16-00-57", "2026-01-01_00-00-00"]
     assert list_local_backtests(Path.cwd() / "Missing") == []
+    assert list_local_backtests(None) == []
+
+
+def test_parse_cloud_backtest() -> None:
+    result = parse_cloud_backtest(create_cloud_backtest(), {"Strategy Equity": create_equity_chart()})
+
+    assert result.name == "Logical Red Monkey"
+    assert (result.status, result.finished, result.progress) == ("Completed", True, 1.0)
+    assert result.statistics == {"Net Profit": "136.589%"}
+    assert result.parameters == {"roc_window": "150"}
+    assert result.equity[-1] == (END, 100040)
+    assert result.start == datetime(2013, 10, 7, tzinfo=timezone.utc)
+
+
+def test_parse_cloud_backtest_while_running_uses_reported_progress() -> None:
+    backtest = create_cloud_backtest(status="Running", completed=False, progress=0.42)
+    backtest["statistics"] = []
+
+    result = parse_cloud_backtest(backtest, {})
+
+    assert (result.finished, result.progress) == (False, 0.42)
+    assert result.statistics == {}
+    assert result.equity == []
+
+
+def test_cloud_backtest_loads_the_backtest_and_only_its_equity_chart() -> None:
+    post = mock_cloud_api(create_cloud_backtest())
+
+    result = CloudBacktest(123, BACKTEST_ID).load()
+
+    assert result.equity[-1] == (END, 100040)
+    chart_requests = [c for c in post.call_args_list if c.args[0] == "backtests/chart/read"]
+    assert len(chart_requests) == 1
+    assert chart_requests[0].args[1]["start"] == int(datetime(2013, 10, 7, tzinfo=timezone.utc).timestamp())
+
+
+def test_cloud_backtest_without_a_chart_yet_loads_the_summary() -> None:
+    backtest = create_cloud_backtest(status="In Queue...", completed=False, progress=0)
+    backtest["charts"] = {}
+    post = mock_cloud_api(backtest)
+
+    result = CloudBacktest(123, BACKTEST_ID).load()
+
+    assert result.status == "In Queue"
+    assert result.equity == []
+    assert all(c.args[0] != "backtests/chart/read" for c in post.call_args_list)
+
+
+def test_cloud_backtest_pages_through_orders() -> None:
+    mock_cloud_api(create_cloud_backtest(), orders=250)
+
+    orders = CloudBacktest(123, BACKTEST_ID).load_orders()
+
+    assert [o.id for o in orders] == list(range(1, 251))
+
+
+def test_cloud_backtest_reads_the_last_log_lines() -> None:
+    mock_cloud_api(create_cloud_backtest(), logs=2500)
+
+    lines = CloudBacktest(123, BACKTEST_ID).load_log()
+
+    assert len(lines) == 2000
+    assert (lines[0], lines[-1]) == ("line 500", "line 2499")
+
+
+def test_list_cloud_backtests_returns_newest_first() -> None:
+    mock_cloud_api(create_cloud_backtest())
+
+    backtests = list_cloud_backtests(123)
+
+    assert [b.name for b in backtests] == ["Newer", "Older"]
+    assert backtests[0].created == datetime(2026, 10, 8, 19, 45, 10, tzinfo=timezone.utc)
+
+
+def test_sort_newest_first_mixes_local_and_cloud_backtests() -> None:
+    local = LocalBacktest(Path("backtests") / "2026-05-01_12-00-00")
+    cloud: List = [CloudBacktest(1, "a" * 32, "Old", datetime(2025, 1, 1, tzinfo=timezone.utc)),
+                   CloudBacktest(1, "b" * 32, "New", datetime(2026, 10, 1, tzinfo=timezone.utc))]
+
+    assert [b.name for b in sort_newest_first([local] + cloud)] == ["New", "2026-05-01_12-00-00", "Old"]

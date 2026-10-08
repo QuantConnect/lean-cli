@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -25,27 +26,31 @@ from lean.ui.results import list_local_backtests
 
 @dataclass(frozen=True)
 class ProjectAction:
-    """A Lean CLI command that can be run on a project from the UI."""
+    """Something to do with a project from the UI, usually running a Lean CLI command."""
 
     key: str
     label: str
-    needs_local: bool
-    needs_cloud_project: bool
-    needs_login: bool
-    refreshes_projects: bool
-    build_args: Optional[Callable[[UIProject], List[str]]]
+    build_args: Optional[Callable[[UIProject], List[str]]] = None
+    needs_local: bool = False
+    needs_cloud_project: bool = False
+    needs_login: bool = False
+    refreshes_projects: bool = False
     opens_results: bool = False
+    live: Optional[str] = None
+    """'local' or 'cloud' for backtests, which open their results right away instead of asking to confirm."""
 
     def unavailable_reason(self, project: UIProject, logged_in: bool) -> Optional[str]:
         """Returns why the action cannot run on the project, or None if it can."""
+        if self.opens_results:
+            if list_local_backtests(project.path) or (project.is_cloud and logged_in):
+                return None
+            return "run `lean login` first" if project.is_cloud else "no backtests yet"
         if self.needs_local and not project.is_local:
             return "pull it first"
         if self.needs_login and not logged_in:
             return "run `lean login` first"
         if self.needs_cloud_project and not project.is_cloud:
             return "push it first"
-        if self.opens_results and not list_local_backtests(project.path):
-            return "no local backtests yet"
         return None
 
 
@@ -55,21 +60,22 @@ def _cloud_name(project: UIProject) -> str:
 
 
 ACTIONS = [
-    ProjectAction("b", "Backtest locally", True, False, False, False,
-                  lambda p: ["backtest", p.name]),
-    ProjectAction("v", "View backtest results", True, False, False, False, None, opens_results=True),
-    ProjectAction("c", "Backtest in the cloud", False, False, True, True,
+    ProjectAction("b", "Backtest locally", lambda p: ["backtest", p.name], needs_local=True, live="local"),
+    ProjectAction("c", "Backtest in the cloud",
                   lambda p: ["cloud", "backtest", p.name, "--push"] if p.is_local
-                  else ["cloud", "backtest", _cloud_name(p)]),
-    ProjectAction("l", "Show latest backtest logs", True, False, False, False,
-                  lambda p: ["logs", "--backtest", "--project", p.name]),
-    ProjectAction("p", "Push to the cloud", True, False, True, True,
-                  lambda p: ["cloud", "push", "--project", p.name]),
-    ProjectAction("u", "Pull from the cloud", False, True, True, True,
-                  lambda p: ["cloud", "pull", "--project", _cloud_name(p)]),
-    ProjectAction("s", "Cloud live status", False, True, True, False,
-                  lambda p: ["cloud", "status", _cloud_name(p)]),
+                  else ["cloud", "backtest", _cloud_name(p)],
+                  needs_login=True, refreshes_projects=True, live="cloud"),
+    ProjectAction("v", "View backtest results", opens_results=True),
+    ProjectAction("p", "Push to the cloud", lambda p: ["cloud", "push", "--project", p.name],
+                  needs_local=True, needs_login=True, refreshes_projects=True),
+    ProjectAction("u", "Pull from the cloud", lambda p: ["cloud", "pull", "--project", _cloud_name(p)],
+                  needs_cloud_project=True, needs_login=True, refreshes_projects=True),
+    ProjectAction("s", "Cloud live status", lambda p: ["cloud", "status", _cloud_name(p)],
+                  needs_cloud_project=True, needs_login=True),
 ]
+
+# `lean cloud backtest` prints the url of the backtest it creates, which holds the project and backtest ids
+CLOUD_BACKTEST_URL = re.compile(r"quantconnect\.com/project/(\d+)/([0-9a-f]{32})")
 
 
 def format_command(args: List[str]) -> str:

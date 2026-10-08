@@ -20,14 +20,15 @@ from click.testing import CliRunner
 from textual.widgets import TabbedContent
 
 from lean.commands import lean
-from lean.container import container
 from lean.ui import app as ui_app
-from lean.ui.actions import ACTIONS, format_command
+from lean.ui.actions import ACTIONS, CLOUD_BACKTEST_URL, format_command
 from lean.ui.app import ConfirmScreen, LeanApp, ProjectTable
-from lean.ui.backtest_screen import BacktestScreen
+from lean.ui.backtest_screen import BacktestPicker, BacktestScreen
 from lean.ui.projects import UIProject, discover_local_projects, filter_projects, merge_cloud_projects
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
-from tests.test_ui_results import create_local_backtest, create_result
+from lean.ui.results import CloudBacktest
+from tests.test_ui_results import (BACKTEST_ID, create_cloud_backtest, create_local_backtest, create_result,
+                                   mock_cloud_api)
 
 
 def _discover() -> list:
@@ -102,9 +103,23 @@ def test_actions_are_unavailable_when_project_or_login_is_missing() -> None:
 
     assert _action("b").unavailable_reason(local, logged_in=False) is None
     assert _action("b").unavailable_reason(cloud, logged_in=True) == "pull it first"
+    assert _action("c").unavailable_reason(local, logged_in=False) == "run `lean login` first"
+    assert _action("c").unavailable_reason(cloud, logged_in=True) is None
     assert _action("p").unavailable_reason(local, logged_in=False) == "run `lean login` first"
     assert _action("u").unavailable_reason(local, logged_in=True) == "push it first"
     assert _action("u").unavailable_reason(cloud, logged_in=True) is None
+
+
+def test_view_results_needs_local_backtests_or_a_cloud_project() -> None:
+    local = UIProject("Local", Path.cwd() / "Local")
+    cloud = UIProject("Cloud", cloud_id=5)
+
+    assert _action("v").unavailable_reason(local, logged_in=True) == "no backtests yet"
+    assert _action("v").unavailable_reason(cloud, logged_in=False) == "run `lean login` first"
+    assert _action("v").unavailable_reason(cloud, logged_in=True) is None
+
+    create_local_backtest(local.path, "2026-10-08_16-00-57", create_result())
+    assert _action("v").unavailable_reason(local, logged_in=False) is None
 
 
 def test_action_commands() -> None:
@@ -117,6 +132,12 @@ def test_action_commands() -> None:
     assert _action("u").build_args(cloud) == ["cloud", "pull", "--project", "5"]
 
 
+def test_cloud_backtest_url_holds_the_project_and_backtest_ids() -> None:
+    match = CLOUD_BACKTEST_URL.search(f"Backtest url: https://www.quantconnect.com/project/19213997/{BACKTEST_ID}")
+
+    assert match.groups() == ("19213997", BACKTEST_ID)
+
+
 def test_ui_requires_lean_config() -> None:
     result = CliRunner().invoke(lean, ["ui"])
 
@@ -124,19 +145,40 @@ def test_ui_requires_lean_config() -> None:
     assert "requires a Lean configuration file" in str(result.exception)
 
 
-def _run_app(test) -> None:
-    """Runs a test coroutine against the app with the fake Lean CLI directory and no stored credentials."""
+def test_command_process_runs_the_cli_as_a_child_process(fake_filesystem) -> None:
+    from lean import __version__
+    from lean.ui.actions import CommandProcess
+
+    lines = []
+    fake_filesystem.pause()
+    try:
+        exit_code = CommandProcess(["--version"], Path(__file__).parent).run(lines.append)
+    finally:
+        fake_filesystem.resume()
+
+    assert exit_code == 0
+    assert lines == [f"lean {__version__}"]
+
+
+def _run_app(test, logged_in: bool = False) -> None:
+    """Runs a test coroutine against the app with the fake Lean CLI directory and no cloud projects."""
     create_fake_lean_cli_directory()
-    container.cli_config_manager.user_id.get_value = mock.Mock(return_value=None)
 
     async def run() -> None:
-        app = LeanApp(Path.cwd(), Path.cwd() / "data")
-        async with app.run_test(size=(140, 40)) as pilot:
-            await app.workers.wait_for_complete()
-            await pilot.pause()
-            await test(app, pilot)
+        with mock.patch.object(ui_app, "is_logged_in", return_value=logged_in), \
+                mock.patch.object(ui_app, "fetch_cloud_projects", return_value=[]):
+            app = LeanApp(Path.cwd(), Path.cwd() / "data")
+            async with app.run_test(size=(140, 40)) as pilot:
+                await _settle(app, pilot)
+                await test(app, pilot)
 
     asyncio.run(run())
+
+
+async def _settle(app: LeanApp, pilot) -> None:
+    for _ in range(3):
+        await app.workers.wait_for_complete()
+        await pilot.pause()
 
 
 def test_app_lists_local_projects_and_filters_them() -> None:
@@ -168,42 +210,37 @@ def test_app_moves_through_projects_with_the_keyboard() -> None:
     _run_app(test)
 
 
-def test_app_asks_for_confirmation_before_running_a_command() -> None:
+def test_app_asks_for_confirmation_before_pushing() -> None:
     async def test(app: LeanApp, pilot) -> None:
         with mock.patch.object(ui_app, "CommandProcess") as command_process:
-            await pilot.press("b")
+            await pilot.press("p")
             assert isinstance(app.screen, ConfirmScreen)
-            assert app.screen._command == "lean backtest 'CSharp Project'"
+            assert app.screen._command == "lean cloud push --project 'CSharp Project'"
 
             await pilot.press("n")
             assert not isinstance(app.screen, ConfirmScreen)
             command_process.assert_not_called()
 
-    _run_app(test)
+    _run_app(test, logged_in=True)
 
 
-def test_app_runs_the_selected_action_and_shows_its_output() -> None:
+def test_app_runs_a_confirmed_command_and_shows_its_output() -> None:
     async def test(app: LeanApp, pilot) -> None:
         def fake_run(on_line):
-            on_line("Backtest finished")
+            on_line("Successfully pushed 'CSharp Project'")
             return 0
 
         with mock.patch.object(ui_app, "CommandProcess") as command_process:
             command_process.return_value.run.side_effect = fake_run
+            await pilot.press("p", "y")
+            await _settle(app, pilot)
 
-            await pilot.press("enter")
-            assert app.focused.__class__.__name__ == "ActionList"
-            await pilot.press("enter", "y")
-            await app.workers.wait_for_complete()
-            await pilot.pause()
-
-        command_process.assert_called_once_with(["backtest", "CSharp Project"], Path.cwd())
+        command_process.assert_called_once_with(["cloud", "push", "--project", "CSharp Project"], Path.cwd())
         output = app.query_one("#output")
-        lines = [line.text for line in output.lines]
-        assert "Backtest finished" in lines
+        assert "Successfully pushed 'CSharp Project'" in [line.text for line in output.lines]
         assert output.border_subtitle == "done"
 
-    _run_app(test)
+    _run_app(test, logged_in=True)
 
 
 def test_app_does_not_run_unavailable_actions() -> None:
@@ -216,48 +253,97 @@ def test_app_does_not_run_unavailable_actions() -> None:
     _run_app(test)
 
 
-def test_command_process_runs_the_cli_as_a_child_process(fake_filesystem) -> None:
-    from lean import __version__
-    from lean.ui.actions import CommandProcess
-
-    lines = []
-    fake_filesystem.pause()
-    try:
-        exit_code = CommandProcess(["--version"], Path(__file__).parent).run(lines.append)
-    finally:
-        fake_filesystem.resume()
-
-    assert exit_code == 0
-    assert lines == [f"lean {__version__}"]
-
-
-def test_view_results_is_unavailable_without_local_backtests() -> None:
+def test_backtesting_locally_opens_the_results_while_the_backtest_runs() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        await pilot.press("v")
-        assert not isinstance(app.screen, BacktestScreen)
-        assert _action("v").unavailable_reason(app.selected_project, logged_in=False) == "no local backtests yet"
+        def fake_run(on_line):
+            output_dir = Path(command_process.call_args.args[0][3])
+            on_line("Starting LEAN")
+            create_local_backtest(output_dir.parent.parent, output_dir.name, create_result())
+            return 0
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            await pilot.press("b")
+            assert isinstance(app.screen, BacktestScreen)
+            await _settle(app, pilot)
+
+        args = command_process.call_args.args[0]
+        assert args[:3] == ["backtest", "CSharp Project", "--output"]
+        assert Path(args[3]).parent == Path.cwd() / "CSharp Project" / "backtests"
+
+        screen = app.screen
+        assert screen.query_one("#summary").border_title.endswith("(local): Completed")
+        assert len(screen.query_one("#equity").points) == 5
+        assert screen.query_one(TabbedContent).active == "logs"
+        assert "Starting LEAN" in [line.text for line in screen.query_one("#log").lines]
 
     _run_app(test)
 
 
-def test_app_opens_backtest_results_with_charts_statistics_and_orders() -> None:
+def test_backtesting_in_the_cloud_switches_to_the_backtest_once_it_is_created() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57", create_result())
+        mock_cloud_api(create_cloud_backtest())
+
+        def fake_run(on_line):
+            on_line("Started compiling project 'CSharp Project'")
+            on_line(f"Backtest url: https://www.quantconnect.com/project/123/{BACKTEST_ID}")
+            return 0
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            await pilot.press("c")
+            assert isinstance(app.screen, BacktestScreen)
+            await _settle(app, pilot)
+
+        command_process.assert_called_once_with(["cloud", "backtest", "CSharp Project", "--push"], Path.cwd())
+        screen = app.screen
+        assert isinstance(screen.live_source, CloudBacktest)
+        assert (screen.live_source.project_id, screen.live_source.backtest_id) == (123, BACKTEST_ID)
+        assert screen.query_one("#summary").border_title == "Logical Red Monkey (cloud): Completed"
+        assert len(screen.query_one("#equity").points) == 5
+
+    _run_app(test, logged_in=True)
+
+
+def test_a_failed_cloud_backtest_shows_the_failure() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        def fake_run(on_line):
+            on_line("Build Error: main.py line 3")
+            return 1
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            await pilot.press("c")
+            await _settle(app, pilot)
+
+        screen = app.screen
+        assert screen.query_one("#summary").border_title == \
+            "New cloud backtest (cloud): failed (exit code 1), see Logs"
+        assert "Build Error: main.py line 3" in [line.text for line in screen.query_one("#log").lines]
+
+    _run_app(test, logged_in=True)
+
+
+def test_viewing_results_shows_the_newest_backtest() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        project_dir = Path.cwd() / "CSharp Project"
+        create_local_backtest(project_dir, "2026-10-08_16-00-57", create_result())
+        create_local_backtest(project_dir, "2026-10-09_09-30-00", create_result())
 
         await pilot.press("v")
-        await app.workers.wait_for_complete()
-        await pilot.pause()
+        await _settle(app, pilot)
 
         screen = app.screen
         assert isinstance(screen, BacktestScreen)
-        assert screen.query_one("#summary").border_title == "2026-10-08_16-00-57: Completed"
-        assert screen.query_one("#equity")._lines[0].label == "Equity"
-        assert screen.query_one("#equity")._lines[1].label == "Benchmark"
+        assert screen.query_one("#summary").border_title == "2026-10-09_09-30-00 (local): Completed"
+
+        await pilot.press("2")
+        await _settle(app, pilot)
         assert screen.query_one("#orders-table").row_count == 2
 
-        await pilot.press("3")
-        assert screen.query_one(TabbedContent).active == "charts"
-        assert screen.query_one("#chart-names").option_count == 4
+        await pilot.press("right_square_bracket")
+        await _settle(app, pilot)
+        assert screen.query_one("#summary").border_title == "2026-10-08_16-00-57 (local): Completed"
 
         await pilot.press("escape")
         assert not isinstance(app.screen, BacktestScreen)
@@ -265,34 +351,60 @@ def test_app_opens_backtest_results_with_charts_statistics_and_orders() -> None:
     _run_app(test)
 
 
-def test_backtest_screen_switches_between_backtests() -> None:
+def test_results_list_local_and_cloud_backtests_newest_first() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        project = UIProject("Cloud Project", Path.cwd() / "Cloud Project", cloud_id=123)
+        create_local_backtest(project.path, "2026-05-01_12-00-00", create_result())
+        mock_cloud_api(create_cloud_backtest())
+
+        app.push_screen(BacktestScreen(project, logged_in=True))
+        await _settle(app, pilot)
+
+        screen = app.screen
+        assert [(b.location, b.name) for b in screen._backtests] == \
+            [("cloud", "Logical Red Monkey"), ("local", "2026-05-01_12-00-00"), ("cloud", "Older")]
+        assert screen.query_one("#summary").border_title == "Logical Red Monkey (cloud): Completed"
+
+    _run_app(test, logged_in=True)
+
+
+def test_backtest_picker_filters_and_opens_a_backtest() -> None:
     async def test(app: LeanApp, pilot) -> None:
         project_dir = Path.cwd() / "CSharp Project"
         create_local_backtest(project_dir, "2026-10-08_16-00-57", create_result())
-        create_local_backtest(project_dir, "2026-10-09_09-30-00", create_result(status="Running"))
+        create_local_backtest(project_dir, "2026-10-09_09-30-00", create_result())
 
         await pilot.press("v")
-        await app.workers.wait_for_complete()
-        await pilot.pause()
-        assert app.screen.query_one("#summary").border_title.startswith("2026-10-09_09-30-00: Running")
+        await _settle(app, pilot)
+        await pilot.press("o")
+        assert isinstance(app.screen, BacktestPicker)
 
-        await pilot.press("j")
-        await app.workers.wait_for_complete()
-        await pilot.pause()
-        assert app.screen.query_one("#summary").border_title == "2026-10-08_16-00-57: Completed"
+        await pilot.press(*"10-08", "enter")
+        await _settle(app, pilot)
+
+        assert isinstance(app.screen, BacktestScreen)
+        assert app.screen.query_one("#summary").border_title == "2026-10-08_16-00-57 (local): Completed"
 
     _run_app(test)
 
 
-def test_backtest_screen_shows_a_message_for_backtests_without_results() -> None:
+def test_results_of_a_running_backtest_refresh_until_it_finishes() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        (Path.cwd() / "CSharp Project" / "backtests" / "2026-10-08_16-00-57").mkdir(parents=True)
+        output_dir = create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57",
+                                           create_result(status="Running", equity_points=3))
 
         await pilot.press("v")
-        await app.workers.wait_for_complete()
-        await pilot.pause()
+        await _settle(app, pilot)
+        screen = app.screen
+        assert screen.query_one("#summary").border_title.startswith("2026-10-08_16-00-57 (local): Running ")
+        assert screen._poll_timer is not None
 
-        assert "No results found" in str(app.screen.query_one("#summary").render())
+        (output_dir / "1121419604.json").write_text(json.dumps(create_result()))
+        screen._poll()
+        await _settle(app, pilot)
+
+        assert screen.query_one("#summary").border_title == "2026-10-08_16-00-57 (local): Completed"
+        assert screen._poll_timer is None
 
     _run_app(test)
 
@@ -301,7 +413,7 @@ def test_project_keys_do_not_run_actions_on_other_screens() -> None:
     async def test(app: LeanApp, pilot) -> None:
         create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57", create_result())
         await pilot.press("v")
-        await pilot.pause()
+        await _settle(app, pilot)
 
         with mock.patch.object(ui_app, "CommandProcess") as command_process:
             await pilot.press("b")
@@ -313,12 +425,12 @@ def test_project_keys_do_not_run_actions_on_other_screens() -> None:
 
 def test_projects_can_update_while_another_screen_is_shown() -> None:
     async def test(app: LeanApp, pilot) -> None:
-        await pilot.press("b")
+        await pilot.press("p")
         assert isinstance(app.screen, ConfirmScreen)
 
-        app._set_projects(app._projects[:1], logged_in=False, status="updated")
+        app._set_projects(app._projects[:1], logged_in=True, status="updated")
         await pilot.pause()
 
         assert app.screen_stack[0].query_one(ProjectTable).row_count == 1
 
-    _run_app(test)
+    _run_app(test, logged_in=True)
