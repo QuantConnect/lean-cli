@@ -25,8 +25,10 @@ from textual.widgets import DataTable, Footer, Header, Input, OptionList, RichLo
 from textual.widgets.option_list import Option
 
 from lean.ui.actions import ACTIONS, CommandProcess, ProjectAction, format_command
+from lean.ui.backtest_screen import BacktestScreen
 from lean.ui.projects import (UIProject, discover_local_projects, fetch_cloud_projects, filter_projects,
                               is_logged_in, merge_cloud_projects)
+from lean.ui.results import list_local_backtests
 
 
 class ProjectTable(DataTable):
@@ -105,6 +107,11 @@ class LeanApp(App):
         self._logged_in = False
         self._process: Optional[CommandProcess] = None
 
+    def _query(self, selector, expect_type=None):
+        """Queries the projects screen, which stays at the bottom of the stack while other screens are shown."""
+        screen = self.screen_stack[0]
+        return screen.query_one(selector, expect_type) if expect_type is not None else screen.query_one(selector)
+
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal():
@@ -120,13 +127,13 @@ class LeanApp(App):
     def on_mount(self) -> None:
         self.sub_title = str(self._root)
 
-        table = self.query_one(ProjectTable)
+        table = self._query(ProjectTable)
         table.add_columns("Where", "Lang", "Project")
         table.border_title = "Projects"
-        self.query_one("#filter", Input).border_title = "Filter (/)"
-        self.query_one("#details", Static).border_title = "Project"
-        self.query_one(ActionList).border_title = "Actions"
-        self.query_one("#output", RichLog).border_title = "Output"
+        self._query("#filter", Input).border_title = "Filter (/)"
+        self._query("#details", Static).border_title = "Project"
+        self._query(ActionList).border_title = "Actions"
+        self._query("#output", RichLog).border_title = "Output"
 
         table.focus()
         self.action_refresh()
@@ -160,7 +167,7 @@ class LeanApp(App):
     def _set_projects(self, projects: List[UIProject], logged_in: bool, status: str) -> None:
         self._projects = projects
         self._logged_in = logged_in
-        self.query_one(ProjectTable).border_subtitle = status
+        self._query(ProjectTable).border_subtitle = status
         self._apply_filter()
 
     # Filtering and selection
@@ -171,13 +178,13 @@ class LeanApp(App):
 
     @on(Input.Submitted, "#filter")
     def _filter_submitted(self) -> None:
-        self.query_one(ProjectTable).focus()
+        self._query(ProjectTable).focus()
 
     def _apply_filter(self) -> None:
-        table = self.query_one(ProjectTable)
+        table = self._query(ProjectTable)
         selected = self.selected_project
 
-        self._visible = filter_projects(self._projects, self.query_one("#filter", Input).value)
+        self._visible = filter_projects(self._projects, self._query("#filter", Input).value)
 
         table.clear()
         for index, project in enumerate(self._visible):
@@ -197,7 +204,7 @@ class LeanApp(App):
 
     @property
     def selected_project(self) -> Optional[UIProject]:
-        table = self.query_one(ProjectTable)
+        table = self._query(ProjectTable)
         if not self._visible or table.cursor_row < 0 or table.cursor_row >= len(self._visible):
             return None
         return self._visible[table.cursor_row]
@@ -208,16 +215,19 @@ class LeanApp(App):
 
     @on(DataTable.RowSelected)
     def _row_selected(self) -> None:
-        self.query_one(ActionList).focus()
+        self._query(ActionList).focus()
 
     def _show_project(self, project: Optional[UIProject]) -> None:
-        details = self.query_one("#details", Static)
-        actions = self.query_one(ActionList)
+        details = self._query("#details", Static)
+        actions = self._query(ActionList)
         actions.clear_options()
 
         if project is None:
-            query = self.query_one("#filter", Input).value
-            message = f"No projects match '{query}'." if self._projects and query                 else "No projects found. Create one with `lean project-create`."
+            query = self._query("#filter", Input).value
+            if self._projects and query:
+                message = f"No projects match '{query}'."
+            else:
+                message = "No projects found. Create one with `lean project-create`."
             details.update(Text(message, style="dim"))
             return
 
@@ -248,14 +258,20 @@ class LeanApp(App):
 
     # Navigation
 
+    def check_action(self, action: str, parameters: tuple) -> Optional[bool]:
+        # The project actions belong to the projects screen, other screens use these keys for their own bindings
+        if action in ("run_action", "focus_filter", "refresh") and len(self.screen_stack) > 1:
+            return False
+        return True
+
     def action_focus_filter(self) -> None:
-        self.query_one("#filter", Input).focus()
+        self._query("#filter", Input).focus()
 
     def action_back(self) -> None:
-        filter_input = self.query_one("#filter", Input)
+        filter_input = self._query("#filter", Input)
         if filter_input.has_focus and filter_input.value:
             filter_input.value = ""
-        self.query_one(ProjectTable).focus()
+        self._query(ProjectTable).focus()
 
     # Running commands
 
@@ -272,6 +288,10 @@ class LeanApp(App):
         reason = action.unavailable_reason(project, self._logged_in)
         if reason is not None:
             self.notify(f"Cannot {action.label.lower()} '{project.name}': {reason}", severity="warning")
+            return
+
+        if action.opens_results:
+            self.push_screen(BacktestScreen(project.name, list_local_backtests(project.path)))
             return
 
         if self._process is not None:
@@ -292,7 +312,7 @@ class LeanApp(App):
         self._process = process
         self.call_from_thread(self._command_started, args)
 
-        output = self.query_one("#output", RichLog)
+        output = self._query("#output", RichLog)
         try:
             exit_code = process.run(lambda line: self.call_from_thread(output.write, Text.from_ansi(line)))
         except Exception as exception:
@@ -303,24 +323,27 @@ class LeanApp(App):
         self.call_from_thread(self._command_finished, exit_code, action.refreshes_projects)
 
     def _command_started(self, args: List[str]) -> None:
-        output = self.query_one("#output", RichLog)
+        output = self._query("#output", RichLog)
         output.clear()
         output.write(Text(f"$ {format_command(args)}", style="bold cyan"))
         output.border_title = f"Output: {format_command(args)}"
         output.border_subtitle = "running, x to stop"
 
     def _command_finished(self, exit_code: int, refresh_projects: bool) -> None:
-        output = self.query_one("#output", RichLog)
+        output = self._query("#output", RichLog)
         output.border_subtitle = "done" if exit_code == 0 else f"failed (exit code {exit_code})"
         output.write(Text(output.border_subtitle, style="green" if exit_code == 0 else "red"))
         if refresh_projects:
             self.action_refresh()
+        else:
+            # A finished backtest can make the view action available
+            self._show_project(self.selected_project)
 
     def action_stop_command(self) -> None:
         if self._process is None:
             return
         self._process.stop()
-        self.query_one("#output", RichLog).border_subtitle = "stopping, x again to force"
+        self._query("#output", RichLog).border_subtitle = "stopping, x again to force"
 
     async def action_quit(self) -> None:
         if self._process is not None:

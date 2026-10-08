@@ -17,14 +17,17 @@ from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
+from textual.widgets import TabbedContent
 
 from lean.commands import lean
 from lean.container import container
 from lean.ui import app as ui_app
 from lean.ui.actions import ACTIONS, format_command
 from lean.ui.app import ConfirmScreen, LeanApp, ProjectTable
+from lean.ui.backtest_screen import BacktestScreen
 from lean.ui.projects import UIProject, discover_local_projects, filter_projects, merge_cloud_projects
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
+from tests.test_ui_results import create_local_backtest, create_result
 
 
 def _discover() -> list:
@@ -226,3 +229,96 @@ def test_command_process_runs_the_cli_as_a_child_process(fake_filesystem) -> Non
 
     assert exit_code == 0
     assert lines == [f"lean {__version__}"]
+
+
+def test_view_results_is_unavailable_without_local_backtests() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        await pilot.press("v")
+        assert not isinstance(app.screen, BacktestScreen)
+        assert _action("v").unavailable_reason(app.selected_project, logged_in=False) == "no local backtests yet"
+
+    _run_app(test)
+
+
+def test_app_opens_backtest_results_with_charts_statistics_and_orders() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57", create_result())
+
+        await pilot.press("v")
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+
+        screen = app.screen
+        assert isinstance(screen, BacktestScreen)
+        assert screen.query_one("#summary").border_title == "2026-10-08_16-00-57: Completed"
+        assert screen.query_one("#equity")._lines[0].label == "Equity"
+        assert screen.query_one("#equity")._lines[1].label == "Benchmark"
+        assert screen.query_one("#orders-table").row_count == 2
+
+        await pilot.press("3")
+        assert screen.query_one(TabbedContent).active == "charts"
+        assert screen.query_one("#chart-names").option_count == 4
+
+        await pilot.press("escape")
+        assert not isinstance(app.screen, BacktestScreen)
+
+    _run_app(test)
+
+
+def test_backtest_screen_switches_between_backtests() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        project_dir = Path.cwd() / "CSharp Project"
+        create_local_backtest(project_dir, "2026-10-08_16-00-57", create_result())
+        create_local_backtest(project_dir, "2026-10-09_09-30-00", create_result(status="Running"))
+
+        await pilot.press("v")
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert app.screen.query_one("#summary").border_title.startswith("2026-10-09_09-30-00: Running")
+
+        await pilot.press("j")
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert app.screen.query_one("#summary").border_title == "2026-10-08_16-00-57: Completed"
+
+    _run_app(test)
+
+
+def test_backtest_screen_shows_a_message_for_backtests_without_results() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        (Path.cwd() / "CSharp Project" / "backtests" / "2026-10-08_16-00-57").mkdir(parents=True)
+
+        await pilot.press("v")
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+
+        assert "No results found" in str(app.screen.query_one("#summary").render())
+
+    _run_app(test)
+
+
+def test_project_keys_do_not_run_actions_on_other_screens() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        create_local_backtest(Path.cwd() / "CSharp Project", "2026-10-08_16-00-57", create_result())
+        await pilot.press("v")
+        await pilot.pause()
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            await pilot.press("b")
+            assert isinstance(app.screen, BacktestScreen)
+            command_process.assert_not_called()
+
+    _run_app(test)
+
+
+def test_projects_can_update_while_another_screen_is_shown() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        await pilot.press("b")
+        assert isinstance(app.screen, ConfirmScreen)
+
+        app._set_projects(app._projects[:1], logged_in=False, status="updated")
+        await pilot.pause()
+
+        assert app.screen_stack[0].query_one(ProjectTable).row_count == 1
+
+    _run_app(test)
