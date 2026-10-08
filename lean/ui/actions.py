@@ -20,6 +20,7 @@ from shlex import quote
 from typing import Callable, List, Optional
 
 from lean.ui.projects import UIProject
+from lean.ui.results import list_local_backtests
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,8 @@ class ProjectAction:
     needs_cloud_project: bool
     needs_login: bool
     refreshes_projects: bool
-    build_args: Callable[[UIProject], List[str]]
+    build_args: Optional[Callable[[UIProject], List[str]]]
+    opens_results: bool = False
 
     def unavailable_reason(self, project: UIProject, logged_in: bool) -> Optional[str]:
         """Returns why the action cannot run on the project, or None if it can."""
@@ -42,6 +44,8 @@ class ProjectAction:
             return "run `lean login` first"
         if self.needs_cloud_project and not project.is_cloud:
             return "push it first"
+        if self.opens_results and not list_local_backtests(project.path):
+            return "no local backtests yet"
         return None
 
 
@@ -53,6 +57,7 @@ def _cloud_name(project: UIProject) -> str:
 ACTIONS = [
     ProjectAction("b", "Backtest locally", True, False, False, False,
                   lambda p: ["backtest", p.name]),
+    ProjectAction("v", "View backtest results", True, False, False, False, None, opens_results=True),
     ProjectAction("c", "Backtest in the cloud", False, False, True, True,
                   lambda p: ["cloud", "backtest", p.name, "--push"] if p.is_local
                   else ["cloud", "backtest", _cloud_name(p)]),
