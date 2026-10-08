@@ -22,6 +22,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical, VerticalScroll
 from textual.events import Key
+from textual.message import Message
 from textual.screen import ModalScreen, Screen
 from textual.timer import Timer
 from textual.widgets import DataTable, Footer, Header, Input, OptionList, RichLog, Static, TabbedContent, TabPane
@@ -30,8 +31,8 @@ from textual.worker import get_current_worker
 from textual_plotext import PlotextPlot
 
 from lean.ui.projects import UIProject
-from lean.ui.results import (BacktestResult, BacktestSource, Order, list_cloud_backtests, list_local_backtests,
-                             sort_newest_first)
+from lean.ui.results import (ORDERS_PAGE, BacktestResult, BacktestSource, Order, list_cloud_backtests,
+                             list_local_backtests, sort_newest_first)
 from lean.ui.ticks import format_value_ticks, time_ticks, value_ticks
 
 # Most equity charts are a few hundred points, this keeps rendering fast for long high resolution backtests
@@ -40,6 +41,13 @@ MAX_PLOT_POINTS = 2000
 # Runtime statistics shown above the chart, in the order the QuantConnect UI shows them
 SUMMARY_STATISTICS = ["Equity", "Net Profit", "Return", "Probabilistic Sharpe Ratio", "Unrealized", "Holdings",
                       "Fees", "Volume"]
+
+# The next page of orders loads when the cursor or the scroll position is this many rows from the end
+ORDERS_LOAD_MARGIN = 20
+
+# Orders can be readable a little after a cloud backtest completes, until then loading them is retried
+ORDERS_RETRY_SECONDS = 10
+ORDERS_RETRIES = 6
 
 # Statistics where a negative value is bad and a positive value is good
 SIGNED_STATISTICS = {"Net Profit", "Return", "Unrealized", "Compounding Annual Return", "Sharpe Ratio",
@@ -133,6 +141,34 @@ class EquityChart(PlotextPlot):
         plt.xticks(x_ticks, x_labels)
 
         self.refresh()
+
+
+class OrdersTable(DataTable):
+    """The orders of a backtest, which asks for more orders when the cursor or scroll position nears the end."""
+
+    class NearEnd(Message):
+        pass
+
+    def watch_scroll_y(self, old_value: float, new_value: float) -> None:
+        super().watch_scroll_y(old_value, new_value)
+        self._check_near_end()
+
+    def watch_cursor_coordinate(self, old_coordinate, new_coordinate) -> None:
+        super().watch_cursor_coordinate(old_coordinate, new_coordinate)
+        self._check_near_end()
+
+    @property
+    def near_end(self) -> bool:
+        """Whether the cursor or the bottom of the view is close to the last row."""
+        if self.row_count == 0:
+            return False
+        # Measured in rows, as the scroll limits are not updated yet when rows have just been added
+        last_visible_row = int(self.scroll_y) + self.size.height
+        return max(last_visible_row, self.cursor_row) >= self.row_count - ORDERS_LOAD_MARGIN
+
+    def _check_near_end(self) -> None:
+        if self.near_end:
+            self.post_message(self.NearEnd())
 
 
 class BacktestPicker(ModalScreen[Optional[int]]):
@@ -231,9 +267,15 @@ class BacktestScreen(Screen):
         self._backtests: List[BacktestSource] = [live.source] if live is not None else []
         self._selected = 0
         self._result: Optional[BacktestResult] = None
-        self._orders_loaded_for: Optional[str] = None
         self._log_loaded_for: Optional[str] = None
         self._poll_timer: Optional[Timer] = None
+
+        # Orders are loaded a page at a time as they are scrolled to
+        self._orders_for: Optional[str] = None
+        self._orders_count = 0
+        self._orders_total: Optional[int] = None
+        self._orders_loading = False
+        self._orders_retries = 0
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -245,7 +287,7 @@ class BacktestScreen(Screen):
                     with VerticalScroll(id="statistics-scroll"):
                         yield Static(id="statistics-table")
                 with TabPane("Orders", id="orders"):
-                    yield DataTable(id="orders-table", cursor_type="row", zebra_stripes=True)
+                    yield OrdersTable(id="orders-table", cursor_type="row", zebra_stripes=True)
                 with TabPane("Logs", id="logs"):
                     yield RichLog(id="log", markup=False, min_width=20)
         yield Footer()
@@ -322,7 +364,7 @@ class BacktestScreen(Screen):
         self.query_one(TabbedContent).active = tab
 
     def action_reload(self) -> None:
-        self._orders_loaded_for = None
+        self._reset_orders()
         if not self._is_live(self.backtest):
             self._log_loaded_for = None
         self._load()
@@ -370,10 +412,8 @@ class BacktestScreen(Screen):
 
     def _show_backtest(self) -> None:
         self._result = None
-        self._orders_loaded_for = None
         self._log_loaded_for = None
-        self.query_one("#orders-table", DataTable).clear()
-        self.query_one(TabbedContent).get_tab("orders").label = "Orders"
+        self._reset_orders()
         log = self.query_one("#log", RichLog)
         log.clear()
         if self._is_live(self.backtest):
@@ -401,44 +441,45 @@ class BacktestScreen(Screen):
             self._show_summary()
             return
         tab = self.query_one(TabbedContent).active
-        self._load_result(backtest,
-                          load_orders=tab == "orders",
-                          load_log=tab == "logs" and not self._is_live(backtest))
+        self._load_result(backtest, load_log=tab == "logs" and not self._is_live(backtest))
 
     @work(thread=True, exclusive=True, group="result")
-    def _load_result(self, backtest: BacktestSource, load_orders: bool, load_log: bool) -> None:
+    def _load_result(self, backtest: BacktestSource, load_log: bool) -> None:
         worker = get_current_worker()
         error = None
-        result = orders = log = None
+        result = log = None
         try:
             result = backtest.load()
-            if load_orders:
-                orders = backtest.load_orders()
             if load_log:
                 log = backtest.load_log()
         except Exception as exception:
             error = exception
         if not worker.is_cancelled:
-            self.app.call_from_thread(self._show_result, backtest, result, orders, log, error)
+            self.app.call_from_thread(self._show_result, backtest, result, log, error)
 
-    def _show_result(self, backtest: BacktestSource, result: Optional[BacktestResult], orders: Optional[List[Order]],
-                     log: Optional[List[str]], error: Optional[Exception]) -> None:
+    def _show_result(self, backtest: BacktestSource, result: Optional[BacktestResult], log: Optional[List[str]],
+                     error: Optional[Exception]) -> None:
         if backtest is not self.backtest:
             return
         if error is not None:
             self.notify(f"Could not load the backtest: {error}", severity="error")
+        just_finished = False
         if result is not None:
+            just_finished = self._result is not None and not self._result.finished
             self._result = result
             self._apply_live_exit()
+            just_finished = just_finished and self._result.finished
         self._show_summary()
         self._show_chart()
         self._show_statistics()
-        if orders is not None:
-            self._show_orders(orders)
-            self._orders_loaded_for = backtest.id
         if log is not None:
             self._show_log(log)
             self._log_loaded_for = backtest.id
+
+        if just_finished:
+            # Orders loaded while running may have changed status, so load them again
+            self._reset_orders()
+        self._update_orders()
 
         if self._should_poll():
             self._poll_timer = self.set_timer(backtest.poll_seconds, self._poll)
@@ -455,7 +496,6 @@ class BacktestScreen(Screen):
         return self._is_live(self.backtest) and self._live.exit_code is None
 
     def _poll(self) -> None:
-        self._orders_loaded_for = None
         if not self._is_live(self.backtest):
             self._log_loaded_for = None
         self._load()
@@ -465,10 +505,108 @@ class BacktestScreen(Screen):
         backtest = self.backtest
         if backtest is None:
             return
-        tab = event.pane.id
-        if (tab == "orders" and self._orders_loaded_for != backtest.id) or \
-                (tab == "logs" and self._log_loaded_for != backtest.id):
+        if event.pane.id == "orders":
+            self._update_orders()
+        elif event.pane.id == "logs" and self._log_loaded_for != backtest.id:
             self._load()
+
+    # Loading orders a page at a time
+
+    def _reset_orders(self) -> None:
+        self._orders_for = None
+        self._orders_count = 0
+        self._orders_total = None
+        self._orders_retries = 0
+        self.query_one("#orders-table", OrdersTable).clear()
+        self._label_orders()
+
+    def _update_orders(self) -> None:
+        """Loads the first page of orders when the tab is shown, and new orders while the backtest runs."""
+        backtest = self.backtest
+        if backtest is None or self.query_one(TabbedContent).active != "orders":
+            return
+        if self._orders_for != backtest.id:
+            self._reset_orders()
+            self._orders_for = backtest.id
+            self._load_more_orders()
+        elif self._result is not None and not self._result.finished:
+            # Ask for any orders the running backtest has placed since the last refresh
+            self._load_more_orders(new_orders=True)
+
+    @on(OrdersTable.NearEnd)
+    def _near_end_of_orders(self) -> None:
+        # Checked again, as the message may have been posted while the table was still filling
+        if self.query_one("#orders-table", OrdersTable).near_end:
+            self._load_more_orders()
+
+    def _load_more_orders(self, new_orders: bool = False) -> None:
+        """Loads the next page of orders, if there are more or new_orders asks to check for new ones."""
+        backtest = self.backtest
+        if backtest is None or self._orders_for != backtest.id or self._orders_loading:
+            return
+        if not new_orders and self._orders_total is not None and self._orders_count >= self._orders_total:
+            return
+        self._orders_loading = True
+        self._label_orders()
+        self._load_orders_page(backtest, self._orders_count)
+
+    @work(thread=True, group="orders")
+    def _load_orders_page(self, backtest: BacktestSource, start: int) -> None:
+        try:
+            orders, total = backtest.load_orders(start, start + ORDERS_PAGE)
+            error = None
+        except Exception as exception:
+            orders, total, error = [], None, exception
+        self.app.call_from_thread(self._add_orders, backtest, start, orders, total, error)
+
+    def _add_orders(self, backtest: BacktestSource, start: int, orders: List[Order], total: Optional[int],
+                    error: Optional[Exception]) -> None:
+        self._orders_loading = False
+        self._label_orders()
+        if backtest is not self.backtest or self._orders_for != backtest.id or start != self._orders_count:
+            # The table was reset while this page loaded
+            if self._orders_for == getattr(self.backtest, "id", None):
+                self._load_more_orders()
+            return
+        if error is not None:
+            self.notify(f"Could not load orders: {error}", severity="error")
+            return
+
+        self._show_orders(orders)
+        self._orders_count += len(orders)
+        self._orders_total = max(total or 0, self._orders_count)
+        self._label_orders()
+
+        if self._orders_total == 0 and self._orders_expected() and self._orders_retries < ORDERS_RETRIES:
+            self._orders_retries += 1
+            self.set_timer(ORDERS_RETRY_SECONDS, self._retry_orders)
+
+    def _orders_expected(self) -> bool:
+        """Whether the statistics count orders that the orders endpoint does not return yet."""
+        result = self._result
+        if result is None or not result.finished:
+            return False
+        try:
+            return int(result.statistics.get("Total Orders", "0").replace(",", "")) > 0
+        except ValueError:
+            return False
+
+    def _retry_orders(self) -> None:
+        backtest = self.backtest
+        if backtest is not None and self._orders_for == backtest.id and self._orders_count == 0:
+            self._orders_total = None
+            self._load_more_orders()
+
+    def _label_orders(self) -> None:
+        if self._orders_loading and self._orders_count == 0:
+            label = "Orders (loading...)"
+        elif self._orders_total is None:
+            label = "Orders"
+        elif self._orders_count < self._orders_total:
+            label = f"Orders ({self._orders_count:,} of {self._orders_total:,})"
+        else:
+            label = f"Orders ({self._orders_total:,})"
+        self.query_one(TabbedContent).get_tab("orders").label = label
 
     # Rendering
 
@@ -542,8 +680,7 @@ class BacktestScreen(Screen):
         table.update(grid)
 
     def _show_orders(self, orders: List[Order]) -> None:
-        table = self.query_one("#orders-table", DataTable)
-        table.clear()
+        table = self.query_one("#orders-table", OrdersTable)
         for order in orders:
             table.add_row(str(order.id),
                           order.time.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S") if order.time else "",
@@ -555,7 +692,6 @@ class BacktestScreen(Screen):
                           f"{order.value:,.2f}",
                           order.status,
                           order.tag)
-        self.query_one(TabbedContent).get_tab("orders").label = f"Orders ({len(orders)})"
 
     def _show_log(self, lines: List[str]) -> None:
         log = self.query_one("#log", RichLog)

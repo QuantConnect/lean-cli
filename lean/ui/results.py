@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from json import loads
 from re import compile
+from time import sleep
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -35,10 +36,14 @@ ORDER_DIRECTIONS = ["Buy", "Sell", "Hold"]
 # Algorithm statuses after which a backtest's results no longer change, see Common/AlgorithmStatus.cs
 FINISHED_STATUSES = {"Completed", "RuntimeError", "Runtime Error", "Stopped", "Liquidated", "Deleted"}
 
-# The cloud API returns at most this many orders and log lines per request
-CLOUD_ORDERS_PAGE = 100
+# Orders are loaded a page at a time, the cloud API returns at most 100 orders and 200 log lines per request
+ORDERS_PAGE = 100
 CLOUD_LOG_PAGE = 200
 MAX_LOG_LINES = 2000
+
+# How often and how long to wait for the cloud to prepare a backtest's chart, orders or logs
+CLOUD_LOADING_ATTEMPTS = 30
+CLOUD_LOADING_DELAY_SECONDS = 1
 
 # Points to request of the equity chart from the cloud, which samples it down to this many
 CLOUD_CHART_POINTS = 1000
@@ -211,7 +216,8 @@ class BacktestSource:
         """Loads the summary and equity chart, returns None if there are no results yet. Blocks."""
         raise NotImplementedError()
 
-    def load_orders(self) -> List[Order]:
+    def load_orders(self, start: int, end: int) -> Tuple[List[Order], int]:
+        """Loads the orders from index start up to end, and returns them with the total number of orders."""
         raise NotImplementedError()
 
     def load_log(self) -> List[str]:
@@ -290,9 +296,10 @@ class LocalBacktest(BacktestSource):
                         break
         return None, None
 
-    def load_orders(self) -> List[Order]:
+    def load_orders(self, start: int, end: int) -> Tuple[List[Order], int]:
         result = self._last_result or self.load()
-        return result.orders or [] if result is not None else []
+        orders = result.orders or [] if result is not None else []
+        return orders[start:end], len(orders)
 
     def load_log(self) -> List[str]:
         log_file = self.path / "log.txt"
@@ -326,9 +333,21 @@ class CloudBacktest(BacktestSource):
         return self._created
 
     def _post(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Makes a request about this backtest.
+
+        The chart, orders and log endpoints prepare their data the first time it is asked for and answer
+        {"status": "loading", "progress": ...} until it is ready, so those answers are retried.
+        """
         from lean.container import container
-        return container.api_client.post(endpoint, {"projectId": self.project_id, "backtestId": self.backtest_id,
-                                                    **payload})
+
+        for attempt in range(CLOUD_LOADING_ATTEMPTS):
+            response = container.api_client.post(endpoint, {"projectId": self.project_id,
+                                                            "backtestId": self.backtest_id, **payload})
+            if response.get("status") != "loading":
+                return response
+            if attempt < CLOUD_LOADING_ATTEMPTS - 1:
+                sleep(CLOUD_LOADING_DELAY_SECONDS)
+        raise RuntimeError(f"QuantConnect is still preparing the data of {endpoint}, try again with r")
 
     def load(self) -> Optional[BacktestResult]:
         backtest = self._post("backtests/read", {})["backtest"]
@@ -350,13 +369,9 @@ class CloudBacktest(BacktestSource):
 
         return parse_cloud_backtest(backtest, charts)
 
-    def load_orders(self) -> List[Order]:
-        orders: List[Dict[str, Any]] = []
-        while True:
-            page = self._post("backtests/orders/read", {"start": len(orders), "end": len(orders) + CLOUD_ORDERS_PAGE})
-            orders.extend(page.get("orders") or [])
-            if not page.get("orders") or len(orders) >= page.get("length", 0):
-                return parse_orders(orders)
+    def load_orders(self, start: int, end: int) -> Tuple[List[Order], int]:
+        page = self._post("backtests/orders/read", {"start": start, "end": min(end, start + ORDERS_PAGE)})
+        return parse_orders(page.get("orders") or []), page.get("length", 0)
 
     def load_log(self) -> List[str]:
         first = self._post("backtests/read/log", {"start": 0, "end": CLOUD_LOG_PAGE, "query": " "})
@@ -394,8 +409,8 @@ class PendingCloudBacktest(BacktestSource):
     def load(self) -> Optional[BacktestResult]:
         return None
 
-    def load_orders(self) -> List[Order]:
-        return []
+    def load_orders(self, start: int, end: int) -> Tuple[List[Order], int]:
+        return [], 0
 
     def load_log(self) -> List[str]:
         return []
