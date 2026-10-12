@@ -158,8 +158,12 @@ def test_create_project_preserves_capitals_in_class_name() -> None:
 
 
 @pytest.mark.parametrize("name,class_name", [("2024 momentum", "_2024Momentum"),
-                                             ("123", "_123")])
-def test_create_project_creates_valid_class_name_when_name_starts_with_digit(name: str, class_name: str) -> None:
+                                             ("123", "_123"),
+                                             ("none", "_None"),
+                                             ("true", "_True"),
+                                             ("_class", "_class"),
+                                             ("__import__", "_import")])
+def test_create_project_creates_valid_class_name_when_name_is_not_an_identifier(name: str, class_name: str) -> None:
     create_fake_lean_cli_directory()
 
     result = CliRunner().invoke(lean, ["create-project", "--language", "python", name])

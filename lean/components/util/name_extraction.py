@@ -31,10 +31,12 @@ def convert_to_class_name(file_path: Path):
     :return: returns a valid class name
     """
     from re import sub
+    from keyword import iskeyword
     class_name = sub(f"[^a-zA-Z0-9]", "", "".join(map(_capitalize, file_path.name.split(" "))))
 
-    # An identifier cannot be empty or start with a digit
-    if class_name == "" or class_name[0].isdigit():
+    # An identifier cannot be empty, start with a digit or be a keyword.
+    # Keywords are lowercase in Python and C# except for None/True/False, so a lowercase start is enough to flag them
+    if class_name == "" or not class_name[0].isupper() or iskeyword(class_name):
         class_name = "_" + class_name
 
     return class_name
