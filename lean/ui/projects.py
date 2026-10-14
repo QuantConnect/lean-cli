@@ -134,9 +134,7 @@ def filter_projects(projects: List[UIProject], query: str) -> List[UIProject]:
 def is_logged_in() -> bool:
     """Returns whether credentials are stored, without contacting the API."""
     from lean.container import container
-
-    cli_config_manager = container.cli_config_manager
-    return cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None
+    return container.cli_config_manager.has_credentials()
 
 
 def fetch_cloud_projects() -> List[QCProject]:

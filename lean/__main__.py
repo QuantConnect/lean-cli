@@ -13,13 +13,6 @@
 
 # Allows running the CLI with `python -m lean`, which is how `lean ui` launches commands as child processes
 
-import signal
-
-# `lean ui` starts commands in their own process group on Windows and stops them with Ctrl+Break,
-# which is turned into Ctrl+C here so the command's own Ctrl+C handling (e.g. stopping its Docker container) runs
-if hasattr(signal, "SIGBREAK"):
-    signal.signal(signal.SIGBREAK, lambda *_: signal.raise_signal(signal.SIGINT))
-
 from lean.main import main
 
 main(prog_name="lean")

@@ -375,30 +375,32 @@ class BacktestScreen(Screen):
         """Replaces the backtest being run, once a new cloud backtest has an id."""
         if self._live is None:
             return
-        was_selected = self._is_live(self.backtest)
+        current = self.backtest
         old_source = self._live.source
         self._live.source = source
         self._backtests = [source] + [b for b in self._backtests if b is not old_source and b.id != source.id]
-        if was_selected:
+        if current is old_source:
             self._selected = 0
             self._result = None
-            self._update_position()
-            self._load()
+            if self.is_mounted:
+                self._update_position()
+                self._load()
         else:
-            self._selected = next((i for i, b in enumerate(self._backtests) if b is self.backtest), 0)
+            self._selected = next((i for i, b in enumerate(self._backtests) if b is current), 0)
 
     def add_live_line(self, line: str) -> None:
         if self._live is None:
             return
         self._live.lines.append(line)
-        if self._is_live(self.backtest):
+        # The command can print before this screen is mounted, on_mount then shows what was stored
+        if self.is_mounted and self._is_live(self.backtest):
             self.query_one("#log", RichLog).write(Text.from_ansi(line))
 
     def live_finished(self, exit_code: int) -> None:
         if self._live is None:
             return
         self._live.exit_code = exit_code
-        if self._is_live(self.backtest):
+        if self.is_mounted and self._is_live(self.backtest):
             self._load()
 
     @property

@@ -13,6 +13,7 @@
 
 import asyncio
 import json
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
@@ -24,12 +25,12 @@ from lean.commands import lean
 from lean.container import container
 from lean.ui import app as ui_app
 from lean.ui import backtest_screen
-from lean.ui.actions import ACTIONS, CLOUD_BACKTEST_URL, format_command
+from lean.ui.actions import ACTIONS, format_command, parse_cloud_backtest_url
 from lean.ui.app import ConfirmScreen, LeanApp, ProjectTable
-from lean.ui.backtest_screen import BacktestPicker, BacktestScreen
+from lean.ui.backtest_screen import BacktestPicker, BacktestScreen, LiveRun
 from lean.ui.projects import UIProject, discover_local_projects, filter_projects, merge_cloud_projects
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
-from lean.ui.results import CloudBacktest
+from lean.ui.results import CloudBacktest, LocalBacktest, PendingCloudBacktest
 from tests.test_ui_results import (BACKTEST_ID, create_cloud_backtest, create_cloud_orders, create_local_backtest,
                                    create_result, mock_cloud_api)
 
@@ -135,10 +136,11 @@ def test_action_commands() -> None:
     assert _action("u").build_args(cloud) == ["cloud", "pull", "--project", "5"]
 
 
-def test_cloud_backtest_url_holds_the_project_and_backtest_ids() -> None:
-    match = CLOUD_BACKTEST_URL.search(f"Backtest url: https://www.quantconnect.com/project/19213997/{BACKTEST_ID}")
+def test_parse_cloud_backtest_url_reads_the_project_and_backtest_ids() -> None:
+    url = f"Backtest url: https://www.quantconnect.com/project/19213997/{BACKTEST_ID}"
 
-    assert match.groups() == ("19213997", BACKTEST_ID)
+    assert parse_cloud_backtest_url(url) == (19213997, BACKTEST_ID)
+    assert parse_cloud_backtest_url("Started compiling project 'CSharp Project'") is None
 
 
 def test_ui_requires_lean_config() -> None:
@@ -181,6 +183,16 @@ def _run_app(test, logged_in: bool = False) -> None:
 async def _settle(app: LeanApp, pilot) -> None:
     for _ in range(3):
         await app.workers.wait_for_complete()
+        await pilot.pause()
+
+
+async def _settle_results(app: LeanApp, pilot) -> None:
+    """Waits for the results screen to load, while the command it runs is still going."""
+    for _ in range(3):
+        # An empty list makes wait_for_complete wait for every worker, including the command's
+        result_workers = [w for w in app.workers if w.group == "result"]
+        if result_workers:
+            await app.workers.wait_for_complete(result_workers)
         await pilot.pause()
 
 
@@ -256,11 +268,36 @@ def test_app_does_not_run_unavailable_actions() -> None:
     _run_app(test)
 
 
+def test_app_runs_one_command_at_a_time() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        finish = threading.Event()
+
+        def fake_run(on_line):
+            finish.wait(5)
+            return 0
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            await pilot.press("p", "y", "b")
+            assert app._process is not None
+            finish.set()
+            await _settle(app, pilot)
+
+        command_process.assert_called_once_with(["cloud", "push", "--project", "CSharp Project"], Path.cwd())
+        assert app._process is None
+
+    _run_app(test, logged_in=True)
+
+
 def test_backtesting_locally_opens_the_results_while_the_backtest_runs() -> None:
     async def test(app: LeanApp, pilot) -> None:
+        screen_loaded = threading.Event()
+
         def fake_run(on_line):
             output_dir = Path(command_process.call_args.args[0][3])
             on_line("Starting LEAN")
+            # LEAN writes the result file after the results screen has opened without one
+            screen_loaded.wait(5)
             create_local_backtest(output_dir.parent.parent, output_dir.name, create_result())
             return 0
 
@@ -268,6 +305,8 @@ def test_backtesting_locally_opens_the_results_while_the_backtest_runs() -> None
             command_process.return_value.run.side_effect = fake_run
             await pilot.press("b")
             assert isinstance(app.screen, BacktestScreen)
+            await _settle_results(app, pilot)
+            screen_loaded.set()
             await _settle(app, pilot)
 
         args = command_process.call_args.args[0]
@@ -306,6 +345,22 @@ def test_backtesting_in_the_cloud_switches_to_the_backtest_once_it_is_created() 
         assert len(screen.query_one("#equity").points) == 5
 
     _run_app(test, logged_in=True)
+
+
+def test_a_new_cloud_backtest_id_keeps_the_backtest_the_user_moved_to() -> None:
+    project = UIProject("CSharp Project", path=Path.cwd() / "CSharp Project")
+    pending = PendingCloudBacktest()
+    listed = CloudBacktest(123, BACKTEST_ID)
+    older = LocalBacktest(Path.cwd() / "CSharp Project" / "backtests" / "2026-10-01_10-00-00")
+    screen = BacktestScreen(project, True, LiveRun(pending, lines=[]))
+    # The listing already holds the new backtest, so replacing the pending one shifts the older one down
+    screen._backtests = [pending, listed, older]
+    screen._selected = 2
+
+    screen.set_live_source(CloudBacktest(123, BACKTEST_ID))
+
+    assert screen.backtest is older
+    assert [b.id for b in screen._backtests] == [BACKTEST_ID, older.id]
 
 
 def test_a_failed_cloud_backtest_shows_the_failure() -> None:

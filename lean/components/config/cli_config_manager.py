@@ -74,6 +74,13 @@ class CLIConfigManager:
             self.database_update_frequency
         ]
 
+    def has_credentials(self) -> bool:
+        """Returns whether a user id and API token are stored, without checking them against the API.
+
+        :return: True if both credentials are set, False if not
+        """
+        return self.user_id.get_value() is not None and self.api_token.get_value() is not None
+
     def get_option_by_key(self, key: str) -> Option:
         """Returns the option matching the given key.
 

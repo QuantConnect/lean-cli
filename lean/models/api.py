@@ -185,6 +185,10 @@ class QCBacktest(WrappedBaseModel):
     runtimeStatistics: Optional[Dict[str, str]] = None
     statistics: Optional[Union[Dict[str, str], List[Any]]] = None
     totalPerformance: Optional[Any] = None
+    backtestStart: Optional[datetime] = None
+    backtestEnd: Optional[datetime] = None
+    charts: Optional[Dict[str, Any]] = None
+    parameterSet: Optional[Any] = None
 
     def is_complete(self) -> bool:
         """Returns whether the backtest has completed in the cloud.

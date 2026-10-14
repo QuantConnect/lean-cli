@@ -19,9 +19,11 @@ from unittest import mock
 
 import pytest
 
+from lean.components.api.backtest_client import BacktestClient
 from lean.container import container
+from lean.models.api import QCBacktest
 from lean.ui.results import (CloudBacktest, LocalBacktest, list_cloud_backtests, list_local_backtests,
-                             parse_cloud_backtest, parse_local_result, sort_newest_first)
+                             parse_cloud_backtest, parse_local_result, parse_order, sort_newest_first)
 
 # 2013-10-07 04:00 UTC to 2013-10-11 20:00 UTC, like the sample data backtests
 START = 1381118400
@@ -88,7 +90,8 @@ def create_local_backtest(project_dir: Path, name: str, result: Optional[Dict[st
 
 def create_cloud_backtest(status: str = "Completed.", completed: bool = True, progress: float = 1.0) -> Dict[str, Any]:
     """Returns a backtest as the backtests/read endpoint returns it, without chart data."""
-    return {"backtestId": BACKTEST_ID, "name": "Logical Red Monkey", "status": status, "completed": completed,
+    return {"backtestId": BACKTEST_ID, "projectId": 123, "name": "Logical Red Monkey", "status": status,
+            "completed": completed,
             "progress": progress, "created": "2026-10-08 19:45:10", "error": None,
             "backtestStart": "2013-10-07 00:00:00", "backtestEnd": "2013-10-11 23:59:59",
             "charts": {"Strategy Equity": {"name": "Strategy Equity", "series": {}}},
@@ -109,9 +112,11 @@ def mock_cloud_api(backtest: Dict[str, Any], orders: int = 0, logs: int = 0,
     order_list = order_list if order_list is not None else create_cloud_orders(orders)
     log_lines = [f"line {i}" for i in range(logs)]
 
+    def get(endpoint: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        assert endpoint == "backtests/read"
+        return {"backtest": backtest}
+
     def post(endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        if endpoint == "backtests/read":
-            return {"backtest": backtest}
         if endpoint == "backtests/chart/read":
             assert payload["name"] == "Strategy Equity"
             return {"chart": create_equity_chart()}
@@ -126,7 +131,9 @@ def mock_cloud_api(backtest: Dict[str, Any], orders: int = 0, logs: int = 0,
                                   {"backtestId": "b" * 32, "name": "Newer", "created": "2026-10-08 19:45:10"}]}
         raise AssertionError(f"Unexpected endpoint {endpoint}")
 
+    container.api_client.get = mock.Mock(side_effect=get)
     container.api_client.post = mock.Mock(side_effect=post)
+    container.api_client.backtests = BacktestClient(container.api_client)
     return container.api_client.post
 
 
@@ -153,6 +160,14 @@ def test_parse_local_result_reads_orders_sorted_by_id_with_readable_enums() -> N
     assert orders[1].direction == "Sell"
     assert orders[1].tag == "Liquidated"
     assert orders[0].time == datetime(2013, 10, 7, 14, 10, tzinfo=timezone.utc)
+
+
+def test_parse_order_treats_null_fields_as_missing() -> None:
+    order = parse_order({"id": None, "type": None, "direction": None, "quantity": None, "price": None, "value": None,
+                         "status": None, "symbol": None, "tag": None, "time": None})
+
+    assert (order.id, order.quantity, order.price, order.value) == (0, 0.0, 0.0, 0.0)
+    assert (order.type, order.direction, order.symbol, order.tag) == ("Market", "Buy", "", "")
 
 
 def test_parse_local_result_reads_statistics_status_and_configuration() -> None:
@@ -235,7 +250,7 @@ def test_list_local_backtests_returns_newest_first() -> None:
 
 
 def test_parse_cloud_backtest() -> None:
-    result = parse_cloud_backtest(create_cloud_backtest(), {"Strategy Equity": create_equity_chart()})
+    result = parse_cloud_backtest(QCBacktest(**create_cloud_backtest()), {"Strategy Equity": create_equity_chart()})
 
     assert result.name == "Logical Red Monkey"
     assert (result.status, result.finished, result.progress) == ("Completed", True, 1.0)
@@ -249,7 +264,7 @@ def test_parse_cloud_backtest_while_running_uses_reported_progress() -> None:
     backtest = create_cloud_backtest(status="Running", completed=False, progress=0.42)
     backtest["statistics"] = []
 
-    result = parse_cloud_backtest(backtest, {})
+    result = parse_cloud_backtest(QCBacktest(**backtest), {})
 
     assert (result.finished, result.progress) == (False, 0.42)
     assert result.statistics == {}
@@ -330,7 +345,7 @@ def test_cloud_backtest_waits_while_the_api_prepares_the_orders() -> None:
     answers = iter([{"status": "loading", "progress": 0.0, "success": True}] * 2)
     post.side_effect = lambda endpoint, payload: next(answers, None) or serve(endpoint, payload)
 
-    with mock.patch("lean.ui.results.CLOUD_LOADING_DELAY_SECONDS", 0):
+    with mock.patch.object(BacktestClient, "_LOADING_DELAY_SECONDS", 0):
         orders, total = CloudBacktest(123, BACKTEST_ID).load_orders(0, 100)
 
     assert (len(orders), total) == (3, 3)
@@ -339,8 +354,9 @@ def test_cloud_backtest_waits_while_the_api_prepares_the_orders() -> None:
 
 def test_cloud_backtest_gives_up_when_the_api_keeps_loading() -> None:
     container.api_client.post = mock.Mock(return_value={"status": "loading", "progress": 0.5, "success": True})
+    container.api_client.backtests = BacktestClient(container.api_client)
 
-    with mock.patch("lean.ui.results.CLOUD_LOADING_DELAY_SECONDS", 0), \
+    with mock.patch.object(BacktestClient, "_LOADING_DELAY_SECONDS", 0), \
             pytest.raises(RuntimeError, match="still preparing"):
         CloudBacktest(123, BACKTEST_ID).load_orders(0, 100)
 

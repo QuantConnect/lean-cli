@@ -88,11 +88,23 @@ from lean.commands import lean
 from lean.container import container
 
 
+def _handle_ctrl_break_as_ctrl_c() -> None:
+    """On Windows `lean ui` stops a command with Ctrl+Break, which must run the command's Ctrl+C cleanup."""
+    from signal import SIGINT, raise_signal, signal
+    try:
+        from signal import SIGBREAK
+    except ImportError:
+        return
+    signal(SIGBREAK, lambda *_: raise_signal(SIGINT))
+
+
 def main(prog_name: str = None) -> None:
     """This function is the entrypoint when running a Lean command in a terminal.
 
     :param prog_name: the program name shown in help and error messages, detected from the command line if not set
     """
+    _handle_ctrl_break_as_ctrl_c()
+
     try:
         lean.main(standalone_mode=False, prog_name=prog_name)
 

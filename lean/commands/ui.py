@@ -17,7 +17,8 @@ from lean.click import LeanCommand
 from lean.container import container
 
 
-@command(cls=LeanCommand, requires_lean_config=True)
+# requires_docker makes the CLI elevate with sudo on Linux before the UI starts, the commands it runs have no terminal
+@command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 def ui() -> None:
     """Browse projects and run commands on them in an interactive terminal UI.
 

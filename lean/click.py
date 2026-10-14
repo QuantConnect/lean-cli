@@ -41,7 +41,7 @@ def get_whoami_message() -> str:
     api_client = container.api_client
     cli_config_manager = container.cli_config_manager
 
-    if cli_config_manager.user_id.get_value() is not None and cli_config_manager.api_token.get_value() is not None:
+    if cli_config_manager.has_credentials():
         try:
             organizations = api_client.organizations.get_all()
             logged_in = True

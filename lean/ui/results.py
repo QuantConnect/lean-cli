@@ -17,10 +17,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from json import loads
-from re import compile
-from time import sleep
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from lean.components.api.backtest_client import BacktestClient
+from lean.models.api import QCBacktest
 
 EQUITY_CHART = "Strategy Equity"
 EQUITY_SERIES = "Equity"
@@ -41,15 +42,11 @@ ORDERS_PAGE = 100
 CLOUD_LOG_PAGE = 200
 MAX_LOG_LINES = 2000
 
-# How often and how long to wait for the cloud to prepare a backtest's chart, orders or logs
-CLOUD_LOADING_ATTEMPTS = 30
-CLOUD_LOADING_DELAY_SECONDS = 1
-
 # Points to request of the equity chart from the cloud, which samples it down to this many
 CLOUD_CHART_POINTS = 1000
 
 # LEAN logs the date range when a backtest starts, before the result file has it
-_DATA_STREAM_RANGE = compile(r"Begin DataStream - Start: (.+?) Stop: (.+?) Time:")
+_DATA_STREAM_RANGE = r"Begin DataStream - Start: (.+?) Stop: (.+?) Time:"
 _LEAN_LOG_TIME_FORMAT = "%m/%d/%Y %I:%M:%S %p"
 
 # Files written next to a local result file that are not the result itself
@@ -108,6 +105,8 @@ def _parse_time(value: Any) -> Optional[datetime]:
     """Parses a LEAN time, either unix seconds or an ISO 8601 string, which is UTC unless it says otherwise."""
     if not value:
         return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
     if isinstance(value, (int, float)):
         return datetime.fromtimestamp(value, tz=timezone.utc)
     try:
@@ -137,17 +136,18 @@ def parse_equity(charts: Dict[str, Any]) -> List[Tuple[float, float]]:
 
 
 def parse_order(data: Dict[str, Any]) -> Order:
+    # Keys may be present with null, which must fall back like a missing key
     symbol = data.get("symbol") or {}
-    order_type = data.get("type", 0)
-    direction = data.get("direction", 0)
-    return Order(id=data.get("id", 0),
+    order_type = data.get("type") or 0
+    direction = data.get("direction") or 0
+    return Order(id=data.get("id") or 0,
                  time=_parse_time(data.get("time")),
                  symbol=symbol.get("value", "") if isinstance(symbol, dict) else str(symbol),
                  type=ORDER_TYPES[order_type] if 0 <= order_type < len(ORDER_TYPES) else str(order_type),
                  direction=ORDER_DIRECTIONS[direction] if 0 <= direction < len(ORDER_DIRECTIONS) else str(direction),
-                 quantity=data.get("quantity", 0.0),
-                 price=data.get("price", 0.0),
-                 value=data.get("value", 0.0),
+                 quantity=data.get("quantity") or 0.0,
+                 price=data.get("price") or 0.0,
+                 value=data.get("value") or 0.0,
                  status=ORDER_STATUSES.get(data.get("status"), str(data.get("status"))),
                  tag=data.get("tag") or "")
 
@@ -177,21 +177,19 @@ def parse_local_result(data: Dict[str, Any]) -> BacktestResult:
                           parameters=configuration.get("parameters") or {})
 
 
-def parse_cloud_backtest(backtest: Dict[str, Any], charts: Dict[str, Any]) -> BacktestResult:
+def parse_cloud_backtest(backtest: QCBacktest, charts: Dict[str, Any]) -> BacktestResult:
     """Parses a backtest from the backtests/read endpoint and its equity chart from backtests/chart/read."""
-    statistics = backtest.get("statistics")
-    parameters = backtest.get("parameterSet")
-    return BacktestResult(name=backtest.get("name", ""),
+    return BacktestResult(name=backtest.name,
                           equity=parse_equity(charts),
-                          statistics=statistics if isinstance(statistics, dict) else {},
-                          runtime_statistics=backtest.get("runtimeStatistics") or {},
-                          status=(backtest.get("status") or "").rstrip("."),
-                          finished=bool(backtest.get("completed")),
-                          runtime_error=backtest.get("error") or "",
-                          start=_parse_time(backtest.get("backtestStart")),
-                          end=_parse_time(backtest.get("backtestEnd")),
-                          parameters=parameters if isinstance(parameters, dict) else {},
-                          reported_progress=backtest.get("progress"))
+                          statistics=backtest.statistics if isinstance(backtest.statistics, dict) else {},
+                          runtime_statistics=backtest.runtimeStatistics or {},
+                          status=backtest.status.rstrip("."),
+                          finished=backtest.completed,
+                          runtime_error=backtest.error or "",
+                          start=_parse_time(backtest.backtestStart),
+                          end=_parse_time(backtest.backtestEnd),
+                          parameters=backtest.parameterSet if isinstance(backtest.parameterSet, dict) else {},
+                          reported_progress=backtest.progress)
 
 
 class BacktestSource:
@@ -282,12 +280,14 @@ class LocalBacktest(BacktestSource):
 
     def _date_range_from_log(self) -> Tuple[Optional[datetime], Optional[datetime]]:
         """Reads the backtest's date range from its log, which has it from the start of the run."""
+        from re import search
+
         log_file = self.path / "log.txt"
         if not log_file.is_file():
             return None, None
         with log_file.open(encoding="utf-8", errors="replace") as file:
             for line in file:
-                match = _DATA_STREAM_RANGE.search(line)
+                match = search(_DATA_STREAM_RANGE, line)
                 if match is not None:
                     try:
                         return tuple(datetime.strptime(m, _LEAN_LOG_TIME_FORMAT).replace(tzinfo=timezone.utc)
@@ -332,35 +332,23 @@ class CloudBacktest(BacktestSource):
     def created(self) -> Optional[datetime]:
         return self._created
 
-    def _post(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Makes a request about this backtest.
-
-        The chart, orders and log endpoints prepare their data the first time it is asked for and answer
-        {"status": "loading", "progress": ...} until it is ready, so those answers are retried.
-        """
+    @staticmethod
+    def _client() -> BacktestClient:
         from lean.container import container
-
-        for attempt in range(CLOUD_LOADING_ATTEMPTS):
-            response = container.api_client.post(endpoint, {"projectId": self.project_id,
-                                                            "backtestId": self.backtest_id, **payload})
-            if response.get("status") != "loading":
-                return response
-            if attempt < CLOUD_LOADING_ATTEMPTS - 1:
-                sleep(CLOUD_LOADING_DELAY_SECONDS)
-        raise RuntimeError(f"QuantConnect is still preparing the data of {endpoint}, try again with r")
+        return container.api_client.backtests
 
     def load(self) -> Optional[BacktestResult]:
-        backtest = self._post("backtests/read", {})["backtest"]
-        self._name = backtest.get("name") or self._name
-        self._created = _parse_time(backtest.get("created")) or self._created
+        client = self._client()
+        backtest = client.get(self.project_id, self.backtest_id)
+        self._name = backtest.name or self._name
+        self._created = _parse_time(backtest.created) or self._created
 
         charts = {}
-        start, end = _parse_time(backtest.get("backtestStart")), _parse_time(backtest.get("backtestEnd"))
-        if EQUITY_CHART in (backtest.get("charts") or {}) and start is not None and end is not None:
+        start, end = _parse_time(backtest.backtestStart), _parse_time(backtest.backtestEnd)
+        if EQUITY_CHART in (backtest.charts or {}) and start is not None and end is not None:
             try:
-                chart = self._post("backtests/chart/read", {"name": EQUITY_CHART, "count": CLOUD_CHART_POINTS,
-                                                            "start": int(start.timestamp()),
-                                                            "end": int(end.timestamp())}).get("chart")
+                chart = client.read_chart(self.project_id, self.backtest_id, EQUITY_CHART,
+                                          int(start.timestamp()), int(end.timestamp()), CLOUD_CHART_POINTS)
                 if chart:
                     charts[EQUITY_CHART] = chart
             except Exception:
@@ -370,18 +358,18 @@ class CloudBacktest(BacktestSource):
         return parse_cloud_backtest(backtest, charts)
 
     def load_orders(self, start: int, end: int) -> Tuple[List[Order], int]:
-        page = self._post("backtests/orders/read", {"start": start, "end": min(end, start + ORDERS_PAGE)})
+        page = self._client().read_orders(self.project_id, self.backtest_id, start, min(end, start + ORDERS_PAGE))
         return parse_orders(page.get("orders") or []), page.get("length", 0)
 
     def load_log(self) -> List[str]:
-        first = self._post("backtests/read/log", {"start": 0, "end": CLOUD_LOG_PAGE, "query": " "})
+        client = self._client()
+        first = client.read_log(self.project_id, self.backtest_id, 0, CLOUD_LOG_PAGE)
         length = first.get("length", 0)
         start = max(0, length - MAX_LOG_LINES)
         lines: List[str] = list(first.get("logs") or []) if start == 0 else []
         position = len(lines) if start == 0 else start
         while position < length:
-            page = self._post("backtests/read/log", {"start": position, "end": min(position + CLOUD_LOG_PAGE, length),
-                                                     "query": " "})
+            page = client.read_log(self.project_id, self.backtest_id, position, min(position + CLOUD_LOG_PAGE, length))
             if not page.get("logs"):
                 break
             lines.extend(page["logs"])
@@ -429,9 +417,8 @@ def list_cloud_backtests(project_id: int) -> List[CloudBacktest]:
     """Returns the backtests of a cloud project, newest first. Makes a blocking API request."""
     from lean.container import container
 
-    data = container.api_client.post("backtests/list", {"projectId": project_id, "includeStatistics": False})
     backtests = [CloudBacktest(project_id, b["backtestId"], b.get("name", ""), _parse_time(b.get("created")))
-                 for b in data.get("backtests") or []]
+                 for b in container.api_client.backtests.list(project_id)]
     return sorted(backtests, key=lambda b: b.created or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
 
 

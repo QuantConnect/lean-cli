@@ -11,14 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import re
-import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from shlex import quote
-from typing import Callable, List, Optional
+from subprocess import Popen
+from typing import Callable, List, Optional, Tuple
 
 from lean.ui.projects import UIProject
 from lean.ui.results import list_local_backtests
@@ -74,8 +71,12 @@ ACTIONS = [
                   needs_cloud_project=True, needs_login=True),
 ]
 
-# `lean cloud backtest` prints the url of the backtest it creates, which holds the project and backtest ids
-CLOUD_BACKTEST_URL = re.compile(r"quantconnect\.com/project/(\d+)/([0-9a-f]{32})")
+
+def parse_cloud_backtest_url(line: str) -> Optional[Tuple[int, str]]:
+    """Returns the project and backtest ids from the backtest url `lean cloud backtest` prints, if the line has it."""
+    from re import search
+    match = search(r"quantconnect\.com/project/(\d+)/([0-9a-f]{32})", line)
+    return (int(match.group(1)), match.group(2)) if match is not None else None
 
 
 def format_command(args: List[str]) -> str:
@@ -89,7 +90,7 @@ class CommandProcess:
     def __init__(self, args: List[str], cwd: Path) -> None:
         self.args = args
         self._cwd = cwd
-        self._process: Optional[subprocess.Popen] = None
+        self._process: Optional[Popen] = None
         self._stop_requested = False
 
     def run(self, on_line: Callable[[str], None]) -> int:
@@ -97,18 +98,28 @@ class CommandProcess:
 
         :return: the exit code of the command
         """
-        env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1", COLUMNS="120")
-        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+        import sys
+        from os import environ
+        from subprocess import DEVNULL, PIPE, STDOUT
 
-        self._process = subprocess.Popen([sys.executable, "-m", "lean"] + self.args,
-                                         cwd=self._cwd,
-                                         env=env,
-                                         stdin=subprocess.DEVNULL,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.STDOUT,
-                                         encoding="utf-8",
-                                         errors="replace",
-                                         creationflags=creation_flags)
+        env = dict(environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1", COLUMNS="120")
+        creation_flags = 0
+        if sys.platform == "win32":
+            from subprocess import CREATE_NEW_PROCESS_GROUP
+            creation_flags = CREATE_NEW_PROCESS_GROUP
+
+        # In the portable (PyInstaller) build sys.executable is the lean-cli binary itself, not a Python interpreter
+        lean_command = [sys.executable] if getattr(sys, "frozen", False) else [sys.executable, "-m", "lean"]
+
+        self._process = Popen(lean_command + self.args,
+                              cwd=self._cwd,
+                              env=env,
+                              stdin=DEVNULL,
+                              stdout=PIPE,
+                              stderr=STDOUT,
+                              encoding="utf-8",
+                              errors="replace",
+                              creationflags=creation_flags)
 
         for line in self._process.stdout:
             on_line(line.rstrip("\r\n"))
@@ -128,8 +139,10 @@ class CommandProcess:
             return
         self._stop_requested = True
 
-        import signal
-        if sys.platform == "win32":
-            self._process.send_signal(signal.CTRL_BREAK_EVENT)
+        from sys import platform
+        if platform == "win32":
+            from signal import CTRL_BREAK_EVENT
+            self._process.send_signal(CTRL_BREAK_EVENT)
         else:
-            self._process.send_signal(signal.SIGINT)
+            from signal import SIGINT
+            self._process.send_signal(SIGINT)
