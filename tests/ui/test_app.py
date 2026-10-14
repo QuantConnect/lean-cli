@@ -141,16 +141,12 @@ def test_parse_cloud_backtest_url_reads_the_project_and_backtest_ids() -> None:
     assert parse_cloud_backtest_url("Started compiling project 'CSharp Project'") is None
 
 
-def test_command_process_runs_the_cli_as_a_child_process(fake_filesystem) -> None:
+def test_command_process_runs_the_cli_as_a_child_process() -> None:
     from lean import __version__
     from lean.ui.actions import CommandProcess
 
     lines = []
-    fake_filesystem.pause()
-    try:
-        exit_code = CommandProcess(["--version"], Path(__file__).parent).run(lines.append)
-    finally:
-        fake_filesystem.resume()
+    exit_code = CommandProcess(["--version"], Path(__file__).parent).run(lines.append)
 
     assert exit_code == 0
     assert lines == [f"lean {__version__}"]
@@ -490,9 +486,16 @@ def test_backtesting_in_the_cloud_switches_to_the_backtest_once_it_is_created() 
     _run_app(test, logged_in=True)
 
 
+def _new_screen(*args) -> BacktestScreen:
+    """Builds a screen outside the app, Python 3.9 needs an event loop for the lock every widget creates."""
+    async def build() -> BacktestScreen:
+        return BacktestScreen(*args)
+    return asyncio.run(build())
+
+
 def test_a_new_cloud_backtest_id_keeps_showing_its_live_log() -> None:
     pending = PendingCloudBacktest()
-    screen = BacktestScreen(UIProject("CSharp Project"), True, LiveRun(pending, lines=["Started compiling"]))
+    screen = _new_screen(UIProject("CSharp Project"), True, LiveRun(pending, lines=["Started compiling"]))
 
     screen.set_live_source(CloudBacktest(123, BACKTEST_ID))
 
@@ -505,7 +508,7 @@ def test_a_new_cloud_backtest_id_keeps_the_backtest_the_user_moved_to() -> None:
     pending = PendingCloudBacktest()
     listed = CloudBacktest(123, BACKTEST_ID)
     older = LocalBacktest(Path.cwd() / "CSharp Project" / "backtests" / "2026-10-01_10-00-00")
-    screen = BacktestScreen(project, True, LiveRun(pending, lines=[]))
+    screen = _new_screen(project, True, LiveRun(pending, lines=[]))
     # The listing already holds the new backtest, so replacing the pending one shifts the older one down
     screen._backtests = [pending, listed, older]
     screen._selected = 2
