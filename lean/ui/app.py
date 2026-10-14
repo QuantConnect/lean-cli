@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Deque, List, Optional
@@ -56,21 +55,27 @@ class ActionList(OptionList):
 
 
 class ConfirmScreen(ModalScreen[bool]):
-    """Shows the command an action is about to run and asks for confirmation."""
+    """Asks a yes or no question, by default whether to run the command an action is about to run."""
 
     BINDINGS = [
-        Binding("y,enter", "confirm", "Run"),
-        Binding("n,escape", "cancel", "Cancel"),
+        Binding("y,enter", "confirm", "Yes"),
+        Binding("n,escape", "cancel", "No"),
     ]
 
-    def __init__(self, command: str) -> None:
+    def __init__(self, command: str = "", question: str = "Run this command?", yes: str = "run",
+                 no: str = "cancel") -> None:
         super().__init__()
         self._command = command
+        self._question = question
+        self._yes = yes
+        self._no = no
 
     def compose(self) -> ComposeResult:
-        message = Text.assemble(("Run this command?\n\n", "bold"), (self._command, "cyan"),
-                                ("\n\n", ""), ("y", "bold"), (" / enter to run, ", "dim"),
-                                ("n", "bold"), (" / esc to cancel", "dim"))
+        message = Text.assemble((self._question, "bold"), ("\n\n", ""))
+        if self._command:
+            message.append_text(Text.assemble((self._command, "cyan"), ("\n\n", "")))
+        message.append_text(Text.assemble(("y", "bold"), (f" / enter to {self._yes}, ", "dim"),
+                                          ("n", "bold"), (f" / esc to {self._no}", "dim")))
         yield Static(message, id="confirm")
 
     def action_confirm(self) -> None:
@@ -118,6 +123,7 @@ class LeanApp(App):
         self._process: Optional[CommandProcess] = None
         self._live_screen: Optional[BacktestScreen] = None
         # The command's output is read on a worker thread and shown in batches, a round trip per line stalls it
+        from collections import deque
         self._output_lines: Deque[str] = deque()
         self._output_timer: Optional[Timer] = None
 
@@ -223,11 +229,11 @@ class LeanApp(App):
             return None
         return self._visible[table.cursor_row]
 
-    @on(DataTable.RowHighlighted)
+    @on(DataTable.RowHighlighted, "ProjectTable")
     def _row_highlighted(self) -> None:
         self._show_project(self.selected_project)
 
-    @on(DataTable.RowSelected)
+    @on(DataTable.RowSelected, "ProjectTable")
     def _row_selected(self) -> None:
         self._query(ActionList).focus()
 
@@ -289,7 +295,7 @@ class LeanApp(App):
 
     # Running commands
 
-    @on(OptionList.OptionSelected)
+    @on(OptionList.OptionSelected, "ActionList")
     def _action_selected(self, event: OptionList.OptionSelected) -> None:
         self.action_run_action(event.option.id)
 
@@ -408,10 +414,38 @@ class LeanApp(App):
             self._show_project(self.selected_project)
 
     def action_stop_command(self) -> None:
+        process = self._process
+        if process is None:
+            return
+
+        source = self._live_screen.live_source if self._live_screen is not None else None
+        if not process.stop_requested and isinstance(source, CloudBacktest):
+            # The backtest keeps running in the cloud once the command stops, deleting it is the user's call
+            def on_answer(delete: Optional[bool]) -> None:
+                self._stop_process()
+                if delete:
+                    self._delete_cloud_backtest(source)
+
+            self.push_screen(ConfirmScreen(question="Stop watching the cloud backtest. Cancel and delete it too?",
+                                           yes="delete it", no="keep it running"), on_answer)
+            return
+        self._stop_process()
+
+    def _stop_process(self) -> None:
         if self._process is None:
             return
         self._process.stop()
         self._query("#output", RichLog).border_subtitle = "stopping, x again to force"
+
+    @work(thread=True, group="delete")
+    def _delete_cloud_backtest(self, backtest: CloudBacktest) -> None:
+        from lean.container import container
+        try:
+            container.api_client.backtests.delete(backtest.project_id, backtest.backtest_id)
+        except Exception as exception:
+            self.call_from_thread(self.notify, f"Could not delete the cloud backtest: {exception}", severity="error")
+            return
+        self.call_from_thread(self.notify, "Cancelled and deleted the cloud backtest")
 
     async def action_quit(self) -> None:
         process = self._process

@@ -123,6 +123,6 @@ LIST_PENDING_DATASETS = environ.get("LIST_PENDING_DATASETS", "false").lower() ==
 # Local backtests, optimizations and live deployments write their output to a directory named after their start time
 OUTPUT_DIRECTORY_NAME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
-# Set by `lean ui` in the commands it runs, which have no terminal and are stopped with Ctrl+Break on Windows
+# Set by `lean ui` in the commands it runs, which it stops with Ctrl+Break on Windows
 UI_COMMAND_ENV_VAR = "LEAN_UI_COMMAND"
 IS_UI_COMMAND = environ.get(UI_COMMAND_ENV_VAR) == "1"

@@ -465,7 +465,9 @@ class BacktestScreen(Screen):
         if backtest is not self.backtest:
             return
         if error is not None:
-            self.notify(f"Could not load the backtest: {error}", severity="error")
+            # Polling on would repeat the error every few seconds
+            self.notify(f"Could not load the backtest, press r to try again: {error}", severity="error")
+            return
         just_finished = False
         if result is not None:
             just_finished = self._result is not None and not self._result.finished

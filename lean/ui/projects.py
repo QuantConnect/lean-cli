@@ -13,7 +13,6 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from os import walk
 from pathlib import Path
 from typing import List, Optional
 
@@ -66,6 +65,7 @@ def discover_local_projects(root: Path, skip_dirs: Optional[List[Path]] = None) 
     skip = {str(p.resolve()) for p in (skip_dirs or [])}
     projects = []
 
+    from os import walk
     for current, dirs, files in walk(root):
         current_path = Path(current)
         if PROJECT_CONFIG_FILE_NAME in files and current_path != root:

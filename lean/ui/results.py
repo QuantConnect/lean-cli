@@ -16,7 +16,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from json import loads
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -267,9 +266,10 @@ class LocalBacktest(BacktestSource):
         result_file = self.result_file
         if result_file is None:
             return None
+        from json import loads
         try:
             result = parse_local_result(loads(result_file.read_text(encoding="utf-8")))
-        except ValueError:
+        except (ValueError, OSError):
             return None
         result.name = self.name
         if result.start is None or result.end is None:

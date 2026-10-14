@@ -13,9 +13,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from shlex import quote
-from subprocess import Popen
-from threading import Lock
 from typing import Callable, List, Optional, Tuple
 
 from lean.constants import UI_COMMAND_ENV_VAR
@@ -83,6 +80,7 @@ def parse_cloud_backtest_url(line: str) -> Optional[Tuple[int, str]]:
 
 def format_command(args: List[str]) -> str:
     """Formats arguments as the `lean` command a user would type."""
+    from shlex import quote
     return " ".join(["lean"] + [quote(a) for a in args])
 
 
@@ -92,7 +90,8 @@ class CommandProcess:
     def __init__(self, args: List[str], cwd: Path) -> None:
         self.args = args
         self._cwd = cwd
-        self._process: Optional[Popen] = None
+        from threading import Lock
+        self._process = None
         self._stops = 0
         self._lock = Lock()
 
@@ -103,7 +102,7 @@ class CommandProcess:
         """
         import sys
         from os import environ
-        from subprocess import DEVNULL, PIPE, STDOUT
+        from subprocess import DEVNULL, PIPE, STDOUT, Popen
 
         env = dict(environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1", COLUMNS="120")
         env[UI_COMMAND_ENV_VAR] = "1"
