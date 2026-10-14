@@ -150,17 +150,20 @@ class LeanApp(App):
         table = self._query(ProjectTable)
         table.add_columns("Where", "Lang", "Project")
         table.border_title = "Projects"
+        table.border_subtitle = "loading projects..."
         self._query("#filter", Input).border_title = "Filter (/)"
         self._query("#details", Static).border_title = "Project"
         self._query(ActionList).border_title = "Actions"
         self._query("#output", RichLog).border_title = "Output"
 
-        table.focus()
         self.action_refresh()
 
     # Loading projects
 
     def action_refresh(self) -> None:
+        # The spinner covers the table, so a refresh keeps showing the projects it already has
+        if not self._projects:
+            self._query(ProjectTable).loading = True
         self._load_projects()
 
     @work(thread=True, exclusive=True, group="projects")
@@ -187,7 +190,12 @@ class LeanApp(App):
     def _set_projects(self, projects: List[UIProject], logged_in: bool, status: str) -> None:
         self._projects = projects
         self._logged_in = logged_in
-        self._query(ProjectTable).border_subtitle = status
+        table = self._query(ProjectTable)
+        if table.loading:
+            # A widget cannot be focused while it is loading, so the table takes the focus once it has rows
+            table.loading = False
+            table.focus()
+        table.border_subtitle = status
         self._apply_filter()
 
     # Filtering and selection

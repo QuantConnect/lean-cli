@@ -245,6 +245,35 @@ def test_app_lists_local_projects_and_filters_them() -> None:
     _run_app(test)
 
 
+def test_app_shows_it_is_loading_until_the_projects_arrive() -> None:
+    create_fake_lean_cli_directory()
+    release = threading.Event()
+
+    def slow_discover(root, skip_dirs):
+        release.wait(5)
+        return discover_local_projects(root, skip_dirs)
+
+    async def run() -> None:
+        with mock.patch.object(ui_app, "is_logged_in", return_value=False),                 mock.patch.object(ui_app, "discover_local_projects", side_effect=slow_discover):
+            app = LeanApp(Path.cwd(), Path.cwd() / "data")
+            async with app.run_test(size=(140, 40)) as pilot:
+                await pilot.pause()
+                table = app.query_one(ProjectTable)
+                assert table.loading
+                assert table.border_subtitle == "loading projects..."
+
+                release.set()
+                await _settle(app, pilot)
+                assert not table.loading
+                assert table.has_focus
+                assert table.row_count == 4
+
+                await pilot.press("r")
+                assert not table.loading
+
+    asyncio.run(run())
+
+
 def test_app_moves_through_projects_with_the_keyboard() -> None:
     async def test(app: LeanApp, pilot) -> None:
         assert app.selected_project.name == "CSharp Project"
