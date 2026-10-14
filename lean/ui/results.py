@@ -20,6 +20,7 @@ from json import loads
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from lean.constants import OUTPUT_DIRECTORY_NAME_FORMAT
 from lean.models.api import QCBacktest
 
 EQUITY_CHART = "Strategy Equity"
@@ -183,7 +184,7 @@ def parse_cloud_backtest(backtest: QCBacktest, charts: Dict[str, Any]) -> Backte
                           statistics=backtest.statistics if isinstance(backtest.statistics, dict) else {},
                           runtime_statistics=backtest.runtimeStatistics or {},
                           status=backtest.status.rstrip("."),
-                          finished=backtest.completed,
+                          finished=backtest.is_complete(),
                           runtime_error=backtest.error or "",
                           start=_parse_time(backtest.backtestStart),
                           end=_parse_time(backtest.backtestEnd),
@@ -242,21 +243,20 @@ class LocalBacktest(BacktestSource):
     @property
     def created(self) -> Optional[datetime]:
         try:
-            return datetime.strptime(self.path.name, "%Y-%m-%d_%H-%M-%S").astimezone(timezone.utc)
+            return datetime.strptime(self.path.name, OUTPUT_DIRECTORY_NAME_FORMAT).astimezone(timezone.utc)
         except ValueError:
             return None
 
     @property
     def result_file(self) -> Optional[Path]:
         """The result file, which LEAN names after the backtest id."""
-        config_file = self.path / "config"
-        if config_file.is_file():
-            try:
-                result_file = self.path / f"{loads(config_file.read_text(encoding='utf-8'))['id']}.json"
-                if result_file.is_file():
-                    return result_file
-            except (ValueError, KeyError):
-                pass
+        from lean.container import container
+
+        output_id = container.output_config_manager.get_output_config(self.path).get("id")
+        if output_id is not None:
+            result_file = self.path / f"{output_id}.json"
+            if result_file.is_file():
+                return result_file
 
         candidates = [f for f in self.path.glob("*.json")
                       if f.stem.lstrip("L-").isdigit() and not f.name.endswith(_NON_RESULT_SUFFIXES)]

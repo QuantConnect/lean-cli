@@ -180,6 +180,21 @@ def test_command_process_honors_a_stop_asked_before_it_started() -> None:
     assert exit_code == 1
 
 
+def test_command_process_interrupts_twice_then_kills() -> None:
+    process = CommandProcess(["--version"], Path.cwd())
+
+    with mock.patch.object(actions, "Popen") as popen:
+        popen.return_value.stdout = iter([])
+        popen.return_value.poll.return_value = None
+        popen.return_value.wait.return_value = 0
+        process.run(lambda line: None)
+        for _ in range(3):
+            process.stop()
+
+    assert popen.return_value.send_signal.call_count == 2
+    popen.return_value.kill.assert_called_once()
+
+
 def test_command_process_wait_kills_a_command_that_does_not_stop() -> None:
     from subprocess import TimeoutExpired
     process = CommandProcess(["--version"], Path.cwd())
@@ -306,6 +321,7 @@ def test_quitting_waits_for_the_running_command_to_stop() -> None:
 
         with mock.patch.object(ui_app, "CommandProcess") as command_process:
             command_process.return_value.run.side_effect = fake_run
+            command_process.return_value.stop_requested = False
             command_process.return_value.wait.side_effect = lambda timeout: finish.set()
             await pilot.press("p", "y", "q")
             await _settle(app, pilot)
@@ -313,6 +329,27 @@ def test_quitting_waits_for_the_running_command_to_stop() -> None:
         command_process.return_value.stop.assert_called_once_with()
         command_process.return_value.wait.assert_called_once_with(ui_app.QUIT_TIMEOUT_SECONDS)
         assert not app.is_running
+
+    _run_app(test, logged_in=True)
+
+
+def test_quitting_does_not_force_a_command_that_is_already_stopping() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        finish = threading.Event()
+
+        def fake_run(on_line):
+            finish.wait(5)
+            return 0
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            command_process.return_value.stop_requested = True
+            command_process.return_value.wait.side_effect = lambda timeout: finish.set()
+            await pilot.press("p", "y", "q")
+            await _settle(app, pilot)
+
+        command_process.return_value.stop.assert_not_called()
+        command_process.return_value.wait.assert_called_once_with(ui_app.QUIT_TIMEOUT_SECONDS)
 
     _run_app(test, logged_in=True)
 

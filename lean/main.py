@@ -90,9 +90,8 @@ from lean.container import container
 
 def _handle_ctrl_break_as_ctrl_c() -> None:
     """On Windows `lean ui` stops a command with Ctrl+Break, which must run the command's Ctrl+C cleanup."""
-    from os import environ
-    from lean.constants import UI_COMMAND_ENV_VAR
-    if environ.get(UI_COMMAND_ENV_VAR) != "1":
+    from lean.constants import IS_UI_COMMAND
+    if not IS_UI_COMMAND:
         return
     from signal import SIGINT, raise_signal, signal
     try:

@@ -278,6 +278,14 @@ def test_cloud_backtest_without_charts_yet_loads_the_summary() -> None:
     assert all(c.args[0] != "backtests/chart/read" for c in post.call_args_list)
 
 
+def test_parse_cloud_backtest_is_not_finished_until_its_statistics_arrive() -> None:
+    backtest = dict(create_cloud_backtest(), statistics=[], runtimeStatistics=None)
+
+    result = parse_cloud_backtest(QCBacktest(**backtest), {})
+
+    assert result.finished is False
+
+
 def test_parse_cloud_backtest_while_running_uses_reported_progress() -> None:
     backtest = create_cloud_backtest(status="Running", completed=False, progress=0.42)
     backtest["statistics"] = []

@@ -15,20 +15,18 @@ from unittest import mock
 
 from lean.components.cloud import cloud_runner
 from lean.components.cloud.cloud_runner import CloudRunner
-from lean.constants import UI_COMMAND_ENV_VAR
 
 
 def test_confirm_asks_the_user() -> None:
     with mock.patch.object(cloud_runner, "confirm", return_value=False) as confirm, \
-            mock.patch.dict("os.environ", {UI_COMMAND_ENV_VAR: ""}):
+            mock.patch("lean.constants.IS_UI_COMMAND", False):
         assert CloudRunner._confirm("Delete?") is False
 
     confirm.assert_called_once_with("Delete?", True)
 
 
 def test_confirm_answers_yes_when_run_by_the_ui() -> None:
-    with mock.patch.object(cloud_runner, "confirm") as confirm, \
-            mock.patch.dict("os.environ", {UI_COMMAND_ENV_VAR: "1"}):
+    with mock.patch.object(cloud_runner, "confirm") as confirm, mock.patch("lean.constants.IS_UI_COMMAND", True):
         assert CloudRunner._confirm("Delete?") is True
 
     confirm.assert_not_called()

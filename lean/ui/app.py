@@ -27,6 +27,7 @@ from textual.timer import Timer
 from textual.widgets import DataTable, Footer, Header, Input, OptionList, RichLog, Static
 from textual.widgets.option_list import Option
 
+from lean.constants import OUTPUT_DIRECTORY_NAME_FORMAT
 from lean.ui.actions import ACTIONS, CommandProcess, ProjectAction, format_command, parse_cloud_backtest_url
 from lean.ui.backtest_screen import BacktestScreen, LiveRun
 from lean.ui.projects import (UIProject, discover_local_projects, fetch_cloud_projects, filter_projects,
@@ -328,7 +329,7 @@ class LeanApp(App):
         source: BacktestSource
         if action.live == "local":
             # Choosing the output directory lets the results screen read it while the backtest runs
-            output_dir = project.path / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            output_dir = project.path / "backtests" / datetime.now().strftime(OUTPUT_DIRECTORY_NAME_FORMAT)
             args = args + ["--output", str(output_dir)]
             source = LocalBacktest(output_dir)
         else:
@@ -417,7 +418,8 @@ class LeanApp(App):
         if process is not None:
             # Exiting with the command running would hang on its thread, give it a moment to stop its containers
             from asyncio import to_thread
-            process.stop()
+            if not process.stop_requested:
+                process.stop()
             self._query("#output", RichLog).border_subtitle = "stopping before quitting"
             await to_thread(process.wait, QUIT_TIMEOUT_SECONDS)
         self.exit()

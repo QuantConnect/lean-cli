@@ -104,9 +104,8 @@ class CloudRunner:
     @staticmethod
     def _confirm(text: str) -> bool:
         """Asks the user, or answers yes when `lean ui` runs the command, which has no terminal to ask on."""
-        from os import environ
-        from lean.constants import UI_COMMAND_ENV_VAR
-        if environ.get(UI_COMMAND_ENV_VAR) == "1":
+        from lean.constants import IS_UI_COMMAND
+        if IS_UI_COMMAND:
             return True
         return confirm(text, True)
 

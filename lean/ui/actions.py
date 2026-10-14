@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from shlex import quote
 from subprocess import Popen
+from threading import Lock
 from typing import Callable, List, Optional, Tuple
 
 from lean.constants import UI_COMMAND_ENV_VAR
@@ -92,7 +93,8 @@ class CommandProcess:
         self.args = args
         self._cwd = cwd
         self._process: Optional[Popen] = None
-        self._stop_requested = False
+        self._stops = 0
+        self._lock = Lock()
 
     def run(self, on_line: Callable[[str], None]) -> int:
         """Runs the command to completion, passing each line of output to on_line. Blocks the calling thread.
@@ -113,36 +115,43 @@ class CommandProcess:
         # In the portable (PyInstaller) build sys.executable is the lean-cli binary itself, not a Python interpreter
         lean_command = [sys.executable] if getattr(sys, "frozen", False) else [sys.executable, "-m", "lean"]
 
-        self._process = Popen(lean_command + self.args,
-                              cwd=self._cwd,
-                              env=env,
-                              stdin=DEVNULL,
-                              stdout=PIPE,
-                              stderr=STDOUT,
-                              encoding="utf-8",
-                              errors="replace",
-                              creationflags=creation_flags)
-        if self._stop_requested:
-            self._interrupt()
+        with self._lock:
+            self._process = Popen(lean_command + self.args,
+                                  cwd=self._cwd,
+                                  env=env,
+                                  stdin=DEVNULL,
+                                  stdout=PIPE,
+                                  stderr=STDOUT,
+                                  encoding="utf-8",
+                                  errors="replace",
+                                  creationflags=creation_flags)
+            if self._stops:
+                self._interrupt()
 
         for line in self._process.stdout:
             on_line(line.rstrip("\r\n"))
 
         return self._process.wait()
 
-    def stop(self) -> None:
-        """Asks the command to stop the way Ctrl+C would, so it can clean up its Docker containers.
+    @property
+    def stop_requested(self) -> bool:
+        return self._stops > 0
 
-        Calling this again while the command is still running kills it. Asking before the command has started
-        stops it as soon as it has.
+    def stop(self) -> None:
+        """Interrupts the command like Ctrl+C would, so it can stop its Docker containers.
+
+        The command force stops its containers on a second interrupt, a third call kills the command itself.
+        Asking before the command has started interrupts it as soon as it has.
         """
-        if self._stop_requested:
-            if self._process is not None and self._process.poll() is None:
-                self._process.kill()
-            return
-        self._stop_requested = True
-        if self._process is not None:
-            self._interrupt()
+        with self._lock:
+            self._stops += 1
+            if self._process is None:
+                return
+            if self._stops > 2:
+                if self._process.poll() is None:
+                    self._process.kill()
+            else:
+                self._interrupt()
 
     def wait(self, timeout: float) -> None:
         """Waits for the command to end, killing it if it takes longer than timeout seconds."""

@@ -125,3 +125,4 @@ OUTPUT_DIRECTORY_NAME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
 # Set by `lean ui` in the commands it runs, which have no terminal and are stopped with Ctrl+Break on Windows
 UI_COMMAND_ENV_VAR = "LEAN_UI_COMMAND"
+IS_UI_COMMAND = environ.get(UI_COMMAND_ENV_VAR) == "1"
