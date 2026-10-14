@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 from unittest import mock
 import responses
 from click.testing import CliRunner
@@ -19,7 +20,7 @@ import sys
 from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, \
-    QCTelegramNotificationMethod, QCAuth0Authorization
+    QCTelegramNotificationMethod, QCAuth0Authorization, QCNotificationMethod
 from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes, create_api_organization
 from tests.commands.test_live import brokerage_required_options
 
@@ -231,6 +232,9 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
                                              ("webhooks", "customAddress:header1=value1"),
                                              ("webhooks", "customAddress:header1=value1:header2=value2"),
                                              ("webhooks", "customAddress1:header1=value1:header2=value2,customAddress2:header3=value3"),
+                                             ("webhooks", "https://example.com/hook"),
+                                             ("webhooks", "https://example.com:8080/hook?id=1:header1=value1"),
+                                             ("webhooks", "https://example.com/hook:Authorization=Basic dXNlcjpwYXNz=="),
                                              ("sms", "customNumber"),
                                              ("sms", "customNumber1,customNumber2,customNumber3"),
                                              ("telegram", "customId"),
@@ -241,6 +245,18 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
                                              ("telegram", "customId1:custom:token1,customId2"),
                                              ("telegram", "customId1:custom:token1,customId2:custom:token2")])
 def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) -> None:
+    expected_webhooks = {
+        "customAddress:header1=value1": ("customAddress", {"header1": "value1"}),
+        "customAddress:header1=value1:header2=value2": ("customAddress", {"header1": "value1", "header2": "value2"}),
+        "customAddress1:header1=value1:header2=value2": ("customAddress1", {"header1": "value1", "header2": "value2"}),
+        "customAddress2:header3=value3": ("customAddress2", {"header3": "value3"}),
+        "https://example.com/hook": ("https://example.com/hook", {}),
+        "https://example.com:8080/hook?id=1:header1=value1": ("https://example.com:8080/hook?id=1",
+                                                              {"header1": "value1"}),
+        "https://example.com/hook:Authorization=Basic dXNlcjpwYXNz==": ("https://example.com/hook",
+                                                                        {"Authorization": "Basic dXNlcjpwYXNz=="})
+    }
+
     create_fake_lean_cli_directory()
 
     api_client = mock.Mock()
@@ -272,12 +288,7 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
             notification.append(QCEmailNotificationMethod(address=address, subject=subject))
 
         elif notice_method == "webhooks":
-            address, headers = config.split(":", 1)
-            headers_dict = {}
-
-            for header in headers.split(":"):
-                key, value = header.split("=")
-                headers_dict[key] = value
+            address, headers_dict = expected_webhooks[config]
 
             notification.append(QCWebhookNotificationMethod(address=address, headers=headers_dict))
 
@@ -308,6 +319,80 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
                                                   notification,
                                                   mock.ANY,
                                                   mock.ANY)
+
+
+@pytest.mark.parametrize("notice_method,configs,expected", [
+    ("webhooks", '"https://example.com/hook?a=1:b=2":header1=value1',
+     [QCWebhookNotificationMethod(address="https://example.com/hook?a=1:b=2", headers={"header1": "value1"})]),
+    ("webhooks", '"https://user:pw=1@example.com/hook"',
+     [QCWebhookNotificationMethod(address="https://user:pw=1@example.com/hook", headers={})]),
+    ("webhooks", 'https://example.com/hook:"Authorization=Bearer a:b"',
+     [QCWebhookNotificationMethod(address="https://example.com/hook", headers={"Authorization": "Bearer a:b"})]),
+    ("webhooks", '"https://example.com/hook?ids=1,2":header1=value1,https://example.com/other:"header2=a,b"',
+     [QCWebhookNotificationMethod(address="https://example.com/hook?ids=1,2", headers={"header1": "value1"}),
+      QCWebhookNotificationMethod(address="https://example.com/other", headers={"header2": "a,b"})]),
+    ("emails", "customAddress:Alert: order filled",
+     [QCEmailNotificationMethod(address="customAddress", subject="Alert: order filled")]),
+    ("emails", 'customAddress1:"Fills, orders",customAddress2:"a:b, c"',
+     [QCEmailNotificationMethod(address="customAddress1", subject="Fills, orders"),
+      QCEmailNotificationMethod(address="customAddress2", subject="a:b, c")]),
+    ("sms", '"customNumber1",customNumber2',
+     [QCSMSNotificationMethod(phoneNumber="customNumber1"), QCSMSNotificationMethod(phoneNumber="customNumber2")]),
+    ("telegram", 'customId1:"custom:to,ken",customId2',
+     [QCTelegramNotificationMethod(id="customId1", token="custom:to,ken"), QCTelegramNotificationMethod(id="customId2")])])
+def test_cloud_live_deploy_with_quoted_notifications(notice_method: str, configs: str,
+                                                     expected: List[QCNotificationMethod]) -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    api_client.get.return_value = {
+        "status": "stopped",
+        "stopped": "2024-07-10 19:12:20",
+        "success": True,
+        "portfolio": {"holdings": {}, "cash": {}, "success": True}}
+    container.api_client = api_client
+    container.cloud_project_manager = mock.Mock()
+    container.cloud_runner = mock.Mock()
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
+                                       "--live-cash-balance", "USD:100", f"--notify-{notice_method}", configs,
+                                       "--data-provider-live", "QuantConnect"])
+
+    assert result.exit_code == 0
+
+    api_client.live.start.assert_called_once_with(mock.ANY,
+                                                  mock.ANY,
+                                                  "3",
+                                                  mock.ANY,
+                                                  mock.ANY,
+                                                  True,
+                                                  mock.ANY,
+                                                  True,
+                                                  True,
+                                                  expected,
+                                                  mock.ANY,
+                                                  mock.ANY)
+
+
+def test_cloud_live_deploy_aborts_when_email_notification_has_no_subject() -> None:
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    api_client.nodes.get_all.return_value = create_qc_nodes()
+    container.api_client = api_client
+    container.cloud_project_manager = mock.Mock()
+    container.cloud_runner = mock.Mock()
+
+    result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
+                                       "--auto-restart", "yes", "--notify-order-events", "yes", "--notify-insights", "yes",
+                                       "--live-cash-balance", "USD:100", "--notify-emails", "customAddress",
+                                       "--data-provider-live", "QuantConnect"])
+
+    assert result.exit_code != 0
+    assert "Invalid --notify-emails configuration 'customAddress', expected 'email:subject'" in str(result.exception)
+    api_client.live.start.assert_not_called()
 
 
 @pytest.mark.parametrize("brokerage,cash", [("Paper Trading", "USD:100"),

@@ -555,12 +555,15 @@ Options:
   --auto-restart BOOLEAN          Whether automatic algorithm restarting must be enabled
   --notify-order-events BOOLEAN   Whether notifications must be sent for order events
   --notify-insights BOOLEAN       Whether notifications must be sent for emitted insights
-  --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications
+  --notify-emails TEXT            A comma-separated list of 'email:subject' pairs configuring email-notifications. Wrap
+                                  a subject containing ',' in double quotes, e.g. 'a@x.com:"Fills, orders"'
   --notify-webhooks TEXT          A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs
-                                  configuring webhook-notifications
+                                  configuring webhook-notifications. Wrap a url (with ',' or a ':' outside its scheme
+                                  and port) or a header (with ':' or ',') in double quotes, e.g.
+                                  '"https://x.com/hook?t=1:2":"Auth=Bearer a:b"'
   --notify-sms TEXT               A comma-separated list of phone numbers configuring SMS-notifications
   --notify-telegram TEXT          A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-
-                                  notifications
+                                  notifications. Wrap a token containing ',' in double quotes
   --live-cash-balance TEXT        A comma-separated list of currency:amount pairs of initial cash balance
   --live-holdings TEXT            A comma-separated list of symbol:symbolId:quantity:averagePrice of initial portfolio
                                   holdings

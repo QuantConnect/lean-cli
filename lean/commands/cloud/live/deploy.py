@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 from click import prompt, option, argument, confirm
 from lean.click import LeanCommand, ensure_options, CaseInsensitiveChoice
 from lean.components.api.api_client import APIClient
@@ -152,6 +152,40 @@ def _configure_notifications(logger: Logger) -> Tuple[bool, bool, List[QCNotific
     return notify_order_events, notify_insights, notify_methods
 
 
+def _split_notify_configs(notify_option: str) -> List[List[str]]:
+    """Splits a --notify-* value into its comma-separated configurations and each of those into its ':' parts.
+
+    A part wrapped in double quotes is never split, so it can contain colons and commas.
+
+    :param notify_option: the value of the --notify-* option given by the user
+    :return: the parts of each configuration, without their quotes
+    """
+    from csv import reader
+    from re import split
+
+    # A comma is a separator only when an even number of quotes follows it
+    configs = split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', notify_option)
+    return [next(reader([config], delimiter=":"), [""]) for config in configs]
+
+
+def _parse_webhook_config(parts: List[str]) -> Tuple[str, Dict[str, str]]:
+    """Splits the parts of a 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2' webhook configuration into its address and headers.
+
+    The address can contain colons itself (scheme and port), so only the trailing 'NAME=VALUE' parts are headers.
+
+    :param parts: the ':' parts of the webhook configuration given by the user
+    :return: the address and the headers of the webhook
+    """
+    from re import match
+
+    parts = list(parts)
+    headers = []
+    while len(parts) > 1 and match(r"^[\w-]+=", parts[-1]):
+        headers.insert(0, parts.pop().split("=", 1))
+
+    return ":".join(parts), dict(headers)
+
+
 def _configure_auto_restart(logger: Logger) -> bool:
     """Interactively configures whether automatic algorithm restarting must be enabled.
 
@@ -179,12 +213,15 @@ def _configure_auto_restart(logger: Logger) -> bool:
 @option("--notify-insights", type=bool, help="Whether notifications must be sent for emitted insights")
 @option("--notify-emails",
               type=str,
-              help="A comma-separated list of 'email:subject' pairs configuring email-notifications")
+              help="A comma-separated list of 'email:subject' pairs configuring email-notifications. "
+                   "Wrap a subject containing ',' in double quotes, e.g. 'a@x.com:\"Fills, orders\"'")
 @option("--notify-webhooks",
               type=str,
-              help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications")
+              help="A comma-separated list of 'url:HEADER_1=VALUE_1:HEADER_2=VALUE_2:etc' pairs configuring webhook-notifications. "
+                   "Wrap a url (with ',' or a ':' outside its scheme and port) or a header (with ':' or ',') in double quotes, e.g. '\"https://x.com/hook?t=1:2\":\"Auth=Bearer a:b\"'")
 @option("--notify-sms", type=str, help="A comma-separated list of phone numbers configuring SMS-notifications")
-@option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications")
+@option("--notify-telegram", type=str, help="A comma-separated list of 'user/group Id:token(optional)' pairs configuring telegram-notifications. "
+                   "Wrap a token containing ',' in double quotes")
 @option("--live-cash-balance",
               type=str,
               default="",
@@ -254,29 +291,24 @@ def deploy(project: str,
                                                                    kwargs, logger, no_browser=no_browser)
         notify_methods = []
         if notify_emails is not None:
-            for config in notify_emails.split(","):
-                address, subject = config.split(":")
-                notify_methods.append(QCEmailNotificationMethod(address=address, subject=subject))
+            for address, *subject in _split_notify_configs(notify_emails):
+                if len(subject) == 0:
+                    raise RuntimeError(f"Invalid --notify-emails configuration '{address}', expected 'email:subject'")
+                notify_methods.append(QCEmailNotificationMethod(address=address, subject=":".join(subject)))
 
         if notify_webhooks is not None:
-            for config in notify_webhooks.split(","):
-                address, *headers = config.split(":")
-                headers = {header.split("=")[0]: header.split("=")[1] for header in headers}
+            for parts in _split_notify_configs(notify_webhooks):
+                address, headers = _parse_webhook_config(parts)
                 notify_methods.append(QCWebhookNotificationMethod(address=address, headers=headers))
 
         if notify_sms is not None:
-            for phoneNumber in notify_sms.split(","):
-                notify_methods.append(QCSMSNotificationMethod(phoneNumber=phoneNumber))
+            for parts in _split_notify_configs(notify_sms):
+                notify_methods.append(QCSMSNotificationMethod(phoneNumber=":".join(parts)))
 
         if notify_telegram is not None:
-            for config in notify_telegram.split(","):
-                id_token_pair = config.split(":", 1)    # telegram token is like "01234567:Abc132xxx..."
-                if len(id_token_pair) == 2:
-                    chat_id, token = id_token_pair
-                    token = None if not token else token
-                    notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=token))
-                else:
-                    notify_methods.append(QCTelegramNotificationMethod(id=id_token_pair[0]))
+            # telegram token is like "01234567:Abc132xxx..."
+            for chat_id, *token in _split_notify_configs(notify_telegram):
+                notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=":".join(token) or None))
 
         cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
 
