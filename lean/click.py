@@ -314,12 +314,21 @@ class CaseInsensitiveChoice(Choice):
     def __init__(self, choices, **kwargs):
         super().__init__(choices, case_sensitive=False, **kwargs)
 
-    def get_metavar(self, param, ctx=None) -> str:
+    def _get_display_choices(self) -> List[str]:
         import enum
-        choices_str = "|".join(c.value if isinstance(c, enum.Enum) else str(c) for c in self.choices)
+        return [c.value if isinstance(c, enum.Enum) else str(c) for c in self.choices]
+
+    def get_metavar(self, param, ctx=None) -> str:
+        choices_str = "|".join(self._get_display_choices())
         if param is not None and param.required and param.param_type_name == "argument":
             return f"{{{choices_str}}}"
         return f"[{choices_str}]"
+
+    def get_invalid_choice_message(self, value, ctx=None) -> str:
+        choices_str = ", ".join(map(repr, self._get_display_choices()))
+        if len(self.choices) == 1:
+            return f"{value!r} is not {choices_str}."
+        return f"{value!r} is not one of {choices_str}."
 
 
 class PathParameter(ParamType):
