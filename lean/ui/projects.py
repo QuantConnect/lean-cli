@@ -18,9 +18,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from lean.constants import PROJECT_CONFIG_FILE_NAME
-from lean.models.api import QCProject
-
-LANGUAGE_LABELS = {"Python": "Py", "CSharp": "C#", "Py": "Py", "C#": "C#"}
+from lean.models.api import QCLanguage, QCProject
 
 
 @dataclass
@@ -72,11 +70,13 @@ def discover_local_projects(root: Path, skip_dirs: Optional[List[Path]] = None) 
         current_path = Path(current)
         if PROJECT_CONFIG_FILE_NAME in files and current_path != root:
             config = container.project_config_manager.get_project_config(current_path)
+            # The project config names the language like the QCLanguage members, "Python" or "CSharp"
+            language = config.get("algorithm-language", "")
             projects.append(UIProject(
                 name=current_path.relative_to(root).as_posix(),
                 path=current_path,
                 cloud_id=config.get("cloud-id"),
-                language=LANGUAGE_LABELS.get(config.get("algorithm-language", ""), ""),
+                language=QCLanguage[language].value if language in QCLanguage.__members__ else "",
                 description=config.get("description", ""),
                 modified=datetime.fromtimestamp(current_path.stat().st_mtime)
             ))
@@ -111,7 +111,7 @@ def merge_cloud_projects(local_projects: List[UIProject], cloud_projects: List[Q
         merged.append(UIProject(
             name=cloud_project.name,
             cloud_id=cloud_project.projectId,
-            language=LANGUAGE_LABELS.get(cloud_project.language.value, cloud_project.language.value),
+            language=cloud_project.language.value,
             description=cloud_project.description,
             modified=cloud_project.modified
         ))

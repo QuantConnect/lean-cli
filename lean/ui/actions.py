@@ -17,6 +17,7 @@ from shlex import quote
 from subprocess import Popen
 from typing import Callable, List, Optional, Tuple
 
+from lean.constants import UI_COMMAND_ENV_VAR
 from lean.ui.projects import UIProject
 from lean.ui.results import list_local_backtests
 
@@ -103,6 +104,7 @@ class CommandProcess:
         from subprocess import DEVNULL, PIPE, STDOUT
 
         env = dict(environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1", COLUMNS="120")
+        env[UI_COMMAND_ENV_VAR] = "1"
         creation_flags = 0
         if sys.platform == "win32":
             from subprocess import CREATE_NEW_PROCESS_GROUP
@@ -120,6 +122,8 @@ class CommandProcess:
                               encoding="utf-8",
                               errors="replace",
                               creationflags=creation_flags)
+        if self._stop_requested:
+            self._interrupt()
 
         for line in self._process.stdout:
             on_line(line.rstrip("\r\n"))
@@ -129,15 +133,30 @@ class CommandProcess:
     def stop(self) -> None:
         """Asks the command to stop the way Ctrl+C would, so it can clean up its Docker containers.
 
-        Calling this again while the command is still running kills it.
+        Calling this again while the command is still running kills it. Asking before the command has started
+        stops it as soon as it has.
         """
-        if self._process is None or self._process.poll() is not None:
-            return
-
         if self._stop_requested:
-            self._process.kill()
+            if self._process is not None and self._process.poll() is None:
+                self._process.kill()
             return
         self._stop_requested = True
+        if self._process is not None:
+            self._interrupt()
+
+    def wait(self, timeout: float) -> None:
+        """Waits for the command to end, killing it if it takes longer than timeout seconds."""
+        if self._process is None:
+            return
+        from subprocess import TimeoutExpired
+        try:
+            self._process.wait(timeout)
+        except TimeoutExpired:
+            self._process.kill()
+
+    def _interrupt(self) -> None:
+        if self._process.poll() is not None:
+            return
 
         from sys import platform
         if platform == "win32":

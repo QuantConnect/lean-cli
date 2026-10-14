@@ -23,9 +23,10 @@ from textual.widgets import TabbedContent
 
 from lean.commands import lean
 from lean.container import container
+from lean.ui import actions
 from lean.ui import app as ui_app
 from lean.ui import backtest_screen
-from lean.ui.actions import ACTIONS, format_command, parse_cloud_backtest_url
+from lean.ui.actions import ACTIONS, CommandProcess, format_command, parse_cloud_backtest_url
 from lean.ui.app import ConfirmScreen, LeanApp, ProjectTable
 from lean.ui.backtest_screen import BacktestPicker, BacktestScreen, LiveRun
 from lean.ui.projects import UIProject, discover_local_projects, filter_projects, merge_cloud_projects
@@ -165,6 +166,33 @@ def test_command_process_runs_the_cli_as_a_child_process(fake_filesystem) -> Non
     assert lines == [f"lean {__version__}"]
 
 
+def test_command_process_honors_a_stop_asked_before_it_started() -> None:
+    process = CommandProcess(["--version"], Path.cwd())
+    process.stop()
+
+    with mock.patch.object(actions, "Popen") as popen:
+        popen.return_value.stdout = iter(["lean 0.0.0\n"])
+        popen.return_value.poll.return_value = None
+        popen.return_value.wait.return_value = 1
+        exit_code = process.run(lambda line: None)
+
+    popen.return_value.send_signal.assert_called_once()
+    assert exit_code == 1
+
+
+def test_command_process_wait_kills_a_command_that_does_not_stop() -> None:
+    from subprocess import TimeoutExpired
+    process = CommandProcess(["--version"], Path.cwd())
+
+    with mock.patch.object(actions, "Popen") as popen:
+        popen.return_value.stdout = iter([])
+        popen.return_value.wait.side_effect = [0, TimeoutExpired("lean", 1)]
+        process.run(lambda line: None)
+        process.wait(1)
+
+    popen.return_value.kill.assert_called_once()
+
+
 def _run_app(test, logged_in: bool = False) -> None:
     """Runs a test coroutine against the app with the fake Lean CLI directory and no cloud projects."""
     create_fake_lean_cli_directory()
@@ -268,6 +296,27 @@ def test_app_does_not_run_unavailable_actions() -> None:
     _run_app(test)
 
 
+def test_quitting_waits_for_the_running_command_to_stop() -> None:
+    async def test(app: LeanApp, pilot) -> None:
+        finish = threading.Event()
+
+        def fake_run(on_line):
+            finish.wait(5)
+            return 0
+
+        with mock.patch.object(ui_app, "CommandProcess") as command_process:
+            command_process.return_value.run.side_effect = fake_run
+            command_process.return_value.wait.side_effect = lambda timeout: finish.set()
+            await pilot.press("p", "y", "q")
+            await _settle(app, pilot)
+
+        command_process.return_value.stop.assert_called_once_with()
+        command_process.return_value.wait.assert_called_once_with(ui_app.QUIT_TIMEOUT_SECONDS)
+        assert not app.is_running
+
+    _run_app(test, logged_in=True)
+
+
 def test_app_runs_one_command_at_a_time() -> None:
     async def test(app: LeanApp, pilot) -> None:
         finish = threading.Event()
@@ -345,6 +394,16 @@ def test_backtesting_in_the_cloud_switches_to_the_backtest_once_it_is_created() 
         assert len(screen.query_one("#equity").points) == 5
 
     _run_app(test, logged_in=True)
+
+
+def test_a_new_cloud_backtest_id_keeps_showing_its_live_log() -> None:
+    pending = PendingCloudBacktest()
+    screen = BacktestScreen(UIProject("CSharp Project"), True, LiveRun(pending, lines=["Started compiling"]))
+
+    screen.set_live_source(CloudBacktest(123, BACKTEST_ID))
+
+    assert screen.backtest.id == BACKTEST_ID
+    assert screen._log_loaded_for == BACKTEST_ID
 
 
 def test_a_new_cloud_backtest_id_keeps_the_backtest_the_user_moved_to() -> None:

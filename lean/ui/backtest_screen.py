@@ -382,6 +382,7 @@ class BacktestScreen(Screen):
         if current is old_source:
             self._selected = 0
             self._result = None
+            self._log_loaded_for = source.id
             if self.is_mounted:
                 self._update_position()
                 self._load()

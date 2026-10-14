@@ -260,6 +260,24 @@ def test_parse_cloud_backtest() -> None:
     assert result.start == datetime(2013, 10, 7, tzinfo=timezone.utc)
 
 
+def test_parse_cloud_backtest_accepts_empty_charts_and_dates() -> None:
+    backtest = dict(create_cloud_backtest(status="In Queue...", completed=False, progress=0.0),
+                    charts=[], backtestStart="", backtestEnd=None)
+
+    result = parse_cloud_backtest(QCBacktest(**backtest), {})
+
+    assert (result.status, result.start, result.end, result.equity) == ("In Queue", None, None, [])
+
+
+def test_cloud_backtest_without_charts_yet_loads_the_summary() -> None:
+    post = mock_cloud_api(dict(create_cloud_backtest(completed=False, progress=0.1), charts=[]))
+
+    result = CloudBacktest(123, BACKTEST_ID).load()
+
+    assert result.progress == 0.1
+    assert all(c.args[0] != "backtests/chart/read" for c in post.call_args_list)
+
+
 def test_parse_cloud_backtest_while_running_uses_reported_progress() -> None:
     backtest = create_cloud_backtest(status="Running", completed=False, progress=0.42)
     backtest["statistics"] = []

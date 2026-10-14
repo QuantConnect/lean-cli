@@ -96,10 +96,19 @@ class CloudRunner:
                 get_progress=lambda data: data.progress
             )
         except KeyboardInterrupt as e:
-            if confirm("Do you want to cancel and delete the running backtest?", True):
+            if self._confirm("Do you want to cancel and delete the running backtest?"):
                 self._api_client.backtests.delete(project.projectId, created_backtest.backtestId)
                 self._logger.info(f"Successfully cancelled and deleted backtest '{name}'")
             raise e
+
+    @staticmethod
+    def _confirm(text: str) -> bool:
+        """Asks the user, or answers yes when `lean ui` runs the command, which has no terminal to ask on."""
+        from os import environ
+        from lean.constants import UI_COMMAND_ENV_VAR
+        if environ.get(UI_COMMAND_ENV_VAR) == "1":
+            return True
+        return confirm(text, True)
 
     def run_optimization(self,
                          project: QCProject,
@@ -144,7 +153,7 @@ class CloudRunner:
                 get_progress=lambda data: data.get_progress()
             )
         except KeyboardInterrupt as e:
-            if confirm("Do you want to cancel and delete the running optimization?", True):
+            if self._confirm("Do you want to cancel and delete the running optimization?"):
                 try:
                     self._api_client.optimizations.abort(created_optimization.optimizationId)
                 except RequestFailedError:

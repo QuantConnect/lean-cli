@@ -36,6 +36,9 @@ from lean.ui.results import BacktestSource, CloudBacktest, LocalBacktest, Pendin
 # How often the output of the running command is shown
 OUTPUT_FLUSH_SECONDS = 0.1
 
+# How long quitting waits for the running command to stop before killing it
+QUIT_TIMEOUT_SECONDS = 10
+
 
 class ProjectTable(DataTable):
     BINDINGS = [
@@ -255,14 +258,14 @@ class LeanApp(App):
             grid.add_row("Description", project.description)
         details.update(grid)
 
-        for action in ACTIONS:
-            reason = action.unavailable_reason(project, self._logged_in)
+        reasons = [action.unavailable_reason(project, self._logged_in) for action in ACTIONS]
+        for action, reason in zip(ACTIONS, reasons):
             prompt = Text.assemble((f" {action.key} ", "bold reverse"), f"  {action.label}")
             if reason is not None:
                 prompt.append(f"  ({reason})", style="dim")
             actions.add_option(Option(prompt, id=action.key, disabled=reason is not None))
 
-        available = [i for i, a in enumerate(ACTIONS) if a.unavailable_reason(project, self._logged_in) is None]
+        available = [i for i, reason in enumerate(reasons) if reason is None]
         if available:
             actions.highlighted = available[0]
 
@@ -410,6 +413,11 @@ class LeanApp(App):
         self._query("#output", RichLog).border_subtitle = "stopping, x again to force"
 
     async def action_quit(self) -> None:
-        if self._process is not None:
-            self._process.stop()
+        process = self._process
+        if process is not None:
+            # Exiting with the command running would hang on its thread, give it a moment to stop its containers
+            from asyncio import to_thread
+            process.stop()
+            self._query("#output", RichLog).border_subtitle = "stopping before quitting"
+            await to_thread(process.wait, QUIT_TIMEOUT_SECONDS)
         self.exit()

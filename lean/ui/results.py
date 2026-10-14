@@ -20,7 +20,6 @@ from json import loads
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from lean.components.api.backtest_client import BacktestClient
 from lean.models.api import QCBacktest
 
 EQUITY_CHART = "Strategy Equity"
@@ -333,7 +332,8 @@ class CloudBacktest(BacktestSource):
         return self._created
 
     @staticmethod
-    def _client() -> BacktestClient:
+    def _client():
+        """The BacktestClient, looked up when needed so the UI modules load without the container."""
         from lean.container import container
         return container.api_client.backtests
 
