@@ -1376,3 +1376,17 @@ def test_live_state_file(brokerage_name: str, data_provider_live_name: str,
 
     create_lean_option(brokerage_name, data_provider_live_name, None, api_client,
                        environment_modifier=environment_modifier)
+
+
+@pytest.mark.parametrize("stray_entry", [".DS_Store", "my-run"])
+def test_live_ignores_entries_in_the_live_directory_that_are_not_deployments(stray_entry: str) -> None:
+    def environment_modifier():
+        live_directory = Path.cwd() / "Python Project" / "live"
+        (live_directory / "2024-09-26_17-25-28").mkdir(parents=True)
+        # Finder creates .DS_Store files, and --output can point to any directory name
+        if stray_entry.startswith("."):
+            (live_directory / stray_entry).touch()
+        else:
+            (live_directory / stray_entry).mkdir()
+
+    create_lean_option("Paper Trading", "Polygon", None, mock.MagicMock(), environment_modifier=environment_modifier)

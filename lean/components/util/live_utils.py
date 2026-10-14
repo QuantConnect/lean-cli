@@ -63,7 +63,14 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     local_last_time = datetime.min.replace(tzinfo=timezone.utc)
     live_deployment_path = f"{project_name}/live"
     if path.isdir(live_deployment_path):
-        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(timezone.utc) for subdir in listdir(live_deployment_path)]
+        local_deployment_time = []
+        for subdir in listdir(live_deployment_path):
+            try:
+                deployment_time = datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S")
+            except ValueError:
+                # not a deployment, like a .DS_Store file or a custom --output directory
+                continue
+            local_deployment_time.append(deployment_time.astimezone().astimezone(timezone.utc))
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
