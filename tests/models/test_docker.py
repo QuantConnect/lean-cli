@@ -21,7 +21,11 @@ from lean.models.docker import DockerImage
                                             ("lean:123", "lean", "123"),
                                             ("quantconnect/lean", "quantconnect/lean", "latest"),
                                             ("quantconnect/lean:latest", "quantconnect/lean", "latest"),
-                                            ("quantconnect/lean:123", "quantconnect/lean", "123")])
+                                            ("quantconnect/lean:123", "quantconnect/lean", "123"),
+                                            ("localhost:5000/lean", "localhost:5000/lean", "latest"),
+                                            ("localhost:5000/lean:123", "localhost:5000/lean", "123"),
+                                            ("registry.example.com:5000/quantconnect/lean:123",
+                                             "registry.example.com:5000/quantconnect/lean", "123")])
 def test_docker_image_name_parse_parses_value(value: str, name: str, tag: str) -> None:
     result = DockerImage.parse(value)
 
