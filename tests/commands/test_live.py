@@ -13,6 +13,7 @@
 
 import itertools
 import sys
+from importlib import import_module
 import json
 from pathlib import Path
 import traceback
@@ -1395,8 +1396,10 @@ def test_live_ignores_entries_in_the_live_directory_that_are_not_deployments(str
         else:
             (live_directory / stray_entry).touch()
 
-    with mock.patch("lean.commands.live.deploy.configure_initial_cash_balance",
-                    wraps=configure_initial_cash_balance) as configure_cash:
+    # patch by module object: the dotted path resolves to the `live` click group on Python < 3.11
+    deploy_module = import_module("lean.commands.live.deploy")
+    with mock.patch.object(deploy_module, "configure_initial_cash_balance",
+                           wraps=configure_initial_cash_balance) as configure_cash:
         create_lean_option("Paper Trading", "Polygon", None, mock.MagicMock(), environment_modifier=environment_modifier)
 
     # the deployment next to the stray entry is still read and its cash balance offered
