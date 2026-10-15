@@ -103,6 +103,7 @@ class DockerManager:
         from types import FrameType
         from docker.errors import APIError
         from docker.types import Mount
+        from lean.constants import IS_UI_COMMAND
 
         if not self.image_installed(image):
             self.pull_image(image)
@@ -143,6 +144,8 @@ class DockerManager:
 
         detach = kwargs.pop("detach", False)
         is_tty = stdout.isatty()
+        # Without a terminal there is nobody to interrupt twice, except `lean ui` which stops its commands that way
+        graceful_stop = is_tty or IS_UI_COMMAND
 
         kwargs["detach"] = True
         kwargs["hostname"] = kwargs["hostname"] if "hostname" in kwargs else node()
@@ -224,7 +227,7 @@ class DockerManager:
         # Kill the container on Ctrl+C
         def signal_handler(sig: Signals, frame: FrameType) -> None:
             nonlocal force_kill_next
-            if not is_tty or force_kill_next or kwargs["stop_signal"] == "SIGKILL":
+            if not graceful_stop or force_kill_next or kwargs["stop_signal"] == "SIGKILL":
                 force_kill_current = True
             else:
                 self._logger.info("Waiting 1 minute for LEAN to exit gracefully, press Ctrl+C again to force stop")

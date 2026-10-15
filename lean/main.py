@@ -88,10 +88,28 @@ from lean.commands import lean
 from lean.container import container
 
 
-def main() -> None:
-    """This function is the entrypoint when running a Lean command in a terminal."""
+def _handle_ctrl_break_as_ctrl_c() -> None:
+    """On Windows `lean ui` stops a command with Ctrl+Break, which must run the command's Ctrl+C cleanup."""
+    from lean.constants import IS_UI_COMMAND
+    if not IS_UI_COMMAND:
+        return
+    from signal import SIGINT, raise_signal, signal
     try:
-        lean.main(standalone_mode=False)
+        from signal import SIGBREAK
+    except ImportError:
+        return
+    signal(SIGBREAK, lambda *_: raise_signal(SIGINT))
+
+
+def main(prog_name: str = None) -> None:
+    """This function is the entrypoint when running a Lean command in a terminal.
+
+    :param prog_name: the program name shown in help and error messages, detected from the command line if not set
+    """
+    _handle_ctrl_break_as_ctrl_c()
+
+    try:
+        lean.main(standalone_mode=False, prog_name=prog_name)
 
         temp_manager = container.temp_manager
         if temp_manager.delete_temporary_directories_when_done:
