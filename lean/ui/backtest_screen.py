@@ -25,10 +25,10 @@ from textual.events import Key
 from textual.message import Message
 from textual.screen import ModalScreen, Screen
 from textual.timer import Timer
+from textual.widget import Widget
 from textual.widgets import DataTable, Footer, Header, Input, OptionList, RichLog, Static, TabbedContent, TabPane
 from textual.widgets.option_list import Option
 from textual.worker import get_current_worker
-from textual_plotext import PlotextPlot
 
 from lean.ui.projects import UIProject
 from lean.ui.results import (ORDERS_PAGE, BacktestResult, BacktestSource, Order, list_cloud_backtests,
@@ -81,11 +81,15 @@ class LiveRun:
     exit_code: Optional[int] = None
 
 
-class EquityChart(PlotextPlot):
+class EquityChart(Widget):
     """The equity of a backtest over time, with dates on the x axis and dollar values on the y axis.
 
     When the backtest's period is known the x axis spans all of it, so a running backtest's equity grows from left
     to right instead of being stretched over the full width.
+    """
+
+    DEFAULT_CSS = """
+    EquityChart { width: 1fr; height: 1fr; }
     """
 
     def __init__(self, *, id: Optional[str] = None) -> None:
@@ -114,19 +118,26 @@ class EquityChart(PlotextPlot):
         self._points = _downsample(points)
         self._period = (period[0].timestamp(), period[1].timestamp()) if period is not None else None
         self._message = message
-        self._replot()
+        self.refresh()
 
-    def on_resize(self) -> None:
-        self._replot()
+    def on_mount(self) -> None:
+        self.app.theme_changed_signal.subscribe(self, lambda _: self.refresh())
 
-    def _replot(self) -> None:
-        plt = self.plt
+    def render(self) -> Text:
+        import plotext as plt
+        from textual.color import Color
+
         plt.clear_figure()
+        plt.plotsize(self.size.width, self.size.height)
+        # Match the app's theme, plotext would otherwise paint its own background
+        variables = self.app.theme_variables
+        plt.canvas_color(Color.parse(variables["surface"]).rgb)
+        plt.axes_color(Color.parse(variables["surface"]).rgb)
+        plt.ticks_color(Color.parse(variables["foreground"]).rgb)
 
         if not self._points:
             plt.title(self._message)
-            self.refresh()
-            return
+            return Text.from_ansi(plt.build())
 
         xs = [x for x, _ in self._points]
         ys = [y for _, y in self._points]
@@ -140,7 +151,7 @@ class EquityChart(PlotextPlot):
         x_ticks, x_labels = time_ticks(x_low, x_high, max(2, self.size.width // 16))
         plt.xticks(x_ticks, x_labels)
 
-        self.refresh()
+        return Text.from_ansi(plt.build())
 
 
 class OrdersTable(DataTable):

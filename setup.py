@@ -59,7 +59,7 @@ install_requires = [
     f"quantconnect-stubs{get_stubs_version_range()}",
     "cryptography>=41.0.4",
     "textual>=1.0.0",
-    "textual-plotext>=1.0.0",
+    "plotext>=5.3.2,<6",
 ]
 
 setup(
