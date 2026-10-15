@@ -258,7 +258,6 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
     "ib-port": "4002",
     "ib-agent-description": "Individual",
     "ib-tws-dir": "C:\\Jts",
-    "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": false,
     "ib-version": "974",
 
@@ -285,7 +284,7 @@ def test_clean_lean_config_removes_auto_configurable_keys_from_original_config()
 
     for key in ["data-folder", "log-handler", "messaging-handler", "job-queue-handler",
                 "ib-account", "ib-user-name", "ib-password", "ib-agent-description",
-                "ib-trading-mode", "ib-enable-delayed-streaming-data",
+                "ib-enable-delayed-streaming-data",
                 "iqfeed-iqconnect", "iqfeed-username", "iqfeed-password", "iqfeed-productName", "iqfeed-version"]:
         assert f'"{key}"' in clean_config
 
@@ -345,7 +344,6 @@ def test_clean_lean_config_removes_documentation_of_removed_keys() -> None:
     "ib-port": "4002",
     "ib-agent-description": "Individual",
     "ib-tws-dir": "C:\\Jts",
-    "ib-trading-mode": "paper",
     "ib-enable-delayed-streaming-data": false,
     "ib-version": "974",
 
