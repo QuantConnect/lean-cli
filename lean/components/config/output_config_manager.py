@@ -11,11 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.storage import Storage
+from lean.constants import OUTPUT_DIRECTORY_NAME_FORMAT
+
+
+def get_output_directory_timestamp(directory: Path) -> Optional[datetime]:
+    """Returns the start time in the name of a backtest, optimization or live output directory, or None for other entries."""
+    if not directory.is_dir():
+        return None
+
+    try:
+        return datetime.strptime(directory.name, OUTPUT_DIRECTORY_NAME_FORMAT)
+    except ValueError:
+        return None
 
 
 class OutputConfigManager:
