@@ -24,6 +24,7 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components import reserved_names, output_reserved_names
+from lean.components.util.live_utils import configure_initial_cash_balance
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
@@ -1378,15 +1379,26 @@ def test_live_state_file(brokerage_name: str, data_provider_live_name: str,
                        environment_modifier=environment_modifier)
 
 
-@pytest.mark.parametrize("stray_entry", [".DS_Store", "my-run"])
-def test_live_ignores_entries_in_the_live_directory_that_are_not_deployments(stray_entry: str) -> None:
+# Finder creates .DS_Store files, --output can point to any directory name, and old names fail to convert on Windows
+@pytest.mark.parametrize("stray_entry,is_directory", [(".DS_Store", False), ("my-run", True), ("1960-01-01_00-00-00", True)])
+def test_live_ignores_entries_in_the_live_directory_that_are_not_deployments(stray_entry: str, is_directory: bool) -> None:
     def environment_modifier():
         live_directory = Path.cwd() / "Python Project" / "live"
-        (live_directory / "2024-09-26_17-25-28").mkdir(parents=True)
-        # Finder creates .DS_Store files, and --output can point to any directory name
-        if stray_entry.startswith("."):
-            (live_directory / stray_entry).touch()
-        else:
+        deployment_directory = live_directory / "2024-09-26_17-25-28"
+        deployment_directory.mkdir(parents=True)
+        with open(deployment_directory / "L-3875119070.json", "w+") as out_file:
+            json.dump({"cash": {"USD": {"symbol": "USD", "amount": 100000.0}}}, out_file)
+        with open(deployment_directory / "config", "w+") as out_file:
+            json.dump({"algorithm-language": "Python", "parameters": {}, "id": "3875119070"}, out_file)
+        if is_directory:
             (live_directory / stray_entry).mkdir()
+        else:
+            (live_directory / stray_entry).touch()
 
-    create_lean_option("Paper Trading", "Polygon", None, mock.MagicMock(), environment_modifier=environment_modifier)
+    with mock.patch("lean.commands.live.deploy.configure_initial_cash_balance",
+                    wraps=configure_initial_cash_balance) as configure_cash:
+        create_lean_option("Paper Trading", "Polygon", None, mock.MagicMock(), environment_modifier=environment_modifier)
+
+    # the deployment next to the stray entry is still read and its cash balance offered
+    previous_cash_state = configure_cash.call_args[0][3]
+    assert previous_cash_state["USD"]["amount"] == 100000.0

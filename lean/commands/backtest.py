@@ -16,7 +16,7 @@ from typing import List, Optional, Tuple
 from click import command, option, argument
 
 from lean.click import LeanCommand, PathParameter, backtest_parameter_option, CaseInsensitiveChoice
-from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH
+from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, OUTPUT_DIRECTORY_NAME_FORMAT
 from lean.container import container, Logger
 from lean.models.utils import DebuggingMethod
 from lean.models.cli import cli_data_downloaders, cli_addon_modules
@@ -323,7 +323,7 @@ def backtest(project: Path,
     algorithm_file = project_manager.find_algorithm_file(Path(project))
     lean_config_manager = container.lean_config_manager
     if output is None:
-        output = algorithm_file.parent / "backtests" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output = algorithm_file.parent / "backtests" / datetime.now().strftime(OUTPUT_DIRECTORY_NAME_FORMAT)
 
     environment_name = "backtesting"
     debugging_method = None

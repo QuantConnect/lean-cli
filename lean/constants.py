@@ -119,3 +119,6 @@ MODULE_CLOUD_PLATFORM = "cloud"
 
 # List pending datasets
 LIST_PENDING_DATASETS = environ.get("LIST_PENDING_DATASETS", "false").lower() == "true"
+
+# Local backtests, optimizations and live deployments write their output to a directory named after their start time
+OUTPUT_DIRECTORY_NAME_FORMAT = "%Y-%m-%d_%H-%M-%S"

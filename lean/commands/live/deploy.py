@@ -16,7 +16,7 @@ from typing import List, Optional, Tuple
 from click import option, argument
 from lean.click import LeanCommand, PathParameter, CaseInsensitiveChoice
 from lean.components.util.name_rename import rename_internal_config_to_user_friendly_format
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, OUTPUT_DIRECTORY_NAME_FORMAT
 from lean.container import container
 from lean.models.cli import (cli_brokerages, cli_data_queue_handlers, cli_data_downloaders,
                              cli_addon_modules, cli_history_provider)
@@ -168,7 +168,7 @@ def deploy(project: Path,
     algorithm_file = project_manager.find_algorithm_file(Path(project))
 
     if output is None:
-        output = algorithm_file.parent / "live" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output = algorithm_file.parent / "live" / datetime.now().strftime(OUTPUT_DIRECTORY_NAME_FORMAT)
 
     lean_config_manager = container.lean_config_manager
 

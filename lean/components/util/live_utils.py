@@ -13,9 +13,11 @@
 
 from click import prompt, confirm
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from lean.components.api.api_client import APIClient
+from lean.components.config.output_config_manager import get_output_directory_timestamp
 from lean.components.util.logger import Logger
 from lean.models.errors import RequestFailedError
 from lean.models.json_module import LiveInitialStateInput, JsonModule
@@ -35,10 +37,29 @@ class InsensitiveCaseDict(UserDict):
         self.data[key] = item
 
 
+def _get_local_deployment_time(directory: Path) -> Optional[datetime]:
+    """Returns when a local live deployment ran, or None when the directory is not a deployment."""
+    if not directory.is_dir():
+        return None
+
+    deployment_time = get_output_directory_timestamp(directory)
+    if deployment_time is not None:
+        try:
+            # the directory name holds the deployment's start time, in local time
+            return deployment_time.astimezone(timezone.utc)
+        except (OverflowError, OSError):
+            pass
+
+    # a custom --output directory: use the time its result file was last written
+    result_files = list(directory.glob("L-*.json"))
+    if not result_files:
+        return None
+    return datetime.fromtimestamp(max(f.stat().st_mtime for f in result_files), tz=timezone.utc)
+
+
 def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
-    from os import listdir, path
     from json import loads
-    from datetime import datetime, timezone
+    from lean.container import container
 
     cloud_last_time = datetime.min.replace(tzinfo=timezone.utc)
 
@@ -61,24 +82,19 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
                                tzinfo=timezone.utc)
 
     local_last_time = datetime.min.replace(tzinfo=timezone.utc)
-    live_deployment_path = f"{project_name}/live"
-    if path.isdir(live_deployment_path):
-        local_deployment_time = []
-        for subdir in listdir(live_deployment_path):
-            try:
-                deployment_time = datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S")
-            except ValueError:
-                # not a deployment, like a .DS_Store file or a custom --output directory
-                continue
-            local_deployment_time.append(deployment_time.astimezone().astimezone(timezone.utc))
-        if local_deployment_time:
-            local_last_time = sorted(local_deployment_time, reverse = True)[0]
+    live_deployment_path = Path(project_name) / "live"
+    if live_deployment_path.is_dir():
+        for entry in live_deployment_path.iterdir():
+            deployment_time = _get_local_deployment_time(entry)
+            if deployment_time is None:
+                container.logger.debug(f"Ignoring '{entry}' in the live directory, it is not a deployment")
+            else:
+                local_last_time = max(local_last_time, deployment_time)
 
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/portfolio/read", {"projectId": project_id})
         previous_portfolio_state = last_state["portfolio"]
     elif cloud_last_time < local_last_time:
-        from lean.container import container
         output_directory = container.output_config_manager.get_latest_output_directory("live")
         if not output_directory:
             return None
