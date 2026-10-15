@@ -47,7 +47,7 @@ def test_get_last_portfolio_reads_the_latest_local_deployment() -> None:
     assert _get_last_local_portfolio() == {"cash": LOCAL_STATE["Cash"]}
 
 
-@pytest.mark.parametrize("stray_entry,is_directory", [(".DS_Store", False), ("my-run", True), ("1960-01-01_00-00-00", True)])
+@pytest.mark.parametrize("stray_entry,is_directory", [(".DS_Store", False), ("my-run", True)])
 def test_get_last_portfolio_ignores_entries_that_are_not_deployments(stray_entry: str, is_directory: bool) -> None:
     create_fake_lean_cli_directory()
     _create_deployment(_live_directory() / "2024-09-26_17-25-28", LOCAL_STATE)
@@ -60,6 +60,15 @@ def test_get_last_portfolio_ignores_entries_that_are_not_deployments(stray_entry
         assert _get_last_local_portfolio() == {"cash": LOCAL_STATE["Cash"]}
 
     assert any(stray_entry in str(call) for call in debug.call_args_list)
+
+
+def test_get_last_portfolio_survives_a_deployment_name_before_1970() -> None:
+    create_fake_lean_cli_directory()
+    _create_deployment(_live_directory() / "2024-09-26_17-25-28", LOCAL_STATE)
+    # converting this name to UTC raises OSError on Windows; elsewhere it is just an older deployment
+    (_live_directory() / "1960-01-01_00-00-00").mkdir()
+
+    assert _get_last_local_portfolio() == {"cash": LOCAL_STATE["Cash"]}
 
 
 def test_get_last_portfolio_returns_none_without_deployments() -> None:
