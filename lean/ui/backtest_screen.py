@@ -120,38 +120,35 @@ class EquityChart(Widget):
         self._message = message
         self.refresh()
 
-    def on_mount(self) -> None:
-        self.app.theme_changed_signal.subscribe(self, lambda _: self.refresh())
-
     def render(self) -> Text:
         import plotext as plt
-        from textual.color import Color
 
-        plt.clear_figure()
-        plt.plotsize(self.size.width, self.size.height)
-        # Match the app's theme, plotext would otherwise paint its own background
-        variables = self.app.theme_variables
-        plt.canvas_color(Color.parse(variables["surface"]).rgb)
-        plt.axes_color(Color.parse(variables["surface"]).rgb)
-        plt.ticks_color(Color.parse(variables["foreground"]).rgb)
+        figure = plt.figure
+        figure.clear.all()
+        figure.plot_size(self.size.width, self.size.height)
+        # The simple theme colours nothing but the data, so the widget's own colours show through
+        figure.theme("simple")
 
         if not self._points:
-            plt.title(self._message)
-            return Text.from_ansi(plt.build())
+            figure.title(self._message)
+            return Text.from_ansi(figure.build().string())
 
         xs = [x for x, _ in self._points]
         ys = [y for _, y in self._points]
-        plt.plot(xs, ys, color="cyan", marker="braille")
+        equity = figure.signal(xs, ys, marker=plt.marker("braille", plt.pixel("cyan")))
+        equity.lines()
+        figure.draw(equity)
 
         y_ticks, y_step = value_ticks(min(ys), max(ys), max(3, min(8, self.size.height // 2)))
-        plt.yticks(y_ticks, format_value_ticks(y_ticks, y_step, "$"))
+        figure.ruler(axis=1, side=0).ticks(y_ticks, format_value_ticks(y_ticks, y_step, "$"))
         x_low, x_high = self.x_range
+        x_axis = figure.ruler(axis=0, side=0)
         if x_high > x_low:
-            plt.xlim(x_low, x_high)
+            x_axis.lim(x_low, x_high)
         x_ticks, x_labels = time_ticks(x_low, x_high, max(2, self.size.width // 16))
-        plt.xticks(x_ticks, x_labels)
+        x_axis.ticks(x_ticks, x_labels)
 
-        return Text.from_ansi(plt.build())
+        return Text.from_ansi(figure.build().string())
 
 
 class OrdersTable(DataTable):

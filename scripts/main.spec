@@ -35,9 +35,12 @@ def Entrypoint(dist, group, name, **kwargs):
         **kwargs
     )
 
+from PyInstaller.utils.hooks import collect_dynamic_libs
+
 # distribution needs to be installed in the machine when trying to package.
 # dist, group, name
-a = Entrypoint('lean', 'console_scripts', 'lean')
+# plotext loads its kernel library through ctypes, which the analysis cannot see
+a = Entrypoint('lean', 'console_scripts', 'lean', binaries=collect_dynamic_libs('plotext'))
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
