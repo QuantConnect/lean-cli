@@ -572,9 +572,14 @@ class DockerManager:
         error = MoreInfoError("Please make sure Docker is installed and running",
                               "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
+        client_kwargs = {}
+        timeout = self._get_docker_client_timeout()
+        if timeout is not None:
+            client_kwargs["timeout"] = timeout
+
         try:
             from docker import from_env
-            docker_client = from_env()
+            docker_client = from_env(**client_kwargs)
         except Exception:
             raise error
 
@@ -585,6 +590,30 @@ class DockerManager:
             raise error
 
         return docker_client
+
+    def _get_docker_client_timeout(self) -> Optional[int]:
+        """Returns the timeout for Docker API calls set through the DOCKER_CLIENT_TIMEOUT environment variable.
+
+        This is the variable Docker Compose reads for the same purpose. The Docker SDK's default of 60 seconds
+        is too short for some Docker hosts, like remote ones or ones under heavy load.
+
+        :return: the timeout in seconds, or None if the variable is not set, so the SDK default is used
+        """
+        from os import environ
+
+        value = environ.get("DOCKER_CLIENT_TIMEOUT")
+        if value is None or value.strip() == "":
+            return None
+
+        try:
+            timeout = int(value)
+        except ValueError:
+            timeout = 0
+
+        if timeout <= 0:
+            raise RuntimeError(f"DOCKER_CLIENT_TIMEOUT must be a positive number of seconds, got '{value}'")
+
+        return timeout
 
     def _format_source_path(self, path: str) -> str:
         """Formats a source path so Docker knows what it refers to.
