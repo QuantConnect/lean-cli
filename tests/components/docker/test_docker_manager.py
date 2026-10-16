@@ -14,6 +14,7 @@
 from pathlib import Path
 from unittest import mock
 
+import docker
 import pytest
 
 from docker.errors import ImageNotFound
@@ -78,3 +79,43 @@ def test_get_image_label_raises_when_the_image_is_not_found_locally() -> None:
     with mock.patch.object(docker_manager, "get_image_labels", side_effect=ImageNotFound("No such image")):
         with pytest.raises(ImageNotFound):
             docker_manager.get_image_label(DockerImage.parse("quantconnect/lean:latest"), "target_framework", "net9.0")
+
+
+def _get_docker_client_with_env(monkeypatch, value):
+    if value is None:
+        monkeypatch.delenv("DOCKER_CLIENT_TIMEOUT", raising=False)
+    else:
+        monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", value)
+
+    docker_manager = _create_docker_manager()
+    # docker is imported at the top of this file: the tests run on a fake filesystem, where importing it
+    # inside the test would fail
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        from_env_mock.return_value.ping.return_value = True
+        docker_manager._get_docker_client()
+
+    return from_env_mock
+
+
+def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch) -> None:
+    from_env_mock = _get_docker_client_with_env(monkeypatch, None)
+
+    from_env_mock.assert_called_once_with()
+
+
+def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_empty(monkeypatch) -> None:
+    from_env_mock = _get_docker_client_with_env(monkeypatch, " ")
+
+    from_env_mock.assert_called_once_with()
+
+
+def test_get_docker_client_passes_docker_client_timeout_to_the_docker_client(monkeypatch) -> None:
+    from_env_mock = _get_docker_client_with_env(monkeypatch, "300")
+
+    from_env_mock.assert_called_once_with(timeout=300)
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-5", "1.5"])
+def test_get_docker_client_raises_when_docker_client_timeout_is_invalid(monkeypatch, value: str) -> None:
+    with pytest.raises(RuntimeError, match="DOCKER_CLIENT_TIMEOUT"):
+        _get_docker_client_with_env(monkeypatch, value)
