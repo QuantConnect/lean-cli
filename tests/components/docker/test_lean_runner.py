@@ -823,3 +823,11 @@ def test_run_lean_mounts_additional_paths() -> None:
 
     assert all([key in backtesting_env and backtesting_env[key] == source_to_target(value)
                 for key, value in paths_to_mount.items()])
+
+
+def test_lean_runner_parses_environment_values_containing_equals_from_extra_docker_configs() -> None:
+    run_options = {}
+    LeanRunner.parse_extra_docker_config(run_options,
+                                         {"environment": ["JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8", "TOKEN=abc=="]})
+
+    assert run_options["environment"] == {"JAVA_TOOL_OPTIONS": "-Dfile.encoding=UTF-8", "TOKEN": "abc=="}
