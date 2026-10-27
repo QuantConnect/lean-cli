@@ -969,7 +969,7 @@ for library_id, library_data in project_assets["targets"][project_target].items(
                     target = run_options["environment"] = {}
                 if isinstance(extra_docker_config["environment"], list):
                     target.update({item[0]: item[1] for item in [
-                        item if not isinstance(item, str) else (item.split("=")[0], item.split("=")[1]) for item in extra_docker_config["environment"]
+                        item if not isinstance(item, str) else item.split("=", 1) for item in extra_docker_config["environment"]
                     ]})
                 elif isinstance(extra_docker_config["environment"], dict):
                     target.update(extra_docker_config["environment"])
