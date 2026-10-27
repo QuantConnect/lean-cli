@@ -81,13 +81,13 @@ def _get_backtest_statistic(backtest: QCOptimizationBacktest, target: str) -> fl
     :return: the value of the target statistic on the backtest
     """
     if target == "TotalPerformance.PortfolioStatistics.SharpeRatio":
-        return backtest.statistics[15]
+        return backtest.statistics["15"]
     elif target == "TotalPerformance.PortfolioStatistics.CompoundingAnnualReturn":
-        return backtest.statistics[6]
+        return backtest.statistics["6"]
     elif target == "TotalPerformance.PortfolioStatistics.ProbabilisticSharpeRatio":
-        return backtest.statistics[13]
+        return backtest.statistics["13"]
     elif target == "TotalPerformance.PortfolioStatistics.Drawdown":
-        return backtest.statistics[7]
+        return backtest.statistics["7"]
     else:
         raise ValueError(f"Target is not supported: {target}")
 
