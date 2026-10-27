@@ -37,12 +37,18 @@ def create_api_optimization() -> QCOptimization:
 def create_api_optimization_backtest(id: int,
                                      success: bool,
                                      meets_constraints: bool,
-                                     maximize_statistics: bool) -> QCOptimizationBacktest:
+                                     maximize_statistics: bool,
+                                     statistics_as_object: bool = False) -> QCOptimizationBacktest:
     # Drawdown must be less than 0.25 to meet the constraints
     if meets_constraints:
-        statistics = [0.24 if maximize_statistics else 0.01] * 30
+        statistics = [0.24 if maximize_statistics else 0.01] * 25
     else:
-        statistics = [1.0] * 30
+        statistics = [1.0] * 25
+
+    if statistics_as_object:
+        # Lean's statistics are keyed by their index, any other statistic by its name
+        statistics = {str(index): statistic for index, statistic in enumerate(statistics)}
+        statistics["Portfolio Turnover"] = 0.5
 
     return QCOptimizationBacktest(id=str(id),
                                   name=f"Backtest {id}",
@@ -228,14 +234,16 @@ def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:
                                              ("ProbabilisticSharpeRatio", OptimizationExtremum.Maximum),
                                              ("Drawdown", OptimizationExtremum.Minimum),
                                              ("Drawdown", OptimizationExtremum.Maximum)])
+@pytest.mark.parametrize("statistics_as_object", [False, True])
 def test_cloud_optimize_displays_optimal_backtest_results(target: str,
-                                                          extremum: OptimizationExtremum) -> None:
+                                                          extremum: OptimizationExtremum,
+                                                          statistics_as_object: bool) -> None:
     create_fake_lean_cli_directory()
 
     project = create_api_project(1, "My Project")
     optimization = create_api_optimization()
-    optimization.backtests["1"] = create_api_optimization_backtest(1, True, True, True)
-    optimization.backtests["2"] = create_api_optimization_backtest(2, True, True, False)
+    optimization.backtests["1"] = create_api_optimization_backtest(1, True, True, True, statistics_as_object)
+    optimization.backtests["2"] = create_api_optimization_backtest(2, True, True, False, statistics_as_object)
 
     api_client = mock.MagicMock()
     api_client.projects.get_all.return_value = [project]
@@ -360,3 +368,23 @@ def test_cloud_optimize_aborts_when_input_matches_no_cloud_project() -> None:
     assert result.exit_code != 0
 
     cloud_runner.run_optimization.assert_not_called()
+
+
+@pytest.mark.parametrize("statistics", [[0.1, 0.2, 0.3],
+                                        {"0": 0.1, "1": 0.2, "2": 0.3},
+                                        {"0": 0.1, "1": 0.2, "2": 0.3, "Portfolio Turnover": 0.5}])
+def test_optimization_backtest_parses_statistics_as_list_or_object(statistics) -> None:
+    optimization = QCOptimization(optimizationId="123",
+                                  projectId=1,
+                                  status="completed",
+                                  name="Optimization name",
+                                  backtests={"1": {"id": "1",
+                                                   "name": "Backtest 1",
+                                                   "exitCode": 0,
+                                                   "parameterSet": {"id": "1"},
+                                                   "statistics": statistics}})
+
+    backtest_statistics = optimization.backtests["1"].statistics
+    assert backtest_statistics["0"] == 0.1
+    assert backtest_statistics["1"] == 0.2
+    assert backtest_statistics["2"] == 0.3

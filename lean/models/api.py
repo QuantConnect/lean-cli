@@ -538,7 +538,15 @@ class QCOptimizationBacktest(WrappedBaseModel):
     name: str
     exitCode: int
     parameterSet: Dict[str, str]
-    statistics: List[float] = []
+    statistics: Dict[str, float] = {}
+
+    @field_validator("statistics", mode="before")
+    @classmethod
+    def parse_statistics_list(cls, value: Any) -> Any:
+        # Older responses send the statistics as an array, newer ones as an object keyed by the same indices
+        if isinstance(value, list):
+            return {str(index): statistic for index, statistic in enumerate(value)}
+        return value
 
 
 class QCOptimization(WrappedBaseModel):
