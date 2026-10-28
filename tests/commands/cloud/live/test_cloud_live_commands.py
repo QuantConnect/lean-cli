@@ -405,7 +405,7 @@ def test_cloud_live_deploy_aborts_when_email_notification_has_no_subject() -> No
                                             ("Kraken", "USD:100"),
                                             ("OANDA", "USD:100"),
                                             ("Samco", "USD:100"),
-                                            ("Terminal Link", "USD:100"),
+                                            ("Quant Bridge", "USD:100"),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", "USD:100"),
                                             ("CharlesSchwab", "USD:100")])
@@ -486,8 +486,8 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("OANDA", "A:A 2T:1:145.1"),
                                                 ("Samco", ""),
                                                 ("Samco", "A:A 2T:1:145.1"),
-                                                ("Terminal Link", ""),
-                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Quant Bridge", ""),
+                                                ("Quant Bridge", "A:A 2T:1:145.1"),
                                                 ("Tradier", ""),
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
@@ -533,7 +533,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
                                        "--notify-insights", "no", *options, "--data-provider-live", "QuantConnect"])
 
     if (brokerage != "Paper Trading" and brokerage != "Binance" and holdings != "")\
-        or brokerage == "Terminal Link":   # non-cloud brokerage
+        or brokerage == "Quant Bridge":   # non-cloud brokerage
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
         return

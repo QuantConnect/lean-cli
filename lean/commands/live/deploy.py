@@ -71,7 +71,7 @@ def _get_history_provider_name(data_provider_live_names: [str]) -> [str]:
               multiple=True,
               help="The live data provider to use")
 @option("--data-provider-historical",
-              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders if dp.get_id() != "TerminalLinkBrokerage"]),
+              type=CaseInsensitiveChoice([dp.get_name() for dp in cli_data_downloaders if dp.get_id() != "QuantBridgeBrokerage"]),
               help="Update the Lean configuration file to retrieve data from the given historical provider")
 @options_from_json(get_configs_for_options("live-cli"))
 @option("--release",
