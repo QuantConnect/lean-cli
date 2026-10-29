@@ -22,6 +22,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
+from lean.models.errors import RequestFailedError
 
 class PushManager:
     """The PushManager class is responsible for synchronizing local projects to the cloud."""
@@ -259,7 +260,16 @@ class PushManager:
         if not force:
             update_args["code_source_id"] = "cli"
         if update_args != {}:
-            self._api_client.projects.update(cloud_project.projectId, **update_args)
+            try:
+                self._api_client.projects.update(cloud_project.projectId, **update_args)
+            except RequestFailedError as error:
+                if error.response.status_code != 413:
+                    raise
+                # The project is too large for a single request, so update the metadata first and push the files one by one
+                self._logger.info(f"'{cloud_project.name}' is too large to push in one request, pushing its files one by one")
+                self._api_client.projects.update(cloud_project.projectId,
+                                                 **{key: value for key, value in update_args.items() if key != "files"})
+                self._push_files_one_by_one(cloud_project, update_args["files"])
 
             if "encryption_key" in update_args:
                 del update_args["encryption_key"]
@@ -273,6 +283,29 @@ class PushManager:
                 updated_keys_str = ", ".join(updated_keys[:-1]) + f", and {updated_keys[-1]}"
 
             self._logger.info(f"Successfully updated {updated_keys_str} for '{cloud_project.name}'")
+
+    def _push_files_one_by_one(self, cloud_project: QCProject, files: List[Dict[str, str]]) -> None:
+        """Pushes the files of a local project to the cloud with one request per created, updated or deleted file.
+
+        Used when the project is too large to push in a single projects/update request.
+
+        :param cloud_project: the cloud project to push the files to
+        :param files: the local files to push, as returned by _get_files()
+        """
+        cloud_files = {file.name: file for file in self._api_client.files.get_all(cloud_project.projectId)}
+        local_file_names = {file["name"] for file in files}
+
+        # Delete first so the project never holds more files than the organization's quota allows
+        for cloud_file in cloud_files.values():
+            if not cloud_file.isLibrary and cloud_file.name not in local_file_names:
+                self._api_client.files.delete(cloud_project.projectId, cloud_file.name)
+
+        for file in files:
+            cloud_file = cloud_files.get(file["name"])
+            if cloud_file is None:
+                self._api_client.files.create(cloud_project.projectId, file["name"], file["content"])
+            elif cloud_file.content.strip() != file["content"].strip():
+                self._api_client.files.update(cloud_project.projectId, file["name"], file["content"])
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
