@@ -526,7 +526,7 @@ def test_run_lean_raises_when_run_image_fails() -> None:
     ("Linux", "/home/user/some_directory"),
     ("Darwin", "/Users/user/some_directory")
 ])
-def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str, root: str) -> None:
+def test_run_lean_mounts_quant_bridge_symbol_map_file_from_data_folder(os: str, root: str) -> None:
     from platform import system
     if os != system():
         pytest.skip(f"This test requires {os}")
@@ -536,10 +536,10 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str,
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
 
-    local_path = Path(root) / "terminal-link-symbol-map.json"
+    local_path = Path(root) / "quant-bridge-symbol-map.json"
 
     lean_runner = create_lean_runner(docker_manager)
-    lean_runner.run_lean({"terminal-link-symbol-map-file": str(local_path)},
+    lean_runner.run_lean({"quant-bridge-symbol-map-file": str(local_path)},
                          "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
@@ -559,7 +559,7 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str,
 
     assert any([
         Path(mount["Source"]) == expected_source and
-        mount["Target"] == f'/Files/terminal-link-symbol-map-file'
+        mount["Target"] == f'/Files/quant-bridge-symbol-map-file'
         for mount in kwargs["mounts"]
     ])
 

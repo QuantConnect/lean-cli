@@ -169,7 +169,7 @@ Options:
   -d, --detach                    Run the backtest in a detached Docker container and return immediately
   --debug [pycharm|ptvsd|debugpy|vsdbg|rider|local-platform]
                                   Enable a certain debugging method (see --help for more information)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Quant Bridge|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -223,18 +223,18 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
-                                  Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-connection-type [DAPI|SAPI]
+                                  Quant Bridge Connection Type [DAPI, SAPI]
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
-                                  The host of the TerminalLink server
-  --terminal-link-server-port INTEGER
-                                  The port of the TerminalLink server
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-server-host TEXT
+                                  The host of the Quant Bridge server
+  --quant-bridge-server-port INTEGER
+                                  The port of the Quant Bridge server
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
@@ -420,9 +420,9 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
                                   The brokerage to use
-  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
+  --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -476,20 +476,20 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
+  --quant-bridge-server-host TEXT
                                   The host of the SAPI server
-  --terminal-link-server-port INTEGER
+  --quant-bridge-server-port INTEGER
                                   The port of the SAPI server
-  --terminal-link-emsx-broker TEXT
+  --quant-bridge-emsx-broker TEXT
                                   The EMSX broker to use (Optional).
-  --terminal-link-emsx-account TEXT
+  --quant-bridge-emsx-account TEXT
                                   The EMSX account to use (Optional).
-  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from (Optional).
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-emsx-team TEXT   The EMSX team to receive order events from (Optional).
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
@@ -958,7 +958,7 @@ Usage: lean data download [OPTIONS]
   https://www.quantconnect.com/datasets
 
 Options:
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Quant Bridge|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   The name of the downloader data provider.
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -1012,18 +1012,18 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
-                                  Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-connection-type [DAPI|SAPI]
+                                  Quant Bridge Connection Type [DAPI, SAPI]
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
-                                  The host of the TerminalLink server
-  --terminal-link-server-port INTEGER
-                                  The port of the TerminalLink server
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-server-host TEXT
+                                  The host of the Quant Bridge server
+  --quant-bridge-server-port INTEGER
+                                  The port of the Quant Bridge server
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
@@ -1421,9 +1421,9 @@ Options:
   --environment TEXT              The environment to use
   --output DIRECTORY              Directory to store results in (defaults to PROJECT/live/TIMESTAMP)
   -d, --detach                    Run the live deployment in a detached Docker container and return immediately
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
                                   The brokerage to use
-  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Terminal Link|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento]
+  --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento]
                                   The live data provider to use
   --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
@@ -1479,23 +1479,23 @@ Options:
   --samco-trading-segment [equity|commodity]
                                   EQUITY if you are trading equities on NSE or BSE, COMMODITY if you are trading
                                   commodities on MCX
-  --terminal-link-connection-type [DAPI|SAPI]
-                                  Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-connection-type [DAPI|SAPI]
+                                  Quant Bridge Connection Type [DAPI, SAPI]
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
-                                  The host of the TerminalLink server
-  --terminal-link-server-port INTEGER
-                                  The port of the TerminalLink server
-  --terminal-link-emsx-broker TEXT
+  --quant-bridge-server-host TEXT
+                                  The host of the Quant Bridge server
+  --quant-bridge-server-port INTEGER
+                                  The port of the Quant Bridge server
+  --quant-bridge-emsx-broker TEXT
                                   The EMSX broker to use (Optional).
-  --terminal-link-emsx-account TEXT
+  --quant-bridge-emsx-account TEXT
                                   The EMSX account to use (Optional).
-  --terminal-link-emsx-team TEXT  The EMSX team to receive order events from (Optional).
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-emsx-team TEXT   The EMSX team to receive order events from (Optional).
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
   --tt-user-name TEXT             Your Trading Technologies username
   --tt-session-password TEXT      Your Trading Technologies session password
   --tt-account-name TEXT          Your Trading Technologies account name
@@ -1898,7 +1898,7 @@ Options:
   --parameter <TEXT FLOAT FLOAT FLOAT>...
                                   The 'parameter min max step' pairs configuring the parameters to optimize
   --constraint TEXT               The 'statistic operator value' pairs configuring the constraints of the optimization
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Quant Bridge|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --download-data                 Update the Lean configuration file to download data from the QuantConnect API, alias
                                   for --data-provider-historical QuantConnect
@@ -1965,18 +1965,18 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
-                                  Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-connection-type [DAPI|SAPI]
+                                  Quant Bridge Connection Type [DAPI, SAPI]
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
-                                  The host of the TerminalLink server
-  --terminal-link-server-port INTEGER
-                                  The port of the TerminalLink server
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-server-host TEXT
+                                  The host of the Quant Bridge server
+  --quant-bridge-server-port INTEGER
+                                  The port of the Quant Bridge server
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
@@ -2182,7 +2182,7 @@ Usage: lean research [OPTIONS] PROJECT
 
 Options:
   --port INTEGER                  The port to run Jupyter Lab on (defaults to 8888)
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Terminal Link|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Quant Bridge|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
@@ -2236,18 +2236,18 @@ Options:
   --thetadata-rest-url TEXT       The ThetaData host address (Optional).
   --thetadata-subscription-plan [Free|Value|Standard|Pro]
                                   Your ThetaData subscription price plan
-  --terminal-link-connection-type [DAPI|SAPI]
-                                  Terminal Link Connection Type [DAPI, SAPI]
-  --terminal-link-environment [Production|Beta]
+  --quant-bridge-connection-type [DAPI|SAPI]
+                                  Quant Bridge Connection Type [DAPI, SAPI]
+  --quant-bridge-environment [Production|Beta]
                                   The environment to run in
-  --terminal-link-server-host TEXT
-                                  The host of the TerminalLink server
-  --terminal-link-server-port INTEGER
-                                  The port of the TerminalLink server
-  --terminal-link-openfigi-api-key TEXT
+  --quant-bridge-server-host TEXT
+                                  The host of the Quant Bridge server
+  --quant-bridge-server-port INTEGER
+                                  The port of the Quant Bridge server
+  --quant-bridge-openfigi-api-key TEXT
                                   The Open FIGI API key to use for mapping options
-  --terminal-link-server-auth-id TEXT
-                                  The Auth ID of the TerminalLink server
+  --quant-bridge-server-auth-id TEXT
+                                  The Auth ID of the Quant Bridge server
   --bybit-api-key TEXT            Your Bybit API key
   --bybit-api-secret TEXT         Your Bybit API secret
   --trade-station-environment [live|paper]
