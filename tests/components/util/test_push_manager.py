@@ -13,14 +13,14 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from unittest import mock
 import pytest
 import platform
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
 from lean.models.api import QCFullFile, QCLanguage, QCProject
-from lean.models.errors import RequestFailedError
+from lean.models.errors import PartialPushError, RequestFailedError
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
 from lean.components import forbidden_characters
@@ -556,7 +556,9 @@ def _create_cloud_file(name: str, content: str, is_library: bool = False) -> QCF
     return QCFullFile(name=name, content=content, modified=datetime.now(), isLibrary=is_library)
 
 
-def test_push_projects_pushes_files_one_by_one_when_the_project_is_too_large() -> None:
+@pytest.mark.parametrize("force, expected_code_source_id", [(False, "cli"), (True, None)])
+def test_push_projects_pushes_files_one_by_one_when_the_project_is_too_large(force: bool,
+                                                                            expected_code_source_id: Optional[str]) -> None:
     api_client = mock.Mock()
     api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
     push_manager = _create_too_large_project_push_manager(api_client)
@@ -565,24 +567,82 @@ def test_push_projects_pushes_files_one_by_one_when_the_project_is_too_large() -
     main_content = (project_path / "main.py").read_text(encoding="utf-8")
     research_content = (project_path / "research.ipynb").read_text(encoding="utf-8")
     api_client.files.get_all = mock.MagicMock(return_value=[
-        _create_cloud_file("main.py", main_content),
-        _create_cloud_file("research.ipynb", "outdated content"),
+        # Extra trailing whitespace can't change the code, extra leading whitespace can
+        _create_cloud_file("main.py", main_content + "\n\n"),
+        _create_cloud_file("research.ipynb", "  " + research_content),
         _create_cloud_file("removed.py", "# removed locally"),
         _create_cloud_file("Library/library.py", "# library file", is_library=True)
     ])
 
-    push_manager.push_projects([project_path])
+    push_manager.push_projects([project_path], force=force)
 
     assert api_client.projects.update.call_count == 2
     first_call_kwargs = api_client.projects.update.call_args_list[0].kwargs
     second_call_args, second_call_kwargs = api_client.projects.update.call_args_list[1]
     assert "files" in first_call_kwargs
+    assert first_call_kwargs.get("code_source_id") == expected_code_source_id
     assert second_call_args[0] == 1000
     assert second_call_kwargs == {key: value for key, value in first_call_kwargs.items() if key != "files"}
 
-    api_client.files.create.assert_called_once_with(1000, "new_file.py", "# new file")
-    api_client.files.update.assert_called_once_with(1000, "research.ipynb", research_content)
-    api_client.files.delete.assert_called_once_with(1000, "removed.py")
+    api_client.files.create.assert_called_once_with(1000, "new_file.py", "# new file",
+                                                    code_source_id=expected_code_source_id)
+    api_client.files.update.assert_called_once_with(1000, "research.ipynb", research_content,
+                                                    code_source_id=expected_code_source_id)
+    api_client.files.delete.assert_called_once_with(1000, "removed.py", code_source_id=expected_code_source_id)
+
+    # Deletes go first and the metadata last, so a collaboration lock stops the push before anything is written
+    write_calls = [name for name, _, _ in api_client.mock_calls
+                   if name in ["projects.update", "files.delete", "files.create", "files.update"]]
+    assert write_calls == ["projects.update", "files.delete", "files.update", "files.create", "projects.update"]
+
+
+def test_push_projects_leaves_the_project_unchanged_when_the_first_file_push_fails() -> None:
+    api_client = mock.Mock()
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.files.create = mock.MagicMock(side_effect=RequestFailedError(mock.Mock(), "You do not have write permission"))
+    push_manager = _create_too_large_project_push_manager(api_client)
+
+    push_manager.push_projects([Path.cwd() / "Python Project"])
+
+    api_client.files.create.assert_called_once()
+    api_client.projects.update.assert_called_once()
+    push_manager._logger.warn.assert_called_once_with("Cannot push 'Python Project': creating 'main.py' failed, "
+                                                      "nothing was pushed: You do not have write permission")
+    push_manager._logger.info.assert_any_call("Please pull any required changes and push with --force")
+
+
+def test_push_projects_raises_when_a_file_push_fails_after_other_files_were_pushed() -> None:
+    api_client = mock.Mock()
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.files.create = mock.MagicMock(side_effect=[None, RequestFailedError(mock.Mock(), "Internal error")])
+    push_manager = _create_too_large_project_push_manager(api_client)
+
+    with pytest.raises(PartialPushError, match="Some projects were only partly pushed: 'Python Project'"):
+        push_manager.push_projects([Path.cwd() / "Python Project"])
+
+    assert api_client.files.create.call_count == 2
+    api_client.projects.update.assert_called_once()
+    warning = push_manager._logger.warn.call_args.args[0]
+    assert "Only part of 'Python Project' was pushed: creating 'research.ipynb' failed" in warning
+    assert "Internal error" in warning
+
+
+def test_push_projects_raises_when_only_the_project_details_fail_after_the_files_were_pushed() -> None:
+    api_client = mock.Mock()
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)),
+                                                             RequestFailedError(mock.Mock(), "Name already taken")])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    push_manager = _create_too_large_project_push_manager(api_client)
+
+    with pytest.raises(PartialPushError):
+        push_manager.push_projects([Path.cwd() / "Python Project"])
+
+    assert api_client.files.create.call_count == 3
+    warning = push_manager._logger.warn.call_args.args[0]
+    assert "All files of 'Python Project' were pushed, but updating the project details failed" in warning
+    assert "Name already taken" in warning
 
 
 def test_push_projects_does_not_push_files_one_by_one_on_other_errors() -> None:

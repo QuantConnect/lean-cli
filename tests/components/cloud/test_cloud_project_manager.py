@@ -14,7 +14,10 @@
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from lean.container import container
+from lean.models.errors import PartialPushError
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
 
@@ -49,3 +52,19 @@ def test_get_cloud_project_pushing_new_project():
 
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
     push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+
+
+def test_get_cloud_project_does_not_return_a_partly_pushed_project():
+    create_fake_lean_cli_directory()
+
+    api_client = mock.Mock()
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(side_effect=PartialPushError("Some projects were only partly pushed"))
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+
+    # Commands like "lean cloud backtest --push" must not run on a mix of old and new cloud code
+    with pytest.raises(PartialPushError):
+        container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    api_client.projects.get.assert_not_called()
