@@ -119,3 +119,24 @@ def test_clear_deletes_file() -> None:
     storage.clear()
 
     assert not path.exists()
+
+
+def test_safe_save_gives_up_after_retries_when_the_lock_file_is_never_released() -> None:
+    from os import utime
+    from time import time
+    from unittest import mock
+
+    from lean.components.config.storage import safe_save
+
+    path = Path.cwd() / "config.json"
+    lock_file = Path(str(path) + ".lock")
+    lock_file.touch()
+    # A lock file that never looks stale, so it is never removed
+    future = time() + 3600
+    utime(lock_file, (future, future))
+
+    with mock.patch("time.sleep") as sleep:
+        safe_save(data="{}", path=path)
+
+    assert sleep.call_count == 11
+    assert not path.exists()
