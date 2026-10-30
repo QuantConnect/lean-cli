@@ -1425,7 +1425,7 @@ Options:
                                   The brokerage to use
   --data-provider-live [Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|IQFeed|Polygon|CoinApi|ThetaData|Custom data only|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento]
                                   The live data provider to use
-  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Quant Bridge|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
+  --data-provider-historical [Interactive Brokers|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Kraken|CharlesSchwab|IQFeed|Polygon|FactSet|AlphaVantage|CoinApi|ThetaData|QuantConnect|Local|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Databento|Webull|Public]
                                   Update the Lean configuration file to retrieve data from the given historical provider
   --ib-user-name TEXT             Your Interactive Brokers username
   --ib-account TEXT               Your Interactive Brokers account id
