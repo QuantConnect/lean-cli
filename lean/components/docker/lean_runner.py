@@ -225,12 +225,13 @@ class LeanRunner:
 
         # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
         # TODO: we should remove it or add to config json
-        for key in ["quant-bridge-server-host"]:
-            if key not in lean_config:
-                continue
+        for config in self._get_config_scopes(lean_config):
+            for key in ["quant-bridge-server-host"]:
+                if key not in config:
+                    continue
 
-            if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
-                lean_config[key] = "host.docker.internal"
+                if config[key] == "localhost" or config[key] == "127.0.0.1":
+                    config[key] = "host.docker.internal"
 
         # Set up modules
         set_up_common_csharp_options_called = self._setup_installed_packages(run_options, image, lean_config)
@@ -287,12 +288,13 @@ class LeanRunner:
 
         # Update all hosts that need to point to the host's localhost to host.docker.internal so they resolve properly
         # TODO: we should remove it or add to config json
-        for key in ["quant-bridge-server-host"]:
-            if key not in lean_config:
-                continue
+        for config in self._get_config_scopes(lean_config):
+            for key in ["quant-bridge-server-host"]:
+                if key not in config:
+                    continue
 
-            if lean_config[key] == "localhost" or lean_config[key] == "127.0.0.1":
-                lean_config[key] = "host.docker.internal"
+                if config[key] == "localhost" or config[key] == "127.0.0.1":
+                    config[key] = "host.docker.internal"
 
         # Set up modules
         self._setup_installed_packages(run_options, image, lean_config, target_path)
@@ -415,11 +417,15 @@ class LeanRunner:
             ("transaction-log", cli_root_dir),
             ("quant-bridge-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties")
         ]
+        scopes = self._get_config_scopes(lean_config)
         for key, base_path in files_to_mount:
-            if key not in lean_config or lean_config[key] == "":
+            # The same key can be set at the top level and in the selected environment:
+            # mount it once, with the environment's value taking precedence
+            configs = [config for config in scopes if key in config and config[key] != ""]
+            if not configs:
                 continue
 
-            lean_config_entry = Path(lean_config[key])
+            lean_config_entry = Path(configs[-1][key])
             local_path = lean_config_entry if lean_config_entry.is_absolute() else base_path / lean_config_entry
             if not local_path.exists():
                 local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -430,7 +436,18 @@ class LeanRunner:
                                                type="bind",
                                                read_only=False))
 
-            lean_config[key] = f"/Files/{key}"
+            for config in configs:
+                config[key] = f"/Files/{key}"
+
+    @staticmethod
+    def _get_config_scopes(lean_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Returns the top level of the Lean config plus the selected environment's entries, if any."""
+        scopes = [lean_config]
+        if "environment" in lean_config and "environments" in lean_config:
+            environment = lean_config["environments"].get(lean_config["environment"])
+            if environment is not None:
+                scopes.append(environment)
+        return scopes
 
 
     def _initialize_run_options(self, detach: bool, docker_project_config: Dict[str, Any], debugging_method: Optional[DebuggingMethod]):
