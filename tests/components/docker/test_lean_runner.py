@@ -883,3 +883,23 @@ def test_run_lean_mounts_quant_bridge_symbol_map_file_from_selected_environment(
         for mount in kwargs["mounts"]
     ])
     assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+
+
+def test_run_lean_mounts_quant_bridge_symbol_map_file_once_when_set_in_root_and_environment() -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "quant-bridge-symbol-map-file": "root-symbol-map.json",
+        "environments": {"lean-cli": {"quant-bridge-symbol-map-file": "env-symbol-map.json"}}
+    }
+
+    args, kwargs = _run_with_environment_config(lean_config)
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    expected_source = cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties" / "env-symbol-map.json"
+
+    targets = [mount["Target"] for mount in kwargs["mounts"]]
+    assert targets.count("/Files/quant-bridge-symbol-map-file") == 1
+    assert any(Path(mount["Source"]) == expected_source for mount in kwargs["mounts"])
+    assert lean_config["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"

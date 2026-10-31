@@ -417,22 +417,26 @@ class LeanRunner:
             ("transaction-log", cli_root_dir),
             ("quant-bridge-symbol-map-file", cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties")
         ]
-        for config in self._get_config_scopes(lean_config):
-            for key, base_path in files_to_mount:
-                if key not in config or config[key] == "":
-                    continue
+        scopes = self._get_config_scopes(lean_config)
+        for key, base_path in files_to_mount:
+            # The same key can be set at the top level and in the selected environment:
+            # mount it once, with the environment's value taking precedence
+            configs = [config for config in scopes if key in config and config[key] != ""]
+            if not configs:
+                continue
 
-                lean_config_entry = Path(config[key])
-                local_path = lean_config_entry if lean_config_entry.is_absolute() else base_path / lean_config_entry
-                if not local_path.exists():
-                    local_path.parent.mkdir(parents=True, exist_ok=True)
-                    local_path.touch()
+            lean_config_entry = Path(configs[-1][key])
+            local_path = lean_config_entry if lean_config_entry.is_absolute() else base_path / lean_config_entry
+            if not local_path.exists():
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                local_path.touch()
 
-                run_options["mounts"].append(Mount(target=f"/Files/{key}",
-                                                   source=str(local_path),
-                                                   type="bind",
-                                                   read_only=False))
+            run_options["mounts"].append(Mount(target=f"/Files/{key}",
+                                               source=str(local_path),
+                                               type="bind",
+                                               read_only=False))
 
+            for config in configs:
                 config[key] = f"/Files/{key}"
 
     @staticmethod
