@@ -831,3 +831,55 @@ def test_lean_runner_parses_environment_values_containing_equals_from_extra_dock
                                          {"environment": ["JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8", "TOKEN=abc=="]})
 
     assert run_options["environment"] == {"JAVA_TOOL_OPTIONS": "-Dfile.encoding=UTF-8", "TOKEN": "abc=="}
+
+
+def _run_with_environment_config(lean_config: dict):
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+    lean_runner.run_lean(lean_config,
+                         "lean-cli",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    docker_manager.run_image.assert_called_once()
+    return docker_manager.run_image.call_args
+
+
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+def test_run_lean_rewrites_localhost_quant_bridge_host_in_selected_environment(host: str) -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "environments": {"lean-cli": {"quant-bridge-server-host": host}}
+    }
+
+    _run_with_environment_config(lean_config)
+
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-server-host"] == "host.docker.internal"
+
+
+def test_run_lean_mounts_quant_bridge_symbol_map_file_from_selected_environment() -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "environments": {"lean-cli": {"quant-bridge-symbol-map-file": "quant-bridge-symbol-map.json"}}
+    }
+
+    args, kwargs = _run_with_environment_config(lean_config)
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    expected_source = cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties" / "quant-bridge-symbol-map.json"
+
+    assert any([
+        Path(mount["Source"]) == expected_source and
+        mount["Target"] == "/Files/quant-bridge-symbol-map-file"
+        for mount in kwargs["mounts"]
+    ])
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
