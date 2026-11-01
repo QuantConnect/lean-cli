@@ -18,7 +18,7 @@ import pytest
 import platform
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
-from lean.models.api import QCLanguage, QCProject
+from lean.models.api import QCCollaborator, QCLanguage, QCProject
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
 from lean.components import forbidden_characters
@@ -414,6 +414,77 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
     args, kwargs = api_client.projects.update.call_args
     assert args[0] == project_id
     assert "python_venv" not in kwargs
+
+
+def _create_collaborator(uid, permission: str, owner: bool = False, organization: bool = False) -> QCCollaborator:
+    return QCCollaborator(uid=uid, liveControl=True, permission=permission, profileImage="", name="Collaborator",
+                          owner=owner, organization=organization)
+
+
+def _push_project_with_library(library_collaborators: List[QCCollaborator]) -> mock.Mock:
+    create_fake_lean_cli_directory()
+
+    lean_cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    project_path = lean_cli_root_dir / "Python Project"
+    library_relative_path = "Library/Python Library"
+    library_path = lean_cli_root_dir / library_relative_path
+    container.library_manager.add_lean_library_reference_to_project(project_path, library_path)
+
+    project_id = 1000
+    library_id = 1001
+    cloud_project = create_api_project(project_id, project_path.name)
+    cloud_library = create_api_project(library_id, library_relative_path)
+    cloud_library.collaborators = library_collaborators
+
+    project_config_manager = container.project_config_manager
+    project_config_manager.get_project_config(project_path).set("cloud-id", project_id)
+    project_config_manager.get_project_config(library_path).set("cloud-id", library_id)
+
+    project_manager = mock.Mock()
+    project_manager.get_project_libraries = mock.MagicMock(return_value=[library_path])
+    project_manager.get_source_files = mock.MagicMock(return_value=[])
+    project_manager.get_local_project_path = mock.MagicMock(side_effect=lambda name, *args: lean_cli_root_dir / name)
+
+    api_client = mock.Mock()
+    api_client.user_id = "123"
+    api_client.projects.get = mock.MagicMock(
+        side_effect=lambda proj_id, *args: next(p for p in [cloud_project, cloud_library] if p.projectId == proj_id))
+    api_client.projects.update = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+
+    push_manager = _create_push_manager(api_client, project_manager)
+    push_manager.push_project(project_path)
+
+    return api_client
+
+
+@pytest.mark.parametrize("library_collaborators", [
+    [_create_collaborator(123, "write", owner=True)],
+    [_create_collaborator(1, "write", owner=True), _create_collaborator(123, "write")],
+    [_create_collaborator(1, "write", owner=True), _create_collaborator(None, "write", organization=True)],
+    [_create_collaborator(123, "write"), _create_collaborator(None, "read", organization=True)],
+    [_create_collaborator(1, "write", owner=True)],
+    [],
+])
+def test_push_projects_pushes_libraries_the_user_can_write_to(library_collaborators: List[QCCollaborator]) -> None:
+    api_client = _push_project_with_library(library_collaborators)
+
+    updated_project_ids = [args[0] for args, kwargs in api_client.projects.update.call_args_list]
+    assert updated_project_ids == [1001, 1000]
+
+
+@pytest.mark.parametrize("library_collaborators", [
+    [_create_collaborator(1, "write", owner=True), _create_collaborator(123, "read")],
+    [_create_collaborator(1, "write", owner=True), _create_collaborator(None, "read", organization=True)],
+])
+def test_push_projects_skips_libraries_the_user_can_only_read(library_collaborators: List[QCCollaborator]) -> None:
+    api_client = _push_project_with_library(library_collaborators)
+
+    api_client.projects.update.assert_called_once()
+    args, kwargs = api_client.projects.update.call_args
+    assert args[0] == 1000
+    assert kwargs["libraries"] == [1001]
 
 
 @pytest.mark.parametrize("test_platform, unsupported_character", [

@@ -139,6 +139,14 @@ class PushManager:
         if cloud_id is not None:
             # Project has cloud id which matches cloud project, update cloud project
             cloud_project = self._get_cloud_project(cloud_id, organization_id)
+
+            # An organization-wide grant has no user id and applies to every member
+            user_permissions = [collaborator.permission for collaborator in cloud_project.collaborators
+                                if collaborator.organization or str(collaborator.uid) == str(self._api_client.user_id)]
+            if len(user_permissions) > 0 and "write" not in user_permissions:
+                self._logger.warn(f"Skipping '{project_name}': you have read-only access to it in the cloud. "
+                                  f"Pull it to get its latest changes")
+                return
         else:
             # Project has invalid cloud id or no cloud id at all, create new cloud project
             cloud_project = self._api_client.projects.create(project_name,

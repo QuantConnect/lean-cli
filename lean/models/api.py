@@ -61,6 +61,7 @@ class QCCollaborator(WrappedBaseModel):
     profileImage: str
     name: str
     owner: bool = False
+    organization: bool = False
 
 
 class QCParameter(WrappedBaseModel):

@@ -73,7 +73,7 @@ class APIClient:
         self.lean = LeanClient(self)
 
     def set_user_token(self, user_id: str, api_token: str):
-        self._user_id = user_id
+        self.user_id = user_id
         self._api_token = api_token
 
     def get(self, endpoint: str, parameters: Dict[str, Any] = {}) -> Any:
@@ -147,7 +147,7 @@ class APIClient:
         response = self._http_client.request(method,
                                              full_url,
                                              headers=headers,
-                                             auth=(self._user_id, password),
+                                             auth=(self.user_id, password),
                                              raise_for_status=False,
                                              **options)
 
