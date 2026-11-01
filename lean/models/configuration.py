@@ -437,6 +437,7 @@ class AuthConfiguration(InternalInputUserInput):
         super().__init__(config_json_object)
         self.require_project_id = config_json_object.get("require-project-id", False)
         self.require_user_name = config_json_object.get("require-user-name", False)
+        self.auth0_brokerage = config_json_object.get("auth0-brokerage")
 
     def factory(config_json_object) -> 'AuthConfiguration':
         """Creates an instance of the child classes.

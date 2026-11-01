@@ -14,6 +14,7 @@
 from json import loads
 from pathlib import Path
 from typing import Any, Dict
+from unittest import mock
 
 import pytest
 from click import Command, Context, command, echo
@@ -21,6 +22,7 @@ from click.testing import CliRunner
 
 from lean.constants import MODULE_BROKERAGE, MODULE_CLI_PLATFORM
 from lean.container import container
+from lean.models.api import QCAuth0Authorization
 from lean.models.json_module import JsonModule
 from tests.models.test_configuration import TIME_REGEX, TIME_REGEX_MESSAGE
 from tests.test_helpers import create_fake_lean_cli_directory
@@ -100,3 +102,59 @@ def test_config_build_accepts_any_lean_config_value_when_the_module_has_no_regex
     module = build_config({"my-time": value}, regex=False)
 
     assert module.get_config_value_from_name("my-time") == value
+
+
+def create_oauth_module(auth0_brokerage: str = None) -> JsonModule:
+    oauth_configuration = {
+        "id": "my-oauth-token",
+        "type": "oauth-token",
+        "require-user-name": True,
+        "value": "Yes"
+    }
+    if auth0_brokerage is not None:
+        oauth_configuration["auth0-brokerage"] = auth0_brokerage
+
+    return JsonModule({
+        "id": "MyBrokerage",
+        "display-id": "My Brokerage (FIX)",
+        "configurations": [
+            oauth_configuration,
+            {
+                "id": "my-user-name",
+                "type": "input",
+                "input-method": "prompt",
+                "prompt-info": "Username"
+            },
+            {
+                "id": "my-account",
+                "type": "input",
+                "input-method": "choice",
+                "prompt-info": "Account",
+                "filters": [{"condition": {"dependent-config-id": "my-oauth-token",
+                                           "pattern": "^(?!\\s*$).+",
+                                           "type": "regex"}}]
+            }
+        ]
+    }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+
+
+@pytest.mark.parametrize("auth0_brokerage,expected_auth0_brokerage", [(None, "my brokerage (fix)"),
+                                                                      ("mybrokerage", "mybrokerage")])
+def test_config_build_authorizes_with_the_auth0_brokerage_of_the_oauth_token(auth0_brokerage: str,
+                                                                            expected_auth0_brokerage: str) -> None:
+    api_client = mock.Mock()
+    api_client.auth0.read.return_value = QCAuth0Authorization(
+        authorization={"my-refresh-token": "token", "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
+    container.api_client = api_client
+
+    with Context(Command("test")):
+        module = create_oauth_module(auth0_brokerage).config_build(
+            {"project-id": 123, "my-user-name": "someuser", "my-account": "U1234567"}, container.logger,
+            interactive=False)
+
+    api_client.auth0.read.assert_called_once_with(expected_auth0_brokerage, user_name="someuser")
+    api_client.auth0.authorize.assert_not_called()
+    settings = module.get_settings()
+    assert settings["my-refresh-token"] == "token"
+    assert settings["my-user-name"] == "someuser"
+    assert settings["my-account"] == "U1234567"

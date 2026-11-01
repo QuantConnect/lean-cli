@@ -315,7 +315,8 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
+                auth0_brokerage = configuration.auth0_brokerage or self._display_name.lower()
+                auth_authorizations = get_authorization(container.api_client.auth0, auth0_brokerage,
                                                         logger, lean_config["project-id"], no_browser=no_browser,
                                                         user_name=user_name)
                 logger.debug(f'auth: {auth_authorizations}')
