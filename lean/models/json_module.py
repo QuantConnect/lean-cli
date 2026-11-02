@@ -224,6 +224,16 @@ class JsonModule(ABC):
                                 -1, show_default=False)
         return project_id
 
+    def get_auth0_brokerage_id(self) -> str:
+        """Returns the brokerage name the live/auth0 endpoints authorize this module under.
+
+        It is the lowercased display name. The Interactive Brokers FIX module is the exception: it trades through
+        the Interactive Brokers login, so it authorizes under the Interactive Brokers name.
+        """
+        if self._id == "InteractiveBrokersFixBrokerage":
+            return "interactivebrokers"
+        return self._display_name.lower()
+
     def _ask_user_for_input(self, configuration: Configuration, logger: Logger, hide_input: bool):
         """Prompts the user for the value of a configuration and saves it in the Lean config.
 
@@ -315,8 +325,7 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                auth0_brokerage = configuration.auth0_brokerage or self._display_name.lower()
-                auth_authorizations = get_authorization(container.api_client.auth0, auth0_brokerage,
+                auth_authorizations = get_authorization(container.api_client.auth0, self.get_auth0_brokerage_id(),
                                                         logger, lean_config["project-id"], no_browser=no_browser,
                                                         user_name=user_name)
                 logger.debug(f'auth: {auth_authorizations}')
