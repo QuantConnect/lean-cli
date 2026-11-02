@@ -129,16 +129,21 @@ def create_oauth_module(module_id: str, display_id: str) -> JsonModule:
                 "filters": [{"condition": {"dependent-config-id": "my-oauth-token",
                                            "pattern": "^(?!\\s*$).+",
                                            "type": "regex"}}]
+            },
+            {
+                "id": "my-linked-account",
+                "type": "internal-input",
+                "alias-of": "my-user-name"
             }
         ]
     }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
 
 
-@pytest.mark.parametrize("module_id,display_id,expected_auth0_brokerage_id",
+@pytest.mark.parametrize("module_id,display_id,expected_read_brokerage_id",
                          [("MyBrokerage", "My Brokerage", "my brokerage"),
-                          ("InteractiveBrokersFixBrokerage", "InteractiveBrokersFix", "interactivebrokers")])
-def test_config_build_authorizes_with_the_auth0_brokerage_id_of_the_module(module_id: str, display_id: str,
-                                                                          expected_auth0_brokerage_id: str) -> None:
+                          ("InteractiveBrokersFixBrokerage", "InteractiveBrokersFix", "InteractiveBrokersFixBrokerage")])
+def test_config_build_reads_the_authorization_under_the_brokerage_id_of_the_module(module_id: str, display_id: str,
+                                                                                  expected_read_brokerage_id: str) -> None:
     api_client = mock.Mock()
     api_client.auth0.read.return_value = QCAuth0Authorization(
         authorization={"my-refresh-token": "token", "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
@@ -149,9 +154,30 @@ def test_config_build_authorizes_with_the_auth0_brokerage_id_of_the_module(modul
             {"project-id": 123, "my-user-name": "someuser", "my-account": "U1234567"}, container.logger,
             interactive=False)
 
-    api_client.auth0.read.assert_called_once_with(expected_auth0_brokerage_id, user_name="someuser")
+    api_client.auth0.read.assert_called_once_with(expected_read_brokerage_id, user_name="someuser")
     api_client.auth0.authorize.assert_not_called()
     settings = module.get_settings()
     assert settings["my-refresh-token"] == "token"
     assert settings["my-user-name"] == "someuser"
     assert settings["my-account"] == "U1234567"
+    assert settings["my-linked-account"] == "someuser"
+
+
+@pytest.mark.parametrize("module_id,display_id,expected_authorize_brokerage_id",
+                         [("MyBrokerage", "My Brokerage", "my brokerage"),
+                          ("InteractiveBrokersFixBrokerage", "InteractiveBrokersFix", "interactivebrokers")])
+def test_config_build_authorizes_under_the_login_brokerage_id_of_the_module(module_id: str, display_id: str,
+                                                                           expected_authorize_brokerage_id: str) -> None:
+    api_client = mock.Mock()
+    stored_authorization = QCAuth0Authorization(
+        authorization={"my-refresh-token": "token", "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
+    api_client.auth0.read.side_effect = [QCAuth0Authorization(authorization=None), stored_authorization]
+    container.api_client = api_client
+
+    with mock.patch("time.sleep"), Context(Command("test")):
+        create_oauth_module(module_id, display_id).config_build(
+            {"project-id": 123, "my-user-name": "someuser", "my-account": "U1234567"}, container.logger,
+            interactive=False)
+
+    api_client.auth0.authorize.assert_called_once_with(expected_authorize_brokerage_id, container.logger, 123, False,
+                                                      user_name="someuser")

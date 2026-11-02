@@ -21,6 +21,7 @@ from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
+from lean.models.api import QCAuth0Authorization
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
     PathParameterUserInput, AuthConfiguration, ChoiceUserInput
 from copy import copy
@@ -226,16 +227,6 @@ class JsonModule(ABC):
                                 -1, show_default=False)
         return project_id
 
-    def get_auth0_brokerage_id(self) -> str:
-        """Returns the brokerage name the live/auth0 endpoints authorize this module under.
-
-        It is the lowercased display name. The Interactive Brokers FIX module is the exception: it trades through
-        the Interactive Brokers login, so it authorizes under the Interactive Brokers name.
-        """
-        if self._id == "InteractiveBrokersFixBrokerage":
-            return "interactivebrokers"
-        return self._display_name.lower()
-
     def _ask_user_for_input(self, configuration: Configuration, logger: Logger, hide_input: bool):
         """Prompts the user for the value of a configuration and saves it in the Lean config.
 
@@ -274,6 +265,22 @@ class JsonModule(ABC):
                     raise
                 logger.info(str(e))
                 user_choice = self._ask_user_for_input(configuration, logger, hide_input)
+
+    def _get_auth0_authorization(self, logger: Logger, project_id: int, no_browser: bool,
+                                 user_name: str) -> QCAuth0Authorization:
+        """Reads the stored brokerage authorization, or starts the authorization in the browser and waits for it.
+
+        The live/auth0 endpoints know a brokerage by its lowercased display name. The Interactive Brokers FIX module
+        is the exception: it trades through the Interactive Brokers login, which live/auth0/authorize knows as
+        `interactivebrokers`, while live/auth0/read keys the stored token by the module id.
+        """
+        brokerage_id = self._display_name.lower()
+        read_brokerage_id = brokerage_id
+        if self._id == "InteractiveBrokersFixBrokerage":
+            brokerage_id = "interactivebrokers"
+            read_brokerage_id = self._id
+        return get_authorization(container.api_client.auth0, brokerage_id, read_brokerage_id, logger, project_id,
+                                 no_browser=no_browser, user_name=user_name)
 
     def config_build(self,
                      lean_config: Dict[str, Any],
@@ -327,9 +334,7 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                auth_authorizations = get_authorization(container.api_client.auth0, self.get_auth0_brokerage_id(),
-                                                        logger, lean_config["project-id"], no_browser=no_browser,
-                                                        user_name=user_name)
+                auth_authorizations = self._get_auth0_authorization(logger, lean_config["project-id"], no_browser, user_name)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
