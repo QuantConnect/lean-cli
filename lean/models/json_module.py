@@ -124,7 +124,11 @@ class JsonModule(ABC):
         for config in self._lean_configs:
             if type(config) is InternalInputUserInput:
                 if config._alias_of:
-                    config._value = self.get_config_value_from_name(config._alias_of)
+                    target = next((c for c in self._lean_configs if c._id == config._alias_of), None)
+                    if target is None:
+                        raise ValueError(f'"{config._id}" is an alias of "{config._alias_of}", '
+                                         f'which is not a configuration of {self._id}')
+                    config._value = target._value
                 if config._is_conditional:
                     for option in config._value_options:
                         if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):

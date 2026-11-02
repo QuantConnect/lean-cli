@@ -181,3 +181,14 @@ def test_config_build_authorizes_under_the_login_brokerage_id_of_the_module(modu
 
     api_client.auth0.authorize.assert_called_once_with(expected_authorize_brokerage_id, container.logger, 123, False,
                                                       user_name="someuser")
+
+
+def test_get_settings_names_the_alias_of_target_when_it_is_not_a_configuration() -> None:
+    module = JsonModule({
+        "id": "MyBrokerage",
+        "display-id": "My Brokerage",
+        "configurations": [{"id": "my-linked-account", "type": "internal-input", "alias-of": "my-username"}]
+    }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+
+    with pytest.raises(ValueError, match='"my-linked-account" is an alias of "my-username"'):
+        module.get_settings()
