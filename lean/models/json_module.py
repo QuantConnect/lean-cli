@@ -21,7 +21,6 @@ from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
-from lean.models.api import QCAuth0Authorization
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
     PathParameterUserInput, AuthConfiguration, ChoiceUserInput
 from copy import copy
@@ -123,12 +122,6 @@ class JsonModule(ABC):
         # we build these after the rest, because they might depend on their values
         for config in self._lean_configs:
             if type(config) is InternalInputUserInput:
-                if config._alias_of:
-                    target = next((c for c in self._lean_configs if c._id == config._alias_of), None)
-                    if target is None:
-                        raise ValueError(f'"{config._id}" is an alias of "{config._alias_of}", '
-                                         f'which is not a configuration of {self._id}')
-                    config._value = target._value
                 if config._is_conditional:
                     for option in config._value_options:
                         if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):
@@ -160,6 +153,16 @@ class JsonModule(ABC):
                 # 2. Backslashes ('\\') in file paths are converted to forward slashes ('/'), making paths
                 #    more consistent across different operating systems.
                 settings[configuration._id] = str(configuration._value).replace("\\n", "\n").replace("\\", "/")
+
+        # aliases take the value as sent, which includes the settings an authorization adds
+        for config in self._lean_configs:
+            if type(config) is not InternalInputUserInput or not config._alias_of:
+                continue
+            if config._alias_of not in settings:
+                raise ValueError(f'"{config._id}" is an alias of "{config._alias_of}", '
+                                 f'which is not a setting of {self._id}')
+            config._value = settings[config._alias_of]
+            settings[config._id] = config._value
 
         return settings
 
@@ -270,22 +273,6 @@ class JsonModule(ABC):
                 logger.info(str(e))
                 user_choice = self._ask_user_for_input(configuration, logger, hide_input)
 
-    def _get_auth0_authorization(self, logger: Logger, project_id: int, no_browser: bool,
-                                 user_name: str) -> QCAuth0Authorization:
-        """Reads the stored brokerage authorization, or starts the authorization in the browser and waits for it.
-
-        The live/auth0 endpoints know a brokerage by its lowercased display name. The Interactive Brokers FIX module
-        is the exception: it trades through the Interactive Brokers login, which live/auth0/authorize knows as
-        `interactivebrokers`, while live/auth0/read keys the stored token by the module id.
-        """
-        brokerage_id = self._display_name.lower()
-        read_brokerage_id = brokerage_id
-        if self._id == "InteractiveBrokersFixBrokerage":
-            brokerage_id = "interactivebrokers"
-            read_brokerage_id = self._id
-        return get_authorization(container.api_client.auth0, brokerage_id, read_brokerage_id, logger, project_id,
-                                 no_browser=no_browser, user_name=user_name)
-
     def config_build(self,
                      lean_config: Dict[str, Any],
                      logger: Logger,
@@ -338,7 +325,16 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                auth_authorizations = self._get_auth0_authorization(logger, lean_config["project-id"], no_browser, user_name)
+                # the Interactive Brokers FIX module trades through the Interactive Brokers login, which
+                # live/auth0/authorize knows as `interactivebrokers`, while live/auth0/read keys it by the module id
+                brokerage_id = self._display_name.lower()
+                read_brokerage_id = brokerage_id
+                if self._id == "InteractiveBrokersFixBrokerage":
+                    brokerage_id = "interactivebrokers"
+                    read_brokerage_id = self._id
+                auth_authorizations = get_authorization(container.api_client.auth0, brokerage_id, read_brokerage_id,
+                                                        logger, lean_config["project-id"], no_browser=no_browser,
+                                                        user_name=user_name)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:

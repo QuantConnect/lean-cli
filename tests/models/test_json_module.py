@@ -133,7 +133,7 @@ def create_oauth_module(module_id: str, display_id: str) -> JsonModule:
             {
                 "id": "my-linked-account",
                 "type": "internal-input",
-                "alias-of": "my-user-name"
+                "alias-of": "userId"
             }
         ]
     }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
@@ -146,19 +146,20 @@ def test_config_build_reads_the_authorization_under_the_brokerage_id_of_the_modu
                                                                                   expected_read_brokerage_id: str) -> None:
     api_client = mock.Mock()
     api_client.auth0.read.return_value = QCAuth0Authorization(
-        authorization={"my-refresh-token": "token", "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
+        authorization={"my-refresh-token": "token", "userId": "someuser",
+                       "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
     container.api_client = api_client
 
     with Context(Command("test")):
         module = create_oauth_module(module_id, display_id).config_build(
-            {"project-id": 123, "my-user-name": "someuser", "my-account": "U1234567"}, container.logger,
+            {"project-id": 123, "my-user-name": "SomeUser", "my-account": "U1234567"}, container.logger,
             interactive=False)
 
-    api_client.auth0.read.assert_called_once_with(expected_read_brokerage_id, user_name="someuser")
+    api_client.auth0.read.assert_called_once_with(expected_read_brokerage_id, user_name="SomeUser")
     api_client.auth0.authorize.assert_not_called()
     settings = module.get_settings()
     assert settings["my-refresh-token"] == "token"
-    assert settings["my-user-name"] == "someuser"
+    assert settings["my-user-name"] == "SomeUser"
     assert settings["my-account"] == "U1234567"
     assert settings["my-linked-account"] == "someuser"
 
@@ -183,7 +184,22 @@ def test_config_build_authorizes_under_the_login_brokerage_id_of_the_module(modu
                                                       user_name="someuser")
 
 
-def test_get_settings_names_the_alias_of_target_when_it_is_not_a_configuration() -> None:
+def test_get_settings_gives_an_alias_the_value_of_another_configuration() -> None:
+    module = JsonModule({
+        "id": "MyBrokerage",
+        "display-id": "My Brokerage",
+        "configurations": [
+            {"id": "my-user-name", "type": "input", "input-method": "prompt", "prompt-info": "Username"},
+            {"id": "my-linked-account", "type": "internal-input", "alias-of": "my-user-name"}
+        ]
+    }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+    [user_name] = [config for config in module._lean_configs if config._id == "my-user-name"]
+    user_name._value = "someuser"
+
+    assert module.get_settings()["my-linked-account"] == "someuser"
+
+
+def test_get_settings_names_the_alias_of_target_when_it_is_not_a_setting() -> None:
     module = JsonModule({
         "id": "MyBrokerage",
         "display-id": "My Brokerage",
