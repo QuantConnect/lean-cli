@@ -21,7 +21,7 @@ def get_authorization(auth0_client: Auth0Client, brokerage_id: str, read_brokera
     """Gets the authorization data for a brokerage, authorizing if necessary.
 
     :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.
-    :param brokerage_id: The ID of the brokerage to get the authorization data for.
+    :param brokerage_id: The ID live/auth0/authorize opens the brokerage login for.
     :param read_brokerage_id: The ID live/auth0/read knows the stored authorization by.
     :param logger: An instance of Logger, handling all output printing.
     :param project_id: The local or cloud project_id.
