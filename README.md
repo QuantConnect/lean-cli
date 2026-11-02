@@ -420,7 +420,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
+  --brokerage [Paper Trading|Interactive Brokers|Interactive Brokers (FIX)|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
                                   The brokerage to use
   --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
@@ -436,6 +436,8 @@ Options:
   --ib-financial-advisors-group-filter TEXT
                                   Use this field to filter data by a specific financial advisor group within your
                                   Interactive Brokers account. Leave blank to include all groups. (Optional).
+  --ib-fix-user-name TEXT         Your Interactive Brokers user name
+  --ib-fix-account TEXT           Your Interactive Brokers account id
   --tradier-account-id TEXT       Your Tradier account id
   --tradier-access-token TEXT     Your Tradier access token
   --tradier-environment [live|paper]
