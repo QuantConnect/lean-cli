@@ -122,6 +122,8 @@ class JsonModule(ABC):
         # we build these after the rest, because they might depend on their values
         for config in self._lean_configs:
             if type(config) is InternalInputUserInput:
+                if config._alias_of:
+                    config._value = self.get_config_value_from_name(config._alias_of)
                 if config._is_conditional:
                     for option in config._value_options:
                         if option._condition.check(self.get_config_value_from_name(option._condition._dependent_config_id)):

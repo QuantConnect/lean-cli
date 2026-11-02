@@ -262,6 +262,7 @@ class InternalInputUserInput(UserInputConfiguration):
 
     def __init__(self, config_json_object):
         super().__init__(config_json_object)
+        self._alias_of: str = config_json_object.get("alias-of")
         self._is_conditional: bool = False
         value_options: List[ConditionalValueOption] = []
         if "value-options" in config_json_object.keys():
