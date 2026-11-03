@@ -619,8 +619,7 @@ Usage: lean cloud object-store delete [OPTIONS] KEY
 
   Delete a value from the organization's cloud object store.
 
-  :param key: The desired key name to delete. A key that does not follow the object store key format is sanitized, with
-  a warning.
+  :param key: The desired key name to delete.
 
 Options:
   --verbose  Enable debug logging
@@ -638,8 +637,7 @@ Usage: lean cloud object-store get [OPTIONS] [KEY]...
 
   Download an object store value to disk from the organization's cloud object store.
 
-  :param key: The desired key to fetch, multiple can be provided. A key that does not follow the object store key format
-  is sanitized, with a warning.
+  :param key: The desired key to fetch, multiple can be provided.
 
 Options:
   --destination-folder TEXT  The destination folder to download the object store values, if not provided will use to
@@ -659,8 +657,7 @@ Usage: lean cloud object-store list [OPTIONS] [KEY]
 
   List all values for the given root key in the organization's cloud object store.
 
-  :param key: The desired root key to list. A key that does not follow the object store key format is sanitized, with a
-  warning.
+  :param key: The desired root key to list.
 
 Options:
   --verbose  Enable debug logging
@@ -678,8 +675,7 @@ Usage: lean cloud object-store ls [OPTIONS] [KEY]
 
   List all values for the given root key in the organization's cloud object store.
 
-  :param key: The desired root key to list. A key that does not follow the object store key format is sanitized, with a
-  warning.
+  :param key: The desired root key to list.
 
 Options:
   --verbose  Enable debug logging
@@ -697,8 +693,7 @@ Usage: lean cloud object-store properties [OPTIONS] KEY
 
   Get a value properties from the organization's cloud object store.
 
-  :param key: The desired key to fetch the properties for. A key that does not follow the object store key format is
-  sanitized, with a warning.
+  :param key: The desired key to fetch the properties for.
 
 Options:
   --verbose  Enable debug logging
@@ -717,7 +712,8 @@ Usage: lean cloud object-store set [OPTIONS] KEY PATH
   Sets the data to the given key in the organization's cloud object store.
 
   :param key: The key to set the data to. A key that does not follow the object store key format is sanitized, with a
-  warning. :param path: Path to the file containing the object data.
+  warning naming the key to use from then on, also when that overwrites an existing object. :param path: Path to the
+  file containing the object data.
 
 Options:
   --verbose  Enable debug logging

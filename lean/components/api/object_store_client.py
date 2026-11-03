@@ -13,6 +13,7 @@
 
 from lean.components.api.api_client import *
 from lean.components.util.logger import Logger
+from lean.models.errors import RequestFailedError
 
 
 class ObjectStoreClient:
@@ -37,6 +38,20 @@ class ObjectStoreClient:
         }
 
         return self._api.post("object/properties", payload)
+
+    def exists(self, key: str, organization_id: str) -> bool:
+        """Returns whether an object is stored under the given key, as typed.
+        :param key: key of the object to look for
+        :param organization_id: the id of the organization who's object store to look in
+        :return: True if the object exists
+        """
+        try:
+            self.properties(key, organization_id)
+            return True
+        except RequestFailedError as error:
+            if "not found" in str(error).lower():
+                return False
+            raise
 
     def get(self, keys: [str], organization_id: str, logger: Logger) -> str:
         """Will fetch an url to download the requested keys

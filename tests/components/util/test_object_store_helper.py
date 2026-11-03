@@ -15,7 +15,7 @@ from unittest import mock
 
 import pytest
 
-from lean.components.util.object_store_helper import get_key_issues, resolve_object_store_key, sanitize_key
+from lean.components.util.object_store_helper import get_key_issues, key_to_save, sanitize_key
 
 RULES = "Keys may only contain english letters, numbers, spaces and the characters '/', '\\', '_', '#', '-', '$' and '=', " \
         "plus at most one '.' followed by a letters-and-numbers-only extension, e.g. 'folder/trade_log-2024.csv'"
@@ -34,6 +34,7 @@ def test_get_key_issues_returns_none_for_a_supported_key(key: str) -> None:
     ("folder.v1/file", "the extension 'v1/file' may only contain letters and numbers"),
     ("trade log: AI.v2.csv", "unsupported character ':'; it has 2 '.' but at most one '.extension' is allowed"),
     (".", "it has no name before the '.'"),
+    ("..model.pkl", "it starts with more than one '.'"),
     ("", "the key is empty"),
     ("a" + "/" * 101, "it has more than 100 '/' or '\\' separators"),
 ])
@@ -50,6 +51,7 @@ def test_get_key_issues_states_the_issue_and_the_rules(key: str, expected_issue:
     ("100%.json", "100_.json"),
     ("../prefix/file", "__/prefix/file"),
     (".", "_"),
+    ("..model.pkl", "__model.pkl"),
 ])
 def test_sanitize_key_returns_a_supported_key(key: str, expected: str) -> None:
     sanitized = sanitize_key(key)
@@ -68,19 +70,29 @@ def test_sanitize_key_is_lossy_and_distinct_keys_can_collide() -> None:
     assert sanitize_key("trade_log_ai&cloud.csv") == sanitize_key("trade_log_ai:cloud.csv") == "trade_log_ai_cloud.csv"
 
 
-def test_resolve_object_store_key_returns_a_supported_key_without_warning() -> None:
+def test_key_to_save_keeps_a_supported_key_without_checking_the_store() -> None:
     logger = mock.Mock()
+    exists = mock.Mock()
 
-    assert resolve_object_store_key("folder/trade_log-2024.csv", logger) == "folder/trade_log-2024.csv"
+    assert key_to_save("folder/trade_log-2024.csv", exists, logger) == "folder/trade_log-2024.csv"
 
+    exists.assert_not_called()
     logger.warn.assert_not_called()
 
 
-def test_resolve_object_store_key_sanitizes_an_unsupported_key_with_a_warning() -> None:
+def test_key_to_save_sanitizes_an_unsupported_key_with_a_warning() -> None:
     logger = mock.Mock()
 
-    assert resolve_object_store_key("trade log: AI & Cloud.csv", logger) == "trade log_ AI _ Cloud.csv"
+    assert key_to_save("trade log: AI & Cloud.csv", lambda key: False, logger) == "trade log_ AI _ Cloud.csv"
 
     logger.warn.assert_called_once_with(
         f"Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. {RULES}. "
         "Using 'trade log_ AI _ Cloud.csv' instead")
+
+
+def test_key_to_save_warns_when_the_sanitized_key_overwrites_an_existing_object() -> None:
+    logger = mock.Mock()
+
+    assert key_to_save("report (1).csv", lambda key: key == "report _1_.csv", logger) == "report _1_.csv"
+
+    assert logger.warn.call_args_list[-1] == mock.call("'report _1_.csv' already exists and will be overwritten")

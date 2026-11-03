@@ -41,16 +41,34 @@ def test_set_sanitizes_an_unsupported_key_with_a_warning() -> None:
     create_fake_lean_cli_project("test", "python")
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
+    api_client.object_store.exists.return_value = False
     initialize_container(api_client_to_use=api_client)
     file_path = str(Path.joinpath(Path.cwd(), "lean.json"))
 
     result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "trade log: AI & Cloud.csv", file_path])
 
     assert result.exit_code == 0
-    assert "Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. Keys may only contain" in result.output.replace("\n", "")
-    assert "Using 'trade log_ AI _ Cloud.csv' instead" in result.output.replace("\n", "")
+    assert "Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. Keys may only contain" in " ".join(result.output.split())
+    assert "Using 'trade log_ AI _ Cloud.csv' instead" in " ".join(result.output.split())
+    assert "will be overwritten" not in result.output
+    api_client.object_store.exists.assert_called_once_with('trade log_ AI _ Cloud.csv', 'abc')
     with open(file_path, "rb") as file:
         container.api_client.object_store.set.assert_called_once_with('trade log_ AI _ Cloud.csv', file.read(), 'abc')
+
+
+def test_set_warns_when_the_sanitized_key_overwrites_an_existing_object() -> None:
+    create_fake_lean_cli_project("test", "python")
+    api_client = mock.Mock()
+    api_client.is_authenticated.return_value = True
+    api_client.object_store.exists.return_value = True
+    initialize_container(api_client_to_use=api_client)
+    file_path = str(Path.joinpath(Path.cwd(), "lean.json"))
+
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "report (1).csv", file_path])
+
+    assert result.exit_code == 0
+    assert "'report _1_.csv' already exists and will be overwritten" in " ".join(result.output.split())
+    container.api_client.object_store.set.assert_called_once_with('report _1_.csv', mock.ANY, 'abc')
 
 
 def test_set_keeps_a_supported_key_silently() -> None:
@@ -64,4 +82,5 @@ def test_set_keeps_a_supported_key_silently() -> None:
 
     assert result.exit_code == 0
     assert "is not supported" not in result.output
+    api_client.object_store.exists.assert_not_called()
     container.api_client.object_store.set.assert_called_once_with('folder/trade_log-2024.csv', mock.ANY, 'abc')

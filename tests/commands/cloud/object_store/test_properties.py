@@ -35,16 +35,17 @@ def test_properties_gets_value_when_key_is_given() -> None:
     container.api_client.object_store.properties.assert_called_once_with('test-key', 'abc')
 
 
-def test_properties_sanitizes_an_unsupported_key_with_a_warning() -> None:
+def test_properties_sends_an_unsupported_key_as_typed() -> None:
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
     api_client.object_store.properties.return_value = {
-        'metadata': {'size': 10, 'modified': '2024-01-01', 'key': 'trade log_ AI _ Cloud.csv', 'preview': 'abc'}
+        'metadata': {'size': 10, 'modified': '2024-01-01', 'key': 'model.v2.pkl', 'preview': 'abc'}
     }
     initialize_container(api_client_to_use=api_client)
 
-    result = CliRunner().invoke(lean, ["cloud", "object-store", "properties", "trade log: AI & Cloud.csv"])
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "properties", "model.v2.pkl"])
 
     assert result.exit_code == 0
-    assert "Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. Keys may only contain" in result.output.replace("\n", "")
-    container.api_client.object_store.properties.assert_called_once_with('trade log_ AI _ Cloud.csv', 'abc')
+    assert "is not supported" not in result.output
+    api_client.object_store.exists.assert_not_called()
+    container.api_client.object_store.properties.assert_called_once_with('model.v2.pkl', 'abc')

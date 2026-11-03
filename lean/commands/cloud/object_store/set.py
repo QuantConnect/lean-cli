@@ -15,7 +15,7 @@ from click import command, argument
 from pathlib import Path
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.components.util.object_store_helper import resolve_object_store_key
+from lean.components.util.object_store_helper import key_to_save
 
 
 @command(cls=LeanCommand)
@@ -24,13 +24,13 @@ from lean.components.util.object_store_helper import resolve_object_store_key
 def set(key: str, path: Path) -> None:
     """Sets the data to the given key in the organization's cloud object store.
 
-    :param key: The key to set the data to. A key that does not follow the object store key format is sanitized, with a warning.
+    :param key: The key to set the data to. A key that does not follow the object store key format is sanitized, with a warning naming the key to use from then on, also when that overwrites an existing object.
     :param path: Path to the file containing the object data.
     """
-    key = resolve_object_store_key(key, container.logger)
     organization_id = container.organization_manager.try_get_working_organization_id()
-    container.logger.info(f"Setting object {key} in organization {organization_id}")
     api_client = container.api_client
+    key = key_to_save(key, lambda k: api_client.object_store.exists(k, organization_id), container.logger)
+    container.logger.info(f"Setting object {key} in organization {organization_id}")
     with open(path, "rb") as file:
         bytes_data: bytes = file.read()
     api_client.object_store.set(key, bytes_data, organization_id)

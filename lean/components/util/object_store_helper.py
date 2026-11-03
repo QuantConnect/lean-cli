@@ -12,12 +12,12 @@
 # limitations under the License.
 
 import re
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 
-# The key rules of Lean's ObjectStore, so a key is stored under the name the engine would use for it
+# The key rules of LEAN's ObjectStore (QuantConnect/Lean#9905), mirrored so a key set here is the one an algorithm saves to
 _SUPPORTED_KEY = re.compile(r"\.?[a-zA-Z0-9\\/_#\-$= ]+\.?[a-zA-Z0-9]*")
 _UNSUPPORTED_CHARACTERS = re.compile(r"[^a-zA-Z0-9\\/_#\-$= .]")
 _EXTENSION = re.compile(r"[a-zA-Z0-9]+")
@@ -25,11 +25,12 @@ _KEY_RULES = "Keys may only contain english letters, numbers, spaces and the cha
              "plus at most one '.' followed by a letters-and-numbers-only extension, e.g. 'folder/trade_log-2024.csv'"
 
 
-def resolve_object_store_key(key: str, logger: Logger) -> str:
-    """Returns the key the object store is asked for: the given one when it follows the key format, else its
-    sanitized version, with a warning stating the problems found and the key used instead.
+def key_to_save(key: str, exists: Callable[[str], bool], logger: Logger) -> str:
+    """Returns the key a set goes to: the given one when it follows the key format, else its sanitized version,
+    warning about the rewrite and about the existing object it overwrites, if any.
 
     :param key: the key as given by the user
+    :param exists: whether an object is stored under a key
     :param logger: the logger to warn with
     :return: the key to send to the object store
     """
@@ -39,6 +40,8 @@ def resolve_object_store_key(key: str, logger: Logger) -> str:
 
     sanitized = sanitize_key(key)
     logger.warn(f"Key '{key}' is not supported: {issues}. Using '{sanitized}' instead")
+    if exists(sanitized):
+        logger.warn(f"'{sanitized}' already exists and will be overwritten")
     return sanitized
 
 
@@ -101,6 +104,8 @@ def _find_key_issues(key: str) -> List[str]:
             issues.append(f"the extension '{extension}' may only contain letters and numbers")
     if not name:
         issues.append("it has no name before the '.'")
+    elif key.startswith(".."):
+        issues.append("it starts with more than one '.'")
 
     if key.count("/") > 100 or key.count("\\") > 100:
         issues.append("it has more than 100 '/' or '\\' separators")

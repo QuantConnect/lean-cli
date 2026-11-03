@@ -39,7 +39,7 @@ def test_get_gets_value_when_key_is_given(mock_zipfile) -> None:
 
 
 @mock.patch("zipfile.ZipFile")
-def test_get_sanitizes_every_unsupported_key_with_a_warning(mock_zipfile) -> None:
+def test_get_sends_unsupported_keys_as_typed(mock_zipfile) -> None:
     archive = mock.Mock()
     archive.return_value.read = mock.Mock()
     mock_zipfile.return_value.__enter__ = archive
@@ -48,12 +48,9 @@ def test_get_sanitizes_every_unsupported_key_with_a_warning(mock_zipfile) -> Non
     api_client.is_authenticated.return_value = True
     initialize_container(api_client_to_use=api_client)
 
-    result = CliRunner().invoke(lean, ["cloud", "object-store", "get", "trade log: AI & Cloud.csv", "model.v2.pkl", "good.csv"])
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "get", "trade log: AI & Cloud.csv", "model.v2.pkl"])
 
     assert result.exit_code == 0
-    output = result.output.replace("\n", "")
-    assert "Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. Keys may only contain" in output
-    assert "Key 'model.v2.pkl' is not supported: it has 2 '.' but at most one '.extension' is allowed." in output
-    assert "Key 'good.csv'" not in output
-    container.api_client.object_store.get.assert_called_once_with(
-        ('trade log_ AI _ Cloud.csv', 'model_v2.pkl', 'good.csv'), 'abc', container.logger)
+    assert "is not supported" not in result.output
+    api_client.object_store.exists.assert_not_called()
+    container.api_client.object_store.get.assert_called_once_with(('trade log: AI & Cloud.csv', 'model.v2.pkl'), 'abc', container.logger)
