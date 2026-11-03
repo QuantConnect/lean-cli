@@ -15,6 +15,7 @@ from click import argument
 from lean.commands.cloud.object_store import object_store
 from lean.click import LeanCommand
 from lean.container import container
+from lean.components.util.object_store_helper import resolve_object_store_key
 
 
 @object_store.command(cls=LeanCommand, name="list", aliases=["ls"])
@@ -23,11 +24,12 @@ def list(key: str):
     """
     List all values for the given root key in the organization's cloud object store.
 
-    :param key: The desired root key to list.
+    :param key: The desired root key to list. A key that does not follow the object store key format is sanitized, with a warning.
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
     api_client = container.api_client
     logger = container.logger
+    key = resolve_object_store_key(key, logger)
     data = api_client.object_store.list(key, organization_id)
 
     try:

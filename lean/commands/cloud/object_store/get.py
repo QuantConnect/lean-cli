@@ -17,6 +17,7 @@ from os import path, getcwd, unlink, mkdir
 from click import command, option, argument
 from lean.click import LeanCommand
 from lean.container import container
+from lean.components.util.object_store_helper import resolve_object_store_key
 
 
 @command(cls=LeanCommand)
@@ -28,11 +29,12 @@ def get(key: [str], destination_folder: str):
     """
     Download an object store value to disk from the organization's cloud object store.
 
-    :param key: The desired key to fetch, multiple can be provided.
+    :param key: The desired key to fetch, multiple can be provided. A key that does not follow the object store key format is sanitized, with a warning.
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
     api_client = container.api_client
     logger = container.logger
+    key = tuple(resolve_object_store_key(k, logger) for k in key)
 
     logger.info(f"Fetching object store download url")
     url = api_client.object_store.get(key, organization_id, logger)

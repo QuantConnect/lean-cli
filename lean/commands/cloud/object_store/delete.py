@@ -15,6 +15,7 @@ from click import command, argument
 
 from lean.click import LeanCommand
 from lean.container import container
+from lean.components.util.object_store_helper import resolve_object_store_key
 
 
 @command(cls=LeanCommand)
@@ -23,8 +24,9 @@ def delete(key: str) -> str:
     """
     Delete a value from the organization's cloud object store.
 
-    :param key: The desired key name to delete.
+    :param key: The desired key name to delete. A key that does not follow the object store key format is sanitized, with a warning.
     """
+    key = resolve_object_store_key(key, container.logger)
     organization_id = container.organization_manager.try_get_working_organization_id()
     api_client = container.api_client
     api_client.object_store.delete(key, organization_id)

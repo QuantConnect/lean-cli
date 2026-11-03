@@ -11,7 +11,105 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+from typing import List, Optional
+
 from lean.components.config.lean_config_manager import LeanConfigManager
+from lean.components.util.logger import Logger
+
+# The key rules of Lean's ObjectStore, so a key is stored under the name the engine would use for it
+_SUPPORTED_KEY = re.compile(r"\.?[a-zA-Z0-9\\/_#\-$= ]+\.?[a-zA-Z0-9]*")
+_UNSUPPORTED_CHARACTERS = re.compile(r"[^a-zA-Z0-9\\/_#\-$= .]")
+_EXTENSION = re.compile(r"[a-zA-Z0-9]+")
+_KEY_RULES = "Keys may only contain english letters, numbers, spaces and the characters '/', '\\', '_', '#', '-', '$' and '=', " \
+             "plus at most one '.' followed by a letters-and-numbers-only extension, e.g. 'folder/trade_log-2024.csv'"
+
+
+def resolve_object_store_key(key: str, logger: Logger) -> str:
+    """Returns the key the object store is asked for: the given one when it follows the key format, else its
+    sanitized version, with a warning stating the problems found and the key used instead.
+
+    :param key: the key as given by the user
+    :param logger: the logger to warn with
+    :return: the key to send to the object store
+    """
+    issues = get_key_issues(key)
+    if issues is None:
+        return key
+
+    sanitized = sanitize_key(key)
+    logger.warn(f"Key '{key}' is not supported: {issues}. Using '{sanitized}' instead")
+    return sanitized
+
+
+def get_key_issues(key: str) -> Optional[str]:
+    """Describes why a key does not follow the key format: the problems found and the rules.
+
+    :param key: the key to check
+    :return: the issues with the key, or None when it is supported
+    """
+    if _is_supported_key(key):
+        return None
+    return "; ".join(_find_key_issues(key)) + ". " + _KEY_RULES
+
+
+def sanitize_key(key: str) -> str:
+    """Converts an unsupported key into a supported one by replacing every unsupported character with '_',
+    keeping at most the final '.extension': 'trade log: AI & Cloud.csv' becomes 'trade log_ AI _ Cloud.csv'.
+
+    :param key: the key to sanitize
+    :return: a key following the key format
+    """
+    sanitized = _UNSUPPORTED_CHARACTERS.sub("_", key)
+
+    # a single trailing '.extension' of letters and numbers is allowed: keep the last dot if it
+    # introduces a valid extension and replace every other dot
+    last_dot = sanitized.rfind(".")
+    if last_dot > 0 and _EXTENSION.fullmatch(sanitized[last_dot + 1:]) is not None:
+        sanitized = sanitized[:last_dot].replace(".", "_") + sanitized[last_dot:]
+    elif last_dot >= 0:
+        sanitized = sanitized.replace(".", "_")
+
+    issues = get_key_issues(sanitized)
+    if issues is not None:
+        raise RuntimeError(f"Key '{key}' is not supported: {issues}")
+    return sanitized
+
+
+def _is_supported_key(key: str) -> bool:
+    return bool(key) and _SUPPORTED_KEY.fullmatch(key) is not None and key.count("/") <= 100 and key.count("\\") <= 100
+
+
+def _find_key_issues(key: str) -> List[str]:
+    """Lists why a key is not supported, one entry per problem found."""
+    if not key:
+        return ["the key is empty"]
+
+    issues = []
+    unsupported = list(dict.fromkeys(f"'{char}'" for char in _UNSUPPORTED_CHARACTERS.findall(key)))
+    if unsupported:
+        issues.append(f"unsupported character{'s' if len(unsupported) > 1 else ''} {', '.join(unsupported)}")
+
+    # a single leading '.' is allowed, every other '.' must introduce the final extension
+    name = key.lstrip(".")
+    dots = name.count(".")
+    if dots > 1:
+        issues.append(f"it has {dots} '.' but at most one '.extension' is allowed")
+    elif dots == 1:
+        extension = name[name.index(".") + 1:]
+        if extension and _EXTENSION.fullmatch(extension) is None:
+            issues.append(f"the extension '{extension}' may only contain letters and numbers")
+    if not name:
+        issues.append("it has no name before the '.'")
+
+    if key.count("/") > 100 or key.count("\\") > 100:
+        issues.append("it has more than 100 '/' or '\\' separators")
+
+    if not issues:
+        issues.append("it does not follow the key format")
+    return issues
+
+
 
 def open_storage_directory_in_explorer(lean_config_manager: LeanConfigManager):
     """Opens the storage directory in the file explorer."""

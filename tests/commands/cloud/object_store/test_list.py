@@ -48,3 +48,16 @@ def test_list_handles_empty_or_none_objects(objects_value) -> None:
     container.api_client.object_store.list.assert_called_once_with('test', 'abc')
 
 
+
+
+def test_list_sanitizes_an_unsupported_root_key_with_a_warning() -> None:
+    api_client = mock.Mock()
+    api_client.is_authenticated.return_value = True
+    api_client.object_store.list.return_value = {'objects': [], 'success': True, 'path': 'trade log_'}
+    initialize_container(api_client_to_use=api_client)
+
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "list", "trade log:"])
+
+    assert result.exit_code == 0
+    assert "Key 'trade log:' is not supported: unsupported character ':'." in result.output.replace("\n", "")
+    container.api_client.object_store.list.assert_called_once_with('trade log_', 'abc')

@@ -35,3 +35,33 @@ def test_set_sets_value_when_path_is_given() -> None:
     with open(file_path, "rb") as file:
         bytes_data: bytes = file.read()
         container.api_client.object_store.set.assert_called_once_with('test-key', bytes_data, 'abc')
+
+
+def test_set_sanitizes_an_unsupported_key_with_a_warning() -> None:
+    create_fake_lean_cli_project("test", "python")
+    api_client = mock.Mock()
+    api_client.is_authenticated.return_value = True
+    initialize_container(api_client_to_use=api_client)
+    file_path = str(Path.joinpath(Path.cwd(), "lean.json"))
+
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "trade log: AI & Cloud.csv", file_path])
+
+    assert result.exit_code == 0
+    assert "Key 'trade log: AI & Cloud.csv' is not supported: unsupported characters ':', '&'. Keys may only contain" in result.output.replace("\n", "")
+    assert "Using 'trade log_ AI _ Cloud.csv' instead" in result.output.replace("\n", "")
+    with open(file_path, "rb") as file:
+        container.api_client.object_store.set.assert_called_once_with('trade log_ AI _ Cloud.csv', file.read(), 'abc')
+
+
+def test_set_keeps_a_supported_key_silently() -> None:
+    create_fake_lean_cli_project("test", "python")
+    api_client = mock.Mock()
+    api_client.is_authenticated.return_value = True
+    initialize_container(api_client_to_use=api_client)
+    file_path = str(Path.joinpath(Path.cwd(), "lean.json"))
+
+    result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "folder/trade_log-2024.csv", file_path])
+
+    assert result.exit_code == 0
+    assert "is not supported" not in result.output
+    container.api_client.object_store.set.assert_called_once_with('folder/trade_log-2024.csv', mock.ANY, 'abc')
