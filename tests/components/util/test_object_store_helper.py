@@ -90,9 +90,11 @@ def test_key_to_save_sanitizes_an_unsupported_key_with_a_warning() -> None:
         "Using 'trade log_ AI _ Cloud.csv' instead")
 
 
-def test_key_to_save_warns_when_the_sanitized_key_overwrites_an_existing_object() -> None:
+def test_key_to_save_raises_when_the_sanitized_key_already_holds_an_object() -> None:
     logger = mock.Mock()
 
-    assert key_to_save("report (1).csv", lambda key: key == "report _1_.csv", logger) == "report _1_.csv"
+    with pytest.raises(RuntimeError) as error:
+        key_to_save("report (1).csv", lambda key: key == "report _1_.csv", logger)
 
-    assert logger.warn.call_args_list[-1] == mock.call("'report _1_.csv' already exists and will be overwritten")
+    assert str(error.value) == "Key 'report (1).csv' is not supported and its sanitized name 'report _1_.csv' already holds " \
+                               "another object. Delete 'report _1_.csv' or set it directly to replace it"

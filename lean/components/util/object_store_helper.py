@@ -28,7 +28,8 @@ _KEY_RULES = "Keys may only contain english letters, numbers, spaces and the cha
 
 def key_to_save(key: str, exists: Callable[[str], bool], logger: Logger) -> str:
     """Returns the key a set goes to: the given one when it follows the key format, else its sanitized version,
-    warning about the rewrite and about the existing object it overwrites, if any.
+    warning about the rewrite. Raises when the sanitized key already holds an object, as LEAN's save does: nothing
+    records who wrote it, so it is only replaced through its exact key.
 
     :param key: the key as given by the user
     :param exists: whether an object is stored under a key
@@ -42,7 +43,8 @@ def key_to_save(key: str, exists: Callable[[str], bool], logger: Logger) -> str:
     sanitized = sanitize_key(key)
     logger.warn(f"Key '{key}' is not supported: {issues}. Using '{sanitized}' instead")
     if exists(sanitized):
-        logger.warn(f"'{sanitized}' already exists and will be overwritten")
+        raise RuntimeError(f"Key '{key}' is not supported and its sanitized name '{sanitized}' already holds another object. "
+                           f"Delete '{sanitized}' or set it directly to replace it")
     return sanitized
 
 

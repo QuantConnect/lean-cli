@@ -56,7 +56,7 @@ def test_set_sanitizes_an_unsupported_key_with_a_warning() -> None:
         container.api_client.object_store.set.assert_called_once_with('trade log_ AI _ Cloud.csv', file.read(), 'abc')
 
 
-def test_set_warns_when_the_sanitized_key_overwrites_an_existing_object() -> None:
+def test_set_fails_when_the_sanitized_key_already_holds_an_object() -> None:
     create_fake_lean_cli_project("test", "python")
     api_client = mock.Mock()
     api_client.is_authenticated.return_value = True
@@ -66,9 +66,10 @@ def test_set_warns_when_the_sanitized_key_overwrites_an_existing_object() -> Non
 
     result = CliRunner().invoke(lean, ["cloud", "object-store", "set", "report (1).csv", file_path])
 
-    assert result.exit_code == 0
-    assert "'report _1_.csv' already exists and will be overwritten" in " ".join(result.output.split())
-    container.api_client.object_store.set.assert_called_once_with('report _1_.csv', mock.ANY, 'abc')
+    assert result.exit_code != 0
+    assert str(result.exception) == "Key 'report (1).csv' is not supported and its sanitized name 'report _1_.csv' already " \
+                                    "holds another object. Delete 'report _1_.csv' or set it directly to replace it"
+    container.api_client.object_store.set.assert_not_called()
 
 
 def test_set_keeps_a_supported_key_silently() -> None:
