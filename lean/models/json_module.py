@@ -315,7 +315,6 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                # The live/auth0 endpoints know the Interactive Brokers FIX module by its module id
                 brokerage_id = self._id if self._id == "InteractiveBrokersFixBrokerage" else self._display_name.lower()
                 auth_authorizations = get_authorization(container.api_client.auth0, brokerage_id, logger,
                                                         lean_config["project-id"], no_browser=no_browser,
