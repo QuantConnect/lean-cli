@@ -25,7 +25,7 @@ from lean.constants import API_BASE_URL
 from lean.models.errors import AuthenticationError, RequestFailedError
 
 
-def test_get_logger():
+def create_logger():
     logger = mock.MagicMock()
     logger.debug_logging_enabled = mock.PropertyMock()
     logger.debug_logging_enabled = False
@@ -34,7 +34,7 @@ def test_get_logger():
 def test_get_makes_get_request_to_given_endpoint(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     api.get("endpoint")
 
@@ -45,7 +45,7 @@ def test_get_makes_get_request_to_given_endpoint(requests_mock: RequestsMock) ->
 def test_get_attaches_parameters_to_url(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.GET, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     api.get("endpoint", {"key1": "value1", "key2": "value2"})
 
@@ -56,7 +56,7 @@ def test_get_attaches_parameters_to_url(requests_mock: RequestsMock) -> None:
 def test_post_makes_post_request_to_given_endpoint(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     api.post("endpoint")
 
@@ -67,7 +67,7 @@ def test_post_makes_post_request_to_given_endpoint(requests_mock: RequestsMock) 
 def test_post_sets_body_of_request_as_json(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     api.post("endpoint", {"key1": "value1", "key2": "value2"})
 
@@ -83,7 +83,7 @@ def test_post_sets_body_of_request_as_json(requests_mock: RequestsMock) -> None:
 def test_post_sets_body_of_request_as_form_data(requests_mock: RequestsMock) -> None:
     requests_mock.add(requests_mock.POST, API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     api.post("endpoint", {"key1": "value1", "key2": "value2"}, data_as_json=False)
 
@@ -97,7 +97,7 @@ def test_post_sets_body_of_request_as_form_data(requests_mock: RequestsMock) -> 
 def test_api_client_makes_authenticated_requests(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     getattr(api, method)("endpoint")
 
@@ -113,7 +113,7 @@ def test_api_client_makes_authenticated_requests(method: str, requests_mock: Req
 def test_api_client_returns_data_when_success_is_true(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     response = getattr(api, method)("endpoint")
 
@@ -125,7 +125,7 @@ def test_api_client_returns_data_when_success_is_true(method: str, requests_mock
 def test_api_client_raises_authentication_error_on_http_500(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=500)
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(AuthenticationError):
@@ -137,7 +137,7 @@ def test_api_client_raises_request_failed_error_on_failing_response_non_http_500
                                                                                  requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=404)
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(RequestFailedError):
@@ -151,7 +151,7 @@ def test_api_client_raises_authentication_error_on_error_complaining_about_hash(
                       API_BASE_URL + "endpoint",
                       '{ "success": false, "errors": ["Hash doesn\'t match."] }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(AuthenticationError):
@@ -165,7 +165,7 @@ def test_api_client_raises_request_failed_error_when_response_contains_errors(me
                       API_BASE_URL + "endpoint",
                       '{ "success": false, "errors": ["Error 1", "Error 2"] }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(RequestFailedError) as error:
@@ -181,7 +181,7 @@ def test_api_client_raises_request_failed_error_when_response_contains_messages(
                       API_BASE_URL + "endpoint",
                       '{ "success": false, "messages": ["Message 1", "Message 2"] }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(RequestFailedError) as error:
@@ -197,7 +197,7 @@ def test_api_client_raises_request_failed_error_when_response_contains_internal_
                       API_BASE_URL + "endpoint",
                       '{ "success": false, "Message": "Internal Error 21" }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(RequestFailedError) as error:
@@ -216,7 +216,7 @@ def test_api_client_retries_request_when_response_is_http_5xx_error(method: str,
                                                                     requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", status=status_code)
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     with pytest.raises(expected_error):
@@ -229,7 +229,7 @@ def test_api_client_retries_request_when_response_is_http_5xx_error(method: str,
 def test_api_client_sets_user_agent(method: str, requests_mock: RequestsMock) -> None:
     requests_mock.add(method.upper(), API_BASE_URL + "endpoint", '{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
     getattr(api, method)("endpoint")
 
@@ -244,7 +244,7 @@ def test_is_authenticated_returns_true_when_authenticated_request_succeeds(reque
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": true }')
     requests_mock.add(requests_mock.POST, re.compile(".*"), body='{ "success": true }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     assert api.is_authenticated()
@@ -255,7 +255,7 @@ def test_is_authenticated_returns_false_when_authenticated_request_fails(request
     requests_mock.add(requests_mock.GET, re.compile(".*"), body='{ "success": false }')
     requests_mock.add(requests_mock.POST, re.compile(".*"), body='{ "success": false }')
 
-    logger = test_get_logger()
+    logger = create_logger()
     api = APIClient(logger, HTTPClient(logger), "123", "456")
 
     assert not api.is_authenticated()
