@@ -17,6 +17,7 @@ import re
 import urllib.request
 
 from setuptools import find_packages, setup
+from setuptools.command.build_py import build_py
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -44,11 +45,22 @@ def get_stubs_version_range() -> str:
         return ""
 
 
-# An empty placeholder for the modules json the CLI downloads into its package makes pip record it, so uninstalling
-# removes it. The name is read rather than imported, as importing lean.models downloads the file
-modules_file_name = re.search(r"^file_name = \"([^\"]+)\"", read("lean/models/__init__.py"), re.M).group(1)
-with open(os.path.join(current_dir, "lean", modules_file_name), "w"):
-    pass
+class BuildPyWithModulesPlaceholder(build_py):
+    """Adds an empty placeholder for the modules json the CLI downloads into its package, so pip records the file and
+    uninstalling removes it. It is written to the build output only, keeping a checkout's downloaded file intact."""
+
+    def run(self) -> None:
+        super().run()
+
+        # Editable builds link to the checkout, where the downloaded file has to stay
+        if getattr(self, "editable_mode", False):
+            return
+
+        # The name is read rather than imported, as importing lean.models downloads the file
+        modules_file_name = re.search(r"^file_name = \"([^\"]+)\"", read("lean/models/__init__.py"), re.M).group(1)
+        with open(os.path.join(self.build_lib, "lean", modules_file_name), "w"):
+            pass
+
 
 # Production dependencies
 install_requires = [
@@ -79,7 +91,10 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
-        "lean": ["ssh/*", modules_file_name]
+        "lean": ["ssh/*"]
+    },
+    cmdclass={
+        "build_py": BuildPyWithModulesPlaceholder
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]
