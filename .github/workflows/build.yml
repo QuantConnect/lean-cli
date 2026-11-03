@@ -39,10 +39,11 @@ jobs:
           pip install -r requirements.txt
 
       # Static analysis tools
+      # mypy 2.x requires Python 3.10 or newer
       - name: Static Code Analysis
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.python-version != '3.9'
         run: |
-          pip install mypy==1.19.1 flake8==7.3.0
+          pip install mypy==2.4.0 flake8==7.3.0
           python static_analysis.py
 
       - name: Run tests
