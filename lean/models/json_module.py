@@ -21,7 +21,6 @@ from lean.components.util.auth0_helper import get_authorization
 from lean.components.util.logger import Logger
 from lean.constants import MODULE_TYPE, MODULE_PLATFORM, MODULE_CLI_PLATFORM
 from lean.container import container
-from lean.models.api import QCAuth0Authorization
 from lean.models.configuration import BrokerageEnvConfiguration, Configuration, InternalInputUserInput, \
     PathParameterUserInput, AuthConfiguration, ChoiceUserInput
 from copy import copy
@@ -264,17 +263,6 @@ class JsonModule(ABC):
                 logger.info(str(e))
                 user_choice = self._ask_user_for_input(configuration, logger, hide_input)
 
-    def _get_auth0_authorization(self, logger: Logger, project_id: int, no_browser: bool,
-                                 user_name: str) -> QCAuth0Authorization:
-        """Reads the stored brokerage authorization, or starts the authorization in the browser and waits for it.
-
-        The live/auth0 endpoints know a brokerage by its lowercased display name, except the Interactive Brokers FIX
-        module, which they know by its module id.
-        """
-        brokerage_id = self._id if self._id == "InteractiveBrokersFixBrokerage" else self._display_name.lower()
-        return get_authorization(container.api_client.auth0, brokerage_id, logger, project_id, no_browser=no_browser,
-                                 user_name=user_name)
-
     def config_build(self,
                      lean_config: Dict[str, Any],
                      logger: Logger,
@@ -327,7 +315,11 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                auth_authorizations = self._get_auth0_authorization(logger, lean_config["project-id"], no_browser, user_name)
+                # The live/auth0 endpoints know the Interactive Brokers FIX module by its module id
+                brokerage_id = self._id if self._id == "InteractiveBrokersFixBrokerage" else self._display_name.lower()
+                auth_authorizations = get_authorization(container.api_client.auth0, brokerage_id, logger,
+                                                        lean_config["project-id"], no_browser=no_browser,
+                                                        user_name=user_name)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
                 for inner_config in self._lean_configs:
