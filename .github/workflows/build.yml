@@ -2,6 +2,10 @@ name: Build
 
 on: [push, pull_request]
 
+env:
+  # Python used to build and package the releases (PyPI, portable builds)
+  RELEASE_PYTHON_VERSION: '3.10'
+
 jobs:
   load-matrix:
     runs-on: ubuntu-latest
@@ -68,7 +72,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Install packaging dependencies
         run: pip install wheel
@@ -80,7 +84,7 @@ jobs:
         run: python setup.py sdist bdist_wheel
 
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
@@ -90,8 +94,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-latest]
-        python-version: ["3.10"]
+        os: [ubuntu-22.04, macos-15, windows-latest]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
@@ -104,7 +107,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Wait for pip release, sleep in seconds
         run: sleep 900
@@ -123,7 +126,7 @@ jobs:
         shell: bash
 
       - name: Create Portable Macos
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -150,7 +153,7 @@ jobs:
         shell: bash
 
       - name: Zip package and notarize Macos
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -178,7 +181,7 @@ jobs:
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET }}
@@ -213,10 +216,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET }}
