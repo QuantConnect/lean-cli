@@ -16,22 +16,19 @@ from lean.components.api.api_client import Auth0Client
 from lean.components.util.logger import Logger
 
 
-def get_authorization(auth0_client: Auth0Client, brokerage_id: str, read_brokerage_id: str, logger: Logger,
-                      project_id: int, no_browser: bool = False, user_name: str = None) -> QCAuth0Authorization:
+def get_authorization(auth0_client: Auth0Client, brokerage_id: str, logger: Logger, project_id: int, no_browser: bool = False, user_name: str = None) -> QCAuth0Authorization:
     """Gets the authorization data for a brokerage, authorizing if necessary.
 
     :param auth0_client: An instance of Auth0Client, containing methods to interact with live/auth0/* API endpoints.
-    :param brokerage_id: The ID live/auth0/authorize opens the brokerage login for.
-    :param read_brokerage_id: The ID live/auth0/read knows the stored authorization by.
+    :param brokerage_id: The ID of the brokerage to get the authorization data for.
     :param logger: An instance of Logger, handling all output printing.
     :param project_id: The local or cloud project_id.
     :param no_browser: whether to disable opening the browser
-    :param user_name: the login ID the authorization is stored under
     :return: The authorization data for the specified brokerage.
     """
     from time import time, sleep
 
-    data = auth0_client.read(read_brokerage_id, user_name=user_name)
+    data = auth0_client.read(brokerage_id, user_name=user_name)
     if data.authorization is not None:
         return data
 
@@ -42,7 +39,7 @@ def get_authorization(auth0_client: Auth0Client, brokerage_id: str, read_brokera
     while time() - start_time < 420:
         logger.debug("Will sleep 5 seconds and retry fetching authorization...")
         sleep(5)
-        data = auth0_client.read(read_brokerage_id, user_name=user_name)
+        data = auth0_client.read(brokerage_id, user_name=user_name)
         if data.authorization is None:
             continue
         return data

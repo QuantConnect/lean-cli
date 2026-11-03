@@ -218,7 +218,7 @@ def _run_oauth_download(extra_run_command: List[str], cli_input: str = "\n"):
 
     captured_project_ids = []
 
-    def _fake_get_authorization(auth0_client, brokerage_id, read_brokerage_id, logger, project_id, *args, **kwargs):
+    def _fake_get_authorization(auth0_client, brokerage_id, logger, project_id, *args, **kwargs):
         captured_project_ids.append(project_id)
         auth = MagicMock()
         auth.get_authorization_config_without_account.return_value = {}

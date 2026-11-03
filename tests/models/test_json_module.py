@@ -129,46 +129,16 @@ def create_oauth_module(module_id: str, display_id: str) -> JsonModule:
                 "filters": [{"condition": {"dependent-config-id": "my-oauth-token",
                                            "pattern": "^(?!\\s*$).+",
                                            "type": "regex"}}]
-            },
-            {
-                "id": "my-linked-account",
-                "type": "internal-input",
-                "alias-of": "userId"
             }
         ]
     }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
 
 
-@pytest.mark.parametrize("module_id,display_id,expected_read_brokerage_id",
+@pytest.mark.parametrize("module_id,display_id,expected_brokerage_id",
                          [("MyBrokerage", "My Brokerage", "my brokerage"),
-                          ("InteractiveBrokersFixBrokerage", "InteractiveBrokersFix", "InteractiveBrokersFixBrokerage")])
-def test_config_build_reads_the_authorization_under_the_brokerage_id_of_the_module(module_id: str, display_id: str,
-                                                                                  expected_read_brokerage_id: str) -> None:
-    api_client = mock.Mock()
-    api_client.auth0.read.return_value = QCAuth0Authorization(
-        authorization={"my-refresh-token": "token", "userId": "someuser",
-                       "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
-    container.api_client = api_client
-
-    with Context(Command("test")):
-        module = create_oauth_module(module_id, display_id).config_build(
-            {"project-id": 123, "my-user-name": "SomeUser", "my-account": "U1234567"}, container.logger,
-            interactive=False)
-
-    api_client.auth0.read.assert_called_once_with(expected_read_brokerage_id, user_name="SomeUser")
-    api_client.auth0.authorize.assert_not_called()
-    settings = module.get_settings()
-    assert settings["my-refresh-token"] == "token"
-    assert settings["my-user-name"] == "SomeUser"
-    assert settings["my-account"] == "U1234567"
-    assert settings["my-linked-account"] == "someuser"
-
-
-@pytest.mark.parametrize("module_id,display_id,expected_authorize_brokerage_id",
-                         [("MyBrokerage", "My Brokerage", "my brokerage"),
-                          ("InteractiveBrokersFixBrokerage", "InteractiveBrokersFix", "interactivebrokers")])
-def test_config_build_authorizes_under_the_login_brokerage_id_of_the_module(module_id: str, display_id: str,
-                                                                           expected_authorize_brokerage_id: str) -> None:
+                          ("InteractiveBrokersFixBrokerage", "Interactive Brokers (FIX)", "InteractiveBrokersFixBrokerage")])
+def test_config_build_authorizes_under_the_brokerage_id_of_the_module(module_id: str, display_id: str,
+                                                                      expected_brokerage_id: str) -> None:
     api_client = mock.Mock()
     stored_authorization = QCAuth0Authorization(
         authorization={"my-refresh-token": "token", "accounts": [{"id": "U1234567", "name": "U1234567 : Me"}]})
@@ -176,35 +146,14 @@ def test_config_build_authorizes_under_the_login_brokerage_id_of_the_module(modu
     container.api_client = api_client
 
     with mock.patch("time.sleep"), Context(Command("test")):
-        create_oauth_module(module_id, display_id).config_build(
+        module = create_oauth_module(module_id, display_id).config_build(
             {"project-id": 123, "my-user-name": "someuser", "my-account": "U1234567"}, container.logger,
             interactive=False)
 
-    api_client.auth0.authorize.assert_called_once_with(expected_authorize_brokerage_id, container.logger, 123, False,
+    assert api_client.auth0.read.call_args_list == [mock.call(expected_brokerage_id, user_name="someuser")] * 2
+    api_client.auth0.authorize.assert_called_once_with(expected_brokerage_id, container.logger, 123, False,
                                                       user_name="someuser")
-
-
-def test_get_settings_gives_an_alias_the_value_of_another_configuration() -> None:
-    module = JsonModule({
-        "id": "MyBrokerage",
-        "display-id": "My Brokerage",
-        "configurations": [
-            {"id": "my-user-name", "type": "input", "input-method": "prompt", "prompt-info": "Username"},
-            {"id": "my-linked-account", "type": "internal-input", "alias-of": "my-user-name"}
-        ]
-    }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
-    [user_name] = [config for config in module._lean_configs if config._id == "my-user-name"]
-    user_name._value = "someuser"
-
-    assert module.get_settings()["my-linked-account"] == "someuser"
-
-
-def test_get_settings_names_the_alias_of_target_when_it_is_not_a_setting() -> None:
-    module = JsonModule({
-        "id": "MyBrokerage",
-        "display-id": "My Brokerage",
-        "configurations": [{"id": "my-linked-account", "type": "internal-input", "alias-of": "my-username"}]
-    }, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
-
-    with pytest.raises(ValueError, match='"my-linked-account" is an alias of "my-username"'):
-        module.get_settings()
+    settings = module.get_settings()
+    assert settings["my-refresh-token"] == "token"
+    assert settings["my-user-name"] == "someuser"
+    assert settings["my-account"] == "U1234567"
