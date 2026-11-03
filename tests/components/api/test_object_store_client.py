@@ -28,9 +28,10 @@ def test_exists_returns_true_when_the_properties_are_returned() -> None:
     api.post.assert_called_once_with("object/properties", {"organizationId": "abc", "key": "model.v2.pkl"})
 
 
-def test_exists_returns_false_when_the_object_is_not_found() -> None:
+def test_exists_returns_false_on_the_api_not_found_message() -> None:
     api = mock.Mock()
-    api.post.side_effect = RequestFailedError(mock.MagicMock(), "File not found")
+    # the message object/properties answers for a missing key, as the api returns it
+    api.post.side_effect = RequestFailedError(mock.MagicMock(), "File not found model.v2.pkl")
 
     assert not ObjectStoreClient(api).exists("model.v2.pkl", "abc")
 

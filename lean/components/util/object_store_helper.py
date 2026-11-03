@@ -17,7 +17,8 @@ from typing import Callable, List, Optional
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 
-# The key rules of LEAN's ObjectStore (QuantConnect/Lean#9905), mirrored so a key set here is the one an algorithm saves to
+# The key rules of LEAN's ObjectStore (QuantConnect/Lean#9905), mirrored by set only so a key set here is the one an
+# algorithm saves to. The other commands send the key as typed; LEAN's reads also fall back to the sanitized key
 _SUPPORTED_KEY = re.compile(r"\.?[a-zA-Z0-9\\/_#\-$= ]+\.?[a-zA-Z0-9]*")
 _UNSUPPORTED_CHARACTERS = re.compile(r"[^a-zA-Z0-9\\/_#\-$= .]")
 _EXTENSION = re.compile(r"[a-zA-Z0-9]+")
