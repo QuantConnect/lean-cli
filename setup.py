@@ -18,6 +18,7 @@ import urllib.request
 
 from setuptools import find_packages, setup
 from setuptools.command.build_py import build_py
+from setuptools.command.sdist import sdist
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -45,10 +46,21 @@ def get_stubs_version_range() -> str:
         return ""
 
 
-class BuildPyWithModulesPlaceholder(build_py):
-    """Adds an empty placeholder for the modules json the CLI downloads into its package, so pip records the file and
-    uninstalling removes it. It is written to the build output only, keeping a checkout's downloaded file intact."""
+def write_modules_placeholder(package_root: str) -> None:
+    """Writes an empty placeholder for the modules json the CLI downloads into its package, so pip records the file and
+    uninstalling removes it. Only build outputs get it, keeping a checkout's downloaded file intact."""
+    # The name is read rather than imported, as importing lean.models downloads the file
+    modules_file_name = re.search(r"^file_name = \"([^\"]+)\"", read("lean/models/__init__.py"), re.M).group(1)
+    placeholder_path = os.path.join(package_root, "lean", modules_file_name)
 
+    # Build trees may hard link the checkout's files, so a copied file is replaced rather than truncated
+    if os.path.exists(placeholder_path):
+        os.remove(placeholder_path)
+    with open(placeholder_path, "w"):
+        pass
+
+
+class BuildPyWithModulesPlaceholder(build_py):
     def run(self) -> None:
         super().run()
 
@@ -56,10 +68,13 @@ class BuildPyWithModulesPlaceholder(build_py):
         if getattr(self, "editable_mode", False):
             return
 
-        # The name is read rather than imported, as importing lean.models downloads the file
-        modules_file_name = re.search(r"^file_name = \"([^\"]+)\"", read("lean/models/__init__.py"), re.M).group(1)
-        with open(os.path.join(self.build_lib, "lean", modules_file_name), "w"):
-            pass
+        write_modules_placeholder(self.build_lib)
+
+
+class SdistWithModulesPlaceholder(sdist):
+    def make_release_tree(self, base_dir: str, files: list) -> None:
+        super().make_release_tree(base_dir, files)
+        write_modules_placeholder(base_dir)
 
 
 # Production dependencies
@@ -94,7 +109,8 @@ setup(
         "lean": ["ssh/*"]
     },
     cmdclass={
-        "build_py": BuildPyWithModulesPlaceholder
+        "build_py": BuildPyWithModulesPlaceholder,
+        "sdist": SdistWithModulesPlaceholder
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]

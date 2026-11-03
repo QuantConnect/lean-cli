@@ -61,9 +61,17 @@ def test_setup_metadata_keeps_downloaded_modules_json(source_tree: Path) -> None
 
 
 def test_setup_wheel_records_empty_modules_placeholder_and_keeps_downloaded_file(source_tree: Path) -> None:
-    _run_setup(source_tree, "sdist", "bdist_wheel")
+    _run_setup(source_tree, "bdist_wheel")
 
     _assert_wheel_has_empty_modules_placeholder(source_tree / "dist")
+    assert (source_tree / MODULES_FILE).read_text() == DOWNLOADED_MODULES_JSON
+
+
+def test_setup_sdist_has_empty_modules_placeholder_and_keeps_downloaded_file(source_tree: Path) -> None:
+    _run_setup(source_tree, "sdist")
+
+    with tarfile.open(next((source_tree / "dist").glob("*.tar.gz"))) as sdist:
+        assert next(member for member in sdist.getmembers() if member.name.endswith(MODULES_FILE)).size == 0
     assert (source_tree / MODULES_FILE).read_text() == DOWNLOADED_MODULES_JSON
 
 
