@@ -79,7 +79,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
-        "lean": ["ssh/*", "modules-*.json"]
+        "lean": ["ssh/*", modules_file_name]
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]
