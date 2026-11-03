@@ -420,7 +420,7 @@ Usage: lean cloud live deploy [OPTIONS] PROJECT
   --notify-insights.
 
 Options:
-  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet]
+  --brokerage [Paper Trading|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX|Webull|Public|ClearStreet|Interactive Brokers (FIX)]
                                   The brokerage to use
   --data-provider-live [QuantConnect|Interactive Brokers|Tradier|Oanda|Bitfinex|Coinbase Advanced Trade|Binance|Zerodha|Samco|Quant Bridge|Trading Technologies|Kraken|CharlesSchwab|Polygon|CoinApi|Bybit|TradeStation|Alpaca|Tastytrade|Eze|dYdX]
                                   The live data provider to use
@@ -544,6 +544,8 @@ Options:
   --clearstreet-access-token TEXT
                                   Your Clear Street API access token
   --clearstreet-account-id TEXT   Your Clear Street account id, the numeric id of the account the algorithm trades
+  --ib-fix-user-name TEXT         Your Interactive Brokers user name
+  --ib-fix-account TEXT           Your Interactive Brokers account id
   --polygon-api-key TEXT          Your Polygon.io API Key
   --polygon-license-type [Individual|Business]
                                   Select your Polygon.io subscription plan (Optional).
