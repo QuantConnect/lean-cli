@@ -44,6 +44,12 @@ def get_stubs_version_range() -> str:
         return ""
 
 
+# An empty placeholder for the modules json the CLI downloads into its package makes pip record it, so uninstalling
+# removes it. The name is read rather than imported, as importing lean.models downloads the file
+modules_file_name = re.search(r"^file_name = \"([^\"]+)\"", read("lean/models/__init__.py"), re.M).group(1)
+with open(os.path.join(current_dir, "lean", modules_file_name), "w"):
+    pass
+
 # Production dependencies
 install_requires = [
     "click>=8.0.4",
@@ -73,7 +79,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=["lean", "lean.*"]),
     package_data={
-        "lean": ["ssh/*"]
+        "lean": ["ssh/*", "modules-*.json"]
     },
     entry_points={
         "console_scripts": ["lean=lean.main:main"]

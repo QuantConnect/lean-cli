@@ -40,8 +40,8 @@ def _download_modules_json() -> None:
 
 error = None
 try:
-    # fetch if file not available or fetched before 1 day
-    if not path.exists(file_path) or (time() - path.getmtime(file_path) > 86400):
+    # fetch if file not available, still the empty placeholder the package ships, or fetched before 1 day
+    if not path.exists(file_path) or path.getsize(file_path) == 0 or (time() - path.getmtime(file_path) > 86400):
         _download_modules_json()
 except Exception as e:
     # No need to do anything if file isn't available
@@ -49,7 +49,7 @@ except Exception as e:
     pass
 
 # check if file exists
-if not Path(file_path).is_file():
+if not Path(file_path).is_file() or path.getsize(file_path) == 0:
     error_message = f": {error}" if error is not None else ""
     raise FileNotFoundError(
         f"Modules json not found in the given path {file_path}{error_message}")
