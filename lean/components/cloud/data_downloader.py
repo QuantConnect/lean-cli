@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import shutil
+import tempfile
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Any, List, Callable
@@ -23,8 +26,30 @@ from lean.models.errors import MoreInfoError, RequestFailedError
 
 def _store_local_file(file_content: bytes, file_path: Path):
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    with file_path.open("wb+") as f:
-        f.write(file_content)
+    # Write to a temporary file first so a failed write never truncates the existing file
+    fd, temp_name = tempfile.mkstemp(dir=file_path.parent, prefix=f".{file_path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(file_content)
+        if file_path.exists():
+            shutil.copymode(file_path, temp_name)
+        os.replace(temp_name, file_path)
+    except BaseException:
+        if os.path.exists(temp_name):
+            os.remove(temp_name)
+        raise
+
+
+def _validate_market_hours_database(file_content: bytes) -> None:
+    """Raises if the content is not a market hours database that MarketHoursDatabase can read."""
+    from re import sub, DOTALL
+    from json import loads
+
+    # Same parsing as MarketHoursDatabase._get_all_entries()
+    text = sub(r"(/\*.*\*/)", "", file_content.decode("utf-8"), flags=DOTALL)
+    database = loads(text)
+    if not isinstance(database, dict) or not isinstance(database.get("entries"), dict):
+        raise ValueError("missing 'entries' object")
 
 
 def parse_timedelta(database_update_frequency: str):
@@ -87,9 +112,15 @@ class DataDownloader:
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
                     data_dir / "symbol-properties" / "symbol-properties-database.csv")
-                _store_local_file(self._api_client.data.download_public_file(
-                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json"),
-                    data_dir / "market-hours" / "market-hours-database.json")
+                market_hours_database = self._api_client.data.download_public_file(
+                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json")
+                try:
+                    _validate_market_hours_database(market_hours_database)
+                except ValueError as e:
+                    # Keep the existing local file; not a ValueError for the config option handler below
+                    raise RuntimeError(f"Downloaded market-hours database is invalid ({e}), "
+                                       f"keeping the existing local file") from e
+                _store_local_file(market_hours_database, data_dir / "market-hours" / "market-hours-database.json")
         except MoreInfoError as e:
             if "not found" in str(e):
                 pass
