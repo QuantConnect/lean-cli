@@ -15,7 +15,7 @@ from unittest import mock
 from pathlib import Path
 from datetime import datetime
 from click.testing import CliRunner
-from lean.models.api import QCFullFile
+from lean.models.api import QCFullFile, QCProjectLibrary
 from lean.commands import lean
 from lean.container import container
 from tests.conftest import initialize_container
@@ -506,3 +506,106 @@ Oae0ese2fAU8lmosUY95ghYxEOGrMHg5ZPklje/afjpxwKAAgTfWqozYPdpNL+MJEqrVA9YRq5wSvjuX
 UGw0ehtO8qY5FmPGcUlkBGuqmd7r6aLE4mosoZrc/UyZb+clWNYJITRLFJbQpWm3EU/Xrt5UM8uWwEdV
 bFWAAkX56MyDHwJefC1nkA=="""
 }
+
+def test_cloud_pull_stores_the_key_path_with_encrypted_flag_given() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+
+    cloud_project = create_api_project(1, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+    api_client.files.get_all = mock.MagicMock(return_value=[
+        QCFullFile(name="main.py", content="print(1)\n", modified=datetime.now(), isLibrary=False)
+    ])
+
+    init_container(api_client_to_use=api_client)
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", 1)
+
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_path.name, "--encrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted", False) == True
+    assert project_config.get("encryption-key-path", None) == str(encryption_file_path)
+
+    # a later push without --key must keep the project encrypted in the cloud
+    key_hash = get_project_key_hash(encryption_file_path)
+    api_client.encryption_keys.list = mock.MagicMock(return_value={'keys': [{'name': 'test', 'hash': key_hash}]})
+    api_client.projects.update.reset_mock()
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path.name])
+
+    assert result.exit_code == 0
+    assert api_client.projects.update.call_args.kwargs["encryption_key"] == key_hash
+
+def test_cloud_pull_removes_the_key_path_with_decrypted_flag_given() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    key_hash = get_project_key_hash(encryption_file_path)
+
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name":"test", "id": key_hash})
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+    fake_cloud_files = [QCFullFile(name=name, content=content, modified=datetime.now(), isLibrary=False)
+                        for name, content in _get_expected_encrypted_files_content().items()]
+    api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
+
+    init_container(api_client_to_use=api_client)
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", True)
+    project_config.set("encryption-key-path", str(encryption_file_path))
+    project_config.set("cloud-id", 1)
+
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_path.name, "--decrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted", False) == False
+    assert project_config.get("encryption-key-path", None) is None
+
+def test_cloud_pull_does_not_encrypt_referenced_libraries_with_encrypted_flag_given() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+
+    cloud_project = create_api_project(1, "Python Project")
+    library_project = create_api_project(2, "Library/Shared Library")
+    cloud_project.libraries = [QCProjectLibrary(projectId=2, libraryName="Library/Shared Library", ownerName="test", access=True)]
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project, library_project]
+    api_client.projects.get.side_effect = lambda project_id, organization_id: {1: cloud_project, 2: library_project}[project_id]
+    cloud_files = {
+        1: [QCFullFile(name="main.py", content="print(1)\n", modified=datetime.now(), isLibrary=False)],
+        2: [QCFullFile(name="main.py", content="LIBRARY_VALUE = 1\n", modified=datetime.now(), isLibrary=False)]
+    }
+    api_client.files.get_all.side_effect = lambda project_id: [file.model_copy() for file in cloud_files[project_id]]
+
+    init_container(api_client_to_use=api_client)
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("cloud-id", 1)
+
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", project_path.name, "--encrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+
+    library_path = Path.cwd() / "Library" / "Shared Library"
+    library_config = container.project_config_manager.get_project_config(library_path)
+    assert library_config.get("encrypted", False) == False
+    assert library_config.get("encryption-key-path", None) is None
+    assert (library_path / "main.py").read_text() == "LIBRARY_VALUE = 1\n"
+    assert container.project_config_manager.get_project_config(project_path).get("encrypted", False) == True
