@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from os import chmod, getpid, path, remove, replace, stat
+from contextlib import suppress
 from json import load
 from pathlib import Path
 from stat import S_IMODE
@@ -47,7 +48,14 @@ def _download_modules_json() -> None:
                 # doesn't leave a file that later runs without it can't read
                 from os import chown
                 existing = stat(file_path)
-                chown(temporary_file_path, existing.st_uid, existing.st_gid)
+                temporary = stat(temporary_file_path)
+                if temporary.st_uid != existing.st_uid:
+                    chown(temporary_file_path, existing.st_uid, existing.st_gid)
+                elif temporary.st_gid != existing.st_gid:
+                    # The owner can read the file whatever its group, and changing the group to one
+                    # the owner isn't a member of needs root
+                    with suppress(PermissionError):
+                        chown(temporary_file_path, -1, existing.st_gid)
                 chmod(temporary_file_path, S_IMODE(existing.st_mode))
             replace(temporary_file_path, file_path)
         finally:

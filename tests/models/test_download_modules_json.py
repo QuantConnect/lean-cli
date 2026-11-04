@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from pyfakefs.helpers import reset_ids, set_gid, set_uid
+from pyfakefs.helpers import get_gid, get_uid, reset_ids, set_gid, set_uid
 from requests.exceptions import JSONDecodeError
 from responses import RequestsMock
 
@@ -97,6 +97,7 @@ def test_download_modules_json_keeps_cache_when_its_owner_cannot_be_kept(request
     cache = Path.cwd() / "cache" / "modules.json"
     cache.parent.mkdir()
     content = _write_cache(cache)
+    os.chown(cache, get_uid() + 1, get_gid() + 1)
     monkeypatch.setattr(models, "file_path", cache)
     requests_mock.add(requests_mock.GET, models.url, json={"modules": {}}, status=200)
 
@@ -109,4 +110,28 @@ def test_download_modules_json_keeps_cache_when_its_owner_cannot_be_kept(request
         models._download_modules_json()
 
     assert cache.read_text(encoding="utf-8") == content
+    assert [p.name for p in cache.parent.iterdir()] == ["modules.json"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="File ownership and modes are POSIX only")
+@pytest.mark.parametrize("group_offset", [0, 1])
+def test_download_modules_json_replaces_cache_when_only_its_group_cannot_be_kept(requests_mock: RequestsMock,
+                                                                                 monkeypatch: pytest.MonkeyPatch,
+                                                                                 group_offset: int) -> None:
+    cache = Path.cwd() / "cache" / "modules.json"
+    cache.parent.mkdir()
+    _write_cache(cache)
+    os.chown(cache, get_uid(), get_gid() + group_offset)
+    monkeypatch.setattr(models, "file_path", cache)
+    new_modules = {"modules": {"NewModule": {"version": "2.0"}}}
+    requests_mock.add(requests_mock.GET, models.url, json=new_modules, status=200)
+
+    def chown(*args, **kwargs) -> None:
+        raise PermissionError("Operation not permitted")
+
+    monkeypatch.setattr(os, "chown", chown)
+
+    models._download_modules_json()
+
+    assert json.loads(cache.read_text(encoding="utf-8")) == new_modules
     assert [p.name for p in cache.parent.iterdir()] == ["modules.json"]
