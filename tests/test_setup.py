@@ -75,6 +75,16 @@ def test_setup_in_place_and_dry_run_builds_keep_downloaded_modules_json(source_t
     assert (source_tree / MODULES_FILE).read_text() == DOWNLOADED_MODULES_JSON
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Creating symbolic links may require elevated rights on Windows")
+def test_setup_build_into_linked_package_keeps_downloaded_modules_json(source_tree: Path) -> None:
+    (source_tree / "build" / "lib").mkdir(parents=True)
+    (source_tree / "build" / "lib" / "lean").symlink_to(source_tree / "lean", target_is_directory=True)
+
+    _run_setup(source_tree, "build_py")
+
+    assert (source_tree / MODULES_FILE).read_text() == DOWNLOADED_MODULES_JSON
+
+
 def test_setup_wheel_records_empty_modules_placeholder_and_keeps_downloaded_file(source_tree: Path) -> None:
     _run_setup(source_tree, "bdist_wheel")
 
