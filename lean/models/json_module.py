@@ -335,9 +335,9 @@ class JsonModule(ABC):
                                                  f"available: {api_account_ids}")
                         existing_account = lean_config.get(inner_config._id)
                         if existing_account and (existing_account not in api_account_ids
-                                                 or len(api_account_ids) > 1):
-                            # Clear stale or ambiguous account so the user is prompted
-                            # to select from the current API choices
+                                                 or (interactive and len(api_account_ids) > 1)):
+                            # Clear a stale account, or an ambiguous one when the user can be prompted,
+                            # so the user selects from the current API choices
                             lean_config.pop(inner_config._id)
                         break
                 continue
