@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import path
+from os import path, remove, replace
 from json import load
 from pathlib import Path
 from time import time
@@ -39,9 +39,10 @@ def _download_modules_json() -> None:
         try:
             with open(temporary_file_path, 'w', encoding='utf-8') as f:
                 dump(data, f, ensure_ascii=False, indent=4)
-            temporary_file_path.replace(file_path)
+            replace(temporary_file_path, file_path)
         finally:
-            temporary_file_path.unlink(missing_ok=True)
+            if path.exists(temporary_file_path):
+                remove(temporary_file_path)
     else:
         res.raise_for_status()
 
