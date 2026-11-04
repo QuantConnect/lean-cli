@@ -11,12 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import chmod, getpid, path, remove, replace, stat
-from contextlib import suppress
+from os import path
 from json import load
 from pathlib import Path
-from stat import S_IMODE
-from sys import platform
 from time import time
 
 json_modules = {}
@@ -33,34 +30,16 @@ def _download_modules_json() -> None:
     from requests import get
     res = get(url, timeout=5)
     if res.ok:
-        from json import dump
-        # Decode the response and write a temporary file first, so a malformed response
-        # or a failed write leaves the existing file untouched; the process id keeps
-        # concurrent refreshes from sharing the temporary file.
+        from json import dumps
+        # Decoded and checked before the file is opened, since opening it for writing empties it: a response that
+        # isn't a modules file would replace a usable one with one the CLI can't start from
         data = res.json()
+        if not isinstance(data, dict) or "modules" not in data:
+            raise ValueError(f"{url} returned no modules")
+        content = dumps(data, ensure_ascii=False, indent=4)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        temporary_file_path = file_path.with_name(f"{file_path.name}.{getpid()}.tmp")
-        try:
-            with open(temporary_file_path, 'w', encoding='utf-8') as f:
-                dump(data, f, ensure_ascii=False, indent=4)
-            if platform != "win32" and path.exists(file_path):
-                # The replacement takes the existing file's owner and mode, so a refresh run with sudo
-                # doesn't leave a file that later runs without it can't read
-                from os import chown
-                existing = stat(file_path)
-                temporary = stat(temporary_file_path)
-                if temporary.st_uid != existing.st_uid:
-                    chown(temporary_file_path, existing.st_uid, existing.st_gid)
-                elif temporary.st_gid != existing.st_gid:
-                    # The owner can read the file whatever its group, and changing the group to one
-                    # the owner isn't a member of needs root
-                    with suppress(PermissionError):
-                        chown(temporary_file_path, -1, existing.st_gid)
-                chmod(temporary_file_path, S_IMODE(existing.st_mode))
-            replace(temporary_file_path, file_path)
-        finally:
-            if path.exists(temporary_file_path):
-                remove(temporary_file_path)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
     else:
         res.raise_for_status()
 
