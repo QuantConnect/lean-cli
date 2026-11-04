@@ -315,9 +315,8 @@ class JsonModule(ABC):
                 user_name = self.get_user_name(lean_config, configuration, user_provided_options,
                                                configuration.require_user_name, interactive)
                 logger.debug(f'user_name: {user_name}')
-                brokerage_id = self._id if self._id == "InteractiveBrokersFixBrokerage" else self._display_name.lower()
-                auth_authorizations = get_authorization(container.api_client.auth0, brokerage_id, logger,
-                                                        lean_config["project-id"], no_browser=no_browser,
+                auth_authorizations = get_authorization(container.api_client.auth0, self._display_name.lower(),
+                                                        logger, lean_config["project-id"], no_browser=no_browser,
                                                         user_name=user_name)
                 logger.debug(f'auth: {auth_authorizations}')
                 configuration._value = auth_authorizations.get_authorization_config_without_account()
