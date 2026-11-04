@@ -30,10 +30,16 @@ def _download_modules_json() -> None:
     from requests import get
     res = get(url, timeout=5)
     if res.ok:
-        from json import dump
+        from json import dumps
+        # Decoded and checked before the file is opened, since opening it for writing empties it: a response that
+        # isn't a modules file would replace a usable one with one the CLI can't start from
+        data = res.json()
+        if not isinstance(data, dict) or "modules" not in data:
+            raise ValueError(f"{url} returned no modules")
+        content = dumps(data, ensure_ascii=False, indent=4)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
-            dump(res.json(), f, ensure_ascii=False, indent=4)
+            f.write(content)
     else:
         res.raise_for_status()
 
