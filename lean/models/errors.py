@@ -34,6 +34,10 @@ class RequestFailedError(Exception):
         self.response = response
 
 
+class PartialPushError(Exception):
+    """A PartialPushError indicates that a push stopped after some of the project's changes were written to the cloud."""
+
+
 class MoreInfoError(Exception):
     """An error which consists of a message and a link to documentation with more information."""
 

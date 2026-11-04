@@ -12,7 +12,8 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List, Dict, Optional
+from functools import partial
+from typing import Any, List, Dict, Optional
 
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -22,6 +23,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
+from lean.models.errors import PartialPushError, RequestFailedError
 
 class PushManager:
     """The PushManager class is responsible for synchronizing local projects to the cloud."""
@@ -69,6 +71,7 @@ class PushManager:
             return
 
         organization_id = self._organization_manager.try_get_working_organization_id()
+        partly_pushed_projects = []
 
         for index, path in enumerate(all_projects_to_push, start=1):
 
@@ -85,6 +88,14 @@ class PushManager:
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
                 if "write permission" in str(ex).lower():
                     self._logger.info("Please pull any required changes and push with --force")
+                if isinstance(ex, PartialPushError):
+                    partly_pushed_projects.append(relative_path.as_posix())
+
+        # A partly pushed project must not be compiled, backtested or deployed by the command that pushed it
+        if len(partly_pushed_projects) > 0:
+            raise PartialPushError(f"Some projects were only partly pushed: "
+                                   f"{', '.join(repr(name) for name in partly_pushed_projects)}. "
+                                   f"Push again after fixing the errors above")
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -259,7 +270,12 @@ class PushManager:
         if not force:
             update_args["code_source_id"] = "cli"
         if update_args != {}:
-            self._api_client.projects.update(cloud_project.projectId, **update_args)
+            try:
+                self._api_client.projects.update(cloud_project.projectId, **update_args)
+            except RequestFailedError as error:
+                if error.response.status_code != 413:
+                    raise
+                self._push_one_by_one(cloud_project, update_args)
 
             if "encryption_key" in update_args:
                 del update_args["encryption_key"]
@@ -273,6 +289,56 @@ class PushManager:
                 updated_keys_str = ", ".join(updated_keys[:-1]) + f", and {updated_keys[-1]}"
 
             self._logger.info(f"Successfully updated {updated_keys_str} for '{cloud_project.name}'")
+
+    def _push_one_by_one(self, cloud_project: QCProject, update_args: Dict[str, Any]) -> None:
+        """Pushes a project that is too large for a single projects/update request, with one request per change.
+
+        The files go first and the other metadata last. The API checks the collaboration lock on files/* requests
+        that carry codeSourceId, but not on a projects/update without files, so a lock held by someone else stops
+        the push before any file is written.
+
+        :param cloud_project: the cloud project to push to
+        :param update_args: the arguments of the projects/update request that was too large
+        """
+        project_id = cloud_project.projectId
+        code_source_id = update_args.get("code_source_id")
+        local_files = update_args["files"]
+        local_file_names = {file["name"] for file in local_files}
+        self._logger.info(f"'{cloud_project.name}' is too large to push in one request, pushing its changed files one by one")
+        cloud_files = {file.name: file for file in self._api_client.files.get_all(project_id)}
+
+        # Deletes go first, so a rename in a project at its file quota doesn't go over the quota
+        requests = [(f"deleting '{cloud_file.name}'",
+                     partial(self._api_client.files.delete, project_id, cloud_file.name, code_source_id=code_source_id))
+                    for cloud_file in cloud_files.values()
+                    if not cloud_file.isLibrary and cloud_file.name not in local_file_names]
+        for file in local_files:
+            cloud_file = cloud_files.get(file["name"])
+            if cloud_file is None:
+                requests.append((f"creating '{file['name']}'",
+                                 partial(self._api_client.files.create, project_id, file["name"], file["content"],
+                                         code_source_id=code_source_id)))
+            # Trailing whitespace can't change the code, leading whitespace can (Python indentation)
+            elif cloud_file.content.rstrip() != file["content"].rstrip():
+                requests.append((f"updating '{file['name']}'",
+                                 partial(self._api_client.files.update, project_id, file["name"], file["content"],
+                                         code_source_id=code_source_id)))
+        requests.append(("updating the project details",
+                         partial(self._api_client.projects.update, project_id,
+                                 **{key: value for key, value in update_args.items() if key != "files"})))
+
+        for index, (description, request) in enumerate(requests):
+            try:
+                request()
+            except Exception as error:
+                if index == 0:
+                    raise RuntimeError(f"{description} failed, nothing was pushed: {error}") from error
+                if index == len(requests) - 1:
+                    raise PartialPushError(f"All files of '{cloud_project.name}' were pushed, but updating the project "
+                                           f"details failed. Fix the problem and push again. Error: {error}") from error
+                raise PartialPushError(f"Only part of '{cloud_project.name}' was pushed: {description} failed, so the "
+                                       f"cloud project now mixes old and new code. Fix the problem and push again. "
+                                       f"Error: {error}") from error
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
