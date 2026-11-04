@@ -31,9 +31,17 @@ def _download_modules_json() -> None:
     res = get(url, timeout=5)
     if res.ok:
         from json import dump
+        # Decode the response and write a temporary file first, so a malformed response
+        # or a failed write leaves the existing file untouched.
+        data = res.json()
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            dump(res.json(), f, ensure_ascii=False, indent=4)
+        temporary_file_path = file_path.with_name(file_path.name + ".tmp")
+        try:
+            with open(temporary_file_path, 'w', encoding='utf-8') as f:
+                dump(data, f, ensure_ascii=False, indent=4)
+            temporary_file_path.replace(file_path)
+        finally:
+            temporary_file_path.unlink(missing_ok=True)
     else:
         res.raise_for_status()
 
