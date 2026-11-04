@@ -21,12 +21,16 @@ from pathlib import Path
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
+from setuptools.dist import Distribution
 
 import lean.models
 
 REPOSITORY_ROOT = Path(__file__).parent.parent
 MODULES_FILE = f"lean/{lean.models.file_name}"
 DOWNLOADED_MODULES_JSON = '{"modules": {}}'
+# Newer setuptools releases removed the --dry-run option
+requires_dry_run = pytest.mark.skipif("dry-run" not in [option[0] for option in Distribution.global_options],
+                                      reason="This setuptools version has no --dry-run option")
 
 
 @pytest.fixture
@@ -60,9 +64,11 @@ def test_setup_metadata_keeps_downloaded_modules_json(source_tree: Path) -> None
     assert (source_tree / MODULES_FILE).read_text() == DOWNLOADED_MODULES_JSON
 
 
-@pytest.mark.parametrize("arguments", [["build_py", "--build-lib", "."],
-                                       ["--dry-run", "build_py", "--build-lib", "."],
-                                       ["--dry-run", "build_py", "--build-lib", "build/lib"]])
+@pytest.mark.parametrize("arguments", [
+    ["build_py", "--build-lib", "."],
+    pytest.param(["--dry-run", "build_py", "--build-lib", "."], marks=requires_dry_run),
+    pytest.param(["--dry-run", "build_py", "--build-lib", "build/lib"], marks=requires_dry_run)
+])
 def test_setup_in_place_and_dry_run_builds_keep_downloaded_modules_json(source_tree: Path, arguments: list) -> None:
     _run_setup(source_tree, *arguments)
 
