@@ -12,9 +12,13 @@
 # limitations under the License.
 
 import json
+import os
+import stat
+import sys
 from pathlib import Path
 
 import pytest
+from pyfakefs.helpers import reset_ids, set_gid, set_uid
 from requests.exceptions import JSONDecodeError
 from responses import RequestsMock
 
@@ -54,4 +58,55 @@ def test_download_modules_json_replaces_cache_with_valid_response(requests_mock:
     models._download_modules_json()
 
     assert json.loads(cache.read_text(encoding="utf-8")) == new_modules
+    assert [p.name for p in cache.parent.iterdir()] == ["modules.json"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="File ownership and modes are POSIX only")
+def test_download_modules_json_keeps_cache_owner_and_mode_when_refreshed_as_root(requests_mock: RequestsMock,
+                                                                                monkeypatch: pytest.MonkeyPatch) -> None:
+    cache = Path.cwd() / "cache" / "modules.json"
+    cache.parent.mkdir()
+    _write_cache(cache)
+    os.chown(cache, 1000, 1000)
+    os.chmod(cache, 0o644)
+    monkeypatch.setattr(models, "file_path", cache)
+    new_modules = {"modules": {"NewModule": {"version": "2.0"}}}
+    requests_mock.add(requests_mock.GET, models.url, json=new_modules, status=200)
+
+    set_uid(0)
+    set_gid(0)
+    previous_umask = os.umask(0o077)
+    try:
+        models._download_modules_json()
+    finally:
+        os.umask(previous_umask)
+        set_uid(1000)
+        set_gid(1000)
+
+    try:
+        cache_stat = os.stat(cache)
+        assert (cache_stat.st_uid, cache_stat.st_gid, stat.S_IMODE(cache_stat.st_mode)) == (1000, 1000, 0o644)
+        assert json.loads(cache.read_text(encoding="utf-8")) == new_modules
+    finally:
+        reset_ids()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="File ownership and modes are POSIX only")
+def test_download_modules_json_keeps_cache_when_its_owner_cannot_be_kept(requests_mock: RequestsMock,
+                                                                         monkeypatch: pytest.MonkeyPatch) -> None:
+    cache = Path.cwd() / "cache" / "modules.json"
+    cache.parent.mkdir()
+    content = _write_cache(cache)
+    monkeypatch.setattr(models, "file_path", cache)
+    requests_mock.add(requests_mock.GET, models.url, json={"modules": {}}, status=200)
+
+    def chown(*args, **kwargs) -> None:
+        raise PermissionError("Operation not permitted")
+
+    monkeypatch.setattr(os, "chown", chown)
+
+    with pytest.raises(PermissionError):
+        models._download_modules_json()
+
+    assert cache.read_text(encoding="utf-8") == content
     assert [p.name for p in cache.parent.iterdir()] == ["modules.json"]

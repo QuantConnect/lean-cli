@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import getpid, path, remove, replace
+from os import chmod, getpid, path, remove, replace, stat
 from json import load
 from pathlib import Path
+from stat import S_IMODE
+from sys import platform
 from time import time
 
 json_modules = {}
@@ -40,6 +42,13 @@ def _download_modules_json() -> None:
         try:
             with open(temporary_file_path, 'w', encoding='utf-8') as f:
                 dump(data, f, ensure_ascii=False, indent=4)
+            if platform != "win32" and path.exists(file_path):
+                # The replacement takes the existing file's owner and mode, so a refresh run with sudo
+                # doesn't leave a file that later runs without it can't read
+                from os import chown
+                existing = stat(file_path)
+                chown(temporary_file_path, existing.st_uid, existing.st_gid)
+                chmod(temporary_file_path, S_IMODE(existing.st_mode))
             replace(temporary_file_path, file_path)
         finally:
             if path.exists(temporary_file_path):
