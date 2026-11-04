@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import path, remove, replace
+from os import getpid, path, remove, replace
 from json import load
 from pathlib import Path
 from time import time
@@ -32,10 +32,11 @@ def _download_modules_json() -> None:
     if res.ok:
         from json import dump
         # Decode the response and write a temporary file first, so a malformed response
-        # or a failed write leaves the existing file untouched.
+        # or a failed write leaves the existing file untouched; the process id keeps
+        # concurrent refreshes from sharing the temporary file.
         data = res.json()
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        temporary_file_path = file_path.with_name(file_path.name + ".tmp")
+        temporary_file_path = file_path.with_name(f"{file_path.name}.{getpid()}.tmp")
         try:
             with open(temporary_file_path, 'w', encoding='utf-8') as f:
                 dump(data, f, ensure_ascii=False, indent=4)
