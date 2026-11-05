@@ -17,13 +17,13 @@ from typing import Callable, List, Optional
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
 
-# The key rules of LEAN's ObjectStore (QuantConnect/Lean#9905), mirrored by set only so a key set here is the one an
+# The key rules of LEAN's ObjectStore (QuantConnect/Lean#10029), mirrored by set only so a key set here is the one an
 # algorithm saves to. The other commands send the key as typed; LEAN's reads also fall back to the sanitized key
-_SUPPORTED_KEY = re.compile(r"\.?[a-zA-Z0-9\\/_#\-$= ]+\.?[a-zA-Z0-9]*")
-_UNSUPPORTED_CHARACTERS = re.compile(r"[^a-zA-Z0-9\\/_#\-$= .]")
-_EXTENSION = re.compile(r"[a-zA-Z0-9]+")
-_KEY_RULES = "Keys may only contain english letters, numbers, spaces and the characters '/', '\\', '_', '#', '-', '$' and '=', " \
-             "plus at most one '.' followed by a letters-and-numbers-only extension, e.g. 'folder/trade_log-2024.csv'"
+_UNSUPPORTED_CHARACTERS = re.compile(r"[^a-zA-Z0-9/_#\-$= .]")
+# '..' is never allowed: it would leave the storage root
+_CONSECUTIVE_DOTS = re.compile(r"\.{2,}")
+_KEY_RULES = "Keys may only contain english letters, numbers, spaces and the characters '.', '/', '_', '#', '-', '$' and '=', " \
+             "never two '.' in a row, e.g. 'folder/trade_log-2024.v2.csv'"
 
 
 def key_to_save(key: str, exists: Callable[[str], bool], logger: Logger) -> str:
@@ -60,21 +60,15 @@ def get_key_issues(key: str) -> Optional[str]:
 
 
 def sanitize_key(key: str) -> str:
-    """Converts an unsupported key into a supported one by replacing every unsupported character with '_',
-    keeping at most the final '.extension': 'trade log: AI & Cloud.csv' becomes 'trade log_ AI _ Cloud.csv'.
+    """Converts an unsupported key into a supported one: '\' becomes '/', the separator LEAN's local store already
+    reads it as, every other unsupported character and every '.' of a '..' run become '_', so 'trade log: AI & Cloud.csv'
+    becomes 'trade log_ AI _ Cloud.csv'.
 
     :param key: the key to sanitize
     :return: a key following the key format
     """
-    sanitized = _UNSUPPORTED_CHARACTERS.sub("_", key)
-
-    # a single trailing '.extension' of letters and numbers is allowed: keep the last dot if it
-    # introduces a valid extension and replace every other dot
-    last_dot = sanitized.rfind(".")
-    if last_dot > 0 and _EXTENSION.fullmatch(sanitized[last_dot + 1:]) is not None:
-        sanitized = sanitized[:last_dot].replace(".", "_") + sanitized[last_dot:]
-    elif last_dot >= 0:
-        sanitized = sanitized.replace(".", "_")
+    sanitized = _UNSUPPORTED_CHARACTERS.sub("_", key.replace("\\", "/"))
+    sanitized = _CONSECUTIVE_DOTS.sub(lambda match: "_" * len(match.group()), sanitized)
 
     issues = get_key_issues(sanitized)
     if issues is not None:
@@ -83,7 +77,12 @@ def sanitize_key(key: str) -> str:
 
 
 def _is_supported_key(key: str) -> bool:
-    return bool(key) and _SUPPORTED_KEY.fullmatch(key) is not None and key.count("/") <= 100 and key.count("\\") <= 100
+    return bool(key) and _UNSUPPORTED_CHARACTERS.search(key) is None and ".." not in key and _has_name(key) and key.count("/") <= 100
+
+
+def _has_name(key: str) -> bool:
+    """Whether the key has something besides dots and separators, so it names an object and not a folder."""
+    return any(char not in "./" for char in key)
 
 
 def _find_key_issues(key: str) -> List[str]:
@@ -96,22 +95,13 @@ def _find_key_issues(key: str) -> List[str]:
     if unsupported:
         issues.append(f"unsupported character{'s' if len(unsupported) > 1 else ''} {', '.join(unsupported)}")
 
-    # a single leading '.' is allowed, every other '.' must introduce the final extension
-    name = key.lstrip(".")
-    dots = name.count(".")
-    if dots > 1:
-        issues.append(f"it has {dots} '.' but at most one '.extension' is allowed")
-    elif dots == 1:
-        extension = name[name.index(".") + 1:]
-        if extension and _EXTENSION.fullmatch(extension) is None:
-            issues.append(f"the extension '{extension}' may only contain letters and numbers")
-    if not name:
-        issues.append("it has no name before the '.'")
-    elif key.startswith(".."):
-        issues.append("it starts with more than one '.'")
+    if ".." in key:
+        issues.append("it contains '..'")
+    if not _has_name(key):
+        issues.append("it has no name, only '.' and separators")
 
-    if key.count("/") > 100 or key.count("\\") > 100:
-        issues.append("it has more than 100 '/' or '\\' separators")
+    if key.count("/") > 100:
+        issues.append("it has more than 100 '/' separators")
 
     if not issues:
         issues.append("it does not follow the key format")
