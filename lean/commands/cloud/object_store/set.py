@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from html import unescape
 from click import command, argument
 from pathlib import Path
 from lean.click import LeanCommand, PathParameter
 from lean.container import container
-from lean.components.util.object_store_helper import key_to_save
 
 
 @command(cls=LeanCommand)
@@ -24,13 +24,15 @@ from lean.components.util.object_store_helper import key_to_save
 def set(key: str, path: Path) -> None:
     """Sets the data to the given key in the organization's cloud object store.
 
-    :param key: The key to set the data to. A key that does not follow the object store key format is sanitized, with a warning naming the key to use from then on; the set fails when the sanitized key already holds an object, as LEAN's save does. The other object-store commands take the key as typed.
+    :param key: The key to set the data to. The cloud stores a key that does not follow the object store key format under a sanitized name, with a warning naming the key to use from then on.
     :param path: Path to the file containing the object data.
     """
     organization_id = container.organization_manager.try_get_working_organization_id()
-    api_client = container.api_client
-    key = key_to_save(key, lambda k: api_client.object_store.exists(k, organization_id), container.logger)
     container.logger.info(f"Setting object {key} in organization {organization_id}")
+    api_client = container.api_client
     with open(path, "rb") as file:
         bytes_data: bytes = file.read()
-    api_client.object_store.set(key, bytes_data, organization_id)
+    response = api_client.object_store.set(key, bytes_data, organization_id)
+    # the cloud encodes the key in its messages for web pages
+    for warning in response.get("warnings", []) if isinstance(response, dict) else []:
+        container.logger.warn(unescape(warning))

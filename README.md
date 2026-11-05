@@ -711,10 +711,9 @@ Usage: lean cloud object-store set [OPTIONS] KEY PATH
 
   Sets the data to the given key in the organization's cloud object store.
 
-  :param key: The key to set the data to. A key that does not follow the object store key format is sanitized, with a
-  warning naming the key to use from then on; the set fails when the sanitized key already holds an object, as LEAN's
-  save does. The other object-store commands take the key as typed. :param path: Path to the file containing the object
-  data.
+  :param key: The key to set the data to. The cloud stores a key that does not follow the object store key format under
+  a sanitized name, with a warning naming the key to use from then on. :param path: Path to the file containing the
+  object data.
 
 Options:
   --verbose  Enable debug logging

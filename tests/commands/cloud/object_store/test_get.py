@@ -36,21 +36,3 @@ def test_get_gets_value_when_key_is_given(mock_zipfile) -> None:
     result = CliRunner().invoke(lean, ["cloud", "object-store", "get", "test-key"])
     assert result.exit_code == 0
     container.api_client.object_store.get.assert_called_once_with(('test-key',), 'abc', container.logger)
-
-
-@mock.patch("zipfile.ZipFile")
-def test_get_sends_unsupported_keys_as_typed(mock_zipfile) -> None:
-    archive = mock.Mock()
-    archive.return_value.read = mock.Mock()
-    mock_zipfile.return_value.__enter__ = archive
-
-    api_client = mock.Mock()
-    api_client.is_authenticated.return_value = True
-    initialize_container(api_client_to_use=api_client)
-
-    result = CliRunner().invoke(lean, ["cloud", "object-store", "get", "trade log: AI & Cloud.csv", "model.v2.pkl"])
-
-    assert result.exit_code == 0
-    assert "is not supported" not in result.output
-    api_client.object_store.exists.assert_not_called()
-    container.api_client.object_store.get.assert_called_once_with(('trade log: AI & Cloud.csv', 'model.v2.pkl'), 'abc', container.logger)

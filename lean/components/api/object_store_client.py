@@ -13,7 +13,6 @@
 
 from lean.components.api.api_client import *
 from lean.components.util.logger import Logger
-from lean.models.errors import RequestFailedError
 
 
 class ObjectStoreClient:
@@ -38,20 +37,6 @@ class ObjectStoreClient:
         }
 
         return self._api.post("object/properties", payload)
-
-    def exists(self, key: str, organization_id: str) -> bool:
-        """Returns whether an object is stored under the given key, as typed.
-        :param key: key of the object to look for
-        :param organization_id: the id of the organization who's object store to look in
-        :return: True if the object exists
-        """
-        try:
-            self.properties(key, organization_id)
-            return True
-        except RequestFailedError as error:
-            if "not found" in str(error).lower():
-                return False
-            raise
 
     def get(self, keys: [str], organization_id: str, logger: Logger) -> str:
         """Will fetch an url to download the requested keys
@@ -95,11 +80,12 @@ class ObjectStoreClient:
 
         return data["url"]
 
-    def set(self, key: str, object_data: bytes, organization_id: str) -> None:
+    def set(self, key: str, object_data: bytes, organization_id: str) -> dict:
         """Sets the given key in the Object Store.
         :param key: key of the object to set
         :param object_data: the data to set
         :param organization_id: the id of the organization who's object store to set data in
+        :return: the api response, with the key the object was stored under and any warnings about it
         """
         payload = {
             "organizationId": organization_id,
@@ -108,7 +94,7 @@ class ObjectStoreClient:
         extra_options = {
             "files": {"objectData": object_data}
         }
-        self._api.post("object/set", payload, False, extra_options)
+        return self._api.post("object/set", payload, False, extra_options)
 
     def list(self, path: str, organization_id: str) -> str:
         """List all values for the given root key in the Object Store.

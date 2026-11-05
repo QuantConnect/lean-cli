@@ -48,17 +48,3 @@ def test_list_handles_empty_or_none_objects(objects_value) -> None:
     container.api_client.object_store.list.assert_called_once_with('test', 'abc')
 
 
-
-
-def test_list_sends_an_unsupported_root_key_as_typed() -> None:
-    api_client = mock.Mock()
-    api_client.is_authenticated.return_value = True
-    api_client.object_store.list.return_value = {'objects': [], 'success': True, 'path': 'trade log:'}
-    initialize_container(api_client_to_use=api_client)
-
-    result = CliRunner().invoke(lean, ["cloud", "object-store", "list", "trade log:"])
-
-    assert result.exit_code == 0
-    assert "is not supported" not in result.output
-    assert "No objects found at 'trade log:'." in result.output
-    container.api_client.object_store.list.assert_called_once_with('trade log:', 'abc')
