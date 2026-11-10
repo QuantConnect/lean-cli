@@ -110,6 +110,19 @@ def test_is_path_valid_windows(path: str, valid: bool) -> None:
     assert path_manager.is_cli_path_valid(Path.cwd() / path) == valid
 
 
+@pytest.mark.parametrize("path", ["BIN",
+                                        "Bin",
+                                        "OBJ",
+                                        "__PYCACHE__",
+                                        ".VSCODE",
+                                        "My Path/BIN/file.txt",
+                                        "My Path/con.txt"])
+def test_is_path_valid_rejects_reserved_names_case_insensitively(path: str) -> None:
+    path_manager = _get_path_manager()
+
+    assert not path_manager.is_path_valid(Path(path))
+
+
 @pytest.mark.parametrize("name, valid", [("123", True),
                                          ("abc", True),
                                          ("1a2b3c", True),
