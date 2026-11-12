@@ -251,7 +251,10 @@ def report(backtest_results: Optional[Path],
             logger.info(f"Custom HTML template file '{html}' could not be found")
 
     if pdf:
-        run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')
+        pdf_destination = report_destination.with_suffix(".pdf")
+        if report_destination.suffix.lower() == ".pdf":
+            pdf_destination = report_destination.with_name(report_destination.name + ".pdf")
+        run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{pdf_destination.name}"')
     if live_results is not None:
         run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
                                            source=str(live_results),
