@@ -613,3 +613,25 @@ def test_report_runs_custom_image_when_given_as_option() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == DockerImage(name="custom/lean", tag="456")
+
+
+@pytest.mark.parametrize("destination, pdf_destination", [
+    ("report.html", "report.pdf"),
+    ("report.HTML", "report.pdf"),
+    ("my-report", "my-report.pdf"),
+    ("report.html.backtest.html", "report.html.backtest.pdf"),
+    ("report.pdf", "report.pdf.pdf"),
+    ("report.PDF", "report.PDF.pdf"),
+])
+def test_report_exports_pdf_to_separate_destination(destination: str, pdf_destination: str) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--pdf", "--report-destination", destination])
+
+    assert result.exit_code == 0
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert f'cp /tmp/report.html "/Output/{destination}"' in commands
+    assert f'cp /tmp/report.pdf "/Output/{pdf_destination}"' in commands
+    assert destination.lower() != pdf_destination.lower()
