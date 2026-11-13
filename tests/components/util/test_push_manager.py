@@ -528,3 +528,34 @@ def test_push_projects_updates_name_locally_if_updated_by_cloud() -> None:
 
     assert not (Path.cwd() / project_path).exists()
     assert (Path.cwd() / project_name_renamed_by_cloud).exists()
+
+def test_push_projects_returns_true_when_every_project_is_pushed() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    cloud_project = create_api_project(1, project_path.name)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    api_client = mock.Mock()
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+
+    assert push_manager.push_projects([project_path])
+    api_client.projects.update.assert_called_once()
+
+
+def test_push_projects_returns_false_when_a_project_with_cloud_id_cannot_be_pushed() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    cloud_project = create_api_project(1, project_path.name)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    api_client = mock.Mock()
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.MagicMock(side_effect=RuntimeError("You don't have write permission"))
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+
+    assert not push_manager.push_projects([project_path])

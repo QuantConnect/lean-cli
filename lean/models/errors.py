@@ -60,3 +60,14 @@ class AuthenticationError(MoreInfoError):
                          "https://www.lean.io/docs/v2/lean-cli/initialization/authenticating-accounts#02-Log-In")
 
         self.response = response
+
+
+class PushFailedError(Exception):
+    """An error indicating that local changes the user asked to push could not be pushed to the cloud."""
+
+    def __init__(self, project: str) -> None:
+        """Creates a new PushFailedError instance.
+
+        :param project: the name or id of the project that could not be pushed
+        """
+        super().__init__(f"Cannot push '{project}' to the cloud, aborting so the cloud does not run outdated files")

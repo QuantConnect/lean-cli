@@ -21,6 +21,7 @@ from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject
+from lean.models.errors import PushFailedError
 
 
 class CloudProjectManager:
@@ -68,7 +69,8 @@ class CloudProjectManager:
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path):
             if push:
-                self._push_manager.push_projects([local_path])
+                if not self._push_manager.push_projects([local_path]):
+                    raise PushFailedError(input)
 
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is None:
@@ -92,7 +94,8 @@ class CloudProjectManager:
             if push:
                 local_path = self._project_manager.get_local_project_path(cloud_project.name, cloud_project.projectId)
                 if local_path.exists():
-                    self._push_manager.push_projects([local_path])
+                    if not self._push_manager.push_projects([local_path]):
+                        raise PushFailedError(input)
                     return self._api_client.projects.get(cloud_project.projectId, organization_id)
 
             return cloud_project
