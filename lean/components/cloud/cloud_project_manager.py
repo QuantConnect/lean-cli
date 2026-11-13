@@ -69,7 +69,8 @@ class CloudProjectManager:
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path):
             if push:
-                if not self._push_manager.push_projects([local_path]):
+                libraries = self._project_manager.get_project_libraries(local_path)
+                if not self._push_manager.push_projects([local_path], libraries):
                     raise PushFailedError(input)
 
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
@@ -94,7 +95,8 @@ class CloudProjectManager:
             if push:
                 local_path = self._project_manager.get_local_project_path(cloud_project.name, cloud_project.projectId)
                 if local_path.exists():
-                    if not self._push_manager.push_projects([local_path]):
+                    libraries = self._project_manager.get_project_libraries(local_path)
+                    if not self._push_manager.push_projects([local_path], libraries):
                         raise PushFailedError(input)
                     return self._api_client.projects.get(cloud_project.projectId, organization_id)
 
