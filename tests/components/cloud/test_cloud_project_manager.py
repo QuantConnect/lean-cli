@@ -40,7 +40,7 @@ def test_get_cloud_project_pushing_new_project():
     push_manager.pushed_project_paths = {Path.cwd() / "Python Project": Path.cwd() / "Python Project"}
 
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
+    project_config.get = mock.MagicMock(side_effect=lambda key, default=None: cloud_project.projectId if key == "cloud-id" else default)
     project_config.is_empty = mock.MagicMock(return_value=False)
     project_config_manager = mock.Mock()
     project_config_manager.try_get_project_config = mock.MagicMock(return_value=None)
@@ -55,7 +55,7 @@ def test_get_cloud_project_pushing_new_project():
     assert created_cloud_project == cloud_project
 
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
 
 
 def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> None:
@@ -75,7 +75,7 @@ def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> 
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project("Python Project", push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
     api_client.projects.get.assert_not_called()
 
 
@@ -96,7 +96,7 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
     api_client.projects.get.assert_not_called()
 
 
