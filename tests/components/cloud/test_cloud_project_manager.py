@@ -14,7 +14,10 @@
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from lean.container import container
+from lean.models.errors import PushFailedError
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
 
@@ -49,3 +52,45 @@ def test_get_cloud_project_pushing_new_project():
 
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
     push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+
+
+def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get.return_value = cloud_project
+
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(return_value=False)
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", cloud_project.projectId)
+
+    with pytest.raises(PushFailedError):
+        container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    api_client.projects.get.assert_not_called()
+
+
+def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(return_value=False)
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", cloud_project.projectId)
+
+    with pytest.raises(PushFailedError):
+        container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True)
+
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    api_client.projects.get.assert_not_called()

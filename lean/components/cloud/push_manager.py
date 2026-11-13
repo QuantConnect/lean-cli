@@ -56,17 +56,20 @@ class PushManager:
         libraries = self._project_manager.get_project_libraries(project)
         self.push_projects([project], libraries, encryption_action, encryption_key, force)
 
-    def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> None:
+    def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> bool:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
+        :return: True if every project and library was pushed, False if any of them could not be pushed
         """
         all_projects_to_push = associated_libraries_to_push + projects_to_push
 
         if len(all_projects_to_push) == 0:
-            return
+            return True
+
+        all_pushed = True
 
         organization_id = self._organization_manager.try_get_working_organization_id()
 
@@ -85,6 +88,9 @@ class PushManager:
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
                 if "write permission" in str(ex).lower():
                     self._logger.info("Please pull any required changes and push with --force")
+                all_pushed = False
+
+        return all_pushed
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
