@@ -15,6 +15,7 @@ from pathlib import Path
 from unittest import mock
 
 from lean.components.docker.docker_manager import DockerManager
+from lean.models.docker import DockerImage
 
 
 def _create_docker_manager() -> DockerManager:
@@ -46,3 +47,45 @@ def test_write_to_file_does_not_let_the_host_shell_expand_the_payload() -> None:
     # $type must reach the container untouched (raw JSON: real double quotes, no backslash escaping)
     assert '"$type"' in echo_command
     assert "\\" not in echo_command
+
+
+def _run_image_and_capture_signal_handlers(docker_manager: DockerManager, container: mock.Mock) -> dict:
+    handlers = {}
+
+    docker_client = mock.Mock()
+    docker_client.containers.run.return_value = container
+
+    with mock.patch.object(docker_manager, "image_installed", return_value=True), \
+            mock.patch.object(docker_manager, "create_network"), \
+            mock.patch.object(docker_manager, "_get_docker_client", return_value=docker_client), \
+            mock.patch("signal.signal", side_effect=lambda sig, handler: handlers.__setitem__(sig, handler)), \
+            mock.patch("sys.exit"):
+        docker_manager.run_image(DockerImage(name="quantconnect/lean", tag="latest"))
+
+    return handlers
+
+
+def test_run_image_stops_the_container_when_the_cli_is_terminated() -> None:
+    import signal
+    from time import sleep, time
+
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "exited"
+    container.attrs = {"State": {"ExitCode": 0}}
+
+    handlers = _run_image_and_capture_signal_handlers(docker_manager, container)
+
+    stop_signals = [signal.SIGINT, signal.SIGTERM] + ([signal.SIGHUP] if hasattr(signal, "SIGHUP") else [])
+    for stop_signal in stop_signals:
+        assert stop_signal in handlers
+
+    # A terminated CLI must stop the container exactly like Ctrl+C does
+    handlers[signal.SIGTERM](signal.SIGTERM, None)
+
+    deadline = time() + 5
+    while not container.kill.called and time() < deadline:
+        sleep(0.01)
+
+    container.kill.assert_called_once()

@@ -96,7 +96,9 @@ class DockerManager:
         :param kwargs: the kwargs to forward to docker.containers.run
         :return: True if the command in the container exited successfully, False if not
         """
-        from signal import signal, SIGINT, Signals
+        import signal as signals
+        from signal import signal, SIGINT, SIGTERM, Signals
+        SIGHUP = getattr(signals, "SIGHUP", None)
         from platform import node
         from sys import stdout, exit
         from threading import Thread
@@ -224,7 +226,8 @@ class DockerManager:
                 self._temp_manager.delete_temporary_directories()
                 exit(1)
 
-        # Kill the container on Ctrl+C
+        # Kill the container on Ctrl+C, and when the CLI itself is terminated (SIGTERM, or SIGHUP when the
+        # terminal or SSH session closes), so the container never keeps running without the CLI
         def signal_handler(sig: Signals, frame: FrameType) -> None:
             nonlocal force_kill_next
             if not graceful_stop or force_kill_next or kwargs["stop_signal"] == "SIGKILL":
@@ -239,7 +242,9 @@ class DockerManager:
             kill_thread.daemon = True
             kill_thread.start()
 
-        signal(SIGINT, signal_handler)
+        # SIGHUP does not exist on Windows
+        for stop_signal in [SIGINT, SIGTERM] + ([SIGHUP] if SIGHUP is not None else []):
+            signal(stop_signal, signal_handler)
 
         # container.logs() is blocking, we run it on a separate thread so the SIGINT handler works properly
         # If we run this code on the current thread, SIGINT won't be triggered on Windows when Ctrl+C is triggered
