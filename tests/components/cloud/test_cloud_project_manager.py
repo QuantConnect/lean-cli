@@ -36,7 +36,7 @@ def test_get_cloud_project_pushing_new_project():
     push_manager.push_projects = mock.Mock()
 
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
+    project_config.get = mock.MagicMock(side_effect=lambda key, default=None: cloud_project.projectId if key == "cloud-id" else default)
     project_config.is_empty = mock.MagicMock(return_value=False)
     project_config_manager = mock.Mock()
     project_config_manager.try_get_project_config = mock.MagicMock(return_value=None)
@@ -51,7 +51,7 @@ def test_get_cloud_project_pushing_new_project():
     assert created_cloud_project == cloud_project
 
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
 
 
 def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> None:
@@ -71,7 +71,7 @@ def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> 
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project("Python Project", push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
     api_client.projects.get.assert_not_called()
 
 
@@ -92,5 +92,28 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [])
     api_client.projects.get.assert_not_called()
+
+
+def test_get_cloud_project_pushing_project_also_pushes_its_libraries() -> None:
+    create_fake_lean_cli_directory()
+
+    cloud_project = create_api_project(1, "Python Project")
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(return_value=True)
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+
+    library_path = Path.cwd() / "Library" / "Python Library"
+    container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", cloud_project.projectId)
+    container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set(
+        "libraries", [{"name": "Python Library", "path": str(library_path)}])
+
+    container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"], [library_path.resolve()])
