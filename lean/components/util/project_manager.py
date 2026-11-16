@@ -23,7 +23,8 @@ from lean.components.util.logger import Logger
 from lean.components.util.path_manager import PathManager
 from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
-from lean.constants import PROJECT_CONFIG_FILE_NAME, DEFAULT_LEAN_DOTNET_FRAMEWORK
+from lean.constants import PROJECT_CONFIG_FILE_NAME, DEFAULT_LEAN_DOTNET_FRAMEWORK, \
+    NEW_CSHARP_PROJECT_DOTNET_FRAMEWORK
 from lean.models.api import QCLanguage, QCProject, QCProjectLibrary
 from lean.models.utils import LeanLibraryReference
 
@@ -200,9 +201,15 @@ class ProjectManager:
         else:
             self._generate_vscode_csharp_config(project_dir)
 
+            from docker.errors import ImageNotFound
             image = self._cli_config_manager.get_engine_image()
-            framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
-                                                                 DEFAULT_LEAN_DOTNET_FRAMEWORK)
+            try:
+                framework_ver = self._docker_manager.get_image_label(image, 'target_framework',
+                                                                     DEFAULT_LEAN_DOTNET_FRAMEWORK)
+            except ImageNotFound:
+                self._logger.info(f"Image '{image}' not found locally, "
+                                  f"using {NEW_CSHARP_PROJECT_DOTNET_FRAMEWORK} as the project's target framework")
+                framework_ver = NEW_CSHARP_PROJECT_DOTNET_FRAMEWORK
             self._generate_csproj(project_dir, framework_ver)
             self.generate_rider_config(project_dir)
 
