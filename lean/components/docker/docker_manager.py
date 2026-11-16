@@ -43,7 +43,13 @@ class DockerManager:
         return docker_image.labels.items()
 
     def get_image_label(self, image: DockerImage, label: str, default: str) -> str:
-        for name, value in self.get_image_labels(str(image)):
+        from docker.errors import ImageNotFound
+        try:
+            labels = self.get_image_labels(str(image))
+        except ImageNotFound:
+            self._logger.info(f"Image '{image}' not found locally, using default {default} for label '{label}'")
+            return default
+        for name, value in labels:
             if name == label:
                 self._logger.debug(f"Label '{label}' found in image '{image.name}', value {value}")
                 return value
