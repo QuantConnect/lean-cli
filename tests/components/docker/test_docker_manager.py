@@ -14,7 +14,12 @@
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
+from docker.errors import ImageNotFound
+
 from lean.components.docker.docker_manager import DockerManager
+from lean.models.docker import DockerImage
 
 
 def _create_docker_manager() -> DockerManager:
@@ -46,3 +51,30 @@ def test_write_to_file_does_not_let_the_host_shell_expand_the_payload() -> None:
     # $type must reach the container untouched (raw JSON: real double quotes, no backslash escaping)
     assert '"$type"' in echo_command
     assert "\\" not in echo_command
+
+
+def test_get_image_label_returns_the_label_of_the_image() -> None:
+    docker_manager = _create_docker_manager()
+
+    with mock.patch.object(docker_manager, "get_image_labels", return_value={"target_framework": "net10.0"}.items()):
+        label = docker_manager.get_image_label(DockerImage.parse("quantconnect/lean:latest"), "target_framework", "net9.0")
+
+    assert label == "net10.0"
+
+
+
+def test_get_image_label_returns_the_default_when_the_image_has_no_such_label() -> None:
+    docker_manager = _create_docker_manager()
+
+    with mock.patch.object(docker_manager, "get_image_labels", return_value={}.items()):
+        label = docker_manager.get_image_label(DockerImage.parse("quantconnect/lean:latest"), "target_framework", "net9.0")
+
+    assert label == "net9.0"
+
+
+def test_get_image_label_raises_when_the_image_is_not_found_locally() -> None:
+    docker_manager = _create_docker_manager()
+
+    with mock.patch.object(docker_manager, "get_image_labels", side_effect=ImageNotFound("No such image")):
+        with pytest.raises(ImageNotFound):
+            docker_manager.get_image_label(DockerImage.parse("quantconnect/lean:latest"), "target_framework", "net9.0")
