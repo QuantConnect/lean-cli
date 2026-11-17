@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from json import loads
 from pathlib import Path
+from typing import Optional, Tuple
 
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.pull_manager import PullManager
@@ -20,6 +22,7 @@ from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
+from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCProject
 from lean.models.errors import PushFailedError
 
@@ -63,6 +66,31 @@ class CloudProjectManager:
         :param push: True if the local counterpart of the cloud project needs to be pushed
         :return: the cloud project to use
         """
+        cloud_project, _ = self._resolve_cloud_project(input, push)
+        return cloud_project
+
+    def get_cloud_project_and_local_path(self, input: str, push: bool) -> Tuple[QCProject, Optional[Path]]:
+        """Resolve a cloud project and the directory containing its local results, when available."""
+        cloud_project, local_path = self._resolve_cloud_project(input, push)
+        if local_path is not None:
+            return cloud_project, local_path
+
+        # A cloud ID or name may refer to a project that has been pulled into the workspace.
+        # Read only the matching name's config without Storage's cleanup of invalid JSON.
+        candidate = Path(cloud_project.name)
+        if not candidate.is_absolute() and ".." not in candidate.parts:
+            candidate = Path.cwd() / candidate
+            try:
+                config = loads((candidate / PROJECT_CONFIG_FILE_NAME).read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                pass
+            else:
+                if isinstance(config, dict) and config.get("cloud-id") == cloud_project.projectId:
+                    return cloud_project, candidate
+
+        return cloud_project, None
+
+    def _resolve_cloud_project(self, input: str, push: bool) -> Tuple[QCProject, Optional[Path]]:
         organization_id = self._organization_manager.try_get_working_organization_id()
 
         # If the given input is a valid project directory, we try to use that project
@@ -77,11 +105,11 @@ class CloudProjectManager:
                 if cloud_id is None:
                     raise RuntimeError("Something went wrong while pushing the project to the cloud")
 
-                return self._api_client.projects.get(cloud_id, organization_id)
+                return self._api_client.projects.get(cloud_id, organization_id), local_path
             else:
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is not None:
-                    return self._api_client.projects.get(cloud_id, organization_id)
+                    return self._api_client.projects.get(cloud_id, organization_id), local_path
 
         # If the given input is not a valid project directory, we look for a cloud project with a matching name or id
         # If there are multiple, we use the first one
@@ -103,8 +131,9 @@ class CloudProjectManager:
                 if local_path.exists():
                     if not self._push_manager.push_projects([local_path]):
                         raise PushFailedError(input)
-                    return self._api_client.projects.get(cloud_project.projectId, organization_id)
+                    return (self._api_client.projects.get(cloud_project.projectId, organization_id),
+                            self._push_manager.pushed_project_paths[local_path])
 
-            return cloud_project
+            return cloud_project, None
 
         raise RuntimeError("No project with the given name or id could be found")
