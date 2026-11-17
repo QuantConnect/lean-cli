@@ -94,28 +94,44 @@ def _get_docker_client_with_env(monkeypatch, value):
         from_env_mock.return_value.ping.return_value = True
         docker_manager._get_docker_client()
 
-    return from_env_mock
+    return from_env_mock, docker_manager._logger
 
 
-def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch) -> None:
-    from_env_mock = _get_docker_client_with_env(monkeypatch, None)
-
-    from_env_mock.assert_called_once_with()
-
-
-def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_empty(monkeypatch) -> None:
-    from_env_mock = _get_docker_client_with_env(monkeypatch, " ")
+@pytest.mark.parametrize("value", [None, "", " "])
+def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch,
+                                                                                               value) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
 
     from_env_mock.assert_called_once_with()
+    logger.warn.assert_not_called()
 
 
-def test_get_docker_client_passes_docker_client_timeout_to_the_docker_client(monkeypatch) -> None:
-    from_env_mock = _get_docker_client_with_env(monkeypatch, "300")
+@pytest.mark.parametrize("value", ["300", " 300 "])
+def test_get_docker_client_passes_docker_client_timeout_to_the_docker_client(monkeypatch, value: str) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
 
     from_env_mock.assert_called_once_with(timeout=300)
+    logger.warn.assert_not_called()
 
 
-@pytest.mark.parametrize("value", ["abc", "0", "-5", "1.5"])
-def test_get_docker_client_raises_when_docker_client_timeout_is_invalid(monkeypatch, value: str) -> None:
-    with pytest.raises(RuntimeError, match="DOCKER_CLIENT_TIMEOUT"):
-        _get_docker_client_with_env(monkeypatch, value)
+@pytest.mark.parametrize("value", ["abc", "0", "-5", "1.5", "²"])
+def test_get_docker_client_warns_and_uses_the_sdk_default_timeout_when_docker_client_timeout_is_invalid(
+        monkeypatch, value: str) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
+
+    from_env_mock.assert_called_once_with()
+    logger.warn.assert_called_once()
+    assert "DOCKER_CLIENT_TIMEOUT" in logger.warn.call_args[0][0]
+
+
+def test_get_docker_client_warns_about_an_invalid_docker_client_timeout_only_once(monkeypatch) -> None:
+    monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", "abc")
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        from_env_mock.return_value.ping.return_value = True
+        docker_manager._get_docker_client()
+        docker_manager._get_docker_client()
+
+    assert from_env_mock.call_count == 2
+    docker_manager._logger.warn.assert_called_once()

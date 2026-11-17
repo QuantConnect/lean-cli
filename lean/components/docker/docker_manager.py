@@ -37,6 +37,7 @@ class DockerManager:
         self._logger = logger
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
+        self._docker_client_kwargs = None
 
     def get_image_labels(self, image: str) -> str:
         docker_image = self._get_docker_client().images.get(image)
@@ -572,14 +573,20 @@ class DockerManager:
         error = MoreInfoError("Please make sure Docker is installed and running",
                               "https://www.lean.io/docs/v2/lean-cli/key-concepts/troubleshooting#02-Common-Errors")
 
-        client_kwargs = {}
-        timeout = self._get_docker_client_timeout()
-        if timeout is not None:
-            client_kwargs["timeout"] = timeout
+        if self._docker_client_kwargs is None:
+            from os import environ
+
+            self._docker_client_kwargs = {}
+            timeout = environ.get("DOCKER_CLIENT_TIMEOUT", "").strip()
+            if timeout.isdecimal() and int(timeout) > 0:
+                self._docker_client_kwargs["timeout"] = int(timeout)
+            elif timeout != "":
+                self._logger.warn(f"Ignoring DOCKER_CLIENT_TIMEOUT='{timeout}', it must be a positive whole number of "
+                                  f"seconds, using the default Docker client timeout instead")
 
         try:
             from docker import from_env
-            docker_client = from_env(**client_kwargs)
+            docker_client = from_env(**self._docker_client_kwargs)
         except Exception:
             raise error
 
@@ -590,30 +597,6 @@ class DockerManager:
             raise error
 
         return docker_client
-
-    def _get_docker_client_timeout(self) -> Optional[int]:
-        """Returns the timeout for Docker API calls set through the DOCKER_CLIENT_TIMEOUT environment variable.
-
-        This is the variable Docker Compose reads for the same purpose. The Docker SDK's default of 60 seconds
-        is too short for some Docker hosts, like remote ones or ones under heavy load.
-
-        :return: the timeout in seconds, or None if the variable is not set, so the SDK default is used
-        """
-        from os import environ
-
-        value = environ.get("DOCKER_CLIENT_TIMEOUT")
-        if value is None or value.strip() == "":
-            return None
-
-        try:
-            timeout = int(value)
-        except ValueError:
-            timeout = 0
-
-        if timeout <= 0:
-            raise RuntimeError(f"DOCKER_CLIENT_TIMEOUT must be a positive number of seconds, got '{value}'")
-
-        return timeout
 
     def _format_source_path(self, path: str) -> str:
         """Formats a source path so Docker knows what it refers to.
