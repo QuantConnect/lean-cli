@@ -2159,7 +2159,8 @@ Options:
   --strategy-name TEXT         Name of the strategy, will appear at the top-right corner of each page
   --strategy-version TEXT      Version number of the strategy, will appear next to the project name
   --strategy-description TEXT  Description of the strategy, will appear under the 'Strategy Description' section
-  --overwrite                  Overwrite --report-destination if it already contains a file
+  --overwrite                  Overwrite --report-destination, and its PDF version with --pdf, if they already contain a
+                               file
   --image TEXT                 The LEAN engine image to use (defaults to quantconnect/lean:latest)
   --update                     Pull the LEAN engine image before running the report creator
   --pdf                        Create a PDF version along with the HTML version of the report

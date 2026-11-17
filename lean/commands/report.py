@@ -74,7 +74,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 @option("--overwrite",
               is_flag=True,
               default=False,
-              help="Overwrite --report-destination if it already contains a file")
+              help="Overwrite --report-destination, and its PDF version with --pdf, if they already contain a file")
 @option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -119,8 +119,14 @@ def report(backtest_results: Optional[Path],
     from uuid import uuid4
     from docker.types import Mount
 
-    if report_destination.exists() and not overwrite:
-        raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
+    pdf_destination = report_destination.with_suffix(".pdf")
+    if report_destination.suffix.lower() == ".pdf":
+        pdf_destination = report_destination.with_name(report_destination.name + ".pdf")
+
+    destinations = [report_destination, pdf_destination] if pdf else [report_destination]
+    for destination in destinations:
+        if destination.exists() and not overwrite:
+            raise RuntimeError(f"{destination} already exists, use --overwrite to overwrite it")
 
     environment = "backtests"
     output_config_manager = container.output_config_manager
@@ -254,9 +260,6 @@ def report(backtest_results: Optional[Path],
             logger.info(f"Custom HTML template file '{html}' could not be found")
 
     if pdf:
-        pdf_destination = report_destination.with_suffix(".pdf")
-        if report_destination.suffix.lower() == ".pdf":
-            pdf_destination = report_destination.with_name(report_destination.name + ".pdf")
         run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{pdf_destination.name}"')
     if live_results is not None:
         run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
