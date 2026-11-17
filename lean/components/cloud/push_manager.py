@@ -272,6 +272,11 @@ class PushManager:
             except RequestFailedError as error:
                 if error.response.status_code != 413:
                     raise
+                # projects/update checks a new encryption key before it writes any file, but the per-file path
+                # sends the key last, so a refused key would leave the cloud files encrypted or decrypted anyway
+                cloud_encryption_key = cloud_project.encryptionKey.id if cloud_project.encryptionKey else ''
+                if update_args["encryption_key"] != cloud_encryption_key:
+                    raise
                 self._push_one_by_one(cloud_project, update_args)
 
             if "encryption_key" in update_args:
