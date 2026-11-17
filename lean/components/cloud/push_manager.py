@@ -307,21 +307,21 @@ class PushManager:
         local_files = update_args["files"]
         local_file_names = {file["name"] for file in local_files}
         self._logger.info(f"'{cloud_project.name}' is too large to push in one request, pushing its changed files one by one")
-        cloud_files = {file.name: file for file in self._api_client.files.get_all(project_id)}
+        # Library files come with their own names, which may be the same as the project's files
+        cloud_files = {file.name: file for file in self._api_client.files.get_all(project_id) if not file.isLibrary}
 
         # Deletes go first, so a rename in a project at its file quota doesn't go over the quota
         requests = [(f"deleting '{cloud_file.name}'",
                      partial(self._api_client.files.delete, project_id, cloud_file.name, code_source_id=code_source_id))
                     for cloud_file in cloud_files.values()
-                    if not cloud_file.isLibrary and cloud_file.name not in local_file_names]
+                    if cloud_file.name not in local_file_names]
         for file in local_files:
             cloud_file = cloud_files.get(file["name"])
             if cloud_file is None:
                 requests.append((f"creating '{file['name']}'",
                                  partial(self._api_client.files.create, project_id, file["name"], file["content"],
                                          code_source_id=code_source_id)))
-            # Trailing whitespace can't change the code, leading whitespace can (Python indentation)
-            elif cloud_file.content.rstrip() != file["content"].rstrip():
+            elif cloud_file.content != file["content"]:
                 requests.append((f"updating '{file['name']}'",
                                  partial(self._api_client.files.update, project_id, file["name"], file["content"],
                                          code_source_id=code_source_id)))

@@ -545,9 +545,9 @@ def test_push_projects_pushes_files_one_by_one_when_the_project_is_too_large(for
     main_content = (project_path / "main.py").read_text(encoding="utf-8")
     research_content = (project_path / "research.ipynb").read_text(encoding="utf-8")
     api_client.files.get_all = mock.MagicMock(return_value=[
-        # Extra trailing whitespace can't change the code, extra leading whitespace can
-        _create_cloud_file("main.py", main_content + "\n\n"),
-        _create_cloud_file("research.ipynb", "  " + research_content),
+        _create_cloud_file("main.py", main_content),
+        # A trailing character can matter too, a non-breaking space is a syntax error in Python
+        _create_cloud_file("research.ipynb", research_content + "\u00a0"),
         _create_cloud_file("removed.py", "# removed locally"),
         _create_cloud_file("Library/library.py", "# library file", is_library=True)
     ])
@@ -572,6 +572,31 @@ def test_push_projects_pushes_files_one_by_one_when_the_project_is_too_large(for
     write_calls = [name for name, _, _ in api_client.mock_calls
                    if name in ["projects.update", "files.delete", "files.create", "files.update"]]
     assert write_calls == ["projects.update", "files.delete", "files.update", "files.create", "projects.update"]
+
+
+def test_push_projects_one_by_one_ignores_library_files_named_like_project_files() -> None:
+    api_client = mock.Mock()
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
+    push_manager = _create_too_large_project_push_manager(api_client)
+
+    project_path = Path.cwd() / "Python Project"
+    main_content = (project_path / "main.py").read_text(encoding="utf-8")
+    research_content = (project_path / "research.ipynb").read_text(encoding="utf-8")
+    # The API lists the files of the project's libraries after its own, under their own names
+    api_client.files.get_all = mock.MagicMock(return_value=[
+        _create_cloud_file("main.py", "# old main"),
+        _create_cloud_file("research.ipynb", research_content),
+        _create_cloud_file("new_file.py", "# new file"),
+        _create_cloud_file("renamed.py", "# renamed locally"),
+        _create_cloud_file("main.py", main_content, is_library=True),
+        _create_cloud_file("renamed.py", "# library file", is_library=True)
+    ])
+
+    assert push_manager.push_projects([project_path])
+
+    api_client.files.update.assert_called_once_with(1000, "main.py", main_content, code_source_id="cli")
+    api_client.files.delete.assert_called_once_with(1000, "renamed.py", code_source_id="cli")
+    api_client.files.create.assert_not_called()
 
 
 def test_push_projects_leaves_the_project_unchanged_when_the_first_file_push_fails() -> None:
