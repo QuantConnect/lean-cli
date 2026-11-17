@@ -25,6 +25,9 @@ CUSTOM_RESEARCH = "lean-cli/research"
 DEFAULT_LEAN_PYTHON_VERSION = "3.11"
 DEFAULT_LEAN_STRICT_PYTHON_VERSION = f"{DEFAULT_LEAN_PYTHON_VERSION}.11"
 DEFAULT_LEAN_DOTNET_FRAMEWORK = "net9.0"
+# The framework of a new C# project's csproj when the engine image isn't available locally to read it from:
+# the one current QuantConnect.Lean packages target, so the csproj restores
+NEW_CSHARP_PROJECT_DOTNET_FRAMEWORK = "net10.0"
 
 # Label name used in Docker containers to specify the version of Lean being used
 CONTAINER_LABEL_LEAN_VERSION_NAME = "lean_version"

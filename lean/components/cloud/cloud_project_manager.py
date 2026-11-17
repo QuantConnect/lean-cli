@@ -73,6 +73,7 @@ class CloudProjectManager:
                 if not self._push_manager.push_projects([local_path], libraries):
                     raise PushFailedError(input)
 
+                local_path = self._push_manager.pushed_project_paths[local_path]
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is None:
                     raise RuntimeError("Something went wrong while pushing the project to the cloud")

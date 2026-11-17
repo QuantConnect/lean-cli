@@ -159,11 +159,21 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         run: |
+          set -o pipefail
           xcrun notarytool store-credentials --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" "QC_APPLE"
           cd portable/dist/lean-cli
           ditto -c -k --keepParent . ../lean-latest-${{env.OS_NAME}}.zip
           cd ..
-          xcrun notarytool submit lean-latest-${{env.OS_NAME}}.zip --keychain-profile "QC_APPLE" --wait
+          xcrun notarytool submit lean-latest-${{env.OS_NAME}}.zip --keychain-profile "QC_APPLE" --wait | tee notarization.log
+          # notarytool exits 0 even when Apple rejects the archive, so print Apple's report to see why (#706)
+          SUBMISSION_ID=$(awk '$1 == "id:" { id = $2 } END { print id }' notarization.log)
+          STATUS=$(awk '$1 == "status:" { status = $2 } END { print status }' notarization.log)
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "::warning::macOS notarization status is '${STATUS:-unknown}' for submission '${SUBMISSION_ID:-unknown}'; the archive is still published"
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" --keychain-profile "QC_APPLE" || echo "::warning::Could not retrieve the notarization log for submission $SUBMISSION_ID"
+            fi
+          fi
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'

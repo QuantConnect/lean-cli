@@ -26,6 +26,10 @@ from lean.models.utils import LeanLibraryReference
 
 from lean.container import container
 
+# pyfakefs unloads the modules first imported during a test, but cryptography's native bindings
+# can only be initialized once per process, so they must be loaded before any fake filesystem starts
+import lean.components.util.encryption_helper
+
 
 # Patch to avoid pyfakefs breaking pydantic-core's Path validator
 _original_lean_library_reference_init = LeanLibraryReference.__init__
@@ -48,7 +52,7 @@ def initialize_container(docker_manager_to_use=None, lean_runner_to_use=None, ap
 
     # Configure download_public_file to return bytes
     mock_csv_content = b"symbol,property\nAAPL,value\n"
-    mock_json_content = b'{"market": "hours"}'
+    mock_json_content = b'{"entries": {}}'
     api_client.data.download_public_file = mock.MagicMock(side_effect=[mock_csv_content, mock_json_content])
 
     if api_client_to_use:

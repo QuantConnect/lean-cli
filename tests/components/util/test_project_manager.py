@@ -18,6 +18,7 @@ from typing import Callable, List, Any
 from unittest import mock
 
 import pytest
+from docker.errors import ImageNotFound
 from lxml import etree
 
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -300,6 +301,33 @@ def test_create_new_project_sets_language_in_project_config(language: QCLanguage
 
     assert config.get("algorithm-language") == language.name
 
+
+
+def _csproj_target_framework(project_path: Path) -> str:
+    csproj = XMLManager().parse((project_path / f"{project_path.name}.csproj").read_text(encoding="utf-8"))
+    return csproj.find(".//PropertyGroup/TargetFramework").text
+
+
+def test_create_new_project_targets_the_framework_of_the_engine_image() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "CSharp Project"
+
+    project_manager = _create_project_manager()
+    container.docker_manager.get_image_label = mock.MagicMock(return_value="net8.0")
+    project_manager.create_new_project(project_path, QCLanguage.CSharp)
+
+    assert _csproj_target_framework(project_path) == "net8.0"
+
+
+def test_create_new_project_targets_net10_when_the_engine_image_is_not_found_locally() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "CSharp Project"
+
+    project_manager = _create_project_manager()
+    container.docker_manager.get_image_label = mock.MagicMock(side_effect=ImageNotFound("No such image"))
+    project_manager.create_new_project(project_path, QCLanguage.CSharp)
+
+    assert _csproj_target_framework(project_path) == "net10.0"
 
 def test_create_new_project_sets_parameters_in_project_config() -> None:
     create_fake_lean_cli_directory()
