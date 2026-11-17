@@ -635,3 +635,43 @@ def test_report_exports_pdf_to_separate_destination(destination: str, pdf_destin
     assert f'cp /tmp/report.html "/Output/{destination}"' in commands
     assert f'cp /tmp/report.pdf "/Output/{pdf_destination}"' in commands
     assert destination.lower() != pdf_destination.lower()
+
+
+def test_report_uses_explicit_backtest_results_without_local_backtests() -> None:
+    import shutil
+    results_dir = Path.cwd() / "Python Project" / "backtests"
+    imported_results = Path.cwd() / "imported.json"
+    shutil.move(str(results_dir / "2020-01-01_00-00-00" / "1459804915.json"), str(imported_results))
+    shutil.rmtree(results_dir)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--backtest-results", "imported.json"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    backtest_mount = [mount for mount in kwargs["mounts"]
+                      if mount["Target"] == "/Lean/Report/bin/Debug/backtest-data-source-file.json"][0]
+    assert backtest_mount["Source"] == str(imported_results)
+    assert kwargs["name"].startswith("lean_cli_report_")
+    assert not (Path.cwd() / "config").exists()
+
+
+def test_report_aborts_when_no_backtest_results_given_and_no_local_backtests() -> None:
+    import shutil
+    shutil.rmtree(Path.cwd() / "Python Project" / "backtests")
+
+    docker_manager = mock.Mock()
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report"])
+
+    assert result.exit_code != 0
+    assert "No output backtests directories were found" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()
