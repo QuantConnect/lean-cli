@@ -37,6 +37,7 @@ class DockerManager:
         self._logger = logger
         self._temp_manager = temp_manager
         self._platform_manager = platform_manager
+        self._docker_client_kwargs = None
 
     def get_image_labels(self, image: str) -> str:
         docker_image = self._get_docker_client().images.get(image)
@@ -475,7 +476,7 @@ class DockerManager:
         """
         try:
             from docker import from_env
-            from_env()
+            from_env(**self._get_docker_client_kwargs())
         except Exception as exception:
             return "Permission denied" in str(exception)
         return False
@@ -562,6 +563,27 @@ class DockerManager:
         }
 
 
+    def _get_docker_client_kwargs(self) -> Dict[str, Any]:
+        """Returns the arguments to create Docker clients with, read from the environment on first use.
+
+        DOCKER_CLIENT_TIMEOUT, the variable Docker Compose uses too, sets the client timeout in seconds.
+
+        :return: the keyword arguments to pass to docker.from_env
+        """
+        if self._docker_client_kwargs is not None:
+            return self._docker_client_kwargs
+
+        from os import environ
+
+        self._docker_client_kwargs = {}
+        timeout = environ.get("DOCKER_CLIENT_TIMEOUT", "").strip()
+        if timeout.isdecimal() and int(timeout) > 0:
+            self._docker_client_kwargs["timeout"] = int(timeout)
+        elif timeout != "":
+            self._logger.warn(f"Ignoring DOCKER_CLIENT_TIMEOUT='{timeout}', it must be a positive whole number of "
+                              f"seconds, using the default Docker client timeout instead")
+        return self._docker_client_kwargs
+
     def _get_docker_client(self):
         """Creates a DockerClient instance.
 
@@ -574,7 +596,7 @@ class DockerManager:
 
         try:
             from docker import from_env
-            docker_client = from_env()
+            docker_client = from_env(**self._get_docker_client_kwargs())
         except Exception:
             raise error
 

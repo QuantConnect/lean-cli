@@ -14,6 +14,7 @@
 from pathlib import Path
 from unittest import mock
 
+import docker
 import pytest
 
 from docker.errors import ImageNotFound
@@ -78,3 +79,79 @@ def test_get_image_label_raises_when_the_image_is_not_found_locally() -> None:
     with mock.patch.object(docker_manager, "get_image_labels", side_effect=ImageNotFound("No such image")):
         with pytest.raises(ImageNotFound):
             docker_manager.get_image_label(DockerImage.parse("quantconnect/lean:latest"), "target_framework", "net9.0")
+
+
+def _get_docker_client_with_env(monkeypatch, value):
+    if value is None:
+        monkeypatch.delenv("DOCKER_CLIENT_TIMEOUT", raising=False)
+    else:
+        monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", value)
+
+    docker_manager = _create_docker_manager()
+    # docker is imported at the top of this file: the tests run on a fake filesystem, where importing it
+    # inside the test would fail
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        from_env_mock.return_value.ping.return_value = True
+        docker_manager._get_docker_client()
+
+    return from_env_mock, docker_manager._logger
+
+
+@pytest.mark.parametrize("value", [None, "", " "])
+def test_get_docker_client_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch,
+                                                                                               value) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
+
+    from_env_mock.assert_called_once_with()
+    logger.warn.assert_not_called()
+
+
+@pytest.mark.parametrize("value", ["300", " 300 "])
+def test_get_docker_client_passes_docker_client_timeout_to_the_docker_client(monkeypatch, value: str) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
+
+    from_env_mock.assert_called_once_with(timeout=300)
+    logger.warn.assert_not_called()
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-5", "1.5", "²"])
+def test_get_docker_client_warns_and_uses_the_sdk_default_timeout_when_docker_client_timeout_is_invalid(
+        monkeypatch, value: str) -> None:
+    from_env_mock, logger = _get_docker_client_with_env(monkeypatch, value)
+
+    from_env_mock.assert_called_once_with()
+    logger.warn.assert_called_once()
+    assert "DOCKER_CLIENT_TIMEOUT" in logger.warn.call_args[0][0]
+
+
+def test_get_docker_client_warns_about_an_invalid_docker_client_timeout_only_once(monkeypatch) -> None:
+    monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", "abc")
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        from_env_mock.return_value.ping.return_value = True
+        docker_manager._get_docker_client()
+        docker_manager._get_docker_client()
+
+    assert from_env_mock.call_count == 2
+    docker_manager._logger.warn.assert_called_once()
+
+
+def test_is_missing_permission_passes_docker_client_timeout_to_the_docker_client(monkeypatch) -> None:
+    monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", "300")
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        assert not docker_manager.is_missing_permission()
+
+    from_env_mock.assert_called_once_with(timeout=300)
+
+
+def test_is_missing_permission_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch) -> None:
+    monkeypatch.delenv("DOCKER_CLIENT_TIMEOUT", raising=False)
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        assert not docker_manager.is_missing_permission()
+
+    from_env_mock.assert_called_once_with()
