@@ -491,6 +491,7 @@ class DockerManager:
         """
         from subprocess import run, CalledProcessError
         from json import dumps
+        from shlex import quote
 
         docker_container = self.get_container_by_name(docker_container_name)
         if docker_container is None:
@@ -499,8 +500,9 @@ class DockerManager:
             raise ValueError(f"Container {docker_container_name} is not running")
 
         data = dumps(data, cls=DecimalEncoder)
+        # The container's shell must take the data literally, even when it contains quotes, $ or backticks
         command = ["docker", "exec", docker_container_name, "bash", "-c",
-                   f"echo '{data}' > {docker_file.as_posix()}"]
+                   f"echo {quote(data)} > {quote(docker_file.as_posix())}"]
         # No shell=True so the host shell does not replace $type with an empty value
         try:
             run(command, check=True)
@@ -519,10 +521,11 @@ class DockerManager:
             timeout: The timeout to wait for the file.
         """
         from json import loads
+        from shlex import quote
         from subprocess import Popen, PIPE, CalledProcessError
         from time import sleep, time
 
-        command = ["docker", "exec", docker_container_name, "bash", "-c", f"cat {docker_file.as_posix()}"]
+        command = ["docker", "exec", docker_container_name, "bash", "-c", f"cat {quote(docker_file.as_posix())}"]
         start = time()
         success = False
         error_message = None

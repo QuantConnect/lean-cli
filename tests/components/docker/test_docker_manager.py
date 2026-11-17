@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -18,9 +19,11 @@ import docker
 import pytest
 
 from docker.errors import ImageNotFound
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.components.docker.docker_manager import DockerManager
 from lean.models.docker import DockerImage
+from tests.test_helpers import run_bash, run_bash_recording_calls
 
 
 def _create_docker_manager() -> DockerManager:
@@ -52,6 +55,52 @@ def test_write_to_file_does_not_let_the_host_shell_expand_the_payload() -> None:
     # $type must reach the container untouched (raw JSON: real double quotes, no backslash escaping)
     assert '"$type"' in echo_command
     assert "\\" not in echo_command
+
+
+def test_write_to_file_does_not_let_the_container_shell_interpret_the_payload(fs: FakeFilesystem) -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    payload = {"$type": "QuantConnect.Commands.OrderCommand, QuantConnect.Common",
+               "Tag": "the trader's $SPY $(echo substituted) `echo substituted` order"}
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.run") as run_mock:
+        docker_manager.write_to_file("my-container", Path("command.json"), payload)
+
+    command = run_mock.call_args.args[0]
+    assert command[:5] == ["docker", "exec", "my-container", "bash", "-c"]
+
+    # Run the container's command in a temporary directory and print the file it writes
+    written = run_bash(fs, "\n".join(['directory="$(mktemp -d)"',
+                                      'cd "$directory"',
+                                      command[5],
+                                      "cat command.json",
+                                      'cd / && rm -r "$directory"']))
+    assert written == json.dumps(payload) + "\n"
+
+
+def test_read_from_file_does_not_let_the_container_shell_interpret_the_file_name(fs: FakeFilesystem) -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    file_name = "command-result-the trader's $SPY $(echo substituted) `echo substituted`.json"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.Popen") as popen_mock:
+        popen_mock.return_value.stdout.read.return_value = b'{"Success": true}'
+        result = docker_manager.read_from_file("my-container", Path(file_name))
+
+    assert result["success"] is True
+
+    command = popen_mock.call_args.args[0]
+    assert command[:5] == ["docker", "exec", "my-container", "bash", "-c"]
+
+    assert run_bash_recording_calls(fs, [command[5]], ["cat"]) == [["cat", file_name]]
 
 
 def test_get_image_label_returns_the_label_of_the_image() -> None:

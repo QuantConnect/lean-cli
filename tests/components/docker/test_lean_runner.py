@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
 import docker.types
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
@@ -32,7 +34,7 @@ from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_DATA_DI
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from lean.models.modules import NuGetPackage
-from tests.test_helpers import create_fake_lean_cli_directory
+from tests.test_helpers import create_fake_lean_cli_directory, run_bash_recording_calls
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
@@ -399,6 +401,85 @@ def test_run_lean_compiles_python_project() -> None:
             then
                 python -m compileall""")), None)
     assert build_command is not None
+
+
+SHELL_SYNTAX_NAMES = ["Profit $SPY", "Profit ${SPY}", "report $(echo substituted)", "report `echo substituted`",
+                      "the trader's report"]
+
+
+def test_run_lean_compiles_python_files_named_with_shell_syntax_literally(fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "Python Project"
+    for name in SHELL_SYNTAX_NAMES:
+        _generate_file(project_dir / f"{name}.py", "")
+    _generate_file(project_dir / "Profit $SPY" / "alpha.py", "")
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    compile_command = next(cmd for cmd in commands if "python -m compileall" in cmd)
+
+    calls = run_bash_recording_calls(fs, [compile_command], ["[", "python"])
+
+    assert len(calls) == 2
+    assert calls[0] == ["[", "-d", "/LeanCLI", "]"]
+    assert calls[1][:3] == ["python", "-m", "compileall"]
+    assert sorted(calls[1][3:]) == sorted(["/LeanCLI/main.py",
+                                           "/LeanCLI/research.ipynb",
+                                           "/LeanCLI/Profit $SPY/alpha.py",
+                                           *[f"/LeanCLI/{name}.py" for name in SHELL_SYNTAX_NAMES]])
+
+
+@pytest.mark.parametrize("project_name", SHELL_SYNTAX_NAMES)
+def test_run_lean_compiles_csharp_project_named_with_shell_syntax_literally(project_name: str,
+                                                                            fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / project_name
+    shutil.copytree(Path.cwd() / "CSharp Project", project_dir)
+    (project_dir / "CSharp Project.csproj").rename(project_dir / f"{project_name}.csproj")
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    # The build, the copy of its output and the copy of its dependencies
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    build_index = next(index for index, cmd in enumerate(commands) if cmd.startswith("dotnet build "))
+
+    calls = run_bash_recording_calls(fs, commands[build_index:build_index + 3], ["dotnet", "cp", "python"])
+
+    assert calls[0][:3] == ["dotnet", "build", f"/LeanCLI/{project_name}.csproj"]
+    assert len(calls[0]) == 4
+    assert calls[0][3].startswith("-p:Configuration=Debug;")
+    assert f";PathMap=/LeanCLI={project_dir};" in calls[0][3]
+    assert calls[1] == ["cp", "-R", "-n", "/Compile/bin/.", f"{LEAN_ROOT_PATH}/"]
+    assert calls[2] == ["python", "/copy_csharp_dependencies.py", f"/Compile/obj/{project_name}/project.assets.json"]
+
 
 def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:
     create_fake_lean_cli_directory()

@@ -496,12 +496,13 @@ class LeanRunner:
         :param image: the docker image that will be used
         """
 
+        from shlex import quote
         from docker.types import Mount
         # Compile python files
         source_files = self._project_manager.get_source_files(project_dir)
         source_files = [file.relative_to(
             project_dir).as_posix() for file in source_files]
-        source_files = [f'"/LeanCLI/{file}"' for file in source_files]
+        source_files = [quote(f"/LeanCLI/{file}") for file in source_files]
 
         # Only need to compile files in backtest/live (where the files were mounted in "/LeanCLI") but not research
         run_options["commands"].append(
@@ -644,9 +645,11 @@ class LeanRunner:
         msbuild_properties["NoWarn"] = "%3B".join(msbuild_properties["NoWarn"])
 
         # Build the project before running LEAN
+        from shlex import quote
         relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
         msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
-        run_options["commands"].append(f'dotnet build "/LeanCLI/{relative_project_file}" "-p:{msbuild_properties}"')
+        run_options["commands"].append(
+            f"dotnet build {quote(f'/LeanCLI/{relative_project_file}')} {quote(f'-p:{msbuild_properties}')}")
 
         # Copy over the algorithm DLL
         # Copy over the project reference DLLs'
@@ -657,7 +660,7 @@ class LeanRunner:
         # CopyLocalLockFileAssemblies does not copy the OS-specific DLLs to the output directory
         # We therefore use a custom Python script that does take the OS into account when deciding what to copy
         run_options["commands"].append(
-            f'python /copy_csharp_dependencies.py "/Compile/obj/{project_file.stem}/project.assets.json"')
+            f"python /copy_csharp_dependencies.py {quote(f'/Compile/obj/{project_file.stem}/project.assets.json')}")
 
     def set_up_common_csharp_options(self, run_options: Dict[str, Any], target_path: str = "/Lean/Launcher/bin/Debug") -> None:
         """

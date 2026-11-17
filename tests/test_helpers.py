@@ -15,8 +15,11 @@ import json
 import responses
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from unittest import mock
+
+import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.components.util.http_client import HTTPClient
 from lean.components.api.api_client import APIClient
@@ -294,3 +297,66 @@ def reset_state_installed_modules() -> None:
     for data_provider in (cli_brokerages + cli_data_downloaders + cli_data_queue_handlers
                           + cli_addon_modules + cli_history_provider):
         data_provider.__setattr__("_is_module_installed", False)
+
+
+def _find_working_bash() -> Optional[str]:
+    """Returns the path to a Bash executable that can run scripts, or None if there is none."""
+    import shutil
+    import subprocess
+
+    bash = shutil.which("bash")
+    if bash is None:
+        return None
+
+    # On Windows "bash" may be the WSL launcher, which cannot run anything without a Linux distribution installed
+    try:
+        probe = subprocess.run([bash], input=b"printf ok", capture_output=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    return bash if probe.stdout == b"ok" else None
+
+
+def run_bash(fs: FakeFilesystem, script: str) -> str:
+    """Runs a script in a real Bash process, skipping the calling test if Bash is not available.
+
+    SPY is set to "expanded" in the environment, so any variable expansion the script does is visible.
+
+    :param fs: the fake filesystem of the calling test, which is paused while Bash runs
+    :param script: the script to run
+    :return: what the script wrote to stdout
+    """
+    import os
+    import subprocess
+
+    # Bash runs in a subprocess, which needs the real filesystem
+    fs.pause()
+    try:
+        bash = _find_working_bash()
+        if bash is None:
+            pytest.skip("Bash is not available to run the container's commands")
+
+        process = subprocess.run([bash],
+                                 input=script.encode("utf-8"),
+                                 capture_output=True,
+                                 env={**os.environ, "SPY": "expanded"},
+                                 timeout=60)
+    finally:
+        fs.resume()
+
+    assert process.returncode == 0, process.stderr.decode("utf-8", errors="replace")
+    return process.stdout.decode("utf-8")
+
+
+def run_bash_recording_calls(fs: FakeFilesystem, commands: List[str], recorded_commands: List[str]) -> List[List[str]]:
+    """Runs commands in a real Bash process, in which the recorded commands only record how they are called.
+
+    :param fs: the fake filesystem of the calling test, which is paused while Bash runs
+    :param commands: the commands to run, as given to a container in run_options["commands"]
+    :param recorded_commands: the names of the commands to replace, which succeed without doing anything else
+    :return: the calls to the recorded commands in order, each being the command name followed by its arguments
+    """
+    # Every call prints its name and arguments, terminated by \0, and ends with \1
+    stubs = [f"{name}() {{ printf '%s\\0' \"$FUNCNAME\" \"$@\"; printf '\\1'; }}" for name in recorded_commands]
+    output = run_bash(fs, "\n".join(["set -e", *stubs, *commands, ""]))
+    return [call.split("\0")[:-1] for call in output.split("\1")[:-1]]
