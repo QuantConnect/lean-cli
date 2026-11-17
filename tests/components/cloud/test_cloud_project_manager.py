@@ -19,8 +19,6 @@ from unittest import mock
 import pytest
 from pyfakefs.helpers import reset_ids, set_uid
 
-# Imported before pyfakefs starts: it reloads modules imported during a test, which cryptography's bindings don't support
-import lean.components.util.encryption_helper
 from lean.container import container
 from lean.models.errors import PushFailedError
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
