@@ -17,6 +17,7 @@ from datetime import datetime
 from time import sleep
 from typing import ContextManager
 from unittest import mock
+from uuid import uuid4
 
 import pytest
 from responses import RequestsMock
@@ -87,7 +88,7 @@ def test_projects_crud() -> None:
     project_client = ProjectClient(api_client)
 
     # Test a project can be created
-    name = f"Test Project {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    name = f"Test Project {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')} {uuid4().hex}"
     created_project = project_client.create(name, QCLanguage.Python, None)
 
     assert created_project.name == name
