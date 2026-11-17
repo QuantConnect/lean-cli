@@ -11,10 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from pyfakefs.helpers import reset_ids, set_uid
 
 # Imported before pyfakefs starts: it reloads modules imported during a test, which cryptography's bindings don't support
 import lean.components.util.encryption_helper
@@ -36,6 +39,7 @@ def test_get_cloud_project_pushing_new_project():
 
     push_manager = mock.Mock()
     push_manager.push_projects = mock.Mock()
+    push_manager.pushed_project_paths = {Path.cwd() / "Python Project": Path.cwd() / "Python Project"}
 
     project_config = mock.Mock()
     project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
@@ -121,3 +125,77 @@ def test_get_cloud_project_follows_project_renamed_by_push(local_name: str, clou
     assert final_config.get("cloud-id") == cloud_project.projectId
     api_client.projects.update.assert_called_once()
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
+
+
+def test_get_cloud_project_leaves_other_project_configs_untouched_when_push_renames_project() -> None:
+    create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project").rename(Path.cwd() / "Unsafe:Project")
+    other_config_path = Path.cwd() / "Other App" / "config.json"
+    other_config_content = '{\n// application setting\n"setting": "keep"\n}'
+    other_config_path.parent.mkdir()
+    other_config_path.write_text(other_config_content)
+
+    cloud_project = create_api_project(20, "Unsafe Project")
+
+    api_client = mock.Mock()
+    api_client.projects.create.return_value = cloud_project
+    api_client.projects.get.return_value = cloud_project
+
+    initialize_container(api_client_to_use=api_client)
+
+    assert container.cloud_project_manager.get_cloud_project("Unsafe:Project", push=True) == cloud_project
+    assert other_config_path.read_text() == other_config_content
+
+
+def test_get_cloud_project_returns_pushed_copy_sharing_the_local_id_of_its_original() -> None:
+    create_fake_lean_cli_directory()
+    original_path = Path.cwd() / "Python Project"
+    copy_path = Path.cwd() / "Unsafe:Copy"
+    original_config = container.project_config_manager.get_project_config(original_path)
+    original_config.set("cloud-id", 10)
+    original_config.set("local-id", 123456789)
+    copy_path.mkdir()
+    for file in original_path.iterdir():
+        if file.is_file():
+            (copy_path / file.name).write_text(file.read_text())
+    container.project_config_manager.get_project_config(copy_path).delete("cloud-id")
+
+    original_cloud_project = create_api_project(10, "Python Project")
+    copy_cloud_project = create_api_project(20, "Unsafe Copy")
+
+    api_client = mock.Mock()
+    api_client.projects.create.return_value = copy_cloud_project
+    api_client.projects.get.side_effect = lambda project_id, _: {10: original_cloud_project,
+                                                                 20: copy_cloud_project}[project_id]
+
+    initialize_container(api_client_to_use=api_client)
+
+    assert container.cloud_project_manager.get_cloud_project("Unsafe:Copy", push=True) == copy_cloud_project
+
+
+def test_get_cloud_project_pushes_read_only_linked_project_without_local_id() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "Python Project"
+    config_path = project_path / "config.json"
+    config = json.loads(config_path.read_text())
+    config.pop("local-id", None)
+    config["cloud-id"] = 20
+    config_path.write_text(json.dumps(config))
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get.return_value = cloud_project
+
+    initialize_container(api_client_to_use=api_client)
+
+    os.chmod(config_path, 0o444)
+    os.chmod(project_path, 0o555)
+    set_uid(1000)
+    try:
+        assert container.cloud_project_manager.get_cloud_project("Python Project", push=True) == cloud_project
+    finally:
+        reset_ids()
+
+    api_client.projects.update.assert_called_once()
+    assert "local-id" not in json.loads(config_path.read_text())

@@ -45,6 +45,8 @@ class PushManager:
         self._project_config_manager = project_config_manager
         self._organization_manager = organization_manager
         self._cloud_projects = []
+        # Where each pushed project is after its push, which renames directories whose name is not valid locally or in the cloud
+        self.pushed_project_paths: Dict[Path, Path] = {}
 
     def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> None:
         """Pushes the given project from the local drive to the cloud.
@@ -81,7 +83,8 @@ class PushManager:
             relative_path = path.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(all_projects_to_push)}] Pushing '{relative_path}'")
-                self._push_project(path, organization_id, encryption_action_value, encryption_key_value, force=force)
+                self.pushed_project_paths[path] = self._push_project(path, organization_id, encryption_action_value,
+                                                                     encryption_key_value, force=force)
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -103,7 +106,7 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None) -> None:
+    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None) -> Path:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -111,6 +114,7 @@ class PushManager:
         :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
         :param suggested_rename_path: the path to move the project to.
+        :return: the path of the pushed project, which differs from project_path when the push renamed it
         """
 
         project_name = project_path.relative_to(Path.cwd()).as_posix()
@@ -156,8 +160,7 @@ class PushManager:
             if cloud_project.name != project_name:
                 # cloud project name was changed. Repeat steps to validate the new name locally.
                 self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
-                self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
-                return
+                return self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
 
             self._cloud_projects.append(cloud_project)
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
@@ -171,6 +174,7 @@ class PushManager:
             encryption_action = ActionType.ENCRYPT if local_encryption_state else ActionType.DECRYPT
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project, encryption_action, encryption_key, force)
+        return project_path
 
     def _get_files(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.
