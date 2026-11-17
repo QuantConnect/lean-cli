@@ -110,18 +110,24 @@ class ProjectManager:
         :param cloud_id: the cloud id of the project
         :return: the path to the directory containing the project with the given cloud id
         """
+        from json import loads
+
         directories = [self._lean_config_manager.get_cli_root_directory()]
         while len(directories) > 0:
             directory = directories.pop(0)
 
+            # Read the config without Storage, which deletes files it can't parse, such as another app's config.json
             try:
-                project_config = self._project_config_manager.get_project_config(directory)
-            except:
-                continue
-            if project_config and project_config.get("cloud-id", None) == cloud_id:
+                project_config = loads((directory / PROJECT_CONFIG_FILE_NAME).read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                project_config = None
+            if isinstance(project_config, dict) and project_config.get("cloud-id") == cloud_id:
                 return directory
-            else:
+
+            try:
                 directories.extend(d for d in directory.iterdir() if d.is_dir())
+            except OSError:
+                pass
 
         return False
 

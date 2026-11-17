@@ -144,6 +144,57 @@ def test_get_cloud_project_pushes_project_given_by_id_renamed_under_a_workspace_
     assert api_client.projects.update.call_args_list[0].kwargs["name"] == "Renamed Project"
 
 
+@pytest.mark.parametrize("renamed", [True, False])
+def test_get_cloud_project_given_by_id_preserves_unrelated_config_it_cannot_parse(renamed: bool) -> None:
+    create_fake_lean_cli_directory()
+    other_config_path = Path.cwd() / "Other App" / "config.json"
+    other_config_content = '{\n// application setting\n"setting": "keep"\n}'
+    other_config_path.parent.mkdir()
+    other_config_path.write_text(other_config_content)
+    if renamed:
+        (Path.cwd() / "Python Project").rename(Path.cwd() / "Renamed Project")
+
+    cloud_project = create_api_project(20, "Cloud Only Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+    api_client.files.get_all.return_value = []
+
+    initialize_container(api_client_to_use=api_client)
+    if renamed:
+        container.project_config_manager.get_project_config(Path.cwd() / "Renamed Project").set("cloud-id", cloud_project.projectId)
+
+    assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
+
+    assert other_config_path.read_text() == other_config_content
+    assert api_client.projects.update.called == renamed
+
+
+def test_get_cloud_project_given_by_id_skips_directories_it_cannot_list() -> None:
+    create_fake_lean_cli_directory()
+    unlistable_path = Path.cwd() / "Unlistable"
+    unlistable_path.mkdir()
+
+    cloud_project = create_api_project(20, "Cloud Only Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+
+    initialize_container(api_client_to_use=api_client)
+
+    # Resolve the workspace while its config can still be cached, so only the listing is denied
+    container.lean_config_manager.get_cli_root_directory()
+    os.chmod(unlistable_path, 0o111)
+    set_uid(1000)
+    try:
+        assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
+    finally:
+        reset_ids()
+
+    api_client.projects.update.assert_not_called()
+
+
 @pytest.mark.parametrize("working_directory", ["Python Project", "Sub"])
 def test_get_cloud_project_given_by_id_does_not_push_project_outside_the_working_directory(working_directory: str) -> None:
     create_fake_lean_cli_directory()
