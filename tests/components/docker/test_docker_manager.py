@@ -135,3 +135,23 @@ def test_get_docker_client_warns_about_an_invalid_docker_client_timeout_only_onc
 
     assert from_env_mock.call_count == 2
     docker_manager._logger.warn.assert_called_once()
+
+
+def test_is_missing_permission_passes_docker_client_timeout_to_the_docker_client(monkeypatch) -> None:
+    monkeypatch.setenv("DOCKER_CLIENT_TIMEOUT", "300")
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        assert not docker_manager.is_missing_permission()
+
+    from_env_mock.assert_called_once_with(timeout=300)
+
+
+def test_is_missing_permission_uses_the_sdk_default_timeout_when_docker_client_timeout_is_not_set(monkeypatch) -> None:
+    monkeypatch.delenv("DOCKER_CLIENT_TIMEOUT", raising=False)
+
+    docker_manager = _create_docker_manager()
+    with mock.patch.object(docker, "from_env") as from_env_mock:
+        assert not docker_manager.is_missing_permission()
+
+    from_env_mock.assert_called_once_with()
