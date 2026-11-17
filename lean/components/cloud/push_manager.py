@@ -23,7 +23,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
 from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
-from lean.models.errors import PartialPushError, RequestFailedError
+from lean.models.errors import RequestFailedError
 
 class PushManager:
     """The PushManager class is responsible for synchronizing local projects to the cloud."""
@@ -58,20 +58,22 @@ class PushManager:
         libraries = self._project_manager.get_project_libraries(project)
         self.push_projects([project], libraries, encryption_action, encryption_key, force)
 
-    def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> None:
+    def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> bool:
         """Pushes the given projects from the local drive to the cloud.
 
         It will also push every library referenced by each project and add or remove references.
 
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
+        :return: True if every project and library was pushed, False if any of them could not be pushed
         """
         all_projects_to_push = associated_libraries_to_push + projects_to_push
 
         if len(all_projects_to_push) == 0:
-            return
+            return True
+
+        all_pushed = True
 
         organization_id = self._organization_manager.try_get_working_organization_id()
-        partly_pushed_projects = []
 
         for index, path in enumerate(all_projects_to_push, start=1):
 
@@ -88,14 +90,9 @@ class PushManager:
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
                 if "write permission" in str(ex).lower():
                     self._logger.info("Please pull any required changes and push with --force")
-                if isinstance(ex, PartialPushError):
-                    partly_pushed_projects.append(relative_path.as_posix())
+                all_pushed = False
 
-        # A partly pushed project must not be compiled, backtested or deployed by the command that pushed it
-        if len(partly_pushed_projects) > 0:
-            raise PartialPushError(f"Some projects were only partly pushed: "
-                                   f"{', '.join(repr(name) for name in partly_pushed_projects)}. "
-                                   f"Push again after fixing the errors above")
+        return all_pushed
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -334,11 +331,11 @@ class PushManager:
                 if index == 0:
                     raise RuntimeError(f"{description} failed, nothing was pushed: {error}") from error
                 if index == len(requests) - 1:
-                    raise PartialPushError(f"All files of '{cloud_project.name}' were pushed, but updating the project "
-                                           f"details failed. Fix the problem and push again. Error: {error}") from error
-                raise PartialPushError(f"Only part of '{cloud_project.name}' was pushed: {description} failed, so the "
-                                       f"cloud project now mixes old and new code. Fix the problem and push again. "
-                                       f"Error: {error}") from error
+                    raise RuntimeError(f"All files of '{cloud_project.name}' were pushed, but updating the project "
+                                       f"details failed. Fix the problem and push again. Error: {error}") from error
+                raise RuntimeError(f"Only part of '{cloud_project.name}' was pushed: {description} failed, so the "
+                                   f"cloud project now mixes old and new code. Fix the problem and push again. "
+                                   f"Error: {error}") from error
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)

@@ -20,7 +20,7 @@ import platform
 from lean.components.cloud.push_manager import PushManager
 from lean.container import container
 from lean.models.api import QCFullFile, QCLanguage, QCProject
-from lean.models.errors import PartialPushError, RequestFailedError
+from lean.models.errors import RequestFailedError
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project, create_lean_environments
 from tests.test_helpers import create_fake_lean_cli_project
 from lean.components import forbidden_characters
@@ -509,28 +509,6 @@ def test_push_projects_updates_name_in_cloud_if_required(test_platform: str, uns
     args, kwargs = api_client.projects.update.call_args
     assert kwargs['name'] == expected_correct_project_name
 
-def test_push_projects_updates_name_locally_if_updated_by_cloud() -> None:
-    
-    project_name = "Python Project"
-    project_path = Path.cwd() / project_name
-    create_fake_lean_cli_project(project_name, "python")
-
-    project_id = 1000
-    project_name_renamed_by_cloud = "Python Project Renamed By Cloud"
-    cloud_project = create_api_project(project_id, project_name_renamed_by_cloud)
-
-    api_client = mock.Mock()
-    api_client.files.get_all = mock.MagicMock(return_value=[])
-    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
-    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
-    api_client.projects.update = mock.Mock()
-
-    push_manager = _create_push_manager(api_client, container.project_manager)
-    push_manager.push_projects([project_path])
-
-    assert not (Path.cwd() / project_path).exists()
-    assert (Path.cwd() / project_name_renamed_by_cloud).exists()
-
 def _create_too_large_project_push_manager(api_client: mock.Mock) -> PushManager:
     create_fake_lean_cli_directory()
 
@@ -612,15 +590,14 @@ def test_push_projects_leaves_the_project_unchanged_when_the_first_file_push_fai
     push_manager._logger.info.assert_any_call("Please pull any required changes and push with --force")
 
 
-def test_push_projects_raises_when_a_file_push_fails_after_other_files_were_pushed() -> None:
+def test_push_projects_returns_false_when_a_file_push_fails_after_other_files_were_pushed() -> None:
     api_client = mock.Mock()
     api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     api_client.files.create = mock.MagicMock(side_effect=[None, RequestFailedError(mock.Mock(), "Internal error")])
     push_manager = _create_too_large_project_push_manager(api_client)
 
-    with pytest.raises(PartialPushError, match="Some projects were only partly pushed: 'Python Project'"):
-        push_manager.push_projects([Path.cwd() / "Python Project"])
+    assert not push_manager.push_projects([Path.cwd() / "Python Project"])
 
     assert api_client.files.create.call_count == 2
     api_client.projects.update.assert_called_once()
@@ -629,15 +606,14 @@ def test_push_projects_raises_when_a_file_push_fails_after_other_files_were_push
     assert "Internal error" in warning
 
 
-def test_push_projects_raises_when_only_the_project_details_fail_after_the_files_were_pushed() -> None:
+def test_push_projects_returns_false_when_only_the_project_details_fail_after_the_files_were_pushed() -> None:
     api_client = mock.Mock()
     api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)),
                                                              RequestFailedError(mock.Mock(), "Name already taken")])
     api_client.files.get_all = mock.MagicMock(return_value=[])
     push_manager = _create_too_large_project_push_manager(api_client)
 
-    with pytest.raises(PartialPushError):
-        push_manager.push_projects([Path.cwd() / "Python Project"])
+    assert not push_manager.push_projects([Path.cwd() / "Python Project"])
 
     assert api_client.files.create.call_count == 3
     warning = push_manager._logger.warn.call_args.args[0]
@@ -655,3 +631,26 @@ def test_push_projects_does_not_push_files_one_by_one_on_other_errors() -> None:
     api_client.projects.update.assert_called_once()
     api_client.files.get_all.assert_not_called()
     api_client.files.create.assert_not_called()
+
+
+def test_push_projects_updates_name_locally_if_updated_by_cloud() -> None:
+    
+    project_name = "Python Project"
+    project_path = Path.cwd() / project_name
+    create_fake_lean_cli_project(project_name, "python")
+
+    project_id = 1000
+    project_name_renamed_by_cloud = "Python Project Renamed By Cloud"
+    cloud_project = create_api_project(project_id, project_name_renamed_by_cloud)
+
+    api_client = mock.Mock()
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+    api_client.lean.environments = mock.MagicMock(return_value=create_lean_environments())
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_projects([project_path])
+
+    assert not (Path.cwd() / project_path).exists()
+    assert (Path.cwd() / project_name_renamed_by_cloud).exists()
