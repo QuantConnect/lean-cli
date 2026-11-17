@@ -197,3 +197,49 @@ def test_get_cloud_project_pushes_read_only_linked_project_without_local_id() ->
 
     api_client.projects.update.assert_called_once()
     assert "local-id" not in json.loads(config_path.read_text())
+
+
+def _create_project_referencing_library(project_id: int, library_id: int) -> mock.Mock:
+    project_path = Path.cwd() / "Python Project"
+    library_path = Path.cwd() / "Library" / "Python Library"
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", project_id)
+    container.project_config_manager.get_project_config(library_path).set("cloud-id", library_id)
+    container.library_manager.add_lean_library_reference_to_project(project_path, library_path)
+    (library_path / "main.py").write_text("# changed library code")
+
+    cloud_projects = {project_id: create_api_project(project_id, "Python Project"),
+                      library_id: create_api_project(library_id, "Library/Python Library")}
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = list(cloud_projects.values())
+    api_client.projects.get.side_effect = lambda cloud_id, _: cloud_projects[cloud_id]
+    return api_client
+
+
+@pytest.mark.parametrize("input", ["Python Project", "20"])
+def test_get_cloud_project_pushes_libraries_referenced_by_the_project(input: str) -> None:
+    create_fake_lean_cli_directory()
+    api_client = _create_project_referencing_library(20, 21)
+    initialize_container(api_client_to_use=api_client)
+
+    assert container.cloud_project_manager.get_cloud_project(input, push=True).projectId == 20
+
+    updates = {call.args[0]: call.kwargs for call in api_client.projects.update.call_args_list}
+    assert sorted(updates) == [20, 21]
+    assert {"name": "main.py", "content": "# changed library code"} in updates[21]["files"]
+    assert updates[20]["libraries"] == [21]
+
+
+@pytest.mark.parametrize("input", ["Python Project", "20"])
+def test_get_cloud_project_raises_when_push_of_referenced_library_fails(input: str) -> None:
+    create_fake_lean_cli_directory()
+    api_client = _create_project_referencing_library(20, 21)
+
+    def update(cloud_id: int, **_) -> None:
+        if cloud_id == 21:
+            raise RuntimeError("Library update failed")
+
+    api_client.projects.update.side_effect = update
+    initialize_container(api_client_to_use=api_client)
+
+    with pytest.raises(PushFailedError):
+        container.cloud_project_manager.get_cloud_project(input, push=True)
