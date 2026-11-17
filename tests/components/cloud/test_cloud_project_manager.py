@@ -100,6 +100,28 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
     api_client.projects.get.assert_not_called()
 
 
+def test_get_cloud_project_pushes_project_given_by_id_after_its_directory_was_renamed() -> None:
+    create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project").rename(Path.cwd() / "Renamed Project")
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(return_value=True)
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    container.project_config_manager.get_project_config(Path.cwd() / "Renamed Project").set("cloud-id", cloud_project.projectId)
+
+    assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
+
+    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Renamed Project"])
+    api_client.projects.get.assert_called_once_with(cloud_project.projectId, "abc")
+
+
 @pytest.mark.parametrize("local_name,cloud_name", [("Unsafe:Project", "Unsafe Project"),
                                                    ("Python Project", "Renamed Project")])
 def test_get_cloud_project_follows_project_renamed_by_push(local_name: str, cloud_name: str) -> None:
