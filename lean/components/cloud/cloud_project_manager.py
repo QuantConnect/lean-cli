@@ -69,8 +69,13 @@ class CloudProjectManager:
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path):
             if push:
+                local_id = self._project_config_manager.get_local_id(local_path)
                 if not self._push_manager.push_projects([local_path]):
                     raise PushFailedError(input)
+
+                # The push renames the project directory when its name is not valid locally or in the cloud
+                if not local_path.exists():
+                    local_path = self._project_manager.get_project_by_id(local_id)
 
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is None:

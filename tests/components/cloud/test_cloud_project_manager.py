@@ -16,6 +16,8 @@ from unittest import mock
 
 import pytest
 
+# Imported before pyfakefs starts: it reloads modules imported during a test, which cryptography's bindings don't support
+import lean.components.util.encryption_helper
 from lean.container import container
 from lean.models.errors import PushFailedError
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
@@ -94,3 +96,28 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
 
     push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
     api_client.projects.get.assert_not_called()
+
+
+@pytest.mark.parametrize("local_name,cloud_name", [("Unsafe:Project", "Unsafe Project"),
+                                                   ("Python Project", "Renamed Project")])
+def test_get_cloud_project_follows_project_renamed_by_push(local_name: str, cloud_name: str) -> None:
+    create_fake_lean_cli_directory()
+    if local_name != "Python Project":
+        (Path.cwd() / "Python Project").rename(Path.cwd() / local_name)
+
+    cloud_project = create_api_project(20, cloud_name)
+
+    api_client = mock.Mock()
+    api_client.projects.create.return_value = cloud_project
+    api_client.projects.get.return_value = cloud_project
+
+    initialize_container(api_client_to_use=api_client)
+
+    returned_cloud_project = container.cloud_project_manager.get_cloud_project(local_name, push=True)
+
+    assert returned_cloud_project == cloud_project
+    assert not (Path.cwd() / local_name).exists()
+    final_config = container.project_config_manager.get_project_config(Path.cwd() / cloud_name)
+    assert final_config.get("cloud-id") == cloud_project.projectId
+    api_client.projects.update.assert_called_once()
+    api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
