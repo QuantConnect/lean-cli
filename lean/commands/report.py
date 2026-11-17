@@ -116,6 +116,7 @@ def report(backtest_results: Optional[Path],
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from json import dump
+    from uuid import uuid4
     from docker.types import Mount
 
     if report_destination.exists() and not overwrite:
@@ -125,11 +126,11 @@ def report(backtest_results: Optional[Path],
     output_config_manager = container.output_config_manager
     output_directory = output_config_manager.get_latest_output_directory(environment)
 
-    if output_directory is None:
-        raise ValueError(f"No output {environment} directories were found. "
-                         f"Make sure you run a backtest or live deployment first.")
-
     if backtest_results is None:
+        if output_directory is None:
+            raise ValueError(f"No output {environment} directories were found. "
+                             f"Make sure you run a backtest or live deployment first.")
+
         backtest_results = get_latest_result_json_file(output_directory)
         if not backtest_results:
             raise MoreInfoError(
@@ -198,7 +199,9 @@ def report(backtest_results: Optional[Path],
     with config_path.open("w+", encoding="utf-8") as file:
         dump(report_config, file)
 
-    backtest_id = container.output_config_manager.get_backtest_id(output_directory)
+    container_suffix = uuid4().hex
+    if output_directory is not None:
+        container_suffix = output_config_manager.get_backtest_id(output_directory)
 
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
@@ -207,7 +210,7 @@ def report(backtest_results: Optional[Path],
 
     run_options: Dict[str, Any] = {
         "detach": detach,
-        "name": f"lean_cli_report_{backtest_id}",
+        "name": f"lean_cli_report_{container_suffix}",
         "working_dir": "/Lean/Report/bin/Debug",
         "commands": ["dotnet QuantConnect.Report.dll", f'cp /tmp/report.html "/Output/{report_destination.name}"'],
         "mounts": [
