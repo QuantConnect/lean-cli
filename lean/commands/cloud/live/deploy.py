@@ -275,7 +275,7 @@ def deploy(project: str,
     api_client = container.api_client
 
     cloud_project_manager = container.cloud_project_manager
-    cloud_project = cloud_project_manager.get_cloud_project(project, push)
+    cloud_project, local_path = cloud_project_manager.get_cloud_project_and_local_path(project, push)
 
     cloud_runner = container.cloud_runner
     finished_compile = cloud_runner.compile_project(cloud_project)
@@ -310,7 +310,8 @@ def deploy(project: str,
             for chat_id, *token in _split_notify_configs(notify_telegram):
                 notify_methods.append(QCTelegramNotificationMethod(id=chat_id, token=":".join(token) or None))
 
-        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(
+            api_client, brokerage_instance, cloud_project.projectId, local_path)
 
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = configure_initial_cash_balance(logger, cash_balance_option, live_cash_balance, last_cash)
@@ -329,7 +330,8 @@ def deploy(project: str,
 
         notify_order_events, notify_insights, notify_methods = _configure_notifications(logger)
         auto_restart = _configure_auto_restart(logger)
-        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(api_client, brokerage_instance, cloud_project.projectId, project)
+        cash_balance_option, holdings_option, last_cash, last_holdings = get_last_portfolio_cash_holdings(
+            api_client, brokerage_instance, cloud_project.projectId, local_path)
         if cash_balance_option != LiveInitialStateInput.NotSupported:
             live_cash_balance = _configure_initial_cash_interactively(logger, cash_balance_option, last_cash)
         if holdings_option != LiveInitialStateInput.NotSupported:
