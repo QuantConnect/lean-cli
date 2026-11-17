@@ -17,6 +17,7 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
@@ -24,7 +25,7 @@ from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
-from tests.test_helpers import create_fake_lean_cli_directory
+from tests.test_helpers import create_fake_lean_cli_directory, run_bash_recording_calls
 from tests.conftest import initialize_container
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
@@ -585,7 +586,7 @@ def test_report_overwrites_pdf_destination_when_overwrite_flag_given() -> None:
     assert result.exit_code == 0
 
     commands = docker_manager.run_image.call_args.kwargs["commands"]
-    assert 'cp /tmp/report.pdf "/Output/report.pdf"' in commands
+    assert "cp /tmp/report.pdf /Output/report.pdf" in commands
 
 
 def test_report_ignores_existing_pdf_when_pdf_flag_not_given() -> None:
@@ -691,9 +692,34 @@ def test_report_exports_pdf_to_separate_destination(destination: str, pdf_destin
 
     assert result.exit_code == 0
     commands = docker_manager.run_image.call_args.kwargs["commands"]
-    assert f'cp /tmp/report.html "/Output/{destination}"' in commands
-    assert f'cp /tmp/report.pdf "/Output/{pdf_destination}"' in commands
+    assert f"cp /tmp/report.html /Output/{destination}" in commands
+    assert f"cp /tmp/report.pdf /Output/{pdf_destination}" in commands
     assert destination.lower() != pdf_destination.lower()
+
+
+@pytest.mark.parametrize("destination, pdf_destination", [
+    ("Profit $SPY.html", "Profit $SPY.pdf"),
+    ("Profit ${SPY}.html", "Profit ${SPY}.pdf"),
+    ("report $(echo substituted).html", "report $(echo substituted).pdf"),
+    ("report `echo substituted`.html", "report `echo substituted`.pdf"),
+    ("the trader's report.html", "the trader's report.pdf"),
+])
+def test_report_copies_to_destination_names_containing_shell_syntax_literally(destination: str,
+                                                                              pdf_destination: str,
+                                                                              fs: FakeFilesystem) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--pdf", "--report-destination", destination])
+
+    assert result.exit_code == 0
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert run_bash_recording_calls(fs, commands, ["dotnet", "cp"]) == [
+        ["dotnet", "QuantConnect.Report.dll"],
+        ["cp", "/tmp/report.html", f"/Output/{destination}"],
+        ["cp", "/tmp/report.pdf", f"/Output/{pdf_destination}"]
+    ]
 
 
 def test_report_uses_explicit_backtest_results_without_local_backtests() -> None:

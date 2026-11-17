@@ -41,6 +41,17 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
     return None
 
 
+def _get_copy_to_output_command(source: str, destination: Path) -> str:
+    """Returns the Bash command which copies a file created in the report container to the output directory.
+
+    :param source: the path in the container of the file to copy
+    :param destination: the path on the host of the file to create, whose parent is mounted to /Output
+    :return: the command copying source to the destination file, with its name taken literally
+    """
+    from shlex import quote
+    return f"cp {source} {quote(f'/Output/{destination.name}')}"
+
+
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @option("--backtest-results",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
@@ -218,7 +229,8 @@ def report(backtest_results: Optional[Path],
         "detach": detach,
         "name": f"lean_cli_report_{container_suffix}",
         "working_dir": "/Lean/Report/bin/Debug",
-        "commands": ["dotnet QuantConnect.Report.dll", f'cp /tmp/report.html "/Output/{report_destination.name}"'],
+        "commands": ["dotnet QuantConnect.Report.dll",
+                     _get_copy_to_output_command("/tmp/report.html", report_destination)],
         "mounts": [
             Mount(target="/Lean/Report/bin/Debug/config.json",
                   source=str(config_path),
@@ -260,7 +272,7 @@ def report(backtest_results: Optional[Path],
             logger.info(f"Custom HTML template file '{html}' could not be found")
 
     if pdf:
-        run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{pdf_destination.name}"')
+        run_options["commands"].append(_get_copy_to_output_command("/tmp/report.pdf", pdf_destination))
     if live_results is not None:
         run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
                                            source=str(live_results),
