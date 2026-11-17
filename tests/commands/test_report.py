@@ -546,6 +546,65 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
     assert output_path.read_text(encoding="utf-8") != "<h1>My strategy</h1>"
 
 
+def test_report_aborts_when_pdf_destination_already_exists() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf"])
+
+    assert result.exit_code != 0
+    assert f"{pdf_path} already exists, use --overwrite to overwrite it" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()
+    assert not (Path.cwd() / "report.html").exists()
+    assert pdf_path.read_text(encoding="utf-8") == "previous PDF content"
+
+
+def test_report_overwrites_pdf_destination_when_overwrite_flag_given() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    (Path.cwd() / "report.pdf").write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf",
+                                       "--overwrite"])
+
+    assert result.exit_code == 0
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert 'cp /tmp/report.pdf "/Output/report.pdf"' in commands
+
+
+def test_report_ignores_existing_pdf_when_pdf_flag_not_given() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html"])
+
+    assert result.exit_code == 0
+    assert pdf_path.read_text(encoding="utf-8") == "previous PDF content"
+
+
 def test_report_aborts_when_run_image_fails() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
