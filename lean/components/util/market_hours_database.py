@@ -18,6 +18,22 @@ from lean.models.api import QCSecurityType
 from lean.models.market_hours_database import MarketHoursDatabaseEntry
 
 
+def parse_market_hours_database_entries(market_hours_database: str) -> Dict[str, Any]:
+    """Parses the content of a market-hours-database.json file and returns all unparsed entries by name.
+
+    :param market_hours_database: the content of the market hours database file
+    :return: a dict containing all unparsed market hours database entries by name
+    """
+    from re import sub, DOTALL
+    from json import loads
+    market_hours_database = sub(r"(/\*.*\*/)", "", market_hours_database, flags=DOTALL)
+    market_hours_database = loads(market_hours_database)
+
+    if not isinstance(market_hours_database, dict) or not isinstance(market_hours_database.get("entries"), dict):
+        raise ValueError("The market hours database has no entries")
+    return market_hours_database["entries"]
+
+
 class MarketHoursDatabase:
     """The MarketHoursDatabase class handles access to the market-hours-database.json file."""
 
@@ -54,8 +70,6 @@ class MarketHoursDatabase:
 
         :return: a dict containing all unparsed market hours database entries by name
         """
-        from re import sub, DOTALL
-        from json import loads
         if self._entries is not None:
             return self._entries
 
@@ -63,8 +77,5 @@ class MarketHoursDatabase:
         market_hours_database_path = data_dir / "market-hours" / "market-hours-database.json"
 
         market_hours_database = market_hours_database_path.read_text(encoding="utf-8")
-        market_hours_database = sub(r"(/\*.*\*/)", "", market_hours_database, flags=DOTALL)
-        market_hours_database = loads(market_hours_database)
-
-        self._entries = market_hours_database["entries"]
+        self._entries = parse_market_hours_database_entries(market_hours_database)
         return self._entries

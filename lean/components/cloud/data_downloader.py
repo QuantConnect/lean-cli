@@ -18,6 +18,7 @@ from typing import Any, List, Callable
 from lean.components.api.api_client import APIClient
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.market_hours_database import parse_market_hours_database_entries
 from lean.models.errors import MoreInfoError, RequestFailedError
 
 
@@ -87,9 +88,16 @@ class DataDownloader:
                 _store_local_file(self._api_client.data.download_public_file(
                     "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/symbol-properties/symbol-properties-database.csv"),
                     data_dir / "symbol-properties" / "symbol-properties-database.csv")
-                _store_local_file(self._api_client.data.download_public_file(
-                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json"),
-                    data_dir / "market-hours" / "market-hours-database.json")
+                market_hours_database = self._api_client.data.download_public_file(
+                    "https://raw.githubusercontent.com/QuantConnect/Lean/master/Data/market-hours/market-hours-database.json")
+                # Parsed before the file is opened, since opening it for writing empties it: a response the CLI can't
+                # read would replace a usable database with one it can't read either
+                try:
+                    parse_market_hours_database_entries(market_hours_database.decode("utf-8"))
+                except ValueError as e:
+                    self._logger.error(f"The downloaded market hours database is invalid, keeping the local one: {e}")
+                    return
+                _store_local_file(market_hours_database, data_dir / "market-hours" / "market-hours-database.json")
         except MoreInfoError as e:
             if "not found" in str(e):
                 pass
