@@ -209,6 +209,42 @@ def test_cloud_push_sends_encrypted_files_and_turns_on_encryption_with_encrypted
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
 
+def test_cloud_push_follows_encryption_key_inside_project_when_push_renames_project() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    key_hash = get_project_key_hash(encryption_file_path)
+    keys_api_data = {'keys': [{'name': 'test', 'hash': key_hash}]}
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value=keys_api_data)
+    # the cloud assigns a different name, so the push renames the local directory (and the key inside it)
+    cloud_project = create_api_project(1, "Renamed Project")
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    fake_cloud_files = [QCFullFile(name="file.py", content="testing", modified=datetime.now(), isLibrary=False)]
+    api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
+
+    init_container(api_client_to_use=api_client)
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", True)
+    project_config.set("encryption-key-path", str(encryption_file_path))
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path])
+
+    assert result.exit_code == 0
+    api_client.projects.update.assert_called_once()
+
+    new_project_path = Path.cwd() / "Renamed Project"
+    assert not project_path.exists()
+    new_config = container.project_config_manager.get_project_config(new_project_path)
+    assert Path(new_config.get("encryption-key-path")) == new_project_path / "encryption.txt"
+
+
 def test_cloud_push_aborts_sending_encrypted_files_when_local_file_encrypted_with_key_x_and_given_key_y() -> None:
     create_fake_lean_cli_directory()
 
