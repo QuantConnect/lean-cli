@@ -512,3 +512,52 @@ def test_cloud_push_code_source_id_behavior(force_flag: bool, expected_code_sour
         expected_arguments["code_source_id"] = expected_code_source_id
 
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
+
+
+def test_cloud_push_does_not_reuse_original_directory_when_copy_name_sanitizes_to_it() -> None:
+    create_fake_lean_cli_directory()
+
+    original_path = Path.cwd() / "Python Project"
+    copy_path = Path.cwd() / "Python:Project"
+    original_config = container.project_config_manager.get_project_config(original_path)
+    original_config.set("cloud-id", 10)
+    original_config.set("local-id", 123456789)
+    original_main = (original_path / "main.py").read_text(encoding="utf-8")
+
+    # The copy keeps the local-id of the original but is a different project without a cloud-id
+    copy_path.mkdir()
+    for file in original_path.iterdir():
+        if file.is_file():
+            (copy_path / file.name).write_text(file.read_text(encoding="utf-8"), encoding="utf-8")
+    (copy_path / "main.py").write_text("# COPY", encoding="utf-8")
+    container.project_config_manager.get_project_config(copy_path).delete("cloud-id")
+
+    original_cloud_project = create_api_project(10, "Python Project")
+    copy_cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[original_cloud_project])
+    api_client.projects.create = mock.MagicMock(return_value=copy_cloud_project)
+    api_client.projects.get = mock.MagicMock(side_effect=lambda project_id, *_: {10: original_cloud_project,
+                                                                                 20: copy_cloud_project}[project_id])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    # Pushed through the push manager because the CLI option rejects names with ':'
+    container.push_manager.push_project(copy_path)
+
+    # The original keeps its cloud id and its files
+    assert container.project_config_manager.get_project_config(original_path).get("cloud-id") == 10
+    assert (original_path / "main.py").read_text(encoding="utf-8") == original_main
+    assert not (original_path / copy_path.name).exists()
+
+    # The copy is stored in its own directory and its own files are the ones uploaded
+    new_copy_path = Path.cwd() / "Python Project 2"
+    assert container.project_config_manager.get_project_config(new_copy_path).get("cloud-id") == 20
+    assert (new_copy_path / "main.py").read_text(encoding="utf-8") == "# COPY"
+
+    updated_ids = [call.args[0] for call in api_client.projects.update.call_args_list]
+    assert 10 not in updated_ids
+    uploaded = [call.kwargs["files"] for call in api_client.projects.update.call_args_list if call.args[0] == 20]
+    assert uploaded and {"name": "main.py", "content": "# COPY"} in uploaded[0]
