@@ -135,7 +135,8 @@ class PushManager:
             expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, cloud_id)
         else:
             local_id = self._project_config_manager.get_local_id(project_path)
-            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, None, local_id)
+            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, None, local_id,
+                                                                                         source_path=project_path)
         if expected_correct_project_path != project_path:
             # rename project
             valid_project_name = expected_correct_project_path.relative_to(Path.cwd()).as_posix()
