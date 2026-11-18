@@ -20,7 +20,8 @@ from click.testing import CliRunner
 
 from lean.commands import lean
 from lean.components.cloud.push_manager import PushManager
-from lean.models.api import QCFullFile
+from lean.models.api import ProjectEncryptionKey, QCFullFile
+from lean.models.errors import RequestFailedError
 from tests.test_helpers import create_fake_lean_cli_directory, create_api_project
 from tests.conftest import initialize_container
 from lean.container import container
@@ -208,6 +209,71 @@ def test_cloud_push_sends_encrypted_files_and_turns_on_encryption_with_encrypted
         "code_source_id": 'cli'
     }
     api_client.projects.update.assert_called_once_with(1, **expected_arguments)
+
+def test_cloud_push_writes_no_files_when_a_too_large_push_turns_on_encryption() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    keys_api_data = {'keys': [{'name': 'test', 'hash': get_project_key_hash(encryption_file_path)}]}
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value=keys_api_data)
+    api_client.projects.create = mock.MagicMock(return_value=create_api_project(1, "Python Project"))
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", False)
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path, "--encrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+    # The cloud may still refuse the key, so the files must not be pushed one by one before it is accepted
+    api_client.projects.update.assert_called_once()
+    api_client.files.create.assert_not_called()
+    api_client.files.update.assert_not_called()
+    api_client.files.delete.assert_not_called()
+
+def test_cloud_push_pushes_files_one_by_one_when_a_too_large_project_keeps_its_encryption_key() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    encryption_file_path = project_path / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    key_hash = get_project_key_hash(encryption_file_path)
+    keys_api_data = {'keys': [{'name': 'test', 'hash': key_hash}]}
+
+    cloud_project = create_api_project(1, "Python Project")
+    cloud_project.encrypted = True
+    cloud_project.encryptionKey = ProjectEncryptionKey(id=key_hash, name="test")
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value=keys_api_data)
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.MagicMock(side_effect=[RequestFailedError(mock.Mock(status_code=413)), None])
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", False)
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path, "--encrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+    expected_encrypted_files = _get_expected_encrypted_files_content()
+    api_client.files.create.assert_has_calls([mock.call(1, name, content, code_source_id="cli")
+                                              for name, content in expected_encrypted_files.items()])
+    assert api_client.files.create.call_count == len(expected_encrypted_files)
+    assert api_client.projects.update.call_count == 2
+    assert api_client.projects.update.call_args.kwargs["encryption_key"] == key_hash
+    assert "files" not in api_client.projects.update.call_args.kwargs
 
 def test_cloud_push_aborts_sending_encrypted_files_when_local_file_encrypted_with_key_x_and_given_key_y() -> None:
     create_fake_lean_cli_directory()
