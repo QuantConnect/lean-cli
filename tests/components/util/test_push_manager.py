@@ -79,7 +79,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -152,7 +152,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -200,7 +200,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -271,7 +271,7 @@ def test_push_projects_pushes_lean_engine_version() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -308,7 +308,7 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -345,7 +345,7 @@ def test_push_projects_pushes_lean_environment() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -383,7 +383,7 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
