@@ -13,6 +13,7 @@
 
 import json
 import os
+from importlib import import_module
 from pathlib import Path
 from typing import List
 from unittest import mock
@@ -211,8 +212,10 @@ def test_cloud_live_deploy_offers_local_cash_for_resolved_project(project: str, 
         return True
 
     options = ["--push"] if push else []
+    # patch by module object: the dotted path resolves to the `cloud` click group on Python < 3.11
+    deploy_module = import_module("lean.commands.cloud.live.deploy")
     with mock.patch.object(container.push_manager, "push_projects", side_effect=push_and_rename), \
-            mock.patch("lean.commands.cloud.live.deploy.configure_initial_cash_balance", return_value=[]) as configure_cash:
+            mock.patch.object(deploy_module, "configure_initial_cash_balance", return_value=[]) as configure_cash:
         result = CliRunner().invoke(lean, ["cloud", "live", "deploy", project, *options, "--brokerage", "Paper Trading",
                                            "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
                                            "--notify-insights", "no", "--data-provider-live", "QuantConnect"])
