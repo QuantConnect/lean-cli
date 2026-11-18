@@ -15,7 +15,7 @@ from click import prompt, confirm
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from lean.components.api.api_client import APIClient
 from lean.components.config.output_config_manager import get_output_directory_timestamp
 from lean.components.util.logger import Logger
@@ -57,7 +57,7 @@ def _get_local_deployment_time(directory: Path) -> Optional[datetime]:
     return datetime.fromtimestamp(max(f.stat().st_mtime for f in result_files), tz=timezone.utc)
 
 
-def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Path) -> List[Dict[str, Any]]:
+def _get_last_portfolio(api_client: APIClient, project_id: str, project: Optional[Union[str, Path]]) -> List[Dict[str, Any]]:
     from json import loads
     from lean.container import container
 
@@ -82,23 +82,22 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
                                tzinfo=timezone.utc)
 
     local_last_time = datetime.min.replace(tzinfo=timezone.utc)
-    live_deployment_path = Path(project_name) / "live"
-    if live_deployment_path.is_dir():
+    latest_local_deployment = None
+    live_deployment_path = Path(project) / "live" if project is not None else None
+    if live_deployment_path is not None and live_deployment_path.is_dir():
         for entry in live_deployment_path.iterdir():
             deployment_time = _get_local_deployment_time(entry)
             if deployment_time is None:
                 container.logger.debug(f"Ignoring '{entry}' in the live directory, it is not a deployment")
-            else:
-                local_last_time = max(local_last_time, deployment_time)
+            elif deployment_time > local_last_time and any(entry.glob("L-*.json")):
+                local_last_time = deployment_time
+                latest_local_deployment = entry
 
     if cloud_last_time > local_last_time:
         last_state = api_client.get("live/portfolio/read", {"projectId": project_id})
         previous_portfolio_state = last_state["portfolio"]
-    elif cloud_last_time < local_last_time:
-        output_directory = container.output_config_manager.get_latest_output_directory("live")
-        if not output_directory:
-            return None
-        previous_state_file = get_latest_result_json_file(output_directory, True)
+    elif latest_local_deployment is not None and local_last_time > cloud_last_time:
+        previous_state_file = get_latest_result_json_file(latest_local_deployment, True)
         if not previous_state_file:
             return None
         previous_portfolio_state = {x.lower(): y for x, y in loads(open(previous_state_file, "r", encoding="utf-8").read()).items()}
@@ -108,13 +107,14 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     return previous_portfolio_state
 
 
-def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: JsonModule, project_id: int, project: str):
+def get_last_portfolio_cash_holdings(api_client: APIClient, brokerage_instance: JsonModule, project_id: int,
+                                     project: Optional[Union[str, Path]]):
     """Interactively obtain the portfolio state from the latest live deployment (both cloud/local)
 
     :param api_client: the api instance
     :param brokerage_instance: the brokerage
     :param project_id: the cloud id of the project
-    :param project: the name of the project
+    :param project: the local project directory, if available
     :return: the options of initial cash/holdings setting, and the latest portfolio cash/holdings from the last deployment
     """
     from lean.container import container
