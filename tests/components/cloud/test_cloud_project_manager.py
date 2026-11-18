@@ -112,6 +112,7 @@ def test_get_cloud_project_pushes_project_given_by_id_after_its_directory_was_re
 
     push_manager = mock.Mock()
     push_manager.push_projects = mock.Mock(return_value=True)
+    push_manager.pushed_project_paths = {Path.cwd() / "Renamed Project": Path.cwd() / "Renamed Project"}
 
     initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
     container.project_config_manager.get_project_config(Path.cwd() / "Renamed Project").set("cloud-id", cloud_project.projectId)
@@ -345,3 +346,87 @@ def test_get_cloud_project_pushes_read_only_linked_project_without_local_id() ->
 
     api_client.projects.update.assert_called_once()
     assert "local-id" not in json.loads(config_path.read_text())
+
+
+@pytest.mark.parametrize("input,push", [("Python Project", False), ("Python Project", True), ("20", False),
+                                        ("20", True), ("Python Project Cloud", False)])
+def test_get_cloud_project_and_local_path_returns_the_local_project_directory(input: str, push: bool) -> None:
+    create_fake_lean_cli_directory()
+    if input == "Python Project Cloud":
+        (Path.cwd() / "Python Project").rename(Path.cwd() / input)
+        project_path = Path.cwd() / input
+    else:
+        project_path = Path.cwd() / "Python Project"
+
+    cloud_project = create_api_project(20, project_path.name)
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+
+    push_manager = mock.Mock()
+    push_manager.push_projects = mock.Mock(return_value=True)
+    push_manager.pushed_project_paths = {project_path: project_path}
+
+    initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    assert container.cloud_project_manager.get_cloud_project_and_local_path(input, push) == (cloud_project, project_path)
+
+
+@pytest.mark.parametrize("local_name,cloud_name", [("Unsafe:Project", "Unsafe Project"),
+                                                   ("Python Project", "Renamed Project")])
+def test_get_cloud_project_and_local_path_returns_the_directory_a_push_renamed(local_name: str, cloud_name: str) -> None:
+    create_fake_lean_cli_directory()
+    if local_name != "Python Project":
+        (Path.cwd() / "Python Project").rename(Path.cwd() / local_name)
+
+    cloud_project = create_api_project(20, cloud_name)
+
+    api_client = mock.Mock()
+    api_client.projects.create.return_value = cloud_project
+    api_client.projects.get.return_value = cloud_project
+
+    initialize_container(api_client_to_use=api_client)
+
+    assert container.cloud_project_manager.get_cloud_project_and_local_path(local_name, push=True) == \
+           (cloud_project, Path.cwd() / cloud_name)
+
+
+def test_get_cloud_project_and_local_path_returns_the_directory_a_push_of_a_project_given_by_id_renamed() -> None:
+    create_fake_lean_cli_directory()
+    (Path.cwd() / "Python Project").rename(Path.cwd() / "Unsafe:Project")
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+    api_client.files.get_all.return_value = []
+
+    initialize_container(api_client_to_use=api_client)
+    container.project_config_manager.get_project_config(Path.cwd() / "Unsafe:Project").set("cloud-id", cloud_project.projectId)
+
+    assert container.cloud_project_manager.get_cloud_project_and_local_path("20", push=True) == \
+           (cloud_project, Path.cwd() / "Unsafe Project")
+
+
+@pytest.mark.parametrize("config_content", [None, '{"cloud-id": 21}', '{\n// application setting\n"cloud-id": 20\n}'])
+def test_get_cloud_project_and_local_path_returns_no_directory_for_a_project_without_local_counterpart(
+        config_content: str) -> None:
+    create_fake_lean_cli_directory()
+    config_path = Path.cwd() / "Cloud Only Project" / "config.json"
+    if config_content is not None:
+        config_path.parent.mkdir()
+        config_path.write_text(config_content)
+
+    cloud_project = create_api_project(20, "Cloud Only Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+
+    initialize_container(api_client_to_use=api_client)
+
+    assert container.cloud_project_manager.get_cloud_project_and_local_path("20", push=False) == (cloud_project, None)
+    if config_content is not None:
+        assert config_path.read_text() == config_content
