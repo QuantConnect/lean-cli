@@ -146,6 +146,9 @@ jobs:
           mkdir ./lean
           /usr/bin/codesign --deep --force --timestamp -o runtime -s CY5GJ9682W ./lean-cli -v
           find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --timestamp --deep -o runtime --force -s CY5GJ9682W "${libfile}"; done;
+          # The Python interpreter is collected as _internal/Python.framework; PyInstaller only signs its binary as a
+          # loose file, which notarization rejects, so sign each framework as a bundle (#706)
+          find . -type d -name '*.framework' -prune | while read fw; do /usr/bin/codesign --timestamp -o runtime --force -s CY5GJ9682W "${fw}"; done;
         shell: bash
 
       - name: Get OS Name Without Version
