@@ -103,6 +103,25 @@ def test_get_project_by_id_raises_error_when_no_project_with_given_id_exists() -
         project_manager.get_project_by_id(max(python_project_id, csharp_project_id) + 1)
 
 
+def test_try_get_project_path_by_cloud_id_returns_project_and_preserves_configs_it_cannot_parse() -> None:
+    create_fake_lean_cli_directory()
+    other_config_path = Path.cwd() / "Other App" / "config.json"
+    other_config_content = '{\n// application setting\n"setting": "keep"\n}'
+    other_config_path.parent.mkdir()
+    other_config_path.write_text(other_config_content)
+
+    project_dir = Path.cwd() / "Nested" / "Renamed Project"
+    project_dir.parent.mkdir()
+    (Path.cwd() / "Python Project").rename(project_dir)
+    ProjectConfigManager(XMLManager()).get_project_config(project_dir).set("cloud-id", 20)
+
+    project_manager = _create_project_manager()
+
+    assert project_manager.try_get_project_path_by_cloud_id(20) == project_dir
+    assert not project_manager.try_get_project_path_by_cloud_id(21)
+    assert other_config_path.read_text() == other_config_content
+
+
 def test_get_source_files_returns_all_source_files() -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()

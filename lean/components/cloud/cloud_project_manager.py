@@ -94,6 +94,12 @@ class CloudProjectManager:
             # If the local directory exists, we push it and return the updated cloud project
             if push:
                 local_path = self._project_manager.get_local_project_path(cloud_project.name, cloud_project.projectId)
+                if not local_path.exists():
+                    # The local directory may have been renamed, so we look for it by its cloud id
+                    # The push names projects relative to the current directory, so only one under it can be pushed
+                    renamed_path = self._project_manager.try_get_project_path_by_cloud_id(cloud_project.projectId)
+                    if renamed_path and Path.cwd() in renamed_path.parents:
+                        local_path = renamed_path
                 if local_path.exists():
                     if not self._push_manager.push_projects([local_path]):
                         raise PushFailedError(input)
