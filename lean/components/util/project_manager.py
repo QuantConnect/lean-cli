@@ -125,9 +125,16 @@ class ProjectManager:
                 return directory
 
             try:
-                directories.extend(d for d in directory.iterdir() if d.is_dir())
+                entries = list(directory.iterdir())
             except OSError:
-                pass
+                continue
+            # An entry that can't be inspected is skipped on its own, so its siblings are still searched
+            for entry in entries:
+                try:
+                    if entry.is_dir():
+                        directories.append(entry)
+                except OSError:
+                    pass
 
         return False
 

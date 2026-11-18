@@ -195,6 +195,40 @@ def test_get_cloud_project_given_by_id_skips_directories_it_cannot_list() -> Non
     api_client.projects.update.assert_not_called()
 
 
+def test_get_cloud_project_given_by_id_finds_renamed_project_after_an_entry_it_cannot_inspect() -> None:
+    create_fake_lean_cli_directory()
+    locked_path = Path.cwd() / "Locked"
+    (locked_path / "Target").mkdir(parents=True)
+    (Path.cwd() / "Link").symlink_to(locked_path / "Target")
+    (Path.cwd() / "Sub").mkdir()
+    project_path = Path.cwd() / "Sub" / "Renamed Project"
+    (Path.cwd() / "Python Project").rename(project_path)
+
+    cloud_project = create_api_project(20, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [cloud_project]
+    api_client.projects.get.return_value = cloud_project
+    api_client.files.get_all.return_value = []
+
+    initialize_container(api_client_to_use=api_client)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    # Resolve the workspace while its config can still be cached, so only the locked folder is denied
+    container.lean_config_manager.get_cli_root_directory()
+    os.chmod(locked_path, 0o000)
+    set_uid(1000)
+    try:
+        with pytest.raises(PermissionError):
+            (Path.cwd() / "Link").is_dir()
+        os.chdir(Path.cwd() / "Sub")
+        assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
+    finally:
+        reset_ids()
+
+    api_client.projects.update.assert_called()
+
+
 @pytest.mark.parametrize("working_directory", ["Python Project", "Sub"])
 def test_get_cloud_project_given_by_id_does_not_push_project_outside_the_working_directory(working_directory: str) -> None:
     create_fake_lean_cli_directory()
