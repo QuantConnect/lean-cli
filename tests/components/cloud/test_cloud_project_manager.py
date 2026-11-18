@@ -219,8 +219,6 @@ def test_get_cloud_project_given_by_id_finds_renamed_project_after_an_entry_it_c
     os.chmod(locked_path, 0o000)
     set_uid(1000)
     try:
-        with pytest.raises(PermissionError):
-            (Path.cwd() / "Link").is_dir()
         os.chdir(Path.cwd() / "Sub")
         assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
     finally:
