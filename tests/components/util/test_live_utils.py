@@ -97,3 +97,28 @@ def test_get_last_portfolio_prefers_the_cloud_deployment_when_it_is_more_recent(
     }[endpoint]
 
     assert _get_last_portfolio(api_client, 1234, Path.cwd() / "Python Project") == CLOUD_STATE
+
+
+def test_get_last_portfolio_reads_the_latest_deployment_of_the_given_project() -> None:
+    create_fake_lean_cli_directory()
+    _create_deployment(_live_directory() / "2024-09-26_17-25-28", LOCAL_STATE)
+    _create_deployment(_live_directory() / "2024-09-25_17-25-28", {"Cash": {"USD": {"Symbol": "USD", "Amount": 1.0}}})
+    # a newer deployment of another project must not be read
+    _create_deployment(Path.cwd() / "CSharp Project" / "live" / "2024-09-27_17-25-28", CLOUD_STATE)
+
+    assert _get_last_local_portfolio() == {"cash": LOCAL_STATE["Cash"]}
+
+
+def test_get_last_portfolio_skips_a_newer_deployment_without_results() -> None:
+    create_fake_lean_cli_directory()
+    _create_deployment(_live_directory() / "2024-09-26_17-25-28", LOCAL_STATE)
+    (_live_directory() / "2024-09-27_17-25-28").mkdir()
+
+    assert _get_last_local_portfolio() == {"cash": LOCAL_STATE["Cash"]}
+
+
+def test_get_last_portfolio_reads_only_the_cloud_without_a_local_project() -> None:
+    create_fake_lean_cli_directory()
+    _create_deployment(_live_directory() / "2024-09-26_17-25-28", LOCAL_STATE)
+
+    assert _get_last_portfolio(mock.MagicMock(), None, None) is None
