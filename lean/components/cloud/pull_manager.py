@@ -101,6 +101,9 @@ class PullManager:
         :param projects_to_pull: the cloud projects that need to be pulled
         :param all_cloud_projects: all the projects available in the cloud
         """
+        # libraries are pulled as they are in the cloud, only the given projects are encrypted or decrypted
+        project_ids_to_transform = {project.projectId for project in projects_to_pull}
+
         if all_cloud_projects is not None:
             projects, inaccessible_libraries = self._project_manager.get_cloud_projects_libraries(all_cloud_projects,
                                                                                                projects_to_pull)
@@ -137,7 +140,11 @@ class PullManager:
         for index, project in enumerate(projects_to_pull, start=1):
             try:
                 self._logger.info(f"[{index}/{len(projects_to_pull)}] Pulling '{project.name}'")
-                projects_with_paths.append((project, self._pull_project(project, encryption_action, encryption_key)))
+                if project.projectId in project_ids_to_transform:
+                    local_path = self._pull_project(project, encryption_action, encryption_key)
+                else:
+                    local_path = self._pull_project(project, None, None)
+                projects_with_paths.append((project, local_path))
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -198,6 +205,10 @@ class PullManager:
         project_config.set("python-venv", project.leanEnvironment)
         if encryption_key:
             project_config.set("encrypted", encryption_action == ActionType.ENCRYPT)
+            if encryption_action == ActionType.ENCRYPT:
+                project_config.set("encryption-key-path", str(encryption_key))
+            else:
+                project_config.delete("encryption-key-path")
         else:
             project_config.set('encrypted', project.encrypted)
 
