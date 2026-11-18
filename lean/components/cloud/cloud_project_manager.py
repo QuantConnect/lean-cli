@@ -69,7 +69,8 @@ class CloudProjectManager:
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path):
             if push:
-                if not self._push_manager.push_projects([local_path]):
+                libraries = self._project_manager.get_project_libraries(local_path)
+                if not self._push_manager.push_projects([local_path], libraries):
                     raise PushFailedError(input)
 
                 local_path = self._push_manager.pushed_project_paths[local_path]
@@ -101,7 +102,8 @@ class CloudProjectManager:
                     if renamed_path and Path.cwd() in renamed_path.parents:
                         local_path = renamed_path
                 if local_path.exists():
-                    if not self._push_manager.push_projects([local_path]):
+                    libraries = self._project_manager.get_project_libraries(local_path)
+                    if not self._push_manager.push_projects([local_path], libraries):
                         raise PushFailedError(input)
                     return self._api_client.projects.get(cloud_project.projectId, organization_id)
 
