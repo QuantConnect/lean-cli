@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import json
+import subprocess
 from pathlib import Path
 from unittest import mock
 
@@ -55,6 +56,32 @@ def test_write_to_file_does_not_let_the_host_shell_expand_the_payload() -> None:
     # $type must reach the container untouched (raw JSON: real double quotes, no backslash escaping)
     assert '"$type"' in echo_command
     assert "\\" not in echo_command
+
+
+def _write_with_failed_docker(error: subprocess.CalledProcessError) -> str:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.run", side_effect=error):
+        with pytest.raises(ValueError) as excinfo:
+            docker_manager.write_to_file("my-container", Path("command.json"), {"Tag": "sample"})
+
+    return str(excinfo.value)
+
+
+def test_write_to_file_raises_value_error_when_docker_fails_without_output() -> None:
+    message = _write_with_failed_docker(subprocess.CalledProcessError(1, ["docker", "exec"]))
+
+    assert message.startswith("Failed to write to command.json")
+
+
+def test_write_to_file_includes_docker_diagnostic_when_docker_fails() -> None:
+    error = subprocess.CalledProcessError(1, ["docker", "exec"], output=b"", stderr=b"container is not running")
+
+    assert "container is not running" in _write_with_failed_docker(error)
 
 
 def test_write_to_file_does_not_let_the_container_shell_interpret_the_payload(fs: FakeFilesystem) -> None:
