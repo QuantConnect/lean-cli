@@ -122,6 +122,30 @@ def test_try_get_project_path_by_cloud_id_returns_project_and_preserves_configs_
     assert other_config_path.read_text() == other_config_content
 
 
+@pytest.mark.parametrize("path,expected_path", [("Old Project/key.txt", "New Project/key.txt"),
+                                                ("Old Project/keys/key.txt", "New Project/keys/key.txt"),
+                                                ("Old Project", "New Project"),
+                                                ("key.txt", "key.txt"),
+                                                ("Old Project 2/key.txt", "Old Project 2/key.txt")])
+def test_get_path_after_project_rename_moves_only_paths_inside_the_project(path: str, expected_path: str) -> None:
+    project_manager = _create_project_manager()
+
+    old_project_path = Path.cwd() / "Old Project"
+    new_project_path = Path.cwd() / "New Project"
+
+    assert project_manager.get_path_after_project_rename(Path.cwd() / path, old_project_path, new_project_path) == Path.cwd() / expected_path
+
+
+def test_get_path_after_project_rename_resolves_relative_paths_from_the_current_directory() -> None:
+    project_manager = _create_project_manager()
+
+    old_project_path = Path.cwd() / "Old Project"
+    new_project_path = Path.cwd() / "New Project"
+
+    assert project_manager.get_path_after_project_rename(Path("Old Project/key.txt"), old_project_path, new_project_path) == new_project_path / "key.txt"
+    assert project_manager.get_path_after_project_rename(Path("key.txt"), old_project_path, new_project_path) == Path("key.txt")
+
+
 def test_get_source_files_returns_all_source_files() -> None:
     project_path = Path.cwd() / "My Project"
     project_path.mkdir()

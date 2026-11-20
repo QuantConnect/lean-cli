@@ -313,6 +313,19 @@ class ProjectManager:
         move(old_path, new_path)
         self._rename_csproj_file(new_path)
 
+    def get_path_after_project_rename(self, path: Path, old_project_path: Path, new_project_path: Path) -> Path:
+        """Returns where a path is after rename_project_and_contents moved old_project_path to new_project_path.
+
+        :param path: the path to locate, absolute or relative to the current working directory
+        :param old_project_path: the path of the project before the rename
+        :param new_project_path: the path of the project after the rename
+        :return: the path in new_project_path when path was inside old_project_path, path itself otherwise
+        """
+        absolute_path = path if path.is_absolute() else Path.cwd() / path
+        if not absolute_path.is_relative_to(old_project_path):
+            return path
+        return new_project_path / absolute_path.relative_to(old_project_path)
+
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.

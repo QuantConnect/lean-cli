@@ -142,9 +142,19 @@ class PushManager:
             valid_project_name = expected_correct_project_path.relative_to(Path.cwd()).as_posix()
             self._logger.info(f"Renaming '{project_name}' to '{valid_project_name}'")
             self._project_manager.rename_project_and_contents(project_path, expected_correct_project_path)
+            old_project_path = project_path
             project_path = expected_correct_project_path
             project_name = valid_project_name
             project_config = self._project_config_manager.get_project_config(project_path)
+
+            # a key stored inside the project directory moved together with it
+            if local_encryption_key is not None:
+                moved_key = self._project_manager.get_path_after_project_rename(local_encryption_key, old_project_path, project_path)
+                if moved_key != local_encryption_key:
+                    local_encryption_key = moved_key
+                    project_config.set("encryption-key-path", str(moved_key))
+            if encryption_key is not None:
+                encryption_key = self._project_manager.get_path_after_project_rename(encryption_key, old_project_path, project_path)
 
         # Find the cloud project to push the files to
         if cloud_id is not None:
