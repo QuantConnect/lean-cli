@@ -313,27 +313,29 @@ class ProjectManager:
         move(old_path, new_path)
         self._rename_csproj_file(new_path)
 
-    def update_csharp_library_reference(self, project_dir: Path, old_library_dir: Path, new_library_dir: Path) -> None:
-        """Points the project's .csproj references to a library that moved to the library's new .csproj file.
+    def add_csharp_library_reference(self, project_dir: Path, library_dir: Path) -> None:
+        """Adds a reference to a library's .csproj file to the project's .csproj file, unless it already has one.
 
-        :param project_dir: the local project whose .csproj file references the library
-        :param old_library_dir: the directory the library was in
-        :param new_library_dir: the directory the library is in now
+        :param project_dir: the local project whose .csproj file must reference the library
+        :param library_dir: the directory of the library
         """
         project_csproj_file = self.get_csproj_file_path(project_dir)
-        library_csproj_file = self.get_csproj_file_path(new_library_dir)
+        library_csproj_file = self.get_csproj_file_path(library_dir)
         if project_csproj_file is None or library_csproj_file is None:
             return
 
         from os.path import relpath
+        from lxml import etree
+        library_reference = Path(relpath(library_csproj_file, project_dir)).as_posix()
         csproj_tree = self._xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
-        library_references = [reference for reference in csproj_tree.findall(".//ProjectReference")
-                              if old_library_dir in (project_dir / reference.get("Include", "")).resolve().parents]
-        if len(library_references) == 0:
+        if any(reference.get("Include") == library_reference for reference in csproj_tree.findall(".//ProjectReference")):
             return
 
-        for reference in library_references:
-            reference.set("Include", Path(relpath(library_csproj_file, project_dir)).as_posix())
+        last_item_group = csproj_tree.find(".//ItemGroup[last()]")
+        if last_item_group is None:
+            last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
+        reference = etree.SubElement(last_item_group, "ProjectReference")
+        reference.set("Include", library_reference)
         project_csproj_file.write_text(self._xml_manager.to_string(csproj_tree), encoding="utf-8")
 
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],

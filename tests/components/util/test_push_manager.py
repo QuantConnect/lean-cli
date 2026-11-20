@@ -596,14 +596,25 @@ def test_push_project_updates_reference_to_library_renamed_by_the_push() -> None
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Windows does not allow creating the unsupported path")
-def test_push_project_updates_csproj_reference_to_csharp_library_renamed_by_the_push() -> None:
+@pytest.mark.parametrize("use_backslashes", [False, True])
+def test_push_project_adds_csproj_reference_to_csharp_library_renamed_by_the_push(use_backslashes: bool) -> None:
     create_fake_lean_cli_directory()
 
     project_path = Path.cwd() / "CSharp Project"
+    project_csproj_file = project_path / "CSharp Project.csproj"
     library_path = Path.cwd() / "Library/Unsafe:Lib"
     renamed_library_path = Path.cwd() / "Library/Unsafe Lib"
     container.project_manager.create_new_project(library_path, QCLanguage.CSharp)
     container.library_manager.add_lean_library_to_csharp_project(project_path, library_path, True)
+
+    old_reference = "../Library/Unsafe:Lib/Unsafe:Lib.csproj"
+    csproj_content = project_csproj_file.read_text(encoding="utf-8")
+    assert f'Include="{old_reference}"' in csproj_content
+    if use_backslashes:
+        # MSBuild accepts backslashes as path separators on every platform
+        old_reference = old_reference.replace("/", "\\")
+        project_csproj_file.write_text(csproj_content.replace("../Library/Unsafe:Lib/Unsafe:Lib.csproj", old_reference),
+                                       encoding="utf-8")
 
     library_id = 21
     project_id = 22
@@ -623,15 +634,15 @@ def test_push_project_updates_csproj_reference_to_csharp_library_renamed_by_the_
     project_libraries = container.project_config_manager.get_project_config(project_path).get("libraries")
     assert project_libraries == [{"name": "Unsafe Lib", "path": "Library/Unsafe Lib"}]
 
-    csproj_tree = container.xml_manager.parse((project_path / "CSharp Project.csproj").read_text(encoding="utf-8"))
+    csproj_tree = container.xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
     assert [reference.get("Include") for reference in csproj_tree.findall(".//ProjectReference")] == \
-           ["../Library/Unsafe Lib/Unsafe Lib.csproj"]
+           [old_reference, "../Library/Unsafe Lib/Unsafe Lib.csproj"]
 
     # Adding the library again finds it already referenced, in the config and in the .csproj file alike
     container.library_manager.add_lean_library_to_csharp_project(project_path, renamed_library_path, True)
-    csproj_tree = container.xml_manager.parse((project_path / "CSharp Project.csproj").read_text(encoding="utf-8"))
+    csproj_tree = container.xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
     assert [reference.get("Include") for reference in csproj_tree.findall(".//ProjectReference")] == \
-           ["../Library/Unsafe Lib/Unsafe Lib.csproj"]
+           [old_reference, "../Library/Unsafe Lib/Unsafe Lib.csproj"]
 
     update_calls = api_client.projects.update.call_args_list
     assert [args[0] for args, _ in update_calls] == [library_id, project_id]

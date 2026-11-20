@@ -109,7 +109,7 @@ class PushManager:
                 library.update(LeanLibraryReference(name=pushed_library_path.name,
                                                     path=pushed_library_path.relative_to(Path.cwd()))
                                .model_dump(mode="json"))
-                self._project_manager.update_csharp_library_reference(project_dir, library_path, pushed_library_path)
+                self._project_manager.add_csharp_library_reference(project_dir, pushed_library_path)
                 renamed_library_found = True
             library_paths.append(pushed_library_path)
 
