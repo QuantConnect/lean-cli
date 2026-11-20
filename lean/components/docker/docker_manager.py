@@ -505,9 +505,11 @@ class DockerManager:
                    f"echo {quote(data)} > {quote(docker_file.as_posix())}"]
         # No shell=True so the host shell does not replace $type with an empty value
         try:
-            run(command, check=True)
+            run(command, check=True, capture_output=True)
         except CalledProcessError as exception:
-            raise ValueError(f"Failed to write to {docker_file.name}: {exception.output.decode('utf-8')}")
+            # stderr carries Docker's diagnostic; either stream may be empty or None
+            diagnostic = b"".join(stream for stream in (exception.stderr, exception.output) if stream)
+            raise ValueError(f"Failed to write to {docker_file.name}: {diagnostic.decode('utf-8', errors='replace').strip()}")
         except Exception as e:
             raise ValueError(f"Failed to write to {docker_file.name}: {e}")
 
