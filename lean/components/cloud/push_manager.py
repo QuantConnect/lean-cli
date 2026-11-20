@@ -130,6 +130,11 @@ class PushManager:
         if local_encryption_key is not None:
             local_encryption_key = Path(local_encryption_key)
 
+        # without a key, the encrypted files would be pushed as plain source and the cloud project's encryption turned off
+        if local_encryption_state and encryption_key is None and local_encryption_key is None:
+            raise RuntimeError("its files are encrypted and it has no encryption key. "
+                               "Push it with --encrypt --key to keep the cloud project encrypted, or --decrypt --key to decrypt it")
+
         # check if project name is valid or if rename is required
         if cloud_id is not None:
             expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, cloud_id)

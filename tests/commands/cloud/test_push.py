@@ -533,6 +533,73 @@ def test_cloud_push_aborts_when_local_files_in_encrypted_state_with_key_x_and_cl
     api_client.projects.update.assert_not_called()
 
 
+def _pull_encrypted_cloud_project_without_key() -> (mock.Mock, Path):
+    create_fake_lean_cli_directory()
+
+    encryption_file_path = Path.cwd() / "encryption.txt"
+    encryption_file_path.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    key_hash = get_project_key_hash(encryption_file_path)
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value={'keys': [{'name': 'test', 'hash': key_hash}]})
+    cloud_project = create_api_project(1, "Python Project", encrypted=True, encryptionKey={"name": "test", "id": key_hash})
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    fake_cloud_files = [QCFullFile(name=name, content=content, modified=datetime.now(), isLibrary=False)
+                        for name, content in _get_expected_encrypted_files_content().items()]
+    api_client.files.get_all = mock.MagicMock(return_value=fake_cloud_files)
+
+    init_container(api_client_to_use=api_client)
+
+    project_path = Path.cwd() / "Python Project"
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", 1)
+
+    result = CliRunner().invoke(lean, ["cloud", "pull", "--project", "1"])
+
+    assert result.exit_code == 0
+    project_config = container.project_config_manager.get_project_config(project_path)
+    assert project_config.get("encrypted") == True
+    assert project_config.get("encryption-key-path") is None
+
+    return api_client, encryption_file_path
+
+
+def test_cloud_push_aborts_without_updating_cloud_project_when_project_pulled_encrypted_without_key() -> None:
+    api_client, _ = _pull_encrypted_cloud_project_without_key()
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project"])
+
+    assert result.exit_code == 0
+    assert "its files are encrypted" in result.output
+    api_client.projects.update.assert_not_called()
+    api_client.projects.create.assert_not_called()
+
+
+def test_cloud_push_keeps_cloud_project_encrypted_when_project_pulled_encrypted_without_key_and_encrypted_flag_given() -> None:
+    api_client, encryption_file_path = _pull_encrypted_cloud_project_without_key()
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project", "--encrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+    args, kwargs = api_client.projects.update.call_args
+    assert kwargs["encryption_key"] == get_project_key_hash(encryption_file_path)
+    expected_encrypted_files = _get_expected_encrypted_files_content()
+    assert {file["name"]: file["content"].strip() for file in kwargs["files"]} == \
+           {name: content.strip() for name, content in expected_encrypted_files.items()}
+
+
+def test_cloud_push_decrypts_cloud_project_when_project_pulled_encrypted_without_key_and_decrypted_flag_given() -> None:
+    api_client, encryption_file_path = _pull_encrypted_cloud_project_without_key()
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", "Python Project", "--decrypt", "--key", encryption_file_path])
+
+    assert result.exit_code == 0
+    args, kwargs = api_client.projects.update.call_args
+    assert kwargs["encryption_key"] == ''
+    main_file = next(file for file in kwargs["files"] if file["name"] == "main.py")
+    assert main_file["content"].startswith("# region imports")
+
+
 def _get_expected_encrypted_files_content() -> dict:
     return {
         "main.py":
