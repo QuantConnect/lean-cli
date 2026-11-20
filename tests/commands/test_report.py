@@ -589,6 +589,31 @@ def test_report_overwrites_pdf_destination_when_overwrite_flag_given() -> None:
     assert "cp /tmp/report.pdf /Output/report.pdf" in commands
 
 
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_report_aborts_when_pdf_destination_is_a_directory(overwrite: bool) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.mkdir()
+    (pdf_path / "existing.txt").write_text("existing content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf",
+                                       *(["--overwrite"] if overwrite else [])])
+
+    assert result.exit_code != 0
+    assert f"{pdf_path} is a directory" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()
+    assert not (Path.cwd() / "report.html").exists()
+    assert (pdf_path / "existing.txt").read_text(encoding="utf-8") == "existing content"
+
+
 def test_report_ignores_existing_pdf_when_pdf_flag_not_given() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.side_effect = run_image
