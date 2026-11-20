@@ -140,6 +140,7 @@ class Container:
                                             self.api_client,
                                             self.project_manager,
                                             self.project_config_manager,
+                                            self.library_manager,
                                             self.organization_manager)
         self.data_downloader = DataDownloader(self.logger,
                                               self.api_client,
