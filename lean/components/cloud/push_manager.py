@@ -99,7 +99,21 @@ class PushManager:
         project_config = self._project_config_manager.get_project_config(project_dir)
 
         libraries_in_config = project_config.get("libraries", [])
-        library_paths = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
+        library_paths = []
+        renamed_library_found = False
+        for library in libraries_in_config:
+            library_path = LeanLibraryReference(**library).path.expanduser().resolve()
+            pushed_library_path = self.pushed_project_paths.get(library_path, library_path)
+            if pushed_library_path != library_path:
+                # The library was renamed when it was pushed before this project, so the reference follows it
+                library.update(LeanLibraryReference(name=pushed_library_path.name,
+                                                    path=pushed_library_path.relative_to(Path.cwd()))
+                               .model_dump(mode="json"))
+                renamed_library_found = True
+            library_paths.append(pushed_library_path)
+
+        if renamed_library_found:
+            project_config.set("libraries", libraries_in_config)
 
         local_libraries_cloud_ids = [int(self._project_config_manager.get_project_config(path).get("cloud-id", None))
                                      for path in library_paths]

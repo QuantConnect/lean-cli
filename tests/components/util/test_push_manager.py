@@ -559,3 +559,37 @@ def test_push_projects_returns_false_when_a_project_with_cloud_id_cannot_be_push
     push_manager = _create_push_manager(api_client, container.project_manager)
 
     assert not push_manager.push_projects([project_path])
+
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Windows does not allow creating the unsupported path")
+def test_push_project_updates_reference_to_library_renamed_by_the_push() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    library_path = Path.cwd() / "Library/Unsafe:Lib"
+    renamed_library_path = Path.cwd() / "Library/Unsafe Lib"
+    container.project_manager.create_new_project(library_path, QCLanguage.Python)
+    container.library_manager.add_lean_library_reference_to_project(project_path, library_path)
+
+    library_id = 21
+    project_id = 22
+    cloud_projects = [create_api_project(library_id, "Library/Unsafe Lib"),
+                      create_api_project(project_id, project_path.name)]
+
+    api_client = mock.Mock()
+    api_client.projects.create = mock.MagicMock(side_effect=lambda name, *args: next(p for p in cloud_projects
+                                                                                     if p.name == name))
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_project(project_path)
+
+    assert not library_path.exists()
+    assert renamed_library_path.exists()
+
+    project_libraries = container.project_config_manager.get_project_config(project_path).get("libraries")
+    assert project_libraries == [{"name": "Unsafe Lib", "path": "Library/Unsafe Lib"}]
+
+    update_calls = api_client.projects.update.call_args_list
+    assert [args[0] for args, _ in update_calls] == [library_id, project_id]
+    assert update_calls[1].kwargs["libraries"] == [library_id]
