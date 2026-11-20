@@ -35,7 +35,8 @@ def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock,
     if organization_manager is None:
         organization_manager = _create_organization_manager()
 
-    return PushManager(logger, api_client, project_manager, container.project_config_manager, organization_manager)
+    return PushManager(logger, api_client, project_manager, container.project_config_manager, container.library_manager,
+                       organization_manager)
 
 
 def _get_base_cloud_projects() -> List[QCProject]:

@@ -17,6 +17,7 @@ from typing import List, Dict, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.library_manager import LibraryManager
 from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
@@ -31,6 +32,7 @@ class PushManager:
                  api_client: APIClient,
                  project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager,
+                 library_manager: LibraryManager,
                  organization_manager: OrganizationManager) -> None:
         """Creates a new PushManager instance.
 
@@ -38,11 +40,13 @@ class PushManager:
         :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_manager: the ProjectManager to use when looking for certain projects
         :param project_config_manager: the ProjectConfigManager instance to use
+        :param library_manager: the LibraryManager to use when updating library references
         """
         self._logger = logger
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._library_manager = library_manager
         self._organization_manager = organization_manager
         self._cloud_projects = []
         # Where each pushed project is after its push, which renames directories whose name is not valid locally or in the cloud
@@ -109,7 +113,7 @@ class PushManager:
                 library.update(LeanLibraryReference(name=pushed_library_path.name,
                                                     path=pushed_library_path.relative_to(Path.cwd()))
                                .model_dump(mode="json"))
-                self._project_manager.add_csharp_library_reference(project_dir, pushed_library_path)
+                self._library_manager.add_csharp_library_to_csproj(project_dir, pushed_library_path)
                 renamed_library_found = True
             library_paths.append(pushed_library_path)
 
