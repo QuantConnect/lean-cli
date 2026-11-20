@@ -136,6 +136,8 @@ def report(backtest_results: Optional[Path],
 
     destinations = [report_destination, pdf_destination] if pdf else [report_destination]
     for destination in destinations:
+        if destination.is_dir():
+            raise RuntimeError(f"{destination} is a directory, use a --report-destination whose PDF version is not one")
         if destination.exists() and not overwrite:
             raise RuntimeError(f"{destination} already exists, use --overwrite to overwrite it")
 
