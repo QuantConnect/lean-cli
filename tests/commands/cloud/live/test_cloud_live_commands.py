@@ -206,7 +206,7 @@ def test_cloud_live_deploy_offers_local_cash_for_resolved_project(project: str, 
     container.api_client.nodes.get_all.return_value = create_qc_nodes()
     container.api_client.get.return_value = {"success": True, "status": "Undefined"}
 
-    def push_and_rename(paths):
+    def push_and_rename(paths, libraries=None):
         paths[0].rename(resolved_path)
         container.push_manager.pushed_project_paths[paths[0]] = resolved_path
         return True

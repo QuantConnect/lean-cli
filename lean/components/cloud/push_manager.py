@@ -83,8 +83,11 @@ class PushManager:
             relative_path = path.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(all_projects_to_push)}] Pushing '{relative_path}'")
+                # A library whose cloud copy already matches the local one needs no update, so it is not
+                # rejected when the user can only read it.
                 self.pushed_project_paths[path] = self._push_project(path, organization_id, encryption_action_value,
-                                                                     encryption_key_value, force=force)
+                                                                     encryption_key_value, force=force,
+                                                                     skip_if_unchanged=path in associated_libraries_to_push)
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -106,7 +109,7 @@ class PushManager:
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None) -> Path:
+    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None, skip_if_unchanged: bool = False) -> Path:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -114,6 +117,7 @@ class PushManager:
         :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
         :param suggested_rename_path: the path to move the project to.
+        :param skip_if_unchanged: don't update the cloud project when it already matches the local one
         :return: the path of the pushed project, which differs from project_path when the push renamed it
         """
 
@@ -171,7 +175,7 @@ class PushManager:
             if cloud_project.name != project_name:
                 # cloud project name was changed. Repeat steps to validate the new name locally.
                 self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
-                return self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
+                return self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name, skip_if_unchanged)
 
             self._cloud_projects.append(cloud_project)
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
@@ -184,7 +188,7 @@ class PushManager:
             encryption_key = local_encryption_key
             encryption_action = ActionType.ENCRYPT if local_encryption_state else ActionType.DECRYPT
         # Finalize pushing by updating locally modified metadata, files and libraries
-        self._push_metadata(project_path, cloud_project, encryption_action, encryption_key, force)
+        self._push_metadata(project_path, cloud_project, encryption_action, encryption_key, force, skip_if_unchanged)
         return project_path
 
     def _get_files(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> List[Dict[str, str]]:
@@ -215,13 +219,14 @@ class PushManager:
 
         return files
 
-    def _push_metadata(self, project: Path, cloud_project: QCProject, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool]) -> None:
+    def _push_metadata(self, project: Path, cloud_project: QCProject, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], skip_if_unchanged: bool = False) -> None:
         """Pushes local project description and parameters to the cloud.
 
         Does nothing if the cloud is already up-to-date.
 
         :param project: the local project to push the parameters of
         :param cloud_project: the cloud project to push the parameters to
+        :param skip_if_unchanged: return without updating when the cloud project already matches the local one
         """
         project_config = self._project_config_manager.get_project_config(project)
 
@@ -277,6 +282,10 @@ class PushManager:
                 encryption_key_id = get_project_key_hash(encryption_key)
                 update_args["encryption_key"] = encryption_key_id
 
+        if skip_if_unchanged and self._is_cloud_project_up_to_date(cloud_project, update_args, expected_correct_project_name):
+            self._logger.debug(f"'{cloud_project.name}' is already up to date in the cloud, not pushing it")
+            return
+
         if not force:
             update_args["code_source_id"] = "cli"
         if update_args != {}:
@@ -294,6 +303,22 @@ class PushManager:
                 updated_keys_str = ", ".join(updated_keys[:-1]) + f", and {updated_keys[-1]}"
 
             self._logger.info(f"Successfully updated {updated_keys_str} for '{cloud_project.name}'")
+
+    def _is_cloud_project_up_to_date(self, cloud_project: QCProject, update_args: Dict, expected_name: str) -> bool:
+        """Checks whether pushing update_args would leave the cloud project unchanged."""
+        changed_metadata = set(update_args) - {"name", "files", "libraries", "encryption_key"}
+        if changed_metadata or cloud_project.name != expected_name or update_args["encryption_key"] != '':
+            return False
+
+        if set(update_args["libraries"]) != {library.projectId for library in cloud_project.libraries}:
+            return False
+
+        try:
+            cloud_files = {file.name: file.content for file in self._api_client.files.get_all(cloud_project.projectId)}
+        except Exception:
+            return False
+
+        return cloud_files == {file["name"]: file["content"] for file in update_args["files"]}
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
