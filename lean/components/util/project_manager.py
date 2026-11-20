@@ -313,6 +313,29 @@ class ProjectManager:
         move(old_path, new_path)
         self._rename_csproj_file(new_path)
 
+    def update_csharp_library_reference(self, project_dir: Path, old_library_dir: Path, new_library_dir: Path) -> None:
+        """Points the project's .csproj references to a library that moved to the library's new .csproj file.
+
+        :param project_dir: the local project whose .csproj file references the library
+        :param old_library_dir: the directory the library was in
+        :param new_library_dir: the directory the library is in now
+        """
+        project_csproj_file = self.get_csproj_file_path(project_dir)
+        library_csproj_file = self.get_csproj_file_path(new_library_dir)
+        if project_csproj_file is None or library_csproj_file is None:
+            return
+
+        from os.path import relpath
+        csproj_tree = self._xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
+        library_references = [reference for reference in csproj_tree.findall(".//ProjectReference")
+                              if old_library_dir in (project_dir / reference.get("Include", "")).resolve().parents]
+        if len(library_references) == 0:
+            return
+
+        for reference in library_references:
+            reference.set("Include", Path(relpath(library_csproj_file, project_dir)).as_posix())
+        project_csproj_file.write_text(self._xml_manager.to_string(csproj_tree), encoding="utf-8")
+
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
                                    project: Optional[Union[str, int]]) -> List[QCProject]:
         """Returns a list of all the projects in the cloud that match the given name or id.
