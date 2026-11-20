@@ -149,12 +149,12 @@ class PushManager:
 
             # a key stored inside the project directory moved together with it
             if local_encryption_key is not None:
-                moved_key = self._get_moved_path(local_encryption_key, old_project_path, project_path)
+                moved_key = self._project_manager.get_path_after_project_rename(local_encryption_key, old_project_path, project_path)
                 if moved_key != local_encryption_key:
                     local_encryption_key = moved_key
                     project_config.set("encryption-key-path", str(moved_key))
             if encryption_key is not None:
-                encryption_key = self._get_moved_path(encryption_key, old_project_path, project_path)
+                encryption_key = self._project_manager.get_path_after_project_rename(encryption_key, old_project_path, project_path)
 
         # Find the cloud project to push the files to
         if cloud_id is not None:
@@ -186,19 +186,6 @@ class PushManager:
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project, encryption_action, encryption_key, force)
         return project_path
-
-    @staticmethod
-    def _get_moved_path(path: Path, old_directory: Path, new_directory: Path) -> Path:
-        """Returns the new location of a path after old_directory has been renamed to new_directory.
-
-        Paths outside old_directory are returned unchanged.
-        """
-        absolute_path = path if path.is_absolute() else Path.cwd() / path
-        try:
-            relative_path = absolute_path.relative_to(old_directory)
-        except ValueError:
-            return path
-        return new_directory / relative_path
 
     def _get_files(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.
