@@ -542,6 +542,7 @@ class DockerManager:
                 if output is not None and output != "":
                     success = True
                     break
+                sleep(interval)
             except CalledProcessError as exception:
                 error_message = f"Failed to read result from docker file {docker_file.name}: {exception.output.decode('utf-8')} {p.stderr.read().decode('utf-8')}"
                 sleep(interval)
