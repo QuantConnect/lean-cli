@@ -168,3 +168,17 @@ def test_detects_circular_dependencies() -> None:
         assert False, "Expected library_manager.add_lean_library_reference_to_project() to raise on circular dependency"
     except RuntimeError:
         pass
+
+
+def test_add_csharp_project_to_csproj_without_item_group_adds_reference() -> None:
+    create_fake_lean_cli_directory()
+
+    csproj_file = Path.cwd() / "Empty.csproj"
+    csproj_file.write_text('<Project Sdk="Microsoft.NET.Sdk">\n  <PropertyGroup />\n</Project>', encoding="utf-8")
+
+    library_manager = _create_library_manager()
+    library_manager._add_csharp_project_to_csproj(csproj_file, "../Library/Lib/Lib.csproj")
+
+    content = csproj_file.read_text(encoding="utf-8")
+    assert '<ProjectReference Include="../Library/Lib/Lib.csproj"' in content
+    assert content.count("<ItemGroup>") == 1
