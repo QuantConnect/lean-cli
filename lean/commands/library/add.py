@@ -68,11 +68,8 @@ def _add_csharp_package_to_csproj(csproj_file: Path, name: str, version: str) ->
     if existing_package_reference is not None:
         existing_package_reference.set("Version", version)
     else:
-        last_item_group = csproj_tree.find(".//ItemGroup[last()]")
-        if last_item_group is None:
-            last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
-
-        last_item_group.append(etree.fromstring(f'<PackageReference Include="{name}" Version="{version}" />'))
+        item_group = xml_manager.unconditional_item_group(csproj_tree)
+        item_group.append(etree.fromstring(f'<PackageReference Include="{name}" Version="{version}" />'))
 
     csproj_file.write_text(xml_manager.to_string(csproj_tree), encoding="utf-8")
 

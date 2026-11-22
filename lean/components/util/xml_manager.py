@@ -37,3 +37,22 @@ class XMLManager:
         """
         etree.indent(root, " " * 4)
         return etree.tostring(root, encoding="utf-8", method="xml", pretty_print=True).decode("utf-8")
+
+    def unconditional_item_group(self, root: etree.Element) -> etree.Element:
+        """Returns a project ItemGroup with no Condition, creating one when none exists.
+
+        Direct children only: an ItemGroup inside a Target is not a project reference group.
+        A Condition on the group would limit a new reference to that configuration.
+
+        :param root: the parsed csproj element
+        :return: an ItemGroup that is included in every build configuration
+        """
+        project = root if str(root.tag).rsplit("}", 1)[-1] == "Project" else root.find(".//Project")
+        if project is None:
+            project = root
+
+        for item_group in reversed(project.findall("ItemGroup")):
+            if item_group.get("Condition") is None:
+                return item_group
+
+        return etree.SubElement(project, "ItemGroup")
