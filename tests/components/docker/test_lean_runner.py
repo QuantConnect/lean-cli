@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -479,6 +480,48 @@ def test_run_lean_compiles_csharp_project_named_with_shell_syntax_literally(proj
     assert f";PathMap=/LeanCLI={project_dir};" in calls[0][3]
     assert calls[1] == ["cp", "-R", "-n", "/Compile/bin/.", f"{LEAN_ROOT_PATH}/"]
     assert calls[2] == ["python", "/copy_csharp_dependencies.py", f"/Compile/obj/{project_name}/project.assets.json"]
+
+
+@pytest.mark.parametrize("directory_name", ["a;b", "a,b", "a%3Bb", "a\"b", "a;NoWarn=CS0001"])
+def test_run_lean_passes_csharp_host_path_with_msbuild_syntax_as_one_property_value(directory_name: str,
+                                                                                    fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / directory_name / "Algorithm"
+    shutil.copytree(Path.cwd() / "CSharp Project", project_dir)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    build_command = next(cmd for cmd in commands if cmd.startswith("dotnet build "))
+
+    calls = run_bash_recording_calls(fs, [build_command], ["dotnet"])
+    property_switch = calls[0][3]
+    assert property_switch.startswith("-p:")
+
+    # MSBuild drops double quotes, splits the switch into properties on ";" and ",", then unescapes %XX in their values
+    properties = {}
+    for prop in re.split("[;,]", property_switch[len("-p:"):].replace('"', "")):
+        key, value = prop.split("=", 1)
+        properties[key] = re.sub("%([0-9A-Fa-f]{2})", lambda match: chr(int(match.group(1), 16)), value)
+
+    assert properties["PathMap"] == f"/LeanCLI={project_dir}"
+    assert properties["NoWarn"] == "MSB3277;CS0618"
+    assert properties["Configuration"] == "Debug"
+    assert len(properties) == 11
 
 
 def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:
