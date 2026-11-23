@@ -984,3 +984,40 @@ def test_run_lean_mounts_quant_bridge_symbol_map_file_once_when_set_in_root_and_
     assert any(Path(mount["Source"]) == expected_source for mount in kwargs["mounts"])
     assert lean_config["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
     assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+
+
+@pytest.mark.parametrize("no_warn,expected_codes", [("<NoWarn />", "MSB3277"),
+                                                    ("<NoWarn></NoWarn>", "MSB3277"),
+                                                    ("<NoWarn>CS0618;CS1998</NoWarn>", "MSB3277%3BCS0618%3BCS1998")])
+def test_run_lean_inherits_no_warn_codes_from_csharp_project(no_warn: str, expected_codes: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    _generate_file(project_dir / "CSharp Project.csproj", f"""
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>{DEFAULT_LEAN_DOTNET_FRAMEWORK}</TargetFramework>
+        {no_warn}
+    </PropertyGroup>
+</Project>
+    """)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    build_command = next(cmd for cmd in docker_manager.run_image.call_args.kwargs["commands"]
+                         if cmd.startswith("dotnet build"))
+
+    assert build_command.endswith(f";NoWarn={expected_codes}'")
