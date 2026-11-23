@@ -774,3 +774,87 @@ def test_cloud_push_does_not_reuse_original_directory_when_copy_name_sanitizes_t
     assert 10 not in updated_ids
     uploaded = [call.kwargs["files"] for call in api_client.projects.update.call_args_list if call.args[0] == 20]
     assert uploaded and {"name": "main.py", "content": "# COPY"} in uploaded[0]
+
+
+def test_cloud_push_does_not_reuse_original_directory_when_copy_with_same_cloud_id_sanitizes_to_it() -> None:
+    create_fake_lean_cli_directory()
+
+    original_path = Path.cwd() / "Python Project"
+    copy_path = Path.cwd() / "Python:Project"
+    original_config = container.project_config_manager.get_project_config(original_path)
+    original_config.set("cloud-id", 10)
+    original_main = (original_path / "main.py").read_text(encoding="utf-8")
+
+    # The copy keeps the cloud-id of the original
+    copy_path.mkdir()
+    for file in original_path.iterdir():
+        if file.is_file():
+            (copy_path / file.name).write_text(file.read_text(encoding="utf-8"), encoding="utf-8")
+    (copy_path / "main.py").write_text("# COPY", encoding="utf-8")
+
+    cloud_project = create_api_project(10, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    # Pushed through the push manager because the CLI option rejects names with ':'
+    container.push_manager.push_project(copy_path)
+
+    # The original keeps its files and nothing is moved inside it
+    assert container.project_config_manager.get_project_config(original_path).get("cloud-id") == 10
+    assert (original_path / "main.py").read_text(encoding="utf-8") == original_main
+    assert not (original_path / copy_path.name).exists()
+
+    # The copy is stored in its own directory and its own files are the ones uploaded
+    new_copy_path = Path.cwd() / "Python Project 2"
+    assert not copy_path.exists()
+    assert (new_copy_path / "main.py").read_text(encoding="utf-8") == "# COPY"
+
+    uploaded = [call.kwargs["files"] for call in api_client.projects.update.call_args_list if call.args[0] == 10]
+    assert uploaded and {"name": "main.py", "content": "# COPY"} in uploaded[0]
+
+
+def test_cloud_push_does_not_read_config_of_other_directories_when_searching_for_a_free_name() -> None:
+    create_fake_lean_cli_directory()
+
+    original_path = Path.cwd() / "Python Project"
+    copy_path = Path.cwd() / "Python:Project"
+    container.project_config_manager.get_project_config(original_path).set("cloud-id", 10)
+
+    # The copy keeps the cloud-id of the original
+    copy_path.mkdir()
+    for file in original_path.iterdir():
+        if file.is_file():
+            (copy_path / file.name).write_text(file.read_text(encoding="utf-8"), encoding="utf-8")
+    (copy_path / "main.py").write_text("# COPY", encoding="utf-8")
+
+    # An unrelated directory on the next free name, whose config the CLI can't parse
+    unrelated_path = Path.cwd() / "Python Project 2"
+    unrelated_path.mkdir()
+    unrelated_config_bytes = b'{\n    // a comment\n    "cloud-id": 30\n}\n'
+    (unrelated_path / "config.json").write_bytes(unrelated_config_bytes)
+
+    cloud_project = create_api_project(10, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all = mock.MagicMock(return_value=[cloud_project])
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    # Pushed through the push manager because the CLI option rejects names with ':'
+    container.push_manager.push_project(copy_path)
+
+    # The unrelated directory is left exactly as it was
+    assert (unrelated_path / "config.json").read_bytes() == unrelated_config_bytes
+    assert [path.name for path in unrelated_path.iterdir()] == ["config.json"]
+
+    # The copy is stored on the next free name
+    new_copy_path = Path.cwd() / "Python Project 3"
+    assert not copy_path.exists()
+    assert (new_copy_path / "main.py").read_text(encoding="utf-8") == "# COPY"
