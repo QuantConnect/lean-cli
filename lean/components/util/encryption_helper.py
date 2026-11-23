@@ -192,6 +192,10 @@ def get_appropriate_files_from_local_project(project: Path, paths: List[Path], e
 def _validate_key_state_for_local_project(project_config: Storage, encryption_key: Path):
     local_encryption_key_path = project_config.get('encryption-key-path', None)
     if local_encryption_key_path and encryption_key and Path(local_encryption_key_path) != encryption_key:
+        registered_key = Path(local_encryption_key_path)
+        # A copy of the registered key at another path has the same content, so it is the same key
+        if registered_key.is_file() and encryption_key.is_file() and are_encryption_keys_equal(registered_key, encryption_key):
+            return
         raise RuntimeError(f"Registered encryption key {local_encryption_key_path} is different from the one provided {encryption_key}")
 
 def _decrypt_file_content(key: bytes, init_vector: bytes, b64_encoded_content: str) -> str:
