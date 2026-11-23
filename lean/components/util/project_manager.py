@@ -267,24 +267,26 @@ class ProjectManager:
             if not current_path.exists():
                 return current_path
 
+            # another directory can't match when source_path is given, so don't open its config:
+            # reading an unparseable config deletes it
             is_source = source_path is None or current_path == source_path
 
-            if cloud_id is not None:
+            if cloud_id is not None and is_source:
                 current_project_config = self._project_config_manager.get_project_config(current_path)
                 if current_project_config.is_empty():
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                elif current_project_config.get("cloud-id") == cloud_id and is_source:
+                elif current_project_config.get("cloud-id") == cloud_id:
                     return current_path
 
-            if local_id is not None:
+            if local_id is not None and is_source:
                 current_project_config = self._project_config_manager.get_project_config(current_path)
                 if current_project_config.is_empty():
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                elif current_project_config.get("local-id") == local_id and is_source:
+                elif current_project_config.get("local-id") == local_id:
                     return current_path
 
             if current_index == 1:
