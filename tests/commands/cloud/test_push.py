@@ -233,6 +233,7 @@ def test_cloud_push_follows_encryption_key_inside_project_when_push_renames_proj
     project_config = container.project_config_manager.get_project_config(project_path)
     project_config.set("encrypted", True)
     project_config.set("encryption-key-path", str(encryption_file_path))
+    _write_encrypted_source_files(project_path)
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path])
 
@@ -303,6 +304,7 @@ def test_cloud_push_keeps_encryption_key_path_outside_project_when_push_renames_
     project_config = container.project_config_manager.get_project_config(project_path)
     project_config.set("encrypted", True)
     project_config.set("encryption-key-path", str(encryption_file_path))
+    _write_encrypted_source_files(project_path)
 
     result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path])
 
@@ -345,6 +347,40 @@ def test_cloud_push_aborts_sending_encrypted_files_when_local_file_encrypted_wit
 
     assert result.exit_code == 0
     api_client.projects.update.assert_not_called()
+
+def test_cloud_push_aborts_when_local_files_encrypted_with_key_x_and_new_cloud_project_given_key_y() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+
+    encryption_file_path_y = Path.cwd() / "encryption_y.txt"
+    encryption_file_path_y.write_text("Jtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+
+    # both keys are registered with the cloud
+    encryption_file_path_x = Path.cwd() / "encryption_x.txt"
+    encryption_file_path_x.write_text("KtSwJtq5a4uuQmxbPqcCP3d8yMRz5TZxDBAKy7kGwPcvcvsNBdCprGYwSBN8ntJa5JNNYHTB2GrBpAbkA38kCdnceegffZH7")
+    keys_api_data = {'keys': [{'name': 'x', 'hash': get_project_key_hash(encryption_file_path_x)},
+                              {'name': 'y', 'hash': get_project_key_hash(encryption_file_path_y)}]}
+
+    api_client = mock.Mock()
+    api_client.encryption_keys.list = mock.MagicMock(return_value=keys_api_data)
+    cloud_project = create_api_project(1, "Python Project")
+    api_client.projects.create = mock.MagicMock(return_value=cloud_project)
+    api_client.files.get_all = mock.MagicMock(return_value=[])
+
+    init_container(api_client_to_use=api_client)
+
+    # the files are encrypted with key x, and neither the cloud project nor the key path is known
+    project_config = container.project_config_manager.get_project_config(project_path)
+    project_config.set("encrypted", True)
+    _write_encrypted_source_files(project_path)
+
+    result = CliRunner().invoke(lean, ["cloud", "push", "--project", project_path, "--encrypt", "--key", encryption_file_path_y])
+
+    assert result.exit_code == 0
+    assert "is not encrypted with the encryption key" in " ".join(result.output.split())
+    api_client.projects.update.assert_not_called()
+
 
 def test_cloud_push_sends_decrypted_files_and_turns_off_encryption_with_decrypted_flag_given() -> None:
     create_fake_lean_cli_directory()
@@ -598,6 +634,12 @@ def test_cloud_push_decrypts_cloud_project_when_project_pulled_encrypted_without
     assert kwargs["encryption_key"] == ''
     main_file = next(file for file in kwargs["files"] if file["name"] == "main.py")
     assert main_file["content"].startswith("# region imports")
+
+
+def _write_encrypted_source_files(project_path: Path) -> None:
+    expected_encrypted_files = _get_expected_encrypted_files_content()
+    for source_file in container.project_manager.get_source_files(project_path):
+        source_file.write_text(expected_encrypted_files[source_file.name])
 
 
 def _get_expected_encrypted_files_content() -> dict:

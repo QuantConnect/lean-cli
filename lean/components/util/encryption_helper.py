@@ -129,15 +129,18 @@ def get_encrypted_file_content_for_local_project(project: Path, source_files: Li
     encoded_project_iv = project_iv.encode('utf-8')
     encrypted_data: List[str] = []
     for file in source_files:
+        with open(file, 'r', encoding= "utf-8") as f:
+            content = f.read()
+        if areProjectFilesAlreadyEncrypted:
+            # the files are kept as they are, so they must already be encrypted with the given key
+            try:
+                _decrypt_file_content(encoded_project_key, encoded_project_iv, content)
+            except Exception:
+                raise RuntimeError(f"File {file} is not encrypted with the encryption key {encryption_key}")
+            encrypted_data.append(content)
+            continue
         try:
-            # lets read and decrypt the file
-            with open(file, 'r', encoding= "utf-8") as f:
-                plain_text = f.read()
-                if areProjectFilesAlreadyEncrypted:
-                    encrypted = plain_text
-                else:
-                    encrypted = _encrypt_file_content(encoded_project_key, encoded_project_iv, plain_text.encode('utf-8'))
-                encrypted_data.append(encrypted)
+            encrypted_data.append(_encrypt_file_content(encoded_project_key, encoded_project_iv, content.encode('utf-8')))
         except Exception as e:
             raise RuntimeError(f"Failed to encrypt file {file} with error {e}")
     return encrypted_data
