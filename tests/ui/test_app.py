@@ -13,6 +13,7 @@
 
 import asyncio
 import json
+import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -141,9 +142,14 @@ def test_parse_cloud_backtest_url_reads_the_project_and_backtest_ids() -> None:
     assert parse_cloud_backtest_url("Started compiling project 'CSharp Project'") is None
 
 
-def test_command_process_runs_the_cli_as_a_child_process() -> None:
+def test_command_process_runs_the_cli_as_a_child_process(monkeypatch) -> None:
+    import lean
     from lean import __version__
     from lean.ui.actions import CommandProcess
+
+    # The child imports lean from the installed packages, which may hold another version than the one under test
+    source = str(Path(lean.__file__).parent.parent)
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join(filter(None, [source, os.environ.get("PYTHONPATH")])))
 
     lines = []
     exit_code = CommandProcess(["--version"], Path(__file__).parent).run(lines.append)
