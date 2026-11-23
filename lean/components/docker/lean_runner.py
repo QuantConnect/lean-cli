@@ -637,7 +637,7 @@ class LeanRunner:
         existing_no_warn = csproj.find(".//NoWarn")
         from re import split
         if existing_no_warn is not None:
-            codes = [c for c in split(r"[^a-zA-Z0-9]", existing_no_warn.text) if c != ""]
+            codes = [c for c in split(r"[^a-zA-Z0-9]", existing_no_warn.text or "") if c != ""]
             msbuild_properties["NoWarn"] += codes
 
         # Turn the NoWarn property into a string
