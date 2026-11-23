@@ -641,13 +641,15 @@ class LeanRunner:
             msbuild_properties["NoWarn"] += codes
 
         # Turn the NoWarn property into a string
-        # %3B is the encoded version of ";", because a raw ";" is seen as a separator between properties
-        msbuild_properties["NoWarn"] = "%3B".join(msbuild_properties["NoWarn"])
+        msbuild_properties["NoWarn"] = ";".join(msbuild_properties["NoWarn"])
 
         # Build the project before running LEAN
         from shlex import quote
         relative_project_file = str(project_file.relative_to(compile_root)).replace("\\", "/")
-        msbuild_properties = ";".join(f"{key}={value}" for key, value in msbuild_properties.items())
+        # MSBuild splits -p: on ";" and ",", drops '"' and unescapes %XX, so values pass these characters as %XX
+        msbuild_properties = ";".join(
+            f"{key}=" + "".join(f"%{ord(char):02X}" if char in '%;,"' else char for char in value)
+            for key, value in msbuild_properties.items())
         run_options["commands"].append(
             f"dotnet build {quote(f'/LeanCLI/{relative_project_file}')} {quote(f'-p:{msbuild_properties}')}")
 
