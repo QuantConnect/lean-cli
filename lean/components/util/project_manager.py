@@ -245,8 +245,8 @@ class ProjectManager:
         :param cloud_id: the cloud project id to get the project path of
         :param local_id: the cloud project local id to get the project path of
         :param allow_corrupted: true if a corrupted path can be used
-        :param source_path: when given together with a local id, only this directory can be matched by local id,
-                            because a copied project can share the local id of another directory
+        :param source_path: when given, only this directory can be matched by cloud id or local id,
+                            because a copied project can share the ids of another directory
         :return: the path to the local project directory
         """
 
@@ -267,13 +267,15 @@ class ProjectManager:
             if not current_path.exists():
                 return current_path
 
+            is_source = source_path is None or current_path == source_path
+
             if cloud_id is not None:
                 current_project_config = self._project_config_manager.get_project_config(current_path)
                 if current_project_config.is_empty():
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                elif current_project_config.get("cloud-id") == cloud_id:
+                elif current_project_config.get("cloud-id") == cloud_id and is_source:
                     return current_path
 
             if local_id is not None:
@@ -282,8 +284,7 @@ class ProjectManager:
                     self._logger.error(f"'{current_path}' '{PROJECT_CONFIG_FILE_NAME}' file is corrupted!")
                     if allow_corrupted:
                         return current_path
-                elif current_project_config.get("local-id") == local_id and \
-                        (source_path is None or current_path == source_path):
+                elif current_project_config.get("local-id") == local_id and is_source:
                     return current_path
 
             if current_index == 1:
