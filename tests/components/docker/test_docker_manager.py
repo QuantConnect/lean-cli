@@ -130,6 +130,39 @@ def test_read_from_file_does_not_let_the_container_shell_interpret_the_file_name
     assert run_bash_recording_calls(fs, [command[5]], ["cat"]) == [["cat", file_name]]
 
 
+def test_read_from_file_sleeps_for_the_interval_while_the_result_file_does_not_exist_yet() -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.Popen") as popen_mock, \
+            mock.patch("time.sleep") as sleep_mock:
+        popen_mock.return_value.stdout.read.return_value = b""
+        result = docker_manager.read_from_file("my-container", Path("command-result.json"), interval=1, timeout=0.05)
+
+    assert result["success"] is False
+    assert sleep_mock.call_count > 0
+    sleep_mock.assert_called_with(1)
+
+
+def test_read_from_file_returns_without_sleeping_when_the_result_is_available() -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.Popen") as popen_mock, \
+            mock.patch("time.sleep") as sleep_mock:
+        popen_mock.return_value.stdout.read.return_value = b'{"Success": true}'
+        result = docker_manager.read_from_file("my-container", Path("command-result.json"), interval=1, timeout=5)
+
+    assert result["success"] is True
+    sleep_mock.assert_not_called()
+
+
 def test_get_image_label_returns_the_label_of_the_image() -> None:
     docker_manager = _create_docker_manager()
 
