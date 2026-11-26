@@ -147,6 +147,41 @@ def test_read_from_file_sleeps_for_the_interval_while_the_result_file_does_not_e
     sleep_mock.assert_called_with(1)
 
 
+def test_read_from_file_retries_when_the_result_is_partially_written() -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.Popen") as popen_mock, \
+            mock.patch("time.sleep") as sleep_mock:
+        popen_mock.return_value.stdout.read.side_effect = [b'{"Success":', b'{"Success": true}']
+        popen_mock.return_value.stderr.read.return_value = b""
+        result = docker_manager.read_from_file("my-container", Path("command-result.json"), interval=1, timeout=5)
+
+    assert result["success"] is True
+    assert result["error"] is None
+    sleep_mock.assert_called_once_with(1)
+
+
+def test_read_from_file_fails_when_the_result_stays_incomplete() -> None:
+    docker_manager = _create_docker_manager()
+
+    container = mock.Mock()
+    container.status = "running"
+
+    with mock.patch.object(docker_manager, "get_container_by_name", return_value=container), \
+            mock.patch("subprocess.Popen") as popen_mock, \
+            mock.patch("time.sleep"):
+        popen_mock.return_value.stdout.read.return_value = b'{"Success":'
+        popen_mock.return_value.stderr.read.return_value = b""
+        result = docker_manager.read_from_file("my-container", Path("command-result.json"), interval=1, timeout=0.05)
+
+    assert result["success"] is False
+    assert "command-result.json" in result["error"]
+
+
 def test_read_from_file_returns_without_sleeping_when_the_result_is_available() -> None:
     docker_manager = _create_docker_manager()
 
