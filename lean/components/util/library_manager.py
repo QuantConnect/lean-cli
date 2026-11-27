@@ -280,7 +280,7 @@ class LibraryManager:
         if existing_project_reference is None:
             last_item_group = csproj_tree.find(".//ItemGroup[last()]")
             if last_item_group is None:
-                last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
+                last_item_group = etree.SubElement(csproj_tree, "ItemGroup")
 
             last_item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_path}" />'))
 
