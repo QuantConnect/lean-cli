@@ -17,7 +17,7 @@ from pathlib import Path
 from time import time
 
 json_modules = {}
-file_name = "modules-1.14.json"
+file_name = "modules-1.15.json"
 directory = Path(__file__).parent
 file_path = directory.parent / file_name
 
@@ -30,18 +30,24 @@ def _download_modules_json() -> None:
     from requests import get
     res = get(url, timeout=5)
     if res.ok:
-        from json import dump
+        from json import dumps
+        # Decoded and checked before the file is opened, since opening it for writing empties it: a response that
+        # isn't a modules file would replace a usable one with one the CLI can't start from
+        data = res.json()
+        if not isinstance(data, dict) or "modules" not in data:
+            raise ValueError(f"{url} returned no modules")
+        content = dumps(data, ensure_ascii=False, indent=4)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
-            dump(res.json(), f, ensure_ascii=False, indent=4)
+            f.write(content)
     else:
         res.raise_for_status()
 
 
 error = None
 try:
-    # fetch if file not available or fetched before 1 day
-    if not path.exists(file_path) or (time() - path.getmtime(file_path) > 86400):
+    # fetch if file not available, still the empty placeholder the package ships, or fetched before 1 day
+    if not path.exists(file_path) or path.getsize(file_path) == 0 or (time() - path.getmtime(file_path) > 86400):
         _download_modules_json()
 except Exception as e:
     # No need to do anything if file isn't available
@@ -49,7 +55,7 @@ except Exception as e:
     pass
 
 # check if file exists
-if not Path(file_path).is_file():
+if not Path(file_path).is_file() or path.getsize(file_path) == 0:
     error_message = f": {error}" if error is not None else ""
     raise FileNotFoundError(
         f"Modules json not found in the given path {file_path}{error_message}")

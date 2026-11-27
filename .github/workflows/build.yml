@@ -2,6 +2,10 @@ name: Build
 
 on: [push, pull_request]
 
+env:
+  # Python used to build and package the releases (PyPI, portable builds)
+  RELEASE_PYTHON_VERSION: '3.10'
+
 jobs:
   load-matrix:
     runs-on: ubuntu-latest
@@ -39,10 +43,11 @@ jobs:
           pip install -r requirements.txt
 
       # Static analysis tools
+      # mypy 2.x requires Python 3.10 or newer
       - name: Static Code Analysis
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.python-version != '3.9'
         run: |
-          pip install mypy==1.19.1 flake8==7.3.0
+          pip install mypy==2.4.0 flake8==7.3.0
           python static_analysis.py
 
       - name: Run tests
@@ -67,7 +72,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Install packaging dependencies
         run: pip install wheel
@@ -79,7 +84,7 @@ jobs:
         run: python setup.py sdist bdist_wheel
 
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
@@ -89,8 +94,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-latest]
-        python-version: ["3.10"]
+        os: [ubuntu-22.04, macos-15, windows-latest]
 
     # on a new tag (release), after 'test' and 'release' have ended we will run this
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
@@ -103,7 +107,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Wait for pip release, sleep in seconds
         run: sleep 900
@@ -122,7 +126,7 @@ jobs:
         shell: bash
 
       - name: Create Portable Macos
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -142,6 +146,9 @@ jobs:
           mkdir ./lean
           /usr/bin/codesign --deep --force --timestamp -o runtime -s CY5GJ9682W ./lean-cli -v
           find . -iname '*.so' -or -iname '*.dylib'| while read libfile; do /usr/bin/codesign --timestamp --deep -o runtime --force -s CY5GJ9682W "${libfile}"; done;
+          # The Python interpreter is collected as _internal/Python.framework; PyInstaller only signs its binary as a
+          # loose file, which notarization rejects, so sign each framework as a bundle (#706)
+          find . -type d -name '*.framework' -prune | while read fw; do /usr/bin/codesign --timestamp -o runtime --force -s CY5GJ9682W "${fw}"; done;
         shell: bash
 
       - name: Get OS Name Without Version
@@ -149,17 +156,29 @@ jobs:
         shell: bash
 
       - name: Zip package and notarize Macos
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         run: |
+          set -o pipefail
           xcrun notarytool store-credentials --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" "QC_APPLE"
           cd portable/dist/lean-cli
           ditto -c -k --keepParent . ../lean-latest-${{env.OS_NAME}}.zip
           cd ..
-          xcrun notarytool submit lean-latest-${{env.OS_NAME}}.zip --keychain-profile "QC_APPLE" --wait
+          xcrun notarytool submit lean-latest-${{env.OS_NAME}}.zip --keychain-profile "QC_APPLE" --wait | tee notarization.log
+          # notarytool exits 0 even when Apple rejects the archive, so require Accepted before publishing it and
+          # otherwise print Apple's report, which lists each rejected file and the reason (#706)
+          SUBMISSION_ID=$(awk '$1 == "id:" { id = $2 } END { print id }' notarization.log)
+          STATUS=$(awk '$1 == "status:" { status = $2 } END { print status }' notarization.log)
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "::error::macOS notarization status is '${STATUS:-unknown}' for submission '${SUBMISSION_ID:-unknown}'; the macOS archive is not published"
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" --keychain-profile "QC_APPLE" || echo "::warning::Could not retrieve the notarization log for submission $SUBMISSION_ID"
+            fi
+            exit 1
+          fi
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
@@ -177,7 +196,7 @@ jobs:
           zip -r ../lean-latest-${{env.OS_NAME}}.zip .
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET }}
@@ -212,10 +231,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ env.RELEASE_PYTHON_VERSION }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET }}

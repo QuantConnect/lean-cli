@@ -724,7 +724,9 @@ def download(ctx: Context,
         if market != "":
             dll_arguments.extend(["--market", market])
 
-        run_options["commands"].append(' '.join(dll_arguments))
+        # Tickers such as future option contracts ('ESH25 C5000') contain spaces the shell must not split
+        from shlex import quote
+        run_options["commands"].append(' '.join(quote(argument) for argument in dll_arguments))
 
         # mount our created above config with work directory
         run_options["mounts"].append(

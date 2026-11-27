@@ -11,12 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
 import docker.types
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.components.config.lean_config_manager import LeanConfigManager
 from lean.components.config.output_config_manager import OutputConfigManager
@@ -32,7 +35,7 @@ from lean.constants import DEFAULT_ENGINE_IMAGE, LEAN_ROOT_PATH, DEFAULT_DATA_DI
 from lean.models.utils import DebuggingMethod
 from lean.models.docker import DockerImage
 from lean.models.modules import NuGetPackage
-from tests.test_helpers import create_fake_lean_cli_directory
+from tests.test_helpers import create_fake_lean_cli_directory, run_bash_recording_calls
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
 
@@ -400,6 +403,127 @@ def test_run_lean_compiles_python_project() -> None:
                 python -m compileall""")), None)
     assert build_command is not None
 
+
+SHELL_SYNTAX_NAMES = ["Profit $SPY", "Profit ${SPY}", "report $(echo substituted)", "report `echo substituted`",
+                      "the trader's report"]
+
+
+def test_run_lean_compiles_python_files_named_with_shell_syntax_literally(fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "Python Project"
+    for name in SHELL_SYNTAX_NAMES:
+        _generate_file(project_dir / f"{name}.py", "")
+    _generate_file(project_dir / "Profit $SPY" / "alpha.py", "")
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    compile_command = next(cmd for cmd in commands if "python -m compileall" in cmd)
+
+    calls = run_bash_recording_calls(fs, [compile_command], ["[", "python"])
+
+    assert len(calls) == 2
+    assert calls[0] == ["[", "-d", "/LeanCLI", "]"]
+    assert calls[1][:3] == ["python", "-m", "compileall"]
+    assert sorted(calls[1][3:]) == sorted(["/LeanCLI/main.py",
+                                           "/LeanCLI/research.ipynb",
+                                           "/LeanCLI/Profit $SPY/alpha.py",
+                                           *[f"/LeanCLI/{name}.py" for name in SHELL_SYNTAX_NAMES]])
+
+
+@pytest.mark.parametrize("project_name", SHELL_SYNTAX_NAMES)
+def test_run_lean_compiles_csharp_project_named_with_shell_syntax_literally(project_name: str,
+                                                                            fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / project_name
+    shutil.copytree(Path.cwd() / "CSharp Project", project_dir)
+    (project_dir / "CSharp Project.csproj").rename(project_dir / f"{project_name}.csproj")
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    # The build, the copy of its output and the copy of its dependencies
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    build_index = next(index for index, cmd in enumerate(commands) if cmd.startswith("dotnet build "))
+
+    calls = run_bash_recording_calls(fs, commands[build_index:build_index + 3], ["dotnet", "cp", "python"])
+
+    assert calls[0][:3] == ["dotnet", "build", f"/LeanCLI/{project_name}.csproj"]
+    assert len(calls[0]) == 4
+    assert calls[0][3].startswith("-p:Configuration=Debug;")
+    assert f";PathMap=/LeanCLI={project_dir};" in calls[0][3]
+    assert calls[1] == ["cp", "-R", "-n", "/Compile/bin/.", f"{LEAN_ROOT_PATH}/"]
+    assert calls[2] == ["python", "/copy_csharp_dependencies.py", f"/Compile/obj/{project_name}/project.assets.json"]
+
+
+@pytest.mark.parametrize("directory_name", ["a;b", "a,b", "a%3Bb", "a\"b", "a;NoWarn=CS0001"])
+def test_run_lean_passes_csharp_host_path_with_msbuild_syntax_as_one_property_value(directory_name: str,
+                                                                                    fs: FakeFilesystem) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / directory_name / "Algorithm"
+    shutil.copytree(Path.cwd() / "CSharp Project", project_dir)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    build_command = next(cmd for cmd in commands if cmd.startswith("dotnet build "))
+
+    calls = run_bash_recording_calls(fs, [build_command], ["dotnet"])
+    property_switch = calls[0][3]
+    assert property_switch.startswith("-p:")
+
+    # MSBuild drops double quotes, splits the switch into properties on ";" and ",", then unescapes %XX in their values
+    properties = {}
+    for prop in re.split("[;,]", property_switch[len("-p:"):].replace('"', "")):
+        key, value = prop.split("=", 1)
+        properties[key] = re.sub("%([0-9A-Fa-f]{2})", lambda match: chr(int(match.group(1), 16)), value)
+
+    assert properties["PathMap"] == f"/LeanCLI={project_dir}"
+    assert properties["NoWarn"] == "MSB3277;CS0618"
+    assert properties["Configuration"] == "Debug"
+    assert len(properties) == 11
+
+
 def test_run_lean_mounts_project_directory_when_running_python_algorithm() -> None:
     create_fake_lean_cli_directory()
 
@@ -526,7 +650,7 @@ def test_run_lean_raises_when_run_image_fails() -> None:
     ("Linux", "/home/user/some_directory"),
     ("Darwin", "/Users/user/some_directory")
 ])
-def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str, root: str) -> None:
+def test_run_lean_mounts_quant_bridge_symbol_map_file_from_data_folder(os: str, root: str) -> None:
     from platform import system
     if os != system():
         pytest.skip(f"This test requires {os}")
@@ -536,10 +660,10 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str,
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = True
 
-    local_path = Path(root) / "terminal-link-symbol-map.json"
+    local_path = Path(root) / "quant-bridge-symbol-map.json"
 
     lean_runner = create_lean_runner(docker_manager)
-    lean_runner.run_lean({"terminal-link-symbol-map-file": str(local_path)},
+    lean_runner.run_lean({"quant-bridge-symbol-map-file": str(local_path)},
                          "backtesting",
                          Path.cwd() / "Python Project" / "main.py",
                          Path.cwd() / "output",
@@ -559,7 +683,7 @@ def test_run_lean_mounts_terminal_link_symbol_map_file_from_data_folder(os: str,
 
     assert any([
         Path(mount["Source"]) == expected_source and
-        mount["Target"] == f'/Files/terminal-link-symbol-map-file'
+        mount["Target"] == f'/Files/quant-bridge-symbol-map-file'
         for mount in kwargs["mounts"]
     ])
 
@@ -831,3 +955,112 @@ def test_lean_runner_parses_environment_values_containing_equals_from_extra_dock
                                          {"environment": ["JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8", "TOKEN=abc=="]})
 
     assert run_options["environment"] == {"JAVA_TOOL_OPTIONS": "-Dfile.encoding=UTF-8", "TOKEN": "abc=="}
+
+
+def _run_with_environment_config(lean_config: dict):
+    create_fake_lean_cli_directory()
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+
+    lean_runner = create_lean_runner(docker_manager)
+    lean_runner.run_lean(lean_config,
+                         "lean-cli",
+                         Path.cwd() / "Python Project" / "main.py",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    docker_manager.run_image.assert_called_once()
+    return docker_manager.run_image.call_args
+
+
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+def test_run_lean_rewrites_localhost_quant_bridge_host_in_selected_environment(host: str) -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "environments": {"lean-cli": {"quant-bridge-server-host": host}}
+    }
+
+    _run_with_environment_config(lean_config)
+
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-server-host"] == "host.docker.internal"
+
+
+def test_run_lean_mounts_quant_bridge_symbol_map_file_from_selected_environment() -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "environments": {"lean-cli": {"quant-bridge-symbol-map-file": "quant-bridge-symbol-map.json"}}
+    }
+
+    args, kwargs = _run_with_environment_config(lean_config)
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    expected_source = cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties" / "quant-bridge-symbol-map.json"
+
+    assert any([
+        Path(mount["Source"]) == expected_source and
+        mount["Target"] == "/Files/quant-bridge-symbol-map-file"
+        for mount in kwargs["mounts"]
+    ])
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+
+
+def test_run_lean_mounts_quant_bridge_symbol_map_file_once_when_set_in_root_and_environment() -> None:
+    lean_config = {
+        "environment": "lean-cli",
+        "quant-bridge-symbol-map-file": "root-symbol-map.json",
+        "environments": {"lean-cli": {"quant-bridge-symbol-map-file": "env-symbol-map.json"}}
+    }
+
+    args, kwargs = _run_with_environment_config(lean_config)
+
+    from lean.container import container
+    cli_root_dir = container.lean_config_manager.get_cli_root_directory()
+    expected_source = cli_root_dir / DEFAULT_DATA_DIRECTORY_NAME / "symbol-properties" / "env-symbol-map.json"
+
+    targets = [mount["Target"] for mount in kwargs["mounts"]]
+    assert targets.count("/Files/quant-bridge-symbol-map-file") == 1
+    assert any(Path(mount["Source"]) == expected_source for mount in kwargs["mounts"])
+    assert lean_config["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+    assert lean_config["environments"]["lean-cli"]["quant-bridge-symbol-map-file"] == "/Files/quant-bridge-symbol-map-file"
+
+
+@pytest.mark.parametrize("no_warn,expected_codes", [("<NoWarn />", "MSB3277"),
+                                                    ("<NoWarn></NoWarn>", "MSB3277"),
+                                                    ("<NoWarn>CS0618;CS1998</NoWarn>", "MSB3277%3BCS0618%3BCS1998")])
+def test_run_lean_inherits_no_warn_codes_from_csharp_project(no_warn: str, expected_codes: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / "CSharp Project"
+    _generate_file(project_dir / "CSharp Project.csproj", f"""
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>{DEFAULT_LEAN_DOTNET_FRAMEWORK}</TargetFramework>
+        {no_warn}
+    </PropertyGroup>
+</Project>
+    """)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.return_value = True
+    docker_manager.get_image_label.return_value = DEFAULT_LEAN_DOTNET_FRAMEWORK
+
+    lean_runner = create_lean_runner(docker_manager)
+
+    lean_runner.run_lean({},
+                         "backtesting",
+                         project_dir / "Main.cs",
+                         Path.cwd() / "output",
+                         ENGINE_IMAGE,
+                         None,
+                         False,
+                         False)
+
+    build_command = next(cmd for cmd in docker_manager.run_image.call_args.kwargs["commands"]
+                         if cmd.startswith("dotnet build"))
+
+    assert build_command.endswith(f";NoWarn={expected_codes}'")

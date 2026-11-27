@@ -12,11 +12,14 @@
 # limitations under the License.
 
 from datetime import datetime
+from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
 
 from lean.commands import lean
+from lean.container import container
+from lean.models.errors import PushFailedError
 from lean.models.api import QCBacktest
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
@@ -198,6 +201,30 @@ def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> 
     assert result.exit_code == 0
 
     push_manager.push_projects.assert_not_called()
+
+
+def test_cloud_backtest_aborts_when_push_of_project_with_cloud_id_fails() -> None:
+    create_fake_lean_cli_directory()
+
+    project = create_api_project(1, "Python Project")
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [project]
+    api_client.projects.get.return_value = project
+    api_client.projects.update.side_effect = RuntimeError("You don't have write permission for this project")
+
+    cloud_runner = mock.Mock()
+    initialize_container(api_client_to_use=api_client, cloud_runner_to_use=cloud_runner)
+    container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", project.projectId)
+
+    result = CliRunner().invoke(lean, ["cloud", "backtest", "Python Project", "--push"])
+
+    assert result.exit_code != 0
+    assert isinstance(result.exception, PushFailedError)
+
+    api_client.projects.update.assert_called_once()
+    cloud_runner.compile_project.assert_not_called()
+    cloud_runner.run_backtest.assert_not_called()
 
 
 def test_cloud_backtest_aborts_when_backtest_fails() -> None:

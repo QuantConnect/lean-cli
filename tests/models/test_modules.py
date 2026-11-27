@@ -11,7 +11,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import runpy
+from pathlib import Path
+
+import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from responses import RequestsMock
+
+import lean.models
 from lean.models.modules import NuGetPackage
+
+
+def _write_modules_json_placeholder(fs: FakeFilesystem) -> None:
+    fs.add_real_file(lean.models.__file__)
+    fs.create_file(lean.models.file_path)
+
+
+def test_modules_json_placeholder_is_replaced_by_the_downloaded_file(fs: FakeFilesystem,
+                                                                      requests_mock: RequestsMock) -> None:
+    _write_modules_json_placeholder(fs)
+    modules = {"SomeModule": {"version": "1.0"}}
+    requests_mock.add(requests_mock.GET, lean.models.url, json={"modules": modules})
+
+    module_globals = runpy.run_path(lean.models.__file__)
+
+    assert module_globals["json_modules"] == modules
+    assert Path(lean.models.file_path).stat().st_size > 0
+
+
+def test_modules_json_placeholder_raises_not_found_when_download_fails(fs: FakeFilesystem,
+                                                                        requests_mock: RequestsMock) -> None:
+    _write_modules_json_placeholder(fs)
+    requests_mock.add(requests_mock.GET, lean.models.url, body=RequestsConnectionError())
+
+    with pytest.raises(FileNotFoundError, match="Modules json not found"):
+        runpy.run_path(lean.models.__file__)
 
 
 def test_get_file_name_returns_correct_value() -> None:

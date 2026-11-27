@@ -17,6 +17,7 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from lean.commands import lean
 from lean.components.config.storage import Storage
@@ -24,7 +25,7 @@ from lean.components import reserved_names, output_reserved_names
 from lean.constants import DEFAULT_ENGINE_IMAGE
 from lean.container import container
 from lean.models.docker import DockerImage
-from tests.test_helpers import create_fake_lean_cli_directory
+from tests.test_helpers import create_fake_lean_cli_directory, run_bash_recording_calls
 from tests.conftest import initialize_container
 
 ENGINE_IMAGE = DockerImage.parse(DEFAULT_ENGINE_IMAGE)
@@ -546,6 +547,90 @@ def test_report_overwrites_report_destination_when_overwrite_flag_given() -> Non
     assert output_path.read_text(encoding="utf-8") != "<h1>My strategy</h1>"
 
 
+def test_report_aborts_when_pdf_destination_already_exists() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf"])
+
+    assert result.exit_code != 0
+    assert f"{pdf_path} already exists, use --overwrite to overwrite it" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()
+    assert not (Path.cwd() / "report.html").exists()
+    assert pdf_path.read_text(encoding="utf-8") == "previous PDF content"
+
+
+def test_report_overwrites_pdf_destination_when_overwrite_flag_given() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    (Path.cwd() / "report.pdf").write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf",
+                                       "--overwrite"])
+
+    assert result.exit_code == 0
+
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert "cp /tmp/report.pdf /Output/report.pdf" in commands
+
+
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_report_aborts_when_pdf_destination_is_a_directory(overwrite: bool) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.mkdir()
+    (pdf_path / "existing.txt").write_text("existing content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html",
+                                       "--pdf",
+                                       *(["--overwrite"] if overwrite else [])])
+
+    assert result.exit_code != 0
+    assert f"{pdf_path} is a directory" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()
+    assert not (Path.cwd() / "report.html").exists()
+    assert (pdf_path / "existing.txt").read_text(encoding="utf-8") == "existing content"
+
+
+def test_report_ignores_existing_pdf_when_pdf_flag_not_given() -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    pdf_path = Path.cwd() / "report.pdf"
+    pdf_path.write_text("previous PDF content", encoding="utf-8")
+
+    result = CliRunner().invoke(lean, ["report",
+                                       "--backtest-results",
+                                       "Python Project/backtests/2020-01-01_00-00-00/1459804915.json",
+                                       "--report-destination", "report.html"])
+
+    assert result.exit_code == 0
+    assert pdf_path.read_text(encoding="utf-8") == "previous PDF content"
+
+
 def test_report_aborts_when_run_image_fails() -> None:
     docker_manager = mock.Mock()
     docker_manager.run_image.return_value = False
@@ -613,3 +698,90 @@ def test_report_runs_custom_image_when_given_as_option() -> None:
     args, kwargs = docker_manager.run_image.call_args
 
     assert args[0] == DockerImage(name="custom/lean", tag="456")
+
+
+@pytest.mark.parametrize("destination, pdf_destination", [
+    ("report.html", "report.pdf"),
+    ("report.HTML", "report.pdf"),
+    ("my-report", "my-report.pdf"),
+    ("report.html.backtest.html", "report.html.backtest.pdf"),
+    ("report.pdf", "report.pdf.pdf"),
+    ("report.PDF", "report.PDF.pdf"),
+])
+def test_report_exports_pdf_to_separate_destination(destination: str, pdf_destination: str) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--pdf", "--report-destination", destination])
+
+    assert result.exit_code == 0
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert f"cp /tmp/report.html /Output/{destination}" in commands
+    assert f"cp /tmp/report.pdf /Output/{pdf_destination}" in commands
+    assert destination.lower() != pdf_destination.lower()
+
+
+@pytest.mark.parametrize("destination, pdf_destination", [
+    ("Profit $SPY.html", "Profit $SPY.pdf"),
+    ("Profit ${SPY}.html", "Profit ${SPY}.pdf"),
+    ("report $(echo substituted).html", "report $(echo substituted).pdf"),
+    ("report `echo substituted`.html", "report `echo substituted`.pdf"),
+    ("the trader's report.html", "the trader's report.pdf"),
+])
+def test_report_copies_to_destination_names_containing_shell_syntax_literally(destination: str,
+                                                                              pdf_destination: str,
+                                                                              fs: FakeFilesystem) -> None:
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--pdf", "--report-destination", destination])
+
+    assert result.exit_code == 0
+    commands = docker_manager.run_image.call_args.kwargs["commands"]
+    assert run_bash_recording_calls(fs, commands, ["dotnet", "cp"]) == [
+        ["dotnet", "QuantConnect.Report.dll"],
+        ["cp", "/tmp/report.html", f"/Output/{destination}"],
+        ["cp", "/tmp/report.pdf", f"/Output/{pdf_destination}"]
+    ]
+
+
+def test_report_uses_explicit_backtest_results_without_local_backtests() -> None:
+    import shutil
+    results_dir = Path.cwd() / "Python Project" / "backtests"
+    imported_results = Path.cwd() / "imported.json"
+    shutil.move(str(results_dir / "2020-01-01_00-00-00" / "1459804915.json"), str(imported_results))
+    shutil.rmtree(results_dir)
+
+    docker_manager = mock.Mock()
+    docker_manager.run_image.side_effect = run_image
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report", "--backtest-results", "imported.json"])
+
+    assert result.exit_code == 0
+
+    docker_manager.run_image.assert_called_once()
+    args, kwargs = docker_manager.run_image.call_args
+
+    backtest_mount = [mount for mount in kwargs["mounts"]
+                      if mount["Target"] == "/Lean/Report/bin/Debug/backtest-data-source-file.json"][0]
+    assert backtest_mount["Source"] == str(imported_results)
+    assert kwargs["name"].startswith("lean_cli_report_")
+    assert not (Path.cwd() / "config").exists()
+
+
+def test_report_aborts_when_no_backtest_results_given_and_no_local_backtests() -> None:
+    import shutil
+    shutil.rmtree(Path.cwd() / "Python Project" / "backtests")
+
+    docker_manager = mock.Mock()
+    initialize_container(docker_manager_to_use=docker_manager)
+
+    result = CliRunner().invoke(lean, ["report"])
+
+    assert result.exit_code != 0
+    assert "No output backtests directories were found" in str(result.exception)
+
+    docker_manager.run_image.assert_not_called()

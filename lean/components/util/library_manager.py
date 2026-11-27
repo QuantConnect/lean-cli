@@ -177,6 +177,19 @@ class LibraryManager:
         self._add_csharp_project_to_csproj(project_csproj_file, library_csproj_file_path)
         self._project_manager.try_restore_csharp_project(project_csproj_file, original_csproj_content, no_local)
 
+    def add_csharp_library_to_csproj(self, project_dir: Path, library_dir: Path) -> None:
+        """Adds a reference to a Lean CLI C# library to a C# project's .csproj file, unless it already has it.
+
+        :param project_dir: the path to the project directory
+        :param library_dir: the path to the library directory
+        """
+        library_csproj_file_path = self.get_csharp_lean_library_path_for_csproj_file(project_dir, library_dir)
+        project_csproj_file = self._project_manager.get_csproj_file_path(project_dir)
+        if library_csproj_file_path is None or project_csproj_file is None:
+            return
+
+        self._add_csharp_project_to_csproj(project_csproj_file, library_csproj_file_path)
+
     def add_lean_library_to_python_project(self, project_dir: Path, library_dir: Path) -> None:
         """Adds a Lean CLI Python library to a Python project.
 

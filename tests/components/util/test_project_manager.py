@@ -18,6 +18,7 @@ from typing import Callable, List, Any
 from unittest import mock
 
 import pytest
+from docker.errors import ImageNotFound
 from lxml import etree
 
 from lean.components.config.project_config_manager import ProjectConfigManager
@@ -100,6 +101,49 @@ def test_get_project_by_id_raises_error_when_no_project_with_given_id_exists() -
 
     with pytest.raises(Exception):
         project_manager.get_project_by_id(max(python_project_id, csharp_project_id) + 1)
+
+
+def test_try_get_project_path_by_cloud_id_returns_project_and_preserves_configs_it_cannot_parse() -> None:
+    create_fake_lean_cli_directory()
+    other_config_path = Path.cwd() / "Other App" / "config.json"
+    other_config_content = '{\n// application setting\n"setting": "keep"\n}'
+    other_config_path.parent.mkdir()
+    other_config_path.write_text(other_config_content)
+
+    project_dir = Path.cwd() / "Nested" / "Renamed Project"
+    project_dir.parent.mkdir()
+    (Path.cwd() / "Python Project").rename(project_dir)
+    ProjectConfigManager(XMLManager()).get_project_config(project_dir).set("cloud-id", 20)
+
+    project_manager = _create_project_manager()
+
+    assert project_manager.try_get_project_path_by_cloud_id(20) == project_dir
+    assert not project_manager.try_get_project_path_by_cloud_id(21)
+    assert other_config_path.read_text() == other_config_content
+
+
+@pytest.mark.parametrize("path,expected_path", [("Old Project/key.txt", "New Project/key.txt"),
+                                                ("Old Project/keys/key.txt", "New Project/keys/key.txt"),
+                                                ("Old Project", "New Project"),
+                                                ("key.txt", "key.txt"),
+                                                ("Old Project 2/key.txt", "Old Project 2/key.txt")])
+def test_get_path_after_project_rename_moves_only_paths_inside_the_project(path: str, expected_path: str) -> None:
+    project_manager = _create_project_manager()
+
+    old_project_path = Path.cwd() / "Old Project"
+    new_project_path = Path.cwd() / "New Project"
+
+    assert project_manager.get_path_after_project_rename(Path.cwd() / path, old_project_path, new_project_path) == Path.cwd() / expected_path
+
+
+def test_get_path_after_project_rename_resolves_relative_paths_from_the_current_directory() -> None:
+    project_manager = _create_project_manager()
+
+    old_project_path = Path.cwd() / "Old Project"
+    new_project_path = Path.cwd() / "New Project"
+
+    assert project_manager.get_path_after_project_rename(Path("Old Project/key.txt"), old_project_path, new_project_path) == new_project_path / "key.txt"
+    assert project_manager.get_path_after_project_rename(Path("key.txt"), old_project_path, new_project_path) == Path("key.txt")
 
 
 def test_get_source_files_returns_all_source_files() -> None:
@@ -300,6 +344,33 @@ def test_create_new_project_sets_language_in_project_config(language: QCLanguage
 
     assert config.get("algorithm-language") == language.name
 
+
+
+def _csproj_target_framework(project_path: Path) -> str:
+    csproj = XMLManager().parse((project_path / f"{project_path.name}.csproj").read_text(encoding="utf-8"))
+    return csproj.find(".//PropertyGroup/TargetFramework").text
+
+
+def test_create_new_project_targets_the_framework_of_the_engine_image() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "CSharp Project"
+
+    project_manager = _create_project_manager()
+    container.docker_manager.get_image_label = mock.MagicMock(return_value="net8.0")
+    project_manager.create_new_project(project_path, QCLanguage.CSharp)
+
+    assert _csproj_target_framework(project_path) == "net8.0"
+
+
+def test_create_new_project_targets_net10_when_the_engine_image_is_not_found_locally() -> None:
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "CSharp Project"
+
+    project_manager = _create_project_manager()
+    container.docker_manager.get_image_label = mock.MagicMock(side_effect=ImageNotFound("No such image"))
+    project_manager.create_new_project(project_path, QCLanguage.CSharp)
+
+    assert _csproj_target_framework(project_path) == "net10.0"
 
 def test_create_new_project_sets_parameters_in_project_config() -> None:
     create_fake_lean_cli_directory()

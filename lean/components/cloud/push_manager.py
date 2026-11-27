@@ -18,6 +18,7 @@ from typing import Any, List, Dict, Optional
 from lean.components.api.api_client import APIClient
 from lean.components.config.project_config_manager import ProjectConfigManager
 from lean.components.util.logger import Logger
+from lean.components.util.library_manager import LibraryManager
 from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCLanguage, QCProject
@@ -33,6 +34,7 @@ class PushManager:
                  api_client: APIClient,
                  project_manager: ProjectManager,
                  project_config_manager: ProjectConfigManager,
+                 library_manager: LibraryManager,
                  organization_manager: OrganizationManager) -> None:
         """Creates a new PushManager instance.
 
@@ -40,13 +42,17 @@ class PushManager:
         :param api_client: the APIClient instance to use when communicating with the cloud
         :param project_manager: the ProjectManager to use when looking for certain projects
         :param project_config_manager: the ProjectConfigManager instance to use
+        :param library_manager: the LibraryManager to use when updating library references
         """
         self._logger = logger
         self._api_client = api_client
         self._project_manager = project_manager
         self._project_config_manager = project_config_manager
+        self._library_manager = library_manager
         self._organization_manager = organization_manager
         self._cloud_projects = []
+        # Where each pushed project is after its push, which renames directories whose name is not valid locally or in the cloud
+        self.pushed_project_paths: Dict[Path, Path] = {}
 
     def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> None:
         """Pushes the given project from the local drive to the cloud.
@@ -83,7 +89,8 @@ class PushManager:
             relative_path = path.relative_to(Path.cwd())
             try:
                 self._logger.info(f"[{index}/{len(all_projects_to_push)}] Pushing '{relative_path}'")
-                self._push_project(path, organization_id, encryption_action_value, encryption_key_value, force=force)
+                self.pushed_project_paths[path] = self._push_project(path, organization_id, encryption_action_value,
+                                                                     encryption_key_value, force=force)
             except Exception as ex:
                 from traceback import format_exc
                 self._logger.debug(format_exc().strip())
@@ -98,14 +105,29 @@ class PushManager:
         project_config = self._project_config_manager.get_project_config(project_dir)
 
         libraries_in_config = project_config.get("libraries", [])
-        library_paths = [LeanLibraryReference(**library).path.expanduser().resolve() for library in libraries_in_config]
+        library_paths = []
+        renamed_library_found = False
+        for library in libraries_in_config:
+            library_path = LeanLibraryReference(**library).path.expanduser().resolve()
+            pushed_library_path = self.pushed_project_paths.get(library_path, library_path)
+            if pushed_library_path != library_path:
+                # The library was renamed when it was pushed before this project, so the reference follows it
+                library.update(LeanLibraryReference(name=pushed_library_path.name,
+                                                    path=pushed_library_path.relative_to(Path.cwd()))
+                               .model_dump(mode="json"))
+                self._library_manager.add_csharp_library_to_csproj(project_dir, pushed_library_path)
+                renamed_library_found = True
+            library_paths.append(pushed_library_path)
+
+        if renamed_library_found:
+            project_config.set("libraries", libraries_in_config)
 
         local_libraries_cloud_ids = [int(self._project_config_manager.get_project_config(path).get("cloud-id", None))
                                      for path in library_paths]
 
         return local_libraries_cloud_ids
 
-    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None) -> None:
+    def _push_project(self, project_path: Path, organization_id: str, encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool], suggested_rename_path: Path = None) -> Path:
         """Pushes a single local project to the cloud.
 
         Raises an error with a descriptive message if the project cannot be pushed.
@@ -113,6 +135,7 @@ class PushManager:
         :param project_path: the local project to push
         :param organization_id: the id of the organization to push the project to
         :param suggested_rename_path: the path to move the project to.
+        :return: the path of the pushed project, which differs from project_path when the push renamed it
         """
 
         project_name = project_path.relative_to(Path.cwd()).as_posix()
@@ -128,20 +151,37 @@ class PushManager:
         if local_encryption_key is not None:
             local_encryption_key = Path(local_encryption_key)
 
+        # without a key, the encrypted files would be pushed as plain source and the cloud project's encryption turned off
+        if local_encryption_state and encryption_key is None and local_encryption_key is None:
+            raise RuntimeError("its files are encrypted and it has no encryption key. "
+                               "Push it with --encrypt --key to keep the cloud project encrypted, or --decrypt --key to decrypt it")
+
         # check if project name is valid or if rename is required
         if cloud_id is not None:
-            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, cloud_id)
+            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, cloud_id,
+                                                                                         source_path=project_path)
         else:
             local_id = self._project_config_manager.get_local_id(project_path)
-            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, None, local_id)
+            expected_correct_project_path = self._project_manager.get_local_project_path(potential_new_name, None, local_id,
+                                                                                         source_path=project_path)
         if expected_correct_project_path != project_path:
             # rename project
             valid_project_name = expected_correct_project_path.relative_to(Path.cwd()).as_posix()
             self._logger.info(f"Renaming '{project_name}' to '{valid_project_name}'")
             self._project_manager.rename_project_and_contents(project_path, expected_correct_project_path)
+            old_project_path = project_path
             project_path = expected_correct_project_path
             project_name = valid_project_name
             project_config = self._project_config_manager.get_project_config(project_path)
+
+            # a key stored inside the project directory moved together with it
+            if local_encryption_key is not None:
+                moved_key = self._project_manager.get_path_after_project_rename(local_encryption_key, old_project_path, project_path)
+                if moved_key != local_encryption_key:
+                    local_encryption_key = moved_key
+                    project_config.set("encryption-key-path", str(moved_key))
+            if encryption_key is not None:
+                encryption_key = self._project_manager.get_path_after_project_rename(encryption_key, old_project_path, project_path)
 
         # Find the cloud project to push the files to
         if cloud_id is not None:
@@ -158,8 +198,7 @@ class PushManager:
             if cloud_project.name != project_name:
                 # cloud project name was changed. Repeat steps to validate the new name locally.
                 self._logger.info(f"Received new name '{cloud_project.name}' for project '{project_name}' from QuantConnect.com")
-                self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
-                return
+                return self._push_project(project_path, organization_id, encryption_action, encryption_key, force, Path.cwd() / cloud_project.name)
 
             self._cloud_projects.append(cloud_project)
             organization_message_part = f" in organization '{organization_id}'" if organization_id is not None else ""
@@ -173,6 +212,7 @@ class PushManager:
             encryption_action = ActionType.ENCRYPT if local_encryption_state else ActionType.DECRYPT
         # Finalize pushing by updating locally modified metadata, files and libraries
         self._push_metadata(project_path, cloud_project, encryption_action, encryption_key, force)
+        return project_path
 
     def _get_files(self, project: Path, encryption_action: Optional[ActionType], encryption_key: Optional[Path]) -> List[Dict[str, str]]:
         """Pushes the files of a local project to the cloud.

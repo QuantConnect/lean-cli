@@ -37,7 +37,8 @@ def _create_push_manager(api_client: mock.Mock, project_manager: mock.Mock,
     if organization_manager is None:
         organization_manager = _create_organization_manager()
 
-    return PushManager(logger, api_client, project_manager, container.project_config_manager, organization_manager)
+    return PushManager(logger, api_client, project_manager, container.project_config_manager, container.library_manager,
+                       organization_manager)
 
 
 def _get_base_cloud_projects() -> List[QCProject]:
@@ -81,7 +82,7 @@ def test_push_projects_pushes_libraries_referenced_by_the_projects() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -154,7 +155,7 @@ def test_push_projects_removes_libraries_in_the_cloud() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -202,7 +203,7 @@ def test_push_projects_adds_and_removes_libraries_simultaneously() -> None:
     lean_config_manager = container.lean_config_manager
     lean_cli_root_dir = lean_config_manager.get_cli_root_directory()
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return lean_cli_root_dir / project_name
 
     project_path = lean_cli_root_dir / "Python Project"
@@ -273,7 +274,7 @@ def test_push_projects_pushes_lean_engine_version() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -310,7 +311,7 @@ def test_push_projects_pushes_lean_engine_version_to_default() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -347,7 +348,7 @@ def test_push_projects_pushes_lean_environment() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -385,7 +386,7 @@ def test_push_projects_does_not_push_lean_environment_when_unset() -> None:
 
     project_path = Path.cwd() / "Python Project"
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_id = 1000
@@ -679,3 +680,122 @@ def test_push_projects_updates_name_locally_if_updated_by_cloud() -> None:
 
     assert not (Path.cwd() / project_path).exists()
     assert (Path.cwd() / project_name_renamed_by_cloud).exists()
+
+def test_push_projects_returns_true_when_every_project_is_pushed() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    cloud_project = create_api_project(1, project_path.name)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    api_client = mock.Mock()
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+
+    assert push_manager.push_projects([project_path])
+    api_client.projects.update.assert_called_once()
+
+
+def test_push_projects_returns_false_when_a_project_with_cloud_id_cannot_be_pushed() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    cloud_project = create_api_project(1, project_path.name)
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", cloud_project.projectId)
+
+    api_client = mock.Mock()
+    api_client.projects.get = mock.MagicMock(return_value=cloud_project)
+    api_client.projects.update = mock.MagicMock(side_effect=RuntimeError("You don't have write permission"))
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+
+    assert not push_manager.push_projects([project_path])
+
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Windows does not allow creating the unsupported path")
+def test_push_project_updates_reference_to_library_renamed_by_the_push() -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "Python Project"
+    library_path = Path.cwd() / "Library/Unsafe:Lib"
+    renamed_library_path = Path.cwd() / "Library/Unsafe Lib"
+    container.project_manager.create_new_project(library_path, QCLanguage.Python)
+    container.library_manager.add_lean_library_reference_to_project(project_path, library_path)
+
+    library_id = 21
+    project_id = 22
+    cloud_projects = [create_api_project(library_id, "Library/Unsafe Lib"),
+                      create_api_project(project_id, project_path.name)]
+
+    api_client = mock.Mock()
+    api_client.projects.create = mock.MagicMock(side_effect=lambda name, *args: next(p for p in cloud_projects
+                                                                                     if p.name == name))
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_project(project_path)
+
+    assert not library_path.exists()
+    assert renamed_library_path.exists()
+
+    project_libraries = container.project_config_manager.get_project_config(project_path).get("libraries")
+    assert project_libraries == [{"name": "Unsafe Lib", "path": "Library/Unsafe Lib"}]
+
+    update_calls = api_client.projects.update.call_args_list
+    assert [args[0] for args, _ in update_calls] == [library_id, project_id]
+    assert update_calls[1].kwargs["libraries"] == [library_id]
+
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Windows does not allow creating the unsupported path")
+@pytest.mark.parametrize("use_backslashes", [False, True])
+def test_push_project_adds_csproj_reference_to_csharp_library_renamed_by_the_push(use_backslashes: bool) -> None:
+    create_fake_lean_cli_directory()
+
+    project_path = Path.cwd() / "CSharp Project"
+    project_csproj_file = project_path / "CSharp Project.csproj"
+    library_path = Path.cwd() / "Library/Unsafe:Lib"
+    renamed_library_path = Path.cwd() / "Library/Unsafe Lib"
+    container.project_manager.create_new_project(library_path, QCLanguage.CSharp)
+    container.library_manager.add_lean_library_to_csharp_project(project_path, library_path, True)
+
+    old_reference = "../Library/Unsafe:Lib/Unsafe:Lib.csproj"
+    csproj_content = project_csproj_file.read_text(encoding="utf-8")
+    assert f'Include="{old_reference}"' in csproj_content
+    if use_backslashes:
+        # MSBuild accepts backslashes as path separators on every platform
+        old_reference = old_reference.replace("/", "\\")
+        project_csproj_file.write_text(csproj_content.replace("../Library/Unsafe:Lib/Unsafe:Lib.csproj", old_reference),
+                                       encoding="utf-8")
+
+    library_id = 21
+    project_id = 22
+    cloud_projects = [create_api_project(library_id, "Library/Unsafe Lib"),
+                      create_api_project(project_id, project_path.name)]
+
+    api_client = mock.Mock()
+    api_client.projects.create = mock.MagicMock(side_effect=lambda name, *args: next(p for p in cloud_projects
+                                                                                     if p.name == name))
+    api_client.projects.update = mock.Mock()
+
+    push_manager = _create_push_manager(api_client, container.project_manager)
+    push_manager.push_project(project_path)
+
+    assert (renamed_library_path / "Unsafe Lib.csproj").exists()
+
+    project_libraries = container.project_config_manager.get_project_config(project_path).get("libraries")
+    assert project_libraries == [{"name": "Unsafe Lib", "path": "Library/Unsafe Lib"}]
+
+    csproj_tree = container.xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
+    assert [reference.get("Include") for reference in csproj_tree.findall(".//ProjectReference")] == \
+           [old_reference, "../Library/Unsafe Lib/Unsafe Lib.csproj"]
+
+    # Adding the library again finds it already referenced, in the config and in the .csproj file alike
+    container.library_manager.add_lean_library_to_csharp_project(project_path, renamed_library_path, True)
+    csproj_tree = container.xml_manager.parse(project_csproj_file.read_text(encoding="utf-8"))
+    assert [reference.get("Include") for reference in csproj_tree.findall(".//ProjectReference")] == \
+           [old_reference, "../Library/Unsafe Lib/Unsafe Lib.csproj"]
+
+    update_calls = api_client.projects.update.call_args_list
+    assert [args[0] for args, _ in update_calls] == [library_id, project_id]
+    assert update_calls[1].kwargs["libraries"] == [library_id]

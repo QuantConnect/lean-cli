@@ -168,6 +168,21 @@ def test_download_data_non_interactive_insensitive_input_param(data_type: str, r
     assert run_data_download.exit_code == 0
 
 
+def test_download_data_non_interactive_passes_tickers_with_spaces_as_one_argument():
+    data_provider_config = _get_data_provider_config(False)
+    data_provider_config["module-specification"]["download"]["security-types"].append("FutureOption")
+    data_provider_config["module-specification"]["download"]["markets"].append("CME")
+
+    run_data_download = _create_lean_data_download(
+        "Polygon", "Trade", "Minute", "FutureOption", ["ESH25 C5000", "NQH25 P20000"], "20240101", "20240202",
+        data_provider_config, "CME", ["--polygon-api-key", "123"])
+    assert run_data_download.exit_code == 0
+
+    command = container.docker_manager.run_image.call_args[1]["commands"][-1]
+    assert "--tickers 'ESH25 C5000,NQH25 P20000'" in command
+    assert "--security-type FutureOption" in command
+
+
 @pytest.mark.parametrize("data_provider,wrong_security_type",
                          [("Polygon", "Future"), ("Polygon", "Crypto"), ("Polygon", "Forex")])
 def test_download_data_non_interactive_wrong_security_type(data_provider: str, wrong_security_type: str):

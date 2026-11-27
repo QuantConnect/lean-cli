@@ -12,6 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Optional, Tuple
 
 from lean.components.api.api_client import APIClient
 from lean.components.cloud.pull_manager import PullManager
@@ -21,6 +22,7 @@ from lean.components.util.organization_manager import OrganizationManager
 from lean.components.util.path_manager import PathManager
 from lean.components.util.project_manager import ProjectManager
 from lean.models.api import QCProject
+from lean.models.errors import PushFailedError
 
 
 class CloudProjectManager:
@@ -62,23 +64,34 @@ class CloudProjectManager:
         :param push: True if the local counterpart of the cloud project needs to be pushed
         :return: the cloud project to use
         """
+        return self.get_cloud_project_and_local_path(input, push)[0]
+
+    def get_cloud_project_and_local_path(self, input: str, push: bool) -> Tuple[QCProject, Optional[Path]]:
+        """Retrieves the cloud project to use like get_cloud_project(), and the directory of its local counterpart.
+
+        :param input: the input the user gave, either a local project name, a cloud project name or a cloud id
+        :param push: True if the local counterpart of the cloud project needs to be pushed
+        :return: the cloud project to use, and the directory of its local counterpart or None if it has none
+        """
         organization_id = self._organization_manager.try_get_working_organization_id()
 
         # If the given input is a valid project directory, we try to use that project
         local_path = Path.cwd() / input
         if self._project_config_manager.try_get_project_config(local_path):
             if push:
-                self._push_manager.push_projects([local_path])
+                if not self._push_manager.push_projects([local_path]):
+                    raise PushFailedError(input)
 
+                local_path = self._push_manager.pushed_project_paths[local_path]
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is None:
                     raise RuntimeError("Something went wrong while pushing the project to the cloud")
 
-                return self._api_client.projects.get(cloud_id, organization_id)
+                return self._api_client.projects.get(cloud_id, organization_id), local_path
             else:
                 cloud_id = self._project_config_manager.get_project_config(local_path).get("cloud-id")
                 if cloud_id is not None:
-                    return self._api_client.projects.get(cloud_id, organization_id)
+                    return self._api_client.projects.get(cloud_id, organization_id), local_path
 
         # If the given input is not a valid project directory, we look for a cloud project with a matching name or id
         # If there are multiple, we use the first one
@@ -91,10 +104,22 @@ class CloudProjectManager:
             # If the local directory exists, we push it and return the updated cloud project
             if push:
                 local_path = self._project_manager.get_local_project_path(cloud_project.name, cloud_project.projectId)
+                if not local_path.exists():
+                    # The local directory may have been renamed, so we look for it by its cloud id
+                    # The push names projects relative to the current directory, so only one under it can be pushed
+                    renamed_path = self._project_manager.try_get_project_path_by_cloud_id(cloud_project.projectId)
+                    if renamed_path and Path.cwd() in renamed_path.parents:
+                        local_path = renamed_path
                 if local_path.exists():
-                    self._push_manager.push_projects([local_path])
-                    return self._api_client.projects.get(cloud_project.projectId, organization_id)
+                    if not self._push_manager.push_projects([local_path]):
+                        raise PushFailedError(input)
+                    return (self._api_client.projects.get(cloud_project.projectId, organization_id),
+                            self._push_manager.pushed_project_paths[local_path])
 
-            return cloud_project
+            # The input may not name the local directory, such as when it is the cloud id of a pulled project
+            pulled_path = Path.cwd() / cloud_project.name
+            if self._project_config_manager.try_get_cloud_id(pulled_path) == cloud_project.projectId:
+                return cloud_project, pulled_path
+            return cloud_project, None
 
         raise RuntimeError("No project with the given name or id could be found")

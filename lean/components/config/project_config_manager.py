@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from lean.components.config.storage import Storage
 from lean.components.util.xml_manager import XMLManager
@@ -48,6 +48,24 @@ class ProjectConfigManager:
         :return: the Storage instance containing the project-specific configuration of the given project
         """
         return Storage(str(project_directory / PROJECT_CONFIG_FILE_NAME))
+
+    def try_get_cloud_id(self, project_directory: Path) -> Optional[int]:
+        """Returns the cloud id in a project's configuration, without changing any file.
+
+        Storage deletes files it can't parse, such as another app's config.json, so this reads the file directly.
+
+        :param project_directory: the path to the directory that may contain a project
+        :return: the cloud id of the project, or None if the directory has no project configuration with one
+        """
+        from json import loads
+
+        try:
+            project_config = loads((project_directory / PROJECT_CONFIG_FILE_NAME).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        if not isinstance(project_config, dict):
+            return None
+        return project_config.get("cloud-id")
 
     def get_local_id(self, project_directory: Path) -> int:
         """Returns the local id of a project.

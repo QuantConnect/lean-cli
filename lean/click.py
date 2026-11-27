@@ -249,7 +249,7 @@ class LeanCommand(Command):
                     container.logger.info(
                         "This command requires access to Docker, you may be asked to enter your password")
 
-                    args = ["sudo", "--preserve-env=HOME", executable, *argv]
+                    args = ["sudo", "--preserve-env=HOME,DOCKER_CLIENT_TIMEOUT", executable, *argv]
                     execlp(args[0], *args)
 
         if self._allow_unknown_options:

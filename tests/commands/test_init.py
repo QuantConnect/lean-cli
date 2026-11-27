@@ -14,7 +14,7 @@
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from unittest import mock
 
 import pytest
@@ -22,6 +22,7 @@ from click.testing import CliRunner
 from responses import RequestsMock
 
 from lean.commands import lean
+from lean.commands.init import _download_repository
 from lean.components.util.logger import Logger
 from lean.components.util.organization_manager import OrganizationManager
 from lean.container import container
@@ -186,3 +187,30 @@ def test_init_uses_organization_given_as_option(use_name: bool) -> None:
     assert not any("Select the organization" in call.args[0] for call in mock_prompt_list.call_args_list)
 
     assert_organization_id_is_in_lean_config(organization.id)
+
+
+@pytest.mark.parametrize("content_length,expected_progress", [(None, "3.0 MB"), (3 * 1024 * 1024, "100% (3.0/3.0 MB)")])
+def test_download_repository_shows_progress_on_a_single_line(requests_mock: RequestsMock,
+                                                              content_length: Optional[int],
+                                                              expected_progress: str) -> None:
+    from io import StringIO
+    from rich.console import Console
+
+    chunks = [b"0" * 1024 * 1024] * 3
+    response = mock.Mock()
+    response.headers = {} if content_length is None else {"content-length": str(content_length)}
+    response.iter_content.return_value = chunks
+    container.http_client = mock.Mock()
+    container.http_client.get.return_value = response
+
+    output = StringIO()
+    container.logger._console = Console(file=output, width=100)
+
+    output_path = Path.cwd() / "archive.zip"
+    _download_repository(output_path)
+
+    assert output_path.read_bytes() == b"".join(chunks)
+
+    progress_lines = [line for line in output.getvalue().splitlines() if "MB" in line]
+    assert len(progress_lines) == 1
+    assert progress_lines[0].rstrip().endswith(expected_progress)

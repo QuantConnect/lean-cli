@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 from lean.components.util.name_generator import NameGenerator
 
 
@@ -23,5 +25,11 @@ def test_generate_name_generates_names_with_at_least_three_words() -> None:
 
 def test_generate_name_generates_names_randomly() -> None:
     name_generator = NameGenerator()
+    draws = ["Calm", "Blue", "Fox", "Geeky", "Red", "Owl"]
 
-    assert name_generator.generate_name() != name_generator.generate_name()
+    with mock.patch("random.choice", side_effect=draws) as choice:
+        assert name_generator.generate_name() == "Calm Blue Fox"
+        assert name_generator.generate_name() == "Geeky Red Owl"
+
+    assert choice.call_count == len(draws)
+    assert all(draw in call.args[0] for call, draw in zip(choice.call_args_list, draws))

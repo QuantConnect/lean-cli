@@ -46,7 +46,7 @@ def safe_save(data: str, path: Path, _retry: int = 0):
             # some else might have deleted it
             pass
         if _retry < 10:
-            safe_save(data, path, ++_retry)
+            safe_save(data, path, _retry + 1)
 
 
 class Storage:

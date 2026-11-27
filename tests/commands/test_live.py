@@ -349,15 +349,15 @@ def test_live_sets_dependent_configurations_from_modules_json_based_on_environme
     # binance exchange should be set
     assert result.exit_code == 1
 
-terminal_link_required_options = {
-    "terminal-link-connection-type": "SAPI",
-    "terminal-link-server-auth-id": "abc",
-    "terminal-link-environment": "Beta",
-    "terminal-link-server-host": "abc",
-    "terminal-link-server-port": "123",
-    "terminal-link-emsx-broker": "abc",
-    "terminal-link-emsx-account": "abc",
-    "terminal-link-openfigi-api-key": "test"
+quant_bridge_required_options = {
+    "quant-bridge-connection-type": "SAPI",
+    "quant-bridge-server-auth-id": "abc",
+    "quant-bridge-environment": "Beta",
+    "quant-bridge-server-host": "abc",
+    "quant-bridge-server-port": "123",
+    "quant-bridge-emsx-broker": "abc",
+    "quant-bridge-emsx-account": "abc",
+    "quant-bridge-openfigi-api-key": "test"
 }
 
 brokerage_required_options = {
@@ -406,8 +406,8 @@ brokerage_required_options = {
         "samco-product-type": "mis",
         "samco-trading-segment": "equity",
     },
-    "Terminal Link": {
-        **terminal_link_required_options,
+    "Quant Bridge": {
+        **quant_bridge_required_options,
         "live-cash-balance": "USD:10000,EUR:10",
     },
     "Kraken": {
@@ -453,7 +453,7 @@ data_feed_required_options = {
     "Binance": brokerage_required_options["Binance"],
     "Zerodha": brokerage_required_options["Zerodha"],
     "Samco": brokerage_required_options["Samco"],
-    "Terminal Link": terminal_link_required_options,
+    "Quant Bridge": quant_bridge_required_options,
     "Kraken": brokerage_required_options["Kraken"],
     "CharlesSchwab": brokerage_required_options["CharlesSchwab"],
     "Bybit": brokerage_required_options["Bybit"],
@@ -476,7 +476,7 @@ data_provider_required_options = {
 data_providers_required_options = {
     "QuantConnect": {},
     "local": {},
-    "Terminal Link": terminal_link_required_options
+    "Quant Bridge": quant_bridge_required_options
 }
 
 
@@ -499,7 +499,7 @@ def test_live_calls_lean_runner_with_data_provider(data_provider: str) -> None:
 
     expected = 0
     # not a valid option
-    if data_provider == 'Terminal Link':
+    if data_provider == 'Quant Bridge':
         expected = 2
     assert result.exit_code == expected
 
@@ -1012,8 +1012,8 @@ def test_live_passes_custom_python_venv_to_lean_runner_when_given_as_option(pyth
                                             ("OANDA", "USD:100"),
                                             ("Samco", ""),
                                             ("Samco", "USD:100"),
-                                            # ("Terminal Link", ""),  not tested since this will prompt to interactive panel
-                                            ("Terminal Link", "USD:100"),
+                                            # ("Quant Bridge", ""),  not tested since this will prompt to interactive panel
+                                            ("Quant Bridge", "USD:100"),
                                             ("Tradier", ""),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", ""),
@@ -1039,7 +1039,7 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                        "--brokerage", brokerage, "--live-cash-balance", cash,
                                        "--data-provider-live", "Custom data only"])
 
-    if brokerage not in ["Paper Trading", "Trading Technologies", "Terminal Link"] and cash != "":
+    if brokerage not in ["Paper Trading", "Trading Technologies", "Quant Bridge"] and cash != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return
@@ -1081,8 +1081,8 @@ def test_live_passes_live_cash_balance_to_lean_runner_when_given_as_option(broke
                                                 ("OANDA", "A:A 2T:1:145.1"),
                                                 ("Samco", ""),
                                                 ("Samco", "A:A 2T:1:145.1"),
-                                                ("Terminal Link", ""),
-                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Quant Bridge", ""),
+                                                ("Quant Bridge", "A:A 2T:1:145.1"),
                                                 ("Tradier", ""),
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
@@ -1108,7 +1108,7 @@ def test_live_passes_live_holdings_to_lean_runner_when_given_as_option(brokerage
     result = CliRunner().invoke(lean, ["live", "Python Project", "--brokerage", brokerage, "--live-holdings", holdings,
                                        "--data-provider-live", "Custom data only", *options])
 
-    if brokerage not in ["Paper Trading", "Terminal Link", "Binance"] and holdings != "":
+    if brokerage not in ["Paper Trading", "Quant Bridge", "Binance"] and holdings != "":
         assert result.exit_code != 0
         lean_runner.run_lean.start.assert_not_called()
         return

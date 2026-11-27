@@ -41,6 +41,17 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
     return None
 
 
+def _get_copy_to_output_command(source: str, destination: Path) -> str:
+    """Returns the Bash command which copies a file created in the report container to the output directory.
+
+    :param source: the path in the container of the file to copy
+    :param destination: the path on the host of the file to create, whose parent is mounted to /Output
+    :return: the command copying source to the destination file, with its name taken literally
+    """
+    from shlex import quote
+    return f"cp {source} {quote(f'/Output/{destination.name}')}"
+
+
 @command(cls=LeanCommand, requires_lean_config=True, requires_docker=True)
 @option("--backtest-results",
               type=PathParameter(exists=True, file_okay=True, dir_okay=False),
@@ -74,7 +85,7 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
 @option("--overwrite",
               is_flag=True,
               default=False,
-              help="Overwrite --report-destination if it already contains a file")
+              help="Overwrite --report-destination, and its PDF version with --pdf, if they already contain a file")
 @option("--image",
               type=str,
               help=f"The LEAN engine image to use (defaults to {DEFAULT_ENGINE_IMAGE})")
@@ -116,20 +127,29 @@ def report(backtest_results: Optional[Path],
     Alternatively you can set the default engine image for all commands using `lean config set engine-image <image>`.
     """
     from json import dump
+    from uuid import uuid4
     from docker.types import Mount
 
-    if report_destination.exists() and not overwrite:
-        raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
+    pdf_destination = report_destination.with_suffix(".pdf")
+    if report_destination.suffix.lower() == ".pdf":
+        pdf_destination = report_destination.with_name(report_destination.name + ".pdf")
+
+    destinations = [report_destination, pdf_destination] if pdf else [report_destination]
+    for destination in destinations:
+        if destination.is_dir():
+            raise RuntimeError(f"{destination} is a directory, use a --report-destination whose PDF version is not one")
+        if destination.exists() and not overwrite:
+            raise RuntimeError(f"{destination} already exists, use --overwrite to overwrite it")
 
     environment = "backtests"
     output_config_manager = container.output_config_manager
     output_directory = output_config_manager.get_latest_output_directory(environment)
 
-    if output_directory is None:
-        raise ValueError(f"No output {environment} directories were found. "
-                         f"Make sure you run a backtest or live deployment first.")
-
     if backtest_results is None:
+        if output_directory is None:
+            raise ValueError(f"No output {environment} directories were found. "
+                             f"Make sure you run a backtest or live deployment first.")
+
         backtest_results = get_latest_result_json_file(output_directory)
         if not backtest_results:
             raise MoreInfoError(
@@ -198,7 +218,9 @@ def report(backtest_results: Optional[Path],
     with config_path.open("w+", encoding="utf-8") as file:
         dump(report_config, file)
 
-    backtest_id = container.output_config_manager.get_backtest_id(output_directory)
+    container_suffix = uuid4().hex
+    if output_directory is not None:
+        container_suffix = output_config_manager.get_backtest_id(output_directory)
 
     lean_config_manager = container.lean_config_manager
     data_dir = lean_config_manager.get_data_directory()
@@ -207,9 +229,10 @@ def report(backtest_results: Optional[Path],
 
     run_options: Dict[str, Any] = {
         "detach": detach,
-        "name": f"lean_cli_report_{backtest_id}",
+        "name": f"lean_cli_report_{container_suffix}",
         "working_dir": "/Lean/Report/bin/Debug",
-        "commands": ["dotnet QuantConnect.Report.dll", f'cp /tmp/report.html "/Output/{report_destination.name}"'],
+        "commands": ["dotnet QuantConnect.Report.dll",
+                     _get_copy_to_output_command("/tmp/report.html", report_destination)],
         "mounts": [
             Mount(target="/Lean/Report/bin/Debug/config.json",
                   source=str(config_path),
@@ -251,7 +274,7 @@ def report(backtest_results: Optional[Path],
             logger.info(f"Custom HTML template file '{html}' could not be found")
 
     if pdf:
-        run_options["commands"].append(f'cp /tmp/report.pdf "/Output/{report_destination.name.replace(".html", ".pdf")}"')
+        run_options["commands"].append(_get_copy_to_output_command("/tmp/report.pdf", pdf_destination))
     if live_results is not None:
         run_options["mounts"].append(Mount(target="/Lean/Report/bin/Debug/live-data-source-file.json",
                                            source=str(live_results),

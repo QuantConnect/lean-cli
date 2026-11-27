@@ -11,6 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
+from importlib import import_module
+from pathlib import Path
 from typing import List
 from unittest import mock
 import responses
@@ -21,7 +25,7 @@ from lean.commands import lean
 from lean.container import container
 from lean.models.api import QCEmailNotificationMethod, QCWebhookNotificationMethod, QCSMSNotificationMethod, \
     QCTelegramNotificationMethod, QCAuth0Authorization, QCNotificationMethod
-from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes, create_api_organization
+from tests.test_helpers import create_fake_lean_cli_directory, create_qc_nodes, create_api_organization, create_api_project
 from tests.commands.test_live import brokerage_required_options
 
 brokerage_required_options = {
@@ -152,7 +156,8 @@ def test_cloud_live_deploy() -> None:
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
-    cloud_project_manager = mock.Mock()
+    cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
@@ -177,6 +182,50 @@ def test_cloud_live_deploy() -> None:
                                                   mock.ANY,
                                                   mock.ANY)
 
+@pytest.mark.parametrize("project,push", [("20", False), ("Old Project", True)])
+def test_cloud_live_deploy_offers_local_cash_for_resolved_project(project: str, push: bool) -> None:
+    create_fake_lean_cli_directory()
+    original_path = Path.cwd() / "Python Project"
+    resolved_path = Path.cwd() / "Renamed Project"
+    starting_path = Path.cwd() / project if push else resolved_path
+    original_path.rename(starting_path)
+    container.project_config_manager.get_project_config(starting_path).set("cloud-id", 20)
+
+    for path, amount in [(starting_path, 200000), (Path.cwd() / "CSharp Project", 500000)]:
+        deployment = path / "live" / "2024-09-26_17-25-28"
+        deployment.mkdir(parents=True)
+        (deployment / "config").write_text('{"id": 1234}', encoding="utf-8")
+        result_file = deployment / "L-1234.json"
+        result_file.write_text(
+            json.dumps({"Cash": {"USD": {"Symbol": "USD", "Amount": amount}}}), encoding="utf-8")
+        os.utime(result_file, (amount, amount))
+
+    cloud_project = create_api_project(20, project if push else resolved_path.name)
+    container.api_client.projects.get.return_value = cloud_project
+    container.api_client.projects.get_all.return_value = [cloud_project]
+    container.api_client.nodes.get_all.return_value = create_qc_nodes()
+    container.api_client.get.return_value = {"success": True, "status": "Undefined"}
+
+    def push_and_rename(paths):
+        paths[0].rename(resolved_path)
+        container.push_manager.pushed_project_paths[paths[0]] = resolved_path
+        return True
+
+    options = ["--push"] if push else []
+    # patch by module object: the dotted path resolves to the `cloud` click group on Python < 3.11
+    deploy_module = import_module("lean.commands.cloud.live.deploy")
+    with mock.patch.object(container.push_manager, "push_projects", side_effect=push_and_rename), \
+            mock.patch.object(deploy_module, "configure_initial_cash_balance", return_value=[]) as configure_cash:
+        result = CliRunner().invoke(lean, ["cloud", "live", "deploy", project, *options, "--brokerage", "Paper Trading",
+                                           "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",
+                                           "--notify-insights", "no", "--data-provider-live", "QuantConnect"])
+
+    assert result.exit_code == 0, result.exception
+    previous_cash = configure_cash.call_args.args[-1]
+    assert previous_cash is not None
+    assert previous_cash["USD"]["Amount"] == 200000
+
+
 @pytest.mark.skipif(
     sys.platform =="darwin", reason="MacOS does not support IB tests."
 )
@@ -192,7 +241,8 @@ def test_cloud_live_deploy_with_ib_using_hybrid_datafeed() -> None:
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
-    cloud_project_manager = mock.Mock()
+    cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
@@ -213,7 +263,8 @@ def test_cloud_live_deploy_with_tradier_using_tradier_datafeed() -> None:
     api_client.nodes.get_all.return_value = create_qc_nodes()
     container.api_client = api_client
 
-    cloud_project_manager = mock.Mock()
+    cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
@@ -268,7 +319,8 @@ def test_cloud_live_deploy_with_notifications(notice_method: str, configs: str) 
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
 
-    cloud_project_manager = mock.Mock()
+    cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_project_manager = cloud_project_manager
 
     cloud_runner = mock.Mock()
@@ -352,7 +404,8 @@ def test_cloud_live_deploy_with_quoted_notifications(notice_method: str, configs
         "success": True,
         "portfolio": {"holdings": {}, "cash": {}, "success": True}}
     container.api_client = api_client
-    container.cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_runner = mock.Mock()
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
@@ -382,7 +435,8 @@ def test_cloud_live_deploy_aborts_when_email_notification_has_no_subject() -> No
     api_client = mock.Mock()
     api_client.nodes.get_all.return_value = create_qc_nodes()
     container.api_client = api_client
-    container.cloud_project_manager = mock.Mock()
+    container.cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_runner = mock.Mock()
 
     result = CliRunner().invoke(lean, ["cloud", "live", "Python Project", "--brokerage", "Paper Trading", "--node", "live",
@@ -405,7 +459,7 @@ def test_cloud_live_deploy_aborts_when_email_notification_has_no_subject() -> No
                                             ("Kraken", "USD:100"),
                                             ("OANDA", "USD:100"),
                                             ("Samco", "USD:100"),
-                                            ("Terminal Link", "USD:100"),
+                                            ("Quant Bridge", "USD:100"),
                                             ("Tradier", "USD:100"),
                                             ("Zerodha", "USD:100"),
                                             ("CharlesSchwab", "USD:100")])
@@ -415,7 +469,8 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
 
     create_fake_lean_cli_directory()
 
-    cloud_project_manager = mock.Mock()
+    cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(), None)))
     container.cloud_project_manager = cloud_project_manager
 
     api_client = mock.Mock()
@@ -486,8 +541,8 @@ def test_cloud_live_deploy_with_live_cash_balance(brokerage: str, cash: str) -> 
                                                 ("OANDA", "A:A 2T:1:145.1"),
                                                 ("Samco", ""),
                                                 ("Samco", "A:A 2T:1:145.1"),
-                                                ("Terminal Link", ""),
-                                                ("Terminal Link", "A:A 2T:1:145.1"),
+                                                ("Quant Bridge", ""),
+                                                ("Quant Bridge", "A:A 2T:1:145.1"),
                                                 ("Tradier", ""),
                                                 ("Tradier", "A:A 2T:1:145.1"),
                                                 ("Zerodha", ""),
@@ -499,7 +554,8 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
         pytest.skip("MacOS does not support IB tests")
 
     create_fake_lean_cli_directory()
-    container.cloud_project_manager = mock.Mock(get_cloud_project=mock.Mock(return_value=mock.Mock(projectId=123)))
+    container.cloud_project_manager = mock.Mock(
+        get_cloud_project_and_local_path=mock.Mock(return_value=(mock.Mock(projectId=123), None)))
 
     api_client = mock.Mock()
     api_client.auth0.read.return_value = QCAuth0Authorization(
@@ -533,7 +589,7 @@ def test_cloud_live_deploy_with_live_holdings(brokerage: str, holdings: str) -> 
                                        "--notify-insights", "no", *options, "--data-provider-live", "QuantConnect"])
 
     if (brokerage != "Paper Trading" and brokerage != "Binance" and holdings != "")\
-        or brokerage == "Terminal Link":   # non-cloud brokerage
+        or brokerage == "Quant Bridge":   # non-cloud brokerage
         assert result.exit_code != 0
         api_client.live.start.assert_not_called()
         return

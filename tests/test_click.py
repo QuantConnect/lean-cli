@@ -127,6 +127,30 @@ def test_lean_command_does_not_check_for_cli_updates_when_command_raises() -> No
     update_manager.warn_if_cli_outdated.assert_not_called()
 
 
+def test_lean_command_keeps_docker_client_timeout_when_elevating_to_access_docker() -> None:
+    import sys
+
+    @click.command(cls=LeanCommand, requires_docker=True)
+    def command() -> None:
+        pass
+
+    container.platform_manager = mock.Mock()
+    container.platform_manager.is_system_linux.return_value = True
+    container.docker_manager = mock.Mock()
+    container.docker_manager.is_missing_permission.return_value = True
+
+    # The CLI never elevates while running under pytest, so pytest is hidden from that check
+    with mock.patch.dict(sys.modules), \
+            mock.patch("os.getuid", return_value=1000), \
+            mock.patch("shutil.which", return_value="/usr/bin/docker"), \
+            mock.patch("os.execlp", side_effect=SystemExit(0)) as execlp_mock:
+        del sys.modules["pytest"]
+        CliRunner().invoke(command)
+
+    execlp_mock.assert_called_once()
+    assert execlp_mock.call_args[0][:3] == ("sudo", "sudo", "--preserve-env=HOME,DOCKER_CLIENT_TIMEOUT")
+
+
 def test_path_parameter_fails_when_input_not_valid_path() -> None:
     @click.command()
     @click.argument("arg", type=PathParameter(exists=False, file_okay=True, dir_okay=True))
