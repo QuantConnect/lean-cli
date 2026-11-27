@@ -163,6 +163,17 @@ def test_read_from_file_returns_without_sleeping_when_the_result_is_available() 
     sleep_mock.assert_not_called()
 
 
+def test_read_from_file_reports_the_original_error_when_docker_is_unavailable() -> None:
+    docker_manager = _create_docker_manager()
+
+    with mock.patch.object(docker_manager, "get_container_by_name", side_effect=RuntimeError("docker is not running")), \
+            mock.patch("time.sleep"):
+        result = docker_manager.read_from_file("my-container", Path("command-result.json"), interval=1, timeout=0.05)
+
+    assert result["success"] is False
+    assert "docker is not running" in result["error"]
+
+
 def test_get_image_label_returns_the_label_of_the_image() -> None:
     docker_manager = _create_docker_manager()
 

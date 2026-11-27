@@ -533,6 +533,7 @@ class DockerManager:
         error_message = None
         container_running = True
         while time() - start < timeout:
+            p = None
             try:
                 docker_container = self.get_container_by_name(docker_container_name)
                 if docker_container is None:
@@ -546,10 +547,10 @@ class DockerManager:
                     break
                 sleep(interval)
             except CalledProcessError as exception:
-                error_message = f"Failed to read result from docker file {docker_file.name}: {exception.output.decode('utf-8')} {p.stderr.read().decode('utf-8')}"
+                error_message = f"Failed to read result from docker file {docker_file.name}: {exception.output.decode('utf-8')} {p.stderr.read().decode('utf-8') if p is not None else ''}"
                 sleep(interval)
             except Exception as e:
-                error_message = f"Failed to read result from docker file {docker_file.name}: {e} {p.stderr.read().decode('utf-8')}"
+                error_message = f"Failed to read result from docker file {docker_file.name}: {e} {p.stderr.read().decode('utf-8') if p is not None else ''}"
                 sleep(interval)
 
         if success:
