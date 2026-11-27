@@ -278,11 +278,8 @@ class LibraryManager:
 
         existing_project_reference = csproj_tree.find(f".//ProjectReference[@Include='{library_csproj_path}']")
         if existing_project_reference is None:
-            last_item_group = csproj_tree.find(".//ItemGroup[last()]")
-            if last_item_group is None:
-                last_item_group = etree.SubElement(csproj_tree.find(".//Project"), "ItemGroup")
-
-            last_item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_path}" />'))
+            item_group = self._xml_manager.unconditional_item_group(csproj_tree)
+            item_group.append(etree.fromstring(f'<ProjectReference Include="{library_csproj_path}" />'))
 
         csproj_file.write_text(self._xml_manager.to_string(csproj_tree), encoding="utf-8")
 

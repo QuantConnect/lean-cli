@@ -168,3 +168,95 @@ def test_detects_circular_dependencies() -> None:
         assert False, "Expected library_manager.add_lean_library_reference_to_project() to raise on circular dependency"
     except RuntimeError:
         pass
+
+
+def _csproj_with_conditional_item_group(only_conditional: bool) -> Path:
+    groups = "" if only_conditional else """
+  <ItemGroup>
+    <PackageReference Include="QuantConnect.Lean" Version="2.5.*" />
+  </ItemGroup>"""
+    csproj_file = Path.cwd() / "App.csproj"
+    csproj_file.write_text(f"""<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>{groups}
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'" />
+</Project>
+""", encoding="utf-8")
+    return csproj_file
+
+
+def _item_groups_by_condition(csproj_file: Path):
+    csproj_tree = container.xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
+    groups = csproj_tree.findall(".//ItemGroup")
+    unconditional = [group for group in groups if group.get("Condition") is None]
+    conditional = [group for group in groups if group.get("Condition") is not None]
+    return unconditional, conditional
+
+
+def test_add_csharp_project_to_csproj_does_not_use_a_conditional_item_group() -> None:
+    create_fake_lean_cli_directory()
+
+    csproj_file = _csproj_with_conditional_item_group(False)
+    reference = "../Library/Lib/Lib.csproj"
+    _create_library_manager()._add_csharp_project_to_csproj(csproj_file, reference)
+
+    unconditional, conditional = _item_groups_by_condition(csproj_file)
+    assert len(unconditional) == 1
+    assert [element.get("Include") for element in unconditional[0].findall("ProjectReference")] == [reference]
+    assert unconditional[0].find("PackageReference").get("Include") == "QuantConnect.Lean"
+    assert conditional[0].find("ProjectReference") is None
+    assert conditional[0].get("Condition") == "'$(Configuration)' == 'Debug'"
+
+
+def test_add_csharp_project_to_csproj_with_only_a_conditional_item_group_adds_an_unconditional_one() -> None:
+    create_fake_lean_cli_directory()
+
+    csproj_file = _csproj_with_conditional_item_group(True)
+    reference = "../Library/Lib/Lib.csproj"
+    _create_library_manager()._add_csharp_project_to_csproj(csproj_file, reference)
+
+    unconditional, conditional = _item_groups_by_condition(csproj_file)
+    assert len(unconditional) == 1
+    assert [element.get("Include") for element in unconditional[0].findall("ProjectReference")] == [reference]
+    assert conditional[0].find("ProjectReference") is None
+
+
+def test_add_csharp_package_to_csproj_does_not_use_a_conditional_item_group() -> None:
+    from lean.commands.library.add import _add_csharp_package_to_csproj
+
+    create_fake_lean_cli_directory()
+
+    csproj_file = _csproj_with_conditional_item_group(False)
+    _add_csharp_package_to_csproj(csproj_file, "Example.Package", "1.2.3")
+
+    unconditional, conditional = _item_groups_by_condition(csproj_file)
+    assert len(unconditional) == 1
+    assert any(element.get("Include") == "Example.Package" and element.get("Version") == "1.2.3"
+               for element in unconditional[0].findall("PackageReference"))
+    assert conditional[0].find("PackageReference") is None
+
+
+def test_add_csharp_project_to_csproj_does_not_use_an_item_group_inside_a_target() -> None:
+    create_fake_lean_cli_directory()
+
+    csproj_file = Path.cwd() / "App.csproj"
+    csproj_file.write_text("""<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="QuantConnect.Lean" Version="2.5.*" />
+  </ItemGroup>
+  <Target Name="CopyExtra">
+    <ItemGroup>
+      <Content Include="extra.txt" />
+    </ItemGroup>
+  </Target>
+</Project>
+""", encoding="utf-8")
+    reference = "../Library/Lib/Lib.csproj"
+    _create_library_manager()._add_csharp_project_to_csproj(csproj_file, reference)
+
+    csproj_tree = container.xml_manager.parse(csproj_file.read_text(encoding="utf-8"))
+    project_group = csproj_tree.find("ItemGroup")
+    target_group = csproj_tree.find("Target/ItemGroup")
+    assert [element.get("Include") for element in project_group.findall("ProjectReference")] == [reference]
+    assert target_group.find("ProjectReference") is None
