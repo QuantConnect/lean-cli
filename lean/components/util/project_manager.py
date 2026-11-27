@@ -459,6 +459,10 @@ class ProjectManager:
         new_components = []
 
         for component in cloud_path.split("/"):
+            # Leading, trailing and repeated separators don't name a directory
+            if not component:
+                continue
+
             # Some names are reserved
             for reserved_name in reserved_names:
                 # If the component is a reserved name, we add an underscore to it so it can be used
@@ -471,7 +475,8 @@ class ProjectManager:
             # Components cannot end with a period
             component = component.rstrip(".")
 
-            new_components.append(component)
+            # An empty component would be dropped from the path or make it absolute, outside the workspace
+            new_components.append(component or "_")
 
         cloud_path = "/".join(new_components)
 
