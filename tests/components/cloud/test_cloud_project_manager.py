@@ -13,13 +13,16 @@
 
 import json
 import os
+from datetime import datetime
 from pathlib import Path
+from typing import Callable, Tuple
 from unittest import mock
 
 import pytest
 from pyfakefs.helpers import reset_ids, set_uid
 
 from lean.container import container
+from lean.models.api import QCFullFile, QCProject, QCProjectLibrary
 from lean.models.errors import PushFailedError
 from tests.test_helpers import create_api_project, create_fake_lean_cli_directory
 from tests.conftest import initialize_container
@@ -36,11 +39,11 @@ def test_get_cloud_project_pushing_new_project():
     api_client.projects.get.return_value = cloud_project
 
     push_manager = mock.Mock()
-    push_manager.push_projects = mock.Mock()
+    push_manager.push_project = mock.Mock()
     push_manager.pushed_project_paths = {Path.cwd() / "Python Project": Path.cwd() / "Python Project"}
 
     project_config = mock.Mock()
-    project_config.get = mock.MagicMock(return_value=cloud_project.projectId)
+    project_config.get = mock.MagicMock(side_effect=lambda key, default=None: cloud_project.projectId if key == "cloud-id" else default)
     project_config.is_empty = mock.MagicMock(return_value=False)
     project_config_manager = mock.Mock()
     project_config_manager.try_get_project_config = mock.MagicMock(return_value=None)
@@ -55,7 +58,7 @@ def test_get_cloud_project_pushing_new_project():
     assert created_cloud_project == cloud_project
 
     api_client.projects.get.assert_called_with(cloud_project.projectId, "abc")
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project")
 
 
 def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> None:
@@ -67,7 +70,7 @@ def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> 
     api_client.projects.get.return_value = cloud_project
 
     push_manager = mock.Mock()
-    push_manager.push_projects = mock.Mock(return_value=False)
+    push_manager.push_project = mock.Mock(return_value=False)
 
     initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
     container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", cloud_project.projectId)
@@ -75,7 +78,7 @@ def test_get_cloud_project_raises_when_push_of_project_with_cloud_id_fails() -> 
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project("Python Project", push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project")
     api_client.projects.get.assert_not_called()
 
 
@@ -88,7 +91,7 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
     api_client.projects.get_all.return_value = [cloud_project]
 
     push_manager = mock.Mock()
-    push_manager.push_projects = mock.Mock(return_value=False)
+    push_manager.push_project = mock.Mock(return_value=False)
 
     initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
     container.project_config_manager.get_project_config(Path.cwd() / "Python Project").set("cloud-id", cloud_project.projectId)
@@ -96,7 +99,7 @@ def test_get_cloud_project_raises_when_push_of_project_given_by_id_fails() -> No
     with pytest.raises(PushFailedError):
         container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True)
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Python Project"])
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Python Project")
     api_client.projects.get.assert_not_called()
 
 
@@ -111,7 +114,7 @@ def test_get_cloud_project_pushes_project_given_by_id_after_its_directory_was_re
     api_client.projects.get.return_value = cloud_project
 
     push_manager = mock.Mock()
-    push_manager.push_projects = mock.Mock(return_value=True)
+    push_manager.push_project = mock.Mock(return_value=True)
     push_manager.pushed_project_paths = {Path.cwd() / "Renamed Project": Path.cwd() / "Renamed Project"}
 
     initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
@@ -119,7 +122,7 @@ def test_get_cloud_project_pushes_project_given_by_id_after_its_directory_was_re
 
     assert container.cloud_project_manager.get_cloud_project(str(cloud_project.projectId), push=True) == cloud_project
 
-    push_manager.push_projects.assert_called_once_with([Path.cwd() / "Renamed Project"])
+    push_manager.push_project.assert_called_once_with(Path.cwd() / "Renamed Project")
     api_client.projects.get.assert_called_once_with(cloud_project.projectId, "abc")
 
 
@@ -249,6 +252,15 @@ def test_get_cloud_project_given_by_id_does_not_push_project_outside_the_working
     api_client.projects.create.assert_not_called()
 
 
+@pytest.mark.parametrize("input", ["Python Project", "1"])
+def test_get_cloud_project_pushing_project_also_pushes_its_changed_libraries(input: str) -> None:
+    api_client = _setup_project_with_library(lambda content: "# changed in the cloud", write_denied_project_ids=())
+
+    assert container.cloud_project_manager.get_cloud_project(input, push=True).projectId == 1
+
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [2, 1]
+
+
 @pytest.mark.parametrize("local_name,cloud_name", [("Unsafe:Project", "Unsafe Project"),
                                                    ("Python Project", "Renamed Project")])
 def test_get_cloud_project_follows_project_renamed_by_push(local_name: str, cloud_name: str) -> None:
@@ -365,7 +377,7 @@ def test_get_cloud_project_and_local_path_returns_the_local_project_directory(in
     api_client.projects.get.return_value = cloud_project
 
     push_manager = mock.Mock()
-    push_manager.push_projects = mock.Mock(return_value=True)
+    push_manager.push_project = mock.Mock(return_value=True)
     push_manager.pushed_project_paths = {project_path: project_path}
 
     initialize_container(api_client_to_use=api_client, push_manager_to_use=push_manager)
@@ -430,3 +442,127 @@ def test_get_cloud_project_and_local_path_returns_no_directory_for_a_project_wit
     assert container.cloud_project_manager.get_cloud_project_and_local_path("20", push=False) == (cloud_project, None)
     if config_content is not None:
         assert config_path.read_text() == config_content
+
+
+def _setup_project_with_library(cloud_library_content: Callable[[str], str],
+                                write_denied_project_ids: Tuple[int, ...] = (2,),
+                                cloud_files_of_library_libraries: Tuple[QCFullFile, ...] = (),
+                                change_library: Callable[[Path, QCProject], None] = lambda path, cloud: None
+                                ) -> mock.Mock:
+    """Sets up project 1 referencing library 2, with library 2's cloud files derived from its local files.
+
+    :param cloud_library_content: returns the cloud content of a library file given its local content
+    :param write_denied_project_ids: the projects whose update the cloud refuses, like for a read-only library
+    :param cloud_files_of_library_libraries: files the cloud lists for the library's own libraries
+    :param change_library: changes the local library or its cloud copy once its cloud files are set up
+    """
+    create_fake_lean_cli_directory()
+    project_path = Path.cwd() / "Python Project"
+    library_path = Path.cwd() / "Library" / "Python Library"
+
+    library_cloud_project = create_api_project(2, "Library/Python Library")
+    library_cloud_project.description = ""
+    project_cloud_project = create_api_project(1, "Python Project")
+    project_cloud_project.libraries = [QCProjectLibrary(projectId=2, libraryName="Python Library",
+                                                         ownerName="owner", access=True)]
+
+    api_client = mock.Mock()
+    api_client.projects.get_all.return_value = [project_cloud_project, library_cloud_project]
+    api_client.projects.get.side_effect = lambda project_id, _: {1: project_cloud_project,
+                                                                 2: library_cloud_project}[project_id]
+
+    def update(project_id: int, **kwargs):
+        if project_id in write_denied_project_ids:
+            raise RuntimeError("You do not have write permission on this project.")
+
+    api_client.projects.update.side_effect = update
+
+    initialize_container(api_client_to_use=api_client)
+
+    container.project_config_manager.get_project_config(project_path).set("cloud-id", 1)
+    container.project_config_manager.get_project_config(project_path).set(
+        "libraries", [{"name": "Python Library", "path": str(library_path)}])
+    container.project_config_manager.get_project_config(library_path).set("cloud-id", 2)
+
+    library_files = [QCFullFile(name=path.relative_to(library_path).as_posix(),
+                                content=cloud_library_content(path.read_text(encoding="utf-8")),
+                                modified=datetime.now(), isLibrary=False)
+                     for path in container.project_manager.get_source_files(library_path)]
+    api_client.files.get_all.side_effect = lambda project_id: library_files + list(cloud_files_of_library_libraries) \
+        if project_id == 2 else []
+
+    change_library(library_path, library_cloud_project)
+
+    return api_client
+
+
+@pytest.mark.parametrize("cloud_library_content", [
+    lambda content: content,
+    # What a pull turns into the local file: no final newline and Windows line endings
+    lambda content: content[:-1].replace("\n", "\r\n"),
+])
+def test_get_cloud_project_push_skips_library_that_matches_its_cloud_copy(
+        cloud_library_content: Callable[[str], str]) -> None:
+    api_client = _setup_project_with_library(cloud_library_content)
+
+    container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [1]
+
+
+def test_get_cloud_project_push_skips_library_whose_own_libraries_are_listed_with_its_files() -> None:
+    library_library_file = QCFullFile(name="main.py", content="# the library's own library", modified=datetime.now(),
+                                      isLibrary=True)
+    api_client = _setup_project_with_library(lambda content: content,
+                                             cloud_files_of_library_libraries=(library_library_file,))
+
+    container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [1]
+
+
+def _set_library_config(library_path: Path, key: str, value) -> None:
+    container.project_config_manager.get_project_config(library_path).set(key, value)
+
+
+@pytest.mark.parametrize("change_library", [
+    # a local file added
+    lambda path, cloud: (path / "helpers.py").write_text("def helper():\n    return 1\n", encoding="utf-8"),
+    # a local file deleted
+    lambda path, cloud: (path / "research.ipynb").unlink(),
+    # a library reference removed locally
+    lambda path, cloud: setattr(cloud, "libraries", [QCProjectLibrary(projectId=3, libraryName="Other Library",
+                                                                      ownerName="owner", access=True)]),
+    # a changed description
+    lambda path, cloud: _set_library_config(path, "description", "A changed description"),
+    # changed parameters
+    lambda path, cloud: _set_library_config(path, "parameters", {"period": "10"}),
+], ids=["file added", "file deleted", "library reference removed", "description changed", "parameters changed"])
+def test_get_cloud_project_push_pushes_library_whose_files_match_when_something_else_changed(
+        change_library: Callable[[Path, QCProject], None]) -> None:
+    api_client = _setup_project_with_library(lambda content: content, write_denied_project_ids=(),
+                                             change_library=change_library)
+
+    container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [2, 1]
+
+
+def test_get_cloud_project_push_warns_and_continues_when_changed_library_cannot_be_pushed() -> None:
+    api_client = _setup_project_with_library(lambda content: "# changed in the cloud")
+
+    with mock.patch.object(container.logger, "warn") as warn:
+        assert container.cloud_project_manager.get_cloud_project("Python Project", push=True).projectId == 1
+
+    warn.assert_called_once_with(f"Cannot push '{Path('Library') / 'Python Library'}': "
+                                 f"You do not have write permission on this project.")
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [2, 1]
+
+
+def test_get_cloud_project_push_raises_when_project_cannot_be_pushed_after_its_libraries() -> None:
+    api_client = _setup_project_with_library(lambda content: "# changed in the cloud", write_denied_project_ids=(1,))
+
+    with pytest.raises(PushFailedError):
+        container.cloud_project_manager.get_cloud_project("Python Project", push=True)
+
+    assert [call.args[0] for call in api_client.projects.update.call_args_list] == [2, 1]
