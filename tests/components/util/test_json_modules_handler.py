@@ -193,3 +193,49 @@ def test_config_build_uses_lean_config_account_when_valid() -> None:
     mock_prompt.assert_not_called()
     account_config = next(c for c in module._lean_configs if c._id == "test-account-number")
     assert account_config._value == "60102549"
+
+
+def test_config_build_keeps_valid_saved_account_when_not_interactive_with_multiple_accounts() -> None:
+    create_fake_lean_cli_directory()
+    initialize_container()
+
+    module = JsonModule(_SCHWAB_LIKE_MODULE_DATA, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+
+    lean_config = {"project-id": 123, "test-account-number": "60102549"}  # valid and in the authorized list
+
+    mock_auth = mock.MagicMock()
+    mock_auth.get_authorization_config_without_account.return_value = {"token": "abc"}
+    mock_auth.get_account_ids.return_value = ["60102549", "99887766"]
+
+    with mock.patch("lean.models.json_module.get_current_context") as mock_ctx, \
+         mock.patch("lean.models.json_module.get_authorization", return_value=mock_auth), \
+         mock.patch("lean.models.configuration.prompt") as mock_prompt, \
+         mock.patch.object(module, "_save_property"):
+        mock_ctx.return_value.get_parameter_source.return_value = None
+
+        module.config_build(lean_config, mock.Mock(), interactive=False)
+
+    mock_prompt.assert_not_called()
+    account_config = next(c for c in module._lean_configs if c._id == "test-account-number")
+    assert account_config._value == "60102549"
+
+
+def test_config_build_requires_account_when_saved_account_is_not_authorized_and_not_interactive() -> None:
+    create_fake_lean_cli_directory()
+    initialize_container()
+
+    module = JsonModule(_SCHWAB_LIKE_MODULE_DATA, MODULE_BROKERAGE, MODULE_CLI_PLATFORM)
+
+    lean_config = {"project-id": 123, "test-account-number": "00000000"}  # not authorized any more
+
+    mock_auth = mock.MagicMock()
+    mock_auth.get_authorization_config_without_account.return_value = {"token": "abc"}
+    mock_auth.get_account_ids.return_value = ["60102549", "99887766"]
+
+    with mock.patch("lean.models.json_module.get_current_context") as mock_ctx, \
+         mock.patch("lean.models.json_module.get_authorization", return_value=mock_auth), \
+         mock.patch.object(module, "_save_property"):
+        mock_ctx.return_value.get_parameter_source.return_value = None
+
+        with pytest.raises(RuntimeError, match="--test-account-number"):
+            module.config_build(lean_config, mock.Mock(), interactive=False)
