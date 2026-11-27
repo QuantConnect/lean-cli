@@ -542,6 +542,9 @@ class DockerManager:
                 p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 output = p.stdout.read().decode('utf-8')
                 if output is not None and output != "":
+                    # Lean may still be writing the file, incomplete JSON raises and is read again
+                    result = loads(output)
+                    error_message = None
                     success = True
                     break
                 sleep(interval)
@@ -553,7 +556,6 @@ class DockerManager:
                 sleep(interval)
 
         if success:
-            result = loads(output)
             success = result["Success"]
             if success is False:
                 error_message = "Rejected by Lean. Possible arguments error. Please check your logs and try again."
