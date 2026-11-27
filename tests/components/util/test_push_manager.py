@@ -517,7 +517,7 @@ def _create_too_large_project_push_manager(api_client: mock.Mock) -> PushManager
     (project_path / "new_file.py").write_text("# new file", encoding="utf-8")
     container.project_config_manager.get_project_config(project_path).set("cloud-id", 1000)
 
-    def get_local_project_path(project_name, *args):
+    def get_local_project_path(project_name, *args, **kwargs):
         return Path.cwd() / project_name
 
     project_manager = mock.Mock()
