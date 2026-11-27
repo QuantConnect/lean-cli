@@ -26,6 +26,21 @@ from lean.models.utils import LeanLibraryReference
 from lean.models.encryption import ActionType
 from lean.components.config.storage import safe_save
 
+
+def get_pulled_file_content(cloud_file_content: str) -> str:
+    """Returns the content a pull writes to the local drive for a cloud file's content.
+
+    :param cloud_file_content: the content of the file in the cloud
+    :return: the content with unix line endings, ending with a newline unless it is empty
+    """
+    # Make sure we always work with unix line endings in memory,
+    # so they can be properly translated to the local OS line endings when writing to disk.
+    content = cloud_file_content.replace("\r\n", "\n")
+    if content != "" and not content.endswith("\n"):
+        content += "\n"
+    return content
+
+
 class PullManager:
     """The PullManager class is responsible for synchronizing cloud projects to the local drive."""
 
@@ -239,12 +254,7 @@ class PullManager:
 
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Make sure we always work with unix line endings in memory,
-            # so they can be properly translated to the local OS line endings when writing to disk.
-            content = cloud_file.content.replace("\r\n", "\n")
-            if content != "" and not content.endswith("\n"):
-                content += "\n"
-            safe_save(content, local_file_path)
+            safe_save(get_pulled_file_content(cloud_file.content), local_file_path)
 
             self._project_manager.update_last_modified_time(local_file_path, cloud_file.modified)
             self._logger.info(f"Successfully pulled '{project.name}/{cloud_file.name}'")

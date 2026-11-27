@@ -200,7 +200,7 @@ def test_cloud_backtest_pushes_nothing_when_project_does_not_exist_locally() -> 
 
     assert result.exit_code == 0
 
-    push_manager.push_projects.assert_not_called()
+    push_manager.push_project.assert_not_called()
 
 
 def test_cloud_backtest_aborts_when_push_of_project_with_cloud_id_fails() -> None:

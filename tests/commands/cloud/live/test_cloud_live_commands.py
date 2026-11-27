@@ -206,15 +206,15 @@ def test_cloud_live_deploy_offers_local_cash_for_resolved_project(project: str, 
     container.api_client.nodes.get_all.return_value = create_qc_nodes()
     container.api_client.get.return_value = {"success": True, "status": "Undefined"}
 
-    def push_and_rename(paths):
-        paths[0].rename(resolved_path)
-        container.push_manager.pushed_project_paths[paths[0]] = resolved_path
+    def push_and_rename(path):
+        path.rename(resolved_path)
+        container.push_manager.pushed_project_paths[path] = resolved_path
         return True
 
     options = ["--push"] if push else []
     # patch by module object: the dotted path resolves to the `cloud` click group on Python < 3.11
     deploy_module = import_module("lean.commands.cloud.live.deploy")
-    with mock.patch.object(container.push_manager, "push_projects", side_effect=push_and_rename), \
+    with mock.patch.object(container.push_manager, "push_project", side_effect=push_and_rename), \
             mock.patch.object(deploy_module, "configure_initial_cash_balance", return_value=[]) as configure_cash:
         result = CliRunner().invoke(lean, ["cloud", "live", "deploy", project, *options, "--brokerage", "Paper Trading",
                                            "--node", "live", "--auto-restart", "yes", "--notify-order-events", "no",

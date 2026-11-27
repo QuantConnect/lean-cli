@@ -191,7 +191,7 @@ def test_cloud_optimize_pushes_nothing_when_project_does_not_exist_locally() -> 
 
     assert result.exit_code == 0
 
-    push_manager.push_projects.assert_not_called()
+    push_manager.push_project.assert_not_called()
 
 
 def test_cloud_optimize_passes_given_config_to_cloud_runner() -> None:

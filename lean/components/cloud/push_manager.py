@@ -54,15 +54,17 @@ class PushManager:
         # Where each pushed project is after its push, which renames directories whose name is not valid locally or in the cloud
         self.pushed_project_paths: Dict[Path, Path] = {}
 
-    def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> None:
+    def push_project(self, project: Path, encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> bool:
         """Pushes the given project from the local drive to the cloud.
 
         It will also push every library referenced by the project and add or remove references.
+        A library that cannot be pushed only gets a warning, the project is pushed anyway.
 
         :param project: path to the directory containing the local project that needs to be pushed
+        :return: True if the project was pushed, even when some of its libraries could not be
         """
         libraries = self._project_manager.get_project_libraries(project)
-        self.push_projects([project], libraries, encryption_action, encryption_key, force)
+        return project not in self._push_projects([project], libraries, encryption_action, encryption_key, force)
 
     def push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: Optional[List[Path]]=[], encryption_action: Optional[ActionType]=None, encryption_key: Optional[Path]=None, force: Optional[bool]=False) -> bool:
         """Pushes the given projects from the local drive to the cloud.
@@ -72,12 +74,19 @@ class PushManager:
         :param projects_to_push: a list of directories containing the local projects that need to be pushed
         :return: True if every project and library was pushed, False if any of them could not be pushed
         """
+        return len(self._push_projects(projects_to_push, associated_libraries_to_push, encryption_action,
+                                       encryption_key, force)) == 0
+
+    def _push_projects(self, projects_to_push: List[Path], associated_libraries_to_push: List[Path], encryption_action: Optional[ActionType], encryption_key: Optional[Path], force: Optional[bool]) -> List[Path]:
+        """Pushes the given projects and libraries, with a warning for each one that cannot be pushed.
+
+        :return: the directories of the projects and libraries that could not be pushed
+        """
         all_projects_to_push = associated_libraries_to_push + projects_to_push
+        failed_paths = []
 
         if len(all_projects_to_push) == 0:
-            return True
-
-        all_pushed = True
+            return failed_paths
 
         organization_id = self._organization_manager.try_get_working_organization_id()
 
@@ -100,9 +109,9 @@ class PushManager:
                 self._logger.warn(f"Cannot push '{relative_path}': {ex}")
                 if "write permission" in str(ex).lower():
                     self._logger.info("Please pull any required changes and push with --force")
-                all_pushed = False
+                failed_paths.append(path)
 
-        return all_pushed
+        return failed_paths
 
     def _get_local_libraries_cloud_ids(self, project_dir: Path) -> List[int]:
         project_config = self._project_config_manager.get_project_config(project_dir)
@@ -401,11 +410,20 @@ class PushManager:
             return False
 
         try:
-            cloud_files = {file.name: file.content for file in self._api_client.files.get_all(cloud_project.projectId)}
+            # Library files come with their own names, and belong to the project's libraries, not to the project
+            cloud_files = {file.name: file.content for file in self._api_client.files.get_all(cloud_project.projectId)
+                           if not file.isLibrary}
         except Exception:
             return False
 
-        return cloud_files == {file["name"]: file["content"] for file in update_args["files"]}
+        local_files = {file["name"]: file["content"] for file in update_args["files"]}
+        if local_files.keys() != cloud_files.keys():
+            return False
+
+        # A file is unchanged when it is the one pushed, or the one a pull of the cloud copy wrote
+        from lean.components.cloud.pull_manager import get_pulled_file_content
+        return all(content in (cloud_files[name], get_pulled_file_content(cloud_files[name]))
+                   for name, content in local_files.items())
 
     def _get_cloud_project(self, project_id: int, organization_id: str) -> QCProject:
         project = next(iter(p for p in self._cloud_projects if p.projectId == project_id), None)
