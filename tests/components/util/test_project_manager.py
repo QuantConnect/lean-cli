@@ -721,3 +721,18 @@ def test_get_cloud_projects_libraries_filters_libraries_that_cannot_be_accessed(
 
     assert _lists_are_equal(libraries, own_project_libraries)
     assert _lists_are_equal(libraries_not_found, collab_libraries)
+
+
+@pytest.mark.parametrize("cloud_name,expected_name", [(":/Strategy", "_/Strategy"),
+                                                      ("Folder/ /Strategy", "Folder/_/Strategy"),
+                                                      ("../Strategy", "_/Strategy"),
+                                                      ("::", "_"),
+                                                      ("/Strategy", "Strategy"),
+                                                      ("Folder/Strategy/", "Folder/Strategy")])
+def test_get_local_project_path_stays_inside_workspace_when_a_component_sanitizes_to_nothing(cloud_name: str,
+                                                                                             expected_name: str) -> None:
+    project_manager = _create_project_manager()
+
+    local_path = project_manager.get_local_project_path(cloud_name, cloud_id=1)
+
+    assert local_path == Path.cwd() / expected_name
